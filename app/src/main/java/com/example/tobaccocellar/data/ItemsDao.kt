@@ -36,8 +36,8 @@ interface ItemsDao {
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItems(): Flow<List<Items>>
 
-    @Query("SELECT * FROM items WHERE brand = :brand AND blend = :blend")
-    fun checkItemExists(brand: String, blend: String): Flow<List<Items>>
+    @Query("SELECT EXISTS(SELECT * FROM items WHERE brand = :brand AND blend = :blend)")
+    suspend fun exists(brand: String, blend: String): Boolean
 
     @Query("SELECT * FROM items WHERE brand = :brand")
     fun getItemsByBrand(brand: String): Flow<List<Items>>

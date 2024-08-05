@@ -7,20 +7,15 @@ interface ItemsRepository {
 
     fun getItemStream(id: Int): Flow<Items?>
 
-    suspend fun insertItem(item: Items): Result<Unit> {
-        return try {
-            ItemsDao.insert(item)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend fun insertItem(item: Items)
 
     suspend fun deleteItem(item: Items)
 
     suspend fun updateItem(item: Items)
 
-//    fun isEntryExist(id: Int): Boolean
+    suspend fun exists(brand: String, blend: String): Boolean
+
+
 
 //    suspend fun checkItemExists(brand: String, blend: String): Flow<Items?>
 

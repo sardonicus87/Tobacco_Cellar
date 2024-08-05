@@ -53,7 +53,9 @@ fun CellarNavHost(
         composable(route = AddEntryDestination.route) {
             AddEntryScreen(
                 navigateBack = { navController.popBackStack() },
-                onNavigateUp = { navController.navigateUp() }
+                onNavigateUp = { navController.navigateUp() },
+                snackbarError = "",
+                onSnackbarErrorShown = {}
             )
         }
         composable(

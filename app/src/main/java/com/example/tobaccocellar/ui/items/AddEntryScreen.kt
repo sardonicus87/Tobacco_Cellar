@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -68,6 +69,8 @@ fun AddEntryScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
+    snackbarError: String,
+    onSnackbarErrorShown: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: AddEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 
@@ -92,7 +95,7 @@ fun AddEntryScreen(
             onItemValueChange = viewModel::updateUiState,
             onSaveClick = {
                 coroutineScope.launch {
-                    viewModel.saveItem()
+                    viewModel.checkItemExistsOnSave()
                     navigateBack()
                 }
             },
@@ -107,6 +110,12 @@ fun AddEntryScreen(
                 .padding(innerPadding)
                 .fillMaxSize(),
         )
+        if (snackbarError.isNotBlank()) {
+            Snackbar {
+                Text(text = snackbarError)
+            }
+            onSnackbarErrorShown()
+        }
     }
 }
 

@@ -11,6 +11,10 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 //        itemsDao.insertWithSnackbar(item)
 //    }
 
+    override suspend fun exists(brand: String, blend: String): Boolean {
+        return itemsDao.exists(brand, blend)
+    }
+
     override suspend fun insertItem(item: Items) = itemsDao.insert(item)
 
     override suspend fun deleteItem(item: Items) = itemsDao.delete(item)
