@@ -25,12 +25,15 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,6 +80,7 @@ fun AddEntryScreen(
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -110,11 +114,16 @@ fun AddEntryScreen(
                 .padding(innerPadding)
                 .fillMaxSize(),
         )
-        if (snackbarError.isNotBlank()) {
-            Snackbar {
-                Text(text = snackbarError)
+        LaunchedEffect(viewModel.snackbarError.value) {
+            if (viewModel.snackbarError.value.isNotEmpty()) {
+                snackbarHostState.showSnackbar(
+                    message = viewModel.snackbarError.value,
+                    actionLabel = "OK",
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Short
+                )
+                viewModel.clearSnackbarError()
             }
-            onSnackbarErrorShown()
         }
     }
 }
