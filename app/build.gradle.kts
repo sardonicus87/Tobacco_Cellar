@@ -46,7 +46,7 @@ android {
         compose = true
     }
     composeOptions {
-//        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
     packaging {
         resources {
@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.lazytable)
     implementation(libs.minabox)
     implementation(libs.androidx.compose.ui.ui)
+    implementation(libs.kotlinx.coroutines.android)
 
 //    implementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
 //    implementation("androidx.compose.material3:material3-window-size-class")

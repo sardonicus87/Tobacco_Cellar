@@ -15,6 +15,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         return itemsDao.exists(brand, blend)
     }
 
+    override suspend fun getItemIdByIndex(brand: String, blend: String) = itemsDao.getItemIdByIndex(brand, blend)
+
     override suspend fun insertItem(item: Items) = itemsDao.insert(item)
 
     override suspend fun deleteItem(item: Items) = itemsDao.delete(item)

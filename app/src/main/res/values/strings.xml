@@ -13,9 +13,10 @@
     <string name="add">Add</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>
-    <string name="no">Cancel</string>
-    <string name="yes">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
     <string name="delete_entry">Delete Entry</string>
+    <string name="update">Update</string>
 
 
     <string name="import_csv">Import CSV</string>
@@ -23,8 +24,10 @@
 
 
     // Instructions //
+    <string name="attention">Attention:</string>
     <string name="no_items">No items found in cellar.\nClick \"+\" to add items,\nor use options to import CSV.</string>
     <string name="delete_question">Are you sure?</string>
+    <string name="item_exists">This item already exists, would you like to edit it instead?</string>
 
     // Content Descriptions //
     <string name="table_view_toggle">Table View</string>
@@ -36,6 +39,7 @@
     <string name="stats_nothing">Stats placeholder</string>
     <string name="item_detail_title">Details</string>
     <string name="settings_nothing">Settings</string>
+
 
 
 </resources>

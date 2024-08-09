@@ -3,15 +3,13 @@ package com.example.tobaccocellar.ui.items
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.ItemsRepository
-import kotlinx.coroutines.launch
+
 
 class AddEntryViewModel(
-    private val itemsRepository: ItemsRepository
+    private val itemsRepository: ItemsRepository,
 ): ViewModel() {
 
     /** current item state **/
@@ -33,23 +31,42 @@ class AddEntryViewModel(
         }
     }
 
-    /** check if Item already exists, display snackbar if so **/
-    private var _snackbarError = mutableStateOf("")
-    val snackbarError: State<String> = _snackbarError
+    /** check if Item already exists, display optional dialog if so **/
+    var existState by mutableStateOf(ExistState())
 
-    fun checkItemExistsOnSave() {
-        viewModelScope.launch {
-            val currentItem = itemUiState.itemDetails
-            if (itemsRepository.exists(currentItem.brand, currentItem.blend)) {
-                _snackbarError.value = "Item already exists"
-            } else {
-                saveItem()
-            }
+    suspend fun checkItemExistsOnSave() {
+        val currentItem = itemUiState.itemDetails
+        if (itemsRepository.exists(currentItem.brand, currentItem.blend)) {
+            existState =
+                ExistState(
+                    exists = true,
+                    transferId = itemsRepository.getItemIdByIndex(
+                        currentItem.brand, currentItem.blend),
+                    existCheck = true
+                )
+        }
+        else if (!itemsRepository.exists(currentItem.brand, currentItem.blend)) {
+            existState =
+                ExistState(
+                    exists = false,
+                    transferId = 0,
+                    existCheck = false,
+                )
         }
     }
 
+    fun resetExistState() {
+        existState =
+            ExistState(
+                exists = false,
+                transferId = 0,
+                existCheck = false,
+            )
+    }
+
+
     /** save to or delete from database **/
-    private suspend fun saveItem() {
+    suspend fun saveItem() {
         if (validateInput()) {
             itemsRepository.insertItem(itemUiState.itemDetails.toItem())
         }
@@ -60,14 +77,13 @@ class AddEntryViewModel(
             itemsRepository.deleteItem(itemUiState.itemDetails.toItem())
         }
     }
-
-    fun clearSnackbarError() {
-        _snackbarError.value = ""
-    }
 }
 
-data class ItemExistsState(
-    val exists: Boolean = false
+
+data class ExistState(
+    val exists: Boolean = false,
+    val transferId: Int = 0,
+    var existCheck: Boolean = false,
 )
 
 data class ItemUiState(

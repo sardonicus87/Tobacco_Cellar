@@ -1,7 +1,10 @@
 package com.example.tobaccocellar.ui.items
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,16 +27,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,8 +41,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -72,15 +75,21 @@ fun AddEntryScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
-    snackbarError: String,
-    onSnackbarErrorShown: () -> Unit,
+    navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: AddEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
-
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
+
+    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
+        this.clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }) {
+            onClick()
+        }
+    }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -96,11 +105,15 @@ fun AddEntryScreen(
     ) { innerPadding ->
         AddEntryBody(
             itemUiState = viewModel.itemUiState,
+            existState = viewModel.existState,
             onItemValueChange = viewModel::updateUiState,
             onSaveClick = {
                 coroutineScope.launch {
                     viewModel.checkItemExistsOnSave()
-                    navigateBack()
+                    if (!viewModel.existState.exists) {
+                        viewModel.saveItem()
+                        navigateBack()
+                    }
                 }
             },
             onDeleteClick = {
@@ -110,32 +123,29 @@ fun AddEntryScreen(
                 }
             },
             isEditEntry = false,
+            navigateToEditEntry = navigateToEditEntry,
+            resetExistState = viewModel::resetExistState,
             modifier = modifier
                 .padding(innerPadding)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .noRippleClickable(onClick = { focusManager.clearFocus() }),
         )
-        LaunchedEffect(viewModel.snackbarError.value) {
-            if (viewModel.snackbarError.value.isNotEmpty()) {
-                snackbarHostState.showSnackbar(
-                    message = viewModel.snackbarError.value,
-                    actionLabel = "OK",
-                    withDismissAction = true,
-                    duration = SnackbarDuration.Short
-                )
-                viewModel.clearSnackbarError()
-            }
-        }
     }
 }
+
 
 @Composable
 fun AddEntryBody(
     itemUiState: ItemUiState,
+    existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
+    navigateToEditEntry: (Int) -> Unit,
+    resetExistState: () -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -151,16 +161,26 @@ fun AddEntryBody(
             modifier = Modifier
                 .fillMaxWidth()
         )
-        Button(
-            onClick = onSaveClick,
-            enabled = itemUiState.isEntryValid,
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp)
-        ) {
-            Text(text = stringResource(R.string.save))
+         Button(
+             onClick = { onSaveClick() },
+             enabled = itemUiState.isEntryValid,
+             shape = MaterialTheme.shapes.small,
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp)
+         ) {
+             Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
+         }
+        if (existState.existCheck) {
+            ItemExistsDialog(
+                onItemExistsConfirm = {
+                    resetExistState()
+                    navigateToEditEntry(existState.transferId)
+                },
+                onItemExistsCancel = { resetExistState() },
+            )
         }
+
         if (isEditEntry) {
             Button(
                 onClick = { deleteConfirm = true },
@@ -196,7 +216,56 @@ fun AddEntryBody(
     }
 }
 
+/** Dialogs **/
 
+@Composable
+fun ItemExistsDialog(
+    onItemExistsConfirm: () -> Unit,
+    onItemExistsCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.attention)) },
+        text = { Text(stringResource(R.string.item_exists)) },
+        modifier = modifier,
+        dismissButton = {
+            TextButton(onClick = onItemExistsCancel) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onItemExistsConfirm) {
+                Text(stringResource(R.string.yes))
+            }
+        }
+    )
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    onDeleteConfirm: () -> Unit,
+    onDeleteCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.delete_entry)) },
+        text = { Text(stringResource(R.string.delete_question)) },
+        modifier = modifier,
+        dismissButton = {
+            TextButton(onClick = onDeleteCancel) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDeleteConfirm) {
+                Text(stringResource(R.string.yes))
+            }
+        })
+}
+
+/** Item Input Form **/
 
 @Composable
 fun ItemInputForm(
@@ -496,30 +565,6 @@ fun ItemInputForm(
 }
 
 
-
-
-@Composable
-private fun DeleteConfirmationDialog(
-    onDeleteConfirm: () -> Unit,
-    onDeleteCancel: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(onDismissRequest = { /* Do nothing */ },
-        title = { Text(stringResource(R.string.delete_entry)) },
-        text = { Text(stringResource(R.string.delete_question)) },
-        modifier = modifier,
-        dismissButton = {
-            TextButton(onClick = onDeleteCancel) {
-                Text(stringResource(R.string.no))
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDeleteConfirm) {
-                Text(stringResource(R.string.yes))
-            }
-        })
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TypeDropDown(
@@ -547,7 +592,12 @@ fun TypeDropDown(
             },
             enabled = false,
             singleLine = true,
-            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+            )
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option: String ->
@@ -571,5 +621,17 @@ fun AddEntryScreenPreview(){
         ItemDetails(
             brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, hated = false
         )
-    ), onItemValueChange = {}, onSaveClick = {}, onDeleteClick = {}, isEditEntry = true)
+    ),
+        onItemValueChange = {},
+        onSaveClick = {},
+        onDeleteClick = {},
+        navigateToEditEntry = {},
+        isEditEntry = true,
+        existState = ExistState(),
+        resetExistState = {},
+        innerPadding = PaddingValues(0.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+        )
 }

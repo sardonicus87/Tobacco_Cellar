@@ -1,6 +1,8 @@
 package com.example.tobaccocellar.ui.navigation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -41,10 +43,9 @@ fun CellarNavHost(
         }
         composable(route = StatsDestination.route) {
             StatsScreen(
-                navigateToHome = {
-                    navController.navigate(HomeDestination.route) {
-                        popUpTo(HomeDestination.route) { inclusive = true }
-                    } },
+                navigateToHome = { navController.navigate(HomeDestination.route) {
+                    popUpTo(HomeDestination.route) { inclusive = true }
+                } },
 //                navigateToStats = { navController.navigate(StatsDestination.route) },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 onNavigateUp = { navController.navigateUp() }
@@ -54,8 +55,7 @@ fun CellarNavHost(
             AddEntryScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
-                snackbarError = "",
-                onSnackbarErrorShown = {}
+                navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") }
             )
         }
         composable(
@@ -66,7 +66,7 @@ fun CellarNavHost(
             ) {
                 EditEntryScreen(
                     navigateBack = { navController.popBackStack() },
-                    onNavigateUp = { navController.navigateUp() }
+                    onNavigateUp = { navController.navigateUp() },
                 )
             }
         composable(route = SettingsDestination.route) {

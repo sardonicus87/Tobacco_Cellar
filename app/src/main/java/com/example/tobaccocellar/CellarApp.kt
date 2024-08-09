@@ -22,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -45,10 +46,13 @@ import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
 
 @Composable
-fun CellarApp(navController: NavHostController = rememberNavController()) {
+fun CellarApp(
+    navController: NavHostController = rememberNavController(),
+    ) {
     CellarNavHost(navController = navController)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CellarTopAppBar(
     title: String,
