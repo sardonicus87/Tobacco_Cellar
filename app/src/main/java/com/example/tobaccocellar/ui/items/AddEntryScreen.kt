@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
@@ -24,6 +27,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -42,8 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
@@ -61,7 +63,9 @@ import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 object AddEntryDestination : NavigationDestination {
@@ -92,7 +96,9 @@ fun AddEntryScreen(
     }
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .noRippleClickable(onClick = { focusManager.clearFocus() }),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(AddEntryDestination.titleRes),
@@ -109,10 +115,12 @@ fun AddEntryScreen(
             onItemValueChange = viewModel::updateUiState,
             onSaveClick = {
                 coroutineScope.launch {
-                    viewModel.checkItemExistsOnSave()
-                    if (!viewModel.existState.exists) {
-                        viewModel.saveItem()
-                        navigateBack()
+                    withContext(Dispatchers.Main) {
+                        viewModel.checkItemExistsOnSave()
+                        if (!viewModel.existState.exists) {
+                            viewModel.saveItem()
+                            navigateBack()
+                        }
                     }
                 }
             },
@@ -127,8 +135,7 @@ fun AddEntryScreen(
             resetExistState = viewModel::resetExistState,
             modifier = modifier
                 .padding(innerPadding)
-                .fillMaxSize()
-                .noRippleClickable(onClick = { focusManager.clearFocus() }),
+                .fillMaxSize(),
         )
     }
 }
@@ -265,6 +272,7 @@ private fun DeleteConfirmationDialog(
         })
 }
 
+
 /** Item Input Form **/
 
 @Composable
@@ -277,7 +285,7 @@ fun ItemInputForm(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(0.dp),
+            .padding(top = 8.dp, bottom = 0.dp, start = 0.dp, end = 0.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
@@ -371,7 +379,7 @@ fun ItemInputForm(
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
-                .size(8.dp)
+                .size(12.dp)
         )
 
 // Optional //
@@ -534,33 +542,70 @@ fun ItemInputForm(
 // Favorite or Hated? //
                 Row(
                     modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Favorite?",
+                    Row (
                         modifier = Modifier
-                            .width(80.dp)
-                    )
-
-                    /* TODO favorite */
-
-                    Text(
-                        text = "Hated?",
+                            .padding(0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Favorite?",
+                            modifier = Modifier
+                        )
+                        FavoriteHeart(
+                            checked = itemDetails.favorite,
+                            onCheckedChange = { onValueChange(itemDetails.copy(favorite = it)) },
+                            modifier = Modifier
+                                .padding(0.dp)
+                        )
+                    }
+                    Row (
                         modifier = Modifier
-                            .width(80.dp)
-                    )
-                    Checkbox(
-                        checked = itemDetails.hated,
-                        onCheckedChange = { onValueChange(itemDetails.copy(hated = it)) },
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .offset(x = (-4).dp)
-                    )
+                            .padding(0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Hated?",
+                            modifier = Modifier
+                        )
+                        Checkbox(
+                            checked = itemDetails.hated,
+                            onCheckedChange = { onValueChange(itemDetails.copy(hated = it)) },
+                            modifier = Modifier
+                                .padding(0.dp)
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun FavoriteHeart(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    ) {
+
+    IconToggleButton(
+        checked = checked,
+        onCheckedChange = { onCheckedChange?.invoke(it) },
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = if (checked) {
+                Icons.Filled.Favorite
+            } else Icons.Outlined.FavoriteBorder,
+            contentDescription = null,
+            modifier = modifier
+        )
     }
 }
 

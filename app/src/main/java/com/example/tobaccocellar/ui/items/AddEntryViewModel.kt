@@ -111,7 +111,7 @@ fun ItemDetails.toItem(): Items = Items(
     type = type,
     quantity = quantity,
     hated = hated,
-    favorite = favorite
+    favorite = favorite,
 )
 
 /** convert Items to ItemUiState**/

@@ -53,7 +53,9 @@ fun EditEntryScreen(
     }
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .noRippleClickable(onClick = { focusManager.clearFocus() }),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(EditEntryDestination.titleRes),
@@ -87,7 +89,6 @@ fun EditEntryScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .noRippleClickable (onClick = { focusManager.clearFocus() },)
         )
     }
 }
