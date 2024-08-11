@@ -99,11 +99,12 @@ data class ItemDetails(
     val quantity: Int = 1,
     val hated: Boolean = false,
     val favorite: Boolean = false,
-    val squantity: String = ""
+    val squantity: String = "",
+    val notes: String = "",
 )
 
 
-/** convert ItemDetails (class) to Items (Database Table) **/
+/** convert ItemDetails (state/class) to Items (Database Table entity) **/
 fun ItemDetails.toItem(): Items = Items(
     id = id,
     brand = brand,
@@ -112,9 +113,10 @@ fun ItemDetails.toItem(): Items = Items(
     quantity = quantity,
     hated = hated,
     favorite = favorite,
+    notes = notes,
 )
 
-/** convert Items to ItemUiState**/
+/** convert Items (Database Table) to ItemUiState**/
 fun Items.toItemUiState(isEntryValid: Boolean = false): ItemUiState = ItemUiState(
     itemDetails = this.toItemDetails(),
     isEntryValid = isEntryValid
@@ -129,5 +131,6 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
     quantity = quantity,
     hated = hated,
     favorite = favorite,
-    squantity = quantity.toString()
+    squantity = quantity.toString(),
+    notes = notes
 )

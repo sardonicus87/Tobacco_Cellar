@@ -17,6 +17,6 @@ data class Items(
     val quantity: Int,
     val hated: Boolean,
     val favorite: Boolean,
-    //val notes: String,
+    val notes: String,
 
 )

@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.tobaccocellar.data.AppContainer
 import com.example.tobaccocellar.data.AppDataContainer
-import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.data.PreferencesRepo
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"

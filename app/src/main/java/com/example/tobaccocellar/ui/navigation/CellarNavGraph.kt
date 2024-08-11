@@ -1,20 +1,20 @@
 package com.example.tobaccocellar.ui.navigation
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
-import com.example.tobaccocellar.ui.home.HomeDestination
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.tobaccocellar.ui.home.HomeDestination
 import com.example.tobaccocellar.ui.home.HomeScreen
 import com.example.tobaccocellar.ui.items.AddEntryDestination
 import com.example.tobaccocellar.ui.items.AddEntryScreen
 import com.example.tobaccocellar.ui.items.EditEntryDestination
 import com.example.tobaccocellar.ui.items.EditEntryScreen
+import com.example.tobaccocellar.ui.items.NotesEntryDestination
+import com.example.tobaccocellar.ui.items.NotesEntryScreen
 import com.example.tobaccocellar.ui.settings.SettingsDestination
 import com.example.tobaccocellar.ui.settings.SettingsScreen
 import com.example.tobaccocellar.ui.stats.StatsDestination
@@ -71,6 +71,12 @@ fun CellarNavHost(
             }
         composable(route = SettingsDestination.route) {
             SettingsScreen(
+                navigateBack = { navController.navigateUp() },
+                onNavigateUp = { navController.navigateUp() }
+            )
+        }
+        composable(route = NotesEntryDestination.route) {
+            NotesEntryScreen(
                 navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() }
             )

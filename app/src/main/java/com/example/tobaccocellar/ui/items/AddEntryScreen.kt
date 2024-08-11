@@ -9,18 +9,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -47,10 +44,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
@@ -269,7 +268,8 @@ private fun DeleteConfirmationDialog(
             TextButton(onClick = onDeleteConfirm) {
                 Text(stringResource(R.string.yes))
             }
-        })
+        }
+    )
 }
 
 
@@ -443,7 +443,7 @@ fun ItemInputForm(
                         modifier = Modifier
                             .width(80.dp)
                     )
-                    Row (
+                    Row(
                         modifier = Modifier
                             .padding(0.dp),
                         horizontalArrangement = Arrangement.spacedBy(0.dp),
@@ -479,16 +479,19 @@ fun ItemInputForm(
                         IconButton(
                             onClick = {
                                 if (itemDetails.squantity.isEmpty()) {
-                                    onValueChange(itemDetails.copy(
-                                        squantity = "1",
-                                        quantity = 1
-                                    ))
-                                }
-                                else {
-                                    onValueChange(itemDetails.copy(
-                                        squantity = (itemDetails.squantity.toInt() + 1).toString(),
-                                        quantity = itemDetails.squantity.toInt() + 1
-                                    ))
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            squantity = "1",
+                                            quantity = 1
+                                        )
+                                    )
+                                } else {
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            squantity = (itemDetails.squantity.toInt() + 1).toString(),
+                                            quantity = itemDetails.squantity.toInt() + 1
+                                        )
+                                    )
                                 }
                             },
                             modifier = Modifier
@@ -539,23 +542,24 @@ fun ItemInputForm(
                     }
                 }
 
-// Favorite or Hated? //
+// Favorite or Disliked? //
                 Row(
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 8.dp),
+                        .padding(top = 10.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row (
+                    Row(
                         modifier = Modifier
                             .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "Favorite?",
                             modifier = Modifier
+                                .offset(x = 0.dp, y = 1.dp)
                         )
                         FavoriteHeart(
                             checked = itemDetails.favorite,
@@ -564,17 +568,18 @@ fun ItemInputForm(
                                 .padding(0.dp)
                         )
                     }
-                    Row (
+                    Row(
                         modifier = Modifier
                             .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "Hated?",
+                            text = "Disliked?",
                             modifier = Modifier
+                                .offset(x = 0.dp, y = 1.dp)
                         )
-                        Checkbox(
+                        HatedBrokenHeart(
                             checked = itemDetails.hated,
                             onCheckedChange = { onValueChange(itemDetails.copy(hated = it)) },
                             modifier = Modifier
@@ -582,10 +587,29 @@ fun ItemInputForm(
                         )
                     }
                 }
+                // Hidden field to hold notes so they're not overwritten //
+                Row(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .width(0.dp)
+                        .height(0.dp)
+                        .offset(x = 0.dp, y = (-16).dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextField(
+                        value = itemDetails.notes,
+                        onValueChange = { onValueChange(itemDetails.copy(notes = it)) },
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        enabled = false,
+                    )
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun FavoriteHeart(
@@ -601,13 +625,36 @@ fun FavoriteHeart(
     ) {
         Icon(
             imageVector = if (checked) {
-                Icons.Filled.Favorite
-            } else Icons.Outlined.FavoriteBorder,
+                ImageVector.vectorResource(id = R.drawable.heart_filled_24)
+            } else ImageVector.vectorResource(id = R.drawable.heart_outline_24),
             contentDescription = null,
             modifier = modifier
         )
     }
 }
+
+
+@Composable
+fun HatedBrokenHeart(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    IconToggleButton(
+        checked = checked,
+        onCheckedChange = { onCheckedChange?.invoke(it) },
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = if (checked) {
+                ImageVector.vectorResource(id = R.drawable.heartbroken_filled_24)
+            } else ImageVector.vectorResource(id = R.drawable.heartbroken_outlined_24),
+            contentDescription = null,
+            modifier = modifier
+        )
+    }
+}
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)

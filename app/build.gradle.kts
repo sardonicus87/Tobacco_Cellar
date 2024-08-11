@@ -1,7 +1,5 @@
 @file:Suppress(
-    "SpellCheckingInspection", "SpellCheckingInspection",
-    "SpellCheckingInspection"
-)
+    "SpellCheckingInspection")
 
 plugins {
     id("com.android.application")
@@ -73,6 +71,7 @@ dependencies {
     implementation(libs.minabox)
     implementation(libs.androidx.compose.ui.ui)
     implementation(libs.kotlinx.coroutines.android)
+//    implementation(libs.androidx.material.icons.extended)
 
 //    implementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
 //    implementation("androidx.compose.material3:material3-window-size-class")

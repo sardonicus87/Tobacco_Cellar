@@ -1,6 +1,7 @@
 package com.example.tobaccocellar.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -8,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -43,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -69,7 +73,6 @@ object HomeDestination : NavigationDestination {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-//    navigateToHome: () -> Unit,
     navigateToStats: () -> Unit,
     navigateToAddEntry: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
@@ -94,7 +97,6 @@ fun HomeScreen(
             CellarBottomAppBar(
                 modifier = Modifier
                     .padding(0.dp),
-//                navigateToHome = navigateToHome,
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
             )
@@ -139,7 +141,7 @@ private fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        //Switch table/list view//
+        // Switch table/list view //
         Text(
             text = "View:",
             textAlign = TextAlign.Start,
@@ -170,7 +172,7 @@ private fun HomeHeader(
                 .padding(0.dp)
         )
 
-        /* TODO Search widget */
+        /* TODO Finish Search widget */
 
         TextField(
             value = "",
@@ -296,65 +298,145 @@ private fun CellarListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ){
-            Column(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-            ){
-                Text(
-                    text = item.blend,
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(fraction = .9f)
-                        .basicMarquee(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 16.sp
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
-                        .offset(y = (-4).dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ){
-                    Column(
+                        .padding(0.dp)
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                ) {
+                    Box(
                         modifier = Modifier
+                            .height(IntrinsicSize.Min)
                             .padding(0.dp)
-                            .weight(.95f),
-                        horizontalAlignment = Alignment.Start
-                    ){
-                        Text(
-                            text = item.brand,
-                            modifier = Modifier,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontStyle = Italic,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 10.sp
-                        )
+                    ) {
+                        Row (
+                            modifier = Modifier
+                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
+                                .fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            if (item.favorite) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.favorite_heart_filled_18),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(0.dp)
+                                        .graphicsLayer {
+                                            rotationZ = (-45f)
+                                        },
+                                    tint = Color(0x60FF0000)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text =
+                                if (item.hated) (item.blend + " ")
+                                else (item.blend),
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .fillMaxWidth(fraction = .9f)
+                                    .basicMarquee(
+                                        iterations = Int.MAX_VALUE,
+                                        delayMillis = 250,
+                                        spacing = MarqueeSpacing(100.dp)
+                                    ),
+                                style =
+                                if (item.quantity == 0 && !item.hated) (
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.tertiary
+                                        )
+                                        )
+                                else if (item.hated && item.quantity > 0) (
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            textDecoration = TextDecoration.LineThrough
+                                        )
+                                        )
+                                else if (item.hated && item.quantity == 0) (
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                            textDecoration = TextDecoration.LineThrough
+                                        )
+                                        )
+                                else (MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textDecoration = TextDecoration.None
+                                )
+                                        ),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp,
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
+                                    .offset(y = (-4).dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(0.dp)
+                                        .weight(.95f),
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Text(
+                                        text = item.brand,
+                                        modifier = Modifier,
+                                        style =
+                                        if (item.quantity == 0) (
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    textDecoration = TextDecoration.None
+                                                )
+                                                )
+                                        else (MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            textDecoration = TextDecoration.None
+                                        )
+                                                ),
+                                        fontStyle = Italic,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier
+                                        .padding(0.dp)
+                                        .weight(0.5f),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = item.type,
+                                        modifier = Modifier,
+                                        style =
+                                        if (item.quantity == 0) (
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    textDecoration = TextDecoration.None
+                                                )
+                                                )
+                                        else (MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            textDecoration = TextDecoration.None
+                                        )
+                                                ),
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 10.sp,
+                                    )
+                                }
+                                Spacer(
+                                    modifier = Modifier
+                                        .width(0.dp)
+                                        .padding(0.dp)
+                                        .weight(1f)
+                                )
+                            }
+                        }
                     }
-                    Column(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .weight(0.5f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ){
-                        Text(
-                            text = item.type,
-                            modifier = Modifier,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 10.sp,
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .width(0.dp)
-                            .padding(0.dp)
-                            .weight(1f)
-                    )
-                }
+
             }
             Column(
                 modifier = Modifier
@@ -373,7 +455,16 @@ private fun CellarListItem(
                     Text(
                         text = "x" + item.quantity,
                         modifier = Modifier,
-                        style = MaterialTheme.typography.titleMedium,
+                        style =
+                        if (item.quantity == 0) (
+                                MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    textDecoration = TextDecoration.None)
+                                )
+                        else (MaterialTheme.typography.titleMedium.copy(
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            textDecoration = TextDecoration.None)
+                                ),
                         fontWeight = FontWeight.Normal,
                         fontSize = 16.sp
                     )
@@ -562,9 +653,10 @@ fun HomeHeaderPreview() {
 @Composable
 fun HomeBodyListPreview() {
     ListViewMode(itemsList = listOf(
-        Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2, hated = false, favorite = false        ),
-        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, hated = false, favorite = false),
-        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, hated = true, favorite = false)
+        Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Virginia", 2, hated = false, favorite = true, notes = null.toString()),
+        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, hated = false, favorite = false, notes = null.toString()),
+        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, hated = true, favorite = false, notes = null.toString()),
+        Items(3, "Cornell & Diehl", "Some super long blend name to test the basic marquee effect if that ever happens", "Burley", 0, hated = true, favorite = true, notes = null.toString())
     ), onItemClick = {}, contentPadding = PaddingValues(0.dp)
     )
 }
@@ -576,8 +668,10 @@ fun CellarItemPreview() {
     CellarListItem(
         Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2,
             hated = false,
-            favorite = false),
-        )
+            favorite = true,
+            notes = null.toString(),
+        ),
+    )
 }
 
 
@@ -587,11 +681,12 @@ fun HomeBodyTablePreview() {
     TableViewMode(itemsList = listOf(
         Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2,
             hated = false,
-            favorite = true
+            favorite = true,
+            notes = null.toString(),
         ),
-        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, hated = false, favorite = true),
-        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, hated = true, favorite = false),
-        Items(3, "Warped", "Midsommar", "Burley", 1, hated = false, favorite = false)
+        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, hated = false, favorite = true, notes = null.toString()),
+        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, hated = true, favorite = false, notes = null.toString()),
+        Items(3, "Warped", "Midsommar", "Burley", 1, hated = false, favorite = false, notes = null.toString())
     ), contentPadding = PaddingValues(0.dp)
     )
 }
