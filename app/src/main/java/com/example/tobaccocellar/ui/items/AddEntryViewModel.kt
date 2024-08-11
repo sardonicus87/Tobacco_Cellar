@@ -79,7 +79,6 @@ class AddEntryViewModel(
     }
 }
 
-
 data class ExistState(
     val exists: Boolean = false,
     val transferId: Int = 0,
@@ -97,8 +96,8 @@ data class ItemDetails(
     val blend: String = "",
     val type: String = "",
     val quantity: Int = 1,
-    val hated: Boolean = false,
-    val favorite: Boolean = false,
+    var hated: Boolean = false,
+    var favorite: Boolean = false,
     val squantity: String = "",
     val notes: String = "",
 )

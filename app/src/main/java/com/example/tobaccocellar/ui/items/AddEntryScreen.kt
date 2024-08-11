@@ -41,11 +41,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.autofill.AutofillType
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -275,12 +283,14 @@ private fun DeleteConfirmationDialog(
 
 /** Item Input Form **/
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ItemInputForm(
     itemDetails: ItemDetails,
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
+
 // Required Fields //
     Column(
         modifier = modifier
@@ -563,7 +573,13 @@ fun ItemInputForm(
                         )
                         FavoriteHeart(
                             checked = itemDetails.favorite,
-                            onCheckedChange = { onValueChange(itemDetails.copy(favorite = it)) },
+                            onCheckedChange = {
+                                if (itemDetails.favorite) {
+                                    onValueChange(itemDetails.copy(favorite = it))
+                                } else {
+                                    onValueChange(itemDetails.copy(favorite = it, hated = false))
+                                }
+                                              },
                             modifier = Modifier
                                 .padding(0.dp)
                         )
@@ -581,7 +597,13 @@ fun ItemInputForm(
                         )
                         HatedBrokenHeart(
                             checked = itemDetails.hated,
-                            onCheckedChange = { onValueChange(itemDetails.copy(hated = it)) },
+                            onCheckedChange = {
+                                if (itemDetails.hated) {
+                                    onValueChange(itemDetails.copy(hated = it))
+                                } else {
+                                    onValueChange(itemDetails.copy(hated = it, favorite = false))
+                                }
+                                              },
                             modifier = Modifier
                                 .padding(0.dp)
                         )

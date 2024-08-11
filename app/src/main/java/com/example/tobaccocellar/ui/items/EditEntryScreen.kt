@@ -68,7 +68,7 @@ fun EditEntryScreen(
     ) { innerPadding ->
         AddEntryBody(
             itemUiState = viewModel.itemUiState,
-//            existState = ExistState(),
+            existState = ExistState(),
             onItemValueChange = viewModel::updateUiState,
             onSaveClick = {
                 coroutineScope.launch {
@@ -83,7 +83,6 @@ fun EditEntryScreen(
                 }
             },
             isEditEntry = true,
-            existState = ExistState(),
             navigateToEditEntry = {},
             resetExistState = {},
             modifier = Modifier

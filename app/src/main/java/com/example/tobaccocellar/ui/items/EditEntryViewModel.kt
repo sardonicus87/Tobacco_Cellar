@@ -28,6 +28,27 @@ class EditEntryViewModel(
         }
     }
 
+//    /** mutually exclusive favorite and hated buttons**/
+//    fun onFavoriteClicked(isChecked: Boolean) {
+//        itemUiState = itemUiState.copy(
+//            itemDetails = itemUiState.itemDetails.copy(
+//                favorite = isChecked,
+//                hated = if (isChecked) false
+//                else itemUiState.itemDetails.hated,
+//            )
+//        )
+//    }
+//
+//    fun onHatedClicked(isChecked: Boolean) {
+//        itemUiState = itemUiState.copy(
+//            itemDetails = itemUiState.itemDetails.copy(
+//                hated = isChecked,
+//                favorite = if (isChecked) false
+//                else itemUiState.itemDetails.favorite,
+//            )
+//        )
+//    }
+
     init {
         viewModelScope.launch {
             itemUiState = itemsRepository.getItemStream(itemsId)
