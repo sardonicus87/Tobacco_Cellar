@@ -7,6 +7,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -28,27 +30,6 @@ class EditEntryViewModel(
         }
     }
 
-//    /** mutually exclusive favorite and hated buttons**/
-//    fun onFavoriteClicked(isChecked: Boolean) {
-//        itemUiState = itemUiState.copy(
-//            itemDetails = itemUiState.itemDetails.copy(
-//                favorite = isChecked,
-//                hated = if (isChecked) false
-//                else itemUiState.itemDetails.hated,
-//            )
-//        )
-//    }
-//
-//    fun onHatedClicked(isChecked: Boolean) {
-//        itemUiState = itemUiState.copy(
-//            itemDetails = itemUiState.itemDetails.copy(
-//                hated = isChecked,
-//                favorite = if (isChecked) false
-//                else itemUiState.itemDetails.favorite,
-//            )
-//        )
-//    }
-
     init {
         viewModelScope.launch {
             itemUiState = itemsRepository.getItemStream(itemsId)
@@ -58,9 +39,28 @@ class EditEntryViewModel(
         }
     }
 
+    /** autocomplete for brands**/
+    private val _brands = MutableStateFlow<List<String>>(emptyList())
+    val brands: StateFlow<List<String>> = _brands
+
+
+    init {
+        viewModelScope.launch {
+            itemsRepository.getAllBrands().collect {
+                _brands.value = it
+            }.also {
+                _brands.value = ItemUiState().autoBrands
+            }
+        }
+    }
+
     fun updateUiState(itemDetails: ItemDetails) {
         itemUiState =
-            ItemUiState(itemDetails = itemDetails, isEntryValid = validateInput(itemDetails))
+            ItemUiState(
+                itemDetails = itemDetails,
+                isEntryValid = validateInput(itemDetails),
+                autoBrands = brands.value
+            )
     }
 
     suspend fun updateItem() {

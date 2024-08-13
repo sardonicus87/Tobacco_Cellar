@@ -34,6 +34,12 @@ interface ItemsDao {
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItems(): Flow<List<Items>>
 
+    @Query("SELECT DISTINCT brand FROM items ORDER BY brand ASC")
+    fun getAllBrands(): Flow<List<String>>
+
+//    @Query("SELECT DISTINCT brand FROM items ORDER BY brand ASC")
+//    fun getAllBrands(): Flow<List<BrandState>>
+
     @Query("SELECT EXISTS(SELECT * FROM items WHERE brand = :brand AND blend = :blend)")
     suspend fun exists(brand: String, blend: String): Boolean
 
@@ -52,7 +58,5 @@ interface ItemsDao {
     @Query("SELECT COUNT(*) FROM items")
     suspend fun getItemsCount(): Int
 
-//    @Query("SELECT EXISTS(SELECT * FROM items WHERE id = :id)")
-//    fun isEntryExist(id : Int) : Boolean
 
 }

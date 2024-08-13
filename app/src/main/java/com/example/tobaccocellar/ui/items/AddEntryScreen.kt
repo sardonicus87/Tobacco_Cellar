@@ -3,6 +3,7 @@ package com.example.tobaccocellar.ui.items
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -27,6 +30,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,30 +46,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.autofill.AutofillNode
-import androidx.compose.ui.autofill.AutofillType
 import androidx.compose.ui.composed
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalAutofill
-import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
@@ -94,6 +96,8 @@ fun AddEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
+
+
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
             indication = null,
@@ -119,6 +123,7 @@ fun AddEntryScreen(
         AddEntryBody(
             itemUiState = viewModel.itemUiState,
             existState = viewModel.existState,
+            resetExistState = viewModel::resetExistState,
             onItemValueChange = viewModel::updateUiState,
             onSaveClick = {
                 coroutineScope.launch {
@@ -139,7 +144,6 @@ fun AddEntryScreen(
             },
             isEditEntry = false,
             navigateToEditEntry = navigateToEditEntry,
-            resetExistState = viewModel::resetExistState,
             modifier = modifier
                 .padding(innerPadding)
                 .fillMaxSize(),
@@ -163,6 +167,7 @@ fun AddEntryBody(
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
 
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -171,6 +176,7 @@ fun AddEntryBody(
         ) {
         ItemInputForm(
             itemDetails = itemUiState.itemDetails,
+            itemUiState = itemUiState,
             onValueChange = onItemValueChange,
             modifier = Modifier
                 .fillMaxWidth()
@@ -283,10 +289,10 @@ private fun DeleteConfirmationDialog(
 
 /** Item Input Form **/
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ItemInputForm(
     itemDetails: ItemDetails,
+    itemUiState: ItemUiState,
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -331,27 +337,28 @@ fun ItemInputForm(
                     modifier = Modifier
                         .width(80.dp)
                 )
-                TextField(
+                val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+                var showSuggestions by remember { mutableStateOf(false) }
+
+                AutoCompleteText(
                     value = itemDetails.brand,
-                    onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
+                    onValueChange = {
+                        if (it.length >= 2) {
+                            val filterText = it
+                            suggestions.value = itemUiState.autoBrands.filter { brand ->
+                                brand.contains(filterText, ignoreCase = true)
+                            }
+                        } else {
+                            suggestions.value = emptyList()
+                        }
+                        showSuggestions = suggestions.value.isNotEmpty()
+                        onValueChange(itemDetails.copy(brand = it))            },
+                    onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
+                    suggestions = suggestions.value,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(0.dp),
-                    enabled = true,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = androidx.compose.ui.text.input.ImeAction.Next,
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                    )
+                        .fillMaxWidth(),
                 )
             }
-            /* TODO add autocomplete for brands */
 
 // Blend //
             Row(
@@ -372,10 +379,21 @@ fun ItemInputForm(
                         .fillMaxWidth(),
                     enabled = true,
                     singleLine = true,
+                    trailingIcon = {
+                        if (itemDetails.blend.isNotEmpty()) { Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .clickable{
+                                    onValueChange(itemDetails.copy(blend = ""))
+                                }
+                            )
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(
-                        capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
+                        capitalization = KeyboardCapitalization.Sentences,
                         keyboardType = KeyboardType.Text,
-                        imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                        imeAction = ImeAction.Done,
                     ),
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
@@ -633,6 +651,7 @@ fun ItemInputForm(
 }
 
 
+
 @Composable
 fun FavoriteHeart(
     checked: Boolean,
@@ -679,6 +698,163 @@ fun HatedBrokenHeart(
 
 
 
+//val options = listOf("Option 1", "Option 2", "Option 3", "Option 4", "Option 5")
+//var exp by remember { mutableStateOf(false) }
+//var selectedOption by remember { mutableStateOf("") }
+
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun AutoComplete2(
+//    modifier: Modifier = Modifier
+//) {
+//
+//    ExposedDropdownMenuBox(
+//        expanded = exp,
+//        onExpandedChange = { exp = !exp }
+//    ) {
+//        TextField(
+//            value = selectedOption,
+//            onValueChange = { selectedOption = it },
+//            label = { Text("Label") },
+//            trailingIcon = {
+//                ExposedDropdownMenuDefaults.TrailingIcon(expanded = exp)
+//            },
+//            colors = ExposedDropdownMenuDefaults.textFieldColors()
+//        )
+//        // filter options based on text field value (i.e. crude autocomplete)
+//        val filterOpts = options.filter { it.contains(selectedOption, ignoreCase = true) }
+//        if (filterOpts.isNotEmpty()) {
+//            ExposedDropdownMenu(
+//                expanded = exp,
+//                onDismissRequest = { exp = false }
+//            ) {
+//                filterOpts.forEach { option ->
+//                    DropdownMenuItem(
+//                        text = { Text(text = option) },
+//                        onClick = {
+//                            selectedOption = option
+//                            exp = false
+//                        },
+//                        modifier = Modifier
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AutoCompleteText(
+    modifier: Modifier = Modifier,
+    value: String,
+    onValueChange: ((String) -> Unit)?,
+    onOptionSelected: (String) -> Unit,
+    suggestions: List<String> = emptyList(),
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var text by remember { mutableStateOf(value) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && suggestions.isNotEmpty(),
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier
+            .padding(0.dp)
+    ) {
+        TextField(
+            value = value,
+            onValueChange = { onValueChange?.invoke(it)
+                            expanded = it.isNotEmpty() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(0.dp)
+                .menuAnchor(),
+            enabled = true,
+            trailingIcon = {
+                if (value.isNotEmpty()) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clickable {
+                                if (onValueChange != null) {
+                                    onValueChange("")
+                                }
+                            }
+                    )
+                } else {
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next,
+            ),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+            )
+        )
+        if (expanded && suggestions.isNotEmpty()) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .padding(start = 4.dp, end = 4.dp, top = 0.dp, bottom = 0.dp)
+                    .heightIn(max = 80.dp),
+                properties = PopupProperties(focusable = false),
+                offset = DpOffset(32.dp, (-12).dp),
+            ) {
+                suggestions.forEach { label ->
+                    CustomDropdownMenuItem(
+                        text = {
+                            Text(
+                                text = label,
+                                modifier = Modifier,
+                                fontSize = 16.sp,
+                                lineHeight = 16.sp,
+                                maxLines = 1
+                            )
+                        },
+                        onClick = {
+                            onOptionSelected(label)
+                            text = label
+                            expanded = false
+                        },
+                        enabled = true,
+                        modifier = Modifier
+                            .padding(start = 4.dp, end = 4.dp, top = 0.dp, bottom = 4.dp)
+                            .offset(0.dp),
+                        colors = MenuDefaults.itemColors(),
+                        contentPadding = PaddingValues(4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomDropdownMenuItem(
+    text: @Composable () -> Unit,
+    onClick: () -> Unit,
+    enabled: Boolean = false,
+    modifier: Modifier,
+    colors: MenuItemColors,
+    contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
+) {
+    Box(
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(0.dp)
+    ) {
+        text()
+    }
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TypeDropDown(
@@ -713,7 +889,10 @@ fun TypeDropDown(
                 disabledIndicatorColor = Color.Transparent,
             )
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
             options.forEach { option: String ->
                 DropdownMenuItem(
                     text = { Text(text = option) },
@@ -728,10 +907,34 @@ fun TypeDropDown(
 }
 
 
+
+
+//                TextField(
+//                    value = itemDetails.brand,
+//                    onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(0.dp),
+//                    enabled = true,
+//                    singleLine = true,
+//                    keyboardOptions = KeyboardOptions(
+//                        capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
+//                        keyboardType = KeyboardType.Text,
+//                        imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+//                    ),
+//                    colors = TextFieldDefaults.colors(
+//                        focusedIndicatorColor = Color.Transparent,
+//                        unfocusedIndicatorColor = Color.Transparent,
+//                        disabledIndicatorColor = Color.Transparent,
+//                    )
+//                )
+
+
 @Preview(showBackground = true)
 @Composable
 fun AddEntryScreenPreview(){
-    AddEntryBody(itemUiState = ItemUiState(
+    AddEntryBody(
+        itemUiState = ItemUiState(
         ItemDetails(
             brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, hated = false
         )

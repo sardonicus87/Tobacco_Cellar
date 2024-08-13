@@ -4,8 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.ItemsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 
 class AddEntryViewModel(
@@ -22,6 +26,7 @@ class AddEntryViewModel(
             ItemUiState(
                 itemDetails = itemDetails,
                 isEntryValid = validateInput(itemDetails),
+                autoBrands = brands.value
             )
     }
 
@@ -64,6 +69,31 @@ class AddEntryViewModel(
             )
     }
 
+    /** autocomplete for brands**/
+    private val _brands = MutableStateFlow<List<String>>(emptyList())
+        val brands: StateFlow<List<String>> = _brands
+
+
+    init {
+        viewModelScope.launch {
+            itemsRepository.getAllBrands().collect {
+                _brands.value = it
+            }.also {
+                _brands.value = ItemUiState().autoBrands
+            }
+        }
+    }
+
+
+//    val brandState: StateFlow<BrandState> =
+//        itemsRepository.getAllBrands()
+//            .map { BrandState(it) }
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(250),
+//                initialValue = BrandState()
+//            )
+
 
     /** save to or delete from database **/
     suspend fun saveItem() {
@@ -79,15 +109,22 @@ class AddEntryViewModel(
     }
 }
 
+/** Exist check state **/
 data class ExistState(
     val exists: Boolean = false,
     val transferId: Int = 0,
     var existCheck: Boolean = false,
 )
 
+///** Brands state for autocomplete **/
+//data class BrandState(
+//    val brands: List<String> = listOf()
+//)
+
 data class ItemUiState(
     val itemDetails: ItemDetails = ItemDetails(),
     val isEntryValid: Boolean = false,
+    val autoBrands: List<String> = listOf(),
 )
 
 data class ItemDetails(
@@ -133,3 +170,17 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
     squantity = quantity.toString(),
     notes = notes
 )
+
+///** brands autocomplete **/
+//val brandState: StateFlow<BrandState> =
+//    itemsRepository.getAllBrands()
+//        .map { BrandState(it) }
+//        .stateIn(
+//            scope = viewModelScope,
+//            started = SharingStarted.WhileSubscribed(500),
+//            initialValue = BrandState()
+//        )
+//
+//data class BrandState(
+//    val brands: List<String> = listOf()
+//)

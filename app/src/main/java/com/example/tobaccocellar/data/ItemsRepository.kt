@@ -17,11 +17,9 @@ interface ItemsRepository {
 
     suspend fun getItemIdByIndex(brand: String, blend: String): Int
 
-//    suspend fun exists(brand: String, blend: String): Boolean
+    fun getAllBrands(): Flow<List<String>>
 
-
-
-//    suspend fun checkItemExists(brand: String, blend: String): Flow<Items?>
+//    fun getAllBrands(): Flow<List<BrandState>>
 
 //    suspend fun getItemsCount(): Int
 //
