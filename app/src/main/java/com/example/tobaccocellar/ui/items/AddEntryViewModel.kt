@@ -71,7 +71,7 @@ class AddEntryViewModel(
 
     /** autocomplete for brands**/
     private val _brands = MutableStateFlow<List<String>>(emptyList())
-        val brands: StateFlow<List<String>> = _brands
+        private val brands: StateFlow<List<String>> = _brands
 
 
     init {
@@ -85,16 +85,6 @@ class AddEntryViewModel(
     }
 
 
-//    val brandState: StateFlow<BrandState> =
-//        itemsRepository.getAllBrands()
-//            .map { BrandState(it) }
-//            .stateIn(
-//                scope = viewModelScope,
-//                started = SharingStarted.WhileSubscribed(250),
-//                initialValue = BrandState()
-//            )
-
-
     /** save to or delete from database **/
     suspend fun saveItem() {
         if (validateInput()) {
@@ -103,10 +93,9 @@ class AddEntryViewModel(
     }
 
     suspend fun deleteItem() {
-        if (validateInput()) {
-            itemsRepository.deleteItem(itemUiState.itemDetails.toItem())
-        }
+        itemsRepository.deleteItem(itemUiState.itemDetails.toItem())
     }
+
 }
 
 /** Exist check state **/
@@ -137,6 +126,8 @@ data class ItemDetails(
     var favorite: Boolean = false,
     val squantity: String = "",
     val notes: String = "",
+    var originalBrand: String = "",
+    var originalBlend: String = "",
 )
 
 

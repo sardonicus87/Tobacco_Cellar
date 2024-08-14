@@ -30,18 +30,24 @@ class EditEntryViewModel(
         }
     }
 
+    private fun copyOriginalDetails(itemDetails: ItemDetails) {
+        itemDetails.originalBrand = "(" + itemDetails.brand + ")"
+        itemDetails.originalBlend = "(" + itemDetails.blend + ")"
+    }
+
     init {
         viewModelScope.launch {
             itemUiState = itemsRepository.getItemStream(itemsId)
                 .filterNotNull()
                 .first()
                 .toItemUiState(true)
+                .also {copyOriginalDetails(it.itemDetails)}
         }
     }
 
     /** autocomplete for brands**/
     private val _brands = MutableStateFlow<List<String>>(emptyList())
-    val brands: StateFlow<List<String>> = _brands
+    private val brands: StateFlow<List<String>> = _brands
 
 
     init {
@@ -70,9 +76,7 @@ class EditEntryViewModel(
     }
 
     suspend fun deleteItem() {
-        if (validateInput()) {
-            itemsRepository.deleteItem(itemUiState.itemDetails.toItem())
-        }
+        itemsRepository.deleteItem(itemUiState.itemDetails.toItem())
     }
 
 }

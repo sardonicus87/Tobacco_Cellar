@@ -1,6 +1,5 @@
 [versions]
 agp = "8.5.2"
-autofill = "1.1.0"
 datastorePreferences = "1.1.1"
 kotlin = "2.0.0"
 coreKtx = "1.13.1"
@@ -14,7 +13,6 @@ lifecycleRuntimeKtx = "2.8.4"
 activityCompose = "1.9.1"
 composeBom = "2024.06.00"
 material3Android = "1.2.1"
-materialIconsExtendedVersion = "1.6.8"
 minabox = "1.7.1"
 monitor = "1.7.1"
 navigationCompose = "2.7.7"
@@ -30,7 +28,6 @@ androidx-compose-ui-ui = { module = "androidx.compose.ui:ui", version.ref = "ui"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
-androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtendedVersion" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }

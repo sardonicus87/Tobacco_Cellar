@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -59,7 +60,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -178,6 +178,7 @@ fun AddEntryBody(
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
             onValueChange = onItemValueChange,
+            isEditEntry = isEditEntry,
             modifier = Modifier
                 .fillMaxWidth()
         )
@@ -204,7 +205,7 @@ fun AddEntryBody(
         if (isEditEntry) {
             Button(
                 onClick = { deleteConfirm = true },
-                enabled = itemUiState.isEntryValid,
+                enabled = true,
                 shape = MaterialTheme.shapes.small,
                 colors = ButtonColors(
                     containerColor = Color(0xFF990000),
@@ -293,6 +294,7 @@ private fun DeleteConfirmationDialog(
 fun ItemInputForm(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
+    isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -344,7 +346,7 @@ fun ItemInputForm(
                     value = itemDetails.brand,
                     onValueChange = {
                         if (it.length >= 2) {
-                            val filterText = it
+                            val filterText = it.trim().lowercase()
                             suggestions.value = itemUiState.autoBrands.filter { brand ->
                                 brand.contains(filterText, ignoreCase = true)
                             }
@@ -357,6 +359,12 @@ fun ItemInputForm(
                     suggestions = suggestions.value,
                     modifier = Modifier
                         .fillMaxWidth(),
+                    placeholder = { if (isEditEntry) Text(
+                        text = itemDetails.originalBrand,
+                        modifier = Modifier
+                            .alpha(0.66f),
+                        fontSize = 14.sp,)
+                    },
                 )
             }
 
@@ -379,6 +387,12 @@ fun ItemInputForm(
                         .fillMaxWidth(),
                     enabled = true,
                     singleLine = true,
+                    placeholder = { if (isEditEntry) Text(
+                        text = itemDetails.originalBlend,
+                        modifier = Modifier
+                            .alpha(0.66f),
+                        fontSize = 14.sp,)
+                                  },
                     trailingIcon = {
                         if (itemDetails.blend.isNotEmpty()) { Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
@@ -387,6 +401,8 @@ fun ItemInputForm(
                                 .clickable{
                                     onValueChange(itemDetails.copy(blend = ""))
                                 }
+                                .alpha(0.66f)
+                                .size(20.dp)
                             )
                         }
                     },
@@ -696,58 +712,12 @@ fun HatedBrokenHeart(
     }
 }
 
-
-
-//val options = listOf("Option 1", "Option 2", "Option 3", "Option 4", "Option 5")
-//var exp by remember { mutableStateOf(false) }
-//var selectedOption by remember { mutableStateOf("") }
-
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun AutoComplete2(
-//    modifier: Modifier = Modifier
-//) {
-//
-//    ExposedDropdownMenuBox(
-//        expanded = exp,
-//        onExpandedChange = { exp = !exp }
-//    ) {
-//        TextField(
-//            value = selectedOption,
-//            onValueChange = { selectedOption = it },
-//            label = { Text("Label") },
-//            trailingIcon = {
-//                ExposedDropdownMenuDefaults.TrailingIcon(expanded = exp)
-//            },
-//            colors = ExposedDropdownMenuDefaults.textFieldColors()
-//        )
-//        // filter options based on text field value (i.e. crude autocomplete)
-//        val filterOpts = options.filter { it.contains(selectedOption, ignoreCase = true) }
-//        if (filterOpts.isNotEmpty()) {
-//            ExposedDropdownMenu(
-//                expanded = exp,
-//                onDismissRequest = { exp = false }
-//            ) {
-//                filterOpts.forEach { option ->
-//                    DropdownMenuItem(
-//                        text = { Text(text = option) },
-//                        onClick = {
-//                            selectedOption = option
-//                            exp = false
-//                        },
-//                        modifier = Modifier
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoCompleteText(
     modifier: Modifier = Modifier,
     value: String,
+    placeholder: @Composable (() -> Unit)? = null,
     onValueChange: ((String) -> Unit)?,
     onOptionSelected: (String) -> Unit,
     suggestions: List<String> = emptyList(),
@@ -781,11 +751,13 @@ fun AutoCompleteText(
                                     onValueChange("")
                                 }
                             }
+                            .alpha(0.66f)
+                            .size(20.dp)
                     )
-                } else {
-                }
+                } else { /* do nothing */ }
             },
             singleLine = true,
+            placeholder = { if (placeholder != null) placeholder() },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 keyboardType = KeyboardType.Text,
@@ -802,8 +774,8 @@ fun AutoCompleteText(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
-                    .padding(start = 4.dp, end = 4.dp, top = 0.dp, bottom = 0.dp)
-                    .heightIn(max = 80.dp),
+                    .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+                    .heightIn(max = 82.dp),
                 properties = PopupProperties(focusable = false),
                 offset = DpOffset(32.dp, (-12).dp),
             ) {
@@ -812,7 +784,8 @@ fun AutoCompleteText(
                         text = {
                             Text(
                                 text = label,
-                                modifier = Modifier,
+                                modifier = Modifier
+                                    .padding(0.dp),
                                 fontSize = 16.sp,
                                 lineHeight = 16.sp,
                                 maxLines = 1
@@ -822,13 +795,14 @@ fun AutoCompleteText(
                             onOptionSelected(label)
                             text = label
                             expanded = false
+                            emptyList<String>()
                         },
                         enabled = true,
                         modifier = Modifier
-                            .padding(start = 4.dp, end = 4.dp, top = 0.dp, bottom = 4.dp)
-                            .offset(0.dp),
+                            .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
+                            .offset(0.dp, 0.dp)
+                            .fillMaxWidth(),
                         colors = MenuDefaults.itemColors(),
-                        contentPadding = PaddingValues(4.dp)
                     )
                 }
             }
@@ -843,12 +817,11 @@ fun CustomDropdownMenuItem(
     enabled: Boolean = false,
     modifier: Modifier,
     colors: MenuItemColors,
-    contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
 ) {
     Box(
         modifier = modifier
             .clickable(onClick = onClick)
-            .padding(0.dp)
+            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
     ) {
         text()
     }
@@ -906,28 +879,6 @@ fun TypeDropDown(
     }
 }
 
-
-
-
-//                TextField(
-//                    value = itemDetails.brand,
-//                    onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(0.dp),
-//                    enabled = true,
-//                    singleLine = true,
-//                    keyboardOptions = KeyboardOptions(
-//                        capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
-//                        keyboardType = KeyboardType.Text,
-//                        imeAction = androidx.compose.ui.text.input.ImeAction.Next,
-//                    ),
-//                    colors = TextFieldDefaults.colors(
-//                        focusedIndicatorColor = Color.Transparent,
-//                        unfocusedIndicatorColor = Color.Transparent,
-//                        disabledIndicatorColor = Color.Transparent,
-//                    )
-//                )
 
 
 @Preview(showBackground = true)
