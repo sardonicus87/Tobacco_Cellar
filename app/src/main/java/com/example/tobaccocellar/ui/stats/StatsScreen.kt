@@ -33,10 +33,9 @@ object StatsDestination : NavigationDestination {
 @Composable
 fun StatsScreen(
     navigateToHome: () -> Unit,
-//    navigateToStats: () -> Unit,
     navigateToAddEntry: () -> Unit,
-//    navigateToSettings: () -> Unit,
     onNavigateUp: () -> Unit,
+    navigateToCsvImport: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -50,6 +49,7 @@ fun StatsScreen(
                 title = stringResource(StatsDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
+                navigateToCsvImport = navigateToCsvImport,
                 showMenu = false,
             )
         },

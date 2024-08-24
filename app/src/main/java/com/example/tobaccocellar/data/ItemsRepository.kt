@@ -5,9 +5,13 @@ import kotlinx.coroutines.flow.Flow
 interface ItemsRepository {
     fun getAllItemsStream(): Flow<List<Items>>
 
+    fun getAllItemsExport(): List<Items>
+
     fun getItemStream(id: Int): Flow<Items?>
 
     suspend fun insertItem(item: Items)
+
+    suspend fun insertMultiple(items: List<Items>): List<Long>
 
     suspend fun deleteItem(item: Items)
 

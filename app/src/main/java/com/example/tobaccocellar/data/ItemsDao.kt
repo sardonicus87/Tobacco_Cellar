@@ -14,13 +14,8 @@ interface ItemsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(item: Items)
 
-
-//    @Transaction
-//    suspend fun insertWithSnackbar(item: Items) {
-//        val result = insert(item)
-//        if (result == -1L) {
-//        }
-//    }
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMultiple(items: List<Items>): LongArray
 
     @Update
     suspend fun update(item: Items)
@@ -33,6 +28,9 @@ interface ItemsDao {
 
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItems(): Flow<List<Items>>
+
+    @Query("SELECT * FROM items ORDER BY id ASC")
+    fun getAllItemsExport(): List<Items>
 
     @Query("SELECT DISTINCT brand FROM items ORDER BY brand ASC")
     fun getAllBrands(): Flow<List<String>>

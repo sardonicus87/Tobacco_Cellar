@@ -7,6 +7,8 @@
     <string name="stats_title">Stats</string>
     <string name="add_entry">Add Entry</string>
     <string name="edit_entry">Edit Entry</string>
+    <string name="csv_import_title">CSV Import Wizard</string>
+    <string name="import_results_title">CSV Import Results</string>
 
     // Button Text //
     <string name="filter_items">Filter</string>
@@ -17,7 +19,7 @@
     <string name="yes">Yes</string>
     <string name="delete_entry">Delete Entry</string>
     <string name="update">Update</string>
-
+    <string name="ok">OK</string>
 
     <string name="import_csv">Import CSV</string>
     <string name="export_csv">Export CSV</string>
@@ -28,6 +30,20 @@
     <string name="no_items">No items found in cellar.\nClick \"+\" to add items,\nor use options to import CSV.</string>
     <string name="delete_question">Are you sure?</string>
     <string name="item_exists">This item already exists, would you like to edit it instead?</string>
+    <string name="csv_import_instructions">Select a CSV file and review the parsing attempts. If a
+        header does not exist, both results will be records. If the record test looks wrong, please
+        reformat your CSV using standard RFC 4180 formatting.</string>
+    <string name="csv_import_mapping">Indicate if the CSV has a header and map the columns (in the
+        order they appear above) to the correct fields. Brand and Blend must each have a column mapping.</string>
+
+
+
+    /Labels/
+    <string name="possible_header">Possible header: </string>
+    <string name="possible_record">Record parse test: </string>
+
+
+
 
     // Content Descriptions //
     <string name="table_view_toggle">Table View</string>
@@ -40,6 +56,8 @@
     <string name="item_detail_title">Details</string>
     <string name="settings_nothing">Settings</string>
     <string name="notes_entry">Enter Notes</string>
+    <string name="csv_import_error">Error importing CSV file. File is possibly empty or incorrect format.</string>
+
 
 
 </resources>

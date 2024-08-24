@@ -105,11 +105,6 @@ data class ExistState(
     var existCheck: Boolean = false,
 )
 
-///** Brands state for autocomplete **/
-//data class BrandState(
-//    val brands: List<String> = listOf()
-//)
-
 data class ItemUiState(
     val itemDetails: ItemDetails = ItemDetails(),
     val isEntryValid: Boolean = false,
@@ -122,7 +117,7 @@ data class ItemDetails(
     val blend: String = "",
     val type: String = "",
     val quantity: Int = 1,
-    var hated: Boolean = false,
+    var disliked: Boolean = false,
     var favorite: Boolean = false,
     val squantity: String = "",
     val notes: String = "",
@@ -138,7 +133,7 @@ fun ItemDetails.toItem(): Items = Items(
     blend = blend,
     type = type,
     quantity = quantity,
-    hated = hated,
+    disliked = disliked,
     favorite = favorite,
     notes = notes,
 )
@@ -156,22 +151,8 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
     blend = blend,
     type = type,
     quantity = quantity,
-    hated = hated,
+    disliked = disliked,
     favorite = favorite,
     squantity = quantity.toString(),
     notes = notes
 )
-
-///** brands autocomplete **/
-//val brandState: StateFlow<BrandState> =
-//    itemsRepository.getAllBrands()
-//        .map { BrandState(it) }
-//        .stateIn(
-//            scope = viewModelScope,
-//            started = SharingStarted.WhileSubscribed(500),
-//            initialValue = BrandState()
-//        )
-//
-//data class BrandState(
-//    val brands: List<String> = listOf()
-//)

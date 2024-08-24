@@ -8,11 +8,18 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.tobaccocellar.CellarApplication
 import com.example.tobaccocellar.ui.home.HomeViewModel
 import com.example.tobaccocellar.ui.items.AddEntryViewModel
+import com.example.tobaccocellar.ui.csvimport.CsvImportViewModel
 import com.example.tobaccocellar.ui.items.EditEntryViewModel
 import com.example.tobaccocellar.ui.stats.StatsViewModel
 
 object AppViewModelProvider {
     val Factory = viewModelFactory {
+        initializer {
+            CsvImportViewModel(
+                cellarApplication().container.itemsRepository,
+            )
+        }
+
         initializer {
             EditEntryViewModel(
                 this.createSavedStateHandle(),
@@ -36,6 +43,8 @@ object AppViewModelProvider {
             HomeViewModel(
                 cellarApplication().container.itemsRepository,
                 cellarApplication().preferencesRepo,
+                cellarApplication().csvHelper,
+                cellarApplication()
             )
         }
     }

@@ -36,6 +36,7 @@ fun EditEntryScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
+    navigateToCsvImport: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: EditEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 
@@ -62,6 +63,7 @@ fun EditEntryScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,
+                navigateToCsvImport = navigateToCsvImport,
                 showMenu = false,
                 )
         },

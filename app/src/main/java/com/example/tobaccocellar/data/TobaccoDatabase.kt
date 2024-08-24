@@ -7,13 +7,13 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-val MIGRATION_1_2 = object : Migration(1, 2) {
+val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE items ADD COLUMN notes TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE items RENAME COLUMN hated TO disliked")
     }
 }
 
-@Database(entities = [Items::class], version = 2, exportSchema = true)
+@Database(entities = [Items::class], version = 3, exportSchema = true)
 abstract class TobaccoDatabase : RoomDatabase() {
 
     abstract fun itemsDao(): ItemsDao
@@ -25,7 +25,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
         fun getDatabase(context: Context): TobaccoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database")
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_2_3)
                     .build()
                     .also { Instance = it }
             }

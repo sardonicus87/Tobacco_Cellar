@@ -1,5 +1,6 @@
 [versions]
 agp = "8.5.2"
+commonsCsv = "1.11.0"
 datastorePreferences = "1.1.1"
 kotlin = "2.0.0"
 coreKtx = "1.13.1"
@@ -11,10 +12,10 @@ lazytable = "1.8.0"
 leakcanaryAndroid = "2.14"
 lifecycleRuntimeKtx = "2.8.4"
 activityCompose = "1.9.1"
-composeBom = "2024.06.00"
+composeBom = "2024.08.00"
 material3Android = "1.2.1"
 minabox = "1.7.1"
-monitor = "1.7.1"
+monitor = "1.7.2"
 navigationCompose = "2.7.7"
 roomRuntime = "2.6.1"
 ui = "1.6.8"
@@ -32,6 +33,7 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

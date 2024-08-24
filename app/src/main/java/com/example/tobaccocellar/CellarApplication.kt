@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.tobaccocellar.data.AppContainer
 import com.example.tobaccocellar.data.AppDataContainer
+import com.example.tobaccocellar.data.CsvHelper
 import com.example.tobaccocellar.data.PreferencesRepo
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
@@ -17,10 +18,12 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 class CellarApplication : Application() {
     lateinit var container: AppContainer
     lateinit var preferencesRepo: PreferencesRepo
+    lateinit var csvHelper: CsvHelper
 
     override fun onCreate() {
         super.onCreate()
         container = AppDataContainer(this)
         preferencesRepo = PreferencesRepo(dataStore)
+        csvHelper = CsvHelper()
     }
 }

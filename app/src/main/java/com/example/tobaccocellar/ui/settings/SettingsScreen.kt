@@ -33,6 +33,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
+    navigateToCsvImport: () -> Unit,
     canNavigateBack: Boolean = true,
     viewmodel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -44,6 +45,7 @@ fun SettingsScreen(
                 title = stringResource(StatsDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
+                navigateToCsvImport = navigateToCsvImport,
                 showMenu = false,
             )
         },

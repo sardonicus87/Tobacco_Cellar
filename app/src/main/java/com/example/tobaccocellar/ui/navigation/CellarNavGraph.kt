@@ -11,6 +11,10 @@ import com.example.tobaccocellar.ui.home.HomeDestination
 import com.example.tobaccocellar.ui.home.HomeScreen
 import com.example.tobaccocellar.ui.items.AddEntryDestination
 import com.example.tobaccocellar.ui.items.AddEntryScreen
+import com.example.tobaccocellar.ui.csvimport.CsvImportDestination
+import com.example.tobaccocellar.ui.csvimport.CsvImportResultsDestination
+import com.example.tobaccocellar.ui.csvimport.CsvImportResultsScreen
+import com.example.tobaccocellar.ui.csvimport.CsvImportScreen
 import com.example.tobaccocellar.ui.items.EditEntryDestination
 import com.example.tobaccocellar.ui.items.EditEntryScreen
 import com.example.tobaccocellar.ui.items.NotesEntryDestination
@@ -34,11 +38,10 @@ fun CellarNavHost(
     ) {
         composable(route = HomeDestination.route) {
             HomeScreen(
-//                navigateToHome = { navController.navigate(HomeDestination.route) },
-                navigateToStats = {
-                    navController.navigate(StatsDestination.route) },
+                navigateToStats = { navController.navigate(StatsDestination.route) },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
+                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
             )
         }
         composable(route = StatsDestination.route) {
@@ -46,8 +49,8 @@ fun CellarNavHost(
                 navigateToHome = { navController.navigate(HomeDestination.route) {
                     popUpTo(HomeDestination.route) { inclusive = true }
                 } },
-//                navigateToStats = { navController.navigate(StatsDestination.route) },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
+                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
                 onNavigateUp = { navController.navigateUp() }
             )
         }
@@ -55,7 +58,8 @@ fun CellarNavHost(
             AddEntryScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
-                navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") }
+                navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
+                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) }
             )
         }
         composable(
@@ -67,18 +71,53 @@ fun CellarNavHost(
                 EditEntryScreen(
                     navigateBack = { navController.popBackStack() },
                     onNavigateUp = { navController.navigateUp() },
+                    navigateToCsvImport = { navController.navigate(CsvImportDestination.route) }
                 )
             }
         composable(route = SettingsDestination.route) {
             SettingsScreen(
                 navigateBack = { navController.navigateUp() },
-                onNavigateUp = { navController.navigateUp() }
+                onNavigateUp = { navController.navigateUp() },
+                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
             )
         }
         composable(route = NotesEntryDestination.route) {
             NotesEntryScreen(
                 navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() }
+            )
+        }
+        composable(route = CsvImportDestination.route) {
+            CsvImportScreen(
+                navigateBack = { navController.navigateUp() },
+                onNavigateUp = { navController.navigateUp() },
+                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
+                navigateToImportResults = { totalRecords, successCount, successfulInsertions -> navController.navigate(
+                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}") }
+            )
+        }
+        composable(
+            route = CsvImportResultsDestination.routeWithArgs,
+            arguments = listOf(
+                navArgument(CsvImportResultsDestination.totalRecordsArg) { type = NavType.IntType },
+                navArgument(CsvImportResultsDestination.successCountArg) { type = NavType.IntType },
+                navArgument(CsvImportResultsDestination.successfulInsertionsArg) { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val totalRecords =
+                backStackEntry.arguments?.getInt(CsvImportResultsDestination.totalRecordsArg) ?: 0
+            val successCount =
+                backStackEntry.arguments?.getInt(CsvImportResultsDestination.successCountArg) ?: 0
+            val successfulInsertions =
+                backStackEntry.arguments?.getInt(CsvImportResultsDestination.successfulInsertionsArg) ?: 0
+            CsvImportResultsScreen(
+                totalRecords = totalRecords,
+                successfulConversions = successCount,
+                successfulInsertions = successfulInsertions,
+                navigateToHome = { navController.navigate(HomeDestination.route) },
+                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
+                navigateBack = { navController.popBackStack(HomeDestination.route, true) },
+                onNavigateUp = { navController.popBackStack(HomeDestination.route, true) }
             )
         }
     }

@@ -15,8 +15,7 @@ data class Items(
     val blend: String,
     val type: String,
     val quantity: Int,
-    val hated: Boolean,
+    val disliked: Boolean,
     val favorite: Boolean,
     val notes: String,
-
 )

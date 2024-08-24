@@ -1,5 +1,8 @@
 package com.example.tobaccocellar.ui.home
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
@@ -23,23 +26,32 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -59,6 +71,8 @@ import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import eu.wewox.lazytable.LazyTable
+import eu.wewox.lazytable.LazyTableDefaults.dimensions
+import eu.wewox.lazytable.LazyTableDefaults.pinConfiguration
 import eu.wewox.lazytable.LazyTableDimensions
 import eu.wewox.lazytable.LazyTableItem
 import eu.wewox.lazytable.LazyTablePinConfiguration
@@ -76,21 +90,37 @@ fun HomeScreen(
     navigateToStats: () -> Unit,
     navigateToAddEntry: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
+    navigateToCsvImport: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val isTableView = homeUiState.isTableView
+    val snackbarHostState = remember { SnackbarHostState() }
+    val showSnackbar = viewmodel.showSnackbar.collectAsState()
+
+    if (showSnackbar.value) {
+        LaunchedEffect(Unit) {
+            snackbarHostState.showSnackbar(
+                message = "CSV Exported",
+                duration = SnackbarDuration.Short
+            )
+            viewmodel.snackbarShown()
+        }
+    }
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(HomeDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
+                navigateToCsvImport = navigateToCsvImport,
                 showMenu = true,
+                exportCsvHandler = viewmodel,
             )
         },
         bottomBar = {
@@ -101,6 +131,14 @@ fun HomeScreen(
                 navigateToAddEntry = navigateToAddEntry,
             )
         },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .padding(start = 0.dp, top = 0.dp, bottom = 16.dp, end = 0.dp),
+                snackbar = { Snackbar(it) }
+            )
+        }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -118,6 +156,7 @@ fun HomeScreen(
                 items = homeUiState.items,
                 isTableView = isTableView,
                 onItemClick = navigateToEditEntry,
+                isLoading = homeUiState.isLoading,
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(0.dp),
@@ -198,6 +237,7 @@ private fun HomeHeader(
 private fun HomeBody(
     modifier: Modifier = Modifier,
     items: List<Items>,
+    isLoading: Boolean,
     isTableView: Boolean,
     onItemClick: (Int) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -211,41 +251,64 @@ private fun HomeBody(
             .fillMaxWidth()
             .padding(0.dp)
     ) {
-        /* TODO add circular loading indicator */
-        if (items.isEmpty()) {
-            Column(
+        if (isLoading) {
+            Column (
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(
-                    text = stringResource(R.string.no_items),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleLarge,
+                Spacer(
                     modifier = Modifier
-                        .padding(0.dp),
-                    )
-            }
-        }
-        else {
-            if (isTableView) {
-                TableViewMode(
-                    itemsList = items,
-                    contentPadding = contentPadding,
-                    modifier = Modifier
-                        .padding(0.dp),
-                    )
-            }
-            else {
-                ListViewMode(
-                    itemsList = items,
-                    onItemClick = { onItemClick(it.id) },
-                    contentPadding = contentPadding,
+                        .weight(1.5f)
+                )
+                CircularProgressIndicator(
                     modifier = Modifier
                         .padding(0.dp)
-                        .fillMaxWidth()
-                    )
+                        .size(48.dp)
+                        .weight(0.5f),
+                )
+                Spacer(
+                    modifier = Modifier
+                        .weight(2f)
+                )
+            }
+        } else {
+            if (items.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_items),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .padding(0.dp),
+                        )
+                }
+            }
+            else {
+                if (isTableView) {
+                    TableViewMode(
+                        itemsList = items,
+                        contentPadding = contentPadding,
+                        modifier = Modifier
+                            .padding(0.dp),
+                        )
+                }
+                else {
+                    ListViewMode(
+                        itemsList = items,
+                        onItemClick = { onItemClick(it.id) },
+                        contentPadding = contentPadding,
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth()
+                        )
+                }
             }
         }
     }
@@ -333,7 +396,7 @@ private fun CellarListItem(
                         Column {
                             Text(
                                 text =
-                                if (item.hated) (item.blend + " ")
+                                if (item.disliked) (item.blend + " ")
                                 else (item.blend),
                                 modifier = Modifier
                                     .padding(0.dp)
@@ -344,17 +407,17 @@ private fun CellarListItem(
                                         spacing = MarqueeSpacing(100.dp)
                                     ),
                                 style =
-                                if (item.quantity == 0 && !item.hated) (
+                                if (item.quantity == 0 && !item.disliked) (
                                         MaterialTheme.typography.titleMedium.copy(
                                             color = MaterialTheme.colorScheme.tertiary
                                         )
                                         )
-                                else if (item.hated && item.quantity > 0) (
+                                else if (item.disliked && item.quantity > 0) (
                                         MaterialTheme.typography.titleMedium.copy(
                                             textDecoration = TextDecoration.LineThrough
                                         )
                                         )
-                                else if (item.hated && item.quantity == 0) (
+                                else if (item.disliked && item.quantity == 0) (
                                         MaterialTheme.typography.titleMedium.copy(
                                             color = MaterialTheme.colorScheme.tertiary,
                                             textDecoration = TextDecoration.LineThrough
@@ -653,10 +716,10 @@ fun HomeHeaderPreview() {
 @Composable
 fun HomeBodyListPreview() {
     ListViewMode(itemsList = listOf(
-        Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Virginia", 2, hated = false, favorite = true, notes = null.toString()),
-        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, hated = false, favorite = false, notes = null.toString()),
-        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, hated = true, favorite = false, notes = null.toString()),
-        Items(3, "Cornell & Diehl", "Some super long blend name to test the basic marquee effect if that ever happens", "Burley", 0, hated = true, favorite = true, notes = null.toString())
+        Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Virginia", 2, disliked = false, favorite = true, notes = null.toString()),
+        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, disliked = false, favorite = false, notes = null.toString()),
+        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, disliked = true, favorite = false, notes = null.toString()),
+        Items(3, "Cornell & Diehl", "Some super long blend name to test the basic marquee effect if that ever happens", "Burley", 0, disliked = true, favorite = true, notes = null.toString())
     ), onItemClick = {}, contentPadding = PaddingValues(0.dp)
     )
 }
@@ -667,7 +730,7 @@ fun HomeBodyListPreview() {
 fun CellarItemPreview() {
     CellarListItem(
         Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2,
-            hated = false,
+            disliked = false,
             favorite = true,
             notes = null.toString(),
         ),
@@ -680,13 +743,13 @@ fun CellarItemPreview() {
 fun HomeBodyTablePreview() {
     TableViewMode(itemsList = listOf(
         Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2,
-            hated = false,
+            disliked = false,
             favorite = true,
             notes = null.toString(),
         ),
-        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, hated = false, favorite = true, notes = null.toString()),
-        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, hated = true, favorite = false, notes = null.toString()),
-        Items(3, "Warped", "Midsommar", "Burley", 1, hated = false, favorite = false, notes = null.toString())
+        Items(1, "Sutliff", "Maple Shadows", "Aromatic", 0, disliked = false, favorite = true, notes = null.toString()),
+        Items(2, "Cornell & Diehl", "Pegasus", "Burley", 2, disliked = true, favorite = false, notes = null.toString()),
+        Items(3, "Warped", "Midsommar", "Burley", 1, disliked = false, favorite = false, notes = null.toString())
     ), contentPadding = PaddingValues(0.dp)
     )
 }

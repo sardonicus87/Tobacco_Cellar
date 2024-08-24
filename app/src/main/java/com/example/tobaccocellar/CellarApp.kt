@@ -2,6 +2,11 @@
 
 package com.example.tobaccocellar
 
+import android.app.Activity
+import android.content.Intent
+import android.os.Environment
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -23,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -30,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +49,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.tobaccocellar.data.CsvHelper
+import com.example.tobaccocellar.data.ItemsRepository
+import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
+import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun CellarApp(
@@ -58,10 +71,20 @@ fun CellarTopAppBar(
     canNavigateBack: Boolean,
     showMenu: Boolean,
     modifier: Modifier = Modifier,
+    exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     navigateUp: () -> Unit = {},
+    navigateToCsvImport: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            exportCsvHandler?.onExportCsvClick(uri)
+        }
+    }
 
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -88,15 +111,44 @@ fun CellarTopAppBar(
                         contentDescription = null
                     )
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { R.string.import_csv }, onClick = { expanded = false })
-                        DropdownMenuItem(text = { R.string.export_csv }, onClick = { expanded = false })
-                        DropdownMenuItem(text = { R.string.settings}, onClick = { expanded = false })
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.import_csv)) },
+                            onClick = {
+                                expanded = false
+                                navigateToCsvImport()
+                            },
+                            modifier = Modifier.padding(0.dp),
+                            enabled = true,
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.export_csv)) },
+                            onClick = {
+                                expanded = false
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "text/csv"
+                                    putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
+                                }
+                                launcher.launch(intent)
+                            },
+                            modifier = Modifier.padding(0.dp),
+                            enabled = exportCsvHandler != null,
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.settings)) },
+                            onClick = { expanded = false },
+                            modifier = Modifier.padding(0.dp),
+                            enabled = false,
+                        )
                     }
                 }
             }
         }
     )
 }
+
+
+
 
 @Composable
 fun CellarBottomAppBar(
@@ -239,6 +291,24 @@ fun CellarBottomAppBar(
            }
        }
    }
+}
+
+@Composable
+fun ErrorDialog(
+    confirmError: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.attention)) },
+        text = { Text(stringResource(R.string.csv_import_error)) },
+        modifier = modifier,
+        confirmButton = {
+            TextButton(onClick = confirmError) {
+                Text(stringResource(R.string.ok))
+            }
+        }
+    )
 }
 
 @Preview

@@ -1,22 +1,34 @@
 package com.example.tobaccocellar.ui.home
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.net.Uri
+import android.os.Environment
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.R
+import com.example.tobaccocellar.data.CsvHelper
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.data.PreferencesRepo
+import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
+import kotlinx.coroutines.withContext
+import java.io.File
 
 class HomeViewModel(
-    itemsRepository: ItemsRepository,
+    val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
-): ViewModel() {
+    private val csvHelper: CsvHelper,
+    application: Application
+): AndroidViewModel(application), ExportCsvHandler {
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
@@ -29,7 +41,7 @@ class HomeViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = HomeUiState()
+            initialValue = HomeUiState(isLoading = true)
         )
 
 
@@ -40,14 +52,43 @@ class HomeViewModel(
         }
     }
 
+    /** csvExport for TopAppBar **/
+    private val _showSnackbar = MutableStateFlow(false)
+    val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()
 
+    fun snackbarShown() {
+        _showSnackbar.value = false
+    }
+
+    override fun onExportCsvClick(uri: Uri?) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val items = itemsRepository.getAllItemsExport()
+                val csvData = csvHelper.exportToCsv(items)
+                if (uri != null) {
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
+                    outputStream ->
+                        outputStream.write(csvData.toByteArray())
+                        _showSnackbar.value = true
+                        Log.d("HomeViewModel", "CSV data exported to URI: $uri")
+                    }
+                } else {
+                    val documentsDirectory = Environment
+                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    val file = File(documentsDirectory, "tobacco_cellar.csv")
+                    file.writeText(csvData)
+                }
+            }
+        }
+    }
 }
 
 data class HomeUiState(
     val items: List<Items> = listOf(),
-    val isTableView: Boolean = true,
+    val isTableView: Boolean = false,
     val toggleContentDescription: Int =
         if (isTableView) R.string.list_view_toggle else R.string.table_view_toggle,
     val toggleIcon: Int =
         if (isTableView) R.drawable.list_view else R.drawable.table_view,
+    val isLoading: Boolean = false
 )

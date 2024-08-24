@@ -1,6 +1,7 @@
 package com.example.tobaccocellar.ui.items
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,6 +57,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -89,14 +91,13 @@ fun AddEntryScreen(
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
+    navigateToCsvImport: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: AddEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-
-
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -116,6 +117,7 @@ fun AddEntryScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,
+                navigateToCsvImport = navigateToCsvImport,
                 showMenu = false,
             )
         },
@@ -339,8 +341,10 @@ fun ItemInputForm(
                     modifier = Modifier
                         .width(80.dp)
                 )
+
                 val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
                 var showSuggestions by remember { mutableStateOf(false) }
+//                val focusManager = LocalFocusManager.current
 
                 AutoCompleteText(
                     value = itemDetails.brand,
@@ -354,8 +358,12 @@ fun ItemInputForm(
                             suggestions.value = emptyList()
                         }
                         showSuggestions = suggestions.value.isNotEmpty()
-                        onValueChange(itemDetails.copy(brand = it))            },
-                    onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
+                        onValueChange(itemDetails.copy(brand = it)) },
+                    onOptionSelected = {
+                        onValueChange(itemDetails.copy(brand = it))
+                        TextRange(0, it.length)
+//                        focusManager.clearFocus()
+                    },
                     suggestions = suggestions.value,
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -398,7 +406,7 @@ fun ItemInputForm(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = null,
                             modifier = Modifier
-                                .clickable{
+                                .clickable {
                                     onValueChange(itemDetails.copy(blend = ""))
                                 }
                                 .alpha(0.66f)
@@ -611,7 +619,7 @@ fun ItemInputForm(
                                 if (itemDetails.favorite) {
                                     onValueChange(itemDetails.copy(favorite = it))
                                 } else {
-                                    onValueChange(itemDetails.copy(favorite = it, hated = false))
+                                    onValueChange(itemDetails.copy(favorite = it, disliked = false))
                                 }
                                               },
                             modifier = Modifier
@@ -630,12 +638,12 @@ fun ItemInputForm(
                                 .offset(x = 0.dp, y = 1.dp)
                         )
                         HatedBrokenHeart(
-                            checked = itemDetails.hated,
+                            checked = itemDetails.disliked,
                             onCheckedChange = {
-                                if (itemDetails.hated) {
-                                    onValueChange(itemDetails.copy(hated = it))
+                                if (itemDetails.disliked) {
+                                    onValueChange(itemDetails.copy(disliked = it))
                                 } else {
-                                    onValueChange(itemDetails.copy(hated = it, favorite = false))
+                                    onValueChange(itemDetails.copy(disliked = it, favorite = false))
                                 }
                                               },
                             modifier = Modifier
@@ -723,7 +731,7 @@ fun AutoCompleteText(
     suggestions: List<String> = emptyList(),
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var text by remember { mutableStateOf(value) }
+//    val dropOffset by remember { mutableIntStateOf(value.length) }
 
     ExposedDropdownMenuBox(
         expanded = expanded && suggestions.isNotEmpty(),
@@ -734,7 +742,8 @@ fun AutoCompleteText(
         TextField(
             value = value,
             onValueChange = { onValueChange?.invoke(it)
-                            expanded = it.isNotEmpty() },
+                expanded = it.isNotEmpty()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
@@ -785,7 +794,8 @@ fun AutoCompleteText(
                             Text(
                                 text = label,
                                 modifier = Modifier
-                                    .padding(0.dp),
+                                    .padding(0.dp)
+                                    .focusable(false),
                                 fontSize = 16.sp,
                                 lineHeight = 16.sp,
                                 maxLines = 1
@@ -793,7 +803,6 @@ fun AutoCompleteText(
                         },
                         onClick = {
                             onOptionSelected(label)
-                            text = label
                             expanded = false
                             emptyList<String>()
                         },
@@ -887,7 +896,7 @@ fun AddEntryScreenPreview(){
     AddEntryBody(
         itemUiState = ItemUiState(
         ItemDetails(
-            brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, hated = false
+            brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, disliked = false
         )
     ),
         onItemValueChange = {},

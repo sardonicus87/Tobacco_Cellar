@@ -17,7 +17,7 @@ class ItemDetailsViewModel(
 
     private val itemId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
 
-    val uiState: StateFlow<ItemDetailsUiState> =
+    private val uiState: StateFlow<ItemDetailsUiState> =
         itemsRepository.getItemStream(itemId)
             .filterNotNull()
             .map {
