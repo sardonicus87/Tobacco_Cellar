@@ -402,7 +402,7 @@ fun ItemInputForm(
                         fontSize = 14.sp,)
                                   },
                     trailingIcon = {
-                        if (itemDetails.blend.isNotEmpty()) { Icon(
+                        if (itemDetails.blend.length > 5) { Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = null,
                             modifier = Modifier
@@ -411,6 +411,7 @@ fun ItemInputForm(
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
+                                .focusable(false)
                             )
                         }
                     },
@@ -750,7 +751,7 @@ fun AutoCompleteText(
                 .menuAnchor(),
             enabled = true,
             trailingIcon = {
-                if (value.isNotEmpty()) {
+                if (value.length > 5) {
                     Icon(
                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                         contentDescription = null,
@@ -762,8 +763,9 @@ fun AutoCompleteText(
                             }
                             .alpha(0.66f)
                             .size(20.dp)
+                            .focusable(false)
                     )
-                } else { /* do nothing */ }
+                }
             },
             singleLine = true,
             placeholder = { if (placeholder != null) placeholder() },

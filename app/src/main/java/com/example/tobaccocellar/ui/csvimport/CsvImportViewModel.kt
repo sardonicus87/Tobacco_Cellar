@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.ItemsRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -139,6 +140,8 @@ class CsvImportViewModel(
             Log.d("CsvImport", "Successfully converted $successfulConversions items")
 
             val successfulInsertions = insertedIds.count { it != -1L }
+
+            delay(1500)
 
             val totalRecords = if (hasHeader) {
                 csvImportState.value.recordCount - 1 } else

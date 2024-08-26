@@ -116,8 +116,8 @@ fun CellarNavHost(
                 successfulInsertions = successfulInsertions,
                 navigateToHome = { navController.navigate(HomeDestination.route) },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
-                navigateBack = { navController.popBackStack(HomeDestination.route, true) },
-                onNavigateUp = { navController.popBackStack(HomeDestination.route, true) }
+                navigateBack = { navController.navigate(HomeDestination.route) },
+                onNavigateUp = { navController.navigate(HomeDestination.route) }
             )
         }
     }

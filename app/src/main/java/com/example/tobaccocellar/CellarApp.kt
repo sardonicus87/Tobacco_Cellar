@@ -34,6 +34,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.tobaccocellar.data.CsvHelper
 import com.example.tobaccocellar.data.ItemsRepository
+import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
@@ -148,6 +150,14 @@ fun CellarTopAppBar(
 }
 
 
+/* TODO add filter sheet */
+
+@Composable
+fun FilterBottomSheet(viewModel: FilterViewModel) {
+    val brands by viewModel.itemsFilter.collectAsState()
+
+    var selectedBrands by remember { mutableStateOf(brands) }
+}
 
 
 @Composable

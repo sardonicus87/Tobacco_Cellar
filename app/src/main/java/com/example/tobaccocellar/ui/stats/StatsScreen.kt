@@ -1,9 +1,14 @@
 package com.example.tobaccocellar.ui.stats
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -12,6 +17,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -40,7 +46,7 @@ fun StatsScreen(
     viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val statsUiState by viewmodel.statsUiState.collectAsState()
+    val rawStats by viewmodel.rawStats.collectAsState()
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -56,31 +62,79 @@ fun StatsScreen(
         bottomBar = {
             CellarBottomAppBar(
                 navigateToHome = navigateToHome,
-//                navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
             )
         },
     ) { innerPadding ->
-        StatsBody(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = innerPadding,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 64.dp, bottom = 66.dp, start = 0.dp, end = 0.dp)
+        ) {
+            StatsBody(
+                rawStats = rawStats,
+                viewModel = viewmodel,
+                modifier = modifier.fillMaxSize(),
+                contentPadding = innerPadding,
+            )
+        }
     }
 }
 
 @Composable
 private fun StatsBody(
+    rawStats: RawStats,
+    viewModel: StatsViewModel,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(8.dp),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     Column(
         modifier = modifier
+            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 0.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = stringResource(R.string.stats_nothing),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(contentPadding),
+            text = stringResource(R.string.quick_stats),
+            textAlign = TextAlign.Start,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(bottom = 8.dp),
         )
+        Text(
+            text = "These stats are based on totals without regards to quantities"
+        )
+        Row(
+            modifier = Modifier.padding(bottom = 8.dp),
+        ){
+            Column(
+                modifier = Modifier,
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Total Blends: ${rawStats.itemsCount}",
+                )
+                Text(
+                    text = "Total Brands: ${rawStats.brandsCount}",
+                )
+                Text(
+                    text = "Total favorites: ${rawStats.favoriteCount}",
+                )
+                Text(
+                    text = "Total disliked: ${rawStats.dislikedCount}",
+                )
+                Text(
+                    text = "Total quantity: ${rawStats.totalQuantity}",
+                )
+                Text(
+                    text = "Total out of stock: ${rawStats.totalZeroQuantity}",
+                )
+                Text(
+                    text = "Totals by type: " + rawStats.totalByType.toList(),
+                )
+            }
+        }
     }
 }
+

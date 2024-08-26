@@ -62,6 +62,7 @@ fun CsvImportResultsScreen (
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateToCsvImport = navigateToCsvImport,
+                navigateUp = navigateToHome,
                 showMenu = false,
             )
         },

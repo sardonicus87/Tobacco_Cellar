@@ -23,6 +23,7 @@
 
     <string name="import_csv">Import CSV</string>
     <string name="export_csv">Export CSV</string>
+    <string name="select_csv">Select CSV</string>
 
 
     // Instructions //
@@ -37,11 +38,10 @@
         order they appear above) to the correct fields. Brand and Blend must each have a column mapping.</string>
 
 
-
     /Labels/
     <string name="possible_header">Possible header: </string>
     <string name="possible_record">Record parse test: </string>
-
+    <string name="quick_stats">Quick Stats:</string>
 
 
 
@@ -57,7 +57,6 @@
     <string name="settings_nothing">Settings</string>
     <string name="notes_entry">Enter Notes</string>
     <string name="csv_import_error">Error importing CSV file. File is possibly empty or incorrect format.</string>
-
 
 
 </resources>

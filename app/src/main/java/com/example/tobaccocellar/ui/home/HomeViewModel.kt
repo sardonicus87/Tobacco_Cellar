@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class HomeViewModel(
-    val itemsRepository: ItemsRepository,
+    private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
     private val csvHelper: CsvHelper,
     application: Application

@@ -76,7 +76,7 @@ class AddEntryViewModel(
 
     init {
         viewModelScope.launch {
-            itemsRepository.getAllBrands().collect {
+            itemsRepository.getAllBrandsStream().collect {
                 _brands.value = it
             }.also {
                 _brands.value = ItemUiState().autoBrands

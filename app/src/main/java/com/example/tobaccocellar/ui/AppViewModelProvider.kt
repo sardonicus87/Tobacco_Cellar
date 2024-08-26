@@ -15,6 +15,12 @@ import com.example.tobaccocellar.ui.stats.StatsViewModel
 object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
+            FilterViewModel(
+                cellarApplication().container.itemsRepository,
+            )
+        }
+
+        initializer {
             CsvImportViewModel(
                 cellarApplication().container.itemsRepository,
             )
