@@ -126,7 +126,7 @@ data class ItemDetails(
 )
 
 
-/** convert ItemDetails (state/class) to Items (Database Table entity) **/
+/** convert ItemDetails (class) to Items (Database Table entity) **/
 fun ItemDetails.toItem(): Items = Items(
     id = id,
     brand = brand,

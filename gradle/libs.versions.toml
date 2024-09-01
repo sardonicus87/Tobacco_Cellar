@@ -1,4 +1,5 @@
 [versions]
+accompanistSystemuicontroller = "0.28.0"
 agp = "8.5.2"
 commonsCsv = "1.11.0"
 datastorePreferences = "1.1.1"
@@ -22,9 +23,11 @@ ui = "1.6.8"
 uiTextGoogleFonts = "1.6.8"
 datastoreCoreAndroid = "1.1.1"
 datastorePreferencesCoreJvm = "1.1.1"
+material = "1.12.0"
 
 [libraries]
 
+accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-compose-ui-ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
@@ -60,6 +63,7 @@ minabox = { module = "io.github.oleksandrbalan:minabox", version.ref = "minabox"
 ui = { module = "androidx.compose.ui:ui" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

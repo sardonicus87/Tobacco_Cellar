@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +34,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
@@ -41,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,9 +73,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
+import com.example.tobaccocellar.FilterBottomSheet
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.Items
+import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
+import com.example.tobaccocellar.ui.BottomSheetState
+import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import eu.wewox.lazytable.LazyTable
 import eu.wewox.lazytable.LazyTableDefaults.dimensions
@@ -101,6 +110,7 @@ fun HomeScreen(
     val isTableView = homeUiState.isTableView
     val snackbarHostState = remember { SnackbarHostState() }
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     if (showSnackbar.value) {
         LaunchedEffect(Unit) {
@@ -131,6 +141,7 @@ fun HomeScreen(
                     .padding(0.dp),
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
+                filterViewModel = filterViewModel,
             )
         },
         snackbarHost = {
@@ -140,7 +151,7 @@ fun HomeScreen(
                     .padding(0.dp),
                 snackbar = { Snackbar(it) }
             )
-        }
+        },
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -395,6 +406,7 @@ private fun CellarListItem(
                                 )
                             }
                         }
+// Blend Name //
                         Column {
                             Text(
                                 text =
@@ -441,6 +453,7 @@ private fun CellarListItem(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.Top
                             ) {
+// Brand Name //
                                 Column(
                                     modifier = Modifier
                                         .padding(0.dp)
@@ -467,6 +480,7 @@ private fun CellarListItem(
                                         fontSize = 10.sp
                                     )
                                 }
+// Type //
                                 Column(
                                     modifier = Modifier
                                         .padding(0.dp)

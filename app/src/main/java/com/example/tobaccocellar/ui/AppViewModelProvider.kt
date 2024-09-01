@@ -13,11 +13,10 @@ import com.example.tobaccocellar.ui.items.EditEntryViewModel
 import com.example.tobaccocellar.ui.stats.StatsViewModel
 
 object AppViewModelProvider {
+
     val Factory = viewModelFactory {
         initializer {
-            FilterViewModel(
-                cellarApplication().container.itemsRepository,
-            )
+            FilterViewModel(cellarApplication().container.itemsRepository)
         }
 
         initializer {
@@ -41,7 +40,8 @@ object AppViewModelProvider {
 
         initializer {
             StatsViewModel(
-                cellarApplication().container.itemsRepository
+                cellarApplication().container.itemsRepository,
+                cellarApplication().filterViewModel
             )
         }
 
@@ -49,6 +49,7 @@ object AppViewModelProvider {
             HomeViewModel(
                 cellarApplication().container.itemsRepository,
                 cellarApplication().preferencesRepo,
+                cellarApplication().filterViewModel,
                 cellarApplication().csvHelper,
                 cellarApplication()
             )

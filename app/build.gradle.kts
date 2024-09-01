@@ -73,6 +73,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.commons.csv)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.material)
+    implementation(libs.accompanist.systemuicontroller)
 
 
     debugImplementation(libs.leakcanary.android)

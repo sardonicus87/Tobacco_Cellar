@@ -27,7 +27,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
+import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
+import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 
 object StatsDestination : NavigationDestination {
@@ -47,6 +49,7 @@ fun StatsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val rawStats by viewmodel.rawStats.collectAsState()
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -61,8 +64,11 @@ fun StatsScreen(
         },
         bottomBar = {
             CellarBottomAppBar(
+                modifier = Modifier
+                    .padding(0.dp),
                 navigateToHome = navigateToHome,
                 navigateToAddEntry = navigateToAddEntry,
+                filterViewModel = filterViewModel,
             )
         },
     ) { innerPadding ->

@@ -3,13 +3,15 @@ package com.example.tobaccocellar.ui.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
+import com.example.tobaccocellar.ui.FilterViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 class StatsViewModel(
-    private val itemsRepository: ItemsRepository
+    private val itemsRepository: ItemsRepository,
+    private val filterViewModel: FilterViewModel
 ): ViewModel() {
 
 //    val itemsCount: StateFlow<Int> = itemsRepository.getItemsCount()
