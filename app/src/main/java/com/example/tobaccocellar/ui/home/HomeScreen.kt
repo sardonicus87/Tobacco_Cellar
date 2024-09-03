@@ -1,8 +1,5 @@
 package com.example.tobaccocellar.ui.home
 
-import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
@@ -16,12 +13,9 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,31 +28,25 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -73,13 +61,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
-import com.example.tobaccocellar.FilterBottomSheet
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
-import com.example.tobaccocellar.ui.BottomSheetState
-import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import eu.wewox.lazytable.LazyTable
 import eu.wewox.lazytable.LazyTableDefaults.dimensions
@@ -442,7 +427,7 @@ private fun CellarListItem(
                                     textDecoration = TextDecoration.None
                                 )
                                         ),
-                                fontWeight = FontWeight.Normal,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp,
                             )
                             Row(
@@ -476,8 +461,8 @@ private fun CellarListItem(
                                         )
                                                 ),
                                         fontStyle = Italic,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 10.sp
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp
                                     )
                                 }
 // Type //
@@ -503,7 +488,7 @@ private fun CellarListItem(
                                         )
                                                 ),
                                         fontWeight = FontWeight.Normal,
-                                        fontSize = 10.sp,
+                                        fontSize = 11.sp,
                                     )
                                 }
                                 Spacer(

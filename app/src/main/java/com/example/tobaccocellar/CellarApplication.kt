@@ -9,7 +9,6 @@ import com.example.tobaccocellar.data.AppContainer
 import com.example.tobaccocellar.data.AppDataContainer
 import com.example.tobaccocellar.data.CsvHelper
 import com.example.tobaccocellar.data.PreferencesRepo
-import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.FilterViewModel
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"

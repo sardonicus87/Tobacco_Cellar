@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,7 +40,7 @@ class HomeViewModel(
     }
 
     companion object {
-        private const val TIMEOUT_MILLIS = 5_000L
+        private const val TIMEOUT_MILLIS = 1_000L
     }
 
     val homeUiState: StateFlow<HomeUiState> =
@@ -56,41 +58,28 @@ class HomeViewModel(
             val dislikeds = values[3] as Boolean
             val outOfStock = values[4] as Boolean
             val isTableView = values[5] as Boolean
-            HomeUiState(
-                items = itemsRepository.getFilteredItems(
-                    brands = brands,
-                    types = types,
-                    favorites = favorites,
-                    dislikeds = dislikeds,
-                    outOfStock = outOfStock
-                ).first(),
-                isTableView = isTableView
-            )
+
+            itemsRepository.getFilteredItems(
+                brands = brands,
+                types = types,
+                favorites = favorites,
+                dislikeds = dislikeds,
+                outOfStock = outOfStock
+            ).map { items ->
+                HomeUiState(
+                    items = items,
+                    isTableView = isTableView
+                )
+            }
         }
+            .flattenMerge()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = HomeUiState(isLoading = true)
             )
 
-//    val homeUiState: StateFlow<HomeUiState> =
-//        combine(
-//            itemsRepository.getFilteredItems(
-//                brands = filterViewModel.selectedBrands.value,
-//                types = filterViewModel.selectedTypes.value,
-//                favorites = filterViewModel.selectedFavorites.value,
-//                dislikeds = filterViewModel.selectedDislikeds.value,
-//                outOfStock = filterViewModel.selectedOutOfStock.value
-//            ),
-//            preferencesRepo.isTableView,
-//        ) { items, isTableView ->
-//            Log.d("HomeViewModel", "disliked items: ${filterViewModel.selectedDislikeds.value}")
-//            HomeUiState(items, isTableView) }
-//        .stateIn(
-//            scope = viewModelScope,
-//            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-//            initialValue = HomeUiState(isLoading = true)
-//        )
+
 
 
     /** Toggle Cellar View **/

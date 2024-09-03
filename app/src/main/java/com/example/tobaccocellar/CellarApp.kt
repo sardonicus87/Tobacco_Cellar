@@ -22,29 +22,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetDefaults.ExpandedShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -74,6 +68,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -85,7 +81,6 @@ import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.android.material.chip.Chip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,25 +90,24 @@ fun CellarApp(
     val application = LocalCellarApplication.current
     val systemBars = rememberSystemUiController()
 
+    val sheetPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
             onDismissRequest = { filterViewModel.closeBottomSheet() },
             modifier = Modifier
-                .offset(y = (-66).dp)
-                .systemBarsPadding()
-                .navigationBarsPadding(),
+//                .padding(bottom = sheetPadding)
+                .offset(y = (-66).dp),
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
             ),
             dragHandle = { },
             windowInsets = WindowInsets(
-                bottom = WindowInsets.navigationBars.asPaddingValues()
-                    .calculateBottomPadding()
+                bottom = sheetPadding
             ),
             properties = ModalBottomSheetDefaults.properties(
-                shouldDismissOnBackPress = true
+                shouldDismissOnBackPress = true,
             ),
         ) {
             FilterBottomSheet(
@@ -127,7 +121,7 @@ fun CellarApp(
     }
 
     CellarNavHost(
-            navController = navController,
+        navController = navController,
     )
 }
 
@@ -251,13 +245,13 @@ fun FilterBottomSheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Center
         ) {
             Button(
                 onClick = { filterViewModel.closeBottomSheet() },
                 modifier = Modifier
             ) {
-                Text(text = "Apply Filtering")
+                Text(text = "Done")
             }
         }
     }
@@ -273,7 +267,8 @@ fun OtherFiltersSection(
     val outOfStock by filterViewModel.selectedOutOfStock.collectAsState()
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         CheckboxWithLabel(
@@ -290,6 +285,10 @@ fun OtherFiltersSection(
             text = "Out of Stock",
             checked = outOfStock,
             onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) }
+        )
+        Spacer(
+            modifier = Modifier
+                .width(8.dp)
         )
     }
 }
@@ -309,7 +308,7 @@ fun CheckboxWithLabel(
         )
         Text(
             text = text,
-            fontSize = 12.sp,
+            fontSize = 14.sp,
         )
     }
 }
@@ -320,7 +319,6 @@ fun TypeFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
-  //  val allTypes by filterViewModel.availableTypes.collectAsState()
     val availableTypes = listOf("Aromatic", "English", "Burley", "Virginia", "Other")
     val selectedTypes by filterViewModel.selectedTypes.collectAsState()
 
@@ -335,7 +333,15 @@ fun TypeFilterSection(
                 FilterChip(
                     selected = selectedTypes.contains(type),
                     onClick = { filterViewModel.updateSelectedTypes(type, !selectedTypes.contains(type)) },
-                    label = { Text(type) }
+                    label = {
+                        Text(
+                            type,
+                            fontSize = 12.sp,
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    shape = MaterialTheme.shapes.small
                 )
             }
         }
@@ -397,7 +403,7 @@ fun BrandFilterSection(
             }
         }
 
-        val chipCountToShow = 4
+        val chipCountToShow = 5
         val overflowCount = selectedBrands.size - chipCountToShow
 
         Column() {
@@ -406,7 +412,9 @@ fun BrandFilterSection(
                     .fillMaxWidth()
                     .padding(0.dp)
                     .heightIn(min = 48.dp),
-                horizontalArrangement = Arrangement.spacedBy(space = 4.dp, alignment = Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(
+                    space = 6.dp, alignment = Alignment.CenterHorizontally
+                ),
             ) {
                 selectedBrands.take(chipCountToShow).forEach { brand ->
                     Chip(
@@ -414,7 +422,8 @@ fun BrandFilterSection(
                         isSelected = true,
                         onChipClicked = {},
                         onChipRemoved = { filterViewModel.updateSelectedBrands(brand, false) },
-                        trailingIcon = true
+                        trailingIcon = true,
+                        modifier = Modifier
                     )
                 }
                 if (overflowCount > 0) {
@@ -424,6 +433,7 @@ fun BrandFilterSection(
                         onChipClicked = { showOverflowPopup = true },
                         onChipRemoved = { },
                         trailingIcon = false,
+                        modifier = Modifier
                     )
                 }
             }
@@ -431,12 +441,12 @@ fun BrandFilterSection(
             if (showOverflowPopup) {
                 AlertDialog(
                     onDismissRequest = { showOverflowPopup = false },
-                    title = { Text("Selected Brands") },
+                    title = { Text("Selected Brands:") },
                     text = {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy((-6).dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(selectedBrands) { brand ->
                                 Chip(
@@ -468,13 +478,30 @@ fun BrandFilterSection(
 fun Chip(
     text: String,
     isSelected: Boolean,
+    modifier: Modifier = Modifier,
     onChipClicked: (String) -> Unit,
     onChipRemoved: () -> Unit,
     trailingIcon: Boolean = true
 ) {
     AssistChip(
         onClick = { onChipClicked(text) },
-        label = { Text(text)},
+        label = {
+            if (text.startsWith("+")) {
+                Text(
+                    text = text,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .width(25.dp)
+                )
+            }
+            else {
+                Text(
+                    text = text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
         trailingIcon = {
             if (trailingIcon) {
                 Icon(
@@ -485,7 +512,10 @@ fun Chip(
             }
             else { // do nothing
             }
-        }
+        },
+        modifier = Modifier
+            .widthIn(max = 118.dp)
+            .padding(0.dp),
     )
 }
 
@@ -652,15 +682,3 @@ fun ErrorDialog(
     )
 }
 
-//@Preview
-//@Composable
-//fun BottomBarPreview(
-//    modifier: Modifier = Modifier,
-//    navigateToHome: () -> Unit = {},
-//    navigateToStats: () -> Unit = {},
-//    navigateToAddEntry: () -> Unit = {},
-//    showBackground: Boolean = true,
-//) {
-//    CellarBottomAppBar () {
-//    }
-//}

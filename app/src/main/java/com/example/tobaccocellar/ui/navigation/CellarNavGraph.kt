@@ -38,7 +38,10 @@ fun CellarNavHost(
     ) {
         composable(route = HomeDestination.route) {
             HomeScreen(
-                navigateToStats = { navController.navigate(StatsDestination.route) },
+                navigateToStats = { navController.navigate(StatsDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
@@ -47,7 +50,8 @@ fun CellarNavHost(
         composable(route = StatsDestination.route) {
             StatsScreen(
                 navigateToHome = { navController.navigate(HomeDestination.route) {
-                    popUpTo(HomeDestination.route) { inclusive = true }
+                    launchSingleTop = true
+                    popUpTo(StatsDestination.route) { inclusive = true }
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
@@ -93,7 +97,9 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
                 navigateToImportResults = { totalRecords, successCount, successfulInsertions -> navController.navigate(
-                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}") }
+                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}") {
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } }
             )
         }
         composable(
@@ -115,7 +121,7 @@ fun CellarNavHost(
                 successfulConversions = successCount,
                 successfulInsertions = successfulInsertions,
                 navigateToHome = { navController.navigate(HomeDestination.route) },
-                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
+                navigateToCsvImport = { navController.navigate(HomeDestination.route) },
                 navigateBack = { navController.navigate(HomeDestination.route) },
                 onNavigateUp = { navController.navigate(HomeDestination.route) }
             )

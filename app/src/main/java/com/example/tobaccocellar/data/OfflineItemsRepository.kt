@@ -95,7 +95,7 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         val args = mutableListOf<Any>()
         val whereClauses = mutableListOf<String>()
 
-        if (brands != null && brands.isNotEmpty()) {
+        if (!brands.isNullOrEmpty()) {
             val brandClause = StringBuilder()
             brandClause.append("brand IN (")
             for (i in brands.indices) {
@@ -109,7 +109,7 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
             whereClauses.add(brandClause.toString())
         }
 
-        if (types != null && types.isNotEmpty()) {
+        if (!types.isNullOrEmpty()) {
             val typeClause = StringBuilder()
             typeClause.append("type IN (")
             for (i in types.indices) {
@@ -124,13 +124,17 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         }
 
         if (favorites != null) {
-            whereClauses.add("favorite = ?")
-            args.add(if (favorites) 1 else 0)
+            if (favorites) {
+                whereClauses.add("favorite = ?")
+                args.add(1)
+            }
         }
 
         if (dislikeds != null) {
-            whereClauses.add("disliked = ?")
-            args.add(if (dislikeds) 1 else 0)
+            if (dislikeds) {
+                whereClauses.add("disliked = ?")
+                args.add(1)
+            }
         }
 
         if (outOfStock != null) {
@@ -174,7 +178,15 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 //            outOfStock,
 //        )
 
-
+//    if (favorites != null) {
+//        whereClauses.add("favorite = ?")
+//        args.add(if (favorites) 1 else 0)
+//    }
+//
+//    if (dislikeds != null) {
+//        whereClauses.add("disliked = ?")
+//        args.add(if (dislikeds) 1 else 0)
+//    }
 
     override fun getItemsByQuantity(): Flow<List<Items>> = itemsDao.getItemsByQuantity()
 
