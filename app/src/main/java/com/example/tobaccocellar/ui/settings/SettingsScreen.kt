@@ -1,26 +1,43 @@
 package com.example.tobaccocellar.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
+import com.example.tobaccocellar.data.PreferencesRepo
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
-import com.example.tobaccocellar.ui.stats.StatsDestination
+import kotlinx.coroutines.launch
 
 object SettingsDestination : NavigationDestination {
     override val route = "settings"
@@ -33,44 +50,192 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
-    navigateToCsvImport: () -> Unit,
     canNavigateBack: Boolean = true,
     viewmodel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val coroutineScope = rememberCoroutineScope()
+    val currentTheme by viewmodel.themeSetting.collectAsState()
+
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(StatsDestination.titleRes),
+                title = stringResource(SettingsDestination.titleRes),
                 scrollBehavior = scrollBehavior,
-                canNavigateBack = true,
-                navigateToCsvImport = navigateToCsvImport,
+                navigateUp = onNavigateUp,
+                canNavigateBack = canNavigateBack,
+                navigateToCsvImport = {},
+                navigateToSettings = {},
                 showMenu = false,
             )
         },
     ) { innerPadding ->
-        SettingsBody(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = innerPadding
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 64.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+        ) {
+            SettingsBody(
+                onDeleteAllClick = {
+                    coroutineScope.launch {
+                        viewmodel.deleteAllItems()
+                    }
+                },
+                saveTheme = { viewmodel.saveThemeSetting(it) },
+                //currentTheme = currentTheme,
+                preferencesRepo = viewmodel.preferencesRepo,
+                modifier = modifier
+                    .fillMaxWidth(),
+                contentPadding = innerPadding
+            )
+        }
     }
 }
-    /* TODO: Settings screen */
+/* TODO: Settings screen */
 @Composable
 private fun SettingsBody(
-        modifier: Modifier = Modifier,
-        contentPadding: PaddingValues = PaddingValues(8.dp),
+    onDeleteAllClick: () -> Unit,
+    saveTheme: (String) -> Unit,
+//    currentTheme: String,
+    modifier: Modifier = Modifier,
+    preferencesRepo: PreferencesRepo,
+    contentPadding: PaddingValues = PaddingValues(8.dp),
 ) {
-    /* TODO: Settings body */
+    var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
+    var showThemeDialog by rememberSaveable { mutableStateOf(false) }
+
+    /* TODO: finish Settings body */
     Column(
         modifier = modifier
+            .fillMaxSize()
+            .padding(top = 16.dp, bottom = 0.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = stringResource(R.string.settings_nothing),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(contentPadding),
+            text = "Display Settings",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(start = 16.dp)
         )
+        TextButton(
+            onClick = { showThemeDialog = true },
+            enabled = true,
+            modifier = Modifier
+                .padding(start = 16.dp)
+        ) {
+            Text(text = "Theme")
+        }
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth(fraction = 0.9f)
+                .padding(top = 8.dp, bottom = 8.dp),
+            thickness = 2.dp,
+        )
+        Text(
+            text = "Database Settings",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(start = 16.dp)
+        )
+        TextButton(
+            onClick = { deleteAllConfirm = true },
+            enabled = true,
+            modifier = Modifier
+                .padding(start = 16.dp)
+        ) {
+            Text(text = "Clear Database")
+        }
+        if (showThemeDialog) {
+            ThemeDialog(
+//                currentTheme = currentTheme,
+                onThemeSelected = { newTheme ->
+                    saveTheme(newTheme)
+                },
+                preferencesRepo = preferencesRepo,
+                onClose = { showThemeDialog = false }
+            )
+        }
+        if (deleteAllConfirm) {
+            DeleteAllDialog(
+                onDeleteConfirm = {
+                    deleteAllConfirm = false
+                    onDeleteAllClick()
+                },
+                onDeleteCancel = { deleteAllConfirm = false },
+                modifier = Modifier
+                    .padding(0.dp)
+            )
+        }
     }
+}
+
+@Composable
+fun ThemeDialog(
+    onThemeSelected: (String) -> Unit,
+    onClose: () -> Unit,
+    preferencesRepo: PreferencesRepo,
+    modifier: Modifier = Modifier
+) {
+    val currentTheme by preferencesRepo.themeSetting.collectAsState(initial = ThemeSetting.SYSTEM.value)
+
+    AlertDialog(
+        onDismissRequest = { onClose() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column (
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy((-2).dp)
+            ) {
+                listOf(ThemeSetting.LIGHT, ThemeSetting.DARK, ThemeSetting.SYSTEM).forEach { theme ->
+                    Row(
+                        modifier = Modifier
+                            .padding(0.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentTheme == theme.value,
+                            onClick = { onThemeSelected(theme.value) }
+                        )
+                        Text(text = theme.value)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onClose() }
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+    )
+}
+
+@Composable
+private fun DeleteAllDialog(
+    onDeleteConfirm: () -> Unit,
+    onDeleteCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.delete_all)) },
+        text = { Text(stringResource(R.string.delete_all_question)) },
+        modifier = modifier,
+        dismissButton = {
+            TextButton(onClick = onDeleteCancel) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDeleteConfirm) {
+                Text(stringResource(R.string.yes))
+            }
+        }
+    )
 }

@@ -91,7 +91,6 @@ fun AddEntryScreen(
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
-    navigateToCsvImport: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: AddEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ){
@@ -117,7 +116,8 @@ fun AddEntryScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,
-                navigateToCsvImport = navigateToCsvImport,
+                navigateToCsvImport = {},
+                navigateToSettings = {},
                 showMenu = false,
             )
         },
@@ -168,7 +168,6 @@ fun AddEntryBody(
     innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
-
 
     Column(
         modifier = modifier
@@ -234,7 +233,7 @@ fun AddEntryBody(
                 )
             }
         } else {
-           // do nothing //
+            // do nothing //
         }
     }
 }

@@ -15,6 +15,8 @@ interface ItemsRepository {
 
     suspend fun deleteItem(item: Items)
 
+    suspend fun deleteAllItems()
+
 
     /** Get all items **/
     fun getAllItemsStream(): Flow<List<Items>>

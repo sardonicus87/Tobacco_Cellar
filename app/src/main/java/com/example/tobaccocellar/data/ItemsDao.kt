@@ -35,6 +35,10 @@ interface ItemsDao {
     @Delete
     suspend fun delete(item: Items)
 
+    // Delete all items from database //
+    @Query("DELETE FROM items")
+    suspend fun deleteAllItems()
+
 
     /** Get all items **/
     // Get all items flow //

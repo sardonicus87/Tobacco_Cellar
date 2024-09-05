@@ -1,9 +1,12 @@
 package com.example.tobaccocellar.ui.theme
 
 import android.app.Activity
+import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -11,9 +14,17 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import com.example.tobaccocellar.data.PreferencesRepo
+import com.example.tobaccocellar.ui.settings.ThemeSetting
 
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
@@ -215,19 +226,35 @@ val unspecified_scheme = ColorFamily(
 
 @Composable
 fun TobaccoCellarTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+//    darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    preferencesRepo: PreferencesRepo,
     content: @Composable () -> Unit
 ) {
+    val userThemeSetting by preferencesRepo.themeSetting.collectAsState(
+        initial = ThemeSetting.SYSTEM.value
+    )
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (userThemeSetting == ThemeSetting.SYSTEM.value) {
+                if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
+                    dynamicLightColorScheme(context)
+            } else {
+                if (userThemeSetting == ThemeSetting.DARK.value)
+                    dynamicDarkColorScheme(context) else
+                    dynamicLightColorScheme(context)
+            }
         }
-
-        darkTheme -> darkScheme
-        else -> lightScheme
+        userThemeSetting == ThemeSetting.DARK.value -> darkScheme
+        userThemeSetting == ThemeSetting.LIGHT.value -> lightScheme
+        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
+            if (isSystemInDarkTheme()) darkScheme else lightScheme
+        } else {
+            lightScheme
+        }
     }
 
     MaterialTheme(
@@ -237,3 +264,38 @@ fun TobaccoCellarTheme(
     )
 }
 
+//@Composable
+//fun TobaccoCellarTheme(
+//    // Dynamic color is available on Android 12+
+//    dynamicColor: Boolean = true,
+//    currentTheme: ColorScheme,
+//    content: @Composable () -> Unit
+//) {
+//    val configuration = LocalConfiguration.current
+//    val darkTheme = configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+//
+//    val colorScheme = when {
+//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+//            val context = LocalContext.current
+//            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+//        }
+//
+//        darkTheme -> darkScheme
+//        else -> lightScheme
+//    }
+//
+//    MaterialTheme(
+//        colorScheme = currentTheme,
+//        typography = Typography,
+//        content = content
+//    )
+//}
+
+//val colorScheme = when {
+//    dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+//        val context = LocalContext.current
+//        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+//    }
+//    darkTheme -> darkScheme
+//    else -> lightScheme
+//}

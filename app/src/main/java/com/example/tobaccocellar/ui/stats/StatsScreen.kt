@@ -44,6 +44,7 @@ fun StatsScreen(
     navigateToAddEntry: () -> Unit,
     onNavigateUp: () -> Unit,
     navigateToCsvImport: () -> Unit,
+    navigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -59,6 +60,7 @@ fun StatsScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
                 navigateToCsvImport = navigateToCsvImport,
+                navigateToSettings = navigateToSettings,
                 showMenu = false,
             )
         },

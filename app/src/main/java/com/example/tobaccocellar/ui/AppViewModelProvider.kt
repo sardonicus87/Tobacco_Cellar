@@ -10,6 +10,7 @@ import com.example.tobaccocellar.ui.home.HomeViewModel
 import com.example.tobaccocellar.ui.items.AddEntryViewModel
 import com.example.tobaccocellar.ui.csvimport.CsvImportViewModel
 import com.example.tobaccocellar.ui.items.EditEntryViewModel
+import com.example.tobaccocellar.ui.settings.SettingsViewModel
 import com.example.tobaccocellar.ui.stats.StatsViewModel
 
 object AppViewModelProvider {
@@ -17,25 +18,6 @@ object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
             FilterViewModel(cellarApplication().container.itemsRepository)
-        }
-
-        initializer {
-            CsvImportViewModel(
-                cellarApplication().container.itemsRepository,
-            )
-        }
-
-        initializer {
-            EditEntryViewModel(
-                this.createSavedStateHandle(),
-                cellarApplication().container.itemsRepository
-            )
-        }
-
-        initializer {
-            AddEntryViewModel(
-                cellarApplication().container.itemsRepository
-            )
         }
 
         initializer {
@@ -52,6 +34,32 @@ object AppViewModelProvider {
                 cellarApplication().filterViewModel,
                 cellarApplication().csvHelper,
                 cellarApplication()
+            )
+        }
+
+        initializer {
+            CsvImportViewModel(
+                cellarApplication().container.itemsRepository,
+            )
+        }
+
+        initializer {
+            SettingsViewModel(
+                cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo
+            )
+        }
+
+        initializer {
+            AddEntryViewModel(
+                cellarApplication().container.itemsRepository
+            )
+        }
+
+        initializer {
+            EditEntryViewModel(
+                this.createSavedStateHandle(),
+                cellarApplication().container.itemsRepository
             )
         }
     }

@@ -70,7 +70,6 @@ fun CsvImportScreen(
     navigateToImportResults: (Int, Int, Int) -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
-    navigateToCsvImport: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: CsvImportViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -78,7 +77,6 @@ fun CsvImportScreen(
     val csvImportState = viewModel.csvImportState.value
     val csvUiState = viewModel.csvUiState
     val mappingOptions = viewModel.mappingOptions
-//    val csvImportState by viewModel.csvImportState.collectAsState()
 
     LaunchedEffect(key1 = csvImportState){ // Add LaunchedEffect here
         Log.d("CsvImportScreen", "State updated: $csvImportState")
@@ -93,7 +91,8 @@ fun CsvImportScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,
-                navigateToCsvImport = navigateToCsvImport,
+                navigateToCsvImport = {},
+                navigateToSettings = {},
                 showMenu = false,
             )
         },
@@ -900,7 +899,6 @@ fun CsvImportScreenPreview() {
     CsvImportScreen(
         navigateBack = {},
         onNavigateUp = {},
-        navigateToCsvImport = {},
         navigateToImportResults = { totalRecords, successCount, successfulInsertions -> {} },
         modifier = Modifier
     )

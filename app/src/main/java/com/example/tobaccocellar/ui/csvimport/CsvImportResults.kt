@@ -49,7 +49,6 @@ fun CsvImportResultsScreen (
     navigateToHome: () -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
-    navigateToCsvImport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -61,8 +60,9 @@ fun CsvImportResultsScreen (
                 title = stringResource(HomeDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
-                navigateToCsvImport = navigateToCsvImport,
-                navigateUp = navigateToHome,
+                navigateToCsvImport = {},
+                navigateToSettings = {},
+                navigateUp = onNavigateUp,
                 showMenu = false,
             )
         },
@@ -206,6 +206,7 @@ fun CsvImportResultsScreenPreview() {
         title = "CSV Import Results",
         canNavigateBack = true,
         navigateToCsvImport = {},
+        navigateToSettings = {},
         showMenu = false,
     )
     ImportResultsBody(

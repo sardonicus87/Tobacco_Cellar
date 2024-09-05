@@ -87,6 +87,7 @@ fun HomeScreen(
     navigateToAddEntry: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     navigateToCsvImport: () -> Unit,
+    navigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
@@ -116,6 +117,7 @@ fun HomeScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
                 navigateToCsvImport = navigateToCsvImport,
+                navigateToSettings = navigateToSettings,
                 showMenu = true,
                 exportCsvHandler = viewmodel,
             )
@@ -285,7 +287,7 @@ private fun HomeBody(
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier
                             .padding(0.dp),
-                        )
+                    )
                 }
             }
             else {
@@ -295,7 +297,7 @@ private fun HomeBody(
                         contentPadding = contentPadding,
                         modifier = Modifier
                             .padding(0.dp),
-                        )
+                    )
                 }
                 else {
                     ListViewMode(
@@ -305,7 +307,7 @@ private fun HomeBody(
                         modifier = Modifier
                             .padding(0.dp)
                             .fillMaxWidth()
-                        )
+                    )
                 }
             }
         }
@@ -359,147 +361,147 @@ private fun CellarListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ){
-                Column(
+            Column(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+            ) {
+                Box(
                     modifier = Modifier
+                        .height(IntrinsicSize.Min)
                         .padding(0.dp)
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    Box(
+                    Row (
                         modifier = Modifier
-                            .height(IntrinsicSize.Min)
-                            .padding(0.dp)
+                            .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
+                            .fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        Row (
-                            modifier = Modifier
-                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
-                                .fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            if (item.favorite) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.favorite_heart_filled_18),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .padding(0.dp)
-                                        .graphicsLayer {
-                                            rotationZ = (-45f)
-                                        },
-                                    tint = Color(0x60FF0000)
-                                )
-                            }
-                        }
-// Blend Name //
-                        Column {
-                            Text(
-                                text =
-                                if (item.disliked) (item.blend + " ")
-                                else (item.blend),
+                        if (item.favorite) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.favorite_heart_filled_18),
+                                contentDescription = null,
                                 modifier = Modifier
+                                    .size(24.dp)
                                     .padding(0.dp)
-                                    .fillMaxWidth(fraction = .9f)
-                                    .basicMarquee(
-                                        iterations = Int.MAX_VALUE,
-                                        delayMillis = 250,
-                                        spacing = MarqueeSpacing(100.dp)
-                                    ),
-                                style =
-                                if (item.quantity == 0 && !item.disliked) (
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.tertiary
-                                        )
-                                        )
-                                else if (item.disliked && item.quantity > 0) (
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            textDecoration = TextDecoration.LineThrough
-                                        )
-                                        )
-                                else if (item.disliked && item.quantity == 0) (
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.tertiary,
-                                            textDecoration = TextDecoration.LineThrough
-                                        )
-                                        )
-                                else (MaterialTheme.typography.titleMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    textDecoration = TextDecoration.None
-                                )
-                                        ),
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
+                                    .graphicsLayer {
+                                        rotationZ = (-45f)
+                                    },
+                                tint = Color(0x60FF0000)
                             )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
-                                    .offset(y = (-4).dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-// Brand Name //
-                                Column(
-                                    modifier = Modifier
-                                        .padding(0.dp)
-                                        .weight(.95f),
-                                    horizontalAlignment = Alignment.Start
-                                ) {
-                                    Text(
-                                        text = item.brand,
-                                        modifier = Modifier,
-                                        style =
-                                        if (item.quantity == 0) (
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    color = MaterialTheme.colorScheme.tertiary,
-                                                    textDecoration = TextDecoration.None
-                                                )
-                                                )
-                                        else (MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            textDecoration = TextDecoration.None
-                                        )
-                                                ),
-                                        fontStyle = Italic,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 11.sp
-                                    )
-                                }
-// Type //
-                                Column(
-                                    modifier = Modifier
-                                        .padding(0.dp)
-                                        .weight(0.5f),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = item.type,
-                                        modifier = Modifier,
-                                        style =
-                                        if (item.quantity == 0) (
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    color = MaterialTheme.colorScheme.tertiary,
-                                                    textDecoration = TextDecoration.None
-                                                )
-                                                )
-                                        else (MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            textDecoration = TextDecoration.None
-                                        )
-                                                ),
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 11.sp,
-                                    )
-                                }
-                                Spacer(
-                                    modifier = Modifier
-                                        .width(0.dp)
-                                        .padding(0.dp)
-                                        .weight(1f)
-                                )
-                            }
                         }
                     }
+// Blend Name //
+                    Column {
+                        Text(
+                            text =
+                            if (item.disliked) (item.blend + " ")
+                            else (item.blend),
+                            modifier = Modifier
+                                .padding(0.dp)
+                                .fillMaxWidth(fraction = .9f)
+                                .basicMarquee(
+                                    iterations = Int.MAX_VALUE,
+                                    delayMillis = 250,
+                                    spacing = MarqueeSpacing(100.dp)
+                                ),
+                            style =
+                            if (item.quantity == 0 && !item.disliked) (
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.tertiary
+                                    )
+                                    )
+                            else if (item.disliked && item.quantity > 0) (
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        textDecoration = TextDecoration.LineThrough
+                                    )
+                                    )
+                            else if (item.disliked && item.quantity == 0) (
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        textDecoration = TextDecoration.LineThrough
+                                    )
+                                    )
+                            else (MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                textDecoration = TextDecoration.None
+                            )
+                                    ),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 16.sp,
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
+                                .offset(y = (-4).dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+// Brand Name //
+                            Column(
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .weight(.95f),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = item.brand,
+                                    modifier = Modifier,
+                                    style =
+                                    if (item.quantity == 0) (
+                                            MaterialTheme.typography.titleMedium.copy(
+                                                color = MaterialTheme.colorScheme.tertiary,
+                                                textDecoration = TextDecoration.None
+                                            )
+                                            )
+                                    else (MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textDecoration = TextDecoration.None
+                                    )
+                                            ),
+                                    fontStyle = Italic,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 11.sp
+                                )
+                            }
+// Type //
+                            Column(
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .weight(0.5f),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = item.type,
+                                    modifier = Modifier,
+                                    style =
+                                    if (item.quantity == 0) (
+                                            MaterialTheme.typography.titleMedium.copy(
+                                                color = MaterialTheme.colorScheme.tertiary,
+                                                textDecoration = TextDecoration.None
+                                            )
+                                            )
+                                    else (MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textDecoration = TextDecoration.None
+                                    )
+                                            ),
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 11.sp,
+                                )
+                            }
+                            Spacer(
+                                modifier = Modifier
+                                    .width(0.dp)
+                                    .padding(0.dp)
+                                    .weight(1f)
+                            )
+                        }
+                    }
+                }
 
             }
             Column(
@@ -539,7 +541,32 @@ private fun CellarListItem(
 }
 
 
+/* TODO create new table mode */
 /** Table View Mode **/
+@Composable
+fun NewTableViewMode(
+    modifier: Modifier = Modifier,
+    itemsList: List<Items>,
+    onItemClick: (Items) -> Unit,
+) {
+
+}
+
+@Composable
+fun NewCellarTable (
+
+) {
+
+}
+
+@Composable
+fun NewTableItem(
+    item: Items,
+    modifier: Modifier = Modifier
+) {
+
+}
+
 @Composable
 fun TableViewMode(
     itemsList: List<Items>,
@@ -578,24 +605,24 @@ fun CellarLazyTable(
                 LazyTableItem(
                     column = it % columns,
                     row = it / columns + 1,
-                    )
-            },
-            ) {
-                Cell(
-                    items = itemsTbl[it / columns],
-                    column = it % columns,
                 )
-                items(
-                    count = columns,
-                    layoutInfo = { it ->
-                        LazyTableItem(
-                            column = it % columns,
-                            row = 0,
-                        )
-                    },
-                ) { it ->
-                    HeaderCell(column = it)
-                }
+            },
+        ) {
+            Cell(
+                items = itemsTbl[it / columns],
+                column = it % columns,
+            )
+            items(
+                count = columns,
+                layoutInfo = { it ->
+                    LazyTableItem(
+                        column = it % columns,
+                        row = 0,
+                    )
+                },
+            ) { it ->
+                HeaderCell(column = it)
+            }
 
         }
     }

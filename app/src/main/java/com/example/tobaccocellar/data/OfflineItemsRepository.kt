@@ -21,6 +21,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     override suspend fun deleteItem(item: Items) = itemsDao.delete(item)
 
+    override suspend fun deleteAllItems() = itemsDao.deleteAllItems()
+
 
     /** Get all items **/
     override fun getAllItemsStream(): Flow<List<Items>> = itemsDao.getAllItems()

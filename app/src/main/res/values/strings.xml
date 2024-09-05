@@ -15,6 +15,7 @@
     <string name="add">Add</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>
+    <string name="delete_all">Clear Database</string>
     <string name="cancel">Cancel</string>
     <string name="yes">Yes</string>
     <string name="delete_entry">Delete Entry</string>
@@ -28,14 +29,18 @@
 
     // Instructions //
     <string name="attention">Attention:</string>
-    <string name="no_items">No items found in cellar.\nClick \"+\" to add items,\nor use options to import CSV.</string>
+    <string name="no_items">No items found in cellar.\nClick \"+\" to add items,\nor use options to
+        import CSV.</string>
     <string name="delete_question">Are you sure?</string>
+    <string name="delete_all_question">Are you sure you want to delete all entries in the database?
+        This cannot be undone.</string>
     <string name="item_exists">This item already exists, would you like to edit it instead?</string>
     <string name="csv_import_instructions">Select a CSV file and review the parsing attempts. If a
         header does not exist, both results will be records. If the record test looks wrong, please
         reformat your CSV using standard RFC 4180 formatting.</string>
-    <string name="csv_import_mapping">Indicate if the CSV has a header and map the columns (in the
-        order they appear above) to the correct fields. Brand and Blend must each have a column mapping.</string>
+    <string name="csv_import_mapping">Indicate if the CSV has a header and map the columns in the CSV
+        to the correct database fields. Brand and Blend must each have a column mapping, other fields
+        are optional.</string>
 
 
     /Labels/

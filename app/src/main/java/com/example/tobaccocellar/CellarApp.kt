@@ -8,7 +8,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -16,15 +15,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
@@ -32,6 +37,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -80,7 +87,6 @@ import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,24 +94,19 @@ fun CellarApp(
     navController: NavHostController = rememberNavController()
 ) {
     val application = LocalCellarApplication.current
-    val systemBars = rememberSystemUiController()
 
-    val sheetPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
             onDismissRequest = { filterViewModel.closeBottomSheet() },
             modifier = Modifier
-//                .padding(bottom = sheetPadding)
-                .offset(y = (-66).dp),
+                .statusBarsPadding(),
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
             ),
+            windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
             dragHandle = { },
-            windowInsets = WindowInsets(
-                bottom = sheetPadding
-            ),
             properties = ModalBottomSheetDefaults.properties(
                 shouldDismissOnBackPress = true,
             ),
@@ -130,16 +131,16 @@ fun CellarApp(
 @Composable
 fun CellarTopAppBar(
     title: String,
-    canNavigateBack: Boolean,
     showMenu: Boolean,
+    canNavigateBack: Boolean,
     modifier: Modifier = Modifier,
-    exportCsvHandler: ExportCsvHandler? = null,
-    scrollBehavior: TopAppBarScrollBehavior? = null,
     navigateUp: () -> Unit = {},
     navigateToCsvImport: () -> Unit,
+    navigateToSettings: () -> Unit,
+    exportCsvHandler: ExportCsvHandler? = null,
+    scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
-
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
@@ -199,9 +200,12 @@ fun CellarTopAppBar(
                         )
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.settings)) },
-                            onClick = { expanded = false },
+                            onClick = {
+                                expanded = false
+                                navigateToSettings()
+                            },
                             modifier = Modifier.padding(0.dp),
-                            enabled = false,
+                            enabled = true,
                         )
                     }
                 }
@@ -219,17 +223,56 @@ fun FilterBottomSheet(
     onDismiss: () -> Unit,
     onApplyFilters: () -> Unit,
 ) {
+    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = navigationHeight)
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Text(
-            text = "Select Filters: "
-        )
+        Row (
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(0.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+            )
+            Text(
+                text = "Select Filters",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+            )
+            Column (
+                modifier = Modifier
+                    .weight(1f),
+                horizontalAlignment = Alignment.End
+            ) {
+                IconButton(
+                    onClick = { filterViewModel.closeBottomSheet() },
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier
+                            .padding(0.dp)
+                    )
+                }
+            }
+        }
         BrandFilterSection(
             filterViewModel = filterViewModel,
             modifier = Modifier
@@ -242,18 +285,22 @@ fun FilterBottomSheet(
             filterViewModel = filterViewModel,
             modifier = Modifier
         )
-        Row(
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth(),
+//            horizontalArrangement = Center
+//        ) {
+//            Button(
+//                onClick = { filterViewModel.closeBottomSheet() },
+//                modifier = Modifier
+//            ) {
+//                Text(text = "Done")
+//            }
+//        }
+        Spacer(
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Center
-        ) {
-            Button(
-                onClick = { filterViewModel.closeBottomSheet() },
-                modifier = Modifier
-            ) {
-                Text(text = "Done")
-            }
-        }
+                .height(8.dp)
+        )
     }
 }
 
@@ -336,7 +383,7 @@ fun TypeFilterSection(
                     label = {
                         Text(
                             type,
-                            fontSize = 12.sp,
+                            fontSize = 14.sp,
                         )
                     },
                     modifier = Modifier
@@ -545,7 +592,7 @@ fun CellarBottomAppBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // Cellar //
+// Cellar //
             Column (
                 modifier = Modifier
                     .weight(1f),
@@ -574,7 +621,7 @@ fun CellarBottomAppBar(
                 )
             }
 
-            // Stats //
+// Stats //
             Column (
                 modifier = Modifier
                     .weight(1f),
@@ -603,7 +650,7 @@ fun CellarBottomAppBar(
                 )
             }
 
-            // Filter //
+// Filter //
             Column (
                 modifier = Modifier
                     .weight(1f),
@@ -632,7 +679,7 @@ fun CellarBottomAppBar(
                 )
             }
 
-            // Add //
+// Add //
             Column (
                 modifier = Modifier
                     .weight(1f),
