@@ -98,6 +98,7 @@ fun CellarNavHost(
             CsvImportScreen(
                 navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() },
+                navigateToHome = { navController.navigate(HomeDestination.route) },
                 navigateToImportResults = { totalRecords, successCount, successfulInsertions -> navController.navigate(
                     "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}") {
                     popUpTo(HomeDestination.route) { inclusive = false }

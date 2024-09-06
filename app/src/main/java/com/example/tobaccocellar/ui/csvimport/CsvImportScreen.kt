@@ -28,9 +28,11 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
@@ -68,6 +71,7 @@ object CsvImportDestination : NavigationDestination {
 fun CsvImportScreen(
     modifier: Modifier = Modifier,
     navigateToImportResults: (Int, Int, Int) -> Unit,
+    navigateToHome: () -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
@@ -111,6 +115,7 @@ fun CsvImportScreen(
                 mappingOptions = mappingOptions,
                 onHeaderChange = { isChecked -> viewModel.updateHeaderOptions(isChecked) },
                 navigateToImportResults = navigateToImportResults,
+                navigateToHome = navigateToHome,
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(0.dp),
@@ -124,6 +129,7 @@ fun CsvImportScreen(
 fun CsvImportBody(
     modifier: Modifier = Modifier,
     navigateToImportResults: (Int, Int, Int) -> Unit,
+    navigateToHome: () -> Unit,
     onHeaderChange: (isChecked: Boolean) -> Unit,
     csvImportState: CsvImportState,
     csvUiState: CsvUiState,
@@ -179,7 +185,7 @@ fun CsvImportBody(
         }
     }
 
-    if (importStatus is ImportStatus.Loading) {
+    if (importStatus is ImportStatus.Loading || importStatus is ImportStatus.Success) {
         Column(
             modifier = Modifier
                 .fillMaxSize(),
@@ -196,6 +202,71 @@ fun CsvImportBody(
                     .size(48.dp)
                     .weight(0.5f),
             )
+            Spacer(
+                modifier = Modifier
+                    .weight(2f)
+            )
+            when (importStatus) {
+                is ImportStatus.Success -> {
+                    val success = importStatus as ImportStatus.Success
+                    navigateToImportResults(
+                        success.totalRecords,
+                        success.successfulConversions,
+                        success.successfulInsertions
+                    )
+                }
+                else -> {}
+            }
+        }
+    }
+    else if (importStatus is ImportStatus.Error) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(
+                modifier = Modifier
+                    .weight(1.5f)
+            )
+            Text(
+                text = "Error importing CSV!",
+                modifier = Modifier
+                    .padding(bottom = 16.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 34.sp
+            )
+            Text(
+                text = "Please try again or return to cellar.",
+                modifier = Modifier
+                    .padding(bottom = 16.dp),
+                fontSize = 18.sp,
+            )
+            TextButton(
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.resetImportState()
+                    }
+                },
+                modifier = Modifier,
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text(
+                    text = "Reset form",
+                    fontSize = 18.sp,
+                )
+            }
+            TextButton(
+                onClick = { navigateToHome() },
+                modifier = Modifier,
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text(
+                    text = "Go back to Cellar",
+                    fontSize = 18.sp,
+                )
+            }
             Spacer(
                 modifier = Modifier
                     .weight(2f)
@@ -415,18 +486,18 @@ fun CsvImportBody(
                     modifier = modifier
                         .height(12.dp)
                 )
-                when (importStatus) {
-                    is ImportStatus.Success -> {
-                        val success = importStatus as ImportStatus.Success
-                        navigateToImportResults(
-                            success.totalRecords,
-                            success.successfulConversions,
-                            success.successfulInsertions
-                        )
-                    }
-                    is ImportStatus.Error -> Text(text = "Import failed")
-                    else -> {}
-                }
+//                when (importStatus) {
+//                    is ImportStatus.Success -> {
+//                        val success = importStatus as ImportStatus.Success
+//                        navigateToImportResults(
+//                            success.totalRecords,
+//                            success.successfulConversions,
+//                            success.successfulInsertions
+//                        )
+//                    }
+//                    is ImportStatus.Error -> Text(text = "Import failed")
+//                    else -> {}
+//                }
             }
         }
     }
@@ -899,6 +970,7 @@ fun CsvImportScreenPreview() {
     CsvImportScreen(
         navigateBack = {},
         onNavigateUp = {},
+        navigateToHome = {},
         navigateToImportResults = { totalRecords, successCount, successfulInsertions -> {} },
         modifier = Modifier
     )

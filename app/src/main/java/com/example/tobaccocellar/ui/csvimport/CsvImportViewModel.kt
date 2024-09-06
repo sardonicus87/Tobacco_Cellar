@@ -26,7 +26,6 @@ class CsvImportViewModel(
 
     private val _csvImportState = mutableStateOf(CsvImportState())
     val csvImportState: State<CsvImportState> = _csvImportState
-
     var csvUiState by mutableStateOf(CsvUiState())
 
 
@@ -52,6 +51,7 @@ class CsvImportViewModel(
                 csvUiState = csvUiState.copy(columns = it)
             }
     }
+
 
     /** handling mapping options and UI state **/
     var mappingOptions by mutableStateOf(MappingOptions())
@@ -157,7 +157,6 @@ class CsvImportViewModel(
     }
 
     // Stored CSV data state to Database Table structure conversion functions //
-
     private fun getSelectedColumnIndices(): Map<CsvField, Int> {
         val header = csvImportState.value.header
         return mapOf(
@@ -171,6 +170,14 @@ class CsvImportViewModel(
         )
     }
 
+
+    /** reset import state **/
+    fun resetImportState() {
+        _importStatus.value = ImportStatus.Idle
+        _csvImportState.value = CsvImportState()
+        csvUiState = CsvUiState()
+        mappingOptions = MappingOptions()
+    }
 
     override fun onCleared() {
         super.onCleared()
