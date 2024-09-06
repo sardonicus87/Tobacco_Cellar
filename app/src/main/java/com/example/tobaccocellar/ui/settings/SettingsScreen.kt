@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -55,7 +54,6 @@ fun SettingsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
-    val currentTheme by viewmodel.themeSetting.collectAsState()
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -85,7 +83,6 @@ fun SettingsScreen(
                     }
                 },
                 saveTheme = { viewmodel.saveThemeSetting(it) },
-                //currentTheme = currentTheme,
                 preferencesRepo = viewmodel.preferencesRepo,
                 modifier = modifier
                     .fillMaxWidth(),
@@ -99,7 +96,6 @@ fun SettingsScreen(
 private fun SettingsBody(
     onDeleteAllClick: () -> Unit,
     saveTheme: (String) -> Unit,
-//    currentTheme: String,
     modifier: Modifier = Modifier,
     preferencesRepo: PreferencesRepo,
     contentPadding: PaddingValues = PaddingValues(8.dp),
@@ -150,7 +146,6 @@ private fun SettingsBody(
         }
         if (showThemeDialog) {
             ThemeDialog(
-//                currentTheme = currentTheme,
                 onThemeSelected = { newTheme ->
                     saveTheme(newTheme)
                 },
