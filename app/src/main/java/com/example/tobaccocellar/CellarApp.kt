@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -72,11 +73,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -87,6 +90,7 @@ import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
+import com.google.android.material.chip.Chip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -409,7 +413,6 @@ fun BrandFilterSection(
 
     Column {
         Text("Brand:")
-
         TextField(
             value = brandSearchText,
             onValueChange = { text ->
@@ -450,72 +453,77 @@ fun BrandFilterSection(
             }
         }
 
-        val chipCountToShow = 5
-        val overflowCount = selectedBrands.size - chipCountToShow
+        BoxWithConstraints {
 
-        Column() {
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(0.dp)
-                    .heightIn(min = 48.dp),
-                horizontalArrangement = Arrangement.spacedBy(
-                    space = 6.dp, alignment = Alignment.CenterHorizontally
-                ),
-            ) {
-                selectedBrands.take(chipCountToShow).forEach { brand ->
-                    Chip(
-                        text = brand,
-                        isSelected = true,
-                        onChipClicked = {},
-                        onChipRemoved = { filterViewModel.updateSelectedBrands(brand, false) },
-                        trailingIcon = true,
-                        modifier = Modifier
-                    )
-                }
-                if (overflowCount > 0) {
-                    Chip(
-                        text = "+$overflowCount",
-                        isSelected = true,
-                        onChipClicked = { showOverflowPopup = true },
-                        onChipRemoved = { },
-                        trailingIcon = false,
-                        modifier = Modifier
-                    )
-                }
-            }
+            val maxWidth = maxWidth * 0.3f
+            val chipCountToShow = 5
+            val overflowCount = selectedBrands.size - chipCountToShow
 
-            if (showOverflowPopup) {
-                AlertDialog(
-                    onDismissRequest = { showOverflowPopup = false },
-                    title = { Text("Selected Brands:") },
-                    text = {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            verticalArrangement = Arrangement.spacedBy((-6).dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(selectedBrands) { brand ->
-                                Chip(
-                                    text = brand,
-                                    isSelected = true,
-                                    onChipClicked = { },
-                                    onChipRemoved = {
-                                        filterViewModel.updateSelectedBrands(
-                                            brand,
-                                            false
-                                        )
-                                    }
-                                )
+            Column() {
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(0.dp)
+                        .heightIn(min = 48.dp),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        space = 6.dp, alignment = Alignment.CenterHorizontally
+                    ),
+                ) {
+                    selectedBrands.take(chipCountToShow).forEach { brand ->
+                        Chip(
+                            text = brand,
+                            isSelected = true,
+                            onChipClicked = {},
+                            onChipRemoved = { filterViewModel.updateSelectedBrands(brand, false) },
+                            trailingIcon = true,
+                            maxWidth = maxWidth,
+                            modifier = Modifier
+                        )
+                    }
+                    if (overflowCount > 0) {
+                        Chip(
+                            text = "+$overflowCount",
+                            isSelected = true,
+                            onChipClicked = { showOverflowPopup = true },
+                            onChipRemoved = { },
+                            trailingIcon = false,
+                            modifier = Modifier
+                        )
+                    }
+                }
+
+                if (showOverflowPopup) {
+                    AlertDialog(
+                        onDismissRequest = { showOverflowPopup = false },
+                        title = { Text("Selected Brands:") },
+                        text = {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                verticalArrangement = Arrangement.spacedBy((-6).dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(selectedBrands) { brand ->
+                                    Chip(
+                                        text = brand,
+                                        isSelected = true,
+                                        onChipClicked = { },
+                                        onChipRemoved = {
+                                            filterViewModel.updateSelectedBrands(
+                                                brand,
+                                                false
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            Button(onClick = { showOverflowPopup = false }) {
+                                Text("Close")
                             }
                         }
-                    },
-                    confirmButton = {
-                        Button(onClick = { showOverflowPopup = false }) {
-                            Text("Close")
-                        }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -528,7 +536,8 @@ fun Chip(
     modifier: Modifier = Modifier,
     onChipClicked: (String) -> Unit,
     onChipRemoved: () -> Unit,
-    trailingIcon: Boolean = true
+    trailingIcon: Boolean = true,
+    maxWidth: Dp = Dp.Infinity
 ) {
     AssistChip(
         onClick = { onChipClicked(text) },
@@ -561,7 +570,7 @@ fun Chip(
             }
         },
         modifier = Modifier
-            .widthIn(max = 118.dp)
+            .widthIn(max = maxWidth)
             .padding(0.dp),
     )
 }
