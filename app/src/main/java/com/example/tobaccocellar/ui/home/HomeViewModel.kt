@@ -14,12 +14,12 @@ import com.example.tobaccocellar.data.PreferencesRepo
 import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -40,9 +40,10 @@ class HomeViewModel(
     }
 
     companion object {
-        private const val TIMEOUT_MILLIS = 1_000L
+        private const val TIMEOUT_MILLIS = 5_000L
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val homeUiState: StateFlow<HomeUiState> =
         combine(
             filterViewModel.selectedBrands,
@@ -78,8 +79,6 @@ class HomeViewModel(
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = HomeUiState(isLoading = true)
             )
-
-
 
 
     /** Toggle Cellar View **/
