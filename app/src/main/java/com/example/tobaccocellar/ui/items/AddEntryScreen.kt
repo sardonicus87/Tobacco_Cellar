@@ -31,9 +31,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -172,9 +176,9 @@ fun AddEntryBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 0.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+    ) {
         ItemInputForm(
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
@@ -183,16 +187,16 @@ fun AddEntryBody(
             modifier = Modifier
                 .fillMaxWidth()
         )
-         Button(
-             onClick = { onSaveClick() },
-             enabled = itemUiState.isEntryValid,
-             shape = MaterialTheme.shapes.small,
-             modifier = Modifier
-                 .fillMaxWidth()
-                 .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp)
-         ) {
-             Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
-         }
+        Button(
+            onClick = { onSaveClick() },
+            enabled = itemUiState.isEntryValid,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp)
+        ) {
+            Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
+        }
         if (existState.existCheck) {
             ItemExistsDialog(
                 onItemExistsConfirm = {
@@ -202,7 +206,6 @@ fun AddEntryBody(
                 onItemExistsCancel = { resetExistState() },
             )
         }
-
         if (isEditEntry) {
             Button(
                 onClick = { deleteConfirm = true },
@@ -238,8 +241,8 @@ fun AddEntryBody(
     }
 }
 
-/** Dialogs **/
 
+/** Dialogs **/
 @Composable
 fun ItemExistsDialog(
     onItemExistsConfirm: () -> Unit,
@@ -289,8 +292,7 @@ private fun DeleteConfirmationDialog(
 }
 
 
-/** Item Input Form **/
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemInputForm(
     itemDetails: ItemDetails,
@@ -299,374 +301,427 @@ fun ItemInputForm(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val titles = listOf("Item Details", "Notes")
 
-// Required Fields //
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 0.dp, start = 0.dp, end = 0.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .fillMaxWidth(),
     ) {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Required Fields:",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-            )
+        SecondaryTabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = Modifier
+                .padding(0.dp, bottom = 8.dp),
+            ) {
+            titles.forEachIndexed { index, title ->
+                Tab(
+                    text = { Text(title) },
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index }
+                )
+            }
         }
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 0.dp, bottom = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        when (selectedTabIndex) {
+            0 -> {
+// Required Fields //
+                Column(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 0.dp, start = 0.dp, end = 0.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Required Fields:",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                        )
+                    }
+                    Column(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
 
 // Brand //
-            Row(
-                modifier = modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Brand:",
-                    modifier = Modifier
-                        .width(80.dp)
-                )
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Brand:",
+                                modifier = Modifier
+                                    .width(80.dp)
+                            )
 
-                val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-                var showSuggestions by remember { mutableStateOf(false) }
+                            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+                            var showSuggestions by remember { mutableStateOf(false) }
 //                val focusManager = LocalFocusManager.current
 
-                AutoCompleteText(
-                    value = itemDetails.brand,
-                    onValueChange = {
-                        if (it.length >= 2) {
-                            val filterText = it.trim().lowercase()
-                            suggestions.value = itemUiState.autoBrands.filter { brand ->
-                                brand.contains(filterText, ignoreCase = true)
-                            }
-                        } else {
-                            suggestions.value = emptyList()
-                        }
-                        showSuggestions = suggestions.value.isNotEmpty()
-                        onValueChange(itemDetails.copy(brand = it)) },
-                    onOptionSelected = {
-                        onValueChange(itemDetails.copy(brand = it))
-                        TextRange(0, it.length)
+                            AutoCompleteText(
+                                value = itemDetails.brand,
+                                onValueChange = {
+                                    if (it.length >= 2) {
+                                        val filterText = it.trim().lowercase()
+                                        suggestions.value = itemUiState.autoBrands.filter { brand ->
+                                            brand.contains(filterText, ignoreCase = true)
+                                        }
+                                    } else {
+                                        suggestions.value = emptyList()
+                                    }
+                                    showSuggestions = suggestions.value.isNotEmpty()
+                                    onValueChange(itemDetails.copy(brand = it))
+                                },
+                                onOptionSelected = {
+                                    onValueChange(itemDetails.copy(brand = it))
+                                    TextRange(0, it.length)
 //                        focusManager.clearFocus()
-                    },
-                    suggestions = suggestions.value,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    placeholder = { if (isEditEntry) Text(
-                        text = itemDetails.originalBrand,
-                        modifier = Modifier
-                            .alpha(0.66f),
-                        fontSize = 14.sp,)
-                    },
-                )
-            }
+                                },
+                                suggestions = suggestions.value,
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                placeholder = {
+                                    if (isEditEntry) Text(
+                                        text = itemDetails.originalBrand,
+                                        modifier = Modifier
+                                            .alpha(0.66f),
+                                        fontSize = 14.sp,
+                                    )
+                                },
+                            )
+                        }
 
 // Blend //
-            Row(
-                modifier = modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Blend:",
-                    modifier = Modifier
-                        .width(80.dp)
-                )
-                TextField(
-                    value = itemDetails.blend,
-                    onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    enabled = true,
-                    singleLine = true,
-                    placeholder = { if (isEditEntry) Text(
-                        text = itemDetails.originalBlend,
-                        modifier = Modifier
-                            .alpha(0.66f),
-                        fontSize = 14.sp,)
-                                  },
-                    trailingIcon = {
-                        if (itemDetails.blend.length > 5) { Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .clickable {
-                                    onValueChange(itemDetails.copy(blend = ""))
-                                }
-                                .alpha(0.66f)
-                                .size(20.dp)
-                                .focusable(false)
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Blend:",
+                                modifier = Modifier
+                                    .width(80.dp)
+                            )
+                            TextField(
+                                value = itemDetails.blend,
+                                onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                enabled = true,
+                                singleLine = true,
+                                placeholder = {
+                                    if (isEditEntry) Text(
+                                        text = itemDetails.originalBlend,
+                                        modifier = Modifier
+                                            .alpha(0.66f),
+                                        fontSize = 14.sp,
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (itemDetails.blend.length > 5) {
+                                        Icon(
+                                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .clickable {
+                                                    onValueChange(itemDetails.copy(blend = ""))
+                                                }
+                                                .alpha(0.66f)
+                                                .size(20.dp)
+                                                .focusable(false)
+                                        )
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Sentences,
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Done,
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                )
                             )
                         }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
+                    }
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .size(12.dp)
                     )
-                )
-            }
-        }
-
-        Spacer(
-            modifier = Modifier
-                .fillMaxWidth()
-                .size(12.dp)
-        )
 
 // Optional //
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(0.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Optional:",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                )
-            }
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 8.dp, top = 0.dp, bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-// Type //
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Type:",
-                        modifier = Modifier
-                            .width(80.dp)
-                    )
-                    TypeDropDown(
-                        selectedValue = itemDetails.type,
-                        onValueChange = { onValueChange(itemDetails.copy(type = it)) },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                    )
-                }
-
-// Quantity //
-                Row(
-                    modifier = modifier
-                        .padding(0.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Quantity:",
-                        modifier = Modifier
-                            .width(80.dp)
-                    )
-                    Row(
-                        modifier = Modifier
+                    Column(
+                        modifier = modifier
+                            .fillMaxWidth()
                             .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val pattern = remember { Regex("^(\\s*|\\d+)\$") }
-                        TextField(
-                            value = itemDetails.squantity,
-                            onValueChange = {
-                                if (it.matches(pattern)) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            squantity = it,
-                                            quantity = it.toIntOrNull() ?: 1
-                                        )
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .width(54.dp)
-                                .padding(0.dp),
-                            visualTransformation = VisualTransformation.None,
-                            enabled = true,
-                            singleLine = true,
-                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                            )
-                        )
-                        IconButton(
-                            onClick = {
-                                if (itemDetails.squantity.isEmpty()) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            squantity = "1",
-                                            quantity = 1
-                                        )
-                                    )
-                                } else {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            squantity = (itemDetails.squantity.toInt() + 1).toString(),
-                                            quantity = itemDetails.squantity.toInt() + 1
-                                        )
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .padding(0.dp)
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.increase),
-                                contentDescription = null,
+                            Text(
+                                text = "Optional:",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
                                 modifier = Modifier
-                                    .padding(0.dp)
-                                    .offset(x = 0.dp, y = (-4).dp)
                             )
                         }
-                        IconButton(
-                            onClick = {
-                                if (itemDetails.squantity.isEmpty()) {
-                                    /* do nothing */
-                                } else {
-                                    if (itemDetails.squantity.toInt() > 0) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                squantity = (itemDetails.squantity.toInt() - 1).toString(),
-                                                quantity = itemDetails.quantity - 1
-                                            )
+                        Column(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 8.dp, top = 0.dp, bottom = 0.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+
+// Type //
+                            Row(
+                                modifier = modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Type:",
+                                    modifier = Modifier
+                                        .width(80.dp)
+                                )
+                                TypeDropDown(
+                                    selectedValue = itemDetails.type,
+                                    onValueChange = { onValueChange(itemDetails.copy(type = it)) },
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                )
+                            }
+
+// Quantity //
+                            Row(
+                                modifier = modifier
+                                    .padding(0.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Quantity:",
+                                    modifier = Modifier
+                                        .width(80.dp)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    val pattern = remember { Regex("^(\\s*|\\d+)\$") }
+                                    TextField(
+                                        value = itemDetails.squantity,
+                                        onValueChange = {
+                                            if (it.matches(pattern)) {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = it,
+                                                        quantity = it.toIntOrNull() ?: 1
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .width(54.dp)
+                                            .padding(0.dp),
+                                        visualTransformation = VisualTransformation.None,
+                                        enabled = true,
+                                        singleLine = true,
+                                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent,
+                                            disabledIndicatorColor = Color.Transparent,
                                         )
-                                    } else if (itemDetails.squantity.toInt() == 0) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                squantity = "0",
-                                                quantity = 0
-                                            )
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            if (itemDetails.squantity.isEmpty()) {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = "1",
+                                                        quantity = 1
+                                                    )
+                                                )
+                                            } else {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = (itemDetails.squantity.toInt() + 1).toString(),
+                                                        quantity = itemDetails.squantity.toInt() + 1
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .padding(0.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.arrow_up),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .offset(x = 0.dp, y = (-4).dp)
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            if (itemDetails.squantity.isEmpty()) {
+                                                /* do nothing */
+                                            } else {
+                                                if (itemDetails.squantity.toInt() > 0) {
+                                                    onValueChange(
+                                                        itemDetails.copy(
+                                                            squantity = (itemDetails.squantity.toInt() - 1).toString(),
+                                                            quantity = itemDetails.quantity - 1
+                                                        )
+                                                    )
+                                                } else if (itemDetails.squantity.toInt() == 0) {
+                                                    onValueChange(
+                                                        itemDetails.copy(
+                                                            squantity = "0",
+                                                            quantity = 0
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .padding(0.dp)
+                                            .offset(x = (-12).dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.arrow_down),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .offset(x = 0.dp, y = 4.dp)
                                         )
                                     }
                                 }
-                            },
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .offset(x = (-12).dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.decrease),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .offset(x = 0.dp, y = 4.dp)
-                            )
+                            }
+
+// Favorite or Disliked? //
+                            Row(
+                                modifier = modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        top = 10.dp,
+                                        bottom = 12.dp,
+                                        start = 12.dp,
+                                        end = 12.dp
+                                    ),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "Favorite?",
+                                        modifier = Modifier
+                                            .offset(x = 0.dp, y = 1.dp)
+                                    )
+                                    FavoriteHeart(
+                                        checked = itemDetails.favorite,
+                                        onCheckedChange = {
+                                            if (itemDetails.favorite) {
+                                                onValueChange(itemDetails.copy(favorite = it))
+                                            } else {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        favorite = it,
+                                                        disliked = false
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .padding(0.dp)
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "Disliked?",
+                                        modifier = Modifier
+                                            .offset(x = 0.dp, y = 1.dp)
+                                    )
+                                    HatedBrokenHeart(
+                                        checked = itemDetails.disliked,
+                                        onCheckedChange = {
+                                            if (itemDetails.disliked) {
+                                                onValueChange(itemDetails.copy(disliked = it))
+                                            } else {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        disliked = it,
+                                                        favorite = false
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .padding(0.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
+            }
 
-// Favorite or Disliked? //
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Favorite?",
-                            modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp)
-                        )
-                        FavoriteHeart(
-                            checked = itemDetails.favorite,
-                            onCheckedChange = {
-                                if (itemDetails.favorite) {
-                                    onValueChange(itemDetails.copy(favorite = it))
-                                } else {
-                                    onValueChange(itemDetails.copy(favorite = it, disliked = false))
-                                }
-                                              },
-                            modifier = Modifier
-                                .padding(0.dp)
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Disliked?",
-                            modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp)
-                        )
-                        HatedBrokenHeart(
-                            checked = itemDetails.disliked,
-                            onCheckedChange = {
-                                if (itemDetails.disliked) {
-                                    onValueChange(itemDetails.copy(disliked = it))
-                                } else {
-                                    onValueChange(itemDetails.copy(disliked = it, favorite = false))
-                                }
-                                              },
-                            modifier = Modifier
-                                .padding(0.dp)
-                        )
-                    }
-                }
-                // Hidden field to hold notes so they're not overwritten //
-                Row(
+            1 -> {
+                Column(
                     modifier = Modifier
-                        .padding(0.dp)
-                        .width(0.dp)
-                        .height(0.dp)
-                        .offset(x = 0.dp, y = (-16).dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
+                        .padding(top = 24.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
                 ) {
                     TextField(
                         value = itemDetails.notes,
                         onValueChange = { onValueChange(itemDetails.copy(notes = it)) },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        enabled = false,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done,
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                        ),
+                        singleLine = false,
+                        maxLines = 5,
+                        minLines = 5
                     )
                 }
             }
@@ -674,14 +729,12 @@ fun ItemInputForm(
     }
 }
 
-
-
 @Composable
 fun FavoriteHeart(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
-    ) {
+) {
 
     IconToggleButton(
         checked = checked,
@@ -747,7 +800,7 @@ fun AutoCompleteText(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
-                .menuAnchor(),
+                .menuAnchor(MenuAnchorType.PrimaryEditable, true),
             enabled = true,
             trailingIcon = {
                 if (value.length > 5) {
@@ -858,7 +911,7 @@ fun TypeDropDown(
             value = selectedValue,
             onValueChange = {},
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                 .fillMaxWidth(),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -896,10 +949,10 @@ fun TypeDropDown(
 fun AddEntryScreenPreview(){
     AddEntryBody(
         itemUiState = ItemUiState(
-        ItemDetails(
-            brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, disliked = false
-        )
-    ),
+            ItemDetails(
+                brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, disliked = false
+            )
+        ),
         onItemValueChange = {},
         onSaveClick = {},
         onDeleteClick = {},
@@ -911,5 +964,5 @@ fun AddEntryScreenPreview(){
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
-        )
+    )
 }
