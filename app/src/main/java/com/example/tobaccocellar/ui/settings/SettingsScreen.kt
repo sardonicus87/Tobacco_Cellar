@@ -1,5 +1,6 @@
 package com.example.tobaccocellar.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -98,7 +99,7 @@ private fun SettingsBody(
     saveTheme: (String) -> Unit,
     modifier: Modifier = Modifier,
     preferencesRepo: PreferencesRepo,
-    contentPadding: PaddingValues = PaddingValues(8.dp),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
@@ -107,43 +108,52 @@ private fun SettingsBody(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 16.dp, bottom = 0.dp)
-            .verticalScroll(rememberScrollState())
+            .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.Start,
     ) {
         Text(
             text = "Display Settings",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(start = 16.dp)
+                .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp)
         )
         TextButton(
             onClick = { showThemeDialog = true },
             enabled = true,
             modifier = Modifier
-                .padding(start = 16.dp)
+                .padding(start = 4.dp)
         ) {
-            Text(text = "Theme")
+            Text(
+                text = "Theme",
+                modifier = Modifier
+                    .padding(0.dp)
+            )
         }
         HorizontalDivider(
             modifier = Modifier
-                .fillMaxWidth(fraction = 0.9f)
-                .padding(top = 8.dp, bottom = 8.dp),
-            thickness = 2.dp,
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            thickness = 1.dp,
         )
         Text(
             text = "Database Settings",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(start = 16.dp)
+                .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp)
         )
         TextButton(
             onClick = { deleteAllConfirm = true },
             enabled = true,
             modifier = Modifier
-                .padding(start = 16.dp)
+                .padding(start = 4.dp)
         ) {
-            Text(text = "Clear Database")
+            Text(
+                text = "Clear Database",
+                modifier = Modifier
+                    .padding(0.dp)
+            )
         }
+
         if (showThemeDialog) {
             ThemeDialog(
                 onThemeSelected = { newTheme ->
@@ -166,6 +176,7 @@ private fun SettingsBody(
         }
     }
 }
+
 
 @Composable
 fun ThemeDialog(
@@ -196,7 +207,11 @@ fun ThemeDialog(
                             selected = currentTheme == theme.value,
                             onClick = { onThemeSelected(theme.value) }
                         )
-                        Text(text = theme.value)
+                        Text(
+                            text = theme.value,
+                            modifier = Modifier
+                                .clickable { onThemeSelected(theme.value) }
+                        )
                     }
                 }
             }
