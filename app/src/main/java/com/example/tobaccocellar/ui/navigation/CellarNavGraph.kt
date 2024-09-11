@@ -17,8 +17,6 @@ import com.example.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.example.tobaccocellar.ui.csvimport.CsvImportScreen
 import com.example.tobaccocellar.ui.items.EditEntryDestination
 import com.example.tobaccocellar.ui.items.EditEntryScreen
-import com.example.tobaccocellar.ui.items.NotesEntryDestination
-import com.example.tobaccocellar.ui.items.NotesEntryScreen
 import com.example.tobaccocellar.ui.settings.SettingsDestination
 import com.example.tobaccocellar.ui.settings.SettingsScreen
 import com.example.tobaccocellar.ui.stats.StatsDestination
@@ -86,12 +84,6 @@ fun CellarNavHost(
             EditEntryScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
-            )
-        }
-        composable(route = NotesEntryDestination.route) {
-            NotesEntryScreen(
-                navigateBack = { navController.navigateUp() },
-                onNavigateUp = { navController.navigateUp() }
             )
         }
         composable(route = CsvImportDestination.route) {
