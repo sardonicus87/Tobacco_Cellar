@@ -4,6 +4,8 @@ import android.app.Application
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.R
@@ -43,6 +45,7 @@ class HomeViewModel(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
+    /** States and StateFlows **/
     @OptIn(ExperimentalCoroutinesApi::class)
     val homeUiState: StateFlow<HomeUiState> =
         combine(
@@ -80,11 +83,31 @@ class HomeViewModel(
                 initialValue = HomeUiState(isLoading = true)
             )
 
+    private val _sorting = mutableStateOf(Sorting())
+    val sorting: State<Sorting> = _sorting
+
 
     /** Toggle Cellar View **/
     fun selectView(isTableView: Boolean) {
         viewModelScope.launch {
             preferencesRepo.saveViewPreference(isTableView)
+        }
+    }
+
+    /** Toggle Sorting **/
+//    fun updateSorting(newSorting: Sorting) {
+//        _sorting.value = newSorting
+//    }
+    fun updateSorting(columnIndex: Int) {
+        if (_sorting.value.columnIndex == columnIndex) {
+            when {
+                _sorting.value.sortAscending -> _sorting.value =
+                    _sorting.value.copy(sortAscending = false)
+
+                else -> _sorting.value = Sorting()
+            }
+        } else {
+            _sorting.value = Sorting(columnIndex, true)
         }
     }
 
@@ -127,4 +150,9 @@ data class HomeUiState(
     val toggleIcon: Int =
         if (isTableView) R.drawable.list_view else R.drawable.table_view,
     val isLoading: Boolean = false
+)
+
+data class Sorting(
+    val columnIndex: Int = -1,
+    val sortAscending: Boolean = true,
 )
