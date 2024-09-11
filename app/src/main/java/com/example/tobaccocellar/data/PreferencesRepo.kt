@@ -33,7 +33,7 @@ class PreferencesRepo(
             }
         }
         .map { preferences ->
-            preferences[IS_TABLE_VIEW] ?: true
+            preferences[IS_TABLE_VIEW] ?: false
         }
 
     suspend fun saveViewPreference(isTableView: Boolean) {
