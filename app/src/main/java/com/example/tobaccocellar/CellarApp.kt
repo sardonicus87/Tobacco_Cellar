@@ -16,18 +16,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -58,6 +55,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheetDefaults.properties
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -73,7 +72,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,7 +88,6 @@ import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.theme.primaryLight
-import com.google.android.material.chip.Chip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,20 +106,19 @@ fun CellarApp(
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
             ),
-            windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
+            /* TODO new window insets stuff */
+    //        windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
             dragHandle = { },
-            properties = ModalBottomSheetDefaults.properties(
-                shouldDismissOnBackPress = true,
-            ),
-        ) {
-            FilterBottomSheet(
-                filterViewModel = filterViewModel,
-                onDismiss = { filterViewModel.closeBottomSheet() },
-                onApplyFilters = {
-                    filterViewModel.closeBottomSheet()
-                },
-            )
-        }
+            properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
+            ) {
+                FilterBottomSheet(
+                    filterViewModel = filterViewModel,
+                    onDismiss = { filterViewModel.closeBottomSheet() },
+                    onApplyFilters = {
+                        filterViewModel.closeBottomSheet()
+                    },
+                )
+            }
     }
 
     CellarNavHost(
@@ -227,15 +223,16 @@ fun FilterBottomSheet(
     onDismiss: () -> Unit,
     onApplyFilters: () -> Unit,
 ) {
-    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+//    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+//    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = navigationHeight)
-            .verticalScroll(rememberScrollState())
+            .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)
             .imePadding()
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.Start
     ) {
@@ -289,18 +286,6 @@ fun FilterBottomSheet(
             filterViewModel = filterViewModel,
             modifier = Modifier
         )
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth(),
-//            horizontalArrangement = Center
-//        ) {
-//            Button(
-//                onClick = { filterViewModel.closeBottomSheet() },
-//                modifier = Modifier
-//            ) {
-//                Text(text = "Done")
-//            }
-//        }
         Spacer(
             modifier = Modifier
                 .height(8.dp)
@@ -373,7 +358,9 @@ fun TypeFilterSection(
     val availableTypes = listOf("Aromatic", "English", "Burley", "Virginia", "Other")
     val selectedTypes by filterViewModel.selectedTypes.collectAsState()
 
-    Column {
+    Column(
+        modifier = Modifier
+    ) {
         Text("Type:")
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -455,11 +442,13 @@ fun BrandFilterSection(
 
         BoxWithConstraints {
 
-            val maxWidth = maxWidth * 0.3f
+            val maxWidth = maxWidth * 0.32f
             val chipCountToShow = 5
             val overflowCount = selectedBrands.size - chipCountToShow
 
-            Column() {
+            Column(
+                modifier = Modifier
+            ) {
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
