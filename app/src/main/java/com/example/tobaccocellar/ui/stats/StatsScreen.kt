@@ -70,6 +70,7 @@ fun StatsScreen(
                     .padding(0.dp),
                 navigateToHome = navigateToHome,
                 navigateToAddEntry = navigateToAddEntry,
+                currentDestination = StatsDestination,
                 filterViewModel = filterViewModel,
             )
         },

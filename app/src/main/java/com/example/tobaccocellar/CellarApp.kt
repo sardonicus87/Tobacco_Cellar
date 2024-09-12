@@ -52,6 +52,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetDefaults
@@ -72,6 +73,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode.Companion.Screen
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,8 +87,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.BottomSheetState
 import com.example.tobaccocellar.ui.FilterViewModel
+import com.example.tobaccocellar.ui.home.HomeDestination
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
 import com.example.tobaccocellar.ui.navigation.CellarNavHost
+import com.example.tobaccocellar.ui.navigation.NavigationDestination
+import com.example.tobaccocellar.ui.stats.StatsDestination
 import com.example.tobaccocellar.ui.theme.primaryLight
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,6 +99,8 @@ import com.example.tobaccocellar.ui.theme.primaryLight
 fun CellarApp(
     navController: NavHostController = rememberNavController()
 ) {
+    CellarNavHost(navController = navController)
+
     val application = LocalCellarApplication.current
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
@@ -107,23 +114,19 @@ fun CellarApp(
                 skipPartiallyExpanded = true
             ),
             /* TODO new window insets stuff */
-    //        windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
+            //        windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
             dragHandle = { },
             properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
-            ) {
-                FilterBottomSheet(
-                    filterViewModel = filterViewModel,
-                    onDismiss = { filterViewModel.closeBottomSheet() },
-                    onApplyFilters = {
-                        filterViewModel.closeBottomSheet()
-                    },
-                )
-            }
+        ) {
+            FilterBottomSheet(
+                filterViewModel = filterViewModel,
+                onDismiss = { filterViewModel.closeBottomSheet() },
+                onApplyFilters = {
+                    filterViewModel.closeBottomSheet()
+                },
+            )
+        }
     }
-
-    CellarNavHost(
-        navController = navController,
-    )
 }
 
 
@@ -215,7 +218,163 @@ fun CellarTopAppBar(
 }
 
 
-/* TODO add filter sheet */
+@Composable
+fun CellarBottomAppBar(
+    currentDestination: NavigationDestination?,
+    modifier: Modifier = Modifier,
+    navigateToHome: () -> Unit = {},
+    navigateToStats: () -> Unit = {},
+    navigateToAddEntry: () -> Unit = {},
+    filterViewModel: FilterViewModel,
+) {
+    BottomAppBar(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(0.dp)
+            .height(66.dp),
+        containerColor = primaryLight,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        tonalElevation = 0.dp,
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Row (
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(0.dp)
+                .height(66.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+// Cellar //
+            Column (
+                modifier = Modifier
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = navigateToHome,
+                    modifier = Modifier
+                        .padding(0.dp)
+                ){
+                    Icon(
+                        painter = painterResource(id = R.drawable.table_view_old),
+                        contentDescription = stringResource(R.string.home_title),
+                        modifier = Modifier
+                            .size(28.dp),
+                        tint =
+                            if (currentDestination == HomeDestination) { MaterialTheme.colorScheme.tertiary }
+                            else { MaterialTheme.colorScheme.onBackground },
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.home_title),
+                    modifier = Modifier
+                        .offset(y = (-8).dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color =
+                        if (currentDestination == HomeDestination) { MaterialTheme.colorScheme.tertiary }
+                        else { LocalContentColor.current },
+                )
+            }
+
+// Stats //
+            Column (
+                modifier = Modifier
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = navigateToStats,
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.bar_chart),
+                        contentDescription = stringResource(R.string.stats_title),
+                        modifier = Modifier
+                            .size(28.dp),
+                        tint =
+                            if (currentDestination == StatsDestination) { MaterialTheme.colorScheme.tertiary }
+                            else { MaterialTheme.colorScheme.onBackground },
+
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.stats_title),
+                    modifier = Modifier
+                        .offset(y = (-8).dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color =
+                        if (currentDestination == StatsDestination) { MaterialTheme.colorScheme.tertiary }
+                        else { LocalContentColor.current },
+                )
+            }
+
+// Filter //
+            Column (
+                modifier = Modifier
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = { filterViewModel.openBottomSheet() },
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.filter),
+                        contentDescription = stringResource(R.string.filter_items),
+                        modifier = Modifier
+                            .size(28.dp),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.filter_items),
+                    modifier = Modifier
+                        .offset(y = (-8).dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                )
+            }
+
+// Add //
+            Column (
+                modifier = Modifier
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = navigateToAddEntry,
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.add),
+                        contentDescription = stringResource(R.string.add),
+                        modifier = Modifier
+                            .size(28.dp),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.add),
+                    modifier = Modifier
+                        .offset(y = (-8).dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun FilterBottomSheet(
@@ -565,165 +724,4 @@ fun Chip(
 }
 
 
-@Composable
-fun CellarBottomAppBar(
-    modifier: Modifier = Modifier,
-    navigateToHome: () -> Unit = {},
-    navigateToStats: () -> Unit = {},
-    navigateToAddEntry: () -> Unit = {},
-    filterViewModel: FilterViewModel,
-) {
-    BottomAppBar(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(0.dp)
-            .height(66.dp),
-        contentPadding = PaddingValues(0.dp),
-    ) {
-        /* TODO add tinting for current page/option */
-        Row (
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(0.dp)
-                .height(66.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-// Cellar //
-            Column (
-                modifier = Modifier
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ){
-                IconButton(
-                    onClick = navigateToHome,
-                    modifier = Modifier
-                        .padding(0.dp)
-                ){
-                    Icon(
-                        painter = painterResource(id = R.drawable.table_view_old),
-                        contentDescription = stringResource(R.string.home_title),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .size(28.dp)
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.home_title),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier
-                        .offset(y = (-8).dp)
-                )
-            }
-
-// Stats //
-            Column (
-                modifier = Modifier
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                IconButton(
-                    onClick = navigateToStats,
-                    modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.bar_chart),
-                        contentDescription = stringResource(R.string.stats_title),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .size(28.dp)
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.stats_title),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier
-                        .offset(y = (-8).dp)
-                )
-            }
-
-// Filter //
-            Column (
-                modifier = Modifier
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                IconButton(
-                    onClick = { filterViewModel.openBottomSheet() },
-                    modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.filter),
-                        contentDescription = stringResource(R.string.filter_items),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .size(28.dp)
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.filter_items),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier
-                        .offset(y = (-8).dp)
-                )
-            }
-
-// Add //
-            Column (
-                modifier = Modifier
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                IconButton(
-                    onClick = navigateToAddEntry,
-                    modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.add),
-                        contentDescription = stringResource(R.string.add),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .size(28.dp)
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.add),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier
-                        .offset(y = (-8).dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ErrorDialog(
-    confirmError: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
-        title = { Text(stringResource(R.string.attention)) },
-        text = { Text(stringResource(R.string.csv_import_error)) },
-        modifier = modifier,
-        confirmButton = {
-            TextButton(onClick = confirmError) {
-                Text(stringResource(R.string.ok))
-            }
-        }
-    )
-}
 

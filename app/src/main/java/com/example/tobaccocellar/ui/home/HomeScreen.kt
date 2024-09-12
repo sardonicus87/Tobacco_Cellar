@@ -153,6 +153,7 @@ fun HomeScreen(
                     .padding(0.dp),
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
+                currentDestination = HomeDestination,
                 filterViewModel = filterViewModel,
             )
         },
@@ -501,24 +502,15 @@ fun ListViewMode(
             if (showMenu) {
                 itemBounds?.let {
                     menuPosition = IntOffset(
-                        x = it.left.roundToInt(),
+                        x = it.left.roundToInt() + 50,
                         y = it.top.roundToInt() - 100
                     )
                 }
             }
-//            CustomDropdownMenu(
-//                expanded = showMenu,
-//                onDismissRequest = { showMenu = false },
-//                offset = menuPosition
-//            ) { }
             val density = LocalDensity.current
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
-//                modifier = Modifier
-//                    .offset {
-//                        menuPosition
-//                    },
                 offset = DpOffset(
                     x = density.run { menuPosition.x.toDp() },
                     y = density.run { menuPosition.y.toDp() }
@@ -548,27 +540,6 @@ fun ListViewMode(
     }
 }
 
-@Composable
-fun CustomDropdownMenu(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    offset: IntOffset,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .offset { offset }
-    ) {
-        if (expanded) {
-            Column(
-                modifier = Modifier
-                    .padding(8.dp),
-            ) {
-                content()
-            }
-        }
-    }
-}
 
 // Individual Items in List View //
 @Composable
