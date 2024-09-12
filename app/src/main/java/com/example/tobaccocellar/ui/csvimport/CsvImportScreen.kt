@@ -21,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -138,6 +139,7 @@ fun CsvImportBody(
     contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val coroutineScope = rememberCoroutineScope()
+    var showErrorDialog by remember { mutableStateOf(false) }
     val importStatus by viewModel.importStatus.collectAsState()
     val context = LocalContext.current
     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -169,11 +171,11 @@ fun CsvImportBody(
                             }
 
                             is CsvResult.Error -> {
-                                /*TODO show error dialog*/
+                                showErrorDialog = true
                             }
 
                             is CsvResult.Empty -> {
-                                /*TODO show error dialog*/
+                                showErrorDialog = true
                             }
                         }
 
@@ -490,6 +492,12 @@ fun CsvImportBody(
                         modifier = modifier
                             .height(12.dp)
                     )
+                    if (showErrorDialog) {
+                        ErrorDialog(
+                            modifier = modifier,
+                            confirmError = { showErrorDialog = false }
+                        )
+                    }
 //                when (importStatus) {
 //                    is ImportStatus.Success -> {
 //                        val success = importStatus as ImportStatus.Success
@@ -968,6 +976,26 @@ fun NotesField (
         }
     }
 }
+
+
+@Composable
+fun ErrorDialog(
+    confirmError: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.attention)) },
+        text = { Text(stringResource(R.string.csv_import_error)) },
+        modifier = modifier,
+        confirmButton = {
+            TextButton(onClick = confirmError) {
+                Text(stringResource(R.string.ok))
+            }
+        }
+    )
+}
+
 
 @Preview(showBackground = true)
 @Composable
