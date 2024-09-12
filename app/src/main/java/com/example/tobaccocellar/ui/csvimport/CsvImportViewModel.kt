@@ -20,10 +20,6 @@ class CsvImportViewModel(
     private val itemsRepository: ItemsRepository,
 ) : ViewModel() {
 
-    init {
-        Log.d("CsvImportViewModel", "ViewModel initialized")
-    }
-
     private val _csvImportState = mutableStateOf(CsvImportState())
     val csvImportState: State<CsvImportState> = _csvImportState
     var csvUiState by mutableStateOf(CsvUiState())
@@ -39,8 +35,6 @@ class CsvImportViewModel(
             allRecords = allRecords.toList(),
             recordCount = recordCount
         )
-        println("Header: $header")
-        println("First record: $firstRecord")
     }
 
     fun generateColumns(columnCount: Int): List<String> {
@@ -60,7 +54,7 @@ class CsvImportViewModel(
         mappingOptions = mappingOptions.copy(hasHeader = hasHeader)
     }
 
-    enum class CsvField {Brand, Blend, Type, Quantity, Favorite, Disliked, Notes}
+    enum class CsvField { Brand, Blend, Type, Quantity, Favorite, Disliked, Notes }
 
     fun updateMappingOptions(field: CsvField, selectedColumn: String) {
         mappingOptions = when (field) {
@@ -76,7 +70,7 @@ class CsvImportViewModel(
     }
 
 
-    /** Confirm options and import **/
+    /** Confirm and import **/
     private val _importStatus = MutableStateFlow<ImportStatus>(ImportStatus.Idle)
     val importStatus = _importStatus.asStateFlow()
 
@@ -93,12 +87,7 @@ class CsvImportViewModel(
         val recordsToImport =
             if (hasHeader) csvImportState.value.allRecords.drop(1)
             else csvImportState.value.allRecords
-
-        Log.d("CsvImport", "Number of records to import: ${recordsToImport.size}")
-
         val columnIndices = getSelectedColumnIndices()
-
-        Log.d("CsvImport", "Column Indices: $columnIndices")
 
         val itemsToImport = recordsToImport.map { record ->
             Items(
@@ -134,18 +123,15 @@ class CsvImportViewModel(
         }
         try {
             val insertedIds = withContext(Dispatchers.IO) {
-                itemsRepository.insertMultiple(itemsToImport)
-            }
+                itemsRepository.insertMultiple(itemsToImport) }
             val successfulConversions = itemsToImport.size
-            Log.d("CsvImport", "Successfully converted $successfulConversions items")
-
             val successfulInsertions = insertedIds.count { it != -1L }
+            val totalRecords =
+                if (hasHeader) { csvImportState.value.recordCount - 1 }
+                else { csvImportState.value.recordCount }
 
             delay(1500)
 
-            val totalRecords = if (hasHeader) {
-                csvImportState.value.recordCount - 1 } else
-                { csvImportState.value.recordCount }
             _importStatus.value = ImportStatus.Success(
                 totalRecords = totalRecords,
                 successfulConversions = successfulConversions,
@@ -156,7 +142,8 @@ class CsvImportViewModel(
         }
     }
 
-    // Stored CSV data state to Database Table structure conversion functions //
+
+    // Stored CSV UI state to Database Table structure conversion function //
     private fun getSelectedColumnIndices(): Map<CsvField, Int> {
         val header = csvImportState.value.header
         return mapOf(
@@ -178,15 +165,9 @@ class CsvImportViewModel(
         csvUiState = CsvUiState()
         mappingOptions = MappingOptions()
     }
-
-    override fun onCleared() {
-        super.onCleared()
-        Log.d("CsvImportViewModel", "ViewModel cleared")
-    }
-
 }
 
-// State classes //
+
 data class CsvImportState(
     val header: List<String> = emptyList(),
     val firstRecord: List<String> = emptyList(),
