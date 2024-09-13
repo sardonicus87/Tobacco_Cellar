@@ -151,13 +151,6 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         }
 
         val query = queryBuilder.create()
-
-        // Log the query details
-        Log.d("OfflineItemsRepository", "Query: ${query.sql}")
-        for (i in 0 until query.argCount) {
-            Log.d("OfflineItemsRepository", "Arg $i: ${args[i]}")
-        }
-
         return itemsDao.getFilteredItems(query)
     }
 

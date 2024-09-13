@@ -23,10 +23,6 @@ class FilterViewModel (
         }
     }
 
-    init {
-        Log.d("FilterViewModel", "ViewModel initialized")
-    }
-
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
     val bottomSheetState: StateFlow<BottomSheetState> = _bottomSheetState.asStateFlow()
@@ -57,30 +53,20 @@ class FilterViewModel (
     private val _selectedOutOfStock = MutableStateFlow(false)
     val selectedOutOfStock: StateFlow<Boolean> = _selectedOutOfStock
 
-    init {
-        Log.d("FilterViewModel", "Initial selectedBrands: ${_selectedBrands.value}")
-        Log.d("FilterViewModel", "Initial selectedTypes: ${_selectedTypes.value}")
-        Log.d("FilterViewModel", "Initial selectedFavorites: ${_selectedFavorites.value}")
-        Log.d("FilterViewModel", "Initial selectedDislikeds: ${_selectedDislikeds.value}")
-        Log.d("FilterViewModel", "Initial selectedOutOfStock: ${_selectedOutOfStock.value}")
-    }
 
     // Filtering update functions //
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
         if (isSelected) { _selectedBrands.value += brand }
         else { _selectedBrands.value -= brand }
-        Log.d("FilterViewModel", "Selected brands: ${_selectedBrands.value}")
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
         if (isSelected) { _selectedTypes.value += type }
         else { _selectedTypes.value -= type }
-        Log.d("FilterViewModel", "Selected types: ${_selectedTypes.value}")
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
         _selectedFavorites.value = isSelected
-        Log.d("FilterViewModel", "Selected favorites: ${_selectedFavorites.value}")
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
@@ -90,7 +76,6 @@ class FilterViewModel (
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
         _selectedOutOfStock.value = isSelected
-        Log.d("FilterViewModel", "Selected out of stock: ${_selectedOutOfStock.value}")
     }
 
     // get vals //
@@ -171,11 +156,6 @@ class FilterViewModel (
         } else {
             _sortByType.remove(type)
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        Log.d("FilterViewModel", "ViewModel cleared")
     }
 }
 
