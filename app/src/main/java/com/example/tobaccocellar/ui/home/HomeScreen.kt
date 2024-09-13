@@ -201,11 +201,9 @@ private fun HomeHeader(
     Row (
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        // Switch table/list view //
         Text(
             text = "View:",
             textAlign = TextAlign.Start,
@@ -225,34 +223,21 @@ private fun HomeHeader(
                 contentDescription = stringResource(homeUiState.toggleContentDescription),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(22.dp)
                     .padding(0.dp)
             )
         }
-
         Spacer(
             modifier = Modifier
-                .width(24.dp)
+                .weight(1f)
                 .padding(0.dp)
         )
-
-        /* TODO Finish Search widget */
-
-        TextField(
-            value = "",
-            onValueChange = { /* do nothing */ },
+        Text(
+            text = "Entries: ${homeUiState.items.size}",
+            textAlign = TextAlign.End,
+            fontWeight = FontWeight.Normal,
+            fontSize = 14.sp,
             modifier = Modifier
-                .fillMaxWidth(fraction = .7f)
-                .height(24.dp),
-            enabled = false,
-            leadingIcon = { Icon(painterResource(id = R.drawable.search), null) },
-            singleLine = true,
-            shape = RoundedCornerShape(50),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-            )
         )
     }
 }
