@@ -1,5 +1,13 @@
 package com.example.tobaccocellar.ui.home
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeSpacing
@@ -9,10 +17,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,7 +34,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,20 +45,18 @@ import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheetDefaults.properties
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
@@ -64,16 +69,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -83,12 +84,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
@@ -97,7 +95,6 @@ import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
-import kotlin.math.roundToInt
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -119,6 +116,8 @@ fun HomeScreen(
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val sorting by viewmodel.sorting
     val isTableView = homeUiState.isTableView
+    val activeItemId by viewmodel.menuItemId
+    val isMenuShown by viewmodel.isMenuShown
     val snackbarHostState = remember { SnackbarHostState() }
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
@@ -185,6 +184,11 @@ fun HomeScreen(
                 sorting = sorting,
                 updateSorting = viewmodel::updateSorting,
                 isLoading = homeUiState.isLoading,
+            //    showMenu = showMenu,
+                onDismissMenu = viewmodel::onDismissMenu,
+                onShowMenu = viewmodel::onShowMenu,
+                isMenuShown = isMenuShown,
+                activeItemId = activeItemId,
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(0.dp),
@@ -270,6 +274,11 @@ private fun HomeBody(
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
     onItemClick: (Int) -> Unit,
+//    showMenu: Boolean,
+    isMenuShown: Boolean,
+    activeItemId: Int?,
+    onDismissMenu: () -> Unit,
+    onShowMenu: (Int) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var showNoteDialog by remember { mutableStateOf(false) }
@@ -329,18 +338,6 @@ private fun HomeBody(
                     )
                 }
             } else {
-                if (!isTableView) {
-                    ListViewMode(
-                        itemsList = items,
-                        onItemClick = { onItemClick(it.id) },
-                        onNoteClick = { item -> noteToDisplay = item.notes
-                                      showNoteDialog = true },
-                        contentPadding = contentPadding,
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth()
-                    )
-                }
                 if (isTableView) {
                     TableViewMode(
                         itemsList = items,
@@ -358,7 +355,12 @@ private fun HomeBody(
                         onItemClick = { onItemClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                             showNoteDialog = true },
+                    //    showMenu = showMenu,
+                        menuItemId = activeItemId,
+                        onDismissMenu = onDismissMenu,
+                        onShowMenu = onShowMenu,
                         contentPadding = contentPadding,
+                        isMenuShown = isMenuShown,
                         modifier = Modifier
                             .padding(0.dp)
                             .fillMaxWidth()
@@ -469,74 +471,62 @@ fun NoteDialog(
 @Composable
 fun ListViewMode(
     modifier: Modifier = Modifier,
+    menuItemId: Int?,
+    onDismissMenu: () -> Unit,
+    onShowMenu: (Int) -> Unit,
+    isMenuShown: Boolean,
     itemsList: List<Items>,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-){
-    LazyColumn(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(0.dp),
+) {
+    Box(
+        modifier = Modifier
+            .padding(0.dp)
+            .fillMaxSize()
     ) {
-        items(items = itemsList, key = { it.id }) { item ->
-            val haptics = LocalHapticFeedback.current
-            var showMenu by remember { mutableStateOf(false) }
-            var itemBounds by remember { mutableStateOf<Rect?>(null) }
-            var menuPosition by remember { mutableStateOf(IntOffset.Zero) }
-            CellarListItem(
-                item = item,
-                modifier = Modifier
-                    .padding(0.dp)
-                    .onGloballyPositioned { coordinates ->
-                        itemBounds = coordinates.boundsInWindow()
-                    }
-                    .combinedClickable(
-                        onClick = { },
-                        onLongClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showMenu = true
-                        }
-                    )
-            )
-            if (showMenu) {
-                itemBounds?.let {
-                    menuPosition = IntOffset(
-                        x = it.left.roundToInt() + 50,
-                        y = it.top.roundToInt() - 100
-                    )
+        LazyColumn(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(0.dp),
+        ) {
+            items(items = itemsList, key = { it.id }) { item ->
+                val haptics = LocalHapticFeedback.current
+
+                BackHandler(enabled = isMenuShown && menuItemId == item.id) {
+                    onDismissMenu()
                 }
-            }
-            val density = LocalDensity.current
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false },
-                offset = DpOffset(
-                    x = density.run { menuPosition.x.toDp() },
-                    y = density.run { menuPosition.y.toDp() }
-//                    x = with(density) { menuPosition.x.toDp() },
-//                    y = with(density) { menuPosition.y.toDp() }
-                ),
-                properties = PopupProperties(focusable = false)
-            ) {
-                DropdownMenuItem(
-                    text = { Text(text = "Edit Item") },
-                    onClick = {
-                        onItemClick(item)
-                        showMenu = false
-                    }
+
+                CellarListItem(
+                    item = item,
+                    onItemClick = { onItemClick(item) },
+                    onNoteClick = { onNoteClick(item) },
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .combinedClickable(
+                            onClick = {  },
+                            onLongClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onShowMenu(item.id)
+                            },
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ),
+//                    showMenu = showMenu && activeItemId == item.id,
+                    onMenuDissmiss = { onDismissMenu() },
+                    showMenu = isMenuShown && menuItemId == item.id,
                 )
-                if (item.notes.isNotEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(text = "View Note") },
-                        onClick = {
-                            onNoteClick(item)
-                            showMenu = false
-                        }
-                    )
-                }
             }
         }
+//        if (isMenuShown) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .clickable {
+//                        onDismissMenu()
+//                    }
+//            )
+//        }
     }
 }
 
@@ -544,85 +534,200 @@ fun ListViewMode(
 // Individual Items in List View //
 @Composable
 private fun CellarListItem(
+    modifier: Modifier = Modifier,
     item: Items,
-    modifier: Modifier = Modifier
-){
-    Row(
+    onMenuDissmiss: () -> Unit,
+    showMenu: Boolean,
+    onItemClick: (Items) -> Unit,
+    onNoteClick: (Items) -> Unit,
+) {
+   // var isMenuClicked by remember { mutableStateOf(false) }
+
+    Box(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(start = 0.dp, top = 0.dp, bottom = 1.dp, end = 0.dp)
-            .background(MaterialTheme.colorScheme.secondaryContainer),
-    ){
+            .padding(0.dp)
+    ) {
         Row(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
-                .padding(start = 8.dp, top = 4.dp, bottom = 3.dp, end = 8.dp)
+                .padding(start = 0.dp, top = 0.dp, bottom = 1.dp, end = 0.dp)
                 .background(MaterialTheme.colorScheme.secondaryContainer),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Column(
+        ) {
+            Row(
                 modifier = Modifier
-                    .padding(0.dp)
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
+                    .fillMaxWidth()
+                    .padding(start = 8.dp, top = 4.dp, bottom = 3.dp, end = 8.dp)
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .height(IntrinsicSize.Min)
                         .padding(0.dp)
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    Row (
+                    Box(
                         modifier = Modifier
-                            .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
-                            .fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
+                            .height(IntrinsicSize.Min)
+                            .padding(0.dp)
                     ) {
-                        if (item.favorite) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.favorite_heart_filled_18),
-                                contentDescription = null,
+                        Row(
+                            modifier = Modifier
+                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
+                                .fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            if (item.favorite) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.favorite_heart_filled_18),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(0.dp)
+                                        .graphicsLayer {
+                                            rotationZ = (-45f)
+                                        },
+                                    tint = Color(0x60FF0000)
+                                )
+                            }
+                        }
+                        // Blend Name //
+                        Column {
+                            Text(
+                                text =
+                                if (item.disliked) (item.blend + " ")
+                                else (item.blend),
                                 modifier = Modifier
-                                    .size(24.dp)
                                     .padding(0.dp)
-                                    .graphicsLayer {
-                                        rotationZ = (-45f)
-                                    },
-                                tint = Color(0x60FF0000)
+                                    .fillMaxWidth(fraction = .9f)
+                                    .basicMarquee(
+                                        iterations = Int.MAX_VALUE,
+                                        repeatDelayMillis = 250,
+                                        initialDelayMillis = 250,
+                                        spacing = MarqueeSpacing(100.dp)
+                                    ),
+                                style =
+                                if (item.quantity == 0 && !item.disliked) (
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.tertiary
+                                        )
+                                        )
+                                else if (item.disliked && item.quantity > 0) (
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            textDecoration = TextDecoration.LineThrough
+                                        )
+                                        )
+                                else if (item.disliked && item.quantity == 0) (
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                            textDecoration = TextDecoration.LineThrough
+                                        )
+                                        )
+                                else (MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textDecoration = TextDecoration.None
+                                )
+                                        ),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp,
+                                maxLines = 1,
                             )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
+                                    .offset(y = (-4).dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                // Brand Name //
+                                Column(
+                                    modifier = Modifier
+                                        .padding(0.dp)
+                                        .weight(.95f),
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Text(
+                                        text = item.brand,
+                                        modifier = Modifier,
+                                        style =
+                                        if (item.quantity == 0) (
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    textDecoration = TextDecoration.None
+                                                )
+                                                )
+                                        else (MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            textDecoration = TextDecoration.None
+                                        )
+                                                ),
+                                        fontStyle = Italic,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                                // Type //
+                                Column(
+                                    modifier = Modifier
+                                        .padding(0.dp)
+                                        .weight(0.5f),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = item.type,
+                                        modifier = Modifier,
+                                        style =
+                                        if (item.quantity == 0) (
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    textDecoration = TextDecoration.None
+                                                )
+                                                )
+                                        else (MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            textDecoration = TextDecoration.None
+                                        )
+                                                ),
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 11.sp,
+                                    )
+                                }
+                                Spacer(
+                                    modifier = Modifier
+                                        .width(0.dp)
+                                        .padding(0.dp)
+                                        .weight(1f)
+                                )
+                            }
                         }
                     }
-// Blend Name //
-                    Column {
+
+                }
+                Column(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .weight(0.1f),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text =
-                            if (item.disliked) (item.blend + " ")
-                            else (item.blend),
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .fillMaxWidth(fraction = .9f)
-                                .basicMarquee(
-                                    iterations = Int.MAX_VALUE,
-                                    repeatDelayMillis = 250,
-                                    initialDelayMillis = 250,
-                                    spacing = MarqueeSpacing(100.dp)
-                                ),
+                            text = "x" + item.quantity,
+                            modifier = Modifier,
                             style =
-                            if (item.quantity == 0 && !item.disliked) (
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        color = MaterialTheme.colorScheme.tertiary
-                                    )
-                                    )
-                            else if (item.disliked && item.quantity > 0) (
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        textDecoration = TextDecoration.LineThrough
-                                    )
-                                    )
-                            else if (item.disliked && item.quantity == 0) (
+                            if (item.quantity == 0) (
                                     MaterialTheme.typography.titleMedium.copy(
                                         color = MaterialTheme.colorScheme.tertiary,
-                                        textDecoration = TextDecoration.LineThrough
+                                        textDecoration = TextDecoration.None
                                     )
                                     )
                             else (MaterialTheme.typography.titleMedium.copy(
@@ -631,110 +736,52 @@ private fun CellarListItem(
                             )
                                     ),
                             fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
+                            fontSize = 16.sp
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
-                                .offset(y = (-4).dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
+                    }
+                }
+            }
+        }
+        if (showMenu) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(0.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                      //  .clickable { isMenuClicked = true }
+                        .fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp, alignment = Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = {
+                            onItemClick(item)
+                            onMenuDissmiss()
+                        }
+                    ) {
+                        Text(
+                            text = "Edit item",
+                            modifier = Modifier,
+                            color = LocalContentColor.current,
+                        )
+                    }
+                    if (item.notes.isNotEmpty()) {
+                        TextButton(
+                            onClick = {
+                                onNoteClick(item)
+                                onMenuDissmiss()
+                            }
                         ) {
-// Brand Name //
-                            Column(
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .weight(.95f),
-                                horizontalAlignment = Alignment.Start
-                            ) {
-                                Text(
-                                    text = item.brand,
-                                    modifier = Modifier,
-                                    style =
-                                    if (item.quantity == 0) (
-                                            MaterialTheme.typography.titleMedium.copy(
-                                                color = MaterialTheme.colorScheme.tertiary,
-                                                textDecoration = TextDecoration.None
-                                            )
-                                            )
-                                    else (MaterialTheme.typography.titleMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        textDecoration = TextDecoration.None
-                                    )
-                                            ),
-                                    fontStyle = Italic,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 11.sp
-                                )
-                            }
-// Type //
-                            Column(
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .weight(0.5f),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = item.type,
-                                    modifier = Modifier,
-                                    style =
-                                    if (item.quantity == 0) (
-                                            MaterialTheme.typography.titleMedium.copy(
-                                                color = MaterialTheme.colorScheme.tertiary,
-                                                textDecoration = TextDecoration.None
-                                            )
-                                            )
-                                    else (MaterialTheme.typography.titleMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        textDecoration = TextDecoration.None
-                                    )
-                                            ),
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 11.sp,
-                                )
-                            }
-                            Spacer(
-                                modifier = Modifier
-                                    .width(0.dp)
-                                    .padding(0.dp)
-                                    .weight(1f)
+                            Text(
+                                text = "View note",
+                                modifier = Modifier,
+                                color = LocalContentColor.current,
                             )
                         }
                     }
-                }
-
-            }
-            Column(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .weight(0.1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                horizontalAlignment = Alignment.End
-            ){
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(0.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    Text(
-                        text = "x" + item.quantity,
-                        modifier = Modifier,
-                        style =
-                        if (item.quantity == 0) (
-                                MaterialTheme.typography.titleMedium.copy(
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    textDecoration = TextDecoration.None)
-                                )
-                        else (MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            textDecoration = TextDecoration.None)
-                                ),
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp
-                    )
                 }
             }
         }

@@ -37,10 +37,6 @@ class HomeViewModel(
     application: Application
 ): AndroidViewModel(application), ExportCsvHandler {
 
-    init {
-        Log.d("HomeViewModel", "ViewModel initialized")
-    }
-
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
@@ -86,6 +82,24 @@ class HomeViewModel(
     private val _sorting = mutableStateOf(Sorting())
     val sorting: State<Sorting> = _sorting
 
+    private val _isMenuShown = mutableStateOf(false)
+    val isMenuShown: State<Boolean> = _isMenuShown
+
+    private val _menuItemId = mutableStateOf<Int?>(null)
+    val menuItemId: State<Int?> = _menuItemId
+
+
+    /** List View item menu overlay **/
+    fun onShowMenu(itemId: Int) {
+        _isMenuShown.value = true
+        _menuItemId.value = itemId
+    }
+
+    fun onDismissMenu() {
+        _isMenuShown.value = false
+        _menuItemId.value = null
+    }
+
 
     /** Toggle Cellar View **/
     fun selectView(isTableView: Boolean) {
@@ -94,10 +108,8 @@ class HomeViewModel(
         }
     }
 
+
     /** Toggle Sorting **/
-//    fun updateSorting(newSorting: Sorting) {
-//        _sorting.value = newSorting
-//    }
     fun updateSorting(columnIndex: Int) {
         if (_sorting.value.columnIndex == columnIndex) {
             when {
@@ -110,6 +122,7 @@ class HomeViewModel(
             _sorting.value = Sorting(columnIndex, true)
         }
     }
+
 
     /** csvExport for TopAppBar **/
     private val _showSnackbar = MutableStateFlow(false)
