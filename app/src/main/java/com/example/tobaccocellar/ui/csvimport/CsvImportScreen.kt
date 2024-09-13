@@ -83,10 +83,6 @@ fun CsvImportScreen(
     val csvUiState = viewModel.csvUiState
     val mappingOptions = viewModel.mappingOptions
 
-    LaunchedEffect(key1 = csvImportState){ // Add LaunchedEffect here
-        Log.d("CsvImportScreen", "State updated: $csvImportState")
-    }
-
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -297,7 +293,7 @@ fun CsvImportBody(
                     modifier = modifier
                         .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
                     softWrap = true,
-                    textAlign = TextAlign.Justify,
+                    textAlign = TextAlign.Start,
                 )
                 Button(
                     onClick = { launcher.launch(intent) },
@@ -321,7 +317,6 @@ fun CsvImportBody(
                             .fillMaxWidth(),
                         fontWeight = FontWeight.Bold,
                     )
-                    Log.d("header in CsvImportBody", "header: ${csvImportState.header}")
                     Text(
                         text = csvImportState.header.joinToString(", "),
                         modifier = modifier
@@ -334,10 +329,6 @@ fun CsvImportBody(
                             .fillMaxWidth(),
                         fontWeight = FontWeight.Bold,
                     )
-                    Log.d(
-                        "default format record in CsvImportBody",
-                        "firstRecord: ${csvImportState.firstRecord}"
-                    )
                     Text(
                         text = csvImportState.firstRecord.joinToString(", "),
                         modifier = modifier
@@ -348,7 +339,7 @@ fun CsvImportBody(
                         modifier = modifier
                             .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
                         softWrap = true,
-                        textAlign = TextAlign.Justify,
+                        textAlign = TextAlign.Start,
                     )
                     // has header option //
                     Row (
@@ -549,7 +540,8 @@ fun BrandField (
                     value = selectedColumn.ifBlank { "" },
                     onValueChange = {},
                     readOnly = true,
-                    trailingIcon = {
+                    trailingIcon =
+                    {
                         Icon(
                             imageVector = Icons.Filled.ArrowDropDown,
                             contentDescription = null,
