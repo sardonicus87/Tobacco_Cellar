@@ -312,7 +312,7 @@ fun ItemInputForm(
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier
                 .padding(0.dp, bottom = 8.dp),
-            ) {
+        ) {
             titles.forEachIndexed { index, title ->
                 Tab(
                     text = { Text(title) },
@@ -712,7 +712,6 @@ fun ItemInputForm(
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Sentences,
                             keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done,
                         ),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
