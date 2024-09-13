@@ -1,13 +1,6 @@
 package com.example.tobaccocellar.ui.home
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeSpacing
@@ -112,15 +105,16 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val homeUiState by viewmodel.homeUiState.collectAsState()
+    val showSnackbar = viewmodel.showSnackbar.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val sorting by viewmodel.sorting
     val isTableView = homeUiState.isTableView
     val activeItemId by viewmodel.menuItemId
     val isMenuShown by viewmodel.isMenuShown
-    val snackbarHostState = remember { SnackbarHostState() }
-    val showSnackbar = viewmodel.showSnackbar.collectAsState()
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
+
 
     if (showSnackbar.value) {
         LaunchedEffect(Unit) {
@@ -184,7 +178,6 @@ fun HomeScreen(
                 sorting = sorting,
                 updateSorting = viewmodel::updateSorting,
                 isLoading = homeUiState.isLoading,
-            //    showMenu = showMenu,
                 onDismissMenu = viewmodel::onDismissMenu,
                 onShowMenu = viewmodel::onShowMenu,
                 isMenuShown = isMenuShown,
@@ -274,7 +267,6 @@ private fun HomeBody(
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
     onItemClick: (Int) -> Unit,
-//    showMenu: Boolean,
     isMenuShown: Boolean,
     activeItemId: Int?,
     onDismissMenu: () -> Unit,
@@ -355,7 +347,6 @@ private fun HomeBody(
                         onItemClick = { onItemClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                             showNoteDialog = true },
-                    //    showMenu = showMenu,
                         menuItemId = activeItemId,
                         onDismissMenu = onDismissMenu,
                         onShowMenu = onShowMenu,
@@ -512,21 +503,11 @@ fun ListViewMode(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ),
-//                    showMenu = showMenu && activeItemId == item.id,
                     onMenuDissmiss = { onDismissMenu() },
                     showMenu = isMenuShown && menuItemId == item.id,
                 )
             }
         }
-//        if (isMenuShown) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .clickable {
-//                        onDismissMenu()
-//                    }
-//            )
-//        }
     }
 }
 
@@ -1118,7 +1099,7 @@ fun TableCell(
     ) {
         val text = when (value) {
             null -> ""
-            is String -> if (value.isBlank()) "" else value
+            is String -> value.ifBlank { "" }
             else -> value.toString()
         }
         Text(

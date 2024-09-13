@@ -92,7 +92,8 @@ fun SettingsScreen(
         }
     }
 }
-/* TODO: Settings screen */
+
+
 @Composable
 private fun SettingsBody(
     onDeleteAllClick: () -> Unit,

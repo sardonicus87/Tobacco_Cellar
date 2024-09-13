@@ -142,7 +142,6 @@ class HomeViewModel(
                             outputStream ->
                         outputStream.write(csvData.toByteArray())
                         _showSnackbar.value = true
-                        Log.d("HomeViewModel", "CSV data exported to URI: $uri")
                     }
                 } else {
                     val documentsDirectory = Environment
