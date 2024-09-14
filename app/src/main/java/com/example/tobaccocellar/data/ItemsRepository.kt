@@ -46,9 +46,7 @@ interface ItemsRepository {
     fun getAllZeroQuantityStream(): Flow<List<Boolean>>
 
 
-    /* TODO finish organize ItemsRepo functions */
-
-    /** Get  **/
+    /** Get counts **/
     fun getItemsCount(): Flow<Int>
 
     fun getBrandsCount(): Flow<Int>
@@ -66,10 +64,12 @@ interface ItemsRepository {
     fun getTotalZeroQuantity(): Flow<Int>
 
 
-    /** Get items BY functions (sort and filter) **/
+    /** Get any by value **/
     fun getItemsByBrand(brand: String): Flow<List<Items>>
 
     fun getItemsByType(type: String): Flow<List<Items>>
+
+    fun getItemsByQuantity(): Flow<List<Items>>
 
     fun getItemsByFavorite(): Flow<List<Items>>
 
@@ -78,10 +78,8 @@ interface ItemsRepository {
     fun getItemsByZeroQuantity(): Flow<List<Items>>
 
 
-    fun getItemsByQuantity(): Flow<List<Items>>
 
-
-    /** Filter functions **/
+    /** Special functions **/
     fun getFilteredItems(
         brands: List<String>?,
         types: List<String>?,

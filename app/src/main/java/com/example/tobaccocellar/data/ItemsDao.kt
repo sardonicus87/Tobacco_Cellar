@@ -16,14 +16,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ItemsDao {
 
-    /* TODO organize DAO functions */
-
     /** Database operations **/
-    // Add item to database //
+    // Add item //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(item: Items)
 
-    // Batch add items to database from CSV //
+    // Batch add items //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMultiple(items: List<Items>): LongArray
 
@@ -31,11 +29,11 @@ interface ItemsDao {
     @Update
     suspend fun update(item: Items)
 
-    // Delete item from database //
+    // Delete item //
     @Delete
     suspend fun delete(item: Items)
 
-    // Delete all items from database //
+    // Delete all items //
     @Query("DELETE FROM items")
     suspend fun deleteAllItems()
 
@@ -87,7 +85,7 @@ interface ItemsDao {
     fun getAllZeroQuantity(): Flow<List<Boolean>>
 
 
-    /** Getting  **/
+    /** Get counts **/
     // total item count //
     @Query("SELECT COUNT(*) FROM items")
     fun getItemsCount(): Flow<Int>
@@ -122,12 +120,18 @@ interface ItemsDao {
 
 
 
-    /** Get items BY functions (sort and filter) **/
+    /** Get any BY value **/
     @Query("SELECT * FROM items WHERE brand = :brand")
     fun getItemsByBrand(brand: String): Flow<List<Items>>
 
+    @Query("SELECT * FROM items WHERE blend = :blend")
+    fun getItemsByBlend(blend: String): Flow<List<Items>>
+
     @Query("SELECT * FROM items WHERE type = :type")
     fun getItemsByType(type: String): Flow<List<Items>>
+
+    @Query("SELECT * FROM items ORDER BY quantity DESC")
+    fun getItemsByQuantity(): Flow<List<Items>>
 
     @Query("SELECT * FROM items WHERE favorite = 1")
     fun getItemsByFavorite(): Flow<List<Items>>
@@ -139,45 +143,10 @@ interface ItemsDao {
     fun getItemsByZeroQuantity(): Flow<List<Items>>
 
 
-
-    @Query("SELECT * FROM items ORDER BY quantity DESC")
-    fun getItemsByQuantity(): Flow<List<Items>>
-
-    @Query("SELECT * FROM items WHERE blend = :blend")
-    fun getItemsByBlend(blend: String): Flow<List<Items>>
-
-
-    /** Filtering **/
+    /** Special functions **/
+    // Filter function //
     @RawQuery(observedEntities = [Items::class])
     fun getFilteredItems(query: SupportSQLiteQuery): Flow<List<Items>>
-
-
-//    @Query("""
-//        SELECT * FROM items WHERE
-//            (:brands IS NULL OR :brands = '' OR brand IN (:brands))
-//            AND (:types IS NULL OR :types = '' OR type IN (:types))
-//            AND (:favorites IS NULL OR favorite = CAST(:favorites AS INTEGER))
-//            AND (:dislikeds IS NULL OR disliked = CAST(:dislikeds AS INTEGER))
-//            AND (:outOfStock IS NULL OR quantity = 0)
-//        """)
-//    fun getFilteredItems(
-//        brands: List<String>?,
-//        types: List<String>?,
-//        favorites: Boolean?,
-//        dislikeds: Boolean?,
-//        outOfStock: Boolean?
-//    ): Flow<List<Items>>
-
-
-//    brands: List<String>? = listOf(),
-//    types: List<String>? = listOf(),
-//    favorites: Boolean? = null,
-//    dislikeds: Boolean? = null,
-//    outOfStock: Boolean? = null
-
-
-
-
 
 
 }

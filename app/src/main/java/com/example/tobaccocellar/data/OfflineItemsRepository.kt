@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
-    /* TODO organize OfflineItemsRepo functions */
-
     /** Database operations **/
     override suspend fun insertItem(item: Items) = itemsDao.insert(item)
 
@@ -55,7 +53,7 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override fun getAllZeroQuantityStream(): Flow<List<Boolean>> = itemsDao.getAllZeroQuantity()
 
 
-    /** Get  **/
+    /** Get counts **/
     override fun getItemsCount(): Flow<Int> = itemsDao.getItemsCount()
 
     override fun getBrandsCount(): Flow<Int> = itemsDao.getBrandsCount()
@@ -73,10 +71,12 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override fun getTotalZeroQuantity(): Flow<Int> = itemsDao.getTotalZeroQuantity()
 
 
-    /** Get items BY functions (sort and filter) **/
+    /** Get any by value **/
     override fun getItemsByBrand(brand: String): Flow<List<Items>> = itemsDao.getItemsByBrand(brand)
 
     override fun getItemsByType(type: String): Flow<List<Items>> = itemsDao.getItemsByType(type)
+
+    override fun getItemsByQuantity(): Flow<List<Items>> = itemsDao.getItemsByQuantity()
 
     override fun getItemsByFavorite(): Flow<List<Items>> = itemsDao.getItemsByFavorite()
 
@@ -85,7 +85,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override fun getItemsByZeroQuantity(): Flow<List<Items>> = itemsDao.getItemsByZeroQuantity()
 
 
-    /** Filtering function **/
+    /** Special functions **/
+    // filtering return function //
     override fun getFilteredItems(
         brands: List<String>?,
         types: List<String>?,
@@ -183,7 +184,7 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 //        args.add(if (dislikeds) 1 else 0)
 //    }
 
-    override fun getItemsByQuantity(): Flow<List<Items>> = itemsDao.getItemsByQuantity()
+
 
 
 
