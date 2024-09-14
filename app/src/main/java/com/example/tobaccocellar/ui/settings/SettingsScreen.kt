@@ -31,7 +31,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tobaccocellar.BuildConfig
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.PreferencesRepo
@@ -104,6 +106,7 @@ private fun SettingsBody(
 ) {
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
+    val version = BuildConfig.VERSION_NAME
 
     /* TODO: finish Settings body */
     Column(
@@ -154,6 +157,38 @@ private fun SettingsBody(
                     .padding(0.dp)
             )
         }
+        HorizontalDivider(
+            modifier = Modifier
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            thickness = 1.dp,
+        )
+        Text(
+            text = "About Tobacco Cellar",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(start = 16.dp, top = 0.dp, bottom = 12.dp, end = 16.dp)
+        )
+        Text(
+            text = "Version $version cobbled together by Sardonicus.\nBuilt with Jetpack Compose. " +
+                    "Uses Apache Commons CSV for reading/writing CSV files.",
+            modifier = Modifier
+                .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp),
+            fontSize = 14.sp,
+            softWrap = true,
+        )
+        TextButton(
+            onClick = {  },
+            enabled = false,
+            modifier = Modifier
+                .padding(start = 4.dp)
+        ) {
+            Text(
+                text = "Change Log",
+                modifier = Modifier
+                    .padding(0.dp)
+            )
+        }
+
 
         if (showThemeDialog) {
             ThemeDialog(
