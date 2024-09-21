@@ -1,5 +1,6 @@
 package com.example.tobaccocellar.ui.home
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,8 +53,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,12 +63,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -76,8 +79,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -88,6 +93,7 @@ import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
+import com.example.tobaccocellar.ui.theme.LocalCustomColors
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -142,8 +148,7 @@ fun HomeScreen(
         },
         bottomBar = {
             CellarBottomAppBar(
-                modifier = Modifier
-                    .padding(0.dp),
+                modifier = Modifier,
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
@@ -164,9 +169,11 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 66.dp, start = 0.dp, end = 0.dp)
+                .padding(top = 64.dp, bottom = 52.dp, start = 0.dp, end = 0.dp)
         ) {
             HomeHeader(
+                modifier = Modifier
+                    .shadow(2.dp, shape = RectangleShape, clip = false),
                 homeUiState = homeUiState,
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
@@ -201,6 +208,7 @@ private fun HomeHeader(
     Row (
         modifier = Modifier
             .fillMaxWidth()
+            .background(BottomAppBarDefaults.containerColor)
             .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -208,7 +216,7 @@ private fun HomeHeader(
             text = "View:",
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Normal,
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             modifier = Modifier
                 .padding(0.dp)
         )
@@ -216,14 +224,14 @@ private fun HomeHeader(
             onClick = { selectView(!isTableView) },
             modifier = Modifier
                 .padding(4.dp)
-                .size(28.dp)
+                .size(22.dp)
         ) {
             Icon(
                 painter = painterResource(homeUiState.toggleIcon),
                 contentDescription = stringResource(homeUiState.toggleContentDescription),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
-                    .size(22.dp)
+                    .size(20.dp)
                     .padding(0.dp)
             )
         }
@@ -236,7 +244,7 @@ private fun HomeHeader(
             text = "Entries: ${homeUiState.items.size}",
             textAlign = TextAlign.End,
             fontWeight = FontWeight.Normal,
-            fontSize = 14.sp,
+            fontSize = 15.sp,
             modifier = Modifier
         )
     }
@@ -325,6 +333,7 @@ private fun HomeBody(
                         updateSorting = updateSorting,
                         modifier = Modifier
                             .padding(0.dp)
+                            .fillMaxWidth()
                     )
                 } else {
                     ListViewMode(
@@ -480,7 +489,13 @@ fun ListViewMode(
                     modifier = Modifier
                         .padding(0.dp)
                         .combinedClickable(
-                            onClick = {  },
+                            onClick = {
+                                if (isMenuShown && menuItemId == item.id) {
+                                    // do nothing
+                                } else {
+                                    onDismissMenu()
+                                }
+                            },
                             onLongClick = {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onShowMenu(item.id)
@@ -496,7 +511,6 @@ fun ListViewMode(
     }
 }
 
-
 // Individual Items in List View //
 @Composable
 private fun CellarListItem(
@@ -507,8 +521,6 @@ private fun CellarListItem(
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
 ) {
-   // var isMenuClicked by remember { mutableStateOf(false) }
-
     Box(
         modifier = modifier
             .padding(0.dp)
@@ -522,7 +534,7 @@ private fun CellarListItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 8.dp, top = 4.dp, bottom = 3.dp, end = 8.dp)
+                    .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp)
                     .background(MaterialTheme.colorScheme.secondaryContainer),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -530,152 +542,118 @@ private fun CellarListItem(
                 Column(
                     modifier = Modifier
                         .padding(0.dp)
-                        .weight(1f),
+                        .weight(1f, false),
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    Box(
+                    // Blend Name //
+                    Column(
                         modifier = Modifier
-                            .height(IntrinsicSize.Min)
-                            .padding(0.dp)
+                            .fillMaxWidth(fraction = .95f),
                     ) {
                         Row(
                             modifier = Modifier
-                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
-                                .fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Text(
+                                text = item.blend,
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .weight(1f, false),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textDecoration = TextDecoration.None
+                                ),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp,
+                                overflow = TextOverflow.Ellipsis,
+                                softWrap = true,
+                                maxLines = 1,
+                            )
+                            Spacer(
+                                modifier = Modifier
+                                    .width(4.dp)
+                            )
                             if (item.favorite) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                )
                                 Icon(
                                     painter = painterResource(id = R.drawable.favorite_heart_filled_18),
                                     contentDescription = null,
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .padding(0.dp)
-                                        .graphicsLayer {
-                                            rotationZ = (-45f)
-                                        },
-                                    tint = Color(0x60FF0000)
+                                        .size(17.dp),
+                                    tint = LocalCustomColors.current.favHeart
+                                )
+                            }
+                            if (item.disliked) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.heartbroken_filled_18),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(17.dp),
+                                    tint = LocalCustomColors.current.disHeart
+                                )
+                            }
+                            if (item.notes.isNotEmpty()) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.notes_24),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(15.dp),
+                                    tint = MaterialTheme.colorScheme.tertiary
                                 )
                             }
                         }
-                        // Blend Name //
-                        Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
+                                .offset(y = (-4).dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Start),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            // Brand Name //
                             Text(
-                                text =
-                                if (item.disliked) (item.blend + " ")
-                                else (item.blend),
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .fillMaxWidth(fraction = .9f)
-                                    .basicMarquee(
-                                        iterations = Int.MAX_VALUE,
-                                        repeatDelayMillis = 250,
-                                        initialDelayMillis = 250,
-                                        spacing = MarqueeSpacing(100.dp)
-                                    ),
-                                style =
-                                if (item.quantity == 0 && !item.disliked) (
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.tertiary
-                                        )
-                                        )
-                                else if (item.disliked && item.quantity > 0) (
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            textDecoration = TextDecoration.LineThrough
-                                        )
-                                        )
-                                else if (item.disliked && item.quantity == 0) (
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.tertiary,
-                                            textDecoration = TextDecoration.LineThrough
-                                        )
-                                        )
-                                else (MaterialTheme.typography.titleMedium.copy(
+                                text = item.brand,
+                                modifier = Modifier,
+                                style = MaterialTheme.typography.titleMedium.copy(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     textDecoration = TextDecoration.None
-                                )
-                                        ),
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 16.sp,
-                                maxLines = 1,
+                                ),
+                                fontStyle = Italic,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
                             )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
-                                    .offset(y = (-4).dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                // Brand Name //
-                                Column(
-                                    modifier = Modifier
-                                        .padding(0.dp)
-                                        .weight(.95f),
-                                    horizontalAlignment = Alignment.Start
-                                ) {
-                                    Text(
-                                        text = item.brand,
-                                        modifier = Modifier,
-                                        style =
-                                        if (item.quantity == 0) (
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    color = MaterialTheme.colorScheme.tertiary,
-                                                    textDecoration = TextDecoration.None
-                                                )
-                                                )
-                                        else (MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            textDecoration = TextDecoration.None
-                                        )
-                                                ),
-                                        fontStyle = Italic,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                                // Type //
-                                Column(
-                                    modifier = Modifier
-                                        .padding(0.dp)
-                                        .weight(0.5f),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = item.type,
-                                        modifier = Modifier,
-                                        style =
-                                        if (item.quantity == 0) (
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    color = MaterialTheme.colorScheme.tertiary,
-                                                    textDecoration = TextDecoration.None
-                                                )
-                                                )
-                                        else (MaterialTheme.typography.titleMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            textDecoration = TextDecoration.None
-                                        )
-                                                ),
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 11.sp,
-                                    )
-                                }
-                                Spacer(
-                                    modifier = Modifier
-                                        .width(0.dp)
-                                        .padding(0.dp)
-                                        .weight(1f)
-                                )
-                            }
+                            // Other Info //
+                            Text(
+                                text = item.type,
+                                modifier = Modifier,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textDecoration = TextDecoration.None
+                                ),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 11.sp,
+                            )
                         }
                     }
 
                 }
                 Column(
                     modifier = Modifier
-                        .padding(0.dp)
-                        .weight(0.1f),
+                        .width(18.dp)
+                        .padding(0.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.End
                 ) {
@@ -690,16 +668,13 @@ private fun CellarListItem(
                             text = "x" + item.quantity,
                             modifier = Modifier,
                             style =
-                            if (item.quantity == 0) (
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                        textDecoration = TextDecoration.None
-                                    )
+                            if (item.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.error,
+                                textDecoration = TextDecoration.None)
                                     )
                             else (MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                textDecoration = TextDecoration.None
-                            )
+                                textDecoration = TextDecoration.None)
                                     ),
                             fontWeight = FontWeight.Normal,
                             fontSize = 16.sp
@@ -712,12 +687,11 @@ private fun CellarListItem(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(Color.Black.copy(alpha = 0.7f))
+                    .background(LocalCustomColors.current.customScrim.copy(alpha = 0.85f))
                     .padding(0.dp)
             ) {
                 Row(
                     modifier = Modifier
-                      //  .clickable { isMenuClicked = true }
                         .fillMaxSize(),
                     horizontalArrangement = Arrangement.spacedBy(space = 16.dp, alignment = Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
@@ -726,12 +700,15 @@ private fun CellarListItem(
                         onClick = {
                             onItemClick(item)
                             onMenuDissmiss()
-                        }
+                        },
+                        modifier = Modifier,
                     ) {
                         Text(
                             text = "Edit item",
                             modifier = Modifier,
                             color = LocalContentColor.current,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
                         )
                     }
                     if (item.notes.isNotEmpty()) {
@@ -745,6 +722,8 @@ private fun CellarListItem(
                                 text = "View note",
                                 modifier = Modifier,
                                 color = LocalContentColor.current,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
                             )
                         }
                     }
@@ -765,29 +744,31 @@ fun TableViewMode(
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
 ) {
-    val columnWidths = listOf(
+    val columnMinWidths = listOf(
         180.dp, // Brand
-        250.dp, // Blend
+        300.dp, // Blend
         108.dp, // Type
         64.dp, // Fav/Dis
         64.dp, // Note
         54.dp // Quantity
     )
+
     TableLayout(
         items = itemsList,
-        columnWidths = columnWidths,
+        columnMinWidths = columnMinWidths,
         onItemClick = onItemClick,
         onNoteClick = onNoteClick,
         sorting = sorting,
         updateSorting = updateSorting,
         modifier = modifier
+            .fillMaxWidth()
     )
 }
 
 @Composable
 fun TableLayout(
     items: List<Items>,
-    columnWidths: List<Dp>,
+    columnMinWidths: List<Dp>,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
@@ -828,10 +809,11 @@ fun TableLayout(
                 .fillMaxWidth()
                 .height(intrinsicSize = IntrinsicSize.Min)
         ) {
-            for (columnIndex in columnWidths.indices) {
+            for (columnIndex in columnMinWidths.indices) {
                 Box(
                     modifier = Modifier
-                        .width(columnWidths[columnIndex])
+                        //  .width(columnWidths[columnIndex])
+                        .width(columnMinWidths[columnIndex])
                         .fillMaxHeight()
                         .padding(0.dp)
                         .background(MaterialTheme.colorScheme.primaryContainer)
@@ -860,23 +842,23 @@ fun TableLayout(
                     val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
                         updateSorting(newSortColumn)
                     }
+                        HeaderCell(
+                            text = headerText,
+                            columnIndex = columnIndex,
+                            primarySort = sorting.columnIndex == columnIndex,
+                            onSortChange = onSortChange,
+                            sorting = sorting,
+                            modifier = Modifier
+                                .padding(0.dp)
+                                .align(alignment),
+                            icon1 = if (columnIndex == 3)
+                                painterResource(id = R.drawable.favorite_heart_filled_18) else null,
+                            icon2 = if (columnIndex == 3)
+                                painterResource(id = R.drawable.question_mark_24) else null,
+                            iconUp = painterResource(id = R.drawable.arrow_up),
+                            iconDown = painterResource(id = R.drawable.arrow_down)
+                        )
 
-                    HeaderCell(
-                        text = headerText,
-                        columnIndex = columnIndex,
-                        primarySort = sorting.columnIndex == columnIndex,
-                        onSortChange = onSortChange,
-                        sorting = sorting,
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .align(alignment),
-                        icon1 = if (columnIndex == 3)
-                            painterResource(id = R.drawable.favorite_heart_filled_18) else null,
-                        icon2 = if (columnIndex == 3)
-                            painterResource(id = R.drawable.question_mark_24) else null,
-                        iconUp = painterResource(id = R.drawable.arrow_up),
-                        iconDown = painterResource(id = R.drawable.arrow_down)
-                    )
                 }
             }
         }
@@ -892,13 +874,13 @@ fun TableLayout(
                         .height(intrinsicSize = IntrinsicSize.Min)
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    for (columnIndex in columnWidths.indices) {
+                    for (columnIndex in columnMinWidths.indices) {
                         Box(
                             modifier = Modifier
-                                .width(columnWidths[columnIndex])
+                                .width(columnMinWidths[columnIndex])
                                 .fillMaxHeight()
                                 .align(Alignment.CenterVertically)
-                                .border(Dp.Hairline, color = Color.Gray)
+                                .border(Dp.Hairline, color = Color(0xFF646464))
                         ) {
                             val cellValue = columnMapping[columnIndex](item)
                             val alignment = when (columnIndex) {
@@ -920,8 +902,8 @@ fun TableLayout(
                                     }
                                     if (icon != null) {
                                         val tintColor = when (favDisValue) {
-                                            1 -> Color(0xFFAA0000)
-                                            2 -> Color(0xFFAA0000)
+                                            1 -> LocalCustomColors.current.favHeart
+                                            2 -> LocalCustomColors.current.disHeart
                                             else -> Color.Unspecified
                                         }
                                         Image(
@@ -948,7 +930,7 @@ fun TableLayout(
                                                 .size(20.dp)
                                                 .align(alignment)
                                                 .clickable { onNoteClick(item) },
-                                            colorFilter = ColorFilter.tint(LocalContentColor.current),
+                                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary),
                                         )
                                     } else {
                                         TableCell(
@@ -956,6 +938,14 @@ fun TableLayout(
                                             contentAlignment = alignment,
                                         )
                                     }
+                                }
+                                5 -> { // quantity
+                                    TableCell(
+                                        value = "x$cellValue",
+                                        modifier = Modifier
+                                            .align(alignment),
+                                        contentAlignment = alignment,
+                                    )
                                 }
                                 else -> {
                                     TableCell(
@@ -967,6 +957,7 @@ fun TableLayout(
                                             when (columnIndex) {
                                                 0 -> onItemClick(item)
                                                 1 -> onItemClick(item)
+                                                else -> { }
                                             }
                                         }
                                     )
@@ -1089,7 +1080,7 @@ fun TableCell(
         }
         Text(
             text = text,
-//            color = textColor,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -1110,8 +1101,8 @@ fun TableCell(
 //        isTableView = true,
 //    )
 //}
-//
-//
+
+
 //@Preview(showBackground = true)
 //@Composable
 //fun HomeBodyListPreview() {
@@ -1123,21 +1114,22 @@ fun TableCell(
 //    ), onItemClick = {}, contentPadding = PaddingValues(0.dp)
 //    )
 //}
-//
-//
+
+
 //@Preview(showBackground = true)
 //@Composable
 //fun CellarItemPreview() {
 //    CellarListItem(
-//        Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2,
-//            disliked = false,
-//            favorite = true,
-//            notes = null.toString(),
-//        ),
-//    )
+//        modifier = Modifier,
+//        Items(0, "Cornell & Diehl", "Sun Bear Tupelo (2023)", "Burley", 2, false, true, "note",),
+//        onItemClick = {},
+//        onNoteClick = {},
+//        showMenu = false,
+//        onMenuDissmiss = {}
+//        )
 //}
-//
-//
+
+
 //@Preview(showBackground = true)
 //@Composable
 //fun HomeBodyTablePreview() {
@@ -1172,5 +1164,4 @@ fun TableCell(
 //        onNoteClick = {},
 //        columnWidths = listOf(144.dp, 288.dp, 96.dp, 52.dp, 52.dp, 52.dp)
 //    )
-//
 //}
