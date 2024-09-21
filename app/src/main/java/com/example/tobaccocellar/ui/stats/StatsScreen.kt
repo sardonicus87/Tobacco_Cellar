@@ -80,7 +80,7 @@ fun StatsScreen(
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 66.dp, start = 0.dp, end = 0.dp)
+                .padding(top = 64.dp, bottom = 52.dp, start = 0.dp, end = 0.dp)
         ) {
             StatsBody(
                 rawStats = rawStats,

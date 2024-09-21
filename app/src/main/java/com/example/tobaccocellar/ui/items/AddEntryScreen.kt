@@ -1,5 +1,6 @@
 package com.example.tobaccocellar.ui.items
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -26,25 +26,32 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,13 +71,12 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,6 +86,7 @@ import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
+import com.example.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -178,7 +185,7 @@ fun AddEntryBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 8.dp, end = 8.dp, top = 0.dp, bottom = 8.dp),
+            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         ItemInputForm(
@@ -195,7 +202,7 @@ fun AddEntryBody(
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp)
+                .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 0.dp),
         ) {
             Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
         }
@@ -214,14 +221,14 @@ fun AddEntryBody(
                 enabled = true,
                 shape = MaterialTheme.shapes.small,
                 colors = ButtonColors(
-                    containerColor = Color(0xFF990000),
-                    contentColor = MaterialTheme.colorScheme.onError,
+                    containerColor = LocalCustomColors.current.deleteButton,
+                    contentColor = Color.White,
                     disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
                     disabledContentColor = MaterialTheme.colorScheme.onErrorContainer,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp)
+                    .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 0.dp)
             ) {
                 Icon(painter = painterResource(id = R.drawable.delete_forever), contentDescription = null)
                 Text(text = stringResource(R.string.delete))
@@ -303,24 +310,43 @@ fun ItemInputForm(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     val titles = listOf("Item Details", "Notes")
 
     Column(
         modifier = modifier
             .fillMaxWidth(),
     ) {
-        SecondaryTabRow(
+        TabRow(
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier
                 .padding(0.dp, bottom = 8.dp),
+            containerColor = Color.Transparent,
+            contentColor = LocalContentColor.current,
+            indicator = { tabPositions ->
+                SecondaryIndicator(
+                    modifier = Modifier
+                        .tabIndicatorOffset(tabPositions[selectedTabIndex])
+                        .padding(horizontal = 8.dp),
+                    color = MaterialTheme.colorScheme.inversePrimary
+                )
+            },
+            divider = {
+                HorizontalDivider(
+                    modifier = Modifier,
+                    thickness = 1.dp,
+                )
+            },
         ) {
             titles.forEachIndexed { index, title ->
-                Tab(
-                    text = { Text(title) },
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index }
-                )
+                CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        modifier = Modifier,
+                        text = { Text(title) },
+                    )
+                }
             }
         }
         when (selectedTabIndex) {
@@ -329,7 +355,7 @@ fun ItemInputForm(
                 Column(
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 0.dp, start = 0.dp, end = 0.dp),
+                        .padding(top = 8.dp, bottom = 0.dp, start = 8.dp, end = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -368,7 +394,6 @@ fun ItemInputForm(
 
                             val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
                             var showSuggestions by remember { mutableStateOf(false) }
-//                val focusManager = LocalFocusManager.current
 
                             AutoCompleteText(
                                 value = itemDetails.brand,
@@ -387,7 +412,6 @@ fun ItemInputForm(
                                 onOptionSelected = {
                                     onValueChange(itemDetails.copy(brand = it))
                                     TextRange(0, it.length)
-//                        focusManager.clearFocus()
                                 },
                                 suggestions = suggestions.value,
                                 modifier = Modifier
@@ -454,6 +478,9 @@ fun ItemInputForm(
                                     focusedIndicatorColor = Color.Transparent,
                                     unfocusedIndicatorColor = Color.Transparent,
                                     disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField,
                                 )
                             )
                         }
@@ -488,7 +515,7 @@ fun ItemInputForm(
                         Column(
                             modifier = modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, end = 8.dp, top = 0.dp, bottom = 0.dp),
+                                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
 
@@ -556,6 +583,9 @@ fun ItemInputForm(
                                             focusedIndicatorColor = Color.Transparent,
                                             unfocusedIndicatorColor = Color.Transparent,
                                             disabledIndicatorColor = Color.Transparent,
+                                            focusedContainerColor = LocalCustomColors.current.textField,
+                                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                                            disabledContainerColor = LocalCustomColors.current.textField,
                                         )
                                     )
                                     IconButton(
@@ -663,7 +693,7 @@ fun ItemInputForm(
                                             }
                                         },
                                         modifier = Modifier
-                                            .padding(0.dp)
+                                            .padding(0.dp),
                                     )
                                 }
                                 Row(
@@ -692,7 +722,7 @@ fun ItemInputForm(
                                             }
                                         },
                                         modifier = Modifier
-                                            .padding(0.dp)
+                                            .padding(0.dp),
                                     )
                                 }
                             }
@@ -704,7 +734,7 @@ fun ItemInputForm(
             1 -> {
                 Column(
                     modifier = Modifier
-                        .padding(top = 24.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
+                        .padding(top = 24.dp, bottom = 16.dp, start = 24.dp, end = 24.dp)
                 ) {
                     TextField(
                         value = itemDetails.notes,
@@ -720,6 +750,9 @@ fun ItemInputForm(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
                         ),
                         singleLine = false,
                         maxLines = 5,
@@ -731,17 +764,23 @@ fun ItemInputForm(
     }
 }
 
+
 @Composable
 fun FavoriteHeart(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-
     IconToggleButton(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
         modifier = modifier,
+        colors = IconButtonDefaults.iconToggleButtonColors(
+            checkedContentColor = LocalCustomColors.current.favHeart,
+//            checkedContainerColor = MaterialTheme.colorScheme.primary,
+//            uncheckedContentColor = MaterialTheme.colorScheme.onPrimary,
+//            uncheckedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        )
     ) {
         Icon(
             imageVector = if (checked) {
@@ -764,6 +803,9 @@ fun HatedBrokenHeart(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
         modifier = modifier,
+        colors = IconButtonDefaults.iconToggleButtonColors(
+            checkedContentColor = LocalCustomColors.current.disHeart,
+        )
     ) {
         Icon(
             imageVector = if (checked) {
@@ -832,6 +874,9 @@ fun AutoCompleteText(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
+                focusedContainerColor = LocalCustomColors.current.textField,
+                unfocusedContainerColor = LocalCustomColors.current.textField,
+                disabledContainerColor = LocalCustomColors.current.textField,
             )
         )
         if (expanded && suggestions.isNotEmpty()) {
@@ -913,8 +958,7 @@ fun TypeDropDown(
             value = selectedValue,
             onValueChange = {},
             modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
-                .fillMaxWidth(),
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -924,11 +968,17 @@ fun TypeDropDown(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
+                focusedContainerColor = LocalCustomColors.current.textField,
+                unfocusedContainerColor = LocalCustomColors.current.textField,
+                disabledContainerColor = LocalCustomColors.current.textField,
             )
         )
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            modifier = Modifier,
+            matchTextFieldWidth = true,
+            containerColor = LocalCustomColors.current.textField,
         ) {
             options.forEach { option: String ->
                 DropdownMenuItem(
