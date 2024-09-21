@@ -13,12 +13,14 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
@@ -88,6 +90,8 @@ private val darkScheme = darkColorScheme(
     inversePrimary = inversePrimaryDark,
 )
 
+
+// light //
 private val mediumContrastLightColorScheme = lightColorScheme(
     primary = primaryLightMediumContrast,
     onPrimary = onPrimaryLightMediumContrast,
@@ -150,6 +154,7 @@ private val highContrastLightColorScheme = lightColorScheme(
     inversePrimary = inversePrimaryLightHighContrast,
 )
 
+// dark //
 private val mediumContrastDarkColorScheme = darkColorScheme(
     primary = primaryDarkMediumContrast,
     onPrimary = onPrimaryDarkMediumContrast,
@@ -213,6 +218,37 @@ private val highContrastDarkColorScheme = darkColorScheme(
 )
 
 @Immutable
+data class CustomColorScheme(
+    val customScrim: Color = Color.Unspecified,
+    val deleteButton: Color = Color.Unspecified,
+    val favHeart: Color = Color.Unspecified,
+    val disHeart: Color = Color.Unspecified,
+    val textField: Color = Color.Unspecified,
+    val darkNeutral: Color = Color.Unspecified,
+)
+
+val LocalCustomColors = staticCompositionLocalOf { CustomColorScheme() }
+
+private val customLight = CustomColorScheme(
+    customScrim = customScrimLight,
+    deleteButton = deleteButtonLight,
+    favHeart = favHeartLight,
+    disHeart = disHeartLight,
+    textField = textFieldLight,
+    darkNeutral = darkNeutralLight,
+)
+
+private val customDark = CustomColorScheme(
+    customScrim = customScrimDark,
+    deleteButton = deleteButtonDark,
+    favHeart = favHeartDark,
+    disHeart = disHeartDark,
+    textField = textFieldDark,
+    darkNeutral = darkNeutralDark,
+)
+
+
+@Immutable
 data class ColorFamily(
     val color: Color,
     val onColor: Color,
@@ -224,11 +260,12 @@ val unspecified_scheme = ColorFamily(
     Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
 )
 
+
+
 @Composable
 fun TobaccoCellarTheme(
 //    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+//    dynamicColor: Boolean = false,
     preferencesRepo: PreferencesRepo,
     content: @Composable () -> Unit
 ) {
@@ -237,17 +274,12 @@ fun TobaccoCellarTheme(
     )
 
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (userThemeSetting == ThemeSetting.SYSTEM.value) {
-                if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
-                    dynamicLightColorScheme(context)
-            } else {
-                if (userThemeSetting == ThemeSetting.DARK.value)
-                    dynamicDarkColorScheme(context) else
-                    dynamicLightColorScheme(context)
-            }
-        }
+//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && userThemeSetting == ThemeSetting.SYSTEM.value -> {
+//            val context = LocalContext.current
+//            if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
+//                    dynamicLightColorScheme(context)
+//            }
+
         userThemeSetting == ThemeSetting.DARK.value -> darkScheme
         userThemeSetting == ThemeSetting.LIGHT.value -> lightScheme
         else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
@@ -257,11 +289,23 @@ fun TobaccoCellarTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val customColors = when {
+        userThemeSetting == ThemeSetting.DARK.value -> customDark
+        userThemeSetting == ThemeSetting.LIGHT.value -> customLight
+        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
+            if (isSystemInDarkTheme()) customDark else customLight
+            } else {
+            customLight
+        }
+    }
+
+    CompositionLocalProvider(LocalCustomColors provides customColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 
 //@Composable
@@ -299,3 +343,28 @@ fun TobaccoCellarTheme(
 //    darkTheme -> darkScheme
 //    else -> lightScheme
 //}
+
+////    darkTheme: Boolean = isSystemInDarkTheme(),
+////    dynamicColor: Boolean = false,
+//preferencesRepo: PreferencesRepo,
+//content: @Composable () -> Unit
+//) {
+//    val userThemeSetting by preferencesRepo.themeSetting.collectAsState(
+//        initial = ThemeSetting.SYSTEM.value
+//    )
+//
+//    val colorScheme = when {
+////        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && userThemeSetting == ThemeSetting.SYSTEM.value -> {
+////            val context = LocalContext.current
+////            if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
+////                    dynamicLightColorScheme(context)
+////            }
+//
+//        userThemeSetting == ThemeSetting.DARK.value -> darkScheme
+//        userThemeSetting == ThemeSetting.LIGHT.value -> lightScheme
+//        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
+//            if (isSystemInDarkTheme()) darkScheme else lightScheme
+//        } else {
+//            lightScheme
+//        }
+//    }
