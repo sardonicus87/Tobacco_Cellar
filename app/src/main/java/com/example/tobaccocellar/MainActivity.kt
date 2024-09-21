@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 backPressedOnce = true
-                Toast.makeText(this@MainActivity, "Press BACK again to exit", Toast.LENGTH_SHORT)
+                Toast.makeText(this@MainActivity, "Tap again to exit", Toast.LENGTH_SHORT)
                     .show()
 
                 Handler(Looper.getMainLooper()).postDelayed({ backPressedOnce = false }, 2000)
@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
 //        enableEdgeToEdge()
 //        WindowCompat.setDecorFitsSystemWindows(window, true)
 
-
         setContent {
             val application = (application as CellarApplication)
             WindowInsets.safeDrawing
@@ -52,7 +51,9 @@ class MainActivity : ComponentActivity() {
                     Surface(
                         modifier = Modifier
                             .fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background
+                        color = MaterialTheme.colorScheme.background,
+                    //    tonalElevation = 1.dp
+
                     ) {
                         CellarApp()
                     }
