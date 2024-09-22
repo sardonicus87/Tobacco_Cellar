@@ -5,10 +5,12 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -22,6 +24,7 @@ class FilterViewModel (
             val brands = itemsRepository.getAllBrandsStream()
         }
     }
+
 
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
@@ -79,13 +82,22 @@ class FilterViewModel (
     }
 
     // get vals //
-    val availableBrands: StateFlow<List<String>> =
-        itemsRepository.getAllBrandsStream()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
-                initialValue = emptyList()
-            )
+    private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
+    val availableBrands: StateFlow<List<String>> = _availableBrands
+
+    init {
+        viewModelScope.launch {
+            _availableBrands.value = itemsRepository.getAllBrandsStream().first()
+        }
+    }
+
+//    val availableBrands: StateFlow<List<String>> =
+//        itemsRepository.getAllBrandsStream()
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(),
+//                initialValue = emptyList()
+//            )
 
     val availableTypes: StateFlow<List<String>> =
         itemsRepository.getAllTypesStream()
@@ -118,9 +130,6 @@ class FilterViewModel (
                 started = SharingStarted.WhileSubscribed(),
                 initialValue = emptyList()
             )
-
-
-
 
 
     /** Sorting states **/

@@ -1,6 +1,7 @@
 package com.example.tobaccocellar.ui.home
 
 import android.content.res.Configuration
+import android.widget.TableLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -86,14 +87,18 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
+import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -131,6 +136,7 @@ fun HomeScreen(
             viewmodel.snackbarShown()
         }
     }
+
 
     Scaffold(
         modifier = modifier
@@ -208,7 +214,7 @@ private fun HomeHeader(
     Row (
         modifier = Modifier
             .fillMaxWidth()
-            .background(BottomAppBarDefaults.containerColor)
+            .background(LocalCustomColors.current.backgroundVariant)
             .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

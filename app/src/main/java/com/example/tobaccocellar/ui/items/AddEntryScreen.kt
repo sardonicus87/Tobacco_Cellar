@@ -64,6 +64,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -82,12 +83,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tobaccocellar.CellarApplication
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
+import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -110,6 +114,7 @@ fun AddEntryScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -263,6 +268,8 @@ fun ItemExistsDialog(
         title = { Text(stringResource(R.string.attention)) },
         text = { Text(stringResource(R.string.item_exists)) },
         modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
         dismissButton = {
             TextButton(onClick = onItemExistsCancel) {
                 Text(stringResource(R.string.cancel))
@@ -287,6 +294,8 @@ private fun DeleteConfirmationDialog(
         title = { Text(stringResource(R.string.delete_entry)) },
         text = { Text(stringResource(R.string.delete_question)) },
         modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
         dismissButton = {
             TextButton(onClick = onDeleteCancel) {
                 Text(stringResource(R.string.cancel))

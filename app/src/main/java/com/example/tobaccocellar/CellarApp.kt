@@ -114,7 +114,6 @@ fun CellarApp(
     CellarNavHost(navController = navController)
 
     val application = LocalCellarApplication.current
-
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
 
@@ -126,6 +125,8 @@ fun CellarApp(
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
             ),
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
             /* TODO new window insets stuff */
             //        windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
             dragHandle = { },

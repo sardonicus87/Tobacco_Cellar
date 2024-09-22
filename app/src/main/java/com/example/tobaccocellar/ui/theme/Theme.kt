@@ -225,6 +225,7 @@ data class CustomColorScheme(
     val disHeart: Color = Color.Unspecified,
     val textField: Color = Color.Unspecified,
     val darkNeutral: Color = Color.Unspecified,
+    val backgroundVariant: Color = Color.Unspecified,
 )
 
 val LocalCustomColors = staticCompositionLocalOf { CustomColorScheme() }
@@ -236,6 +237,7 @@ private val customLight = CustomColorScheme(
     disHeart = disHeartLight,
     textField = textFieldLight,
     darkNeutral = darkNeutralLight,
+    backgroundVariant = backgroundVariantLight,
 )
 
 private val customDark = CustomColorScheme(
@@ -245,6 +247,7 @@ private val customDark = CustomColorScheme(
     disHeart = disHeartDark,
     textField = textFieldDark,
     darkNeutral = darkNeutralDark,
+    backgroundVariant = backgroundVariantDark,
 )
 
 
