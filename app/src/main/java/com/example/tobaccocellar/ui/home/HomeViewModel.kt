@@ -41,7 +41,14 @@ class HomeViewModel(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    /** States and StateFlows **/
+    init {
+        viewModelScope.launch {
+           filterViewModel
+        }
+    }
+
+
+    /** States and Flows **/
     @OptIn(ExperimentalCoroutinesApi::class)
     val homeUiState: StateFlow<HomeUiState> =
         combine(

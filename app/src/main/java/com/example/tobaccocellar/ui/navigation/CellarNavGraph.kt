@@ -2,6 +2,7 @@ package com.example.tobaccocellar.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,6 +22,8 @@ import com.example.tobaccocellar.ui.settings.SettingsDestination
 import com.example.tobaccocellar.ui.settings.SettingsScreen
 import com.example.tobaccocellar.ui.stats.StatsDestination
 import com.example.tobaccocellar.ui.stats.StatsScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 @Composable

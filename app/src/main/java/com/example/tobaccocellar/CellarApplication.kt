@@ -24,6 +24,7 @@ class CellarApplication : Application() {
         FilterViewModel(container.itemsRepository)
     }
 
+
     override fun onCreate() {
         super.onCreate()
         container = AppDataContainer(this)
