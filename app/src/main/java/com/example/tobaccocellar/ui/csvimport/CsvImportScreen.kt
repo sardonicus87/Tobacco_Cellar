@@ -184,8 +184,288 @@ fun CsvImportBody(
         }
     }
 
-    when (importStatus) {
-        is ImportStatus.Loading, is ImportStatus.Success -> {
+
+    Box() {
+        Column(
+            modifier = modifier
+                .padding(start = 12.dp, top = 0.dp, end = 12.dp, bottom = 0.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Spacer(
+                modifier = modifier
+                    .height(12.dp)
+            )
+            Text(
+                text = stringResource(R.string.csv_import_instructions),
+                modifier = modifier
+                    .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
+                softWrap = true,
+                textAlign = TextAlign.Start,
+            )
+            Button(
+                onClick = { launcher.launch(intent) },
+                enabled = true,
+                modifier = modifier
+                    .padding(8.dp)
+                    .height(40.dp)
+            ) {
+                Text(text = stringResource(R.string.select_csv))
+            }
+            Spacer(
+                modifier = modifier
+                    .height(8.dp)
+            )
+// Imported CSV data //
+            if (csvUiState.columns.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.possible_header),
+                    modifier = modifier
+                        .padding(0.dp)
+                        .fillMaxWidth(),
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = csvImportState.header.joinToString(", "),
+                    modifier = modifier
+                        .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
+                )
+                Text(
+                    text = stringResource(R.string.possible_record),
+                    modifier = modifier
+                        .padding(0.dp)
+                        .fillMaxWidth(),
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = csvImportState.firstRecord.joinToString(", "),
+                    modifier = modifier
+                        .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 16.dp),
+                )
+                Text(
+                    text = stringResource(R.string.csv_import_mapping),
+                    modifier = modifier
+                        .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
+                    softWrap = true,
+                    textAlign = TextAlign.Start,
+                )
+                // has header option //
+                Row (
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // checkbox
+                    Spacer(
+                        modifier = modifier
+                            .weight(.1f)
+                    )
+                    Column (
+                        modifier = modifier
+                            .padding(0.dp)
+                            .weight(1f),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Row(
+                            modifier = modifier
+                                .padding(0.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Has header?",
+                                modifier = modifier
+                            )
+                            Checkbox(
+                                checked = mappingOptions.hasHeader,
+                                onCheckedChange = { isChecked ->
+                                    onHeaderChange(isChecked)
+                                },
+                                modifier = modifier
+                            )
+                        }
+                    }
+                    Spacer(
+                        modifier = modifier
+                            .weight(.5f)
+                    )
+                    // record count
+                    Column (
+                        modifier = modifier
+                            .padding(0.dp)
+                            .weight(1.5f),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text =
+                            if (mappingOptions.hasHeader) {
+                                "Record count: ${csvImportState.recordCount - 1}"
+                            } else {
+                                "Record count: ${csvImportState.recordCount}"
+                            },
+                            modifier = modifier
+                        )
+                    }
+                    Spacer(
+                        modifier = modifier
+                            .weight(.1f)
+                    )
+                }
+                // column mapping options //
+                Column (
+                    modifier = modifier
+                        .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 16.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BrandField(
+                        selectedColumn = mappingOptions.brandColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Brand, selectedColumn
+                        ) },
+                    )
+                    BlendField(
+                        selectedColumn = mappingOptions.blendColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Blend, selectedColumn
+                        ) },
+                    )
+                    TypeField(
+                        selectedColumn = mappingOptions.typeColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Type, selectedColumn
+                        ) },
+                    )
+                    QuantityField(
+                        selectedColumn = mappingOptions.quantityColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Quantity, selectedColumn
+                        ) },
+                    )
+                    DislikedField(
+                        selectedColumn = mappingOptions.dislikedColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Disliked, selectedColumn
+                        ) },
+                    )
+                    FavoriteField(
+                        selectedColumn = mappingOptions.favoriteColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Favorite, selectedColumn
+                        ) },
+                    )
+                    NotesField(
+                        selectedColumn = mappingOptions.notesColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Notes, selectedColumn
+                        ) },
+                    )
+                }
+                // Confirm and  Import button //
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            viewModel.confirmImport()
+                        }
+                    },
+                    enabled = csvUiState.isFormValid,
+                    modifier = modifier
+                        .padding(8.dp)
+                        .height(40.dp)
+                ) {
+                    Text(text = "Confirm and Import")
+                }
+                Spacer(
+                    modifier = modifier
+                        .height(12.dp)
+                )
+                if (showErrorDialog) {
+                    ErrorDialog(
+                        modifier = modifier,
+                        confirmError = { showErrorDialog = false }
+                    )
+                }
+                when (importStatus) {
+                    is ImportStatus.Success -> {
+                        val success = importStatus as ImportStatus.Success
+                        navigateToImportResults(
+                            success.totalRecords,
+                            success.successfulConversions,
+                            success.successfulInsertions
+                        )
+                    }
+                    is ImportStatus.Error -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(
+                                modifier = Modifier
+                                    .weight(1.5f)
+                            )
+                            Text(
+                                text = "Error importing CSV!",
+                                modifier = Modifier
+                                    .padding(bottom = 16.dp),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 34.sp
+                            )
+                            Text(
+                                text = "Please try again or return to cellar.",
+                                modifier = Modifier
+                                    .padding(bottom = 16.dp),
+                                fontSize = 18.sp,
+                            )
+                            TextButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        viewModel.resetImportState()
+                                    }
+                                },
+                                modifier = Modifier,
+                                shape = MaterialTheme.shapes.small,
+                            ) {
+                                Text(
+                                    text = "Reset form",
+                                    fontSize = 18.sp,
+                                )
+                            }
+                            TextButton(
+                                onClick = { navigateToHome() },
+                                modifier = Modifier,
+                                shape = MaterialTheme.shapes.small,
+                            ) {
+                                Text(
+                                    text = "Go back to Cellar",
+                                    fontSize = 18.sp,
+                                )
+                            }
+                            Spacer(
+                                modifier = Modifier
+                                    .weight(2f)
+                            )
+                        }
+                    } else -> {}
+                }
+            }
+        }
+        if (importStatus is ImportStatus.Loading) {
             Column(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -206,303 +486,6 @@ fun CsvImportBody(
                     modifier = Modifier
                         .weight(2f)
                 )
-                when (importStatus) {
-                    is ImportStatus.Success -> {
-                        val success = importStatus as ImportStatus.Success
-                        navigateToImportResults(
-                            success.totalRecords,
-                            success.successfulConversions,
-                            success.successfulInsertions
-                        )
-                    }
-
-                    else -> {}
-                }
-            }
-        }
-
-        is ImportStatus.Error -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .weight(1.5f)
-                )
-                Text(
-                    text = "Error importing CSV!",
-                    modifier = Modifier
-                        .padding(bottom = 16.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 34.sp
-                )
-                Text(
-                    text = "Please try again or return to cellar.",
-                    modifier = Modifier
-                        .padding(bottom = 16.dp),
-                    fontSize = 18.sp,
-                )
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.resetImportState()
-                        }
-                    },
-                    modifier = Modifier,
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        text = "Reset form",
-                        fontSize = 18.sp,
-                    )
-                }
-                TextButton(
-                    onClick = { navigateToHome() },
-                    modifier = Modifier,
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        text = "Go back to Cellar",
-                        fontSize = 18.sp,
-                    )
-                }
-                Spacer(
-                    modifier = Modifier
-                        .weight(2f)
-                )
-            }
-        }
-
-        else -> {
-            Column(
-                modifier = modifier
-                    .padding(start = 12.dp, top = 0.dp, end = 12.dp, bottom = 0.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start,
-            ) {
-                Spacer(
-                    modifier = modifier
-                        .height(12.dp)
-                )
-                Text(
-                    text = stringResource(R.string.csv_import_instructions),
-                    modifier = modifier
-                        .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
-                    softWrap = true,
-                    textAlign = TextAlign.Start,
-                )
-                Button(
-                    onClick = { launcher.launch(intent) },
-                    enabled = true,
-                    modifier = modifier
-                        .padding(8.dp)
-                        .height(40.dp)
-                ) {
-                    Text(text = stringResource(R.string.select_csv))
-                }
-                Spacer(
-                    modifier = modifier
-                        .height(8.dp)
-                )
-// Imported CSV data //
-                if (csvUiState.columns.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.possible_header),
-                        modifier = modifier
-                            .padding(0.dp)
-                            .fillMaxWidth(),
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = csvImportState.header.joinToString(", "),
-                        modifier = modifier
-                            .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.possible_record),
-                        modifier = modifier
-                            .padding(0.dp)
-                            .fillMaxWidth(),
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = csvImportState.firstRecord.joinToString(", "),
-                        modifier = modifier
-                            .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 16.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.csv_import_mapping),
-                        modifier = modifier
-                            .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
-                        softWrap = true,
-                        textAlign = TextAlign.Start,
-                    )
-                    // has header option //
-                    Row (
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // checkbox
-                        Spacer(
-                            modifier = modifier
-                                .weight(.1f)
-                        )
-                        Column (
-                            modifier = modifier
-                                .padding(0.dp)
-                                .weight(1f),
-                            horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Row(
-                                modifier = modifier
-                                    .padding(0.dp),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = "Has header?",
-                                    modifier = modifier
-                                )
-                                Checkbox(
-                                    checked = mappingOptions.hasHeader,
-                                    onCheckedChange = { isChecked ->
-                                        onHeaderChange(isChecked)
-                                    },
-                                    modifier = modifier
-                                )
-                            }
-                        }
-                        Spacer(
-                            modifier = modifier
-                                .weight(.5f)
-                        )
-                        // record count
-                        Column (
-                            modifier = modifier
-                                .padding(0.dp)
-                                .weight(1.5f),
-                            horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text =
-                                if (mappingOptions.hasHeader) {
-                                    "Record count: ${csvImportState.recordCount - 1}"
-                                } else {
-                                    "Record count: ${csvImportState.recordCount}"
-                                },
-                                modifier = modifier
-                            )
-                        }
-                        Spacer(
-                            modifier = modifier
-                                .weight(.1f)
-                        )
-                    }
-                    // column mapping options //
-                    Column (
-                        modifier = modifier
-                            .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 16.dp)
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        BrandField(
-                            selectedColumn = mappingOptions.brandColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Brand, selectedColumn
-                            ) },
-                        )
-                        BlendField(
-                            selectedColumn = mappingOptions.blendColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Blend, selectedColumn
-                            ) },
-                        )
-                        TypeField(
-                            selectedColumn = mappingOptions.typeColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Type, selectedColumn
-                            ) },
-                        )
-                        QuantityField(
-                            selectedColumn = mappingOptions.quantityColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Quantity, selectedColumn
-                            ) },
-                        )
-                        FavoriteField(
-                            selectedColumn = mappingOptions.favoriteColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Favorite, selectedColumn
-                            ) },
-                        )
-                        DislikedField(
-                            selectedColumn = mappingOptions.dislikedColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Disliked, selectedColumn
-                            ) },
-                        )
-                        NotesField(
-                            selectedColumn = mappingOptions.notesColumn,
-                            csvColumns = csvUiState.columns,
-                            onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                                CsvImportViewModel.CsvField.Notes, selectedColumn
-                            ) },
-                        )
-                    }
-                    // Confirm and  Import button //
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                viewModel.confirmImport()
-                            }
-                        },
-                        enabled = csvUiState.isFormValid,
-                        modifier = modifier
-                            .padding(8.dp)
-                            .height(40.dp)
-                    ) {
-                        Text(text = "Confirm and Import")
-                    }
-                    Spacer(
-                        modifier = modifier
-                            .height(12.dp)
-                    )
-                    if (showErrorDialog) {
-                        ErrorDialog(
-                            modifier = modifier,
-                            confirmError = { showErrorDialog = false }
-                        )
-                    }
-//                when (importStatus) {
-//                    is ImportStatus.Success -> {
-//                        val success = importStatus as ImportStatus.Success
-//                        navigateToImportResults(
-//                            success.totalRecords,
-//                            success.successfulConversions,
-//                            success.successfulInsertions
-//                        )
-//                    }
-//                    is ImportStatus.Error -> Text(text = "Import failed")
-//                    else -> {}
-//                }
-                }
             }
         }
     }
