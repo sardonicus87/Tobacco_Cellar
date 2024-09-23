@@ -226,6 +226,7 @@ data class CustomColorScheme(
     val textField: Color = Color.Unspecified,
     val darkNeutral: Color = Color.Unspecified,
     val backgroundVariant: Color = Color.Unspecified,
+    val tableBorder: Color = Color.Unspecified,
 )
 
 val LocalCustomColors = staticCompositionLocalOf { CustomColorScheme() }
@@ -238,6 +239,7 @@ private val customLight = CustomColorScheme(
     textField = textFieldLight,
     darkNeutral = darkNeutralLight,
     backgroundVariant = backgroundVariantLight,
+    tableBorder = tableBorderLight,
 )
 
 private val customDark = CustomColorScheme(
@@ -248,6 +250,7 @@ private val customDark = CustomColorScheme(
     textField = textFieldDark,
     darkNeutral = darkNeutralDark,
     backgroundVariant = backgroundVariantDark,
+    tableBorder = tableBorderDark,
 )
 
 

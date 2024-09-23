@@ -83,6 +83,7 @@ val disHeartLight = Color(0xFF03B1FF)
 val textFieldLight = Color(0xFFE0E9E6)
 val darkNeutralLight = Color(0xFFCDD2CD)
 val backgroundVariantLight = Color(0xFFECFFEC) // normal 0xFFF5FBF5
+val tableBorderLight = Color(0xFF9A9F9C)
 
 val customScrimDark = Color(0xFF000000)
 val deleteButtonDark = Color(0xFF990000)
@@ -90,7 +91,8 @@ val favHeartDark = Color(0xFFCF0000)
 val disHeartDark = Color(0xFF03B1FF)
 val textFieldDark = Color(0xFF202926) // original 0xFF363B34
 val darkNeutralDark = Color(0xFF222622)
-val backgroundVariantDark = Color(0xFF182419) // normal 0xFF0F1511
+val backgroundVariantDark = Color(0xFF182419) // normal
+val tableBorderDark = Color(0xFF7E8380)
 
 // light //
 val primaryLightMediumContrast = Color(0xFF004D34)

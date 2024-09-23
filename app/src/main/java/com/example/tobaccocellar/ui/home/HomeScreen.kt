@@ -385,9 +385,10 @@ fun NoteDialog(
                 .wrapContentWidth()
                 .wrapContentHeight(),
             shape = RoundedCornerShape(16.dp),
-        //    elevation = CardDefaults.cardElevation(0.dp),
+        //    elevation = CardDefaults.cardElevation(5.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color.Unspecified,
+            //    contentColor = LocalContentColor.current,
             ),
         ) {
             Column(
@@ -693,7 +694,7 @@ private fun CellarListItem(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(LocalCustomColors.current.customScrim.copy(alpha = 0.85f))
+                    .background(LocalCustomColors.current.customScrim.copy(alpha = 0.80f))
                     .padding(0.dp)
             ) {
                 Row(
@@ -823,7 +824,7 @@ fun TableLayout(
                         .fillMaxHeight()
                         .padding(0.dp)
                         .background(MaterialTheme.colorScheme.primaryContainer)
-                        .border(Dp.Hairline, color = Color.Gray)
+                        .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
                 ) {
                     val alignment = when (columnIndex) {
                         0 -> Alignment.CenterStart // brand
@@ -886,7 +887,7 @@ fun TableLayout(
                                 .width(columnMinWidths[columnIndex])
                                 .fillMaxHeight()
                                 .align(Alignment.CenterVertically)
-                                .border(Dp.Hairline, color = Color(0xFF646464))
+                                .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
                         ) {
                             val cellValue = columnMapping[columnIndex](item)
                             val alignment = when (columnIndex) {
