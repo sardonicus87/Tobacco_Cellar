@@ -195,7 +195,12 @@ fun CellarTopAppBar(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = null
                     )
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier,
+                        containerColor = LocalCustomColors.current.darkNeutral,
+                    ) {
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.import_csv)) },
                             onClick = {
