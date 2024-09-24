@@ -85,7 +85,10 @@ fun CellarNavHost(
             })
         ) {
             EditEntryScreen(
-                navigateBack = { navController.popBackStack() },
+                navigateBack = { navController.navigate(HomeDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
@@ -95,9 +98,8 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() },
                 navigateToHome = { navController.navigate(HomeDestination.route) },
                 navigateToImportResults = { totalRecords, successCount, successfulInsertions -> navController.navigate(
-                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}") {
-                    popUpTo(HomeDestination.route) { inclusive = false }
-                } }
+                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}")
+                }
             )
         }
         composable(
@@ -118,7 +120,10 @@ fun CellarNavHost(
                 totalRecords = totalRecords,
                 successfulConversions = successCount,
                 successfulInsertions = successfulInsertions,
-                navigateToHome = { navController.navigate(HomeDestination.route) },
+                navigateToHome = { navController.navigate(HomeDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } },
                 navigateBack = { navController.navigate(HomeDestination.route) },
                 onNavigateUp = { navController.navigate(HomeDestination.route) }
             )
