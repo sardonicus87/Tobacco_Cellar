@@ -11,7 +11,9 @@ import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.ItemsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -73,6 +75,9 @@ class CsvImportViewModel(
     /** Confirm and import **/
     private val _importStatus = MutableStateFlow<ImportStatus>(ImportStatus.Idle)
     val importStatus = _importStatus.asStateFlow()
+
+    private val _navigateToResults = MutableSharedFlow<ImportResults>()
+    val navigateToResults = _navigateToResults.asSharedFlow()
 
     private fun validateForm (csvUiState: MappingOptions = mappingOptions): Boolean {
         return with(csvUiState) {
@@ -136,6 +141,13 @@ class CsvImportViewModel(
                 totalRecords = totalRecords,
                 successfulConversions = successfulConversions,
                 successfulInsertions = successfulInsertions
+            )
+            _navigateToResults.emit(
+                ImportResults(
+                    totalRecords = totalRecords,
+                    successfulConversions = successfulConversions,
+                    successfulInsertions = successfulInsertions
+                )
             )
         } catch (e: Exception) {
             _importStatus.value = ImportStatus.Error(e)
@@ -202,4 +214,10 @@ sealed class ImportStatus {
     ) : ImportStatus()
     data class Error(val exception: Throwable) : ImportStatus()
 }
+
+data class ImportResults(
+    val totalRecords: Int,
+    val successfulConversions: Int,
+    val successfulInsertions: Int
+)
 

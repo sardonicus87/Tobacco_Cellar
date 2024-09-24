@@ -1,5 +1,7 @@
 package com.example.tobaccocellar.ui.csvimport
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -26,8 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
-import com.example.tobaccocellar.ui.home.HomeDestination
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
+import kotlinx.coroutines.delay
 
 object CsvImportResultsDestination : NavigationDestination {
     override val route = "import_results"
@@ -57,7 +64,7 @@ fun CsvImportResultsScreen (
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(HomeDestination.titleRes),
+                title = stringResource(CsvImportResultsDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateToCsvImport = {},
@@ -97,6 +104,19 @@ fun ImportResultsBody(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
+    var visibleItemIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (visibleItemIndex < 4) { // (total items to fade in, index 0-3)
+            delay(500) // Adjust delay as needed
+            visibleItemIndex++
+        }
+    }
+
+//    AnimatedVisibility(visible = visibleItemIndex > 0, enter = fadeIn()) {
+//        Text()
+//    }
+
     Column(
         modifier = modifier
             .padding(contentPadding)

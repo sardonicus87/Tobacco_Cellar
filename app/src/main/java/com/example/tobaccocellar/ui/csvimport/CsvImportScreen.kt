@@ -2,9 +2,9 @@ package com.example.tobaccocellar.ui.csvimport
 
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,11 +30,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -61,6 +63,7 @@ import com.example.tobaccocellar.data.CsvHelper
 import com.example.tobaccocellar.data.CsvResult
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
+import com.example.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 
 object CsvImportDestination : NavigationDestination {
@@ -184,8 +187,20 @@ fun CsvImportBody(
         }
     }
 
+    LaunchedEffect(viewModel) {
+        viewModel.navigateToResults.collect { success ->
+            navigateToImportResults(
+                success.totalRecords,
+                success.successfulConversions,
+                success.successfulInsertions
+            )
+        }
+    }
+
 
     Box() {
+        var loading by remember { mutableStateOf(false) }
+
         Column(
             modifier = modifier
                 .padding(start = 12.dp, top = 0.dp, end = 12.dp, bottom = 0.dp)
@@ -400,15 +415,20 @@ fun CsvImportBody(
                     )
                 }
                 when (importStatus) {
+                    is ImportStatus.Loading -> {
+                        loading = true
+                    }
                     is ImportStatus.Success -> {
-                        val success = importStatus as ImportStatus.Success
-                        navigateToImportResults(
-                            success.totalRecords,
-                            success.successfulConversions,
-                            success.successfulInsertions
-                        )
+                        loading = false
+//                        val success = importStatus as ImportStatus.Success
+//                        navigateToImportResults(
+//                            success.totalRecords,
+//                            success.successfulConversions,
+//                            success.successfulInsertions
+//                        )
                     }
                     is ImportStatus.Error -> {
+                        loading = false
                         Column(
                             modifier = Modifier
                                 .fillMaxSize(),
@@ -465,10 +485,11 @@ fun CsvImportBody(
                 }
             }
         }
-        if (importStatus is ImportStatus.Loading) {
+        if (loading) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .background(color = Color.Black.copy(alpha = 0.5f)),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -535,10 +556,19 @@ fun BrandField (
                         )
                     },
                     placeholder = { Text(text = "Required") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -601,10 +631,19 @@ fun BlendField (
                         )
                     },
                     placeholder = { Text(text = "Required") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -666,10 +705,19 @@ fun TypeField (
                                 .clickable { expanded = !expanded }
                         )
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -731,10 +779,19 @@ fun QuantityField (
                                 .clickable { expanded = !expanded }
                         )
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -796,10 +853,19 @@ fun FavoriteField (
                                 .clickable { expanded = !expanded }
                         )
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -861,10 +927,19 @@ fun DislikedField (
                                 .clickable { expanded = !expanded }
                         )
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -926,10 +1001,19 @@ fun NotesField (
                                 .clickable { expanded = !expanded }
                         )
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                        focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                        disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                    )
                 )
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    containerColor = LocalCustomColors.current.darkNeutral,
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = "") },
@@ -968,7 +1052,9 @@ fun ErrorDialog(
             TextButton(onClick = confirmError) {
                 Text(stringResource(R.string.ok))
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
     )
 }
 
