@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,7 +35,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -46,7 +44,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -75,12 +72,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontVariation.weight
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -101,10 +95,15 @@ import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.stats.StatsDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
+import com.example.tobaccocellar.ui.theme.inversePrimaryLight
 import com.example.tobaccocellar.ui.theme.onBackgroundDark
 import com.example.tobaccocellar.ui.theme.onPrimaryLight
+import com.example.tobaccocellar.ui.theme.primaryContainerLight
 import com.example.tobaccocellar.ui.theme.primaryDark
 import com.example.tobaccocellar.ui.theme.primaryLight
+import com.example.tobaccocellar.ui.theme.secondaryContainerLight
+import com.example.tobaccocellar.ui.theme.tertiaryContainerLight
+import com.example.tobaccocellar.ui.theme.tertiaryDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -256,7 +255,7 @@ fun CellarBottomAppBar(
             .height(52.dp)
             .padding(0.dp),
         containerColor = primaryLight,  // BottomAppBarDefaults.containerColor
-        contentColor = onBackgroundDark,
+        contentColor = secondaryContainerLight,
         tonalElevation = 10.dp,
         contentPadding = PaddingValues(0.dp),
     ) {
@@ -267,61 +266,55 @@ fun CellarBottomAppBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             // Cellar //
             Box(
                 modifier = Modifier
+                    .padding(vertical = 4.dp)
                     .weight(1f),
                 contentAlignment = Alignment.Center,
             ) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth(.55f)
-//                        .background(if (currentDestination == HomeDestination) MaterialTheme.colorScheme.inversePrimary else Color.Transparent, CircleShape),
-//                    contentAlignment = Alignment.Center,
-//                ) {
-                    IconButton(
-                        onClick = navigateToHome,
+                IconButton(
+                    onClick = navigateToHome,
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.table_view_old),
+                        contentDescription = stringResource(R.string.home_title),
                         modifier = Modifier
-                            .padding(0.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.table_view_old),
-                            contentDescription = stringResource(R.string.home_title),
-                            modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = (-8).dp),
-                            tint =
-                            if (currentDestination == HomeDestination) {
-                                primaryDark
-                            } else {
-                                LocalContentColor.current
-                            },
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .offset(y = 13.dp),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal,
-                        color =
+                            .size(26.dp)
+                            .offset(y = (-8).dp),
+                        tint =
                         if (currentDestination == HomeDestination) {
-                            primaryDark
+                            LocalCustomColors.current.navIcon
                         } else {
                             LocalContentColor.current
                         },
                     )
-              //  }
+                }
+                Text(
+                    text = stringResource(R.string.home_title),
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .offset(y = 13.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Normal,
+                    color =
+                    if (currentDestination == HomeDestination) {
+                        LocalCustomColors.current.navIcon
+                    } else {
+                        LocalContentColor.current
+                    },
+                )
             }
 
             // Stats //
             Box(
                 modifier = Modifier
+                    .padding(vertical = 4.dp)
                     .weight(1f),
                 contentAlignment = Alignment.Center,
-                //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
-                //  horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 IconButton(
                     onClick = navigateToStats,
@@ -336,7 +329,7 @@ fun CellarBottomAppBar(
                             .offset(y = (-8).dp),
                         tint =
                         if (currentDestination == StatsDestination) {
-                            primaryDark
+                            LocalCustomColors.current.navIcon
                         } else {
                             LocalContentColor.current
                         },
@@ -351,7 +344,7 @@ fun CellarBottomAppBar(
                     fontWeight = FontWeight.Normal,
                     color =
                     if (currentDestination == StatsDestination) {
-                        primaryDark
+                        LocalCustomColors.current.navIcon
                     } else {
                         LocalContentColor.current
                     },
@@ -361,10 +354,9 @@ fun CellarBottomAppBar(
             // Filter //
             Box(
                 modifier = Modifier
+                    .padding(vertical = 4.dp)
                     .weight(1f),
                 contentAlignment = Alignment.Center,
-                //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
-                //  horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 IconButton(
                     onClick = { filterViewModel.openBottomSheet() },
@@ -392,6 +384,7 @@ fun CellarBottomAppBar(
             // Add //
             Box(
                 modifier = Modifier
+                    .padding(vertical = 4.dp)
                     .weight(1f),
                 contentAlignment = Alignment.Center,
                 //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
@@ -652,6 +645,8 @@ fun BrandFilterSection(
                 TextButton(
                     onClick = {
                         filterViewModel.updateSelectedBrands(brand, true)
+                        brandSearchText = ""
+                        filteredBrands = allBrands
                     },
                     modifier = Modifier
                         .wrapContentSize()

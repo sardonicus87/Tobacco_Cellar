@@ -489,7 +489,7 @@ fun CsvImportBody(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color = Color.Black.copy(alpha = 0.5f)),
+                    .background(color = Color.Black.copy(alpha = 0.6f)),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
