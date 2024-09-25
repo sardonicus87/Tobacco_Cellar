@@ -87,7 +87,7 @@ fun CellarNavHost(
             EditEntryScreen(
                 navigateBack = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
-                    popUpTo(HomeDestination.route) { inclusive = false }
+                    popUpTo(HomeDestination.route) { inclusive = true }
                 } },
                 onNavigateUp = { navController.navigateUp() },
             )
