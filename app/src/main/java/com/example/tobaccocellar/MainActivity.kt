@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val application = (application as CellarApplication)
-            WindowInsets.safeDrawing
+         //   WindowInsets.safeDrawing
             CompositionLocalProvider(LocalCellarApplication provides application) {
                 TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
                     Surface(
