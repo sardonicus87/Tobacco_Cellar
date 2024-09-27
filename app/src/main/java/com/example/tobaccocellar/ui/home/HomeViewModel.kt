@@ -15,6 +15,7 @@ import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.data.PreferencesRepo
 import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
+import com.google.android.material.color.utilities.Blend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -47,6 +49,9 @@ class HomeViewModel(
         }
     }
 
+    private val _blendSearch = MutableStateFlow("")
+    val blendSearch: StateFlow<String> = _blendSearch.asStateFlow()
+
 
     /** States and Flows **/
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -58,6 +63,7 @@ class HomeViewModel(
             filterViewModel.selectedDislikeds,
             filterViewModel.selectedOutOfStock,
             preferencesRepo.isTableView,
+            _blendSearch,
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
@@ -65,6 +71,7 @@ class HomeViewModel(
             val dislikeds = values[3] as Boolean
             val outOfStock = values[4] as Boolean
             val isTableView = values[5] as Boolean
+            val blendSearch = values[6] as String
 
             itemsRepository.getFilteredItems(
                 brands = brands,
@@ -73,8 +80,16 @@ class HomeViewModel(
                 dislikeds = dislikeds,
                 outOfStock = outOfStock
             ).map { items ->
+                val filteredItems = if (blendSearch.isBlank()) {
+                    items
+                } else {
+                    items.filter { item ->
+                        item.blend.contains(blendSearch, ignoreCase = true)
+                    }
+                }
+
                 HomeUiState(
-                    items = items,
+                    items = filteredItems,
                     isTableView = isTableView
                 )
             }
@@ -128,6 +143,11 @@ class HomeViewModel(
         } else {
             _sorting.value = Sorting(columnIndex, true)
         }
+    }
+
+    /** search bar **/
+    fun onBlendSearchChanged(text: String) {
+        _blendSearch.value = text
     }
 
 

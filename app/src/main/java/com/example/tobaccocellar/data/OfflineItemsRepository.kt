@@ -44,6 +44,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     /** Get all column/value functions **/
     override fun getAllBrandsStream(): Flow<List<String>> = itemsDao.getAllBrands()
 
+    override fun getAllBlendsStream(): Flow<List<String>> = itemsDao.getAllBlends()
+
     override fun getAllTypesStream(): Flow<List<String>> = itemsDao.getAllTypes()
 
     override fun getAllFavoritesStream(): Flow<List<Boolean>> = itemsDao.getAllFavorites()
@@ -73,6 +75,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     /** Get any by value **/
     override fun getItemsByBrand(brand: String): Flow<List<Items>> = itemsDao.getItemsByBrand(brand)
+
+    override fun getItemsByBlend(blend: String): Flow<List<Items>> = itemsDao.getItemsByBlend(blend)
 
     override fun getItemsByType(type: String): Flow<List<Items>> = itemsDao.getItemsByType(type)
 

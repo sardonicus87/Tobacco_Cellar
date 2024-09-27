@@ -68,6 +68,9 @@ interface ItemsDao {
     @Query("SELECT DISTINCT brand FROM items ORDER BY brand ASC")
     fun getAllBrands(): Flow<List<String>>
 
+    @Query("SELECT blend FROM items ORDER BY blend ASC")
+    fun getAllBlends(): Flow<List<String>>
+
     // Get all types flow //
     @Query("SELECT type FROM items ORDER BY type ASC")
     fun getAllTypes(): Flow<List<String>>

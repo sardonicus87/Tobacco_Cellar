@@ -1,18 +1,18 @@
 package com.example.tobaccocellar.ui.home
 
-import android.content.res.Configuration
 import android.widget.TableLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,10 +20,14 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,10 +39,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +53,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -54,6 +62,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,41 +74,48 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
-import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
-import kotlinx.coroutines.delay
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -125,6 +142,8 @@ fun HomeScreen(
     val isTableView = homeUiState.isTableView
     val activeItemId by viewmodel.menuItemId
     val isMenuShown by viewmodel.isMenuShown
+    val focusManager = LocalFocusManager.current
+    var searchFieldFocused by remember { mutableStateOf(false) }
 
 
     if (showSnackbar.value) {
@@ -137,10 +156,25 @@ fun HomeScreen(
         }
     }
 
+    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
+        this.clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }) {
+            onClick()
+        }
+    }
+
+//    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
+//        this.pointerInput(Unit) {
+//            detectTapGestures(onTap = { onClick() } )
+//        }
+//    }
+
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .noRippleClickable(onClick = { focusManager.clearFocus() }),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(HomeDestination.titleRes),
@@ -182,6 +216,7 @@ fun HomeScreen(
                     .shadow(2.dp, shape = RectangleShape, clip = false),
                 homeUiState = homeUiState,
                 selectView = viewmodel::selectView,
+                onBlendSearchChanged = viewmodel::onBlendSearchChanged,
                 isTableView = isTableView,
             )
             HomeBody(
@@ -209,51 +244,207 @@ private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
     selectView: (Boolean) -> Unit,
+    onBlendSearchChanged: (String) -> Unit,
     isTableView: Boolean,
 ) {
+    var blendSearchText by remember { mutableStateOf("") }
+
     Row (
         modifier = Modifier
             .fillMaxWidth()
             .background(LocalCustomColors.current.backgroundVariant)
             .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            text = "View:",
-            textAlign = TextAlign.Start,
-            fontWeight = FontWeight.Normal,
-            fontSize = 15.sp,
+        Row (
             modifier = Modifier
-                .padding(0.dp)
-        )
-        IconButton(
-            onClick = { selectView(!isTableView) },
-            modifier = Modifier
-                .padding(4.dp)
-                .size(22.dp)
+                .padding(0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
         ) {
-            Icon(
-                painter = painterResource(homeUiState.toggleIcon),
-                contentDescription = stringResource(homeUiState.toggleContentDescription),
-                tint = MaterialTheme.colorScheme.onBackground,
+            Text(
+                text = "View:",
+                textAlign = TextAlign.Start,
+                fontWeight = FontWeight.Normal,
+                fontSize = 15.sp,
                 modifier = Modifier
-                    .size(20.dp)
                     .padding(0.dp)
+            )
+            IconButton(
+                onClick = { selectView(!isTableView) },
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(22.dp)
+            ) {
+                Icon(
+                    painter = painterResource(homeUiState.toggleIcon),
+                    contentDescription = stringResource(homeUiState.toggleContentDescription),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(0.dp)
+                )
+            }
+        }
+        Spacer(
+            modifier = Modifier
+                .width(8.dp)
+        )
+        Box (
+            modifier = Modifier
+                .padding(horizontal = 0.dp)
+                .weight(1f, false)
+        ) {
+//            TextField(
+//                value = blendSearchText,
+//                onValueChange = { text ->
+//                    blendSearchText = text
+//                    onBlendSearchChanged(text)
+//                },
+//                modifier = Modifier
+//                    .height(30.dp),
+//                enabled = true,
+//                textStyle = LocalTextStyle.current.copy(color = LocalContentColor.current, fontSize = 10.sp, lineHeight = 10.sp),
+//                placeholder = { Text(text = "Search") },
+//                leadingIcon = { Icon(painter = painterResource(id = R.drawable.search), contentDescription = null, modifier = Modifier.padding(0.dp).size(20.dp)) },
+//                keyboardOptions = KeyboardOptions(
+//                    capitalization = KeyboardCapitalization.Sentences,
+//                    keyboardType = KeyboardType.Text,
+//                    imeAction = ImeAction.Search,
+//                ),
+//                singleLine = true,
+//                shape = RoundedCornerShape(100f),
+//                colors = TextFieldDefaults.colors(
+//                    focusedIndicatorColor = Color.Transparent,
+//                    unfocusedIndicatorColor = Color.Transparent,
+//                    disabledIndicatorColor = Color.Transparent,
+//                    focusedContainerColor = LocalCustomColors.current.textField,
+//                    unfocusedContainerColor = LocalCustomColors.current.textField,
+//                    disabledContainerColor = LocalCustomColors.current.textField,
+//                ),
+//            )
+            CustomBlendSearch(
+                value = blendSearchText,
+                onValueChange = {
+                    blendSearchText = it
+                    if (it.isEmpty()) {
+                        onBlendSearchChanged(it)
+                    }
+                },
+                onImeAction = {
+                    onBlendSearchChanged(blendSearchText)
+                }
             )
         }
         Spacer(
             modifier = Modifier
-                .weight(1f)
-                .padding(0.dp)
+                .width(12.dp)
         )
         Text(
             text = "Entries: ${homeUiState.items.size}",
+            modifier = Modifier
+                .widthIn(min = 84.dp),
             textAlign = TextAlign.End,
             fontWeight = FontWeight.Normal,
             fontSize = 15.sp,
-            modifier = Modifier
+            maxLines = 1,
         )
     }
+}
+
+@Composable
+private fun CustomBlendSearch(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Search Blends",
+    leadingIcon: @Composable () -> Unit = {
+        Icon(
+            painter = painterResource(id = R.drawable.search),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(0.dp)
+                .size(20.dp)
+        )
+    },
+    onImeAction: () -> Unit = {}
+) {
+    var showCursor by remember { mutableStateOf(false) }
+    var hasFocus by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
+            .height(30.dp)
+            .onFocusChanged { focusState ->
+                hasFocus = focusState.hasFocus
+                showCursor = focusState.hasFocus
+                if (!focusState.hasFocus) {
+                    focusManager.clearFocus()
+                }
+            }
+            .padding(horizontal = 8.dp),
+        textStyle = LocalTextStyle.current.copy(
+            color = LocalContentColor.current,
+            fontSize = TextUnit.Unspecified,
+            lineHeight = 16.sp
+        ),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Search,
+        ),
+        keyboardActions = KeyboardActions(
+            onSearch = {
+                onImeAction()
+                focusManager.clearFocus()
+            }
+        ),
+        singleLine = true,
+        cursorBrush = if (showCursor) { SolidColor(LocalContentColor.current) }
+            else { SolidColor(Color.Transparent) },
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                leadingIcon()
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = LocalTextStyle.current.copy(
+                                color = LocalContentColor.current.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                    innerTextField()
+                }
+                if (value.isNotEmpty()) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.clear_24),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable(onClick = { onValueChange("") })
+                            .padding(0.dp),
+                    )
+                }
+            }
+        }
+    )
 }
 
 
@@ -518,7 +709,7 @@ fun ListViewMode(
     }
 }
 
-// Individual Items in List View //
+// Entry layout //
 @Composable
 private fun CellarListItem(
     modifier: Modifier = Modifier,
@@ -617,7 +808,7 @@ private fun CellarListItem(
                                     painter = painterResource(id = R.drawable.notes_24),
                                     contentDescription = null,
                                     modifier = Modifier
-                                        .size(15.dp),
+                                        .size(16.dp),
                                     tint = MaterialTheme.colorScheme.tertiary
                                 )
                             }
@@ -962,7 +1153,6 @@ fun TableLayout(
                                         contentAlignment = alignment,
                                         onClick = {
                                             when (columnIndex) {
-                                                0 -> onItemClick(item)
                                                 1 -> onItemClick(item)
                                                 else -> { }
                                             }
@@ -1064,20 +1254,30 @@ fun HeaderCell(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TableCell(
     value: Any?,
     modifier: Modifier = Modifier,
-//    textColor: Color = Color.Black,
     backgroundColor: Color = Color.Transparent,
     contentAlignment: Alignment = Alignment.Center,
     onClick: (() -> Unit)? = null
 ) {
+    val haptics = LocalHapticFeedback.current
+
     Box(
         modifier = modifier
             .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
             .background(backgroundColor)
-            .clickable(enabled = onClick != null) { onClick?.invoke() },
+          //  .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .combinedClickable(
+                enabled = onClick != null,
+                onClick = {},
+                onDoubleClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onClick?.invoke()
+                },
+            ),
         contentAlignment = contentAlignment
     ) {
         val text = when (value) {

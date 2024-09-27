@@ -37,6 +37,8 @@ interface ItemsRepository {
     /** Get all column/value functions **/
     fun getAllBrandsStream(): Flow<List<String>>
 
+    fun getAllBlendsStream(): Flow<List<String>>
+
     fun getAllTypesStream(): Flow<List<String>>
 
     fun getAllFavoritesStream(): Flow<List<Boolean>>
@@ -66,6 +68,8 @@ interface ItemsRepository {
 
     /** Get any by value **/
     fun getItemsByBrand(brand: String): Flow<List<Items>>
+
+    fun getItemsByBlend(blend: String): Flow<List<Items>>
 
     fun getItemsByType(type: String): Flow<List<Items>>
 
