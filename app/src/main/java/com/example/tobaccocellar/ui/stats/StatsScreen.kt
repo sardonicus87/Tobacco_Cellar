@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -111,7 +112,14 @@ private fun StatsBody(
             modifier = Modifier.padding(bottom = 8.dp),
         )
         Text(
-            text = "These stats are based on totals without regards to quantities"
+            text = "There are ${rawStats.itemsCount} blends in ${rawStats.brandsCount} brands, " +
+                    "of which ${rawStats.favoriteCount} are favorites " +
+                    "and ${rawStats.dislikedCount} are disliked. " +
+                    "There is a \"quantity\" total of ${rawStats.totalQuantity}, with " +
+                    "${rawStats.totalZeroQuantity} blends out of stock.",
+            modifier = Modifier.padding(bottom = 8.dp),
+            textAlign = TextAlign.Start,
+            softWrap = true,
         )
         Row(
             modifier = Modifier.padding(bottom = 8.dp),
@@ -121,24 +129,6 @@ private fun StatsBody(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(
-                    text = "Total Blends: ${rawStats.itemsCount}",
-                )
-                Text(
-                    text = "Total Brands: ${rawStats.brandsCount}",
-                )
-                Text(
-                    text = "Total favorites: ${rawStats.favoriteCount}",
-                )
-                Text(
-                    text = "Total disliked: ${rawStats.dislikedCount}",
-                )
-                Text(
-                    text = "Total quantity: ${rawStats.totalQuantity}",
-                )
-                Text(
-                    text = "Total out of stock: ${rawStats.totalZeroQuantity}",
-                )
                 Text(
                     text = "Totals by type: " + rawStats.totalByType.toList(),
                 )
