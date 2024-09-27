@@ -124,6 +124,7 @@ fun AddEntryScreen(
         }
     }
 
+
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -330,13 +331,12 @@ fun ItemInputForm(
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier
                 .padding(0.dp, bottom = 8.dp),
-            containerColor = Color.Transparent,
+            containerColor = MaterialTheme.colorScheme.background,
             contentColor = LocalContentColor.current,
             indicator = { tabPositions ->
                 SecondaryIndicator(
                     modifier = Modifier
-                        .tabIndicatorOffset(tabPositions[selectedTabIndex])
-                        .padding(horizontal = 8.dp),
+                        .tabIndicatorOffset(tabPositions[selectedTabIndex]),
                     color = MaterialTheme.colorScheme.inversePrimary
                 )
             },
@@ -352,8 +352,15 @@ fun ItemInputForm(
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        modifier = Modifier,
+                        modifier = Modifier
+                            .background(
+                                if (selectedTabIndex == index) MaterialTheme.colorScheme.background
+                                else LocalCustomColors.current.backgroundUnselected
+                            ),
                         text = { Text(title) },
+                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                        unselectedContentColor = MaterialTheme.colorScheme.outline,
+                        interactionSource = remember { MutableInteractionSource() }
                     )
                 }
             }

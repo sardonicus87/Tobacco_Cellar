@@ -212,6 +212,7 @@ data class CustomColorScheme(
     val textField: Color = Color.Unspecified,
     val darkNeutral: Color = Color.Unspecified,
     val backgroundVariant: Color = Color.Unspecified,
+    val backgroundUnselected: Color = Color.Unspecified,
     val tableBorder: Color = Color.Unspecified,
     val navIcon: Color = Color.Unspecified,
 )
@@ -226,6 +227,7 @@ private val customLight = CustomColorScheme(
     textField = textFieldLight,
     darkNeutral = darkNeutralLight,
     backgroundVariant = backgroundVariantLight,
+    backgroundUnselected = backgroundUnselectedLight,
     tableBorder = tableBorderLight,
     navIcon = navIconLight,
 )
@@ -238,6 +240,7 @@ private val customDark = CustomColorScheme(
     textField = textFieldDark,
     darkNeutral = darkNeutralDark,
     backgroundVariant = backgroundVariantDark,
+    backgroundUnselected = backgroundUnselectedDark,
     tableBorder = tableBorderDark,
     navIcon = navIconDark,
 )
