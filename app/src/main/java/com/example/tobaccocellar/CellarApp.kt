@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -73,6 +76,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -97,6 +101,7 @@ import com.example.tobaccocellar.ui.stats.StatsDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
 import com.example.tobaccocellar.ui.theme.inversePrimaryLight
 import com.example.tobaccocellar.ui.theme.onBackgroundDark
+import com.example.tobaccocellar.ui.theme.onPrimaryContainerDark
 import com.example.tobaccocellar.ui.theme.onPrimaryLight
 import com.example.tobaccocellar.ui.theme.primaryContainerLight
 import com.example.tobaccocellar.ui.theme.primaryDark
@@ -254,9 +259,8 @@ fun CellarBottomAppBar(
             .fillMaxWidth()
             .height(52.dp)
             .padding(0.dp),
-        containerColor = primaryLight,  // BottomAppBarDefaults.containerColor
-        contentColor = secondaryContainerLight,
-        tonalElevation = 10.dp,
+        containerColor = primaryLight,
+        contentColor = LocalCustomColors.current.navIcon,
         contentPadding = PaddingValues(0.dp),
     ) {
         Row(
@@ -287,7 +291,7 @@ fun CellarBottomAppBar(
                             .offset(y = (-8).dp),
                         tint =
                         if (currentDestination == HomeDestination) {
-                            LocalCustomColors.current.navIcon
+                            onPrimaryLight
                         } else {
                             LocalContentColor.current
                         },
@@ -302,7 +306,7 @@ fun CellarBottomAppBar(
                     fontWeight = FontWeight.Normal,
                     color =
                     if (currentDestination == HomeDestination) {
-                        LocalCustomColors.current.navIcon
+                        onPrimaryLight
                     } else {
                         LocalContentColor.current
                     },
@@ -329,7 +333,7 @@ fun CellarBottomAppBar(
                             .offset(y = (-8).dp),
                         tint =
                         if (currentDestination == StatsDestination) {
-                            LocalCustomColors.current.navIcon
+                            onPrimaryLight
                         } else {
                             LocalContentColor.current
                         },
@@ -344,7 +348,7 @@ fun CellarBottomAppBar(
                     fontWeight = FontWeight.Normal,
                     color =
                     if (currentDestination == StatsDestination) {
-                        LocalCustomColors.current.navIcon
+                        onPrimaryLight
                     } else {
                         LocalContentColor.current
                     },
