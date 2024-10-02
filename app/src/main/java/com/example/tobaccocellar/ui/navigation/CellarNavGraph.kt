@@ -1,29 +1,27 @@
 package com.example.tobaccocellar.ui.navigation
 
+import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.tobaccocellar.ui.home.HomeDestination
-import com.example.tobaccocellar.ui.home.HomeScreen
-import com.example.tobaccocellar.ui.items.AddEntryDestination
-import com.example.tobaccocellar.ui.items.AddEntryScreen
 import com.example.tobaccocellar.ui.csvimport.CsvImportDestination
 import com.example.tobaccocellar.ui.csvimport.CsvImportResultsDestination
 import com.example.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.example.tobaccocellar.ui.csvimport.CsvImportScreen
+import com.example.tobaccocellar.ui.home.HomeDestination
+import com.example.tobaccocellar.ui.home.HomeScreen
+import com.example.tobaccocellar.ui.items.AddEntryDestination
+import com.example.tobaccocellar.ui.items.AddEntryScreen
 import com.example.tobaccocellar.ui.items.EditEntryDestination
 import com.example.tobaccocellar.ui.items.EditEntryScreen
 import com.example.tobaccocellar.ui.settings.SettingsDestination
 import com.example.tobaccocellar.ui.settings.SettingsScreen
 import com.example.tobaccocellar.ui.stats.StatsDestination
 import com.example.tobaccocellar.ui.stats.StatsScreen
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 
 @Composable
@@ -108,7 +106,7 @@ fun CellarNavHost(
                 navArgument(CsvImportResultsDestination.totalRecordsArg) { type = NavType.IntType },
                 navArgument(CsvImportResultsDestination.successCountArg) { type = NavType.IntType },
                 navArgument(CsvImportResultsDestination.successfulInsertionsArg) { type = NavType.IntType }
-            )
+            ),
         ) { backStackEntry ->
             val totalRecords =
                 backStackEntry.arguments?.getInt(CsvImportResultsDestination.totalRecordsArg) ?: 0

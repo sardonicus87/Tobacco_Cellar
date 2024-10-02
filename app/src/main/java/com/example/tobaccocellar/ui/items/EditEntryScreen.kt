@@ -8,27 +8,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
-import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
-import com.example.tobaccocellar.ui.home.HomeDestination
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 object EditEntryDestination : NavigationDestination {

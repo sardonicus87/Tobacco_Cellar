@@ -64,7 +64,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -83,15 +82,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.tobaccocellar.CellarApplication
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
-import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -336,6 +332,7 @@ fun ItemInputForm(
             indicator = { tabPositions ->
                 SecondaryIndicator(
                     modifier = Modifier
+                    //    .padding(horizontal = 32.dp)
                         .tabIndicatorOffset(tabPositions[selectedTabIndex]),
                     color = MaterialTheme.colorScheme.inversePrimary
                 )
@@ -343,7 +340,8 @@ fun ItemInputForm(
             divider = {
                 HorizontalDivider(
                     modifier = Modifier,
-                    thickness = 1.dp,
+                    thickness = Dp.Hairline,
+                    color = Color.Transparent
                 )
             },
         ) {
@@ -356,6 +354,7 @@ fun ItemInputForm(
                             .background(
                                 if (selectedTabIndex == index) MaterialTheme.colorScheme.background
                                 else LocalCustomColors.current.backgroundUnselected
+//                                MaterialTheme.colorScheme.background
                             ),
                         text = { Text(title) },
                         selectedContentColor = MaterialTheme.colorScheme.onBackground,
@@ -427,7 +426,6 @@ fun ItemInputForm(
                                 },
                                 onOptionSelected = {
                                     onValueChange(itemDetails.copy(brand = it))
-                                    TextRange(0, it.length)
                                 },
                                 suggestions = suggestions.value,
                                 modifier = Modifier
@@ -904,6 +902,7 @@ fun AutoCompleteText(
                     .heightIn(max = 82.dp),
                 properties = PopupProperties(focusable = false),
                 offset = DpOffset(32.dp, (-12).dp),
+                containerColor = LocalCustomColors.current.darkNeutral,
             ) {
                 suggestions.forEach { label ->
                     CustomDropdownMenuItem(
@@ -920,6 +919,7 @@ fun AutoCompleteText(
                         },
                         onClick = {
                             onOptionSelected(label)
+                            TextRange(label.length, label.length)
                             expanded = false
                             emptyList<String>()
                         },

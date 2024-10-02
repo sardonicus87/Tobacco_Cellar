@@ -1,6 +1,5 @@
 package com.example.tobaccocellar.data
 
-import android.util.Log
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.example.tobaccocellar.ui.stats.BrandCount
 import com.example.tobaccocellar.ui.stats.TypeCount

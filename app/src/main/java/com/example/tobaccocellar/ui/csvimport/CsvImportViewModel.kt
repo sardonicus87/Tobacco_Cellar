@@ -1,6 +1,5 @@
 package com.example.tobaccocellar.ui.csvimport
 
-import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

@@ -1,6 +1,5 @@
 package com.example.tobaccocellar.ui.home
 
-import android.widget.TableLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -8,11 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,14 +16,10 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,7 +35,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
@@ -62,8 +53,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -83,13 +72,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -143,7 +126,6 @@ fun HomeScreen(
     val activeItemId by viewmodel.menuItemId
     val isMenuShown by viewmodel.isMenuShown
     val focusManager = LocalFocusManager.current
-    var searchFieldFocused by remember { mutableStateOf(false) }
 
 
     if (showSnackbar.value) {
@@ -217,6 +199,7 @@ fun HomeScreen(
                 homeUiState = homeUiState,
                 selectView = viewmodel::selectView,
                 onBlendSearchChanged = viewmodel::onBlendSearchChanged,
+       //         searchFieldFocused = searchFieldFocused,
                 isTableView = isTableView,
             )
             HomeBody(
@@ -259,7 +242,8 @@ private fun HomeHeader(
     ) {
         Row (
             modifier = Modifier
-                .padding(0.dp),
+                .padding(0.dp)
+                .widthIn(min = 84.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
@@ -296,34 +280,6 @@ private fun HomeHeader(
                 .padding(horizontal = 0.dp)
                 .weight(1f, false)
         ) {
-//            TextField(
-//                value = blendSearchText,
-//                onValueChange = { text ->
-//                    blendSearchText = text
-//                    onBlendSearchChanged(text)
-//                },
-//                modifier = Modifier
-//                    .height(30.dp),
-//                enabled = true,
-//                textStyle = LocalTextStyle.current.copy(color = LocalContentColor.current, fontSize = 10.sp, lineHeight = 10.sp),
-//                placeholder = { Text(text = "Search") },
-//                leadingIcon = { Icon(painter = painterResource(id = R.drawable.search), contentDescription = null, modifier = Modifier.padding(0.dp).size(20.dp)) },
-//                keyboardOptions = KeyboardOptions(
-//                    capitalization = KeyboardCapitalization.Sentences,
-//                    keyboardType = KeyboardType.Text,
-//                    imeAction = ImeAction.Search,
-//                ),
-//                singleLine = true,
-//                shape = RoundedCornerShape(100f),
-//                colors = TextFieldDefaults.colors(
-//                    focusedIndicatorColor = Color.Transparent,
-//                    unfocusedIndicatorColor = Color.Transparent,
-//                    disabledIndicatorColor = Color.Transparent,
-//                    focusedContainerColor = LocalCustomColors.current.textField,
-//                    unfocusedContainerColor = LocalCustomColors.current.textField,
-//                    disabledContainerColor = LocalCustomColors.current.textField,
-//                ),
-//            )
             CustomBlendSearch(
                 value = blendSearchText,
                 onValueChange = {
@@ -347,7 +303,7 @@ private fun HomeHeader(
                 .widthIn(min = 84.dp),
             textAlign = TextAlign.End,
             fontWeight = FontWeight.Normal,
-            fontSize = 15.sp,
+            fontSize = 14.sp,
             maxLines = 1,
         )
     }
@@ -358,7 +314,7 @@ private fun CustomBlendSearch(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search Blends",
+    placeholder: String = "Blend Search",
     leadingIcon: @Composable () -> Unit = {
         Icon(
             painter = painterResource(id = R.drawable.search),
@@ -422,7 +378,7 @@ private fun CustomBlendSearch(
                         .weight(1f),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (value.isEmpty()) {
+                    if (value.isEmpty() && !hasFocus) {
                         Text(
                             text = placeholder,
                             style = LocalTextStyle.current.copy(
@@ -675,6 +631,7 @@ fun ListViewMode(
         ) {
             items(items = itemsList, key = { it.id }) { item ->
                 val haptics = LocalHapticFeedback.current
+                val focusManager = LocalFocusManager.current
 
                 BackHandler(enabled = isMenuShown && menuItemId == item.id) {
                     onDismissMenu()
@@ -692,6 +649,7 @@ fun ListViewMode(
                                     // do nothing
                                 } else {
                                     onDismissMenu()
+                                    focusManager.clearFocus()
                                 }
                             },
                             onLongClick = {
@@ -1040,23 +998,39 @@ fun TableLayout(
                     val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
                         updateSorting(newSortColumn)
                     }
-                        HeaderCell(
-                            text = headerText,
-                            columnIndex = columnIndex,
-                            primarySort = sorting.columnIndex == columnIndex,
-                            onSortChange = onSortChange,
-                            sorting = sorting,
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .align(alignment),
-                            icon1 = if (columnIndex == 3)
-                                painterResource(id = R.drawable.favorite_heart_filled_18) else null,
-                            icon2 = if (columnIndex == 3)
-                                painterResource(id = R.drawable.question_mark_24) else null,
-                            iconUp = painterResource(id = R.drawable.arrow_up),
-                            iconDown = painterResource(id = R.drawable.arrow_down)
-                        )
-
+                    when (columnIndex) {
+                        0, 1 -> {
+                            HeaderCell(
+                                text = headerText,
+                                columnIndex = columnIndex,
+                                onClick = { onSortChange(columnIndex) },
+                                primarySort = sorting.columnIndex == columnIndex,
+                                sorting = sorting,
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .align(alignment),
+                                iconUp = painterResource(id = R.drawable.arrow_up),
+                                iconDown = painterResource(id = R.drawable.arrow_down)
+                            )
+                        }
+                        else -> {
+                            HeaderCell(
+                                text = headerText,
+                                columnIndex = columnIndex,
+                                primarySort = sorting.columnIndex == columnIndex,
+                                sorting = sorting,
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .align(alignment),
+                                icon1 = if (columnIndex == 3)
+                                    painterResource(id = R.drawable.favorite_heart_filled_18) else null,
+                                icon2 = if (columnIndex == 3)
+                                    painterResource(id = R.drawable.question_mark_24) else null,
+                                iconUp = painterResource(id = R.drawable.arrow_up),
+                                iconDown = painterResource(id = R.drawable.arrow_down)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -1091,6 +1065,15 @@ fun TableLayout(
                                 else -> Alignment.CenterStart
                             }
                             when (columnIndex) {
+                                1 -> { // blend
+                                    TableCell(
+                                        value = cellValue,
+                                        modifier = Modifier
+                                            .align(alignment),
+                                        contentAlignment = alignment,
+                                        onClick = { onItemClick(item) }
+                                    )
+                                }
                                 3 -> { // fav/disliked
                                     val favDisValue = cellValue as Int
                                     val icon = when (favDisValue) {
@@ -1145,18 +1128,12 @@ fun TableLayout(
                                         contentAlignment = alignment,
                                     )
                                 }
-                                else -> {
+                                else -> { // brand, type
                                     TableCell(
                                         value = cellValue,
                                         modifier = Modifier
                                             .align(alignment),
                                         contentAlignment = alignment,
-                                        onClick = {
-                                            when (columnIndex) {
-                                                1 -> onItemClick(item)
-                                                else -> { }
-                                            }
-                                        }
                                     )
                                 }
                             }
@@ -1177,15 +1154,19 @@ fun HeaderCell(
     iconUp: Painter? = null,
     iconDown: Painter? = null,
     columnIndex: Int,
-    onSortChange: ((Int) -> Unit)?,
     sorting: Sorting,
     primarySort: Boolean,
+    onClick: (() -> Unit)? = null
 ) {
+    val focusManager = LocalFocusManager.current
+
     Box(
         modifier = modifier
-            .clickable {
-                onSortChange?.invoke(columnIndex)
-            }
+            .clickable(enabled = onClick != null, onClick = {
+                focusManager.clearFocus()
+                onClick?.invoke()
+                }
+            )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -1264,16 +1245,17 @@ fun TableCell(
     onClick: (() -> Unit)? = null
 ) {
     val haptics = LocalHapticFeedback.current
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = modifier
             .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
             .background(backgroundColor)
-          //  .clickable(enabled = onClick != null) { onClick?.invoke() }
+            //  .clickable(enabled = onClick != null) { onClick?.invoke() }
             .combinedClickable(
                 enabled = onClick != null,
-                onClick = {},
-                onDoubleClick = {
+                onClick = { focusManager.clearFocus() },
+                onLongClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     onClick?.invoke()
                 },

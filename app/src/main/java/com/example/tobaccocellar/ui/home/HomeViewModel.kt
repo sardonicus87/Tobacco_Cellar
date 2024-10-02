@@ -3,9 +3,8 @@ package com.example.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.R
@@ -15,7 +14,6 @@ import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.data.PreferencesRepo
 import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
-import com.google.android.material.color.utilities.Blend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +21,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn

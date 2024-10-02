@@ -1,3 +1,5 @@
+@file:Suppress("ConstPropertyName", "ConstPropertyName", "ConstPropertyName")
+
 package com.example.tobaccocellar.ui.csvimport
 
 import androidx.compose.animation.AnimatedVisibility
@@ -107,15 +109,12 @@ fun ImportResultsBody(
     var visibleItemIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        while (visibleItemIndex < 4) { // (total items to fade in, index 0-3)
-            delay(500) // Adjust delay as needed
+        while (visibleItemIndex < 5) { // (total items to fade in, index starts 0)
+            delay(300) // Adjust delay as needed
             visibleItemIndex++
         }
     }
 
-//    AnimatedVisibility(visible = visibleItemIndex > 0, enter = fadeIn()) {
-//        Text()
-//    }
 
     Column(
         modifier = modifier
@@ -133,13 +132,15 @@ fun ImportResultsBody(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = "CSV Import Results",
-                modifier = Modifier
-                    .padding(bottom = 16.dp),
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            AnimatedVisibility(visible = visibleItemIndex > 0, enter = fadeIn()) {
+                Text(
+                    text = "CSV Import Results",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp),
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Row(
                 modifier = Modifier
                     .padding(bottom = 16.dp),
@@ -150,24 +151,30 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "Total records found: ",
-                        modifier = Modifier
-                            .padding(0.dp),
-                        fontSize = 18.sp,
-                    )
-                    Text(
-                        text = "Successful conversions: ",
-                        modifier = Modifier
-                            .padding(0.dp),
-                        fontSize = 18.sp,
-                    )
-                    Text(
-                        text = "Total records imported: ",
-                        modifier = Modifier
-                            .padding(0.dp),
-                        fontSize = 18.sp,
-                    )
+                    AnimatedVisibility(visible = visibleItemIndex > 1, enter = fadeIn()) {
+                        Text(
+                            text = "Total records found: ",
+                            modifier = Modifier
+                                .padding(0.dp),
+                            fontSize = 18.sp,
+                        )
+                    }
+                    AnimatedVisibility(visible = visibleItemIndex > 2, enter = fadeIn()) {
+                        Text(
+                            text = "Successful conversions: ",
+                            modifier = Modifier
+                                .padding(0.dp),
+                            fontSize = 18.sp,
+                        )
+                    }
+                    AnimatedVisibility(visible = visibleItemIndex > 3, enter = fadeIn()) {
+                        Text(
+                            text = "Total records imported: ",
+                            modifier = Modifier
+                                .padding(0.dp),
+                            fontSize = 18.sp,
+                        )
+                    }
                 }
                 Spacer(
                     modifier = Modifier
@@ -179,36 +186,44 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "$totalRecords",
-                        modifier = Modifier
-                            .padding(bottom = 0.dp),
-                        fontSize = 18.sp,
-                    )
-                    Text(
-                        text = "$successfulConversions",
-                        modifier = Modifier
-                            .padding(0.dp),
-                        fontSize = 18.sp,
-                    )
-                    Text(
-                        text = "$successfulInsertions",
-                        modifier = Modifier
-                            .padding(0.dp),
-                        fontSize = 18.sp,
-                    )
+                    AnimatedVisibility(visible = visibleItemIndex > 1, enter = fadeIn()) {
+                        Text(
+                            text = "$totalRecords",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                        )
+                    }
+                    AnimatedVisibility(visible = visibleItemIndex > 2, enter = fadeIn()) {
+                        Text(
+                            text = "$successfulConversions",
+                            modifier = Modifier
+                                .padding(0.dp),
+                            fontSize = 18.sp,
+                        )
+                    }
+                    AnimatedVisibility(visible = visibleItemIndex > 3, enter = fadeIn()) {
+                        Text(
+                            text = "$successfulInsertions",
+                            modifier = Modifier
+                                .padding(0.dp),
+                            fontSize = 18.sp,
+                        )
+                    }
                 }
             }
-            TextButton(
-                onClick = { navigateToHome() },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = MaterialTheme.shapes.small,
-            ) {
-                Text(
-                    text = "Back to Cellar",
-                    fontSize = 25.sp,
-                )
+            AnimatedVisibility(visible = visibleItemIndex > 4, enter = fadeIn()) {
+                TextButton(
+                    onClick = { navigateToHome() },
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Text(
+                        text = "Back to Cellar",
+                        fontSize = 25.sp,
+                    )
+                }
             }
         }
         Spacer(

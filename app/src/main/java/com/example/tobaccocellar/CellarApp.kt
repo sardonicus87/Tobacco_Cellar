@@ -139,9 +139,6 @@ fun CellarApp(
             FilterBottomSheet(
                 filterViewModel = filterViewModel,
                 onDismiss = { filterViewModel.closeBottomSheet() },
-                onApplyFilters = {
-                    filterViewModel.closeBottomSheet()
-                },
             )
         }
     }
@@ -337,8 +334,7 @@ fun CellarBottomAppBar(
                         } else {
                             LocalContentColor.current
                         },
-
-                        )
+                    )
                 }
                 Text(
                     text = stringResource(R.string.stats_title),
@@ -425,7 +421,6 @@ fun CellarBottomAppBar(
 fun FilterBottomSheet(
     filterViewModel: FilterViewModel,
     onDismiss: () -> Unit,
-    onApplyFilters: () -> Unit,
 ) {
 //    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 //    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
