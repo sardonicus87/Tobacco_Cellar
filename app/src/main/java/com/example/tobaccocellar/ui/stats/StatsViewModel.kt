@@ -14,45 +14,6 @@ class StatsViewModel(
     private val filterViewModel: FilterViewModel
 ): ViewModel() {
 
-//    val itemsCount: StateFlow<Int> = itemsRepository.getItemsCount()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
-//
-//    val brandsCount: StateFlow<Int> = itemsRepository.getBrandsCount()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
-//
-//    val favoriteCount: StateFlow<Int> = itemsRepository.getTotalFavorite()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
-//
-//    val dislikedCount: StateFlow<Int> = itemsRepository.getTotalDislike()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
-//
-//    val totalByBrand: StateFlow<Map<String, Int>> = itemsRepository.getTotalByBrand()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
-//
-//    val totalByType: StateFlow<Map<String, Int>> = itemsRepository.getTotalByType()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
-//
-//    val totalQuantity: StateFlow<Int> = itemsRepository.getTotalQuantity()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
-//
-//    val totalZeroQuantity: StateFlow<Int> = itemsRepository.getTotalZeroQuantity()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0)
-
-//
-//    fun <T1, T2, T3, T4, T5, T6, T7, T8, R> combine(
-//    itemsRepository.getItemsCount(): Flow<T1>,
-//    itemsRepository.getBrandsCount(): Flow<T2>,
-//    itemsRepository.getTotalFavorite(): Flow<T3>,
-//    itemsRepository.getTotalDislike(): Flow<T4>,
-//    itemsRepository.getTotalByBrand(): Flow<T5>,
-//    itemsRepository.getTotalByType(): Flow<T6>,
-//    itemsRepository.getTotalQuantity(): Flow<T7>,
-//    itemsRepository.getTotalZeroQuantity(): Flow<T8>,
-//    transform: suspend (T1, T2, T3, T4, T5, T6, T7, T8) -> R
-//): Flow<R> = combine(
-//    combine(
-//)
-
     val rawStats: StateFlow<RawStats> = combine(
         combine(
             itemsRepository.getItemsCount(),
@@ -91,6 +52,8 @@ class StatsViewModel(
         started = SharingStarted.WhileSubscribed(),
         initialValue = RawStats()
     )
+
+
 
 
 }

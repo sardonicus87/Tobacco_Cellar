@@ -7,8 +7,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -130,52 +132,8 @@ class FilterViewModel (
                 started = SharingStarted.WhileSubscribed(),
                 initialValue = emptyList()
             )
-
-
-    /** Sorting states **/
-    private val _sortByDefault = mutableStateListOf<String>()
-    val sortByDefault: List<String> = _sortByDefault
-
-    private val _sortByBrand = mutableStateListOf<String>()
-    val sortByBrand: List<String> = _sortByBrand
-
-    private val _sortByType = mutableStateListOf<String>()
-    val sortByType: List<String> = _sortByType
-
-
-    fun updateSortByDefault(default: String, isSelected: Boolean) {
-        if (isSelected) {
-            _sortByDefault.add(default)
-        } else {
-            _sortByDefault.remove(default)
-        }
-    }
-
-    fun updateSortByBrand(brand: String, isSelected: Boolean) {
-        if (isSelected) {
-            _sortByBrand.add(brand)
-        } else {
-            _sortByBrand.remove(brand)
-        }
-    }
-
-    fun updateSortByType(type: String, isSelected: Boolean) {
-        if (isSelected) {
-            _sortByType.add(type)
-        } else {
-            _sortByType.remove(type)
-        }
-    }
 }
 
 enum class BottomSheetState {
     OPENED, CLOSED
 }
-
-data class SortOrderOption(
-    val option: SortType,
-    val ascending: Boolean
-)
-    enum class SortType {
-        DEFAULT, BRAND, TYPE, QUANTITY
-    }
