@@ -147,7 +147,7 @@ fun ImportResultsBody(
             }
             AnimatedVisibility(
                 visible = visibleItemIndex > 0,
-                enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                enter = fadeIn(animationSpec = tween(durationMillis = 350))
             ) {
                 Text(
                     text = "CSV Import Results",
@@ -316,7 +316,7 @@ fun ImportResultsBody(
             }
             AnimatedVisibility(
                 visible = visibleItemIndex > 4,
-                enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                enter = fadeIn(animationSpec = tween(durationMillis = 350))
             ) {
                 TextButton(
                     onClick = { navigateToHome() },
