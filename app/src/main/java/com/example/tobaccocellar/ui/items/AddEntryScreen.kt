@@ -73,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -842,6 +843,7 @@ fun AutoCompleteText(
     suggestions: List<String> = emptyList(),
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
 //    val dropOffset by remember { mutableIntStateOf(value.length) }
 
     ExposedDropdownMenuBox(
@@ -851,9 +853,11 @@ fun AutoCompleteText(
             .padding(0.dp)
     ) {
         TextField(
-            value = value,
-            onValueChange = { onValueChange?.invoke(it)
-                expanded = it.isNotEmpty()
+            value = textFieldValueState.copy(text = value),
+            onValueChange = {
+                textFieldValueState = it
+                onValueChange?.invoke(it.text)
+                expanded = it.text.isNotEmpty()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -902,7 +906,7 @@ fun AutoCompleteText(
                     .heightIn(max = 82.dp),
                 properties = PopupProperties(focusable = false),
                 offset = DpOffset(32.dp, (-12).dp),
-                containerColor = LocalCustomColors.current.textField,
+                containerColor = MaterialTheme.colorScheme.background,
             ) {
                 suggestions.forEach { label ->
                     CustomDropdownMenuItem(
@@ -919,7 +923,10 @@ fun AutoCompleteText(
                         },
                         onClick = {
                             onOptionSelected(label)
-                            TextRange(label.length, label.length)
+                            textFieldValueState = TextFieldValue(
+                                text = label,
+                                selection = TextRange(label.length)
+                            )
                             expanded = false
                             emptyList<String>()
                         },
@@ -935,6 +942,228 @@ fun AutoCompleteText(
         }
     }
 }
+
+/** Working cursor move, broken on edit */
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun AutoCompleteText(
+//    modifier: Modifier = Modifier,
+//    value: String,
+//    placeholder: @Composable (() -> Unit)? = null,
+//    onValueChange: ((String) -> Unit)?,
+//    onOptionSelected: (String) -> Unit,
+//    suggestions: List<String> = emptyList(),
+//) {
+//    var expanded by remember { mutableStateOf(false) }
+//    var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
+////    val dropOffset by remember { mutableIntStateOf(value.length) }
+//
+//    ExposedDropdownMenuBox(
+//        expanded = expanded && suggestions.isNotEmpty(),
+//        onExpandedChange = { expanded = !expanded },
+//        modifier = Modifier
+//            .padding(0.dp)
+//    ) {
+//        TextField(
+//            value = textFieldValueState,
+//            onValueChange = {
+//                textFieldValueState = it
+//                onValueChange?.invoke(it.text)
+//                expanded = it.text.isNotEmpty()
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(0.dp)
+//                .menuAnchor(MenuAnchorType.PrimaryEditable, true),
+//            enabled = true,
+//            trailingIcon = {
+//                if (value.length > 5) {
+//                    Icon(
+//                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+//                        contentDescription = null,
+//                        modifier = Modifier
+//                            .clickable {
+//                                if (onValueChange != null) {
+//                                    onValueChange("")
+//                                }
+//                            }
+//                            .alpha(0.66f)
+//                            .size(20.dp)
+//                            .focusable(false)
+//                    )
+//                }
+//            },
+//            singleLine = true,
+//            placeholder = { if (placeholder != null) placeholder() },
+//            keyboardOptions = KeyboardOptions(
+//                capitalization = KeyboardCapitalization.Sentences,
+//                keyboardType = KeyboardType.Text,
+//                imeAction = ImeAction.Next,
+//            ),
+//            colors = TextFieldDefaults.colors(
+//                focusedIndicatorColor = Color.Transparent,
+//                unfocusedIndicatorColor = Color.Transparent,
+//                disabledIndicatorColor = Color.Transparent,
+//                focusedContainerColor = LocalCustomColors.current.textField,
+//                unfocusedContainerColor = LocalCustomColors.current.textField,
+//                disabledContainerColor = LocalCustomColors.current.textField,
+//            )
+//        )
+//        if (expanded && suggestions.isNotEmpty()) {
+//            DropdownMenu(
+//                expanded = expanded,
+//                onDismissRequest = { expanded = false },
+//                modifier = Modifier
+//                    .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+//                    .heightIn(max = 82.dp),
+//                properties = PopupProperties(focusable = false),
+//                offset = DpOffset(32.dp, (-12).dp),
+//                containerColor = MaterialTheme.colorScheme.background,
+//            ) {
+//                suggestions.forEach { label ->
+//                    CustomDropdownMenuItem(
+//                        text = {
+//                            Text(
+//                                text = label,
+//                                modifier = Modifier
+//                                    .padding(0.dp)
+//                                    .focusable(false),
+//                                fontSize = 16.sp,
+//                                lineHeight = 16.sp,
+//                                maxLines = 1
+//                            )
+//                        },
+//                        onClick = {
+//                            onOptionSelected(label)
+//                            textFieldValueState = TextFieldValue(
+//                                text = label,
+//                                selection = TextRange(label.length)
+//                            )
+//                            //  onValueChange?.invoke(label)
+//                            expanded = false
+//                            emptyList<String>()
+//                        },
+//                        enabled = true,
+//                        modifier = Modifier
+//                            .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
+//                            .offset(0.dp, 0.dp)
+//                            .fillMaxWidth(),
+//                        colors = MenuDefaults.itemColors(),
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+
+/** Original */
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun AutoCompleteText(
+//    modifier: Modifier = Modifier,
+//    value: String,
+//    placeholder: @Composable (() -> Unit)? = null,
+//    onValueChange: ((String) -> Unit)?,
+//    onOptionSelected: (String) -> Unit,
+//    suggestions: List<String> = emptyList(),
+//) {
+//    var expanded by remember { mutableStateOf(false) }
+////    val dropOffset by remember { mutableIntStateOf(value.length) }
+//
+//    ExposedDropdownMenuBox(
+//        expanded = expanded && suggestions.isNotEmpty(),
+//        onExpandedChange = { expanded = !expanded },
+//        modifier = Modifier
+//            .padding(0.dp)
+//    ) {
+//        TextField(
+//            value = value,
+//            onValueChange = {
+//                onValueChange?.invoke(it)
+//                expanded = value.isNotEmpty()
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(0.dp)
+//                .menuAnchor(MenuAnchorType.PrimaryEditable, true),
+//            enabled = true,
+//            trailingIcon = {
+//                if (value.length > 5) {
+//                    Icon(
+//                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+//                        contentDescription = null,
+//                        modifier = Modifier
+//                            .clickable {
+//                                if (onValueChange != null) {
+//                                    onValueChange("")
+//                                }
+//                            }
+//                            .alpha(0.66f)
+//                            .size(20.dp)
+//                            .focusable(false)
+//                    )
+//                }
+//            },
+//            singleLine = true,
+//            placeholder = { if (placeholder != null) placeholder() },
+//            keyboardOptions = KeyboardOptions(
+//                capitalization = KeyboardCapitalization.Sentences,
+//                keyboardType = KeyboardType.Text,
+//                imeAction = ImeAction.Next,
+//            ),
+//            colors = TextFieldDefaults.colors(
+//                focusedIndicatorColor = Color.Transparent,
+//                unfocusedIndicatorColor = Color.Transparent,
+//                disabledIndicatorColor = Color.Transparent,
+//                focusedContainerColor = LocalCustomColors.current.textField,
+//                unfocusedContainerColor = LocalCustomColors.current.textField,
+//                disabledContainerColor = LocalCustomColors.current.textField,
+//            )
+//        )
+//        if (expanded && suggestions.isNotEmpty()) {
+//            DropdownMenu(
+//                expanded = expanded,
+//                onDismissRequest = { expanded = false },
+//                modifier = Modifier
+//                    .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+//                    .heightIn(max = 82.dp),
+//                properties = PopupProperties(focusable = false),
+//                offset = DpOffset(32.dp, (-12).dp),
+//                containerColor = MaterialTheme.colorScheme.background,
+//            ) {
+//                suggestions.forEach { label ->
+//                    CustomDropdownMenuItem(
+//                        text = {
+//                            Text(
+//                                text = label,
+//                                modifier = Modifier
+//                                    .padding(0.dp)
+//                                    .focusable(false),
+//                                fontSize = 16.sp,
+//                                lineHeight = 16.sp,
+//                                maxLines = 1
+//                            )
+//                        },
+//                        onClick = {
+//                            onOptionSelected(label)
+//                            TextRange(label.length)
+//                            expanded = false
+//                            emptyList<String>()
+//                        },
+//                        enabled = true,
+//                        modifier = Modifier
+//                            .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
+//                            .offset(0.dp, 0.dp)
+//                            .fillMaxWidth(),
+//                        colors = MenuDefaults.itemColors(),
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+
+
 
 @Composable
 fun CustomDropdownMenuItem(
