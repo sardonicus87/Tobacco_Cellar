@@ -902,7 +902,7 @@ fun AutoCompleteText(
                     .heightIn(max = 82.dp),
                 properties = PopupProperties(focusable = false),
                 offset = DpOffset(32.dp, (-12).dp),
-                containerColor = LocalCustomColors.current.darkNeutral,
+                containerColor = LocalCustomColors.current.textField,
             ) {
                 suggestions.forEach { label ->
                     CustomDropdownMenuItem(

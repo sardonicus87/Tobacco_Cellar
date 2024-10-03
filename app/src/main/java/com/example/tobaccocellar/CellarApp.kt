@@ -200,7 +200,7 @@ fun CellarTopAppBar(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         modifier = Modifier,
-                        containerColor = LocalCustomColors.current.darkNeutral,
+                        containerColor = LocalCustomColors.current.textField,
                     ) {
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.import_csv)) },
