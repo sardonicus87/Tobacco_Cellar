@@ -3,6 +3,7 @@
 package com.example.tobaccocellar.ui.csvimport
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -107,10 +109,11 @@ fun ImportResultsBody(
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var visibleItemIndex by remember { mutableStateOf(0) }
+    val fadeMilis = 500
 
     LaunchedEffect(Unit) {
         while (visibleItemIndex < 5) { // (total items to fade in, index starts 0)
-            delay(300) // Adjust delay as needed
+            delay(850) // Adjust delay as needed
             visibleItemIndex++
         }
     }
@@ -132,7 +135,20 @@ fun ImportResultsBody(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            AnimatedVisibility(visible = visibleItemIndex > 0, enter = fadeIn()) {
+            if (visibleItemIndex <= 0) {
+                Text(
+                    text = "",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp),
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Transparent
+                )
+            }
+            AnimatedVisibility(
+                visible = visibleItemIndex > 0,
+                enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+            ) {
                 Text(
                     text = "CSV Import Results",
                     modifier = Modifier
@@ -151,7 +167,19 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    AnimatedVisibility(visible = visibleItemIndex > 1, enter = fadeIn()) {
+                    if (visibleItemIndex <= 1) {
+                        Text(
+                            text = "Total records found: ",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                            color = Color.Transparent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = visibleItemIndex > 1,
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                    ) {
                         Text(
                             text = "Total records found: ",
                             modifier = Modifier
@@ -159,7 +187,19 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
-                    AnimatedVisibility(visible = visibleItemIndex > 2, enter = fadeIn()) {
+                    if (visibleItemIndex <= 2) {
+                        Text(
+                            text = "Successful conversions: ",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                            color = Color.Transparent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = visibleItemIndex > 2,
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                    ) {
                         Text(
                             text = "Successful conversions: ",
                             modifier = Modifier
@@ -167,7 +207,19 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
-                    AnimatedVisibility(visible = visibleItemIndex > 3, enter = fadeIn()) {
+                    if (visibleItemIndex <= 3) {
+                        Text(
+                            text = "Total records imported: ",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                            color = Color.Transparent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = visibleItemIndex > 3,
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                    ) {
                         Text(
                             text = "Total records imported: ",
                             modifier = Modifier
@@ -186,7 +238,19 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    AnimatedVisibility(visible = visibleItemIndex > 1, enter = fadeIn()) {
+                    if (visibleItemIndex <= 1) {
+                        Text(
+                            text = "123",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                            color = Color.Transparent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = visibleItemIndex > 1,
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                    ) {
                         Text(
                             text = "$totalRecords",
                             modifier = Modifier
@@ -194,7 +258,19 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
-                    AnimatedVisibility(visible = visibleItemIndex > 2, enter = fadeIn()) {
+                    if (visibleItemIndex <= 2) {
+                        Text(
+                            text = "",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                            color = Color.Transparent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = visibleItemIndex > 2,
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                    ) {
                         Text(
                             text = "$successfulConversions",
                             modifier = Modifier
@@ -202,7 +278,19 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
-                    AnimatedVisibility(visible = visibleItemIndex > 3, enter = fadeIn()) {
+                    if (visibleItemIndex <= 3) {
+                        Text(
+                            text = "",
+                            modifier = Modifier
+                                .padding(bottom = 0.dp),
+                            fontSize = 18.sp,
+                            color = Color.Transparent
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = visibleItemIndex > 3,
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                    ) {
                         Text(
                             text = "$successfulInsertions",
                             modifier = Modifier
@@ -212,7 +300,24 @@ fun ImportResultsBody(
                     }
                 }
             }
-            AnimatedVisibility(visible = visibleItemIndex > 4, enter = fadeIn()) {
+            if (visibleItemIndex <= 4) {
+                TextButton(
+                    onClick = {  },
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Text(
+                        text = "",
+                        fontSize = 25.sp,
+                        color = Color.Transparent
+                    )
+                }
+            }
+            AnimatedVisibility(
+                visible = visibleItemIndex > 4,
+                enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+            ) {
                 TextButton(
                     onClick = { navigateToHome() },
                     modifier = Modifier
