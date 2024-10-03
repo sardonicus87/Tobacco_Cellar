@@ -369,7 +369,9 @@ fun CellarBottomAppBar(
                         modifier = Modifier
                             .size(26.dp)
                             .offset(y = (-8).dp),
-                        tint = LocalContentColor.current,
+                        tint = if (filterViewModel.isBottomSheetOpen) {
+                            onPrimaryLight
+                        } else { LocalContentColor.current },
                     )
                 }
                 Text(
@@ -378,10 +380,14 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Normal,
+                    color = if (filterViewModel.isBottomSheetOpen) {
+                        onPrimaryLight
+                    } else { LocalContentColor.current }
                 )
             }
 
             // Add //
+            var clickToAdd by remember { mutableStateOf(false) }
             Box(
                 modifier = Modifier
                     .padding(vertical = 4.dp)
@@ -391,7 +397,10 @@ fun CellarBottomAppBar(
                 //  horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 IconButton(
-                    onClick = navigateToAddEntry,
+                    onClick = {
+                        clickToAdd = true
+                        navigateToAddEntry()
+                    },
                     modifier = Modifier
                         .padding(0.dp)
                 ) {
@@ -401,7 +410,9 @@ fun CellarBottomAppBar(
                         modifier = Modifier
                             .size(26.dp)
                             .offset(y = (-8).dp),
-                        tint = LocalContentColor.current,
+                        tint = if (clickToAdd) {
+                            onPrimaryLight
+                        } else { LocalContentColor.current },
                     )
                 }
                 Text(
@@ -410,6 +421,9 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Normal,
+                    color = if (clickToAdd) {
+                        onPrimaryLight
+                    } else { LocalContentColor.current }
                 )
             }
         }

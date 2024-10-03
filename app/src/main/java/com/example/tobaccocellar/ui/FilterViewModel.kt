@@ -31,6 +31,8 @@ class FilterViewModel (
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
     val bottomSheetState: StateFlow<BottomSheetState> = _bottomSheetState.asStateFlow()
+    val isBottomSheetOpen: Boolean
+        get() = _bottomSheetState.value == BottomSheetState.OPENED
 
     fun openBottomSheet() {
         _bottomSheetState.value = BottomSheetState.OPENED
