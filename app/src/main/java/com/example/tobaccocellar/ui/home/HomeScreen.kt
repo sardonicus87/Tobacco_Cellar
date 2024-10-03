@@ -843,7 +843,7 @@ private fun CellarListItem(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(LocalCustomColors.current.customScrim.copy(alpha = 0.80f))
+                    .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.80f))
                     .padding(0.dp)
             ) {
                 Row(

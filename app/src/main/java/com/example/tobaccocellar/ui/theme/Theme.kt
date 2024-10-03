@@ -205,7 +205,7 @@ private val highContrastDarkColorScheme = darkColorScheme(
 
 @Immutable
 data class CustomColorScheme(
-    val customScrim: Color = Color.Unspecified,
+    val listMenuScrim: Color = Color.Unspecified,
     val deleteButton: Color = Color.Unspecified,
     val favHeart: Color = Color.Unspecified,
     val disHeart: Color = Color.Unspecified,
@@ -220,7 +220,7 @@ data class CustomColorScheme(
 val LocalCustomColors = staticCompositionLocalOf { CustomColorScheme() }
 
 private val customLight = CustomColorScheme(
-    customScrim = customScrimLight,
+    listMenuScrim = listMenuScrimLight,
     deleteButton = deleteButtonLight,
     favHeart = favHeartLight,
     disHeart = disHeartLight,
@@ -233,7 +233,7 @@ private val customLight = CustomColorScheme(
 )
 
 private val customDark = CustomColorScheme(
-    customScrim = customScrimDark,
+    listMenuScrim = listMenuScrimDark,
     deleteButton = deleteButtonDark,
     favHeart = favHeartDark,
     disHeart = disHeartDark,
