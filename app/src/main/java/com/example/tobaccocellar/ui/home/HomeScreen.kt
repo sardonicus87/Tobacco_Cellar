@@ -1216,7 +1216,7 @@ fun HeaderCell(
                 Image(
                     painter = icon1,
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color(0xFFAA0000)),
+                    colorFilter = ColorFilter.tint(LocalCustomColors.current.favHeart),
                     modifier = Modifier
                         .size(20.dp)
                 )
