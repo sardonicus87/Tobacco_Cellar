@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -102,13 +104,16 @@ import com.example.tobaccocellar.ui.theme.LocalCustomColors
 import com.example.tobaccocellar.ui.theme.inversePrimaryLight
 import com.example.tobaccocellar.ui.theme.onBackgroundDark
 import com.example.tobaccocellar.ui.theme.onPrimaryContainerDark
+import com.example.tobaccocellar.ui.theme.onPrimaryDark
 import com.example.tobaccocellar.ui.theme.onPrimaryLight
 import com.example.tobaccocellar.ui.theme.primaryContainerLight
 import com.example.tobaccocellar.ui.theme.primaryDark
 import com.example.tobaccocellar.ui.theme.primaryLight
 import com.example.tobaccocellar.ui.theme.secondaryContainerLight
+import com.example.tobaccocellar.ui.theme.secondaryLight
 import com.example.tobaccocellar.ui.theme.tertiaryContainerLight
 import com.example.tobaccocellar.ui.theme.tertiaryDark
+import com.google.android.material.chip.Chip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -300,7 +305,11 @@ fun CellarBottomAppBar(
                         .padding(0.dp)
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight =
+                    if (currentDestination == HomeDestination) {
+                        FontWeight.SemiBold
+                    } else {
+                        FontWeight.Normal },
                     color =
                     if (currentDestination == HomeDestination) {
                         onPrimaryLight
@@ -341,7 +350,11 @@ fun CellarBottomAppBar(
                     modifier = Modifier
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight =
+                    if (currentDestination == StatsDestination) {
+                        FontWeight.SemiBold
+                    } else {
+                        FontWeight.Normal },
                     color =
                     if (currentDestination == StatsDestination) {
                         onPrimaryLight
@@ -379,7 +392,12 @@ fun CellarBottomAppBar(
                     modifier = Modifier
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight =
+                    if (filterViewModel.isBottomSheetOpen) {
+                        FontWeight.SemiBold
+                    } else {
+                        FontWeight.Normal
+                    },
                     color = if (filterViewModel.isBottomSheetOpen) {
                         onPrimaryLight
                     } else { LocalContentColor.current }
@@ -420,7 +438,12 @@ fun CellarBottomAppBar(
                     modifier = Modifier
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight =
+                    if (clickToAdd) {
+                        FontWeight.SemiBold
+                    } else {
+                        FontWeight.Normal
+                    },
                     color = if (clickToAdd) {
                         onPrimaryLight
                     } else { LocalContentColor.current }
