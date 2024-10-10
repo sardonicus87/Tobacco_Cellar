@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
+    implementation(libs.kotlin.stdlib.jdk8)
 
 
     debugImplementation(libs.leakcanary.android)
