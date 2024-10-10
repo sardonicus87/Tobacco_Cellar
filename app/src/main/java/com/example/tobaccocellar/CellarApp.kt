@@ -2,6 +2,7 @@
 
 package com.example.tobaccocellar
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -158,8 +159,8 @@ fun CellarTopAppBar(
     canNavigateBack: Boolean,
     modifier: Modifier = Modifier,
     navigateUp: () -> Unit = {},
-    navigateToCsvImport: () -> Unit,
-    navigateToSettings: () -> Unit,
+    navigateToCsvImport: () -> Unit = {},
+    navigateToSettings: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
@@ -622,6 +623,7 @@ fun TypeFilterSection(
     }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BrandFilterSection(
@@ -697,7 +699,6 @@ fun BrandFilterSection(
         }
 
         BoxWithConstraints {
-
             val maxWidth = maxWidth * 0.32f
             val chipCountToShow = 5
             val overflowCount = selectedBrands.size - chipCountToShow
@@ -736,7 +737,6 @@ fun BrandFilterSection(
                         )
                     }
                 }
-
                 if (showOverflowPopup) {
                     AlertDialog(
                         onDismissRequest = { showOverflowPopup = false },
