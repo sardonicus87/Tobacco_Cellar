@@ -155,40 +155,46 @@ fun AddEntryScreen(
                         }
                     ),
                 navigateUp = onNavigateUp,
-                navigateToCsvImport = {},
-                navigateToSettings = {},
                 showMenu = false,
             )
         },
     ) { innerPadding ->
-        AddEntryBody(
-            itemUiState = viewModel.itemUiState,
-            existState = viewModel.existState,
-            resetExistState = viewModel::resetExistState,
-            onItemValueChange = viewModel::updateUiState,
-            onSaveClick = {
-                coroutineScope.launch {
-                    withContext(Dispatchers.Main) {
-                        viewModel.checkItemExistsOnSave()
-                        if (!viewModel.existState.exists) {
-                            viewModel.saveItem()
-                            navigateBack()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            AddEntryBody(
+                itemUiState = viewModel.itemUiState,
+                existState = viewModel.existState,
+                resetExistState = viewModel::resetExistState,
+                onItemValueChange = viewModel::updateUiState,
+                onSaveClick = {
+                    coroutineScope.launch {
+                        withContext(Dispatchers.Main) {
+                            viewModel.checkItemExistsOnSave()
+                            if (!viewModel.existState.exists) {
+                                viewModel.saveItem()
+                                navigateBack()
+                            }
                         }
                     }
-                }
-            },
-            onDeleteClick = {
-                coroutineScope.launch {
-                    viewModel.deleteItem()
-                    navigateBack()
-                }
-            },
-            isEditEntry = false,
-            navigateToEditEntry = navigateToEditEntry,
-            modifier = modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-        )
+                },
+                onDeleteClick = {
+                    coroutineScope.launch {
+                        viewModel.deleteItem()
+                        navigateBack()
+                    }
+                },
+                isEditEntry = false,
+                navigateToEditEntry = navigateToEditEntry,
+                modifier = modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
+            )
+        }
     }
 }
 

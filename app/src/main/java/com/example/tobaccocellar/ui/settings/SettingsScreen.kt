@@ -67,8 +67,6 @@ fun SettingsScreen(
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = canNavigateBack,
-                navigateToCsvImport = {},
-                navigateToSettings = {},
                 showMenu = false,
             )
         },
@@ -78,7 +76,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+                .padding(innerPadding)
         ) {
             SettingsBody(
                 onDeleteAllClick = {

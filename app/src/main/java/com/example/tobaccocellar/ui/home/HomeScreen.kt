@@ -146,12 +146,6 @@ fun HomeScreen(
         }
     }
 
-//    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-//        this.pointerInput(Unit) {
-//            detectTapGestures(onTap = { onClick() } )
-//        }
-//    }
-
 
     Scaffold(
         modifier = modifier
@@ -191,7 +185,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 52.dp, start = 0.dp, end = 0.dp)
+                .padding(innerPadding)
         ) {
             HomeHeader(
                 modifier = Modifier

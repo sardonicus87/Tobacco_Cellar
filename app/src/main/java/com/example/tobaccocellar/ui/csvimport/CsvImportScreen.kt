@@ -95,8 +95,6 @@ fun CsvImportScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,
-                navigateToCsvImport = {},
-                navigateToSettings = {},
                 showMenu = false,
             )
         },
@@ -106,7 +104,7 @@ fun CsvImportScreen(
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 64.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+                .padding(innerPadding)
         ) {
             CsvImportBody(
                 csvImportState = csvImportState,

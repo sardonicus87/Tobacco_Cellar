@@ -71,8 +71,6 @@ fun CsvImportResultsScreen (
                 title = stringResource(CsvImportResultsDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
-                navigateToCsvImport = {},
-                navigateToSettings = {},
                 navigateUp = onNavigateUp,
                 showMenu = false,
             )
@@ -83,7 +81,7 @@ fun CsvImportResultsScreen (
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 8.dp, start = 8.dp, end = 8.dp)
+                .padding(innerPadding)
         ) {
             ImportResultsBody(
                 totalRecords = totalRecords,
