@@ -175,16 +175,8 @@ fun CellarTopAppBar(
     }
 
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = primaryLight,
-            scrolledContainerColor = primaryLight,
-            navigationIconContentColor = onPrimaryLight,
-            actionIconContentColor = onPrimaryLight,
-            titleContentColor = onPrimaryLight,
-        ),
         title = { Text(title) },
         modifier = modifier,
-        scrollBehavior = scrollBehavior,
         navigationIcon = {
             if (canNavigateBack) {
                 IconButton(onClick = navigateUp) {
@@ -243,7 +235,16 @@ fun CellarTopAppBar(
                     }
                 }
             }
-        }
+        },
+        expandedHeight = 56.dp,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = primaryLight,
+            scrolledContainerColor = primaryLight,
+            navigationIconContentColor = onPrimaryLight,
+            actionIconContentColor = onPrimaryLight,
+            titleContentColor = onPrimaryLight,
+        ),
+        scrollBehavior = scrollBehavior,
     )
 }
 
@@ -273,7 +274,7 @@ fun CellarBottomAppBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-
+            var clickToAdd by remember { mutableStateOf(false) }
             // Cellar //
             Box(
                 modifier = Modifier
@@ -293,7 +294,7 @@ fun CellarBottomAppBar(
                             .size(26.dp)
                             .offset(y = (-8).dp),
                         tint =
-                        if (currentDestination == HomeDestination) {
+                        if (currentDestination == HomeDestination && !clickToAdd) {
                             onPrimaryLight
                         } else {
                             LocalContentColor.current
@@ -307,12 +308,12 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight =
-                    if (currentDestination == HomeDestination) {
+                    if (currentDestination == HomeDestination && !clickToAdd) {
                         FontWeight.SemiBold
                     } else {
                         FontWeight.Normal },
                     color =
-                    if (currentDestination == HomeDestination) {
+                    if (currentDestination == HomeDestination && !clickToAdd) {
                         onPrimaryLight
                     } else {
                         LocalContentColor.current
@@ -339,7 +340,7 @@ fun CellarBottomAppBar(
                             .size(26.dp)
                             .offset(y = (-8).dp),
                         tint =
-                        if (currentDestination == StatsDestination) {
+                        if (currentDestination == StatsDestination && !clickToAdd) {
                             onPrimaryLight
                         } else {
                             LocalContentColor.current
@@ -352,12 +353,12 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight =
-                    if (currentDestination == StatsDestination) {
+                    if (currentDestination == StatsDestination && !clickToAdd) {
                         FontWeight.SemiBold
                     } else {
                         FontWeight.Normal },
                     color =
-                    if (currentDestination == StatsDestination) {
+                    if (currentDestination == StatsDestination && !clickToAdd) {
                         onPrimaryLight
                     } else {
                         LocalContentColor.current
@@ -406,7 +407,6 @@ fun CellarBottomAppBar(
             }
 
             // Add //
-            var clickToAdd by remember { mutableStateOf(false) }
             Box(
                 modifier = Modifier
                     .padding(vertical = 4.dp)
