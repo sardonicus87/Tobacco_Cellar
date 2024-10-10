@@ -98,6 +98,30 @@ val backgroundUnselectedDark = Color(0xFF131915)
 val tableBorderDark = Color(0xFF7E8380)
 val navIconDark = Color(0xFFB5F6D5)
 
+// pie charts light
+val pieOneLight = Color(0xFF03B1FF)
+val pieTwoLight = Color(0xFF00FDFE)
+val pieThreeLight = Color(0xFF01A802)
+val pieFourLight = Color(0xFF00FD01)
+val pieFiveLight = Color(0xFFF4FF81)
+val pieSixLight = Color(0xFFFFEA00)
+val pieSevenLight = Color(0xFFFBC02D)
+val pieEightLight = Color(0xFFFF9100)
+val pieNineLight = Color(0xFFFF3D00)
+val pieTenLight = Color(0xFF7E57C2)
+
+// pie charts dark
+val pieOneDark = Color(0xFF03B1FF)
+val pieTwoDark = Color(0xFF00FDFE)
+val pieThreeDark = Color(0xFF01A802)
+val pieFourDark = Color(0xFF00FD01)
+val pieFiveDark = Color(0xFFF4FF81)
+val pieSixDark = Color(0xFFFFEA00)
+val pieSevenDark = Color(0xFFFBC02D)
+val pieEightDark = Color(0xFFFF9100)
+val pieNineDark = Color(0xFFFF3D00)
+val pieTenDark = Color(0xFF7E57C2)
+
 // light //
 val primaryLightMediumContrast = Color(0xFF004D34)
 val onPrimaryLightMediumContrast = Color(0xFFFFFFFF)

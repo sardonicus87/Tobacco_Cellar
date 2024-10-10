@@ -1,44 +1,80 @@
 package com.example.tobaccocellar.ui.stats
 
 
+import android.R.attr.centerX
+import android.R.attr.centerY
+import android.R.attr.label
+import android.R.attr.maxLines
+import android.R.attr.radius
+import android.R.attr.text
+import android.R.attr.textColor
+import android.R.attr.thickness
+import android.graphics.RectF
+import android.graphics.Region
 import android.icu.text.DecimalFormat
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.AndroidPath
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
@@ -47,7 +83,7 @@ import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
-import java.io.File.separator
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -68,7 +104,7 @@ fun StatsScreen(
     modifier: Modifier = Modifier,
     viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val rawStats by viewmodel.rawStats.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
@@ -79,8 +115,6 @@ fun StatsScreen(
                 title = stringResource(StatsDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
-                navigateToCsvImport = navigateToCsvImport,
-                navigateToSettings = navigateToSettings,
                 showMenu = false,
             )
         },
@@ -100,7 +134,7 @@ fun StatsScreen(
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 52.dp, start = 0.dp, end = 0.dp)
+                .padding(innerPadding)
         ) {
             StatsBody(
                 rawStats = rawStats,
@@ -121,79 +155,253 @@ private fun StatsBody(
 ) {
     Column(
         modifier = modifier
-            .padding(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 0.dp)
+            .padding(horizontal = 8.dp, vertical = 16.dp)
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
     ) {
+        // Quick Stats
         Text(
             text = stringResource(R.string.quick_stats),
             modifier = Modifier
-                .padding(bottom = 8.dp),
-            fontSize = 18.sp,
+                .padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Start,
         )
+        HorizontalDivider(
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+            thickness = 1.dp,
+        )
+        QuickStats(
+            rawStats = rawStats,
+        )
+        Spacer(
+            modifier = Modifier
+                .height(40.dp)
+        )
+        // Charts
         Text(
-            text = "${rawStats.itemsCount} blends • ${rawStats.brandsCount} brands • " +
-                    "${rawStats.favoriteCount} favorites • ${rawStats.dislikedCount} disliked\n" +
-                    "${rawStats.totalQuantity} total quantity • ${rawStats.totalZeroQuantity} out of stock\n",
-              //      + rawStats.totalByType.toList().sortedByDescending { it.second }.joinToString(separator = ", ") { "${it.second} ${it.first}" },
+            text = "Charts",
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        HorizontalDivider(
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+            thickness = 1.dp,
+        )
+        ChartsSection(
+            rawStats = rawStats,
+            viewModel = viewModel
+        )
+
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun QuickStats(
+    rawStats: RawStats,
+) {
+    var showSeparatorsState = true
+    val showSeparators by remember { mutableStateOf(showSeparatorsState) }
+
+    var statsList = listOf(
+            "${rawStats.itemsCount} blends",
+            "${rawStats.brandsCount} brands",
+            "${rawStats.favoriteCount} favorites",
+            "${rawStats.dislikedCount} disliked",
+            "${rawStats.totalQuantity} total \"quantity\"",
+            "${rawStats.totalZeroQuantity} out of stock",
+        ).joinToString(separator = if (showSeparators) " • " else "\n")
+
+    val totalByType = rawStats.totalByType.toList().sortedBy {
+        when (it.first) {
+            "Burley" -> 0
+            "Virginia" -> 1
+            "English" -> 2
+            "Aromatic" -> 3
+            "Other" -> 4
+            else -> 5
+        }
+    }.joinToString(separator = ", ") { "${it.second} ${it.first}" }
+
+
+    val separator = " • "
+
+    val quickStats = "• ${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
+            "• ${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
+            "• ${rawStats.totalQuantity} total \"quantity\", " +
+            "${rawStats.totalZeroQuantity} out of stock"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 0.dp)
+            .wrapContentHeight(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start,
+    ) {
+
+        Text(
+            text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
+                    "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
+                    "${rawStats.totalQuantity} total \"quantity\", " +
+                    "${rawStats.totalZeroQuantity} out of stock",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 8.dp, end = 8.dp, bottom = 0.dp),
-            textAlign = TextAlign.Center,
+                .padding(start = 0.dp, end = 0.dp, bottom = 12.dp),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Start,
             softWrap = true,
         )
+
         Text(
-            text = "Charts:",
+            text = totalByType,
+            modifier = Modifier
+                .fillMaxWidth(fraction = 0.75f)
+                .padding(0.dp),
+            textAlign = TextAlign.Start,
+            softWrap = true
+        )
+    }
+}
+
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChartsSection(
+    rawStats: RawStats,
+    viewModel: StatsViewModel
+) {
+    val pieColors = listOf(
+        LocalCustomColors.current.pieOne,
+        LocalCustomColors.current.pieTwo,
+        LocalCustomColors.current.pieThree,
+        LocalCustomColors.current.pieFour,
+        LocalCustomColors.current.pieFive,
+        LocalCustomColors.current.pieSix,
+        LocalCustomColors.current.pieSeven,
+        LocalCustomColors.current.pieEight,
+        LocalCustomColors.current.pieNine,
+        LocalCustomColors.current.pieTen,
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 0.dp)
+            .wrapContentHeight(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start,
+    ) {
+//        Text(
+//            text = "Select charts to view:",
+//            modifier = Modifier
+//        )
+//        FlowRow(
+//            modifier = Modifier
+//                .fillMaxWidth(),
+//            horizontalArrangement = Arrangement.spacedBy(space = 6.dp, Alignment.Start),
+//            verticalArrangement = Arrangement.spacedBy(0.dp),
+//        ) {
+//            TextButton(
+//                onClick = {
+//                },
+//                modifier = Modifier
+//               //     .width(100.dp)
+//            ) {
+//                Text(
+//                    text = "Basic stats",
+//                )
+//            }
+//        }
+
+
+        Text(
+            text = "Basic Stats",
             modifier = Modifier
                 .padding(bottom = 8.dp),
             fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
         )
-        Row(
+        Text(
+            text = "Blends by Type",
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-        ){
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                PieChart(
-                    data = rawStats.totalByType,
-                    colors = listOf(LocalCustomColors.current.disHeart, Color.Cyan, Color.Green, Color.Yellow, Color.Red),
-                    showLabels = true,
-                    showPercentages = true,
-                    onSliceLabelPosition = 0.6f,
-                    outsideSliceLabelPosition = 0.65f,
-                    outsideLabelThreshold = 20f,
-                    modifier = Modifier
-                        .padding(32.dp)
-                        .size(250.dp),
-                    rotationOffset = 225f,
-                    textColor = Color.Black,
-                    labelBackground = Color.White.copy(alpha = 0.45f),
-                    sortData = true
-                )
-            }
-        }
+                .align(Alignment.CenterHorizontally),
+            fontSize = 15.sp,
+        )
+        PieChart(
+            data = rawStats.totalByType,
+            colors = pieColors,
+            showLabels = true,
+            showPercentages = true,
+            modifier = Modifier
+                .padding(top = 24.dp, bottom = 32.dp)
+                .align(Alignment.CenterHorizontally)
+                .size(250.dp),
+            onSliceLabelPosition = 0.6f,
+            outsideSliceLabelPosition = 0.65f,
+            outsideLabelThreshold = 20f,
+            rotationOffset = 225f,
+            textColor = Color.Black,
+            labelBackground = Color.White.copy(alpha = 0.45f),
+            sortData = true
+        )
+        Text(
+            text = "Top 10 Brands (by number of entries)",
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally),
+            fontSize = 15.sp,
+        )
+        val topTenBrands = viewModel.getTopTenBrands(rawStats)
+        PieChart(
+            data = topTenBrands,
+            showLabels = true,
+            showPercentages = true,
+            modifier = Modifier
+                .padding(top = 24.dp, bottom = 32.dp)
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth(fraction = 0.7f),
+            onSliceLabelPosition = 0.6f,
+            outsideSliceLabelPosition = 0.65f,
+            outsideLabelThreshold = 25f,
+            rotationOffset = 225f,
+            textColor = Color.Black,
+            labelBackground = Color.White.copy(alpha = 0.55f),
+            sortData = true
+        )
     }
 }
+
+
+/** Pie Chart stuff*/
 
 @Composable
 private fun PieChart(
     data: Map<String, Int>,
-    colors: List<Color>,
     showLabels: Boolean = true,
     showPercentages: Boolean = false,
-    onSliceLabelPosition: Float,
-    outsideSliceLabelPosition: Float,
-    outsideLabelThreshold: Float = 20f,
     modifier: Modifier = Modifier,
-    rotationOffset: Float = 0f,
+    colors: List<Color> = listOf(
+        LocalCustomColors.current.pieOne,
+        LocalCustomColors.current.pieTwo,
+        LocalCustomColors.current.pieThree,
+        LocalCustomColors.current.pieFour,
+        LocalCustomColors.current.pieFive,
+        LocalCustomColors.current.pieSix,
+        LocalCustomColors.current.pieSeven,
+        LocalCustomColors.current.pieEight,
+        LocalCustomColors.current.pieNine,
+        LocalCustomColors.current.pieTen),
+    onSliceLabelPosition: Float = 0.5f,
+    outsideSliceLabelPosition: Float = 0.5f,
+    outsideLabelThreshold: Float = 20f,
+    rotationOffset: Float = 270f,
     textColor: Color = Color.Black,
     labelBackground: Color = Color.Unspecified,
     sortData: Boolean = true,
@@ -204,16 +412,16 @@ private fun PieChart(
 
     Canvas(
         modifier = modifier
+            .aspectRatio(1f)
     ) {
         val centerX = size.width / 2
         val centerY = size.height / 2
         val radiusSlice = min(centerX, centerY) * 0.8f // float is padding between canvas bounds and chart
         val insideLabel = min(centerX, centerY) * onSliceLabelPosition
-        val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.25f))
+        val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.3f))
 
         drawSlices(
-            sortedData, colors, total, rotationOffset,
-            centerX, centerY, radiusSlice
+            sortedData, colors, total, rotationOffset
         )
 
         drawLabels(
@@ -228,9 +436,6 @@ private fun DrawScope.drawSlices(
     colors: List<Color>,
     total: Int,
     startAngle: Float,
-    centerX: Float,
-    centerY: Float,
-    radius: Float
 ) {
     var currentStartAngle = startAngle
 
@@ -244,7 +449,6 @@ private fun DrawScope.drawSlices(
             useCenter = true,
             style = Fill,
         )
-
         currentStartAngle += sweepAngle
     }
 }
@@ -262,7 +466,7 @@ private fun DrawScope.drawLabels(
     centerY: Float,
     insideRadius: Float,
     outsideRadius: Float,
-    outsideLabelThreshold: Float
+    outsideLabelThreshold: Float,
 ) {
     var currentStartAngle = startAngle
     var outsideLabelCount = 0
@@ -273,7 +477,7 @@ private fun DrawScope.drawLabels(
 
         val radius = if (sweepAngle < outsideLabelThreshold) {
             outsideLabelCount++
-            if (outsideLabelCount % 2 == 1) { outsideRadius + 1f } else { outsideRadius }
+            outsideRadius
         } else {
             outsideLabelCount = 0
             insideRadius
@@ -290,10 +494,14 @@ private fun DrawScope.drawLabels(
         val textLabel = textMeasurer.measure(
             text = AnnotatedString(labelPad),
             style = TextStyle(
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                background = labelBg
-            )
+                background = labelBg,
+                textAlign = TextAlign.Center,
+            ),
+            constraints = Constraints(maxWidth = 250),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
 
         val percentageLabel = textMeasurer.measure(
@@ -309,7 +517,7 @@ private fun DrawScope.drawLabels(
         val percentageWidth = percentageLabel.size.width.toFloat()
         val percentageHeight = percentageLabel.size.height.toFloat()
         val combinedHeight =
-            if (showLabels && showPercentages) { labelHeight + (percentageHeight / 2)
+            if (showLabels && showPercentages) { labelHeight + (percentageHeight * .2f)
             } else {
                 if (showLabels) { labelHeight } else { percentageHeight }
             }
@@ -345,3 +553,190 @@ private fun DrawScope.drawLabels(
     }
 }
 
+
+//private fun DrawScope.drawLabels2(
+//    data: Map<String, Int>,
+//    colors: List<Color>,
+//    total: Int,
+//    startAngle: Float,
+//    showLabels: Boolean,
+//    showPercentages: Boolean,
+//    textMeasurer: TextMeasurer,
+//    textColor: Color,
+//    backgroundColor: Color,
+//    centerX: Float,
+//    centerY: Float,
+//    insideRadius: Float,
+//    outsideRadius: Float,
+//    outsideLabelThreshold: Float,
+//    onOutsideLabelsCollected: (List<Pair<String, PieSliceData>>) -> Unit
+//) {
+//    var currentStartAngle = startAngle
+//    var outsideLabelCount = 0
+//    val outsideLabels = mutableListOf<Pair<String, PieSliceData>>()
+//
+//    data.forEach { (label, value) ->
+//        val sweepAngle = (value.toFloat() / total) * 360f
+//        val midpointAngle = currentStartAngle + sweepAngle / 2
+//        val decimalFormat = DecimalFormat("#.##%")
+//        val percentageCal = decimalFormat.format(value.toDouble() / total)
+//
+//
+//        val radius = if (sweepAngle < outsideLabelThreshold) {
+//            outsideLabelCount++
+//            outsideLabels.add(label to PieSliceData(colors[data.keys.indexOf(label) % colors.size], midpointAngle, percentageCal))
+//            outsideRadius
+//        } else {
+//            outsideLabelCount = 0
+//            insideRadius
+//        }
+//
+//        val labelColor = if (showLabels) { textColor } else { Color.Transparent }
+//        val percentColor = if (showLabels && showPercentages) { textColor } else { Color.Transparent }
+//        val labelBg = if (showLabels) { backgroundColor } else { Color.Transparent }
+//        val percentBg = if (showLabels && showPercentages) { backgroundColor } else { Color.Transparent }
+//        val labelPad = " $label "
+//        val percentPad = " $percentageCal "
+//
+//        val textLabel = textMeasurer.measure(
+//            text = AnnotatedString(labelPad),
+//            style = TextStyle(
+//                fontSize = 14.sp,
+//                fontWeight = FontWeight.Bold,
+//                background = labelBg,
+//                textAlign = TextAlign.Center,
+//            ),
+//            constraints = Constraints(maxWidth = 250),
+//            maxLines = 1,
+//            overflow = TextOverflow.Ellipsis
+//        )
+//
+//        val percentageLabel = textMeasurer.measure(
+//            text = AnnotatedString(percentPad),
+//            style = TextStyle(
+//                fontSize = 12.sp,
+//                background = percentBg
+//            )
+//        )
+//
+//        val labelWidth = textLabel.size.width.toFloat()
+//        val labelHeight = textLabel.size.height.toFloat()
+//        val percentageWidth = percentageLabel.size.width.toFloat()
+//        val percentageHeight = percentageLabel.size.height.toFloat()
+//        val combinedHeight =
+//            if (showLabels && showPercentages) { labelHeight + (percentageHeight * .2f)
+//            } else {
+//                if (showLabels) { labelHeight } else { percentageHeight }
+//            }
+//
+//        val labelX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
+//        val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat() - combinedHeight / 2
+//        val adjustedLabelX = labelX - labelWidth / 2
+//        val adjustedLabelY = labelY - labelHeight / 2
+//
+//        val percentageX = adjustedLabelX + (labelWidth - percentageWidth) / 2
+//        val percentageY = adjustedLabelY + labelHeight
+//
+//        if (sweepAngle >= outsideLabelThreshold) {
+//            drawText(
+//                textLayoutResult = textLabel,
+//                brush = SolidColor(labelColor),
+//                topLeft = Offset(
+//                    x = adjustedLabelX,
+//                    y = adjustedLabelY
+//                )
+//            )
+//
+//            drawText(
+//                textLayoutResult = percentageLabel,
+//                brush = SolidColor(percentColor),
+//                topLeft = Offset(
+//                    x = percentageX,
+//                    y = percentageY
+//                )
+//            )
+//        }
+//
+//        currentStartAngle += sweepAngle
+//        if (outsideLabelCount >= 2) {
+//            onOutsideLabelsCollected(outsideLabels)
+//        }
+//    }
+//}
+
+//data class PieSliceData(val color: Color, val midpointAngle: Float, val percentage: String)
+//
+//@Composable
+//private fun OutsideLabels(
+//    outsideLabels: List<Pair<String, PieSliceData>>,
+//    modifier: Modifier = Modifier
+//) {
+//    Column(
+//        modifier = Modifier,
+//        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),
+//        horizontalAlignment = Alignment.Start
+//    ) {
+//        outsideLabels.reversed().forEach { (label, sliceData) ->
+//            Text(
+//                text = "$label\n(${sliceData.percentage})",
+//                color = sliceData.color,
+//                fontSize = 10.sp,
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//        }
+//    }
+//}
+
+
+
+
+
+
+//        Text(
+//            text = "${rawStats.itemsCount} blends • ${rawStats.brandsCount} brands • " +
+//                    "${rawStats.favoriteCount} favorites • ${rawStats.dislikedCount} disliked\n" +
+//                    "${rawStats.totalQuantity} total quantity • ${rawStats.totalZeroQuantity} out of stock\n",
+//              //      + rawStats.totalByType.toList().sortedByDescending { it.second }.joinToString(separator = ", ") { "${it.second} ${it.first}" },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(start = 8.dp, end = 8.dp, bottom = 0.dp),
+//            textAlign = TextAlign.Center,
+//            softWrap = true,
+//        )
+
+//                var modifiedText = ""
+//                    for (i in 0 until it.lineCount) {
+//                        val lineStart = it.getLineStart(i)
+//                        val lineEnd = it.getLineEnd(i, true)
+//                        val lineText = statsText.value.substring(lineStart, lineEnd)
+//
+//                        modifiedText += lineText
+//
+//                        if (lineText.endsWith(" • ") && i < it.lineCount - 1) {
+//                            val newLineText = lineText.removeSuffix(" • ")
+//                            val beforeLine = modifiedText.substring(0, modifiedText.length - lineText.length)
+//                            modifiedText = beforeLine + newLineText
+//                        }
+//                    }
+//                if (modifiedText != statsText.value) {
+//                    statsText.value = modifiedText
+//                }
+//            },
+
+//onTextLayout = { textLayoutResult ->
+//    if (textLayoutResult.hasVisualOverflow) {
+//        var modifiedText = quickStats
+//        for (i in 0 until textLayoutResult.lineCount - 1) { // Iterate until the second to last line
+//            val lineEnd = textLayoutResult.getLineEnd(i, visibleEnd = true)
+//            if (quickStats.getOrNull(lineEnd - 1) == '•' &&
+//                quickStats.getOrNull(lineEnd - 2) == ' ' &&
+//                quickStats.getOrNull(lineEnd - 3) == '•') {
+//                modifiedText = modifiedText.removeRange(lineEnd - 3, lineEnd)
+//            }
+//        }
+//        if (modifiedText != quickStats) {
+//            quickStats = modifiedText
+//        }
+//    }
+//},

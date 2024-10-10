@@ -215,6 +215,17 @@ data class CustomColorScheme(
     val backgroundUnselected: Color = Color.Unspecified,
     val tableBorder: Color = Color.Unspecified,
     val navIcon: Color = Color.Unspecified,
+    // pie chart colors
+    val pieOne: Color = Color.Unspecified,
+    val pieTwo: Color = Color.Unspecified,
+    val pieThree: Color = Color.Unspecified,
+    val pieFour: Color = Color.Unspecified,
+    val pieFive: Color = Color.Unspecified,
+    val pieSix: Color = Color.Unspecified,
+    val pieSeven: Color = Color.Unspecified,
+    val pieEight: Color = Color.Unspecified,
+    val pieNine: Color = Color.Unspecified,
+    val pieTen: Color = Color.Unspecified,
 )
 
 val LocalCustomColors = staticCompositionLocalOf { CustomColorScheme() }
@@ -230,6 +241,17 @@ private val customLight = CustomColorScheme(
     backgroundUnselected = backgroundUnselectedLight,
     tableBorder = tableBorderLight,
     navIcon = navIconLight,
+    // pie chart colors
+    pieOne = pieOneLight,
+    pieTwo = pieTwoLight,
+    pieThree = pieThreeLight,
+    pieFour = pieFourLight,
+    pieFive = pieFiveLight,
+    pieSix = pieSixLight,
+    pieSeven = pieSevenLight,
+    pieEight = pieEightLight,
+    pieNine = pieNineLight,
+    pieTen = pieTenLight,
 )
 
 private val customDark = CustomColorScheme(
@@ -243,6 +265,17 @@ private val customDark = CustomColorScheme(
     backgroundUnselected = backgroundUnselectedDark,
     tableBorder = tableBorderDark,
     navIcon = navIconDark,
+    // pie chart colors
+    pieOne = pieOneDark,
+    pieTwo = pieTwoDark,
+    pieThree = pieThreeDark,
+    pieFour = pieFourDark,
+    pieFive = pieFiveDark,
+    pieSix = pieSixDark,
+    pieSeven = pieSevenDark,
+    pieEight = pieEightDark,
+    pieNine = pieNineDark,
+    pieTen = pieTenDark,
 )
 
 

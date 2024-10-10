@@ -53,10 +53,19 @@ class StatsViewModel(
         initialValue = RawStats()
     )
 
+    fun getTopTenBrands(rawStats: RawStats): Map<String, Int> {
+        return rawStats.totalByBrand
+            .entries
+            .sortedByDescending { it.value }
+            .take(10)
+            .associate { it.key to it.value }
+    }
 
 
 
 }
+
+
 
 data class SetOne(
     val count: Int,
