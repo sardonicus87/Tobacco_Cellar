@@ -1,5 +1,8 @@
 package com.example.tobaccocellar.ui.home
 
+import android.R.attr.orientation
+import android.content.res.Configuration
+import android.widget.TableLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -37,6 +40,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.BottomAppBarScrollBehavior
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -73,6 +78,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -117,6 +123,9 @@ fun HomeScreen(
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val filterViewModel = LocalCellarApplication.current.filterViewModel
+//    val scrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
+//        TopAppBarDefaults.enterAlwaysScrollBehavior()
+//        else TopAppBarDefaults.pinnedScrollBehavior()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val showSnackbar = viewmodel.showSnackbar.collectAsState()

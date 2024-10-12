@@ -14,6 +14,7 @@ class StatsViewModel(
     private val filterViewModel: FilterViewModel
 ): ViewModel() {
 
+    /** Raw stats */
     val rawStats: StateFlow<RawStats> = combine(
         combine(
             itemsRepository.getItemsCount(),
@@ -61,6 +62,7 @@ class StatsViewModel(
             .associate { it.key to it.value }
     }
 
+    /** Filtered stats */
 
 
 }
