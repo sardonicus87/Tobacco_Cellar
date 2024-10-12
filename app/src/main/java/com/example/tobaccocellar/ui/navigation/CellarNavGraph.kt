@@ -56,10 +56,6 @@ fun CellarNavHost(
                     popUpTo(StatsDestination.route) { inclusive = true }
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
-                navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
-                navigateToSettings = { navController.navigate(SettingsDestination.route) {
-                    launchSingleTop = true
-                } },
                 onNavigateUp = { navController.navigateUp() }
             )
         }
