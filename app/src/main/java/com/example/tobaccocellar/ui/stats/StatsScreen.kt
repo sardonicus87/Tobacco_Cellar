@@ -1,37 +1,19 @@
 package com.example.tobaccocellar.ui.stats
 
 
-import android.R.attr.centerX
-import android.R.attr.centerY
-import android.R.attr.label
-import android.R.attr.maxLines
-import android.R.attr.radius
-import android.R.attr.text
-import android.R.attr.textColor
-import android.R.attr.thickness
-import android.graphics.RectF
-import android.graphics.Region
 import android.icu.text.DecimalFormat
-import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -39,7 +21,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -49,32 +30,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.AndroidPath
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.text.color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarBottomAppBar
 import com.example.tobaccocellar.CellarTopAppBar
@@ -83,7 +55,6 @@ import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
-import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -99,12 +70,10 @@ fun StatsScreen(
     navigateToHome: () -> Unit,
     navigateToAddEntry: () -> Unit,
     onNavigateUp: () -> Unit,
-    navigateToCsvImport: () -> Unit,
-    navigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val rawStats by viewmodel.rawStats.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
@@ -155,12 +124,12 @@ private fun StatsBody(
 ) {
     Column(
         modifier = modifier
-            .padding(horizontal = 8.dp, vertical = 16.dp)
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        // Quick Stats
+        // Raw Stats
         Text(
             text = stringResource(R.string.quick_stats),
             modifier = Modifier
@@ -174,13 +143,14 @@ private fun StatsBody(
                 .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
             thickness = 1.dp,
         )
-        QuickStats(
+        RawStats(
             rawStats = rawStats,
         )
         Spacer(
             modifier = Modifier
                 .height(40.dp)
         )
+
         // Charts
         Text(
             text = "Charts",
@@ -204,21 +174,9 @@ private fun StatsBody(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun QuickStats(
+fun RawStats(
     rawStats: RawStats,
 ) {
-    var showSeparatorsState = true
-    val showSeparators by remember { mutableStateOf(showSeparatorsState) }
-
-    var statsList = listOf(
-            "${rawStats.itemsCount} blends",
-            "${rawStats.brandsCount} brands",
-            "${rawStats.favoriteCount} favorites",
-            "${rawStats.dislikedCount} disliked",
-            "${rawStats.totalQuantity} total \"quantity\"",
-            "${rawStats.totalZeroQuantity} out of stock",
-        ).joinToString(separator = if (showSeparators) " • " else "\n")
-
     val totalByType = rawStats.totalByType.toList().sortedBy {
         when (it.first) {
             "Burley" -> 0
@@ -230,13 +188,6 @@ fun QuickStats(
         }
     }.joinToString(separator = ", ") { "${it.second} ${it.first}" }
 
-
-    val separator = " • "
-
-    val quickStats = "• ${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
-            "• ${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-            "• ${rawStats.totalQuantity} total \"quantity\", " +
-            "${rawStats.totalZeroQuantity} out of stock"
 
     Column(
         modifier = Modifier
@@ -323,7 +274,7 @@ private fun ChartsSection(
 
 
         Text(
-            text = "Basic Stats",
+            text = "Raw Stats",
             modifier = Modifier
                 .padding(bottom = 8.dp),
             fontSize = 18.sp,
@@ -426,7 +377,7 @@ private fun PieChart(
 
         drawLabels(
             sortedData, total, rotationOffset, showLabels, showPercentages, textMeasurer, textColor, labelBackground,
-            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold
+            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold,
         )
     }
 }
@@ -530,14 +481,13 @@ private fun DrawScope.drawLabels(
         val percentageX = adjustedLabelX + (labelWidth - percentageWidth) / 2
         val percentageY = adjustedLabelY + labelHeight
 
-
         drawText(
             textLayoutResult = textLabel,
             brush = SolidColor(labelColor),
             topLeft = Offset(
                 x = adjustedLabelX,
                 y = adjustedLabelY
-            )
+            ),
         )
 
         drawText(
@@ -552,7 +502,6 @@ private fun DrawScope.drawLabels(
         currentStartAngle += sweepAngle
     }
 }
-
 
 //private fun DrawScope.drawLabels2(
 //    data: Map<String, Int>,
