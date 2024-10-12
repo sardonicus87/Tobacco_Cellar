@@ -1,16 +1,12 @@
 package com.example.tobaccocellar.ui
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -65,6 +61,10 @@ class FilterViewModel (
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
         if (isSelected) { _selectedBrands.value += brand }
         else { _selectedBrands.value -= brand }
+    }
+
+    fun clearAllSelectedBrands() {
+        _selectedBrands.value = emptyList()
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {

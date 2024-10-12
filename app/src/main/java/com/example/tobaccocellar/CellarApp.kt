@@ -7,7 +7,6 @@ import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,14 +17,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -40,7 +35,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -50,6 +44,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.BottomAppBarScrollBehavior
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -79,7 +75,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -102,19 +97,8 @@ import com.example.tobaccocellar.ui.navigation.CellarNavHost
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.stats.StatsDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
-import com.example.tobaccocellar.ui.theme.inversePrimaryLight
-import com.example.tobaccocellar.ui.theme.onBackgroundDark
-import com.example.tobaccocellar.ui.theme.onPrimaryContainerDark
-import com.example.tobaccocellar.ui.theme.onPrimaryDark
 import com.example.tobaccocellar.ui.theme.onPrimaryLight
-import com.example.tobaccocellar.ui.theme.primaryContainerLight
-import com.example.tobaccocellar.ui.theme.primaryDark
 import com.example.tobaccocellar.ui.theme.primaryLight
-import com.example.tobaccocellar.ui.theme.secondaryContainerLight
-import com.example.tobaccocellar.ui.theme.secondaryLight
-import com.example.tobaccocellar.ui.theme.tertiaryContainerLight
-import com.example.tobaccocellar.ui.theme.tertiaryDark
-import com.google.android.material.chip.Chip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -275,6 +259,7 @@ fun CellarBottomAppBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             var clickToAdd by remember { mutableStateOf(false) }
+
             // Cellar //
             Box(
                 modifier = Modifier
@@ -740,25 +725,70 @@ fun BrandFilterSection(
                 if (showOverflowPopup) {
                     AlertDialog(
                         onDismissRequest = { showOverflowPopup = false },
-                        title = { Text("Selected Brands:") },
+                        title = {
+                            Text(
+                                text = "Selected Brands",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        },
                         text = {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                verticalArrangement = Arrangement.spacedBy((-6).dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(0.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
                             ) {
-                                items(selectedBrands) { brand ->
-                                    Chip(
-                                        text = brand,
-                                        isSelected = true,
-                                        onChipClicked = { },
-                                        onChipRemoved = {
-                                            filterViewModel.updateSelectedBrands(
-                                                brand,
-                                                false
-                                            )
-                                        }
-                                    )
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    verticalArrangement = Arrangement.spacedBy((-6).dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(selectedBrands) { brand ->
+                                        Chip(
+                                            text = brand,
+                                            isSelected = true,
+                                            onChipClicked = { },
+                                            onChipRemoved = {
+                                                filterViewModel.updateSelectedBrands(
+                                                    brand,
+                                                    false
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    TextButton(
+                                        onClick = {
+                                            filterViewModel.clearAllSelectedBrands()
+                                            showOverflowPopup = false
+                                        },
+                                        modifier = Modifier,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "",
+                                            modifier = Modifier
+                                                .padding(end = 4.dp)
+                                                .size(20.dp)
+                                        )
+                                        Text(
+                                            text = "Clear All",
+                                            modifier = Modifier,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
                             }
                         },
@@ -766,7 +796,8 @@ fun BrandFilterSection(
                             Button(onClick = { showOverflowPopup = false }) {
                                 Text("Close")
                             }
-                        }
+                        },
+                        containerColor = LocalCustomColors.current.darkNeutral,
                     )
                 }
             }
