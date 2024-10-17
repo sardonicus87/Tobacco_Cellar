@@ -8,7 +8,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,15 +22,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -139,7 +135,7 @@ private fun StatsBody(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    var rawStatsExpanded by remember { mutableStateOf(true) }
+    var quickStatsExpanded by remember { mutableStateOf(true) }
 
     Column(
         modifier = modifier
@@ -151,20 +147,20 @@ private fun StatsBody(
         // Raw Stats
         Row(
             modifier = Modifier
-                .clickable(onClick = { rawStatsExpanded = !rawStatsExpanded }),
+                .clickable(onClick = { quickStatsExpanded = !quickStatsExpanded }),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(R.string.quick_stats),
                 modifier = Modifier
-                    .padding(start = 8.dp, end = 4.dp, bottom = 2.dp),
+                    .padding(start = 8.dp, end = 4.dp),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Start,
             )
             Icon(
-                painter = if (rawStatsExpanded) painterResource(id = R.drawable.arrow_down) else painterResource(id = R.drawable.arrow_up),
+                painter = if (quickStatsExpanded) painterResource(id = R.drawable.arrow_down) else painterResource(id = R.drawable.arrow_up),
                 contentDescription = null,
                 modifier = Modifier
                     .padding(0.dp)
@@ -172,24 +168,24 @@ private fun StatsBody(
                 tint = LocalContentColor.current
             )
         }
+        AnimatedVisibility(
+            visible = quickStatsExpanded,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            QuickStats(
+                rawStats = rawStats,
+            )
+        }
+        Spacer(
+            modifier = Modifier
+                .height(20.dp)
+        )
         HorizontalDivider(
             modifier = Modifier
-                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                .padding(horizontal = 8.dp),
             thickness = 1.dp,
         )
-            AnimatedVisibility(
-                visible = rawStatsExpanded,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                QuickStats(
-                    rawStats = rawStats,
-                )
-                Spacer(
-                    modifier = Modifier
-                        .height(20.dp)
-                )
-        }
         Spacer(
             modifier = Modifier
                 .height(20.dp)
@@ -199,14 +195,9 @@ private fun StatsBody(
         Text(
             text = "Charts",
             modifier = Modifier
-                .padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
+                .padding(horizontal = 8.dp),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-        )
-        HorizontalDivider(
-            modifier = Modifier
-                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-            thickness = 1.dp,
         )
         ChartsSection(
             rawStats = rawStats,
@@ -241,7 +232,10 @@ fun QuickStats(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
     ) {
-
+        Spacer(
+            modifier = Modifier
+                .height(10.dp)
+        )
         Text(
             text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                     "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
@@ -250,7 +244,7 @@ fun QuickStats(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 0.dp, end = 0.dp, bottom = 12.dp),
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             textAlign = TextAlign.Start,
             softWrap = true,
         )
@@ -260,6 +254,7 @@ fun QuickStats(
             modifier = Modifier
                 .fillMaxWidth(fraction = 0.75f)
                 .padding(0.dp),
+            fontSize = 15.sp,
             textAlign = TextAlign.Start,
             softWrap = true
         )
@@ -286,8 +281,6 @@ private fun ChartsSection(
         LocalCustomColors.current.pieNine,
         LocalCustomColors.current.pieTen,
     )
-    var rawCharts by remember { mutableStateOf(false) }
-    var filterCharts by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -297,184 +290,103 @@ private fun ChartsSection(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
     ) {
-        Text(
-            text = "Select charts to view:",
-            modifier = Modifier
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(
-                onClick = { filterCharts = false
-                    rawCharts = !rawCharts
-                },
-                modifier = Modifier,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor =
-                        if (rawCharts) MaterialTheme.colorScheme.onBackground
-                        else Color.Unspecified,
-                    containerColor =
-                        if (rawCharts) MaterialTheme.colorScheme.primaryContainer
-                        else Color.Transparent
-                )
-            )
-            {
-                Text(text = "Raw Stats")
-            }
-            TextButton(
-                onClick = { rawCharts = false
-                    filterCharts = !filterCharts
-                },
-                modifier = Modifier,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor =
-                        if (filterCharts) MaterialTheme.colorScheme.onBackground
-                        else Color.Unspecified,
-                    containerColor =
-                        if (filterCharts) MaterialTheme.colorScheme.primaryContainer
-                        else Color.Transparent
-                )
-            )
-            {
-                Text(text = "Filterable")
-            }
-        }
         Spacer(
             modifier = Modifier
-                .height(16.dp)
+                .height(10.dp)
         )
-
-        if (rawCharts) {
-            Box(
+        Text(
+            text = "*Charts are filter-reactive and display a maximum of the top 10 results." +
+                    "Some charts may be redundant/irrelevant depending on the chosen filters.",
+            color = LocalContentColor.current.copy(alpha = 0.75f),
+            modifier = Modifier,
+            fontSize = 13.sp,
+            softWrap = true,
+        )
+        Spacer(
+            modifier = Modifier
+                .height(24.dp)
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "Brands by Number of Entries",
+                modifier = Modifier,
+                fontSize = 15.sp,
+            )
+            PieChart(
+                data = filteredStats.topBrands,
+                showLabels = true,
+                showPercentages = true,
                 modifier = Modifier
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = "Blends by Type",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                    )
-                    PieChart(
-                        data = rawStats.totalByType,
-                        colors = pieColors,
-                        showLabels = true,
-                        showPercentages = true,
-                        modifier = Modifier
-                            .padding(top = 24.dp, bottom = 32.dp)
-                            .size(250.dp),
-                        onSliceLabelPosition = 0.6f,
-                        outsideSliceLabelPosition = 0.65f,
-                        outsideLabelThreshold = 20f,
-                        rotationOffset = 225f,
-                        textColor = Color.Black,
-                        labelBackground = Color.White.copy(alpha = 0.45f),
-                        sortData = true
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-                        thickness = 1.dp,
-                    )
-                    Text(
-                        text = "Top Brands (by number of entries)",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                    )
-                    val topTenBrands = viewModel.getTopTenBrands(rawStats)
-                    PieChart(
-                        data = topTenBrands,
-                        showLabels = true,
-                        showPercentages = true,
-                        modifier = Modifier
-                            .padding(top = 24.dp, bottom = 32.dp)
-                            .fillMaxWidth(fraction = 0.7f),
-                        onSliceLabelPosition = 0.6f,
-                        outsideSliceLabelPosition = 0.65f,
-                        outsideLabelThreshold = 25f,
-                        rotationOffset = 225f,
-                        textColor = Color.Black,
-                        labelBackground = Color.White.copy(alpha = 0.55f),
-                        sortData = true
-                    )
-                    Spacer(
-                        modifier = Modifier
-                            .height(16.dp)
-                    )
-                }
-            }
-        }
-
-        if (filterCharts) {
-            Box(
+                    .padding(top = 24.dp, bottom = 32.dp)
+                    .fillMaxWidth(fraction = 0.7f),
+                onSliceLabelPosition = 0.6f,
+                outsideSliceLabelPosition = 0.65f,
+                outsideLabelThreshold = 25f,
+                rotationOffset = 225f,
+                textColor = Color.Black,
+                labelBackground = Color.White.copy(alpha = 0.55f),
+                sortData = true
+            )
+            HorizontalDivider(
                 modifier = Modifier
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = "Blends by Type",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                    )
-                    PieChart(
-                        data = filteredStats.entriesByType,
-                        colors = pieColors,
-                        showLabels = true,
-                        showPercentages = true,
-                        modifier = Modifier
-                            .padding(top = 24.dp, bottom = 32.dp)
-                            .size(250.dp),
-                        onSliceLabelPosition = 0.6f,
-                        outsideSliceLabelPosition = 0.65f,
-                        outsideLabelThreshold = 20f,
-                        rotationOffset = 225f,
-                        textColor = Color.Black,
-                        labelBackground = Color.White.copy(alpha = 0.45f),
-                        sortData = true
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-                        thickness = 1.dp,
-                    )
-                    Text(
-                        text = "Top Brands (by number of entries)",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                    )
-                    PieChart(
-                        data = filteredStats.topBrands,
-                        showLabels = true,
-                        showPercentages = true,
-                        modifier = Modifier
-                            .padding(top = 24.dp, bottom = 32.dp)
-                            .fillMaxWidth(fraction = 0.7f),
-                        onSliceLabelPosition = 0.6f,
-                        outsideSliceLabelPosition = 0.65f,
-                        outsideLabelThreshold = 25f,
-                        rotationOffset = 225f,
-                        textColor = Color.Black,
-                        labelBackground = Color.White.copy(alpha = 0.55f),
-                        sortData = true
-                    )
-                    Spacer(
-                        modifier = Modifier
-                            .height(16.dp)
-                    )
-                }
-            }
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
+            )
+            Text(
+                text = "Blends by Type",
+                modifier = Modifier,
+                fontSize = 15.sp,
+            )
+            PieChart(
+                data = filteredStats.entriesByType,
+                colors = pieColors,
+                showLabels = true,
+                showPercentages = true,
+                modifier = Modifier
+                    .padding(top = 24.dp, bottom = 32.dp)
+                    .size(250.dp),
+                onSliceLabelPosition = 0.6f,
+                outsideSliceLabelPosition = 0.65f,
+                outsideLabelThreshold = 20f,
+                rotationOffset = 225f,
+                textColor = Color.Black,
+                labelBackground = Color.White.copy(alpha = 0.45f),
+                sortData = true
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
+            )
+            Text(
+                text = "Blends by Rating",
+                modifier = Modifier,
+                fontSize = 15.sp,
+            )
+            PieChart(
+                data = filteredStats.entriesByRating,
+                showLabels = true,
+                showPercentages = true,
+                modifier = Modifier
+                    .padding(top = 24.dp, bottom = 32.dp)
+                    .fillMaxWidth(fraction = 0.7f),
+                onSliceLabelPosition = 0.6f,
+                outsideSliceLabelPosition = 0.65f,
+                outsideLabelThreshold = 25f,
+                rotationOffset = 225f,
+                textColor = Color.Black,
+                labelBackground = Color.White.copy(alpha = 0.55f),
+                sortData = true
+            )
+            Spacer(
+                modifier = Modifier
+                    .height(16.dp)
+            )
         }
     }
 }
