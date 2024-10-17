@@ -4,10 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.ui.FilterViewModel
+import com.example.tobaccocellar.ui.home.HomeUiState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlin.collections.get
 
 class StatsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -62,7 +69,94 @@ class StatsViewModel(
             .associate { it.key to it.value }
     }
 
+
     /** Filtered stats */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val filteredStats: StateFlow<FilteredStats> =
+        combine(
+            filterViewModel.selectedBrands,
+            filterViewModel.selectedTypes,
+            filterViewModel.selectedFavorites,
+            filterViewModel.selectedNeutral,
+            filterViewModel.selectedDislikeds,
+            filterViewModel.selectedInStock,
+            filterViewModel.selectedOutOfStock
+        ) { values ->
+            val brands = values[0] as List<String>
+            val types = values[1] as List<String>
+            val favorites = values[2] as Boolean
+            val neutral = values[3] as Boolean
+            val dislikeds = values[4] as Boolean
+            val inStock = values[5] as Boolean
+            val outOfStock = values[6] as Boolean
+
+            itemsRepository.getFilteredItems(
+                brands = brands,
+                types = types,
+                favorites = favorites,
+                neutral = neutral,
+                dislikeds = dislikeds,
+                inStock = inStock,
+                outOfStock = outOfStock
+            ).map { filteredItems ->
+                FilteredStats(
+                    brands = brands,
+                    types = types,
+                    favorites = favorites,
+                    neutral = neutral,
+                    dislikeds = dislikeds,
+                    inStock = inStock,
+                    outOfStock = outOfStock,
+
+                    topBrands = filteredItems.groupingBy { it.brand }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .take(10)
+                        .associate { it.key to it.value },
+                    entriesByType = filteredItems.groupingBy { it.type }
+                        .eachCount(),
+                )
+            }
+        }
+            .flattenMerge()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = FilteredStats()
+            )
+
+//    fun getFilteredTopBrands(): Flow<Map<String, Int>> =
+//        filteredStats.map { filteredStats ->
+//            itemsRepository.getFilteredItems(
+//                brands = filteredStats.brands,
+//                types = filteredStats.types,
+//                favorites = filteredStats.favorites,
+//                dislikeds = filteredStats.dislikeds,
+//                outOfStock = filteredStats.outOfStock
+//            ).map { items ->
+//                items.groupingBy { it.brand }
+//                    .eachCount()
+//                    .entries
+//                    .sortedByDescending { it.value }
+//                    .take(10)
+//                    .associate { it.key to it.value }
+//            }.first()
+//        }
+//
+//    fun getFilteredEntriesByType(): Flow<Map<String, Int>> =
+//        filteredStats.map { filteredStats ->
+//            itemsRepository.getFilteredItems(
+//                brands = filteredStats.brands,
+//                types = filteredStats.types,
+//                favorites = filteredStats.favorites,
+//                dislikeds = filteredStats.dislikeds,
+//                outOfStock = filteredStats.outOfStock
+//            ).map { items ->
+//                items.groupingBy { it.type }
+//                    .eachCount()
+//            }.first()
+//        }
 
 
 }
@@ -102,4 +196,17 @@ data class RawStats(
     val totalByType: Map<String, Int> = emptyMap(),
     val totalQuantity: Int = 0,
     val totalZeroQuantity: Int = 0
+)
+
+data class FilteredStats(
+    val brands: List<String> = emptyList(),
+    val types: List<String> = emptyList(),
+    val favorites: Boolean = false,
+    val neutral: Boolean = false,
+    val dislikeds: Boolean = false,
+    val inStock: Boolean = false,
+    val outOfStock: Boolean = false,
+
+    val topBrands: Map<String, Int> = emptyMap(),
+    val entriesByType: Map<String, Int> = emptyMap(),
 )
