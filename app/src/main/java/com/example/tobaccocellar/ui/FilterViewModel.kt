@@ -79,22 +79,40 @@ class FilterViewModel (
 
     fun updateSelectedFavorites(isSelected: Boolean) {
         _selectedFavorites.value = isSelected
+        if (isSelected) {
+            _selectedDislikeds.value = false
+            _selectedNeutral.value = false
+        }
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
         _selectedDislikeds.value = isSelected
+        if (isSelected) {
+            _selectedFavorites.value = false
+            _selectedNeutral.value = false
+        }
     }
 
     fun updateSelectedNeutral(isSelected: Boolean) {
         _selectedNeutral.value = isSelected
+        if (isSelected) {
+            _selectedFavorites.value = false
+            _selectedDislikeds.value = false
+        }
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
         _selectedInStock.value = isSelected
+        if (isSelected) {
+            _selectedOutOfStock.value = false
+        }
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
         _selectedOutOfStock.value = isSelected
+        if (isSelected) {
+            _selectedInStock.value = false
+        }
     }
 
     // get vals //
@@ -106,38 +124,6 @@ class FilterViewModel (
             _availableBrands.value = itemsRepository.getAllBrandsStream().first()
         }
     }
-
-    val availableTypes: StateFlow<List<String>> =
-        itemsRepository.getAllTypesStream()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
-                initialValue = emptyList()
-            )
-
-    val availableFavorites: StateFlow<List<Boolean>> =
-        itemsRepository.getAllFavoritesStream()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
-                initialValue = emptyList()
-            )
-
-    val availableDislikeds: StateFlow<List<Boolean>> =
-        itemsRepository.getAllDislikeStream()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
-                initialValue = emptyList()
-            )
-
-    val availableOutOfStock: StateFlow<List<Boolean>> =
-        itemsRepository.getAllZeroQuantityStream()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
-                initialValue = emptyList()
-            )
 }
 
 enum class BottomSheetState {
