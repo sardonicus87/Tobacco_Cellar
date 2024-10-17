@@ -324,7 +324,7 @@ private fun CustomBlendSearch(
             contentDescription = null,
             modifier = Modifier
                 .padding(0.dp)
-                .size(20.dp)
+                .size(20.dp),
         )
     },
     onImeAction: () -> Unit = {}
@@ -500,7 +500,6 @@ private fun HomeBody(
                         menuItemId = activeItemId,
                         onDismissMenu = onDismissMenu,
                         onShowMenu = onShowMenu,
-                        contentPadding = contentPadding,
                         isMenuShown = isMenuShown,
                         modifier = Modifier
                             .padding(0.dp)
@@ -620,7 +619,6 @@ fun ListViewMode(
     itemsList: List<Items>,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     Box(
         modifier = Modifier
