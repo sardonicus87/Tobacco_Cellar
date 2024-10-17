@@ -144,6 +144,12 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
             args.add(0)
         }
 
+//        if (nonNeutral != null && nonNeutral) {
+//            whereClauses.add("favorite = ? OR disliked = ?")
+//            args.add(1)
+//            args.add(1)
+//        }
+
         if (dislikeds != null && dislikeds) {
             if (dislikeds) {
                 whereClauses.add("disliked = ?")
