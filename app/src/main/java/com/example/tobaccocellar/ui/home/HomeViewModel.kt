@@ -57,7 +57,9 @@ class HomeViewModel(
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
             filterViewModel.selectedFavorites,
+            filterViewModel.selectedNeutral,
             filterViewModel.selectedDislikeds,
+            filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
             preferencesRepo.isTableView,
             _blendSearch,
@@ -65,16 +67,20 @@ class HomeViewModel(
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
             val favorites = values[2] as Boolean
-            val dislikeds = values[3] as Boolean
-            val outOfStock = values[4] as Boolean
-            val isTableView = values[5] as Boolean
-            val blendSearch = values[6] as String
+            val neutral = values[3] as Boolean
+            val dislikeds = values[4] as Boolean
+            val inStock = values[5] as Boolean
+            val outOfStock = values[6] as Boolean
+            val isTableView = values[7] as Boolean
+            val blendSearch = values[8] as String
 
             itemsRepository.getFilteredItems(
                 brands = brands,
                 types = types,
                 favorites = favorites,
+                neutral = neutral,
                 dislikeds = dislikeds,
+                inStock = inStock,
                 outOfStock = outOfStock
             ).map { items ->
                 val filteredItems = if (blendSearch.isBlank()) {

@@ -1,6 +1,5 @@
 package com.example.tobaccocellar.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
@@ -53,6 +52,12 @@ class FilterViewModel (
     private val _selectedDislikeds = MutableStateFlow(false)
     val selectedDislikeds: StateFlow<Boolean> = _selectedDislikeds
 
+    private val _selectedNeutral = MutableStateFlow(false)
+    val selectedNeutral: StateFlow<Boolean> = _selectedNeutral
+
+    private val _selectedInStock = MutableStateFlow(false)
+    val selectedInStock: StateFlow<Boolean> = _selectedInStock
+
     private val _selectedOutOfStock = MutableStateFlow(false)
     val selectedOutOfStock: StateFlow<Boolean> = _selectedOutOfStock
 
@@ -78,7 +83,14 @@ class FilterViewModel (
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
         _selectedDislikeds.value = isSelected
-        Log.d("FilterViewModel", "Selected dislikeds: ${_selectedDislikeds.value}")
+    }
+
+    fun updateSelectedNeutral(isSelected: Boolean) {
+        _selectedNeutral.value = isSelected
+    }
+
+    fun updateSelectedInStock(isSelected: Boolean) {
+        _selectedInStock.value = isSelected
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
@@ -94,14 +106,6 @@ class FilterViewModel (
             _availableBrands.value = itemsRepository.getAllBrandsStream().first()
         }
     }
-
-//    val availableBrands: StateFlow<List<String>> =
-//        itemsRepository.getAllBrandsStream()
-//            .stateIn(
-//                scope = viewModelScope,
-//                started = SharingStarted.WhileSubscribed(),
-//                initialValue = emptyList()
-//            )
 
     val availableTypes: StateFlow<List<String>> =
         itemsRepository.getAllTypesStream()

@@ -94,7 +94,9 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         brands: List<String>?,
         types: List<String>?,
         favorites: Boolean?,
+        neutral: Boolean?,
         dislikeds: Boolean?,
+        inStock: Boolean?,
         outOfStock: Boolean?,
     ): Flow<List<Items>> {
         val queryBuilder = SupportSQLiteQueryBuilder.builder("items")
@@ -129,18 +131,28 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
             whereClauses.add(typeClause.toString())
         }
 
-        if (favorites != null) {
+        if (favorites != null && favorites) {
             if (favorites) {
                 whereClauses.add("favorite = ?")
                 args.add(1)
             }
         }
 
-        if (dislikeds != null) {
+        if (neutral != null && neutral) {
+            whereClauses.add("favorite = ? AND disliked = ?")
+            args.add(0)
+            args.add(0)
+        }
+
+        if (dislikeds != null && dislikeds) {
             if (dislikeds) {
                 whereClauses.add("disliked = ?")
                 args.add(1)
             }
+        }
+
+        if (inStock != null && inStock) {
+            whereClauses.add("quantity > 0")
         }
 
         if (outOfStock != null) {
@@ -157,41 +169,4 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         val query = queryBuilder.create()
         return itemsDao.getFilteredItems(query)
     }
-
-
-//    (",") { "?" }})")
-
-
-//    override fun getFilteredItems(
-//        brands: List<String>?,
-//        types: List<String>?,
-//        favorites: Boolean?,
-//        dislikeds: Boolean?,
-//        outOfStock: Boolean?,
-//    ): Flow<List<Items>> =
-//        itemsDao.getFilteredItems(
-//            brands,
-//            types,
-//            favorites,
-//            dislikeds,
-//            outOfStock,
-//        )
-
-//    if (favorites != null) {
-//        whereClauses.add("favorite = ?")
-//        args.add(if (favorites) 1 else 0)
-//    }
-//
-//    if (dislikeds != null) {
-//        whereClauses.add("disliked = ?")
-//        args.add(if (dislikeds) 1 else 0)
-//    }
-
-
-
-
-
-
-
-
 }

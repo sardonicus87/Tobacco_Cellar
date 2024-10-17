@@ -88,7 +88,9 @@ interface ItemsRepository {
         brands: List<String>?,
         types: List<String>?,
         favorites: Boolean?,
+        neutral: Boolean?,
         dislikeds: Boolean?,
+        inStock: Boolean?,
         outOfStock: Boolean?,
     ): Flow<List<Items>>
 

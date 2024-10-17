@@ -44,8 +44,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.BottomAppBarScrollBehavior
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -522,12 +520,14 @@ fun OtherFiltersSection(
 ) {
     val favorites by filterViewModel.selectedFavorites.collectAsState()
     val dislikeds by filterViewModel.selectedDislikeds.collectAsState()
+    val neutral by filterViewModel.selectedNeutral.collectAsState()
+    val inStock by filterViewModel.selectedInStock.collectAsState()
     val outOfStock by filterViewModel.selectedOutOfStock.collectAsState()
 
     Row(
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceAround
     ) {
         CheckboxWithLabel(
             text = "Favorites",
@@ -535,18 +535,38 @@ fun OtherFiltersSection(
             onCheckedChange = { filterViewModel.updateSelectedFavorites(it) }
         )
         CheckboxWithLabel(
+            text = "Neutral",
+            checked = neutral,
+            onCheckedChange = { filterViewModel.updateSelectedNeutral(it) }
+        )
+        CheckboxWithLabel(
             text = "Dislikes",
             checked = dislikeds,
             onCheckedChange = { filterViewModel.updateSelectedDislikeds(it) }
         )
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround
+    ) {
+        Spacer(
+            modifier = Modifier
+                .width(5.dp)
+        )
         CheckboxWithLabel(
-            text = "Out of Stock",
+            text = "In-stock",
+            checked = inStock,
+            onCheckedChange = { filterViewModel.updateSelectedInStock(it) }
+        )
+        CheckboxWithLabel(
+            text = "Out-of-stock",
             checked = outOfStock,
             onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) }
         )
         Spacer(
             modifier = Modifier
-                .width(8.dp)
+                .width(5.dp)
         )
     }
 }
@@ -558,14 +578,20 @@ fun CheckboxWithLabel(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
         Checkbox(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier
+                .padding(0.dp)
         )
         Text(
             text = text,
+            modifier = Modifier
+                .padding(end = 14.dp),
             fontSize = 14.sp,
         )
     }
@@ -663,7 +689,7 @@ fun BrandFilterSection(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             val unselectedBrands = filteredBrands.filterNot { selectedBrands.contains(it) }
-            items(unselectedBrands.size, key = {index -> unselectedBrands[index]}) { index ->
+            items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
                 val brand = unselectedBrands[index]
                 TextButton(
                     onClick = {
