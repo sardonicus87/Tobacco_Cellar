@@ -18,6 +18,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
@@ -97,7 +98,7 @@ fun EditEntryScreen(
                 navigateToEditEntry = {},
                 resetExistState = {},
                 modifier = Modifier
-                    .padding(innerPadding)
+                    .padding(0.dp)
                     .fillMaxSize()
             )
         }

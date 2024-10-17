@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.input.InputTransformation.Companion.keyb
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -191,7 +192,7 @@ fun AddEntryScreen(
                 isEditEntry = false,
                 navigateToEditEntry = navigateToEditEntry,
                 modifier = modifier
-                    .padding(innerPadding)
+                    .padding(0.dp)
                     .fillMaxSize(),
             )
         }
@@ -350,7 +351,6 @@ fun ItemInputForm(
     val titles = listOf("Item Details", "Notes")
 
 
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -372,7 +372,7 @@ fun ItemInputForm(
                 HorizontalDivider(
                     modifier = Modifier,
                     thickness = Dp.Hairline,
-                    color = Color.Transparent
+                    color = DividerDefaults.color,
                 )
             },
         ) {
@@ -385,9 +385,13 @@ fun ItemInputForm(
                             .background(
                                 if (selectedTabIndex == index) MaterialTheme.colorScheme.background
                                 else LocalCustomColors.current.backgroundUnselected
-//                                MaterialTheme.colorScheme.background
                             ),
-                        text = { Text(title) },
+                        text = {
+                            Text(
+                                text = title,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
+                            )
+                        },
                         selectedContentColor = MaterialTheme.colorScheme.onBackground,
                         unselectedContentColor = MaterialTheme.colorScheme.outline,
                         interactionSource = remember { MutableInteractionSource() }
