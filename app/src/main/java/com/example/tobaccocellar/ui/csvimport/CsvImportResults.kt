@@ -1,4 +1,4 @@
-@file:Suppress("ConstPropertyName", "ConstPropertyName", "ConstPropertyName")
+@file:Suppress("ConstPropertyName", "ConstPropertyName")
 
 package com.example.tobaccocellar.ui.csvimport
 
