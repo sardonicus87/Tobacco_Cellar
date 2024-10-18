@@ -160,7 +160,7 @@ private fun StatsBody(
                 textAlign = TextAlign.Start,
             )
             Icon(
-                painter = if (quickStatsExpanded) painterResource(id = R.drawable.arrow_down) else painterResource(id = R.drawable.arrow_up),
+                painter = if (quickStatsExpanded) painterResource(id = R.drawable.arrow_up) else painterResource(id = R.drawable.arrow_down),
                 contentDescription = null,
                 modifier = Modifier
                     .padding(0.dp)
@@ -295,7 +295,7 @@ private fun ChartsSection(
                 .height(10.dp)
         )
         Text(
-            text = "*Charts are filter-reactive and display a maximum of the top 10 results." +
+            text = "*Charts are filter-reactive and display a maximum of the top 10 results. " +
                     "Some charts may be redundant/irrelevant depending on the chosen filters.",
             color = LocalContentColor.current.copy(alpha = 0.75f),
             modifier = Modifier,
@@ -316,6 +316,13 @@ private fun ChartsSection(
                 text = "Brands by Number of Entries",
                 modifier = Modifier,
                 fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "(${filteredStats.itemsCount} entries)",
+                modifier = Modifier,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
             )
             PieChart(
                 data = filteredStats.topBrands,
@@ -341,6 +348,13 @@ private fun ChartsSection(
                 text = "Blends by Type",
                 modifier = Modifier,
                 fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "(${filteredStats.itemsCount} entries)",
+                modifier = Modifier,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
             )
             PieChart(
                 data = filteredStats.entriesByType,
@@ -349,7 +363,7 @@ private fun ChartsSection(
                 showPercentages = true,
                 modifier = Modifier
                     .padding(top = 24.dp, bottom = 32.dp)
-                    .size(250.dp),
+                    .fillMaxWidth(fraction = 0.7f),
                 onSliceLabelPosition = 0.6f,
                 outsideSliceLabelPosition = 0.65f,
                 outsideLabelThreshold = 20f,
@@ -367,6 +381,13 @@ private fun ChartsSection(
                 text = "Blends by Rating",
                 modifier = Modifier,
                 fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "(${filteredStats.itemsCount} entries)",
+                modifier = Modifier,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
             )
             PieChart(
                 data = filteredStats.entriesByRating,
