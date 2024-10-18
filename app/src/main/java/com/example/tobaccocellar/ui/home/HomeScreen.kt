@@ -118,9 +118,10 @@ fun HomeScreen(
 ) {
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 //    val scrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
-//        TopAppBarDefaults.enterAlwaysScrollBehavior()
-//        else TopAppBarDefaults.pinnedScrollBehavior()
+//        TopAppBarDefaults.enterAlwaysScrollBehavior() else TopAppBarDefaults.pinnedScrollBehavior()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+//    val bottomScrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
+//        BottomAppBarDefaults.exitAlwaysScrollBehavior() else null
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -140,6 +141,7 @@ fun HomeScreen(
             viewmodel.snackbarShown()
         }
     }
+
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -162,6 +164,7 @@ fun HomeScreen(
                 navigateToCsvImport = navigateToCsvImport,
                 navigateToSettings = navigateToSettings,
                 showMenu = true,
+                currentDestination = HomeDestination,
                 exportCsvHandler = viewmodel,
             )
         },
@@ -1160,7 +1163,7 @@ fun HeaderCell(
             .clickable(enabled = onClick != null, onClick = {
                 focusManager.clearFocus()
                 onClick?.invoke()
-                }
+            }
             )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         contentAlignment = Alignment.Center
