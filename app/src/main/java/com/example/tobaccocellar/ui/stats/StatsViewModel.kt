@@ -98,6 +98,7 @@ class StatsViewModel(
             ).map { filteredItems ->
 
                 FilteredStats(
+                    itemsCount = filteredItems.size,
                     brands = brands,
                     types = types,
                     favorites = favorites,
@@ -178,6 +179,7 @@ data class RawStats(
 )
 
 data class FilteredStats(
+    val itemsCount: Int = 0,
     val brands: List<String> = emptyList(),
     val types: List<String> = emptyList(),
     val favorites: Boolean = false,
