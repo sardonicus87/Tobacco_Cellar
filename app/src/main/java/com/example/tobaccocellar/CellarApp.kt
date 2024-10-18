@@ -140,6 +140,7 @@ fun CellarTopAppBar(
     showMenu: Boolean,
     canNavigateBack: Boolean,
     modifier: Modifier = Modifier,
+    currentDestination: NavigationDestination? = null,
     navigateUp: () -> Unit = {},
     navigateToCsvImport: () -> Unit = {},
     navigateToSettings: () -> Unit = {},
@@ -189,7 +190,7 @@ fun CellarTopAppBar(
                                 navigateToCsvImport()
                             },
                             modifier = Modifier.padding(0.dp),
-                            enabled = true,
+                            enabled = currentDestination == HomeDestination,
                         )
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.export_csv)) },
@@ -203,7 +204,7 @@ fun CellarTopAppBar(
                                 launcher.launch(intent)
                             },
                             modifier = Modifier.padding(0.dp),
-                            enabled = exportCsvHandler != null,
+                            enabled = currentDestination == HomeDestination && exportCsvHandler != null,
                         )
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.settings)) },
@@ -231,6 +232,7 @@ fun CellarTopAppBar(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CellarBottomAppBar(
     currentDestination: NavigationDestination?,
