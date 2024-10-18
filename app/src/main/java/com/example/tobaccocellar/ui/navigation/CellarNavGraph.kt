@@ -92,7 +92,7 @@ fun CellarNavHost(
                 navigateToHome = { navController.navigate(HomeDestination.route) },
                 navigateToImportResults = { totalRecords, successCount, successfulInsertions -> navController.navigate(
                     "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}")
-                }
+                },
             )
         }
         composable(
