@@ -2,6 +2,7 @@
 accompanistSystemuicontroller = "0.28.0"
 agp = "8.5.2"
 commonsCsv = "1.11.0"
+coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.1"
 kotlin = "2.0.0"
 coreKtx = "1.13.1"
@@ -28,6 +29,7 @@ material = "1.12.0"
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-compose-ui-ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }

@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.kotlin.stdlib.jdk8)
+    implementation(libs.androidx.core.splashscreen)
 
 
     debugImplementation(libs.leakcanary.android)
