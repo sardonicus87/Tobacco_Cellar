@@ -134,7 +134,7 @@ class StatsViewModel(
         return mapOf(
             "Favorite" to favoriteCount,
             "Neutral" to neutralCount,
-            "Dislike" to dislikedCount
+            "Disliked" to dislikedCount
         ).filterValues { it > 0 }
     }
 
