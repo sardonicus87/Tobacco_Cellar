@@ -119,8 +119,6 @@ fun CellarApp(
             ),
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = MaterialTheme.colorScheme.onBackground,
-            /* TODO new window insets stuff */
-            //        windowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
             dragHandle = { },
             properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
         ) {
