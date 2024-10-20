@@ -29,8 +29,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,6 +42,7 @@ import com.example.tobaccocellar.BuildConfig
 import com.example.tobaccocellar.CellarTopAppBar
 import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.PreferencesRepo
+import com.example.tobaccocellar.data.TobaccoDatabase
 import com.example.tobaccocellar.ui.AppViewModelProvider
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import kotlinx.coroutines.launch
@@ -105,7 +110,6 @@ private fun SettingsBody(
 ) {
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
-    val version = BuildConfig.VERSION_NAME
 
     /* TODO: finish Settings body */
     Column(
@@ -161,32 +165,9 @@ private fun SettingsBody(
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             thickness = 1.dp,
         )
-        Text(
-            text = "About Tobacco Cellar",
-            fontWeight = FontWeight.Bold,
+        AboutSection(
             modifier = Modifier
-                .padding(start = 16.dp, top = 0.dp, bottom = 12.dp, end = 16.dp)
         )
-        Text(
-            text = "Version $version cobbled together by Sardonicus.\nBuilt with Jetpack Compose. " +
-                    "Uses Apache Commons CSV for reading/writing CSV files.",
-            modifier = Modifier
-                .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp),
-            fontSize = 14.sp,
-            softWrap = true,
-        )
-        TextButton(
-            onClick = {  },
-            enabled = false,
-            modifier = Modifier
-                .padding(start = 4.dp)
-        ) {
-            Text(
-                text = "Change Log",
-                modifier = Modifier
-                    .padding(0.dp)
-            )
-        }
 
 
         if (showThemeDialog) {
@@ -212,6 +193,73 @@ private fun SettingsBody(
     }
 }
 
+@Composable
+fun AboutSection(
+    modifier: Modifier = Modifier
+) {
+    val appVersion = BuildConfig.VERSION_NAME
+    val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
+
+    val versionInfo = buildAnnotatedString {
+        withStyle(style = SpanStyle(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.SemiBold)
+        ) { append("App Version: ") }
+        withStyle(style = SpanStyle(
+            color = MaterialTheme.colorScheme.tertiary,
+            fontWeight = FontWeight.Normal)
+        ) { append(appVersion) }
+        withStyle(style = SpanStyle(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.SemiBold)
+        ) { append("\nDatabase Version: ") }
+        withStyle(style = SpanStyle(
+            color = MaterialTheme.colorScheme.tertiary,
+            fontWeight = FontWeight.Normal)
+        ) { append(dbVersion) }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp),
+        horizontalAlignment = Alignment.Start,
+    ) {
+        Text(
+            text = "About Tobacco Cellar",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(bottom = 8.dp)
+        )
+        Text(
+            text = "Cobbled together by Sardonicus with Kotlin and Jetpack Compose. " +
+                    "Uses Apache Commons CSV for reading/writing CSV files.",
+            modifier = Modifier
+                .padding(vertical = 8.dp),
+            fontSize = 14.sp,
+            softWrap = true,
+        )
+        Text(
+            text = versionInfo,
+            modifier = Modifier
+                .padding(0.dp),
+            fontSize = 14.sp,
+            softWrap = true,
+        )
+        TextButton(
+            onClick = {  },
+            enabled = false,
+            modifier = Modifier
+                .padding(start = 0.dp)
+        ) {
+            Text(
+                text = "Change Log",
+                modifier = Modifier
+                    .padding(0.dp)
+            )
+        }
+    }
+}
 
 @Composable
 fun ThemeDialog(
