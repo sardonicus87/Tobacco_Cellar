@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.TobaccoCellar" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.TobaccoCellar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/tc_launcher1_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/tc_launcher1_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.TobaccoCellar</item>
+    </style>
+
+    <!-- Theme for API < 31 -->
+    <style name="Theme.TobaccoCellar.Pre31" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/tc_launcher1_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/tc_launcher1_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.TobaccoCellar</item>
+    </style>
 </resources>

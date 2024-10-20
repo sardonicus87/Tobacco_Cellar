@@ -1,28 +1,35 @@
 package com.example.tobaccocellar
 
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.theme.TobaccoCellarTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        supportActionBar?.hide()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            setTheme(R.style.Theme_TobaccoCellar_Pre31)
+        } else {
+            setTheme(R.style.Theme_TobaccoCellar)
+        }
         super.onCreate(savedInstanceState)
+        installSplashScreen()
 
         onBackPressedDispatcher.addCallback(this, object :
             OnBackPressedCallback(true) {
