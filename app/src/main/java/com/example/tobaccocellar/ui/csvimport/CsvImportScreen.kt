@@ -230,6 +230,7 @@ fun CsvImportBody(
                 modifier = modifier
                     .height(8.dp)
             )
+
 // Imported CSV data //
             if (csvUiState.columns.isNotEmpty()) {
                 Text(
@@ -329,6 +330,7 @@ fun CsvImportBody(
                             .weight(.1f)
                     )
                 }
+
                 // column mapping options //
                 Column (
                     modifier = modifier
@@ -365,18 +367,18 @@ fun CsvImportBody(
                             CsvImportViewModel.CsvField.Quantity, selectedColumn
                         ) },
                     )
-                    DislikedField(
-                        selectedColumn = mappingOptions.dislikedColumn,
-                        csvColumns = csvUiState.columns,
-                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Disliked, selectedColumn
-                        ) },
-                    )
                     FavoriteField(
                         selectedColumn = mappingOptions.favoriteColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
                             CsvImportViewModel.CsvField.Favorite, selectedColumn
+                        ) },
+                    )
+                    DislikedField(
+                        selectedColumn = mappingOptions.dislikedColumn,
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+                            CsvImportViewModel.CsvField.Disliked, selectedColumn
                         ) },
                     )
                     NotesField(
@@ -387,6 +389,7 @@ fun CsvImportBody(
                         ) },
                     )
                 }
+
                 // Confirm and  Import button //
                 Button(
                     onClick = {
