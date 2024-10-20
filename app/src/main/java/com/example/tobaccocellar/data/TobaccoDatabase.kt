@@ -30,5 +30,11 @@ abstract class TobaccoDatabase : RoomDatabase() {
                     .also { Instance = it }
             }
         }
+
+        fun getDatabaseVersion(context: Context): Int {
+            val database = getDatabase(context)
+            return database.openHelper.readableDatabase.version
+        }
+
     }
 }
