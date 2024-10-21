@@ -222,27 +222,27 @@ fun AboutSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp),
+            .padding(start = 0.dp, top = 0.dp, bottom = 0.dp, end = 0.dp),
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
             text = "About Tobacco Cellar",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(bottom = 8.dp)
+                .padding(bottom = 8.dp, start = 16.dp, top = 0.dp, end = 16.dp)
         )
         Text(
             text = "Cobbled together by Sardonicus with Kotlin and Jetpack Compose. " +
                     "Uses Apache Commons CSV for reading/writing CSV files.",
             modifier = Modifier
-                .padding(vertical = 8.dp),
+                .padding(vertical = 8.dp, horizontal = 16.dp),
             fontSize = 14.sp,
             softWrap = true,
         )
         Text(
             text = versionInfo,
             modifier = Modifier
-                .padding(0.dp),
+                .padding(horizontal = 16.dp),
             fontSize = 14.sp,
             softWrap = true,
         )
