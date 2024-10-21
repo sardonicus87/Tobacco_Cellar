@@ -7,6 +7,7 @@ import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -53,12 +56,13 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -72,7 +76,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +89,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -498,9 +506,17 @@ fun FilterBottomSheet(
             filterViewModel = filterViewModel,
             modifier = Modifier
         )
+        Spacer(
+            modifier = Modifier
+                .height(4.dp)
+        )
         TypeFilterSection(
             filterViewModel = filterViewModel,
             modifier = Modifier
+        )
+        Spacer(
+            modifier = Modifier
+                .height(4.dp)
         )
         OtherFiltersSection(
             filterViewModel = filterViewModel,
@@ -508,7 +524,7 @@ fun FilterBottomSheet(
         )
         Spacer(
             modifier = Modifier
-                .height(8.dp)
+                .height(4.dp)
         )
     }
 }
@@ -526,7 +542,8 @@ fun OtherFiltersSection(
 
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(0.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         CheckboxWithLabel(
@@ -535,19 +552,20 @@ fun OtherFiltersSection(
             onCheckedChange = { filterViewModel.updateSelectedFavorites(it) }
         )
         CheckboxWithLabel(
-            text = "Neutral",
-            checked = neutral,
-            onCheckedChange = { filterViewModel.updateSelectedNeutral(it) }
-        )
-        CheckboxWithLabel(
             text = "Dislikes",
             checked = dislikeds,
             onCheckedChange = { filterViewModel.updateSelectedDislikeds(it) }
         )
+        CheckboxWithLabel(
+            text = "Neutral",
+            checked = neutral,
+            onCheckedChange = { filterViewModel.updateSelectedNeutral(it) }
+        )
     }
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(0.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Spacer(
@@ -578,7 +596,9 @@ fun CheckboxWithLabel(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier,
+        modifier = Modifier
+            .padding(0.dp)
+            .height(36.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -592,7 +612,7 @@ fun CheckboxWithLabel(
             text = text,
             modifier = Modifier
                 .padding(end = 14.dp),
-            fontSize = 14.sp,
+            fontSize = 15.sp,
         )
     }
 }
@@ -609,7 +629,11 @@ fun TypeFilterSection(
     Column(
         modifier = Modifier
     ) {
-        Text("Type:")
+        Text(
+            text = "Type:",
+            modifier = Modifier,
+            fontSize = 15.sp,
+        )
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
@@ -648,12 +672,16 @@ fun BrandFilterSection(
     var showOverflowPopup by remember { mutableStateOf(false) }
 
     Column {
-        Text("Brand:")
+        Text(
+            text = "Brand:",
+            modifier = Modifier,
+            fontSize = 15.sp,
+        )
         Spacer(
             modifier = Modifier
                 .height(4.dp)
         )
-        TextField(
+        CustomFilterTextField(
             value = brandSearchText,
             onValueChange = { text ->
                 brandSearchText = text
@@ -663,7 +691,8 @@ fun BrandFilterSection(
                     allBrands.filter { it.contains(text, ignoreCase = true) }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 keyboardType = KeyboardType.Text,
@@ -684,9 +713,10 @@ fun BrandFilterSection(
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(0.dp)
-                .heightIn(min = 48.dp),
+                .height(36.dp)
+                .padding(0.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             val unselectedBrands = filteredBrands.filterNot { selectedBrands.contains(it) }
             items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
@@ -829,6 +859,64 @@ fun BrandFilterSection(
             }
         }
     }
+}
+
+@Composable
+private fun CustomFilterTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    colors: TextFieldColors = TextFieldDefaults.colors(),
+    singleLine: Boolean = false,
+    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+) {
+    var showCursor by remember { mutableStateOf(false) }
+    var hasFocus by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
+            .height(48.dp)
+            .onFocusChanged { focusState ->
+                hasFocus = focusState.hasFocus
+                showCursor = focusState.hasFocus
+                if (!focusState.hasFocus) {
+                    focusManager.clearFocus()
+                }
+            }
+            .padding(horizontal = 16.dp),
+        textStyle = LocalTextStyle.current.copy(
+            color = LocalContentColor.current,
+            fontSize = TextUnit.Unspecified,
+            lineHeight = TextUnit.Unspecified,
+        ),
+        keyboardOptions = keyboardOptions,
+        singleLine = singleLine,
+        maxLines = maxLines,
+        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
+        else { SolidColor(Color.Transparent) },
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    innerTextField()
+                }
+            }
+        }
+    )
 }
 
 @Composable
