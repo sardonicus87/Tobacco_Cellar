@@ -361,7 +361,7 @@ private fun CustomBlendSearch(
             }
         ),
         singleLine = true,
-        cursorBrush = if (showCursor) { SolidColor(LocalContentColor.current) }
+        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
             else { SolidColor(Color.Transparent) },
         decorationBox = { innerTextField ->
             Row(
