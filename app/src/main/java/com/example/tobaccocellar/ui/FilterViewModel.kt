@@ -69,6 +69,9 @@ class FilterViewModel (
     private val _selectedNeutral = MutableStateFlow(false)
     val selectedNeutral: StateFlow<Boolean> = _selectedNeutral
 
+    private val _selectedNonNeutral = MutableStateFlow(false)
+    val selectedNonNeutral: StateFlow<Boolean> = _selectedNonNeutral
+
     private val _selectedInStock = MutableStateFlow(false)
     val selectedInStock: StateFlow<Boolean> = _selectedInStock
 
@@ -96,6 +99,7 @@ class FilterViewModel (
         if (isSelected) {
             _selectedDislikeds.value = false
             _selectedNeutral.value = false
+            _selectedNonNeutral.value = false
         }
     }
 
@@ -104,6 +108,7 @@ class FilterViewModel (
         if (isSelected) {
             _selectedFavorites.value = false
             _selectedNeutral.value = false
+            _selectedNonNeutral.value = false
         }
     }
 
@@ -112,6 +117,16 @@ class FilterViewModel (
         if (isSelected) {
             _selectedFavorites.value = false
             _selectedDislikeds.value = false
+            _selectedNonNeutral.value = false
+        }
+    }
+
+    fun updateSelectedNonNeutral(isSelected: Boolean) {
+        _selectedNonNeutral.value = isSelected
+        if (isSelected) {
+            _selectedFavorites.value = false
+            _selectedDislikeds.value = false
+            _selectedNeutral.value = false
         }
     }
 
