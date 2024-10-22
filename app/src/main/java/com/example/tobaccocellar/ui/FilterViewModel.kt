@@ -4,11 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class FilterViewModel (
@@ -35,6 +33,22 @@ class FilterViewModel (
 
     fun closeBottomSheet() {
         _bottomSheetState.value = BottomSheetState.CLOSED
+    }
+
+
+    /** HomeScreen HomeHeader blend search **/
+    private val _blendSearchValue = MutableStateFlow("")
+    val blendSearchValue: StateFlow<String> = _blendSearchValue
+
+    fun onBlendSearch(text: String) {
+        _blendSearchValue.value = text
+    }
+
+    private val _blendSearchText = MutableStateFlow("")
+    val blendSearchText: StateFlow<String> = _blendSearchText
+
+    fun updateSearchText(text: String) {
+        _blendSearchText.value = text
     }
 
 

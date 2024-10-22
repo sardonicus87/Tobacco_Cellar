@@ -97,6 +97,7 @@ import com.example.tobaccocellar.R
 import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.AppViewModelProvider
+import com.example.tobaccocellar.ui.FilterViewModel
 import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import com.example.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -197,9 +198,8 @@ fun HomeScreen(
                 modifier = Modifier
                     .shadow(2.dp, shape = RectangleShape, clip = false),
                 homeUiState = homeUiState,
+                filterViewModel = filterViewModel,
                 selectView = viewmodel::selectView,
-                onBlendSearchChanged = viewmodel::onBlendSearchChanged,
-       //         searchFieldFocused = searchFieldFocused,
                 isTableView = isTableView,
             )
             HomeBody(
@@ -226,11 +226,11 @@ fun HomeScreen(
 private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
+    filterViewModel: FilterViewModel,
     selectView: (Boolean) -> Unit,
-    onBlendSearchChanged: (String) -> Unit,
     isTableView: Boolean,
 ) {
-    var blendSearchText by remember { mutableStateOf("") }
+    val blendSearchText by filterViewModel.blendSearchText.collectAsState()
 
     Row (
         modifier = Modifier
@@ -283,13 +283,13 @@ private fun HomeHeader(
             CustomBlendSearch(
                 value = blendSearchText,
                 onValueChange = {
-                    blendSearchText = it
+                    filterViewModel.updateSearchText(it)
                     if (it.isEmpty()) {
-                        onBlendSearchChanged(it)
+                        filterViewModel.onBlendSearch(it)
                     }
                 },
                 onImeAction = {
-                    onBlendSearchChanged(blendSearchText)
+                    filterViewModel.onBlendSearch(blendSearchText)
                 }
             )
         }

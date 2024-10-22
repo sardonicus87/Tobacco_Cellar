@@ -46,9 +46,6 @@ class HomeViewModel(
         }
     }
 
-    private val _blendSearch = MutableStateFlow("")
-    val blendSearch: StateFlow<String> = _blendSearch.asStateFlow()
-
 
     /** States and Flows **/
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -62,7 +59,7 @@ class HomeViewModel(
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
             preferencesRepo.isTableView,
-            _blendSearch,
+            filterViewModel.blendSearchValue,
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
@@ -72,7 +69,7 @@ class HomeViewModel(
             val inStock = values[5] as Boolean
             val outOfStock = values[6] as Boolean
             val isTableView = values[7] as Boolean
-            val blendSearch = values[8] as String
+            val blendSearchValue = values[8] as String
 
             itemsRepository.getFilteredItems(
                 brands = brands,
@@ -83,11 +80,11 @@ class HomeViewModel(
                 inStock = inStock,
                 outOfStock = outOfStock
             ).map { items ->
-                val filteredItems = if (blendSearch.isBlank()) {
+                val filteredItems = if (blendSearchValue.isBlank()) {
                     items
                 } else {
                     items.filter { item ->
-                        item.blend.contains(blendSearch, ignoreCase = true)
+                        item.blend.contains(blendSearchValue, ignoreCase = true)
                     }
                 }
 
@@ -146,11 +143,6 @@ class HomeViewModel(
         } else {
             _sorting.value = Sorting(columnIndex, true)
         }
-    }
-
-    /** search bar **/
-    fun onBlendSearchChanged(text: String) {
-        _blendSearch.value = text
     }
 
 
