@@ -8,6 +8,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -502,6 +503,10 @@ fun FilterBottomSheet(
                 }
             }
         }
+        Spacer(
+            modifier = Modifier
+                .height(4.dp)
+        )
         BrandFilterSection(
             filterViewModel = filterViewModel,
             modifier = Modifier
@@ -537,55 +542,81 @@ fun OtherFiltersSection(
     val favorites by filterViewModel.selectedFavorites.collectAsState()
     val dislikeds by filterViewModel.selectedDislikeds.collectAsState()
     val neutral by filterViewModel.selectedNeutral.collectAsState()
+    val nonNeutral by filterViewModel.selectedNonNeutral.collectAsState()
     val inStock by filterViewModel.selectedInStock.collectAsState()
     val outOfStock by filterViewModel.selectedOutOfStock.collectAsState()
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(0.dp),
-        horizontalArrangement = Arrangement.SpaceAround
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        CheckboxWithLabel(
-            text = "Favorites",
-            checked = favorites,
-            onCheckedChange = { filterViewModel.updateSelectedFavorites(it) }
-        )
-        CheckboxWithLabel(
-            text = "Dislikes",
-            checked = dislikeds,
-            onCheckedChange = { filterViewModel.updateSelectedDislikeds(it) }
-        )
-        CheckboxWithLabel(
-            text = "Neutral",
-            checked = neutral,
-            onCheckedChange = { filterViewModel.updateSelectedNeutral(it) }
-        )
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp),
-        horizontalArrangement = Arrangement.SpaceAround
-    ) {
+        Column(
+            modifier = Modifier
+                .border(width = 1.dp, color = LocalContentColor.current.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
+                .padding(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row {
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    CheckboxWithLabel(
+                        text = "Favorites",
+                        checked = favorites,
+                        onCheckedChange = { filterViewModel.updateSelectedFavorites(it) }
+                    )
+                    CheckboxWithLabel(
+                        text = "Both",
+                        checked = nonNeutral,
+                        onCheckedChange = { filterViewModel.updateSelectedNonNeutral(it) }
+                    )
+                }
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    CheckboxWithLabel(
+                        text = "Dislikes",
+                        checked = dislikeds,
+                        onCheckedChange = { filterViewModel.updateSelectedDislikeds(it) }
+                    )
+                    CheckboxWithLabel(
+                        text = "Neither",
+                        checked = neutral,
+                        onCheckedChange = { filterViewModel.updateSelectedNeutral(it) }
+                    )
+                }
+            }
+        }
         Spacer(
             modifier = Modifier
-                .width(5.dp)
+                .weight(1f)
         )
-        CheckboxWithLabel(
-            text = "In-stock",
-            checked = inStock,
-            onCheckedChange = { filterViewModel.updateSelectedInStock(it) }
-        )
-        CheckboxWithLabel(
-            text = "Out-of-stock",
-            checked = outOfStock,
-            onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) }
-        )
-        Spacer(
+        Column(
             modifier = Modifier
-                .width(5.dp)
-        )
+                .border(width = 1.dp, color = LocalContentColor.current.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
+                .padding(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            CheckboxWithLabel(
+                text = "In-stock",
+                checked = inStock,
+                onCheckedChange = { filterViewModel.updateSelectedInStock(it) }
+            )
+            CheckboxWithLabel(
+                text = "Out",
+                checked = outOfStock,
+                onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) }
+            )
+        }
     }
 }
 
@@ -627,15 +658,11 @@ fun TypeFilterSection(
     val selectedTypes by filterViewModel.selectedTypes.collectAsState()
 
     Column(
-        modifier = Modifier
+        modifier = modifier
     ) {
-        Text(
-            text = "Type:",
-            modifier = Modifier,
-            fontSize = 15.sp,
-        )
         FlowRow(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
@@ -671,16 +698,9 @@ fun BrandFilterSection(
     var filteredBrands by remember { mutableStateOf(allBrands) }
     var showOverflowPopup by remember { mutableStateOf(false) }
 
-    Column {
-        Text(
-            text = "Brand:",
-            modifier = Modifier,
-            fontSize = 15.sp,
-        )
-        Spacer(
-            modifier = Modifier
-                .height(4.dp)
-        )
+    Column(
+        modifier = modifier
+    ) {
         CustomFilterTextField(
             value = brandSearchText,
             onValueChange = { text ->
@@ -693,6 +713,7 @@ fun BrandFilterSection(
             },
             modifier = Modifier
                 .fillMaxWidth(),
+            placeholder = "Search Brands",
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 keyboardType = KeyboardType.Text,
@@ -713,8 +734,8 @@ fun BrandFilterSection(
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp)
-                .padding(0.dp),
+                .padding(end = 1.dp)
+                .height(36.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -866,6 +887,7 @@ private fun CustomFilterTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    placeholder: String = "",
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     singleLine: Boolean = false,
@@ -912,6 +934,14 @@ private fun CustomFilterTextField(
                         .weight(1f),
                     contentAlignment = Alignment.CenterStart
                 ) {
+                    if (value.isEmpty() && !hasFocus) {
+                        Text(
+                            text = placeholder,
+                            style = LocalTextStyle.current.copy(
+                                color = LocalContentColor.current.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
                     innerTextField()
                 }
             }
