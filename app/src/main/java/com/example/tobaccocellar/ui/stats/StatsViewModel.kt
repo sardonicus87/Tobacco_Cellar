@@ -74,25 +74,28 @@ class StatsViewModel(
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
             filterViewModel.selectedFavorites,
-            filterViewModel.selectedNeutral,
             filterViewModel.selectedDislikeds,
+            filterViewModel.selectedNeutral,
+            filterViewModel.selectedNonNeutral,
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
             val favorites = values[2] as Boolean
-            val neutral = values[3] as Boolean
-            val dislikeds = values[4] as Boolean
-            val inStock = values[5] as Boolean
-            val outOfStock = values[6] as Boolean
+            val dislikeds = values[3] as Boolean
+            val neutral = values[4] as Boolean
+            val nonNeutral = values[5] as Boolean
+            val inStock = values[6] as Boolean
+            val outOfStock = values[7] as Boolean
 
             itemsRepository.getFilteredItems(
                 brands = brands,
                 types = types,
                 favorites = favorites,
-                neutral = neutral,
                 dislikeds = dislikeds,
+                neutral = neutral,
+                nonNeutral = nonNeutral,
                 inStock = inStock,
                 outOfStock = outOfStock
             ).map { filteredItems ->
@@ -102,8 +105,9 @@ class StatsViewModel(
                     brands = brands,
                     types = types,
                     favorites = favorites,
-                    neutral = neutral,
                     dislikeds = dislikeds,
+                    neutral = neutral,
+                    nonNeutral = nonNeutral,
                     inStock = inStock,
                     outOfStock = outOfStock,
 
@@ -183,8 +187,9 @@ data class FilteredStats(
     val brands: List<String> = emptyList(),
     val types: List<String> = emptyList(),
     val favorites: Boolean = false,
-    val neutral: Boolean = false,
     val dislikeds: Boolean = false,
+    val neutral: Boolean = false,
+    val nonNeutral: Boolean = false,
     val inStock: Boolean = false,
     val outOfStock: Boolean = false,
 
