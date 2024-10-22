@@ -94,8 +94,9 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         brands: List<String>?,
         types: List<String>?,
         favorites: Boolean?,
-        neutral: Boolean?,
         dislikeds: Boolean?,
+        neutral: Boolean?,
+        nonNeutral: Boolean?,
         inStock: Boolean?,
         outOfStock: Boolean?,
     ): Flow<List<Items>> {
@@ -138,23 +139,23 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
             }
         }
 
+        if (dislikeds != null && dislikeds) {
+            if (dislikeds) {
+                whereClauses.add("disliked = ?")
+                args.add(1)
+            }
+        }
+
         if (neutral != null && neutral) {
             whereClauses.add("favorite = ? AND disliked = ?")
             args.add(0)
             args.add(0)
         }
 
-//        if (nonNeutral != null && nonNeutral) {
-//            whereClauses.add("favorite = ? OR disliked = ?")
-//            args.add(1)
-//            args.add(1)
-//        }
-
-        if (dislikeds != null && dislikeds) {
-            if (dislikeds) {
-                whereClauses.add("disliked = ?")
-                args.add(1)
-            }
+        if (nonNeutral != null && nonNeutral) {
+            whereClauses.add("favorite = ? OR disliked = ?")
+            args.add(1)
+            args.add(1)
         }
 
         if (inStock != null && inStock) {
