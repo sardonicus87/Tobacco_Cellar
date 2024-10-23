@@ -72,7 +72,6 @@ class AddEntryViewModel(
     private val _brands = MutableStateFlow<List<String>>(emptyList())
         private val brands: StateFlow<List<String>> = _brands
 
-
     init {
         viewModelScope.launch {
             itemsRepository.getAllBrandsStream().collect {

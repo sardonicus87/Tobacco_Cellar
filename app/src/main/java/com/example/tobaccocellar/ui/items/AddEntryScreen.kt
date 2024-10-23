@@ -12,11 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -47,10 +50,12 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,7 +67,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
@@ -80,6 +89,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -336,7 +346,6 @@ fun ItemInputForm(
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val titles = listOf("Item Details", "Notes")
-
 
     Column(
         modifier = modifier
@@ -817,6 +826,65 @@ fun ItemInputForm(
     }
 }
 
+@Composable
+private fun CustomEntryFormTextField (
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = Dp.Unspecified,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    colors: TextFieldColors = TextFieldDefaults.colors(),
+    singleLine: Boolean = false,
+    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+) {
+    var showCursor by remember { mutableStateOf(false) }
+    var hasFocus by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
+            .height(height)
+            .onFocusChanged { focusState ->
+                hasFocus = focusState.hasFocus
+                showCursor = focusState.hasFocus
+                if (!focusState.hasFocus) {
+                    focusManager.clearFocus()
+                }
+            }
+            .padding(horizontal = 16.dp),
+        textStyle = LocalTextStyle.current.copy(
+            color = LocalContentColor.current,
+            fontSize = TextUnit.Unspecified,
+            lineHeight = TextUnit.Unspecified,
+        ),
+        keyboardOptions = keyboardOptions,
+        singleLine = singleLine,
+        maxLines = maxLines,
+        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
+        else { SolidColor(Color.Transparent) },
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    innerTextField()
+                }
+            }
+        }
+    )
+}
+
 
 @Composable
 fun FavoriteHeart(
@@ -870,6 +938,7 @@ fun HatedBrokenHeart(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoCompleteText(
@@ -882,7 +951,8 @@ fun AutoCompleteText(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
-//    val dropOffset by remember { mutableIntStateOf(value.length) }
+    val focusRequester = remember { FocusRequester() }
+    val focusState = remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded && suggestions.isNotEmpty(),
@@ -890,6 +960,11 @@ fun AutoCompleteText(
         modifier = Modifier
             .padding(0.dp)
     ) {
+        DisposableEffect(Unit) {
+            onDispose {
+                expanded = false // Dismiss DropdownMenu on dispose
+            }
+        }
         TextField(
             value = textFieldValueState.copy(text = value),
             onValueChange = {
@@ -900,6 +975,8 @@ fun AutoCompleteText(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
+                .onFocusChanged { focusState.value = it.isFocused }
+                .focusRequester(focusRequester)
                 .menuAnchor(MenuAnchorType.PrimaryEditable, true),
             enabled = true,
             trailingIcon = {
@@ -935,47 +1012,45 @@ fun AutoCompleteText(
                 disabledContainerColor = LocalCustomColors.current.textField,
             )
         )
-        if (expanded && suggestions.isNotEmpty()) {
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier
-                    .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
-                    .heightIn(max = 82.dp),
-                properties = PopupProperties(focusable = false),
-                offset = DpOffset(32.dp, (-12).dp),
-                containerColor = MaterialTheme.colorScheme.background,
-            ) {
-                suggestions.forEach { label ->
-                    CustomDropdownMenuItem(
-                        text = {
-                            Text(
-                                text = label,
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .focusable(false),
-                                fontSize = 16.sp,
-                                lineHeight = 16.sp,
-                                maxLines = 1
-                            )
-                        },
-                        onClick = {
-                            onOptionSelected(label)
-                            textFieldValueState = TextFieldValue(
-                                text = label,
-                                selection = TextRange(label.length)
-                            )
-                            expanded = false
-                            emptyList<String>()
-                        },
-                        enabled = true,
-                        modifier = Modifier
-                            .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
-                            .offset(0.dp, 0.dp)
-                            .fillMaxWidth(),
-                        colors = MenuDefaults.itemColors(),
-                    )
-                }
+        DropdownMenu(
+            expanded = expanded && focusState.value,
+            onDismissRequest = { focusState.value },
+            modifier = Modifier
+                .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+                .heightIn(max = 82.dp),
+            properties = PopupProperties(focusable = false),
+            offset = DpOffset(32.dp, (-12).dp),
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            suggestions.take(3).forEach { label ->
+                CustomDropdownMenuItem(
+                    text = {
+                        Text(
+                            text = label,
+                            modifier = Modifier
+                                .padding(0.dp)
+                                .focusable(false),
+                            fontSize = 16.sp,
+                            lineHeight = 16.sp,
+                            maxLines = 1
+                        )
+                    },
+                    onClick = {
+                        onOptionSelected(label)
+                        textFieldValueState = TextFieldValue(
+                            text = label,
+                            selection = TextRange(label.length)
+                        )
+                        expanded = false
+                        //    emptyList<String>()
+                    },
+                    enabled = true,
+                    modifier = Modifier
+                        .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
+                        .offset(0.dp, 0.dp)
+                        .fillMaxWidth(),
+                    colors = MenuDefaults.itemColors(),
+                )
             }
         }
     }
