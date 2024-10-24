@@ -464,7 +464,8 @@ fun ItemInputForm(
                                         suggestions.value = itemUiState.autoBrands.filter { brand ->
                                             brand.contains(filterText, ignoreCase = true)
                                         }
-                                    } else {
+                                    }
+                                    else {
                                         suggestions.value = emptyList()
                                     }
                                     showSuggestions = suggestions.value.isNotEmpty()
@@ -472,6 +473,7 @@ fun ItemInputForm(
                                 },
                                 onOptionSelected = {
                                     onValueChange(itemDetails.copy(brand = it))
+                                    suggestions.value = emptyList()
                                 },
                                 suggestions = suggestions.value,
                                 modifier = Modifier
@@ -970,7 +972,7 @@ fun AutoCompleteText(
             onValueChange = {
                 textFieldValueState = it
                 onValueChange?.invoke(it.text)
-                expanded = it.text.isNotEmpty()
+                expanded = it.text.isNotEmpty() && suggestions.isNotEmpty()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -1042,7 +1044,6 @@ fun AutoCompleteText(
                             selection = TextRange(label.length)
                         )
                         expanded = false
-                        //    emptyList<String>()
                     },
                     enabled = true,
                     modifier = Modifier
