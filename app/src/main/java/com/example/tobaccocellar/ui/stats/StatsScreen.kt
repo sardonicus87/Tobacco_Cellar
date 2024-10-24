@@ -88,7 +88,8 @@ fun StatsScreen(
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(StatsDestination.titleRes),
@@ -119,7 +120,8 @@ fun StatsScreen(
                 rawStats = rawStats,
                 filteredStats = filteredStats,
                 viewModel = viewmodel,
-                modifier = modifier.fillMaxSize(),
+                modifier = modifier
+                    .fillMaxSize(),
                 contentPadding = innerPadding,
             )
         }
@@ -135,7 +137,8 @@ private fun StatsBody(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    var quickStatsExpanded by remember { mutableStateOf(true) }
+    var rawStatsExpanded by remember { mutableStateOf(true) }
+    var filterStatsExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -144,38 +147,99 @@ private fun StatsBody(
             .padding(horizontal = 8.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        // Raw Stats
-        Row(
+        Text(
+            text = stringResource(R.string.quick_stats),
             modifier = Modifier
-                .clickable(onClick = { quickStatsExpanded = !quickStatsExpanded }),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(start = 8.dp, end = 4.dp),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Start,
+        )
+        Spacer(
+            modifier = Modifier
+                .height(10.dp)
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .wrapContentHeight(),
+            verticalArrangement = Arrangement.Top,
         ) {
-            Text(
-                text = stringResource(R.string.quick_stats),
+            // Raw Stats
+            Row(
                 modifier = Modifier
-                    .padding(start = 8.dp, end = 4.dp),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Start,
-            )
-            Icon(
-                painter = if (quickStatsExpanded) painterResource(id = R.drawable.arrow_up) else painterResource(id = R.drawable.arrow_down),
-                contentDescription = null,
+                    .clickable(onClick = { rawStatsExpanded = !rawStatsExpanded }),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Raw Stats",
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 4.dp),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Start,
+                )
+                Icon(
+                    painter = if (rawStatsExpanded) painterResource(id = R.drawable.arrow_up) else painterResource(
+                        id = R.drawable.arrow_down
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .size(24.dp),
+                    tint = LocalContentColor.current
+                )
+            }
+            AnimatedVisibility(
+                visible = rawStatsExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                RawStats(
+                    rawStats = rawStats,
+                )
+            }
+            Spacer(
                 modifier = Modifier
-                    .padding(0.dp)
-                    .size(24.dp),
-                tint = LocalContentColor.current
+                    .height(16.dp)
             )
-        }
-        AnimatedVisibility(
-            visible = quickStatsExpanded,
-            enter = expandVertically(),
-            exit = shrinkVertically()
-        ) {
-            QuickStats(
-                rawStats = rawStats,
-            )
+
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = { filterStatsExpanded = !filterStatsExpanded }),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Filtered Stats",
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 4.dp, bottom = 0.dp),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Start,
+                )
+                Icon(
+                    painter = if (filterStatsExpanded) painterResource(id = R.drawable.arrow_up) else painterResource(
+                        id = R.drawable.arrow_down
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .size(24.dp),
+                    tint = LocalContentColor.current
+                )
+            }
+            AnimatedVisibility(
+                visible = filterStatsExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                FilteredStats(
+                    filteredStats = filteredStats,
+                )
+            }
         }
         Spacer(
             modifier = Modifier
@@ -200,7 +264,6 @@ private fun StatsBody(
             fontWeight = FontWeight.Bold,
         )
         ChartsSection(
-            rawStats = rawStats,
             filteredStats = filteredStats,
             viewModel = viewModel
         )
@@ -210,7 +273,7 @@ private fun StatsBody(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun QuickStats(
+fun RawStats(
     rawStats: RawStats,
 ) {
     val totalByType = rawStats.totalByType.toList().sortedBy {
@@ -234,7 +297,7 @@ fun QuickStats(
     ) {
         Spacer(
             modifier = Modifier
-                .height(10.dp)
+                .height(2.dp)
         )
         Text(
             text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
@@ -261,11 +324,64 @@ fun QuickStats(
     }
 }
 
+@Composable
+fun FilteredStats(
+    filteredStats: FilteredStats,
+) {
+    val totalByTypeFiltered = filteredStats.totalByType.toList().sortedBy {
+        when (it.first) {
+            "Burley" -> 0
+            "Virginia" -> 1
+            "English" -> 2
+            "Aromatic" -> 3
+            "Other" -> 4
+            else -> 5
+        }
+    }.joinToString(separator = ", ") { "${it.second} ${it.first}" }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 0.dp)
+            .wrapContentHeight(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start,
+    ) {
+        Spacer(
+            modifier = Modifier
+                .height(2.dp)
+        )
+        Text(
+            text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
+                    "${filteredStats.favoriteCount} favorites," + "${filteredStats.dislikedCount} disliked\n" +
+                    "${filteredStats.totalQuantity} total \"quantity\", " +
+                    "${filteredStats.totalZeroQuantity} out of stock",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 0.dp, end = 0.dp, bottom = 12.dp),
+            fontSize = 15.sp,
+            textAlign = TextAlign.Start,
+            softWrap = true,
+        )
+
+        if (filteredStats.totalByType.toList().count() > 1) {
+            Text(
+                text = totalByTypeFiltered,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .padding(0.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true
+            )
+        }
+    }
+}
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChartsSection(
-    rawStats: RawStats,
     filteredStats: FilteredStats,
     viewModel: StatsViewModel
 ) {

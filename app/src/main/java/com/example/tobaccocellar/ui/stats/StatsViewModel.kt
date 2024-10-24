@@ -101,7 +101,6 @@ class StatsViewModel(
             ).map { filteredItems ->
 
                 FilteredStats(
-                    itemsCount = filteredItems.size,
                     brands = brands,
                     types = types,
                     favorites = favorites,
@@ -110,6 +109,17 @@ class StatsViewModel(
                     nonNeutral = nonNeutral,
                     inStock = inStock,
                     outOfStock = outOfStock,
+
+                    itemsCount = filteredItems.size,
+                    brandsCount = filteredItems.groupingBy { it.brand }.eachCount().size,
+                    favoriteCount = filteredItems.count { it.favorite },
+                    dislikedCount = filteredItems.count { it.disliked },
+                    totalByType = filteredItems.groupingBy { it.type }
+                        .eachCount(),
+                    totalQuantity = filteredItems.sumOf { it.quantity },
+                    totalZeroQuantity = filteredItems.count { it.quantity == 0 },
+
+
 
                     topBrands = filteredItems.groupingBy { it.brand }
                         .eachCount()
@@ -184,6 +194,13 @@ data class RawStats(
 
 data class FilteredStats(
     val itemsCount: Int = 0,
+    val brandsCount: Int = 0,
+    val favoriteCount: Int = 0,
+    val dislikedCount: Int = 0,
+    val totalByType: Map<String, Int> = emptyMap(),
+    val totalQuantity: Int = 0,
+    val totalZeroQuantity: Int = 0,
+
     val brands: List<String> = emptyList(),
     val types: List<String> = emptyList(),
     val favorites: Boolean = false,
