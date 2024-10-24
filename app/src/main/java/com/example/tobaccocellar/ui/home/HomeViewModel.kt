@@ -53,6 +53,7 @@ class HomeViewModel(
         combine(
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
+            filterViewModel.selectedUnassigned,
             filterViewModel.selectedFavorites,
             filterViewModel.selectedDislikeds,
             filterViewModel.selectedNeutral,
@@ -64,14 +65,15 @@ class HomeViewModel(
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
-            val favorites = values[2] as Boolean
-            val dislikeds = values[3] as Boolean
-            val neutral = values[4] as Boolean
-            val nonNeutral = values[5] as Boolean
-            val inStock = values[6] as Boolean
-            val outOfStock = values[7] as Boolean
-            val isTableView = values[8] as Boolean
-            val blendSearchValue = values[9] as String
+            val unassigned = values[2] as Boolean
+            val favorites = values[3] as Boolean
+            val dislikeds = values[4] as Boolean
+            val neutral = values[5] as Boolean
+            val nonNeutral = values[6] as Boolean
+            val inStock = values[7] as Boolean
+            val outOfStock = values[8] as Boolean
+            val isTableView = values[9] as Boolean
+            val blendSearchValue = values[10] as String
 
             itemsRepository.getFilteredItems(
                 brands = brands,
@@ -84,7 +86,13 @@ class HomeViewModel(
                 outOfStock = outOfStock
             ).map { items ->
                 val filteredItems = if (blendSearchValue.isBlank()) {
-                    items
+                    if (unassigned) {
+                        items.filter { item ->
+                            item.type.isBlank()
+                        }
+                    } else {
+                        items
+                    }
                 } else {
                     items.filter { item ->
                         item.blend.contains(blendSearchValue, ignoreCase = true)
