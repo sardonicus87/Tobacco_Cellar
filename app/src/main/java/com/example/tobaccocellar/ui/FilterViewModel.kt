@@ -60,6 +60,9 @@ class FilterViewModel (
     private val _selectedTypes = MutableStateFlow<List<String>>(emptyList())
     val selectedTypes: StateFlow<List<String>> = _selectedTypes
 
+    private val _selectedUnassigned = MutableStateFlow(false)
+    val selectedUnassigned: StateFlow<Boolean> = _selectedUnassigned
+
     private val _selectedFavorites = MutableStateFlow(false)
     val selectedFavorites: StateFlow<Boolean> = _selectedFavorites
 
@@ -90,8 +93,18 @@ class FilterViewModel (
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
-        if (isSelected) { _selectedTypes.value += type }
+        if (isSelected) {
+            _selectedTypes.value += type
+            _selectedUnassigned.value = false
+        }
         else { _selectedTypes.value -= type }
+    }
+
+    fun updateSelectedUnassigned(isSelected: Boolean) {
+        _selectedUnassigned.value = isSelected
+        if (isSelected) {
+            _selectedTypes.value = emptyList()
+        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {

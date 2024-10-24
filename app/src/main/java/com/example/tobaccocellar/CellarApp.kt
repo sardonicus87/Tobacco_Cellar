@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -249,6 +250,7 @@ fun CellarBottomAppBar(
     navigateToAddEntry: () -> Unit = {},
     filterViewModel: FilterViewModel,
 ) {
+
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -517,7 +519,7 @@ fun FilterBottomSheet(
         )
         TypeFilterSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier
+            modifier = Modifier,
         )
         Spacer(
             modifier = Modifier
@@ -525,7 +527,7 @@ fun FilterBottomSheet(
         )
         OtherFiltersSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier
+            modifier = Modifier,
         )
         Spacer(
             modifier = Modifier
@@ -537,7 +539,7 @@ fun FilterBottomSheet(
 @Composable
 fun OtherFiltersSection(
     filterViewModel: FilterViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val favorites by filterViewModel.selectedFavorites.collectAsState()
     val dislikeds by filterViewModel.selectedDislikeds.collectAsState()
@@ -550,12 +552,17 @@ fun OtherFiltersSection(
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp),
-        horizontalArrangement = Arrangement.Start,
+        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
             modifier = Modifier
-                .border(width = 1.dp, color = LocalContentColor.current.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
+                .border(
+                    width = 1.dp,
+                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max)
                 .padding(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
             horizontalAlignment = Alignment.Start
@@ -574,7 +581,7 @@ fun OtherFiltersSection(
                     CheckboxWithLabel(
                         text = "Both",
                         checked = nonNeutral,
-                        onCheckedChange = { filterViewModel.updateSelectedNonNeutral(it) }
+                        onCheckedChange = { filterViewModel.updateSelectedNonNeutral(it) },
                     )
                 }
                 Column(
@@ -590,19 +597,23 @@ fun OtherFiltersSection(
                     CheckboxWithLabel(
                         text = "Neither",
                         checked = neutral,
-                        onCheckedChange = { filterViewModel.updateSelectedNeutral(it) }
+                        onCheckedChange = { filterViewModel.updateSelectedNeutral(it) },
                     )
                 }
+                Spacer(
+                        modifier = Modifier
+                            .width(4.dp)
+                    )
             }
         }
-        Spacer(
-            modifier = Modifier
-                .weight(1f)
-        )
+//        Spacer(
+//            modifier = Modifier
+//                .weight(1f)
+//        )
         Column(
             modifier = Modifier
-                .border(width = 1.dp, color = LocalContentColor.current.copy(alpha = 0.5f), shape = RoundedCornerShape(8.dp))
-                .padding(vertical = 4.dp),
+                .padding(vertical = 4.dp)
+                .width(intrinsicSize = IntrinsicSize.Max),
             verticalArrangement = Arrangement.spacedBy(0.dp),
             horizontalAlignment = Alignment.Start
         ) {
@@ -624,10 +635,12 @@ fun OtherFiltersSection(
 fun CheckboxWithLabel(
     text: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    fontColor: Color = LocalContentColor.current,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .padding(0.dp)
             .height(36.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -642,7 +655,8 @@ fun CheckboxWithLabel(
         Text(
             text = text,
             modifier = Modifier
-                .padding(end = 14.dp),
+                .padding(end = 8.dp),
+            color = fontColor,
             fontSize = 15.sp,
         )
     }
@@ -652,10 +666,11 @@ fun CheckboxWithLabel(
 @Composable
 fun TypeFilterSection(
     filterViewModel: FilterViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val availableTypes = listOf("Aromatic", "English", "Burley", "Virginia", "Other")
     val selectedTypes by filterViewModel.selectedTypes.collectAsState()
+    val selectedUnassigned by filterViewModel.selectedUnassigned.collectAsState()
 
     Column(
         modifier = modifier
@@ -678,9 +693,22 @@ fun TypeFilterSection(
                     },
                     modifier = Modifier
                         .padding(0.dp),
-                    shape = MaterialTheme.shapes.small
+                    shape = MaterialTheme.shapes.small,
                 )
             }
+            FilterChip(
+                selected = selectedUnassigned,
+                onClick = { filterViewModel.updateSelectedUnassigned(!selectedUnassigned) },
+                label = {
+                    Text(
+                        "Unassigned",
+                        fontSize = 14.sp,
+                    )
+                },
+                modifier = Modifier
+                    .padding(0.dp),
+                shape = MaterialTheme.shapes.small,
+            )
         }
     }
 }
