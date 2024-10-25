@@ -458,16 +458,16 @@ fun ItemInputForm(
                             AutoCompleteText(
                                 value = itemDetails.brand,
                                 onValueChange = {
+                                    onValueChange(itemDetails.copy(brand = it))
+                                    val filterText = it.trim().lowercase()
+
                                     if (it.length >= 2) {
-                                        val filterText = it.trim().lowercase()
                                         suggestions.value = itemUiState.autoBrands.filter { brand ->
                                             brand.contains(filterText, ignoreCase = true)
                                         }
-                                    }
-                                    else {
+                                    } else {
                                         suggestions.value = emptyList()
                                     }
-                                    onValueChange(itemDetails.copy(brand = it))
                                 },
                                 onOptionSelected = {
                                     onValueChange(itemDetails.copy(brand = it))
@@ -955,7 +955,7 @@ fun AutoCompleteText(
     val focusState = remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
-        expanded = expanded && suggestions.isNotEmpty(),
+        expanded = expanded && focusState.value && suggestions.isNotEmpty(),
         onExpandedChange = { expanded = !expanded },
         modifier = Modifier
             .padding(0.dp)
@@ -1013,7 +1013,7 @@ fun AutoCompleteText(
             )
         )
         DropdownMenu(
-            expanded = expanded && focusState.value,
+            expanded = expanded && focusState.value && suggestions.isNotEmpty(),
             onDismissRequest = { focusState.value },
             modifier = Modifier
                 .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
