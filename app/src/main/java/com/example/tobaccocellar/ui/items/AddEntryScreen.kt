@@ -454,7 +454,6 @@ fun ItemInputForm(
                             )
 
                             val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-                            var showSuggestions by remember { mutableStateOf(false) }
 
                             AutoCompleteText(
                                 value = itemDetails.brand,
@@ -468,7 +467,6 @@ fun ItemInputForm(
                                     else {
                                         suggestions.value = emptyList()
                                     }
-                                    showSuggestions = suggestions.value.isNotEmpty()
                                     onValueChange(itemDetails.copy(brand = it))
                                 },
                                 onOptionSelected = {
@@ -964,7 +962,7 @@ fun AutoCompleteText(
     ) {
         DisposableEffect(Unit) {
             onDispose {
-                expanded = false // Dismiss DropdownMenu on dispose
+                expanded = false
             }
         }
         TextField(
