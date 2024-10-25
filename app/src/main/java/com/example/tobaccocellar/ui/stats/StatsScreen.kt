@@ -353,7 +353,7 @@ fun FilteredStats(
         )
         Text(
             text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
-                    "${filteredStats.favoriteCount} favorites," + "${filteredStats.dislikedCount} disliked\n" +
+                    "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
                     "${filteredStats.totalQuantity} total \"quantity\", " +
                     "${filteredStats.totalZeroQuantity} out of stock",
             modifier = Modifier
