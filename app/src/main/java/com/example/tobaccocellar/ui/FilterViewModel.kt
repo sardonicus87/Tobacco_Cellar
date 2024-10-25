@@ -94,8 +94,8 @@ class FilterViewModel (
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
         if (isSelected) {
-            _selectedTypes.value += type
             _selectedUnassigned.value = false
+            _selectedTypes.value += type
         }
         else { _selectedTypes.value -= type }
     }
