@@ -1,13 +1,12 @@
 package com.example.tobaccocellar
 
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -17,17 +16,11 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.tobaccocellar.data.LocalCellarApplication
 import com.example.tobaccocellar.ui.theme.TobaccoCellarTheme
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        supportActionBar?.hide()
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            setTheme(R.style.Theme_TobaccoCellar_Pre31)
-        } else {
-            setTheme(R.style.Theme_TobaccoCellar)
-        }
         super.onCreate(savedInstanceState)
         installSplashScreen()
 

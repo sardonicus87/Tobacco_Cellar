@@ -18,14 +18,14 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/tc_launcher1_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TobaccoCellar"
+        android:theme="@style/Theme.Start"
         tools:targetApi="34">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustUnspecified"
             android:label="@string/app_name"
-            android:theme="@style/Theme.TobaccoCellar">
+            android:theme="@style/Theme.Start">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
