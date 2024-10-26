@@ -7,19 +7,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -50,7 +46,6 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -71,7 +66,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
@@ -89,7 +83,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -208,7 +201,6 @@ fun AddEntryBody(
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
     modifier: Modifier = Modifier,
-    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -826,64 +818,64 @@ fun ItemInputForm(
     }
 }
 
-@Composable
-private fun CustomEntryFormTextField (
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    height: Dp = Dp.Unspecified,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    colors: TextFieldColors = TextFieldDefaults.colors(),
-    singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
-) {
-    var showCursor by remember { mutableStateOf(false) }
-    var hasFocus by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
-            .height(height)
-            .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus
-                showCursor = focusState.hasFocus
-                if (!focusState.hasFocus) {
-                    focusManager.clearFocus()
-                }
-            }
-            .padding(horizontal = 16.dp),
-        textStyle = LocalTextStyle.current.copy(
-            color = LocalContentColor.current,
-            fontSize = TextUnit.Unspecified,
-            lineHeight = TextUnit.Unspecified,
-        ),
-        keyboardOptions = keyboardOptions,
-        singleLine = singleLine,
-        maxLines = maxLines,
-        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
-        else { SolidColor(Color.Transparent) },
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    innerTextField()
-                }
-            }
-        }
-    )
-}
+//@Composable
+//private fun CustomEntryFormTextField (
+//    value: String,
+//    onValueChange: (String) -> Unit,
+//    modifier: Modifier = Modifier,
+//    height: Dp = Dp.Unspecified,
+//    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+//    colors: TextFieldColors = TextFieldDefaults.colors(),
+//    singleLine: Boolean = false,
+//    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+//) {
+//    var showCursor by remember { mutableStateOf(false) }
+//    var hasFocus by remember { mutableStateOf(false) }
+//    val focusManager = LocalFocusManager.current
+//
+//    BasicTextField(
+//        value = value,
+//        onValueChange = onValueChange,
+//        modifier = modifier
+//            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
+//            .height(height)
+//            .onFocusChanged { focusState ->
+//                hasFocus = focusState.hasFocus
+//                showCursor = focusState.hasFocus
+//                if (!focusState.hasFocus) {
+//                    focusManager.clearFocus()
+//                }
+//            }
+//            .padding(horizontal = 16.dp),
+//        textStyle = LocalTextStyle.current.copy(
+//            color = LocalContentColor.current,
+//            fontSize = TextUnit.Unspecified,
+//            lineHeight = TextUnit.Unspecified,
+//        ),
+//        keyboardOptions = keyboardOptions,
+//        singleLine = singleLine,
+//        maxLines = maxLines,
+//        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
+//        else { SolidColor(Color.Transparent) },
+//        decorationBox = { innerTextField ->
+//            Row(
+//                modifier = Modifier
+//                    .padding(0.dp)
+//                    .fillMaxSize(),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.Start,
+//            ) {
+//                Box(
+//                    modifier = Modifier
+//                        .weight(1f),
+//                    contentAlignment = Alignment.CenterStart
+//                ) {
+//                    innerTextField()
+//                }
+//            }
+//        }
+//    )
+//}
 
 
 @Composable
@@ -957,7 +949,7 @@ fun AutoCompleteText(
     ExposedDropdownMenuBox(
         expanded = expanded && focusState.value && suggestions.isNotEmpty(),
         onExpandedChange = { expanded = !expanded },
-        modifier = Modifier
+        modifier = modifier
             .padding(0.dp)
     ) {
         DisposableEffect(Unit) {
@@ -1062,7 +1054,9 @@ fun CustomDropdownMenuItem(
     onClick: () -> Unit,
     enabled: Boolean = false,
     modifier: Modifier,
-    colors: MenuItemColors,
+    colors: MenuItemColors = MenuDefaults.itemColors(
+        textColor = Color.Unspecified,
+    ),
 ) {
     Box(
         modifier = modifier
@@ -1070,6 +1064,11 @@ fun CustomDropdownMenuItem(
             .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
     ) {
         text()
+        if (enabled) {
+            colors.copy(
+                textColor = colors.textColor
+            )
+        }
     }
 }
 
@@ -1147,7 +1146,6 @@ fun AddEntryScreenPreview(){
         isEditEntry = true,
         existState = ExistState(),
         resetExistState = {},
-        innerPadding = PaddingValues(0.dp),
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp)
