@@ -2,8 +2,8 @@
 <resources>
 
     <style name="Theme.Start" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/tc_launcher1_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/tc_launcher1_foreground</item>
+        <item name="windowSplashScreenBackground">@color/splashscreen_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splashscreen_logo</item>
         <item name="postSplashScreenTheme">@style/Theme.TobaccoCellar</item>
     </style>
 
