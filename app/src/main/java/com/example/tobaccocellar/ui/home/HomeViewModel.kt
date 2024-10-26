@@ -48,8 +48,85 @@ class HomeViewModel(
 
 
     /** States and Flows **/
-    @OptIn(ExperimentalCoroutinesApi::class)
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val homeUiState: StateFlow<HomeUiState> =
+//        combine(
+//            filterViewModel.selectedBrands,
+//            filterViewModel.selectedTypes,
+//            filterViewModel.selectedUnassigned,
+//            filterViewModel.selectedFavorites,
+//            filterViewModel.selectedDislikeds,
+//            filterViewModel.selectedNeutral,
+//            filterViewModel.selectedNonNeutral,
+//            filterViewModel.selectedInStock,
+//            filterViewModel.selectedOutOfStock,
+//            preferencesRepo.isTableView,
+//            filterViewModel.blendSearchValue,
+//        ) { values ->
+//            val brands = values[0] as List<String>
+//            val types = values[1] as List<String>
+//            val unassigned = values[2] as Boolean
+//            val favorites = values[3] as Boolean
+//            val dislikeds = values[4] as Boolean
+//            val neutral = values[5] as Boolean
+//            val nonNeutral = values[6] as Boolean
+//            val inStock = values[7] as Boolean
+//            val outOfStock = values[8] as Boolean
+//            val isTableView = values[0] as Boolean
+//            val blendSearchValue = values[10] as String
+//
+//            itemsRepository.getFilteredItems(
+//                brands = brands,
+//                types = types,
+//                favorites = favorites,
+//                dislikeds = dislikeds,
+//                neutral = neutral,
+//                nonNeutral = nonNeutral,
+//                inStock = inStock,
+//                outOfStock = outOfStock
+//            ).map { items ->
+//                val filteredItems = if (blendSearchValue.isBlank()) {
+//                    if (unassigned) {
+//                        items.filter { item ->
+//                            item.type.isBlank()
+//                        }
+//                    } else {
+//                        items
+//                    }
+//                } else {
+//                    items.filter { item ->
+//                        item.blend.contains(blendSearchValue, ignoreCase = true)
+//                    }
+//                }
+//
+//                HomeUiState(
+//                    items = filteredItems,
+//                    isTableView = isTableView
+//                )
+//            }
+//        }
+//            .flattenMerge()
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+//                initialValue = HomeUiState(HomeUiState)
+//            )
+
+//    @OptIn(ExperimentalCoroutinesApi::class)
+
     val homeUiState: StateFlow<HomeUiState> =
+        preferencesRepo.isTableView
+            .map { isTableView ->
+                HomeUiState(isTableView)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = HomeUiState()
+            )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val itemsUiState: StateFlow<ItemsUiState> =
         combine(
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
@@ -60,7 +137,6 @@ class HomeViewModel(
             filterViewModel.selectedNonNeutral,
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
-            preferencesRepo.isTableView,
             filterViewModel.blendSearchValue,
         ) { values ->
             val brands = values[0] as List<String>
@@ -72,8 +148,7 @@ class HomeViewModel(
             val nonNeutral = values[6] as Boolean
             val inStock = values[7] as Boolean
             val outOfStock = values[8] as Boolean
-            val isTableView = values[9] as Boolean
-            val blendSearchValue = values[10] as String
+            val blendSearchValue = values[9] as String
 
             itemsRepository.getFilteredItems(
                 brands = brands,
@@ -99,9 +174,8 @@ class HomeViewModel(
                     }
                 }
 
-                HomeUiState(
+                ItemsUiState(
                     items = filteredItems,
-                    isTableView = isTableView
                 )
             }
         }
@@ -109,7 +183,7 @@ class HomeViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = HomeUiState(isLoading = true)
+                initialValue = ItemsUiState(isLoading = true)
             )
 
     private val _sorting = mutableStateOf(Sorting())
@@ -188,12 +262,17 @@ class HomeViewModel(
 }
 
 data class HomeUiState(
-    val items: List<Items> = listOf(),
+//    val items: List<Items> = listOf(),
     val isTableView: Boolean = false,
     val toggleContentDescription: Int =
         if (isTableView) R.string.list_view_toggle else R.string.table_view_toggle,
     val toggleIcon: Int =
         if (isTableView) R.drawable.list_view else R.drawable.table_view,
+//    val isLoading: Boolean = false
+)
+
+data class ItemsUiState(
+    val items: List<Items> = listOf(),
     val isLoading: Boolean = false
 )
 

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -124,6 +123,7 @@ fun HomeScreen(
 //    val bottomScrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
 //        BottomAppBarDefaults.exitAlwaysScrollBehavior() else null
     val homeUiState by viewmodel.homeUiState.collectAsState()
+    val itemsUiState by viewmodel.itemsUiState.collectAsState()
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val sorting by viewmodel.sorting
@@ -198,17 +198,18 @@ fun HomeScreen(
                 modifier = Modifier
                     .shadow(2.dp, shape = RectangleShape, clip = false),
                 homeUiState = homeUiState,
+                itemsUiState = itemsUiState,
                 filterViewModel = filterViewModel,
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
             )
             HomeBody(
-                items = homeUiState.items,
+                items = itemsUiState.items,
                 isTableView = isTableView,
                 onItemClick = navigateToEditEntry,
                 sorting = sorting,
                 updateSorting = viewmodel::updateSorting,
-                isLoading = homeUiState.isLoading,
+                isLoading = itemsUiState.isLoading,
                 onDismissMenu = viewmodel::onDismissMenu,
                 onShowMenu = viewmodel::onShowMenu,
                 isMenuShown = isMenuShown,
@@ -216,7 +217,6 @@ fun HomeScreen(
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(0.dp),
-                contentPadding = innerPadding,
             )
         }
     }
@@ -226,6 +226,7 @@ fun HomeScreen(
 private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
+    itemsUiState: ItemsUiState,
     filterViewModel: FilterViewModel,
     selectView: (Boolean) -> Unit,
     isTableView: Boolean,
@@ -233,7 +234,7 @@ private fun HomeHeader(
     val blendSearchText by filterViewModel.blendSearchText.collectAsState()
 
     Row (
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(LocalCustomColors.current.backgroundVariant)
             .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
@@ -298,7 +299,7 @@ private fun HomeHeader(
                 .width(12.dp)
         )
         Text(
-            text = "Entries: ${homeUiState.items.size}",
+            text = "Entries: ${itemsUiState.items.size}",
             modifier = Modifier
                 .widthIn(min = 84.dp),
             textAlign = TextAlign.End,
@@ -417,7 +418,6 @@ private fun HomeBody(
     activeItemId: Int?,
     onDismissMenu: () -> Unit,
     onShowMenu: (Int) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var showNoteDialog by remember { mutableStateOf(false) }
     var noteToDisplay by remember { mutableStateOf("") }
@@ -433,7 +433,7 @@ private fun HomeBody(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(0.dp)
     ) {
@@ -534,7 +534,7 @@ fun NoteDialog(
         //    elevation = CardDefaults.cardElevation(5.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color.Unspecified,
-            //    contentColor = LocalContentColor.current,
+        //        contentColor = MaterialTheme.colorScheme.onBackground,
             ),
         ) {
             Column(
@@ -1000,7 +1000,7 @@ fun TableLayout(
                         0, 1 -> {
                             HeaderCell(
                                 text = headerText,
-                                columnIndex = columnIndex,
+                            //    columnIndex = columnIndex,
                                 onClick = { onSortChange(columnIndex) },
                                 primarySort = sorting.columnIndex == columnIndex,
                                 sorting = sorting,
@@ -1014,7 +1014,7 @@ fun TableLayout(
                         else -> {
                             HeaderCell(
                                 text = headerText,
-                                columnIndex = columnIndex,
+                            //    columnIndex = columnIndex,
                                 primarySort = sorting.columnIndex == columnIndex,
                                 sorting = sorting,
                                 modifier = Modifier
@@ -1151,7 +1151,7 @@ fun HeaderCell(
     icon2: Painter? = null,
     iconUp: Painter? = null,
     iconDown: Painter? = null,
-    columnIndex: Int,
+ //   columnIndex: Int = 0,
     sorting: Sorting,
     primarySort: Boolean,
     onClick: (() -> Unit)? = null
@@ -1160,10 +1160,12 @@ fun HeaderCell(
 
     Box(
         modifier = modifier
-            .clickable(enabled = onClick != null, onClick = {
-                focusManager.clearFocus()
-                onClick?.invoke()
-            }
+            .clickable(
+                enabled = onClick != null,
+                onClick = {
+                    focusManager.clearFocus()
+                    onClick?.invoke()
+                }
             )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         contentAlignment = Alignment.Center
