@@ -1,7 +1,8 @@
-@file:Suppress("ConstPropertyName", "ConstPropertyName")
+@file:Suppress("ConstPropertyName")
 
 package com.example.tobaccocellar.ui.csvimport
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -97,6 +98,7 @@ fun CsvImportResultsScreen (
     }
 }
 
+@SuppressLint("AutoboxingStateCreation")
 @Composable
 fun ImportResultsBody(
     totalRecords: Int,

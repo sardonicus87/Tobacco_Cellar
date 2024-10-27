@@ -2,8 +2,8 @@ package com.example.tobaccocellar.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -320,14 +320,18 @@ fun TobaccoCellarTheme(
         }
     }
 
-    val customColors = when {
-        userThemeSetting == ThemeSetting.DARK.value -> customDark
-        userThemeSetting == ThemeSetting.LIGHT.value -> customLight
-        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
-            if (isSystemInDarkTheme()) customDark else customLight
-            } else {
-            customLight
-        }
+    val customColors = when (userThemeSetting) {
+        ThemeSetting.DARK.value -> customDark
+        ThemeSetting.LIGHT.value -> customLight
+        ThemeSetting.SYSTEM.value -> { if (isSystemInDarkTheme()) customDark else customLight }
+        else -> customLight
+//        userThemeSetting == ThemeSetting.DARK.value -> customDark
+//        userThemeSetting == ThemeSetting.LIGHT.value -> customLight
+//        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
+//            if (isSystemInDarkTheme()) customDark else customLight
+//        } else {
+//            customLight
+//        }
     }
 
     CompositionLocalProvider(LocalCustomColors provides customColors) {

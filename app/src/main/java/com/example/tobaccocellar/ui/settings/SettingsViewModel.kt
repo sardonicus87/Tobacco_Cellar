@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.data.PreferencesRepo
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -17,7 +15,7 @@ class SettingsViewModel(
 
     /** Theme Settings */
     private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM.value)
-    val themeSetting: StateFlow<String> = _themeSetting.asStateFlow()
+//    val themeSetting: StateFlow<String> = _themeSetting.asStateFlow()
 
     init {
         viewModelScope.launch {

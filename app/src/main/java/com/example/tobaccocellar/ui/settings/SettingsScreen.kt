@@ -3,7 +3,6 @@ package com.example.tobaccocellar.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -93,7 +92,6 @@ fun SettingsScreen(
                 preferencesRepo = viewmodel.preferencesRepo,
                 modifier = modifier
                     .fillMaxWidth(),
-                contentPadding = innerPadding
             )
         }
     }
@@ -106,7 +104,6 @@ private fun SettingsBody(
     saveTheme: (String) -> Unit,
     modifier: Modifier = Modifier,
     preferencesRepo: PreferencesRepo,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }

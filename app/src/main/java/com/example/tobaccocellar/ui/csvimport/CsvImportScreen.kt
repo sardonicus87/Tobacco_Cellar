@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -117,7 +116,6 @@ fun CsvImportScreen(
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(0.dp),
-                contentPadding = innerPadding
             )
         }
     }
@@ -133,7 +131,6 @@ fun CsvImportBody(
     csvUiState: CsvUiState,
     mappingOptions: MappingOptions,
     viewModel: CsvImportViewModel,
-    contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val coroutineScope = rememberCoroutineScope()
     var showErrorDialog by remember { mutableStateOf(false) }
@@ -195,7 +192,7 @@ fun CsvImportBody(
     }
 
 
-    Box() {
+    Box {
         var loading by remember { mutableStateOf(false) }
 
         Column(

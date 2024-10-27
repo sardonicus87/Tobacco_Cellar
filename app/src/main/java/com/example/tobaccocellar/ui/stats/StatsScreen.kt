@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -119,10 +118,9 @@ fun StatsScreen(
             StatsBody(
                 rawStats = rawStats,
                 filteredStats = filteredStats,
-                viewModel = viewmodel,
+        //        viewModel = viewmodel,
                 modifier = modifier
                     .fillMaxSize(),
-                contentPadding = innerPadding,
             )
         }
     }
@@ -133,9 +131,8 @@ fun StatsScreen(
 private fun StatsBody(
     rawStats: RawStats,
     filteredStats: FilteredStats,
-    viewModel: StatsViewModel,
+//    viewModel: StatsViewModel,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var rawStatsExpanded by remember { mutableStateOf(true) }
     var filterStatsExpanded by remember { mutableStateOf(false) }
@@ -265,7 +262,7 @@ private fun StatsBody(
         )
         ChartsSection(
             filteredStats = filteredStats,
-            viewModel = viewModel
+        //    viewModel = viewModel
         )
 
     }
@@ -383,7 +380,7 @@ fun FilteredStats(
 @Composable
 private fun ChartsSection(
     filteredStats: FilteredStats,
-    viewModel: StatsViewModel
+//    viewModel: StatsViewModel
 ) {
     val pieColors = listOf(
         LocalCustomColors.current.pieOne,
@@ -566,7 +563,7 @@ private fun PieChart(
     ) {
         val centerX = size.width / 2
         val centerY = size.height / 2
-        val radiusSlice = min(centerX, centerY) * 0.8f // float is padding between canvas bounds and chart
+    //    val radiusSlice = min(centerX, centerY) * 0.8f // float is padding between canvas bounds and chart
         val insideLabel = min(centerX, centerY) * onSliceLabelPosition
         val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.3f))
 

@@ -1,4 +1,5 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
+@file:Suppress("SameParameterValue")
 
 package com.example.tobaccocellar
 
@@ -64,8 +65,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -115,7 +114,7 @@ fun CellarApp(
 ) {
     CellarNavHost(navController = navController)
 
-    val application = LocalCellarApplication.current
+//    val application = LocalCellarApplication.current
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
 
@@ -134,7 +133,7 @@ fun CellarApp(
         ) {
             FilterBottomSheet(
                 filterViewModel = filterViewModel,
-                onDismiss = { filterViewModel.closeBottomSheet() },
+            //    onDismiss = { filterViewModel.closeBottomSheet() },
             )
         }
     }
@@ -452,7 +451,7 @@ fun CellarBottomAppBar(
 @Composable
 fun FilterBottomSheet(
     filterViewModel: FilterViewModel,
-    onDismiss: () -> Unit,
+//    onDismiss: () -> Unit,
 ) {
 //    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 //    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -747,14 +746,14 @@ fun BrandFilterSection(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.None,
             ),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = LocalCustomColors.current.textField,
-                unfocusedContainerColor = LocalCustomColors.current.textField,
-                disabledContainerColor = LocalCustomColors.current.textField,
-            ),
+//            colors = TextFieldDefaults.colors(
+//                focusedIndicatorColor = Color.Transparent,
+//                unfocusedIndicatorColor = Color.Transparent,
+//                disabledIndicatorColor = Color.Transparent,
+//                focusedContainerColor = LocalCustomColors.current.textField,
+//                unfocusedContainerColor = LocalCustomColors.current.textField,
+//                disabledContainerColor = LocalCustomColors.current.textField,
+//            ),
             singleLine = true,
             maxLines = 1,
         )
@@ -808,7 +807,7 @@ fun BrandFilterSection(
                     selectedBrands.take(chipCountToShow).forEach { brand ->
                         Chip(
                             text = brand,
-                            isSelected = true,
+                        //    isSelected = true,
                             onChipClicked = {},
                             onChipRemoved = { filterViewModel.updateSelectedBrands(brand, false) },
                             trailingIcon = true,
@@ -819,7 +818,7 @@ fun BrandFilterSection(
                     if (overflowCount > 0) {
                         Chip(
                             text = "+$overflowCount",
-                            isSelected = true,
+                        //    isSelected = true,
                             onChipClicked = { showOverflowPopup = true },
                             onChipRemoved = { },
                             trailingIcon = false,
@@ -857,7 +856,7 @@ fun BrandFilterSection(
                                     items(selectedBrands) { brand ->
                                         Chip(
                                             text = brand,
-                                            isSelected = true,
+                                           // isSelected = true,
                                             onChipClicked = { },
                                             onChipRemoved = {
                                                 filterViewModel.updateSelectedBrands(
@@ -917,7 +916,7 @@ private fun CustomFilterTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    colors: TextFieldColors = TextFieldDefaults.colors(),
+//    colors: TextFieldColors = TextFieldDefaults.colors(),
     singleLine: Boolean = false,
     maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
 ) {
@@ -980,10 +979,10 @@ private fun CustomFilterTextField(
 @Composable
 fun Chip(
     text: String,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
+//    isSelected: Boolean,
     onChipClicked: (String) -> Unit,
     onChipRemoved: () -> Unit,
+    modifier: Modifier = Modifier,
     trailingIcon: Boolean = true,
     maxWidth: Dp = Dp.Infinity
 ) {
@@ -1013,11 +1012,9 @@ fun Chip(
                     contentDescription = "Remove Chip",
                     modifier = Modifier.clickable { onChipRemoved() }
                 )
-            }
-            else { // do nothing
-            }
+            } else { /** do nothing */ }
         },
-        modifier = Modifier
+        modifier = modifier
             .widthIn(max = maxWidth)
             .padding(0.dp),
     )
