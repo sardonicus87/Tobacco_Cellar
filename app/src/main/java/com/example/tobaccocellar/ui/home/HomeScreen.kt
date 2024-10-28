@@ -467,12 +467,20 @@ private fun HomeBody(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                    )
                     Text(
                         text = stringResource(R.string.no_items),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier
                             .padding(0.dp),
+                    )
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1.5f)
                     )
                 }
             } else {
