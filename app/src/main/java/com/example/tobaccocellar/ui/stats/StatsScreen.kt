@@ -2,11 +2,8 @@ package com.example.tobaccocellar.ui.stats
 
 
 import android.icu.text.DecimalFormat
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -17,23 +14,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -42,7 +35,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
@@ -118,7 +110,6 @@ fun StatsScreen(
             StatsBody(
                 rawStats = rawStats,
                 filteredStats = filteredStats,
-        //        viewModel = viewmodel,
                 modifier = modifier
                     .fillMaxSize(),
             )
@@ -131,135 +122,129 @@ fun StatsScreen(
 private fun StatsBody(
     rawStats: RawStats,
     filteredStats: FilteredStats,
-//    viewModel: StatsViewModel,
     modifier: Modifier = Modifier,
 ) {
-    var rawStatsExpanded by remember { mutableStateOf(true) }
-    var filterStatsExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp, vertical = 16.dp),
+            .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        Text(
-            text = stringResource(R.string.quick_stats),
+        Row(
             modifier = Modifier
-                .padding(start = 8.dp, end = 4.dp),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Start,
-        )
+                .fillMaxWidth()
+                .background(color = LocalCustomColors.current.backgroundVariant)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.quick_stats),
+                modifier = Modifier
+                    .padding(start = 8.dp),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
         Spacer(
             modifier = Modifier
                 .height(10.dp)
         )
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .wrapContentHeight(),
-            verticalArrangement = Arrangement.Top,
+                .wrapContentHeight()
+                .padding(start = 24.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.SpaceAround,
         ) {
             // Raw Stats
-            Row(
+            Column(
                 modifier = Modifier
-                    .clickable(onClick = { rawStatsExpanded = !rawStatsExpanded }),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
+                    .weight(1f, false),
+                horizontalAlignment = Alignment.Start,
             ) {
-                Text(
-                    text = "Raw Stats",
+                Row(
                     modifier = Modifier
-                        .padding(start = 8.dp, end = 4.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Start,
-                )
-                Icon(
-                    painter = if (rawStatsExpanded) painterResource(id = R.drawable.arrow_up) else painterResource(
-                        id = R.drawable.arrow_down
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(24.dp),
-                    tint = LocalContentColor.current
-                )
-            }
-            AnimatedVisibility(
-                visible = rawStatsExpanded,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .padding(0.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Raw Stats",
+                        modifier = Modifier
+                            .padding(vertical = 2.dp),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Start,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
                 RawStats(
                     rawStats = rawStats,
+                    modifier = Modifier
                 )
             }
-            Spacer(
-                modifier = Modifier
-                    .height(16.dp)
-            )
 
-            Row(
+            // Filtered Stats
+            Column(
                 modifier = Modifier
-                    .clickable(onClick = { filterStatsExpanded = !filterStatsExpanded }),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
+                    .weight(1f, false)
+                    .padding(start = 16.dp),
+                horizontalAlignment = Alignment.Start,
             ) {
-                Text(
-                    text = "Filtered Stats",
+                Row(
                     modifier = Modifier
-                        .padding(start = 8.dp, end = 4.dp, bottom = 0.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Start,
-                )
-                Icon(
-                    painter = if (filterStatsExpanded) painterResource(id = R.drawable.arrow_up) else painterResource(
-                        id = R.drawable.arrow_down
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(24.dp),
-                    tint = LocalContentColor.current
-                )
-            }
-            AnimatedVisibility(
-                visible = filterStatsExpanded,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .padding(0.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Filtered Stats",
+                        modifier = Modifier
+                            .padding(vertical = 2.dp),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Start,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+
                 FilteredStats(
                     filteredStats = filteredStats,
+                    modifier = Modifier
                 )
             }
         }
         Spacer(
             modifier = Modifier
-                .height(20.dp)
-        )
-        HorizontalDivider(
-            modifier = Modifier
-                .padding(horizontal = 8.dp),
-            thickness = 1.dp,
-        )
-        Spacer(
-            modifier = Modifier
-                .height(20.dp)
+                .height(10.dp)
         )
 
         // Charts
-        Text(
-            text = "Charts",
+        Row(
             modifier = Modifier
-                .padding(horizontal = 8.dp),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-        )
+                .fillMaxWidth()
+                .background(color = LocalCustomColors.current.backgroundVariant)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = "Charts",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
         ChartsSection(
             filteredStats = filteredStats,
         //    viewModel = viewModel
@@ -272,6 +257,7 @@ private fun StatsBody(
 @Composable
 fun RawStats(
     rawStats: RawStats,
+    modifier: Modifier = Modifier
 ) {
     val totalByType = rawStats.totalByType.toList().sortedBy {
         when (it.first) {
@@ -282,12 +268,11 @@ fun RawStats(
             "Other" -> 4
             else -> 5
         }
-    }.joinToString(separator = ", ") { "${it.second} ${it.first}" }
+    }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 0.dp)
             .wrapContentHeight(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
@@ -299,7 +284,7 @@ fun RawStats(
         Text(
             text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                     "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                    "${rawStats.totalQuantity} total \"quantity\", " +
+                    "${rawStats.totalQuantity} total \"quantity\"\n" +
                     "${rawStats.totalZeroQuantity} out of stock",
             modifier = Modifier
                 .fillMaxWidth()
@@ -318,12 +303,17 @@ fun RawStats(
             textAlign = TextAlign.Start,
             softWrap = true
         )
+        Spacer(
+            modifier = Modifier
+                .height(8.dp)
+        )
     }
 }
 
 @Composable
 fun FilteredStats(
     filteredStats: FilteredStats,
+    modifier: Modifier = Modifier
 ) {
     val totalByTypeFiltered = filteredStats.totalByType.toList().sortedBy {
         when (it.first) {
@@ -334,12 +324,11 @@ fun FilteredStats(
             "Other" -> 4
             else -> 5
         }
-    }.joinToString(separator = ", ") { "${it.second} ${it.first}" }
+    }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 0.dp)
             .wrapContentHeight(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
@@ -351,7 +340,7 @@ fun FilteredStats(
         Text(
             text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
                     "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
-                    "${filteredStats.totalQuantity} total \"quantity\", " +
+                    "${filteredStats.totalQuantity} total \"quantity\"\n" +
                     "${filteredStats.totalZeroQuantity} out of stock",
             modifier = Modifier
                 .fillMaxWidth()
@@ -361,17 +350,21 @@ fun FilteredStats(
             softWrap = true,
         )
 
-        if (filteredStats.totalByType.toList().count() > 1) {
-            Text(
-                text = totalByTypeFiltered,
-                modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .padding(0.dp),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true
-            )
-        }
+        Text(
+            text = totalByTypeFiltered,
+            modifier = Modifier
+                .fillMaxWidth(fraction = 0.75f)
+                .padding(0.dp),
+            fontSize = 15.sp,
+            textAlign = TextAlign.Start,
+            softWrap = true
+        )
+
+
+        Spacer(
+            modifier = Modifier
+                .height(8.dp)
+        )
     }
 }
 
@@ -401,7 +394,7 @@ private fun ChartsSection(
             .padding(horizontal = 20.dp, vertical = 0.dp)
             .wrapContentHeight(),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(
             modifier = Modifier
@@ -411,8 +404,10 @@ private fun ChartsSection(
             text = "*Charts are filter-reactive and display a maximum of the top 10 results. " +
                     "Some charts may be redundant/irrelevant depending on the chosen filters.",
             color = LocalContentColor.current.copy(alpha = 0.75f),
-            modifier = Modifier,
+            modifier = Modifier
+                .fillMaxWidth(),
             fontSize = 13.sp,
+            textAlign = TextAlign.Start,
             softWrap = true,
         )
         Spacer(
