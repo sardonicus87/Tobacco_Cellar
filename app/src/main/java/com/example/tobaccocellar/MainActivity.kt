@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+//        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         installSplashScreen()
 
@@ -40,7 +41,6 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-//        enableEdgeToEdge()
 //        WindowCompat.setDecorFitsSystemWindows(window, true)
 
         setContent {
