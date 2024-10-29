@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 
 object SettingsDestination : NavigationDestination {
     override val route = "settings"
-    override val titleRes = R.string.settings
+    override val titleRes = R.string.settings_title
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -247,7 +247,7 @@ fun AboutSection(
             onClick = {  },
             enabled = false,
             modifier = Modifier
-                .padding(start = 0.dp)
+                .padding(start = 4.dp)
         ) {
             Text(
                 text = "Change Log",
