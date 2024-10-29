@@ -27,8 +27,8 @@ import com.example.tobaccocellar.ui.navigation.NavigationDestination
 import kotlinx.coroutines.launch
 
 object EditEntryDestination : NavigationDestination {
-    override val route = "edit_entry"
-    override val titleRes = R.string.edit_entry
+    override val route = "edit_entry_title"
+    override val titleRes = R.string.edit_entry_title
     @Suppress("ConstPropertyName")
     const val itemsIdArg = "itemsId"
     val routeWithArgs = "$route/{$itemsIdArg}"

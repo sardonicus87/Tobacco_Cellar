@@ -5,10 +5,12 @@
     // Page Titles //
     <string name="home_title">Cellar</string>
     <string name="stats_title">Stats</string>
-    <string name="add_entry">Add Entry</string>
-    <string name="edit_entry">Edit Entry</string>
+    <string name="add_entry_title">Add Entry</string>
+    <string name="edit_entry_title">Edit Entry</string>
     <string name="csv_import_title">CSV Import Wizard</string>
     <string name="import_results_title">CSV Import Results</string>
+    <string name="settings_title">Settings</string>
+    <string name="license_title">Licenses</string>
 
     // Button Text //
     <string name="filter_items">Filter</string>
@@ -49,11 +51,9 @@
     <string name="quick_stats">Quick Stats</string>
 
 
-
     // Content Descriptions //
     <string name="table_view_toggle">Table View</string>
     <string name="list_view_toggle">List View</string>
-
 
 
     <string name="settings">Settings</string>

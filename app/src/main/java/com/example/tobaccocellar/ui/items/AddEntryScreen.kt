@@ -80,7 +80,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -99,7 +98,7 @@ import kotlinx.coroutines.withContext
 
 object AddEntryDestination : NavigationDestination {
     override val route = "add_entry"
-    override val titleRes = R.string.add_entry
+    override val titleRes = R.string.add_entry_title
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1126,28 +1125,4 @@ fun TypeDropDown(
             }
         }
     }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun AddEntryScreenPreview(){
-    AddEntryBody(
-        itemUiState = ItemUiState(
-            ItemDetails(
-                brand = "Cornell & Diehl", blend = "Eight State Burley (2024)", type = "Burley", quantity = 2, disliked = false
-            )
-        ),
-        onItemValueChange = {},
-        onSaveClick = {},
-        onDeleteClick = {},
-        navigateToEditEntry = {},
-        isEditEntry = true,
-        existState = ExistState(),
-        resetExistState = {},
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    )
 }
