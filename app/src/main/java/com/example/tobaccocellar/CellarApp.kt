@@ -52,6 +52,8 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxColors
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -572,11 +574,21 @@ fun OtherFiltersSection(
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    CheckboxWithLabel(
-                        text = "Favorites",
-                        checked = favorites,
-                        onCheckedChange = { filterViewModel.updateSelectedFavorites(it) }
-                    )
+                    Box {
+                        CheckboxWithLabel(
+                            text = "",
+                            checked = nonNeutral,
+                            onCheckedChange = {  },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            )
+                        )
+                        CheckboxWithLabel(
+                            text = "Favorites",
+                            checked = favorites,
+                            onCheckedChange = { filterViewModel.updateSelectedFavorites(it) },
+                        )
+                    }
                     CheckboxWithLabel(
                         text = "Both",
                         checked = nonNeutral,
@@ -588,11 +600,21 @@ fun OtherFiltersSection(
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    CheckboxWithLabel(
-                        text = "Dislikes",
-                        checked = dislikeds,
-                        onCheckedChange = { filterViewModel.updateSelectedDislikeds(it) }
-                    )
+                    Box {
+                        CheckboxWithLabel(
+                            text = "",
+                            checked = nonNeutral,
+                            onCheckedChange = {  },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            )
+                        )
+                        CheckboxWithLabel(
+                            text = "Dislikes",
+                            checked = dislikeds,
+                            onCheckedChange = { filterViewModel.updateSelectedDislikeds(it) },
+                        )
+                    }
                     CheckboxWithLabel(
                         text = "Neither",
                         checked = neutral,
@@ -636,7 +658,9 @@ fun CheckboxWithLabel(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
+    colors: CheckboxColors = CheckboxDefaults.colors()
 ) {
     Row(
         modifier = modifier
@@ -645,12 +669,16 @@ fun CheckboxWithLabel(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier
-                .padding(0.dp)
-        )
+        Box {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = enabled,
+                colors = colors,
+            )
+        }
         Text(
             text = text,
             modifier = Modifier
