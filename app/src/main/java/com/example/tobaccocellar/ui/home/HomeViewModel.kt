@@ -126,7 +126,7 @@ class HomeViewModel(
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val itemsUiState: StateFlow<ItemsUiState> =
+    val itemsState: StateFlow<ItemsState> =
         combine(
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
@@ -174,7 +174,7 @@ class HomeViewModel(
                     }
                 }
 
-                ItemsUiState(
+                ItemsState(
                     items = filteredItems,
                 )
             }
@@ -183,7 +183,7 @@ class HomeViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = ItemsUiState(isLoading = true)
+                initialValue = ItemsState(isLoading = true)
             )
 
     private val _sorting = mutableStateOf(Sorting())
@@ -271,7 +271,7 @@ data class HomeUiState(
 //    val isLoading: Boolean = false
 )
 
-data class ItemsUiState(
+data class ItemsState(
     val items: List<Items> = listOf(),
     val isLoading: Boolean = false
 )

@@ -123,7 +123,7 @@ fun HomeScreen(
 //    val bottomScrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
 //        BottomAppBarDefaults.exitAlwaysScrollBehavior() else null
     val homeUiState by viewmodel.homeUiState.collectAsState()
-    val itemsUiState by viewmodel.itemsUiState.collectAsState()
+    val itemsState by viewmodel.itemsState.collectAsState()
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val sorting by viewmodel.sorting
@@ -198,18 +198,18 @@ fun HomeScreen(
                 modifier = Modifier
                     .shadow(2.dp, shape = RectangleShape, clip = false),
                 homeUiState = homeUiState,
-                itemsUiState = itemsUiState,
+                itemsState = itemsState,
                 filterViewModel = filterViewModel,
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
             )
             HomeBody(
-                items = itemsUiState.items,
+                items = itemsState.items,
                 isTableView = isTableView,
                 onItemClick = navigateToEditEntry,
                 sorting = sorting,
                 updateSorting = viewmodel::updateSorting,
-                isLoading = itemsUiState.isLoading,
+                isLoading = itemsState.isLoading,
                 onDismissMenu = viewmodel::onDismissMenu,
                 onShowMenu = viewmodel::onShowMenu,
                 isMenuShown = isMenuShown,
@@ -226,7 +226,7 @@ fun HomeScreen(
 private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
-    itemsUiState: ItemsUiState,
+    itemsState: ItemsState,
     filterViewModel: FilterViewModel,
     selectView: (Boolean) -> Unit,
     isTableView: Boolean,
@@ -290,6 +290,7 @@ private fun HomeHeader(
                     }
                 },
                 onImeAction = {
+                    filterViewModel.resetFilter()
                     filterViewModel.onBlendSearch(blendSearchText)
                 }
             )
@@ -299,7 +300,7 @@ private fun HomeHeader(
                 .width(12.dp)
         )
         Text(
-            text = "Entries: ${itemsUiState.items.size}",
+            text = "Entries: ${itemsState.items.size}",
             modifier = Modifier
                 .widthIn(min = 84.dp),
             textAlign = TextAlign.End,
