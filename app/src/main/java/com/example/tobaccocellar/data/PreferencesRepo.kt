@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
-@Suppress("unused")
 class PreferencesRepo(
     private val dataStore: DataStore<Preferences>
 ) {
