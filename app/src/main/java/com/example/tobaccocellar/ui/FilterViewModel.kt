@@ -3,12 +3,17 @@ package com.example.tobaccocellar.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
+// @OptIn(FlowPreview::class)
 class FilterViewModel (
     private val itemsRepository: ItemsRepository
 ): ViewModel() {
@@ -53,7 +58,24 @@ class FilterViewModel (
 
 
     /** Filtering **/
+    // selection states //
+    val sheetSelectedBrands = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedTypes = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedUnassigned = MutableStateFlow(false)
+    val sheetSelectedFavorites = MutableStateFlow(false)
+    val sheetSelectedDislikeds = MutableStateFlow(false)
+    val sheetSelectedNeutral = MutableStateFlow(false)
+    val sheetSelectedNonNeutral = MutableStateFlow(false)
+    val sheetSelectedInStock = MutableStateFlow(false)
+    val sheetSelectedOutOfStock = MutableStateFlow(false)
+
+
     // Filter states //
+    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
+    object FilterUpdateEvent
+
+    private var inactivityTimerJob: Job? = null
+
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
     val selectedBrands: StateFlow<List<String>> = _selectedBrands
 
@@ -82,80 +104,300 @@ class FilterViewModel (
     val selectedOutOfStock: StateFlow<Boolean> = _selectedOutOfStock
 
 
-    // Filtering update functions //
+    // filter selection update functions //
+//    // update on "apply filtering" version //
+//    fun updateSelectedBrands(brand: String, isSelected: Boolean) {
+//        if (isSelected) { sheetSelectedBrands.value += brand }
+//        else { sheetSelectedBrands.value -= brand }
+//    }
+
+//    // original live/direct update version //
+//    fun updateSelectedBrands(brand: String, isSelected: Boolean) {
+//        if (isSelected) { _selectedBrands.value += brand }
+//        else { _selectedBrands.value -= brand }
+//    }
+
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
-        if (isSelected) { _selectedBrands.value += brand }
-        else { _selectedBrands.value -= brand }
+        if (isSelected) {
+            sheetSelectedBrands.value += brand
+        } else {
+            sheetSelectedBrands.value -= brand
+        }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun clearAllSelectedBrands() {
+        sheetSelectedBrands.value = emptyList()
         _selectedBrands.value = emptyList()
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
         if (isSelected) {
-            _selectedUnassigned.value = false
-            _selectedTypes.value += type
+            sheetSelectedUnassigned.value = false
+            sheetSelectedTypes.value += type
+        } else {
+            sheetSelectedTypes.value -= type
         }
-        else { _selectedTypes.value -= type }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        if (isSelected) {
+//            _selectedUnassigned.value = false
+//            _selectedTypes.value += type
+//        }
+//        else { _selectedTypes.value -= type }
     }
 
     fun updateSelectedUnassigned(isSelected: Boolean) {
-        _selectedUnassigned.value = isSelected
+        sheetSelectedUnassigned.value = isSelected
         if (isSelected) {
-            _selectedTypes.value = emptyList()
+            sheetSelectedTypes.value = emptyList()
         }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedUnassigned.value = isSelected
+//        if (isSelected) {
+//            _selectedTypes.value = emptyList()
+//        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
-        _selectedFavorites.value = isSelected
+        sheetSelectedFavorites.value = isSelected
         if (isSelected) {
-            _selectedDislikeds.value = false
-            _selectedNeutral.value = false
-            _selectedNonNeutral.value = false
+            sheetSelectedDislikeds.value = false
+            sheetSelectedNeutral.value = false
+            sheetSelectedNonNeutral.value = false
         }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedFavorites.value = isSelected
+//        if (isSelected) {
+//            _selectedDislikeds.value = false
+//            _selectedNeutral.value = false
+//            _selectedNonNeutral.value = false
+//        }
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
-        _selectedDislikeds.value = isSelected
+        sheetSelectedDislikeds.value = isSelected
         if (isSelected) {
-            _selectedFavorites.value = false
-            _selectedNeutral.value = false
-            _selectedNonNeutral.value = false
+            sheetSelectedFavorites.value = false
+            sheetSelectedNeutral.value = false
+            sheetSelectedNonNeutral.value = false
         }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedDislikeds.value = isSelected
+//        if (isSelected) {
+//            _selectedFavorites.value = false
+//            _selectedNeutral.value = false
+//            _selectedNonNeutral.value = false
+//        }
     }
 
     fun updateSelectedNeutral(isSelected: Boolean) {
-        _selectedNeutral.value = isSelected
+        sheetSelectedNeutral.value = isSelected
         if (isSelected) {
-            _selectedFavorites.value = false
-            _selectedDislikeds.value = false
-            _selectedNonNeutral.value = false
+            sheetSelectedFavorites.value = false
+            sheetSelectedDislikeds.value = false
+            sheetSelectedNonNeutral.value = false
         }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedNeutral.value = isSelected
+//        if (isSelected) {
+//            _selectedFavorites.value = false
+//            _selectedDislikeds.value = false
+//            _selectedNonNeutral.value = false
+//        }
     }
 
     fun updateSelectedNonNeutral(isSelected: Boolean) {
-        _selectedNonNeutral.value = isSelected
+        sheetSelectedNonNeutral.value = isSelected
         if (isSelected) {
-            _selectedFavorites.value = false
-            _selectedDislikeds.value = false
-            _selectedNeutral.value = false
+            sheetSelectedFavorites.value = false
+            sheetSelectedDislikeds.value = false
+            sheetSelectedNeutral.value = false
         }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedNonNeutral.value = isSelected
+//        if (isSelected) {
+//            _selectedFavorites.value = false
+//            _selectedDislikeds.value = false
+//            _selectedNeutral.value = false
+//        }
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
-        _selectedInStock.value = isSelected
+        sheetSelectedInStock.value = isSelected
         if (isSelected) {
-            _selectedOutOfStock.value = false
+            sheetSelectedOutOfStock.value = false
         }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedInStock.value = isSelected
+//        if (isSelected) {
+//            _selectedOutOfStock.value = false
+//        }
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
-        _selectedOutOfStock.value = isSelected
+        sheetSelectedOutOfStock.value = isSelected
         if (isSelected) {
-            _selectedInStock.value = false
+            sheetSelectedInStock.value = false
+        }
+        inactivityTimerJob?.cancel()
+        inactivityTimerJob = viewModelScope.launch {
+            delay(INACTIVITY_DURATION)
+            filterUpdateEvents.emit(FilterUpdateEvent)
+        }
+
+//        viewModelScope.launch {
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
+
+//        _selectedOutOfStock.value = isSelected
+//        if (isSelected) {
+//            _selectedInStock.value = false
+//        }
+    }
+
+    //Apply Filtering//
+//    private fun updateStateFlows() {
+//        _selectedBrands.value = sheetSelectedBrands.value
+//        _selectedTypes.value = sheetSelectedTypes.value
+//        _selectedUnassigned.value = sheetSelectedUnassigned.value
+//        _selectedFavorites.value = sheetSelectedFavorites.value
+//        _selectedDislikeds.value = sheetSelectedDislikeds.value
+//        _selectedNeutral.value = sheetSelectedNeutral.value
+//        _selectedNonNeutral.value = sheetSelectedNonNeutral.value
+//        _selectedInStock.value = sheetSelectedInStock.value
+//        _selectedOutOfStock.value = sheetSelectedOutOfStock.value
+//    }
+//
+//    fun applyFilter() {
+//        updateStateFlows()
+//    }
+
+//    init {
+//        viewModelScope.launch {
+//            filterUpdateEvents
+//                .debounce(600)
+//                .collect {
+//                    _selectedBrands.value = sheetSelectedBrands.value
+//                    _selectedTypes.value = sheetSelectedTypes.value
+//                    _selectedUnassigned.value = sheetSelectedUnassigned.value
+//                    _selectedFavorites.value = sheetSelectedFavorites.value
+//                    _selectedDislikeds.value = sheetSelectedDislikeds.value
+//                    _selectedNeutral.value = sheetSelectedNeutral.value
+//                    _selectedNonNeutral.value = sheetSelectedNonNeutral.value
+//                    _selectedInStock.value = sheetSelectedInStock.value
+//                    _selectedOutOfStock.value = sheetSelectedOutOfStock.value
+//                }
+//        }
+//    }
+
+    init {
+        viewModelScope.launch {
+            filterUpdateEvents.collect {
+                withTimeoutOrNull(INACTIVITY_DURATION) {
+                    _selectedBrands.value = sheetSelectedBrands.value
+                    _selectedTypes.value = sheetSelectedTypes.value
+                    _selectedUnassigned.value = sheetSelectedUnassigned.value
+                    _selectedFavorites.value = sheetSelectedFavorites.value
+                    _selectedDislikeds.value = sheetSelectedDislikeds.value
+                    _selectedNeutral.value = sheetSelectedNeutral.value
+                    _selectedNonNeutral.value = sheetSelectedNonNeutral.value
+                    _selectedInStock.value = sheetSelectedInStock.value
+                    _selectedOutOfStock.value = sheetSelectedOutOfStock.value
+                }
+            }
         }
     }
+
+    companion object {
+        private const val INACTIVITY_DURATION = 600L
+    }
+
+    fun resetFilter() {
+        sheetSelectedBrands.value = emptyList()
+        sheetSelectedTypes.value = emptyList()
+        sheetSelectedUnassigned.value = false
+        sheetSelectedFavorites.value = false
+        sheetSelectedDislikeds.value = false
+        sheetSelectedNeutral.value = false
+        sheetSelectedNonNeutral.value = false
+        sheetSelectedInStock.value = false
+        sheetSelectedOutOfStock.value = false
+
+        _selectedBrands.value = emptyList()
+        _selectedTypes.value = emptyList()
+        _selectedUnassigned.value = false
+        _selectedFavorites.value = false
+        _selectedDislikeds.value = false
+        _selectedNeutral.value = false
+        _selectedNonNeutral.value = false
+        _selectedInStock.value = false
+        _selectedOutOfStock.value = false
+    }
+
 
     // get vals //
     private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
