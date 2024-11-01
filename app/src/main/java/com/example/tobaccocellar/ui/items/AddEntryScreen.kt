@@ -790,7 +790,23 @@ fun ItemInputForm(
                     TextField(
                         value = itemDetails.notes,
                         onValueChange = {
-                            onValueChange(itemDetails.copy(notes = it))
+                            var updatedText = it
+                            if (it.contains("\n")) {
+                                val lines = it.lines()
+                                if (lines.size > 1) {
+                                    val lastLine = lines[lines.size - 2]
+                                    val currentLine = lines.last()
+                                    val lastWord = lastLine.substringAfterLast(" ")
+                                    if (currentLine.startsWith(lastWord)) {
+                                        if (currentLine.length == lastWord.length + 1) {
+                                            updatedText = it.dropLast(lastWord.length + 1)
+                                        } else {
+                                            updatedText = it.dropLast(lastWord.length)
+                                        }
+                                    }
+                                }
+                            }
+                            onValueChange(itemDetails.copy(notes = updatedText))
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
