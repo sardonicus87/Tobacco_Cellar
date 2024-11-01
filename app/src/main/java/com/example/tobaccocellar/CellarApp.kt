@@ -70,6 +70,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -85,6 +86,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -122,7 +124,10 @@ fun CellarApp(
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
-            onDismissRequest = { filterViewModel.closeBottomSheet() },
+            onDismissRequest = {
+            //    filterViewModel.applyFilter()
+                filterViewModel.closeBottomSheet()
+            },
             modifier = Modifier
                 .statusBarsPadding(),
             sheetState = rememberModalBottomSheetState(
@@ -493,7 +498,10 @@ fun FilterBottomSheet(
                 horizontalAlignment = Alignment.End
             ) {
                 IconButton(
-                    onClick = { filterViewModel.closeBottomSheet() },
+                    onClick = {
+                      //  filterViewModel.applyFilter()
+                        filterViewModel.closeBottomSheet()
+                              },
                     modifier = Modifier
                         .padding(0.dp)
                 ) {
@@ -542,18 +550,34 @@ fun OtherFiltersSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val favorites by filterViewModel.selectedFavorites.collectAsState()
-    val dislikeds by filterViewModel.selectedDislikeds.collectAsState()
-    val neutral by filterViewModel.selectedNeutral.collectAsState()
-    val nonNeutral by filterViewModel.selectedNonNeutral.collectAsState()
-    val inStock by filterViewModel.selectedInStock.collectAsState()
-    val outOfStock by filterViewModel.selectedOutOfStock.collectAsState()
+//    val favorites by filterViewModel.selectedFavorites.collectAsState()
+//    val dislikeds by filterViewModel.selectedDislikeds.collectAsState()
+//    val neutral by filterViewModel.selectedNeutral.collectAsState()
+//    val nonNeutral by filterViewModel.selectedNonNeutral.collectAsState()
+//    val inStock by filterViewModel.selectedInStock.collectAsState()
+//    val outOfStock by filterViewModel.selectedOutOfStock.collectAsState()
+
+    val favorites by filterViewModel.sheetSelectedFavorites.collectAsState()
+    val dislikeds by filterViewModel.sheetSelectedDislikeds.collectAsState()
+    val neutral by filterViewModel.sheetSelectedNeutral.collectAsState()
+    val nonNeutral by filterViewModel.sheetSelectedNonNeutral.collectAsState()
+    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
+    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
+
+    // tristate checkbox state
+    val (state) = mutableStateOf(nonNeutral)
+    val (state2) = mutableStateOf(neutral)
+    val triState =
+        if (state) ToggleableState.On
+        else if (state2) ToggleableState.Indeterminate
+        else ToggleableState.Off
+
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -575,12 +599,15 @@ fun OtherFiltersSection(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Box {
-                        CheckboxWithLabel(
+                        TriStateCheckWithLabel(
                             text = "",
-                            checked = nonNeutral,
-                            onCheckedChange = {  },
+                            state = triState,
+                            onClick = { },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                checkedColor =
+                                if (state) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else if (state2) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                else Color.Transparent
                             )
                         )
                         CheckboxWithLabel(
@@ -601,12 +628,15 @@ fun OtherFiltersSection(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Box {
-                        CheckboxWithLabel(
+                        TriStateCheckWithLabel(
                             text = "",
-                            checked = nonNeutral,
-                            onCheckedChange = {  },
+                            state = triState,
+                            onClick = { },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                checkedColor =
+                                if (state) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else if (state2) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                else Color.Transparent
                             )
                         )
                         CheckboxWithLabel(
@@ -616,7 +646,7 @@ fun OtherFiltersSection(
                         )
                     }
                     CheckboxWithLabel(
-                        text = "Neither",
+                        text = "Neutral",
                         checked = neutral,
                         onCheckedChange = { filterViewModel.updateSelectedNeutral(it) },
                     )
@@ -627,14 +657,15 @@ fun OtherFiltersSection(
                     )
             }
         }
-//        Spacer(
-//            modifier = Modifier
-//                .weight(1f)
-//        )
         Column(
             modifier = Modifier
-                .padding(vertical = 4.dp)
-                .width(intrinsicSize = IntrinsicSize.Max),
+                .border(
+                    width = 1.dp,
+                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max)
+                .padding(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
             horizontalAlignment = Alignment.Start
         ) {
@@ -689,6 +720,43 @@ fun CheckboxWithLabel(
     }
 }
 
+@Composable
+fun TriStateCheckWithLabel(
+    text: String,
+    state: ToggleableState,
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    fontColor: Color = LocalContentColor.current,
+    colors: CheckboxColors = CheckboxDefaults.colors()
+) {
+    Row(
+        modifier = modifier
+            .padding(0.dp)
+            .height(36.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box {
+            TriStateCheckbox(
+                state = state,
+                onClick = onClick,
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = enabled,
+                colors = colors,
+            )
+        }
+        Text(
+            text = text,
+            modifier = Modifier
+                .padding(end = 8.dp),
+            color = fontColor,
+            fontSize = 15.sp,
+        )
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TypeFilterSection(
@@ -696,8 +764,11 @@ fun TypeFilterSection(
     modifier: Modifier = Modifier,
 ) {
     val availableTypes = listOf("Aromatic", "English", "Burley", "Virginia", "Other")
-    val selectedTypes by filterViewModel.selectedTypes.collectAsState()
-    val selectedUnassigned by filterViewModel.selectedUnassigned.collectAsState()
+//    val selectedTypes by filterViewModel.selectedTypes.collectAsState()
+//    val selectedUnassigned by filterViewModel.selectedUnassigned.collectAsState()
+
+    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
+    val selectedUnassigned by filterViewModel.sheetSelectedUnassigned.collectAsState()
 
     Column(
         modifier = modifier
@@ -747,7 +818,9 @@ fun BrandFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
-    val selectedBrands by filterViewModel.selectedBrands.collectAsState()
+//    val selectedBrands by filterViewModel.selectedBrands.collectAsState()
+
+    val selectedBrands by filterViewModel.sheetSelectedBrands.collectAsState()
     val allBrands by filterViewModel.availableBrands.collectAsState()
     var brandSearchText by remember { mutableStateOf("") }
     var filteredBrands by remember { mutableStateOf(allBrands) }
@@ -835,7 +908,6 @@ fun BrandFilterSection(
                     selectedBrands.take(chipCountToShow).forEach { brand ->
                         Chip(
                             text = brand,
-                        //    isSelected = true,
                             onChipClicked = {},
                             onChipRemoved = { filterViewModel.updateSelectedBrands(brand, false) },
                             trailingIcon = true,
@@ -846,7 +918,6 @@ fun BrandFilterSection(
                     if (overflowCount > 0) {
                         Chip(
                             text = "+$overflowCount",
-                        //    isSelected = true,
                             onChipClicked = { showOverflowPopup = true },
                             onChipRemoved = { },
                             trailingIcon = false,
