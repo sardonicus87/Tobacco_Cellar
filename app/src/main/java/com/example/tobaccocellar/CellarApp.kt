@@ -607,6 +607,10 @@ fun OtherFiltersSection(
                                 checkedColor =
                                 if (state) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                                 else if (state2) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                else Color.Transparent,
+                                checkmarkColor =
+                                if (state) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                else if (state2) MaterialTheme.colorScheme.onError.copy(alpha = 0.75f)
                                 else Color.Transparent
                             )
                         )
@@ -636,6 +640,10 @@ fun OtherFiltersSection(
                                 checkedColor =
                                 if (state) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                                 else if (state2) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                else Color.Transparent,
+                                checkmarkColor =
+                                if (state) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                else if (state2) MaterialTheme.colorScheme.onError.copy(alpha = 0.75f)
                                 else Color.Transparent
                             )
                         )
