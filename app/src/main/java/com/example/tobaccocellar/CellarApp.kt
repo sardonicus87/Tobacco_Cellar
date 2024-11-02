@@ -462,6 +462,7 @@ fun FilterBottomSheet(
 ) {
 //    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 //    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
 
     Column (
         modifier = Modifier
@@ -470,13 +471,13 @@ fun FilterBottomSheet(
             .imePadding()
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.Start
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(0.dp),
+                .padding(bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -516,32 +517,42 @@ fun FilterBottomSheet(
         }
         Spacer(
             modifier = Modifier
-                .height(4.dp)
+                .height(8.dp)
         )
         BrandFilterSection(
             filterViewModel = filterViewModel,
             modifier = Modifier
-        )
-        Spacer(
-            modifier = Modifier
-                .height(4.dp)
+                .padding(bottom = 12.dp)
         )
         TypeFilterSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier,
-        )
-        Spacer(
             modifier = Modifier
-                .height(4.dp)
+                .padding(bottom = 12.dp),
         )
         OtherFiltersSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier,
-        )
-        Spacer(
             modifier = Modifier
-                .height(4.dp)
+                .padding(bottom = 6.dp),
         )
+        TextButton(
+            onClick = { filterViewModel.resetFilter() },
+            modifier = Modifier
+                .offset(x = (-4).dp),
+            enabled = filtersApplied,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "",
+                modifier = Modifier
+                    .padding(end = 3.dp)
+                    .size(20.dp)
+            )
+            Text(
+                text = "Clear All",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }
 
@@ -610,7 +621,7 @@ fun OtherFiltersSection(
                                 else Color.Transparent,
                                 checkmarkColor =
                                 if (state) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else if (state2) MaterialTheme.colorScheme.onError.copy(alpha = 0.75f)
+                                else if (state2) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                 else Color.Transparent
                             )
                         )
@@ -643,7 +654,7 @@ fun OtherFiltersSection(
                                 else Color.Transparent,
                                 checkmarkColor =
                                 if (state) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else if (state2) MaterialTheme.colorScheme.onError.copy(alpha = 0.75f)
+                                else if (state2) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                 else Color.Transparent
                             )
                         )
@@ -984,13 +995,14 @@ fun BrandFilterSection(
                                             filterViewModel.clearAllSelectedBrands()
                                             showOverflowPopup = false
                                         },
-                                        modifier = Modifier,
+                                        modifier = Modifier
+                                            .offset(x = (-4).dp),
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
                                             contentDescription = "",
                                             modifier = Modifier
-                                                .padding(end = 4.dp)
+                                                .padding(end = 3.dp)
                                                 .size(20.dp)
                                         )
                                         Text(
