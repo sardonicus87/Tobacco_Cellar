@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="tc_launcher1_background">#A9F2CD</color>
+    <color name="tc_launcher1_background">#FFFFFF</color>
+    <!-- original color A9F2CD -->
 </resources>
