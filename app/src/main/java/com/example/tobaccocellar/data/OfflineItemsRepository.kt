@@ -90,7 +90,7 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     /** Special functions **/
     // filtering return function //
-    override fun getFilteredItems(
+    override suspend fun getFilteredItems(
         brands: List<String>?,
         types: List<String>?,
         favorites: Boolean?,
