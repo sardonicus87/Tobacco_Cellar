@@ -744,7 +744,7 @@ private fun CellarListItem(
                                         .width(2.dp)
                                 )
                                 Icon(
-                                    painter = painterResource(id = R.drawable.favorite_heart_filled_18),
+                                    painter = painterResource(id = R.drawable.heart_filled_24),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(17.dp),
@@ -757,7 +757,7 @@ private fun CellarListItem(
                                         .width(2.dp)
                                 )
                                 Icon(
-                                    painter = painterResource(id = R.drawable.heartbroken_filled_18),
+                                    painter = painterResource(id = R.drawable.heartbroken_filled_24),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(17.dp),
@@ -1030,7 +1030,7 @@ fun TableLayout(
                                     .padding(0.dp)
                                     .align(alignment),
                                 icon1 = if (columnIndex == 3)
-                                    painterResource(id = R.drawable.favorite_heart_filled_18) else null,
+                                    painterResource(id = R.drawable.heart_filled_24) else null,
                                 icon2 = if (columnIndex == 3)
                                     painterResource(id = R.drawable.question_mark_24) else null,
                                 iconUp = painterResource(id = R.drawable.arrow_up),
@@ -1084,8 +1084,8 @@ fun TableLayout(
                                 3 -> { // fav/disliked
                                     val favDisValue = cellValue as Int
                                     val icon = when (favDisValue) {
-                                        1 -> painterResource(id = R.drawable.favorite_heart_filled_18)
-                                        2 -> painterResource(id = R.drawable.heartbroken_filled_18)
+                                        1 -> painterResource(id = R.drawable.heart_filled_24)
+                                        2 -> painterResource(id = R.drawable.heartbroken_filled_24)
                                         else -> null
                                     }
                                     if (icon != null) {
