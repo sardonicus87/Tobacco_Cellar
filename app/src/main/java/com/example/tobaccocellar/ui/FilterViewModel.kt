@@ -7,9 +7,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -58,7 +61,7 @@ class FilterViewModel (
 
 
     /** Filtering **/
-    // selection states //
+    // sheet selection states //
     val sheetSelectedBrands = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedTypes = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedUnassigned = MutableStateFlow(false)
@@ -68,6 +71,42 @@ class FilterViewModel (
     val sheetSelectedNonNeutral = MutableStateFlow(false)
     val sheetSelectedInStock = MutableStateFlow(false)
     val sheetSelectedOutOfStock = MutableStateFlow(false)
+
+    val isFilterApplied: StateFlow<Boolean> = combine(
+        sheetSelectedBrands,
+        sheetSelectedTypes,
+        sheetSelectedUnassigned,
+        sheetSelectedFavorites,
+        sheetSelectedDislikeds,
+        sheetSelectedNeutral,
+        sheetSelectedNonNeutral,
+        sheetSelectedInStock,
+        sheetSelectedOutOfStock
+    ) {
+        val brands = it[0] as List<String>
+        val types = it[1] as List<String>
+        val unassigned = it[2] as Boolean
+        val favorites = it[3] as Boolean
+        val dislikeds = it[4] as Boolean
+        val neutral = it[5] as Boolean
+        val nonNeutral = it[6] as Boolean
+        val inStock = it[7] as Boolean
+        val outOfStock = it[8] as Boolean
+
+        brands.isNotEmpty() ||
+            types.isNotEmpty() ||
+            unassigned ||
+            favorites ||
+            dislikeds ||
+            neutral ||
+            nonNeutral ||
+            inStock ||
+            outOfStock
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 
 
     // Filter states //
@@ -373,7 +412,7 @@ class FilterViewModel (
     }
 
     companion object {
-        private const val INACTIVITY_DURATION = 600L
+        private const val INACTIVITY_DURATION = 700L
     }
 
     fun resetFilter() {
