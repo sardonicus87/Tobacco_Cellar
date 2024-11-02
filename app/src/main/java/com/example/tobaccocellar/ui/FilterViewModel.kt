@@ -112,7 +112,6 @@ class FilterViewModel (
     // Filter states //
     private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
     object FilterUpdateEvent
-
     private var inactivityTimerJob: Job? = null
 
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
@@ -144,18 +143,6 @@ class FilterViewModel (
 
 
     // filter selection update functions //
-//    // update on "apply filtering" version //
-//    fun updateSelectedBrands(brand: String, isSelected: Boolean) {
-//        if (isSelected) { sheetSelectedBrands.value += brand }
-//        else { sheetSelectedBrands.value -= brand }
-//    }
-
-//    // original live/direct update version //
-//    fun updateSelectedBrands(brand: String, isSelected: Boolean) {
-//        if (isSelected) { _selectedBrands.value += brand }
-//        else { _selectedBrands.value -= brand }
-//    }
-
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
         if (isSelected) {
             sheetSelectedBrands.value += brand
@@ -167,9 +154,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun clearAllSelectedBrands() {
@@ -189,15 +173,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        if (isSelected) {
-//            _selectedUnassigned.value = false
-//            _selectedTypes.value += type
-//        }
-//        else { _selectedTypes.value -= type }
     }
 
     fun updateSelectedUnassigned(isSelected: Boolean) {
@@ -210,14 +185,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedUnassigned.value = isSelected
-//        if (isSelected) {
-//            _selectedTypes.value = emptyList()
-//        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
@@ -232,16 +199,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedFavorites.value = isSelected
-//        if (isSelected) {
-//            _selectedDislikeds.value = false
-//            _selectedNeutral.value = false
-//            _selectedNonNeutral.value = false
-//        }
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
@@ -256,16 +213,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedDislikeds.value = isSelected
-//        if (isSelected) {
-//            _selectedFavorites.value = false
-//            _selectedNeutral.value = false
-//            _selectedNonNeutral.value = false
-//        }
     }
 
     fun updateSelectedNeutral(isSelected: Boolean) {
@@ -280,17 +227,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedNeutral.value = isSelected
-//        if (isSelected) {
-//            _selectedFavorites.value = false
-//            _selectedDislikeds.value = false
-//            _selectedNonNeutral.value = false
-//        }
     }
 
     fun updateSelectedNonNeutral(isSelected: Boolean) {
@@ -305,16 +241,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedNonNeutral.value = isSelected
-//        if (isSelected) {
-//            _selectedFavorites.value = false
-//            _selectedDislikeds.value = false
-//            _selectedNeutral.value = false
-//        }
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
@@ -327,14 +253,6 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedInStock.value = isSelected
-//        if (isSelected) {
-//            _selectedOutOfStock.value = false
-//        }
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
@@ -347,51 +265,7 @@ class FilterViewModel (
             delay(INACTIVITY_DURATION)
             filterUpdateEvents.emit(FilterUpdateEvent)
         }
-
-//        viewModelScope.launch {
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
-
-//        _selectedOutOfStock.value = isSelected
-//        if (isSelected) {
-//            _selectedInStock.value = false
-//        }
     }
-
-    //Apply Filtering//
-//    private fun updateStateFlows() {
-//        _selectedBrands.value = sheetSelectedBrands.value
-//        _selectedTypes.value = sheetSelectedTypes.value
-//        _selectedUnassigned.value = sheetSelectedUnassigned.value
-//        _selectedFavorites.value = sheetSelectedFavorites.value
-//        _selectedDislikeds.value = sheetSelectedDislikeds.value
-//        _selectedNeutral.value = sheetSelectedNeutral.value
-//        _selectedNonNeutral.value = sheetSelectedNonNeutral.value
-//        _selectedInStock.value = sheetSelectedInStock.value
-//        _selectedOutOfStock.value = sheetSelectedOutOfStock.value
-//    }
-//
-//    fun applyFilter() {
-//        updateStateFlows()
-//    }
-
-//    init {
-//        viewModelScope.launch {
-//            filterUpdateEvents
-//                .debounce(600)
-//                .collect {
-//                    _selectedBrands.value = sheetSelectedBrands.value
-//                    _selectedTypes.value = sheetSelectedTypes.value
-//                    _selectedUnassigned.value = sheetSelectedUnassigned.value
-//                    _selectedFavorites.value = sheetSelectedFavorites.value
-//                    _selectedDislikeds.value = sheetSelectedDislikeds.value
-//                    _selectedNeutral.value = sheetSelectedNeutral.value
-//                    _selectedNonNeutral.value = sheetSelectedNonNeutral.value
-//                    _selectedInStock.value = sheetSelectedInStock.value
-//                    _selectedOutOfStock.value = sheetSelectedOutOfStock.value
-//                }
-//        }
-//    }
 
     init {
         viewModelScope.launch {
@@ -412,7 +286,7 @@ class FilterViewModel (
     }
 
     companion object {
-        private const val INACTIVITY_DURATION = 700L
+        private const val INACTIVITY_DURATION = 600L
     }
 
     fun resetFilter() {
