@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flattenMerge
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 
 class StatsViewModel(
@@ -68,38 +68,118 @@ class StatsViewModel(
 
 
     /** Filtered stats */
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val filteredStats: StateFlow<FilteredStats> =
+//        combine(
+//            filterViewModel.selectedBrands,
+//            filterViewModel.selectedTypes,
+//            filterViewModel.selectedFavorites,
+//            filterViewModel.selectedDislikeds,
+//            filterViewModel.selectedNeutral,
+//            filterViewModel.selectedNonNeutral,
+//            filterViewModel.selectedInStock,
+//            filterViewModel.selectedOutOfStock
+//        ) { values ->
+//            val brands = values[0] as List<String>
+//            val types = values[1] as List<String>
+//            val favorites = values[2] as Boolean
+//            val dislikeds = values[3] as Boolean
+//            val neutral = values[4] as Boolean
+//            val nonNeutral = values[5] as Boolean
+//            val inStock = values[6] as Boolean
+//            val outOfStock = values[7] as Boolean
+//
+//            itemsRepository.getFilteredItems(
+//                brands = brands,
+//                types = types,
+//                favorites = favorites,
+//                dislikeds = dislikeds,
+//                neutral = neutral,
+//                nonNeutral = nonNeutral,
+//                inStock = inStock,
+//                outOfStock = outOfStock
+//            ).map { filteredItems ->
+//
+//                FilteredStats(
+//                    brands = brands,
+//                    types = types,
+//                    favorites = favorites,
+//                    dislikeds = dislikeds,
+//                    neutral = neutral,
+//                    nonNeutral = nonNeutral,
+//                    inStock = inStock,
+//                    outOfStock = outOfStock,
+//
+//                    itemsCount = filteredItems.size,
+//                    brandsCount = filteredItems.groupingBy { it.brand }.eachCount().size,
+//                    favoriteCount = filteredItems.count { it.favorite },
+//                    dislikedCount = filteredItems.count { it.disliked },
+//                    totalByType = filteredItems.groupingBy { it.type }
+//                        .eachCount(),
+//                    totalQuantity = filteredItems.sumOf { it.quantity },
+//                    totalZeroQuantity = filteredItems.count { it.quantity == 0 },
+//
+//
+//
+//                    topBrands = filteredItems.groupingBy { it.brand }
+//                        .eachCount()
+//                        .entries
+//                        .sortedByDescending { it.value }
+//                        .take(10)
+//                        .associate { it.key to it.value },
+//                    entriesByType = filteredItems.groupingBy { it.type }
+//                        .eachCount(),
+//                    entriesByRating = calculateEntriesByRating(filteredItems)
+//                )
+//            }
+//        }
+//            .flattenMerge()
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(5_000L),
+//                initialValue = FilteredStats()
+//            )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredStats: StateFlow<FilteredStats> =
         combine(
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
+            filterViewModel.selectedUnassigned,
             filterViewModel.selectedFavorites,
             filterViewModel.selectedDislikeds,
             filterViewModel.selectedNeutral,
             filterViewModel.selectedNonNeutral,
             filterViewModel.selectedInStock,
-            filterViewModel.selectedOutOfStock
+            filterViewModel.selectedOutOfStock,
+            itemsRepository.getAllItemsStream()
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
-            val favorites = values[2] as Boolean
-            val dislikeds = values[3] as Boolean
-            val neutral = values[4] as Boolean
-            val nonNeutral = values[5] as Boolean
-            val inStock = values[6] as Boolean
-            val outOfStock = values[7] as Boolean
+            val unassigned = values[2] as Boolean
+            val favorites = values[3] as Boolean
+            val dislikeds = values[4] as Boolean
+            val neutral = values[5] as Boolean
+            val nonNeutral = values[6] as Boolean
+            val inStock = values[7] as Boolean
+            val outOfStock = values[8] as Boolean
+            val allItems = values[9] as List<Items>
 
-            itemsRepository.getFilteredItems(
-                brands = brands,
-                types = types,
-                favorites = favorites,
-                dislikeds = dislikeds,
-                neutral = neutral,
-                nonNeutral = nonNeutral,
-                inStock = inStock,
-                outOfStock = outOfStock
-            ).map { filteredItems ->
+            val filteredItems = allItems.filter { items ->
+                (brands.isEmpty() || brands.contains(items.brand)) &&
+                        (types.isEmpty() || types.contains(items.type)) &&
+                        (!unassigned || items.type.isBlank()) &&
+                        (!favorites || items.favorite) &&
+                        (!dislikeds || items.disliked) &&
+                        (!neutral || (!items.favorite && !items.disliked)) &&
+                        (!nonNeutral || (items.favorite || items.disliked)) &&
+                        (!inStock || items.quantity > 0) &&
+                        (!outOfStock || items.quantity == 0)
+            }
 
+            val unassignedCount = filteredItems.count { it.type.isBlank() }
+
+            flow { emit(
                 FilteredStats(
                     brands = brands,
                     types = types,
@@ -114,11 +194,12 @@ class StatsViewModel(
                     brandsCount = filteredItems.groupingBy { it.brand }.eachCount().size,
                     favoriteCount = filteredItems.count { it.favorite },
                     dislikedCount = filteredItems.count { it.disliked },
-                    totalByType = filteredItems.groupingBy { it.type }
+                    totalByType = filteredItems.groupingBy {
+                        if (it.type.isBlank()) "Unassigned" else it.type }
                         .eachCount(),
+                    unassignedCount = unassignedCount,
                     totalQuantity = filteredItems.sumOf { it.quantity },
                     totalZeroQuantity = filteredItems.count { it.quantity == 0 },
-
 
 
                     topBrands = filteredItems.groupingBy { it.brand }
@@ -127,10 +208,13 @@ class StatsViewModel(
                         .sortedByDescending { it.value }
                         .take(10)
                         .associate { it.key to it.value },
-                    entriesByType = filteredItems.groupingBy { it.type }
+                    entriesByType = filteredItems
+                        .filterNot { it.type.isBlank() }
+                        .groupingBy { it.type }
                         .eachCount(),
                     entriesByRating = calculateEntriesByRating(filteredItems)
                 )
+            )
             }
         }
             .flattenMerge()
@@ -198,6 +282,7 @@ data class FilteredStats(
     val favoriteCount: Int = 0,
     val dislikedCount: Int = 0,
     val totalByType: Map<String, Int> = emptyMap(),
+    val unassignedCount: Int = 0,
     val totalQuantity: Int = 0,
     val totalZeroQuantity: Int = 0,
 

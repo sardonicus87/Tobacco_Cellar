@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -125,6 +126,67 @@ class HomeViewModel(
                 initialValue = HomeUiState()
             )
 
+//    @OptIn(ExperimentalCoroutinesApi::class)
+//    val itemsState: StateFlow<ItemsState> =
+//        combine(
+//            filterViewModel.selectedBrands,
+//            filterViewModel.selectedTypes,
+//            filterViewModel.selectedUnassigned,
+//            filterViewModel.selectedFavorites,
+//            filterViewModel.selectedDislikeds,
+//            filterViewModel.selectedNeutral,
+//            filterViewModel.selectedNonNeutral,
+//            filterViewModel.selectedInStock,
+//            filterViewModel.selectedOutOfStock,
+//            filterViewModel.blendSearchValue,
+//        ) { values ->
+//            val brands = values[0] as List<String>
+//            val types = values[1] as List<String>
+//            val unassigned = values[2] as Boolean
+//            val favorites = values[3] as Boolean
+//            val dislikeds = values[4] as Boolean
+//            val neutral = values[5] as Boolean
+//            val nonNeutral = values[6] as Boolean
+//            val inStock = values[7] as Boolean
+//            val outOfStock = values[8] as Boolean
+//            val blendSearchValue = values[9] as String
+//
+//            itemsRepository.getFilteredItems(
+//                brands = brands,
+//                types = types,
+//                favorites = favorites,
+//                dislikeds = dislikeds,
+//                neutral = neutral,
+//                nonNeutral = nonNeutral,
+//                inStock = inStock,
+//                outOfStock = outOfStock
+//            ).map { items ->
+//                val filteredItems = if (blendSearchValue.isBlank()) {
+//                    if (unassigned) {
+//                        items.filter { item ->
+//                            item.type.isBlank()
+//                        }
+//                    } else {
+//                        items
+//                    }
+//                } else {
+//                    items.filter { item ->
+//                        item.blend.contains(blendSearchValue, ignoreCase = true)
+//                    }
+//                }
+//
+//                ItemsState(
+//                    items = filteredItems,
+//                )
+//            }
+//        }
+//            .flattenMerge()
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+//                initialValue = ItemsState(isLoading = true)
+//            )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val itemsState: StateFlow<ItemsState> =
         combine(
@@ -138,6 +200,7 @@ class HomeViewModel(
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
             filterViewModel.blendSearchValue,
+            itemsRepository.getAllItemsStream()
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
@@ -149,34 +212,22 @@ class HomeViewModel(
             val inStock = values[7] as Boolean
             val outOfStock = values[8] as Boolean
             val blendSearchValue = values[9] as String
+            val allItems = values[10] as List<Items>
 
-            itemsRepository.getFilteredItems(
-                brands = brands,
-                types = types,
-                favorites = favorites,
-                dislikeds = dislikeds,
-                neutral = neutral,
-                nonNeutral = nonNeutral,
-                inStock = inStock,
-                outOfStock = outOfStock
-            ).map { items ->
-                val filteredItems = if (blendSearchValue.isBlank()) {
-                    if (unassigned) {
-                        items.filter { item ->
-                            item.type.isBlank()
-                        }
-                    } else {
-                        items
-                    }
-                } else {
-                    items.filter { item ->
-                        item.blend.contains(blendSearchValue, ignoreCase = true)
-                    }
-                }
-
-                ItemsState(
-                    items = filteredItems,
-                )
+            val filteredItems = allItems.filter { items ->
+                (brands.isEmpty() || brands.contains(items.brand)) &&
+                        (types.isEmpty() || types.contains(items.type)) &&
+                        (!unassigned || items.type.isBlank()) &&
+                        (!favorites || items.favorite) &&
+                        (!dislikeds || items.disliked) &&
+                        (!neutral || (!items.favorite && !items.disliked)) &&
+                        (!nonNeutral || (items.favorite || items.disliked)) &&
+                        (!inStock || items.quantity > 0) &&
+                        (!outOfStock || items.quantity == 0) &&
+                        (blendSearchValue.isBlank() || items.blend.contains(
+                            blendSearchValue, ignoreCase = true))
+            }
+            flow {emit(ItemsState(items = filteredItems))
             }
         }
             .flattenMerge()
@@ -185,6 +236,7 @@ class HomeViewModel(
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = ItemsState(isLoading = true)
             )
+
 
     private val _sorting = mutableStateOf(Sorting())
     val sorting: State<Sorting> = _sorting
