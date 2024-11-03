@@ -3,9 +3,6 @@ package com.example.tobaccocellar.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobaccocellar.data.ItemsRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +11,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 // @OptIn(FlowPreview::class)
 class FilterViewModel (
@@ -110,9 +106,9 @@ class FilterViewModel (
 
 
     // Filter states //
-    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
-    object FilterUpdateEvent
-    private var inactivityTimerJob: Job? = null
+//    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
+//    object FilterUpdateEvent
+//    private var inactivityTimerJob: Job? = null
 
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
     val selectedBrands: StateFlow<List<String>> = _selectedBrands
@@ -146,14 +142,16 @@ class FilterViewModel (
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
         if (isSelected) {
             sheetSelectedBrands.value += brand
+            _selectedBrands.value += brand
         } else {
             sheetSelectedBrands.value -= brand
+            _selectedBrands.value -= brand
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun clearAllSelectedBrands() {
@@ -165,129 +163,166 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedUnassigned.value = false
             sheetSelectedTypes.value += type
+
+            _selectedUnassigned.value = false
+            _selectedTypes.value += type
         } else {
             sheetSelectedTypes.value -= type
+            _selectedTypes.value -= type
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedUnassigned(isSelected: Boolean) {
         sheetSelectedUnassigned.value = isSelected
+        _selectedUnassigned.value = isSelected
+
         if (isSelected) {
             sheetSelectedTypes.value = emptyList()
+            _selectedTypes.value = emptyList()
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
         sheetSelectedFavorites.value = isSelected
+        _selectedFavorites.value = isSelected
+
         if (isSelected) {
             sheetSelectedDislikeds.value = false
             sheetSelectedNeutral.value = false
             sheetSelectedNonNeutral.value = false
+
+            _selectedDislikeds.value = false
+            _selectedNeutral.value = false
+            _selectedNonNeutral.value = false
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
         sheetSelectedDislikeds.value = isSelected
+        _selectedDislikeds.value = isSelected
+
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedNeutral.value = false
             sheetSelectedNonNeutral.value = false
+
+            _selectedFavorites.value = false
+            _selectedNeutral.value = false
+            _selectedNonNeutral.value = false
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedNeutral(isSelected: Boolean) {
         sheetSelectedNeutral.value = isSelected
+        _selectedNeutral.value = isSelected
+
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
             sheetSelectedNonNeutral.value = false
+
+            _selectedFavorites.value = false
+            _selectedDislikeds.value = false
+            _selectedNonNeutral.value = false
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedNonNeutral(isSelected: Boolean) {
         sheetSelectedNonNeutral.value = isSelected
+        _selectedNonNeutral.value = isSelected
+
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
             sheetSelectedNeutral.value = false
+
+            _selectedFavorites.value = false
+            _selectedDislikeds.value = false
+            _selectedNeutral.value = false
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
         sheetSelectedInStock.value = isSelected
+        _selectedInStock.value = isSelected
+
         if (isSelected) {
             sheetSelectedOutOfStock.value = false
+            _selectedOutOfStock.value = false
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
         sheetSelectedOutOfStock.value = isSelected
+        _selectedOutOfStock.value = isSelected
+
         if (isSelected) {
             sheetSelectedInStock.value = false
+            _selectedInStock.value = false
         }
-        inactivityTimerJob?.cancel()
-        inactivityTimerJob = viewModelScope.launch {
-            delay(INACTIVITY_DURATION)
-            filterUpdateEvents.emit(FilterUpdateEvent)
-        }
+//        inactivityTimerJob?.cancel()
+//        inactivityTimerJob = viewModelScope.launch {
+//            delay(INACTIVITY_DURATION)
+//            filterUpdateEvents.emit(FilterUpdateEvent)
+//        }
     }
 
-    init {
-        viewModelScope.launch {
-            filterUpdateEvents.collect {
-                withTimeoutOrNull(INACTIVITY_DURATION) {
-                    _selectedBrands.value = sheetSelectedBrands.value
-                    _selectedTypes.value = sheetSelectedTypes.value
-                    _selectedUnassigned.value = sheetSelectedUnassigned.value
-                    _selectedFavorites.value = sheetSelectedFavorites.value
-                    _selectedDislikeds.value = sheetSelectedDislikeds.value
-                    _selectedNeutral.value = sheetSelectedNeutral.value
-                    _selectedNonNeutral.value = sheetSelectedNonNeutral.value
-                    _selectedInStock.value = sheetSelectedInStock.value
-                    _selectedOutOfStock.value = sheetSelectedOutOfStock.value
-                }
-            }
-        }
-    }
-
-    companion object {
-        private const val INACTIVITY_DURATION = 600L
-    }
+//    init {
+//        viewModelScope.launch {
+//            filterUpdateEvents.collect {
+//                withTimeoutOrNull(INACTIVITY_DURATION) {
+//                    _selectedBrands.value = sheetSelectedBrands.value
+//                    _selectedTypes.value = sheetSelectedTypes.value
+//                    _selectedUnassigned.value = sheetSelectedUnassigned.value
+//                    _selectedFavorites.value = sheetSelectedFavorites.value
+//                    _selectedDislikeds.value = sheetSelectedDislikeds.value
+//                    _selectedNeutral.value = sheetSelectedNeutral.value
+//                    _selectedNonNeutral.value = sheetSelectedNonNeutral.value
+//                    _selectedInStock.value = sheetSelectedInStock.value
+//                    _selectedOutOfStock.value = sheetSelectedOutOfStock.value
+//                }
+//            }
+//        }
+//    }
+//
+//    companion object {
+//        private const val INACTIVITY_DURATION = 150L
+//    }
 
     fun resetFilter() {
         sheetSelectedBrands.value = emptyList()
