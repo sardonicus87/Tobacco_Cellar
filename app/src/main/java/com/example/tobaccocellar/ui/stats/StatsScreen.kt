@@ -271,7 +271,8 @@ fun RawStats(
             "English" -> 2
             "Aromatic" -> 3
             "Other" -> 4
-            else -> 5
+            "Unassigned" -> 5
+            else -> 6
         }
     }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
@@ -327,7 +328,8 @@ fun FilteredStats(
             "English" -> 2
             "Aromatic" -> 3
             "Other" -> 4
-            else -> 5
+            "Unassigned" -> 5
+            else -> 6
         }
     }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
@@ -464,7 +466,7 @@ private fun ChartsSection(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "(${filteredStats.itemsCount} entries)",
+                text = "(${filteredStats.itemsCount - filteredStats.unassignedCount} entries)",
                 modifier = Modifier,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center
