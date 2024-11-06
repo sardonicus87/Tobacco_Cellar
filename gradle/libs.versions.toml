@@ -1,12 +1,12 @@
 [versions]
-accompanistSystemuicontroller = "0.28.0"
+accompanistSystemuicontroller = "0.36.0"
 agp = "8.5.2"
-commonsCsv = "1.11.0"
+commonsCsv = "1.12.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.1"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
-kotlinxCoroutinesAndroid = "1.8.1"
+kotlinxCoroutinesAndroid = "1.9.0"
 leakcanaryAndroid = "2.14"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
@@ -18,6 +18,7 @@ uiTextGoogleFonts = "1.7.5"
 datastoreCoreAndroid = "1.1.1"
 datastorePreferencesCoreJvm = "1.1.1"
 material = "1.12.0"
+viewpager2 = "1.1.0"
 
 [libraries]
 
@@ -37,6 +38,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
+androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
