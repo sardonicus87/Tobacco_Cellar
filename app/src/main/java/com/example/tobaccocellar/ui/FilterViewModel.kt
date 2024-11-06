@@ -67,6 +67,8 @@ class FilterViewModel (
     val sheetSelectedNonNeutral = MutableStateFlow(false)
     val sheetSelectedInStock = MutableStateFlow(false)
     val sheetSelectedOutOfStock = MutableStateFlow(false)
+    val sheetSelectedExcludedBrands = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedExcludeSwitch = MutableStateFlow(false)
 
     val isFilterApplied: StateFlow<Boolean> = combine(
         sheetSelectedBrands,
@@ -77,7 +79,8 @@ class FilterViewModel (
         sheetSelectedNeutral,
         sheetSelectedNonNeutral,
         sheetSelectedInStock,
-        sheetSelectedOutOfStock
+        sheetSelectedOutOfStock,
+        sheetSelectedExcludedBrands,
     ) {
         val brands = it[0] as List<String>
         val types = it[1] as List<String>
@@ -88,6 +91,7 @@ class FilterViewModel (
         val nonNeutral = it[6] as Boolean
         val inStock = it[7] as Boolean
         val outOfStock = it[8] as Boolean
+        val excludedBrands = it[9] as List<String>
 
         brands.isNotEmpty() ||
             types.isNotEmpty() ||
@@ -97,7 +101,8 @@ class FilterViewModel (
             neutral ||
             nonNeutral ||
             inStock ||
-            outOfStock
+            outOfStock ||
+            excludedBrands.isNotEmpty()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -105,11 +110,12 @@ class FilterViewModel (
     )
 
 
-    // Filter states //
+    /** Filter states **/
 //    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
 //    object FilterUpdateEvent
 //    private var inactivityTimerJob: Job? = null
 
+    // inclusionary filter states //
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
     val selectedBrands: StateFlow<List<String>> = _selectedBrands
 
@@ -137,6 +143,10 @@ class FilterViewModel (
     private val _selectedOutOfStock = MutableStateFlow(false)
     val selectedOutOfStock: StateFlow<Boolean> = _selectedOutOfStock
 
+    // exclusionary filter states //
+    private val _selectedExcludedBrands = MutableStateFlow<List<String>>(emptyList())
+    val selectedExcludedBrands: StateFlow<List<String>> = _selectedExcludedBrands
+
 
     // filter selection update functions //
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
@@ -154,9 +164,37 @@ class FilterViewModel (
 //        }
     }
 
-    fun clearAllSelectedBrands() {
-        sheetSelectedBrands.value = emptyList()
-        _selectedBrands.value = emptyList()
+    fun updateSelectedExcludedBrands(brand: String, isSelected: Boolean) {
+        if (isSelected) {
+            sheetSelectedExcludedBrands.value += brand
+            _selectedExcludedBrands.value += brand
+        } else {
+            sheetSelectedExcludedBrands.value -= brand
+            _selectedExcludedBrands.value -= brand
+        }
+    }
+
+    fun updateSelectedExcludeSwitch(isSelected: Boolean) {
+        sheetSelectedExcludeSwitch.value = isSelected
+
+        if (isSelected) {
+            if (sheetSelectedBrands.value.isNotEmpty()) {
+                sheetSelectedExcludedBrands.value = sheetSelectedBrands.value
+                _selectedExcludedBrands.value = _selectedBrands.value
+
+                sheetSelectedBrands.value = emptyList()
+                _selectedBrands.value = emptyList()
+            }
+        } else {
+            if (sheetSelectedExcludedBrands.value.isNotEmpty()) {
+                sheetSelectedBrands.value = _selectedExcludedBrands.value
+                _selectedBrands.value = _selectedExcludedBrands.value
+
+                sheetSelectedExcludedBrands.value = emptyList()
+                _selectedExcludedBrands.value = emptyList()
+            }
+        }
+
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
@@ -170,11 +208,6 @@ class FilterViewModel (
             sheetSelectedTypes.value -= type
             _selectedTypes.value -= type
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedUnassigned(isSelected: Boolean) {
@@ -185,11 +218,6 @@ class FilterViewModel (
             sheetSelectedTypes.value = emptyList()
             _selectedTypes.value = emptyList()
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
@@ -205,11 +233,6 @@ class FilterViewModel (
             _selectedNeutral.value = false
             _selectedNonNeutral.value = false
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
@@ -225,11 +248,6 @@ class FilterViewModel (
             _selectedNeutral.value = false
             _selectedNonNeutral.value = false
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedNeutral(isSelected: Boolean) {
@@ -245,11 +263,6 @@ class FilterViewModel (
             _selectedDislikeds.value = false
             _selectedNonNeutral.value = false
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedNonNeutral(isSelected: Boolean) {
@@ -265,11 +278,6 @@ class FilterViewModel (
             _selectedDislikeds.value = false
             _selectedNeutral.value = false
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
@@ -280,11 +288,6 @@ class FilterViewModel (
             sheetSelectedOutOfStock.value = false
             _selectedOutOfStock.value = false
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
@@ -295,12 +298,8 @@ class FilterViewModel (
             sheetSelectedInStock.value = false
             _selectedInStock.value = false
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
+
 
 //    init {
 //        viewModelScope.launch {
@@ -324,6 +323,14 @@ class FilterViewModel (
 //        private const val INACTIVITY_DURATION = 150L
 //    }
 
+    fun clearAllSelectedBrands() {
+        sheetSelectedBrands.value = emptyList()
+        _selectedBrands.value = emptyList()
+
+        sheetSelectedExcludedBrands.value = emptyList()
+        _selectedExcludedBrands.value = emptyList()
+    }
+
     fun resetFilter() {
         sheetSelectedBrands.value = emptyList()
         sheetSelectedTypes.value = emptyList()
@@ -334,6 +341,7 @@ class FilterViewModel (
         sheetSelectedNonNeutral.value = false
         sheetSelectedInStock.value = false
         sheetSelectedOutOfStock.value = false
+        sheetSelectedExcludedBrands.value = emptyList()
 
         _selectedBrands.value = emptyList()
         _selectedTypes.value = emptyList()
@@ -344,6 +352,7 @@ class FilterViewModel (
         _selectedNonNeutral.value = false
         _selectedInStock.value = false
         _selectedOutOfStock.value = false
+        _selectedExcludedBrands.value = emptyList()
     }
 
 
