@@ -290,7 +290,7 @@ private fun HomeHeader(
                     }
                 },
                 onImeAction = {
-                    filterViewModel.resetFilter()
+                //    filterViewModel.resetFilter()
                     filterViewModel.onBlendSearch(blendSearchText)
                 }
             )
