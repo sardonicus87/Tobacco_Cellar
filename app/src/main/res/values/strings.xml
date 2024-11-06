@@ -31,8 +31,8 @@
 
     // Instructions //
     <string name="attention">Attention:</string>
-    <string name="no_items">No items found in cellar.\nClick \"+\" to add items,\nor use options to
-        import CSV.</string>
+    <string name="no_items">No items found in cellar.\nChange filters, click \"+\" to\nadd items,
+        or use options\nto import CSV.</string>
     <string name="delete_question">Are you sure?</string>
     <string name="delete_all_question">Are you sure you want to delete all entries in the database?
         This cannot be undone.</string>
@@ -61,7 +61,8 @@
     <string name="item_detail_title">Details</string>
     <string name="settings_nothing">Settings</string>
     <string name="notes_entry">Enter Notes</string>
-    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or incorrect format.</string>
+    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
+        incorrect format.</string>
 
 
 </resources>
