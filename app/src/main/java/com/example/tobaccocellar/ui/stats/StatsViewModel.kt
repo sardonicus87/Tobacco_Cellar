@@ -152,6 +152,7 @@ class StatsViewModel(
             filterViewModel.selectedNonNeutral,
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
+            filterViewModel.selectedExcludedBrands,
             itemsRepository.getAllItemsStream()
         ) { values ->
             val brands = values[0] as List<String>
@@ -163,7 +164,8 @@ class StatsViewModel(
             val nonNeutral = values[6] as Boolean
             val inStock = values[7] as Boolean
             val outOfStock = values[8] as Boolean
-            val allItems = values[9] as List<Items>
+            val excludedBrands = values[9] as List<String>
+            val allItems = values[10] as List<Items>
 
             val filteredItems = allItems.filter { items ->
                 (brands.isEmpty() || brands.contains(items.brand)) &&
@@ -174,7 +176,8 @@ class StatsViewModel(
                         (!neutral || (!items.favorite && !items.disliked)) &&
                         (!nonNeutral || (items.favorite || items.disliked)) &&
                         (!inStock || items.quantity > 0) &&
-                        (!outOfStock || items.quantity == 0)
+                        (!outOfStock || items.quantity == 0) &&
+                        (excludedBrands.isEmpty() || !excludedBrands.contains(items.brand))
             }
 
             val unassignedCount = filteredItems.count { it.type.isBlank() }
