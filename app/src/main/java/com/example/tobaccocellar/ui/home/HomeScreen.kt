@@ -50,6 +50,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -63,7 +64,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -194,15 +194,22 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            HomeHeader(
-                modifier = Modifier
-                    .shadow(2.dp, shape = RectangleShape, clip = false),
-                homeUiState = homeUiState,
-                itemsState = itemsState,
-                filterViewModel = filterViewModel,
-                selectView = viewmodel::selectView,
-                isTableView = isTableView,
-            )
+            Surface(
+                modifier = Modifier,
+                shape = RectangleShape,
+                color = Color.Transparent,
+                tonalElevation = 0.dp,
+                shadowElevation = 1.dp,
+            ) {
+                HomeHeader(
+                    modifier = Modifier,
+                    homeUiState = homeUiState,
+                    itemsState = itemsState,
+                    filterViewModel = filterViewModel,
+                    selectView = viewmodel::selectView,
+                    isTableView = isTableView,
+                )
+            }
             HomeBody(
                 items = itemsState.items,
                 isTableView = isTableView,
@@ -233,7 +240,7 @@ private fun HomeHeader(
 ) {
     val blendSearchText by filterViewModel.blendSearchText.collectAsState()
 
-    Row (
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .background(LocalCustomColors.current.backgroundVariant)
@@ -241,7 +248,7 @@ private fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row (
+        Row(
             modifier = Modifier
                 .padding(0.dp)
                 .widthIn(min = 84.dp),
@@ -276,7 +283,7 @@ private fun HomeHeader(
             modifier = Modifier
                 .width(8.dp)
         )
-        Box (
+        Box(
             modifier = Modifier
                 .padding(horizontal = 0.dp)
                 .weight(1f, false)
@@ -290,7 +297,7 @@ private fun HomeHeader(
                     }
                 },
                 onImeAction = {
-                //    filterViewModel.resetFilter()
+                    //    filterViewModel.resetFilter()
                     filterViewModel.onBlendSearch(blendSearchText)
                 }
             )
@@ -481,7 +488,7 @@ private fun HomeBody(
                     )
                     Spacer(
                         modifier = Modifier
-                            .weight(1.5f)
+                            .weight(1.25f)
                     )
                 }
             } else {
