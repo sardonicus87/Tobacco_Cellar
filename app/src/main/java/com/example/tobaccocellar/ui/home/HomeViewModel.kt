@@ -13,7 +13,7 @@ import com.example.tobaccocellar.data.Items
 import com.example.tobaccocellar.data.ItemsRepository
 import com.example.tobaccocellar.data.PreferencesRepo
 import com.example.tobaccocellar.ui.FilterViewModel
-import com.example.tobaccocellar.ui.interfaces.ExportCsvHandler
+import com.example.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -199,6 +199,7 @@ class HomeViewModel(
             filterViewModel.selectedNonNeutral,
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
+            filterViewModel.selectedExcludedBrands,
             filterViewModel.blendSearchValue,
             itemsRepository.getAllItemsStream()
         ) { values ->
@@ -211,22 +212,29 @@ class HomeViewModel(
             val nonNeutral = values[6] as Boolean
             val inStock = values[7] as Boolean
             val outOfStock = values[8] as Boolean
-            val blendSearchValue = values[9] as String
-            val allItems = values[10] as List<Items>
+            val excludedBrands = values[9] as List<String>
+            val blendSearchValue = values[10] as String
+            val allItems = values[11] as List<Items>
 
-            val filteredItems = allItems.filter { items ->
-                (brands.isEmpty() || brands.contains(items.brand)) &&
-                        (types.isEmpty() || types.contains(items.type)) &&
-                        (!unassigned || items.type.isBlank()) &&
-                        (!favorites || items.favorite) &&
-                        (!dislikeds || items.disliked) &&
-                        (!neutral || (!items.favorite && !items.disliked)) &&
-                        (!nonNeutral || (items.favorite || items.disliked)) &&
-                        (!inStock || items.quantity > 0) &&
-                        (!outOfStock || items.quantity == 0) &&
-                        (blendSearchValue.isBlank() || items.blend.contains(
-                            blendSearchValue, ignoreCase = true))
-            }
+            val filteredItems =
+                if (blendSearchValue.isBlank()) {
+                    allItems.filter { items ->
+                        (brands.isEmpty() || brands.contains(items.brand)) &&
+                                (types.isEmpty() || types.contains(items.type)) &&
+                                (!unassigned || items.type.isBlank()) &&
+                                (!favorites || items.favorite) &&
+                                (!dislikeds || items.disliked) &&
+                                (!neutral || (!items.favorite && !items.disliked)) &&
+                                (!nonNeutral || (items.favorite || items.disliked)) &&
+                                (!inStock || items.quantity > 0) &&
+                                (!outOfStock || items.quantity == 0) &&
+                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.brand))
+                    }
+                } else {
+                    allItems.filter { items ->
+                        items.blend.contains(blendSearchValue, ignoreCase = true)
+                    }
+                }
             flow {emit(ItemsState(items = filteredItems))
             }
         }
