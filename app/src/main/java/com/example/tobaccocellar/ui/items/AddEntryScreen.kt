@@ -136,22 +136,13 @@ fun AddEntryScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection),
-//            .noRippleClickable(
-//                onClick = {
-//                    focusManager.clearFocus()
-//                }
-//            ),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(AddEntryDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier
-                    .noRippleClickable(
-                        onClick = {
-                            focusManager.clearFocus()
-                        }
-                    ),
+                    .noRippleClickable(onClick = { focusManager.clearFocus() }),
                 navigateUp = onNavigateUp,
                 showMenu = false,
             )
