@@ -215,6 +215,8 @@ data class CustomColorScheme(
     val backgroundUnselected: Color = Color.Unspecified,
     val tableBorder: Color = Color.Unspecified,
     val navIcon: Color = Color.Unspecified,
+    val appBarContainer: Color = Color.Unspecified,
+
     // pie chart colors
     val pieOne: Color = Color.Unspecified,
     val pieTwo: Color = Color.Unspecified,
@@ -241,6 +243,8 @@ private val customLight = CustomColorScheme(
     backgroundUnselected = backgroundUnselectedLight,
     tableBorder = tableBorderLight,
     navIcon = navIconLight,
+    appBarContainer = appBarContainerLight,
+
     // pie chart colors
     pieOne = pieOneLight,
     pieTwo = pieTwoLight,
@@ -265,6 +269,8 @@ private val customDark = CustomColorScheme(
     backgroundUnselected = backgroundUnselectedDark,
     tableBorder = tableBorderDark,
     navIcon = navIconDark,
+    appBarContainer = appBarContainerDark,
+
     // pie chart colors
     pieOne = pieOneDark,
     pieTwo = pieTwoDark,

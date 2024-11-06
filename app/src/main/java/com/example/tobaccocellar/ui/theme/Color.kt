@@ -9,7 +9,7 @@ val primaryContainerLight = Color(0xFFA9F2CD)
 val onPrimaryContainerLight = Color(0xFF002114)
 val secondaryLight = Color(0xFF4D6357)
 val onSecondaryLight = Color(0xFFFFFFFF)
-val secondaryContainerLight = Color(0xFFCDEAD8) // original 0xFFCFE9D9
+val secondaryContainerLight = Color(0xFFCFE9D9) // original 0xFFCFE9D9
 val onSecondaryContainerLight = Color(0xFF0A1F16)
 val tertiaryLight = Color(0xFF3D6373)
 val onTertiaryLight = Color(0xFFFFFFFF)
@@ -87,6 +87,7 @@ val backgroundVariantLight = Color(0xFFECFFEC) // normal 0xFFF5FBF5
 val backgroundUnselectedLight = Color(0xFFECF1EC)
 val tableBorderLight = Color(0xFF9A9F9C)
 val navIconLight = Color(0xFFB5F6D5) // 0xFFBEF5D9
+val appBarContainerLight = Color(0xFF218056)
 
 val listMenuScrimDark = Color(0xFF000000)
 val deleteButtonDark = Color(0xFF990000)
@@ -98,6 +99,7 @@ val backgroundVariantDark = Color(0xFF162217) // normal FF0F1511
 val backgroundUnselectedDark = Color(0xFF131915)
 val tableBorderDark = Color(0xFF7E8380)
 val navIconDark = Color(0xFFB5F6D5)
+val appBarContainerDark = Color(0xFF206A4D)
 
 // pie charts light
 val pieOneLight = Color(0xFF03B1FF)
