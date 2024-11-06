@@ -1,4 +1,4 @@
-package com.example.tobaccocellar.ui.interfaces
+package com.example.tobaccocellar.ui.utilities
 
 import android.net.Uri
 
