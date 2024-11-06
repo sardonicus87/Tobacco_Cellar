@@ -59,8 +59,7 @@ fun EditEntryScreen(
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .noRippleClickable(onClick = { focusManager.clearFocus() }),
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(EditEntryDestination.titleRes),
@@ -68,6 +67,8 @@ fun EditEntryScreen(
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,
                 showMenu = false,
+                modifier = Modifier
+                    .noRippleClickable(onClick = { focusManager.clearFocus() })
                 )
         },
     ) { innerPadding ->
