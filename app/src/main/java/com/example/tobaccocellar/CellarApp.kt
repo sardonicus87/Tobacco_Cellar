@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -90,7 +91,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
@@ -134,12 +139,10 @@ fun CellarApp(
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
             onDismissRequest = {
-            //    filterViewModel.applyFilter()
                 filterViewModel.closeBottomSheet()
             },
             modifier = Modifier
-                .statusBarsPadding()
-                .navigationBarsPadding(),
+                .statusBarsPadding(),
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
             ),
@@ -990,41 +993,87 @@ fun BrandFilterSection(
             }
         }
 
-        LazyRow(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(end = 2.dp)
-                .height(36.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val unselectedBrands = filteredBrands.filterNot {
-                if((selectedExcludedBrands.isEmpty())) {
-                selectedBrands.contains(it) } else {
-                    selectedExcludedBrands.contains(it) }
-            }
-            items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
-                val brand = unselectedBrands[index]
-                TextButton(
-                    onClick = {
-                        if (excluded) {
-                            filterViewModel.updateSelectedExcludedBrands(brand, true)
-                        } else {
-                            filterViewModel.updateSelectedBrands(brand, true)
-                        }
-                        brandSearchText = ""
-                        filteredBrands = allBrands
-                    },
-                    modifier = Modifier
-                        .wrapContentSize()
-                ) {
-                    Text(
-                        text = brand,
+            val glowColor1 = MaterialTheme.colorScheme.background
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 2.dp)
+                    .height(36.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val unselectedBrands = filteredBrands.filterNot {
+                    if ((selectedExcludedBrands.isEmpty())) {
+                        selectedBrands.contains(it)
+                    } else {
+                        selectedExcludedBrands.contains(it)
+                    }
+                }
+                items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
+                    val brand = unselectedBrands[index]
+                    TextButton(
+                        onClick = {
+                            if (excluded) {
+                                filterViewModel.updateSelectedExcludedBrands(brand, true)
+                            } else {
+                                filterViewModel.updateSelectedBrands(brand, true)
+                            }
+                            brandSearchText = ""
+                            filteredBrands = allBrands
+                        },
                         modifier = Modifier
                             .wrapContentSize()
-                    )
+                    ) {
+                        Text(
+                            text = brand,
+                            modifier = Modifier
+                                .wrapContentSize()
+                        )
+                    }
                 }
             }
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        Modifier.drawBehind {
+                            val glowWidth = 15.dp
+                            val glowOffsetX = size.width - (glowWidth.toPx())
+
+                            drawRect(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        glowColor1,
+                                        Color.Transparent,
+                                    ),
+                                    startX = 0f,
+                                    endX = glowWidth.toPx(),
+                                ),
+                                topLeft = Offset(0f, 0f),
+                                size = Size(glowWidth.toPx(), size.height)
+                            )
+
+                            drawRect(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        glowColor1,
+                                    ),
+                                    startX = glowOffsetX,
+                                    endX = size.width,
+                                ),
+                                topLeft = Offset(glowOffsetX, 0f),
+                                size = Size(glowWidth.toPx(), size.height)
+                            )
+                        }
+
+                    )
+            )
         }
 
         BoxWithConstraints {
@@ -1135,6 +1184,7 @@ fun BrandFilterSection(
                                 textAlign = TextAlign.Center
                             )
                         },
+                        modifier = Modifier,
                         text = {
                             Column(
                                 modifier = Modifier
@@ -1143,24 +1193,63 @@ fun BrandFilterSection(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
                             ) {
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(2),
-                                    verticalArrangement = Arrangement.spacedBy((-6).dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                val glowColor = LocalCustomColors.current.darkNeutral
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 0.dp, max = 280.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    items(chips) { brand ->
-                                        Chip(
-                                            text = brand,
-                                            onChipClicked = { },
-                                            onChipRemoved = {
-                                                if (excluded) {
-                                                    filterViewModel.updateSelectedExcludedBrands(brand, false)
-                                                } else {
-                                                    filterViewModel.updateSelectedBrands(brand, false)
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Fixed(2),
+                                        modifier = Modifier
+                                            .heightIn(min = 0.dp, max = 280.dp),
+                                        userScrollEnabled = true,
+                                        contentPadding = PaddingValues(bottom = 10.dp),
+                                        verticalArrangement = Arrangement.spacedBy((-6).dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        items(chips) { brand ->
+                                            Chip(
+                                                text = brand,
+                                                onChipClicked = { },
+                                                onChipRemoved = {
+                                                    if (excluded) {
+                                                        filterViewModel.updateSelectedExcludedBrands(brand, false)
+                                                    } else {
+                                                        filterViewModel.updateSelectedBrands(brand, false)
+                                                    }
                                                 }
-                                            }
-                                        )
+                                            )
+                                        }
                                     }
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .then(
+                                                Modifier.drawBehind {
+                                                    val glowHeight = 10.dp
+                                                    val glowOffsetY =
+                                                        size.height - (glowHeight.toPx())
+                                                    drawRect(
+                                                        brush = Brush.verticalGradient(
+                                                            colors = listOf(
+                                                                Color.Transparent,
+                                                                glowColor,
+                                                            ),
+                                                            startY = glowOffsetY,
+                                                            endY = size.height,
+                                                        ),
+                                                        topLeft = Offset(0f, glowOffsetY),
+                                                        size = Size(
+                                                            size.width,
+                                                            glowHeight.toPx()
+                                                        )
+                                                    )
+                                                }
+                                            )
+                                    )
                                 }
                                 Row(
                                     modifier = Modifier
