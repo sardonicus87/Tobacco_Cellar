@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -65,7 +64,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -347,7 +345,8 @@ fun ItemInputForm(
         verticalArrangement = Arrangement.Top
     ) {
         TabRow(
-            selectedTabIndex = pagerState.currentPage,
+        //    selectedTabIndex = pagerState.currentPage,
+            selectedTabIndex = selectedTabIndex,
             modifier = Modifier
                 .padding(0.dp, bottom = 8.dp),
             containerColor = MaterialTheme.colorScheme.background,
@@ -355,7 +354,8 @@ fun ItemInputForm(
             indicator = { tabPositions ->
                 SecondaryIndicator(
                     modifier = Modifier
-                        .tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                    //    .tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                        .tabIndicatorOffset(tabPositions[selectedTabIndex]),
                     color = MaterialTheme.colorScheme.inversePrimary
                 )
             },
@@ -370,22 +370,27 @@ fun ItemInputForm(
             titles.forEachIndexed { index, title ->
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
-                        selected = pagerState.currentPage == index,
+                    //    selected = pagerState.currentPage == index,
+                        selected = selectedTabIndex == index,
                         onClick = {
                             // selectedTabIndex = index
-                            coroutineScope.launch {
-                                pagerState.scrollToPage(index)
-                            }
+                            selectedTabIndex = index
+//                            coroutineScope.launch {
+//                                pagerState.scrollToPage(index)
+//                            }
                         },
                         modifier = Modifier
                             .background(
-                                if (pagerState.currentPage == index) MaterialTheme.colorScheme.background
+//                                if (pagerState.currentPage == index) MaterialTheme.colorScheme.background
+//                                else LocalCustomColors.current.backgroundUnselected
+                                if (selectedTabIndex == index) MaterialTheme.colorScheme.background
                                 else LocalCustomColors.current.backgroundUnselected
                             ),
                         text = {
                             Text(
                                 text = title,
-                                fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.SemiBold,
+                            //    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.SemiBold,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
                             )
                         },
                         selectedContentColor = MaterialTheme.colorScheme.onBackground,
@@ -396,18 +401,18 @@ fun ItemInputForm(
             }
         }
 
-        LaunchedEffect(pagerState.currentPage) {
-            pagerState.scrollToPage(pagerState.currentPage)
-        }
+//        LaunchedEffect(pagerState.currentPage) {
+//            pagerState.scrollToPage(pagerState.currentPage)
+//        }
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier,
-            verticalAlignment = Alignment.Top,
-        //    pageSize = PageSize.Fill,
-        //    beyondViewportPageCount = pagerState.pageCount,
-        ) {
-            when (it) {
+//        HorizontalPager(
+//            state = pagerState,
+//            modifier = Modifier,
+//            verticalAlignment = Alignment.Top,
+//        //    pageSize = PageSize.Fill,
+//        //    beyondViewportPageCount = pagerState.pageCount,
+//        ) {
+            when (selectedTabIndex) {
                 0 -> ItemDetailsEntry(
                     itemDetails = itemDetails,
                     itemUiState = itemUiState,
@@ -424,13 +429,13 @@ fun ItemInputForm(
 
                 else -> throw IllegalArgumentException("Invalid tab position")
             }
-        }
+//        }
 
-        LaunchedEffect(pagerState) {
-            snapshotFlow { pagerState.currentPage }.collect { page ->
-                selectedTabIndex = page
-            }
-        }
+//        LaunchedEffect(pagerState) {
+//            snapshotFlow { pagerState.currentPage }.collect { page ->
+//                selectedTabIndex = page
+//            }
+//        }
     }
 }
 
@@ -505,12 +510,21 @@ fun ItemDetailsEntry(
                     value = itemDetails.brand,
                     onValueChange = {
                         onValueChange(itemDetails.copy(brand = it))
-                        val filterText = it.trim().lowercase()
+                       // val filterText = it.trim().lowercase()
 
                         if (it.length >= 2) {
-                            suggestions.value = itemUiState.autoBrands.filter { brand ->
-                                brand.contains(filterText, ignoreCase = true)
+                            val startsWith = itemUiState.autoBrands.filter { brand ->
+                                brand.startsWith(it, ignoreCase = true)
                             }
+                            val contains = itemUiState.autoBrands.filter { brand ->
+                                brand.contains(it, ignoreCase = true)
+                            }
+
+                            suggestions.value = startsWith + contains
+
+//                            suggestions.value = itemUiState.autoBrands.filter { brand ->
+//                                brand.contains(it, ignoreCase = true)
+//                            }
                         } else {
                             suggestions.value = emptyList()
                         }
@@ -764,12 +778,7 @@ fun ItemDetailsEntry(
                 Row(
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(
-                            top = 10.dp,
-                            bottom = 12.dp,
-                            start = 12.dp,
-                            end = 12.dp
-                        ),
+                        .padding(top = 10.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -784,23 +793,6 @@ fun ItemDetailsEntry(
                             modifier = Modifier
                                 .offset(x = 0.dp, y = 1.dp)
                         )
-//                        FavoriteHeart(
-//                            checked = itemDetails.favorite,
-//                            onCheckedChange = {
-//                                if (itemDetails.favorite) {
-//                                    onValueChange(itemDetails.copy(favorite = it))
-//                                } else {
-//                                    onValueChange(
-//                                        itemDetails.copy(
-//                                            favorite = it,
-//                                            disliked = false
-//                                        )
-//                                    )
-//                                }
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp),
-//                        )
                         CustomCheckBox(
                             checked = itemDetails.favorite,
                             onCheckedChange = {
@@ -835,23 +827,6 @@ fun ItemDetailsEntry(
                             modifier = Modifier
                                 .offset(x = 0.dp, y = 1.dp)
                         )
-//                        HatedBrokenHeart(
-//                            checked = itemDetails.disliked,
-//                            onCheckedChange = {
-//                                if (itemDetails.disliked) {
-//                                    onValueChange(itemDetails.copy(disliked = it))
-//                                } else {
-//                                    onValueChange(
-//                                        itemDetails.copy(
-//                                            disliked = it,
-//                                            favorite = false
-//                                        )
-//                                    )
-//                                }
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp),
-//                        )
                         CustomCheckBox(
                             checked = itemDetails.disliked,
                             onCheckedChange = {
@@ -1095,6 +1070,11 @@ fun AutoCompleteText(
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
     val focusRequester = remember { FocusRequester() }
     val focusState = remember { mutableStateOf(false) }
+
+    LaunchedEffect(suggestions) {
+        // Delay expanded state evaluation
+        expanded = value.isNotEmpty() && suggestions.isNotEmpty()
+    }
 
     ExposedDropdownMenuBox(
         expanded = expanded && focusState.value && suggestions.isNotEmpty(),
