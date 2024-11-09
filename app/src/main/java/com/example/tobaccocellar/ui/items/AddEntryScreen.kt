@@ -510,21 +510,22 @@ fun ItemDetailsEntry(
                     value = itemDetails.brand,
                     onValueChange = {
                         onValueChange(itemDetails.copy(brand = it))
-                       // val filterText = it.trim().lowercase()
 
                         if (it.length >= 2) {
                             val startsWith = itemUiState.autoBrands.filter { brand ->
                                 brand.startsWith(it, ignoreCase = true)
                             }
+                            val otherWordsStartsWith = itemUiState.autoBrands.filter { brand ->
+                                brand.split(" ").drop(1).any { word ->
+                                    word.startsWith(it, ignoreCase = true)
+                                } && !brand.startsWith(it, ignoreCase = true)
+                            }
                             val contains = itemUiState.autoBrands.filter { brand ->
                                 brand.contains(it, ignoreCase = true)
+                                        && !brand.startsWith(it, ignoreCase = true) &&
+                                        !otherWordsStartsWith.contains(brand)
                             }
-
-                            suggestions.value = startsWith + contains
-
-//                            suggestions.value = itemUiState.autoBrands.filter { brand ->
-//                                brand.contains(it, ignoreCase = true)
-//                            }
+                            suggestions.value = (startsWith + otherWordsStartsWith + contains)
                         } else {
                             suggestions.value = emptyList()
                         }
@@ -601,7 +602,8 @@ fun ItemDetailsEntry(
                         focusedContainerColor = LocalCustomColors.current.textField,
                         unfocusedContainerColor = LocalCustomColors.current.textField,
                         disabledContainerColor = LocalCustomColors.current.textField,
-                    )
+                    ),
+                    shape = MaterialTheme.shapes.extraSmall
                 )
             }
         }
@@ -706,7 +708,8 @@ fun ItemDetailsEntry(
                                 focusedContainerColor = LocalCustomColors.current.textField,
                                 unfocusedContainerColor = LocalCustomColors.current.textField,
                                 disabledContainerColor = LocalCustomColors.current.textField,
-                            )
+                            ),
+                            shape = MaterialTheme.shapes.extraSmall
                         )
                         IconButton(
                             onClick = {
@@ -906,6 +909,7 @@ fun NotesEntry(
                 unfocusedContainerColor = LocalCustomColors.current.textField,
                 disabledContainerColor = LocalCustomColors.current.textField,
             ),
+            shape = MaterialTheme.shapes.extraSmall,
             singleLine = false,
             maxLines = 6,
             minLines = 6,
@@ -917,64 +921,6 @@ fun NotesEntry(
     }
 }
 
-//@Composable
-//private fun CustomEntryFormTextField (
-//    value: String,
-//    onValueChange: (String) -> Unit,
-//    modifier: Modifier = Modifier,
-//    height: Dp = Dp.Unspecified,
-//    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-//    colors: TextFieldColors = TextFieldDefaults.colors(),
-//    singleLine: Boolean = false,
-//    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
-//) {
-//    var showCursor by remember { mutableStateOf(false) }
-//    var hasFocus by remember { mutableStateOf(false) }
-//    val focusManager = LocalFocusManager.current
-//
-//    BasicTextField(
-//        value = value,
-//        onValueChange = onValueChange,
-//        modifier = modifier
-//            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
-//            .height(height)
-//            .onFocusChanged { focusState ->
-//                hasFocus = focusState.hasFocus
-//                showCursor = focusState.hasFocus
-//                if (!focusState.hasFocus) {
-//                    focusManager.clearFocus()
-//                }
-//            }
-//            .padding(horizontal = 16.dp),
-//        textStyle = LocalTextStyle.current.copy(
-//            color = LocalContentColor.current,
-//            fontSize = TextUnit.Unspecified,
-//            lineHeight = TextUnit.Unspecified,
-//        ),
-//        keyboardOptions = keyboardOptions,
-//        singleLine = singleLine,
-//        maxLines = maxLines,
-//        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
-//        else { SolidColor(Color.Transparent) },
-//        decorationBox = { innerTextField ->
-//            Row(
-//                modifier = Modifier
-//                    .padding(0.dp)
-//                    .fillMaxSize(),
-//                verticalAlignment = Alignment.CenterVertically,
-//                horizontalArrangement = Arrangement.Start,
-//            ) {
-//                Box(
-//                    modifier = Modifier
-//                        .weight(1f),
-//                    contentAlignment = Alignment.CenterStart
-//                ) {
-//                    innerTextField()
-//                }
-//            }
-//        }
-//    )
-//}
 
 /** custom composables */
 
@@ -1003,57 +949,6 @@ fun CustomCheckBox(
     }
 }
 
-//@Composable
-//fun FavoriteHeart(
-//    checked: Boolean,
-//    onCheckedChange: ((Boolean) -> Unit)?,
-//    modifier: Modifier = Modifier,
-//) {
-//    IconToggleButton(
-//        checked = checked,
-//        onCheckedChange = { onCheckedChange?.invoke(it) },
-//        modifier = modifier,
-//        colors = IconButtonDefaults.iconToggleButtonColors(
-//            checkedContentColor = LocalCustomColors.current.favHeart,
-////            checkedContainerColor = MaterialTheme.colorScheme.primary,
-////            uncheckedContentColor = MaterialTheme.colorScheme.onPrimary,
-////            uncheckedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-//        )
-//    ) {
-//        Icon(
-//            imageVector = if (checked) {
-//                ImageVector.vectorResource(id = R.drawable.heart_filled_24)
-//            } else ImageVector.vectorResource(id = R.drawable.heart_outline_24),
-//            contentDescription = null,
-//            modifier = modifier
-//        )
-//    }
-//}
-//
-//
-//@Composable
-//fun HatedBrokenHeart(
-//    checked: Boolean,
-//    onCheckedChange: ((Boolean) -> Unit)?,
-//    modifier: Modifier = Modifier,
-//) {
-//    IconToggleButton(
-//        checked = checked,
-//        onCheckedChange = { onCheckedChange?.invoke(it) },
-//        modifier = modifier,
-//        colors = IconButtonDefaults.iconToggleButtonColors(
-//            checkedContentColor = LocalCustomColors.current.disHeart,
-//        )
-//    ) {
-//        Icon(
-//            imageVector = if (checked) {
-//                ImageVector.vectorResource(id = R.drawable.heartbroken_filled_24)
-//            } else ImageVector.vectorResource(id = R.drawable.heartbroken_outlined_24),
-//            contentDescription = null,
-//            modifier = modifier
-//        )
-//    }
-//}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1132,7 +1027,8 @@ fun AutoCompleteText(
                 focusedContainerColor = LocalCustomColors.current.textField,
                 unfocusedContainerColor = LocalCustomColors.current.textField,
                 disabledContainerColor = LocalCustomColors.current.textField,
-            )
+            ),
+            shape = MaterialTheme.shapes.extraSmall
         )
         DropdownMenu(
             expanded = expanded && focusState.value && suggestions.isNotEmpty(),
@@ -1236,7 +1132,8 @@ fun TypeDropDown(
                 focusedContainerColor = LocalCustomColors.current.textField,
                 unfocusedContainerColor = LocalCustomColors.current.textField,
                 disabledContainerColor = LocalCustomColors.current.textField,
-            )
+            ),
+            shape = MaterialTheme.shapes.extraSmall
         )
         ExposedDropdownMenu(
             expanded = expanded,
