@@ -125,8 +125,16 @@ class StatsViewModel(
                     totalZeroQuantity = filteredItems.count { it.quantity == 0 },
 
 
-                    topBrands = filteredItems.groupingBy { it.brand }
+                    topBrands = filteredItems
+                        .groupingBy { it.brand }
                         .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .take(10)
+                        .associate { it.key to it.value },
+                    brandsByQuantity = filteredItems
+                        .groupingBy { it.brand }
+                        .fold(0) { acc, item -> acc + item.quantity }
                         .entries
                         .sortedByDescending { it.value }
                         .take(10)
@@ -135,7 +143,13 @@ class StatsViewModel(
                         .filterNot { it.type.isBlank() }
                         .groupingBy { it.type }
                         .eachCount(),
-                    entriesByRating = calculateEntriesByRating(filteredItems)
+                    entriesByRating = calculateEntriesByRating(filteredItems),
+                    typesByQuantity = filteredItems
+                        .groupingBy { it.type }
+                        .fold(0) { acc, item -> acc + item.quantity }
+                        .entries
+                        .sortedByDescending { it.value }
+                        .associate { it.key to it.value }
                 )
             )
             }
@@ -158,8 +172,6 @@ class StatsViewModel(
             "Disliked" to dislikedCount
         ).filterValues { it > 0 }
     }
-
-
 }
 
 
@@ -219,6 +231,8 @@ data class FilteredStats(
     val outOfStock: Boolean = false,
 
     val topBrands: Map<String, Int> = emptyMap(),
+    val brandsByQuantity: Map<String, Int> = emptyMap(),
     val entriesByType: Map<String, Int> = emptyMap(),
-    val entriesByRating: Map<String, Int> = emptyMap()
+    val entriesByRating: Map<String, Int> = emptyMap(),
+    val typesByQuantity: Map<String, Int> = emptyMap()
 )

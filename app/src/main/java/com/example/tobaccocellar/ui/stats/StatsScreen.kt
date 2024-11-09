@@ -427,103 +427,96 @@ private fun ChartsSection(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = "Brands by Number of Entries",
-                modifier = Modifier,
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "(${filteredStats.itemsCount} entries)",
-                modifier = Modifier,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
-            PieChart(
-                data = filteredStats.topBrands,
-                showLabels = true,
-                showPercentages = true,
-                modifier = Modifier
-                    .padding(top = 24.dp, bottom = 32.dp)
-                    .fillMaxWidth(fraction = 0.7f),
-                onSliceLabelPosition = 0.6f,
-                outsideSliceLabelPosition = 0.65f,
-                outsideLabelThreshold = 25f,
-                rotationOffset = 225f,
-                textColor = Color.Black,
-                labelBackground = Color.White.copy(alpha = 0.55f),
-                sortData = true
+            ChartsFormat(
+                label = "Brands by Number of Entries",
+                chartData = filteredStats.topBrands
             )
             HorizontalDivider(
                 modifier = Modifier
                     .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
                 thickness = 1.dp,
             )
-            Text(
-                text = "Blends by Type",
-                modifier = Modifier,
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "(${filteredStats.itemsCount - filteredStats.unassignedCount} entries)",
-                modifier = Modifier,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
-            PieChart(
-                data = filteredStats.entriesByType,
-                colors = pieColors,
-                showLabels = true,
-                showPercentages = true,
-                modifier = Modifier
-                    .padding(top = 24.dp, bottom = 32.dp)
-                    .fillMaxWidth(fraction = 0.7f),
-                onSliceLabelPosition = 0.6f,
-                outsideSliceLabelPosition = 0.65f,
-                outsideLabelThreshold = 20f,
-                rotationOffset = 225f,
-                textColor = Color.Black,
-                labelBackground = Color.White.copy(alpha = 0.45f),
-                sortData = true
+            ChartsFormat(
+                label = "Brands by Quantity",
+                chartData = filteredStats.brandsByQuantity
             )
             HorizontalDivider(
                 modifier = Modifier
                     .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
                 thickness = 1.dp,
             )
-            Text(
-                text = "Blends by Rating",
-                modifier = Modifier,
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center
+            ChartsFormat(
+                label = "Blends by Type",
+                chartData = filteredStats.entriesByType
             )
-            Text(
-                text = "(${filteredStats.itemsCount} entries)",
-                modifier = Modifier,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
-            PieChart(
-                data = filteredStats.entriesByRating,
-                showLabels = true,
-                showPercentages = true,
+            HorizontalDivider(
                 modifier = Modifier
-                    .padding(top = 24.dp, bottom = 32.dp)
-                    .fillMaxWidth(fraction = 0.7f),
-                onSliceLabelPosition = 0.6f,
-                outsideSliceLabelPosition = 0.65f,
-                outsideLabelThreshold = 25f,
-                rotationOffset = 225f,
-                textColor = Color.Black,
-                labelBackground = Color.White.copy(alpha = 0.55f),
-                sortData = true
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
             )
+            ChartsFormat(
+                label = "Blends by Rating",
+                chartData = filteredStats.entriesByRating
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
+            )
+            ChartsFormat(
+                label = "Types by Quantity",
+                chartData = filteredStats.typesByQuantity
+            )
+
             Spacer(
                 modifier = Modifier
                     .height(16.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun ChartsFormat(
+    label: String,
+    chartData: Map<String, Int>,
+)
+{
+    val countVal = chartData.values.sum()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier,
+            fontSize = 15.sp,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "(Data total: ${countVal})",
+            modifier = Modifier,
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center
+        )
+        PieChart(
+            data = chartData,
+            showLabels = true,
+            showPercentages = true,
+            modifier = Modifier
+                .padding(top = 24.dp, bottom = 32.dp)
+                .fillMaxWidth(fraction = 0.7f),
+            onSliceLabelPosition = 0.75f,
+            outsideSliceLabelPosition = 0.65f,
+            outsideLabelThreshold = 25f,
+            rotationOffset = 225f,
+            textColor = Color.Black,
+            labelBackground = Color.White.copy(alpha = 0.55f),
+            sortData = true
+        )
     }
 }
 
@@ -534,7 +527,7 @@ private fun ChartsSection(
 private fun PieChart(
     data: Map<String, Int>,
     showLabels: Boolean = true,
-    showPercentages: Boolean = false,
+    showPercentages: Boolean = true,
     modifier: Modifier = Modifier,
     colors: List<Color> = listOf(
         LocalCustomColors.current.pieOne,
@@ -549,6 +542,7 @@ private fun PieChart(
         LocalCustomColors.current.pieTen),
     onSliceLabelPosition: Float = 0.5f,
     outsideSliceLabelPosition: Float = 0.5f,
+    // Higher float value results in larger slices pushing labels outside
     outsideLabelThreshold: Float = 20f,
     rotationOffset: Float = 270f,
     textColor: Color = Color.Black,
@@ -638,7 +632,7 @@ private fun DrawScope.drawLabels(
         val percentBg = if (showLabels && showPercentages) { backgroundColor } else { Color.Transparent }
         val labelPad = " $label "
         val decimalFormat = DecimalFormat(" #.##% ")
-        val percentageCal = decimalFormat.format(value.toDouble() / total)
+        val percentageCal = decimalFormat.format(value.toDouble() / total) +  "($value) "
 
         val textLabel = textMeasurer.measure(
             text = AnnotatedString(labelPad),
