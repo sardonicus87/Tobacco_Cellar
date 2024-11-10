@@ -4,6 +4,7 @@ package com.example.tobaccocellar.ui.stats
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -28,6 +29,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -483,6 +486,7 @@ private fun ChartsFormat(
 )
 {
     val countVal = chartData.values.sum()
+    var showValue = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -496,16 +500,39 @@ private fun ChartsFormat(
             fontSize = 15.sp,
             textAlign = TextAlign.Center
         )
-        Text(
-            text = "(Data total: ${countVal})",
+        Row(
             modifier = Modifier,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "(Data Total: ${countVal} - ",
+                modifier = Modifier,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Start
+            )
+            Text(
+                text = "Show Values",
+                modifier = Modifier
+                    .clickable(
+                    onClick = { showValue.value = !showValue.value }
+                ),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = ")",
+                modifier = Modifier,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Start
+            )
+        }
         PieChart(
             data = chartData,
             showLabels = true,
             showPercentages = true,
+            showValues = showValue.value,
             modifier = Modifier
                 .padding(top = 24.dp, bottom = 32.dp)
                 .fillMaxWidth(fraction = 0.7f),
@@ -528,6 +555,7 @@ private fun PieChart(
     data: Map<String, Int>,
     showLabels: Boolean = true,
     showPercentages: Boolean = true,
+    showValues: Boolean = false,
     modifier: Modifier = Modifier,
     colors: List<Color> = listOf(
         LocalCustomColors.current.pieOne,
@@ -568,7 +596,7 @@ private fun PieChart(
         )
 
         drawLabels(
-            sortedData, total, rotationOffset, showLabels, showPercentages, textMeasurer, textColor, labelBackground,
+            sortedData, total, rotationOffset, showLabels, showPercentages, showValues, textMeasurer, textColor, labelBackground,
             centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold,
         )
     }
@@ -602,6 +630,7 @@ private fun DrawScope.drawLabels(
     startAngle: Float,
     showLabels: Boolean,
     showPercentages: Boolean,
+    showValues: Boolean,
     textMeasurer: TextMeasurer,
     textColor: Color,
     backgroundColor: Color,
@@ -631,8 +660,10 @@ private fun DrawScope.drawLabels(
         val labelBg = if (showLabels) { backgroundColor } else { Color.Transparent }
         val percentBg = if (showLabels && showPercentages) { backgroundColor } else { Color.Transparent }
         val labelPad = " $label "
+        val valuePad = "($value) "
         val decimalFormat = DecimalFormat(" #.##% ")
-        val percentageCal = decimalFormat.format(value.toDouble() / total) +  "($value) "
+        val percentageCal =
+            if (showValues) { decimalFormat.format(value.toDouble() / total) + valuePad } else { decimalFormat.format(value.toDouble() / total) }
 
         val textLabel = textMeasurer.measure(
             text = AnnotatedString(labelPad),
