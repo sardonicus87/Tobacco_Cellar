@@ -73,7 +73,9 @@ class HomeViewModel(
             filterViewModel.selectedNonNeutral,
             filterViewModel.selectedInStock,
             filterViewModel.selectedOutOfStock,
-            filterViewModel.selectedExcludedBrands,
+            filterViewModel.selectedExcludeBrands,
+            filterViewModel.selectedExcludeLikes,
+            filterViewModel.selectedExcludeDislikes,
             filterViewModel.blendSearchValue,
             itemsRepository.getAllItemsStream()
         ) { values ->
@@ -87,8 +89,10 @@ class HomeViewModel(
             val inStock = values[7] as Boolean
             val outOfStock = values[8] as Boolean
             val excludedBrands = values[9] as List<String>
-            val blendSearchValue = values[10] as String
-            val allItems = values[11] as List<Items>
+            val excludedLikes = values[10] as Boolean
+            val excludedDislikes = values[11] as Boolean
+            val blendSearchValue = values[12] as String
+            val allItems = values[13] as List<Items>
 
             val filteredItems =
                 if (blendSearchValue.isBlank()) {
@@ -102,7 +106,9 @@ class HomeViewModel(
                                 (!nonNeutral || (items.favorite || items.disliked)) &&
                                 (!inStock || items.quantity > 0) &&
                                 (!outOfStock || items.quantity == 0) &&
-                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.brand))
+                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.brand)) &&
+                                (!excludedLikes || !items.favorite) &&
+                                (!excludedDislikes || !items.disliked)
                     }
                 } else {
                     allItems.filter { items ->

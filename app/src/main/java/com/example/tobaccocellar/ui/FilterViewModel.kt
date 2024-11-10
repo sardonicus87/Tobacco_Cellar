@@ -56,7 +56,7 @@ class FilterViewModel (
     }
 
 
-    /** Filtering **/
+    /** Sheet selection states **/
     // sheet selection states //
     val sheetSelectedBrands = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedTypes = MutableStateFlow<List<String>>(emptyList())
@@ -67,9 +67,13 @@ class FilterViewModel (
     val sheetSelectedNonNeutral = MutableStateFlow(false)
     val sheetSelectedInStock = MutableStateFlow(false)
     val sheetSelectedOutOfStock = MutableStateFlow(false)
-    val sheetSelectedExcludedBrands = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedExcludeBrands = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedExcludeSwitch = MutableStateFlow(false)
+    val sheetSelectedExcludeLikes = MutableStateFlow(false)
+    val sheetSelectedExcludeDislikes = MutableStateFlow(false)
 
+
+    // filter applied state for clear all button //
     val isFilterApplied: StateFlow<Boolean> = combine(
         sheetSelectedBrands,
         sheetSelectedTypes,
@@ -80,7 +84,9 @@ class FilterViewModel (
         sheetSelectedNonNeutral,
         sheetSelectedInStock,
         sheetSelectedOutOfStock,
-        sheetSelectedExcludedBrands,
+        sheetSelectedExcludeBrands,
+        sheetSelectedExcludeLikes,
+        sheetSelectedExcludeDislikes
     ) {
         val brands = it[0] as List<String>
         val types = it[1] as List<String>
@@ -91,7 +97,9 @@ class FilterViewModel (
         val nonNeutral = it[6] as Boolean
         val inStock = it[7] as Boolean
         val outOfStock = it[8] as Boolean
-        val excludedBrands = it[9] as List<String>
+        val excludeBrands = it[9] as List<String>
+        val excludeLikes = it[10] as Boolean
+        val excludeDislikes = it[11] as Boolean
 
         brands.isNotEmpty() ||
             types.isNotEmpty() ||
@@ -102,7 +110,9 @@ class FilterViewModel (
             nonNeutral ||
             inStock ||
             outOfStock ||
-            excludedBrands.isNotEmpty()
+            excludeBrands.isNotEmpty() ||
+            excludeLikes ||
+            excludeDislikes
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -110,7 +120,7 @@ class FilterViewModel (
     )
 
 
-    /** Filter states **/
+    /** Filtering states **/
 //    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
 //    object FilterUpdateEvent
 //    private var inactivityTimerJob: Job? = null
@@ -144,8 +154,14 @@ class FilterViewModel (
     val selectedOutOfStock: StateFlow<Boolean> = _selectedOutOfStock
 
     // exclusionary filter states //
-    private val _selectedExcludedBrands = MutableStateFlow<List<String>>(emptyList())
-    val selectedExcludedBrands: StateFlow<List<String>> = _selectedExcludedBrands
+    private val _selectedExcludeBrands = MutableStateFlow<List<String>>(emptyList())
+    val selectedExcludeBrands: StateFlow<List<String>> = _selectedExcludeBrands
+
+    private val _selectedExcludeLikes = MutableStateFlow(false)
+    val selectedExcludeLikes: StateFlow<Boolean> = _selectedExcludeLikes
+
+    private val _selectedExcludeDislikes = MutableStateFlow(false)
+    val selectedExcludeDislikes: StateFlow<Boolean> = _selectedExcludeDislikes
 
 
     // filter selection update functions //
@@ -166,11 +182,11 @@ class FilterViewModel (
 
     fun updateSelectedExcludedBrands(brand: String, isSelected: Boolean) {
         if (isSelected) {
-            sheetSelectedExcludedBrands.value += brand
-            _selectedExcludedBrands.value += brand
+            sheetSelectedExcludeBrands.value += brand
+            _selectedExcludeBrands.value += brand
         } else {
-            sheetSelectedExcludedBrands.value -= brand
-            _selectedExcludedBrands.value -= brand
+            sheetSelectedExcludeBrands.value -= brand
+            _selectedExcludeBrands.value -= brand
         }
     }
 
@@ -179,19 +195,19 @@ class FilterViewModel (
 
         if (isSelected) {
             if (sheetSelectedBrands.value.isNotEmpty()) {
-                sheetSelectedExcludedBrands.value = sheetSelectedBrands.value
-                _selectedExcludedBrands.value = _selectedBrands.value
+                sheetSelectedExcludeBrands.value = sheetSelectedBrands.value
+                _selectedExcludeBrands.value = _selectedBrands.value
 
                 sheetSelectedBrands.value = emptyList()
                 _selectedBrands.value = emptyList()
             }
         } else {
-            if (sheetSelectedExcludedBrands.value.isNotEmpty()) {
-                sheetSelectedBrands.value = _selectedExcludedBrands.value
-                _selectedBrands.value = _selectedExcludedBrands.value
+            if (sheetSelectedExcludeBrands.value.isNotEmpty()) {
+                sheetSelectedBrands.value = _selectedExcludeBrands.value
+                _selectedBrands.value = _selectedExcludeBrands.value
 
-                sheetSelectedExcludedBrands.value = emptyList()
-                _selectedExcludedBrands.value = emptyList()
+                sheetSelectedExcludeBrands.value = emptyList()
+                _selectedExcludeBrands.value = emptyList()
             }
         }
 
@@ -228,10 +244,34 @@ class FilterViewModel (
             sheetSelectedDislikeds.value = false
             sheetSelectedNeutral.value = false
             sheetSelectedNonNeutral.value = false
+            sheetSelectedExcludeLikes.value = false
+            sheetSelectedExcludeDislikes.value = false
 
             _selectedDislikeds.value = false
             _selectedNeutral.value = false
             _selectedNonNeutral.value = false
+            _selectedExcludeLikes.value = false
+            _selectedExcludeDislikes.value = false
+        }
+    }
+
+    fun updateSelectedExcludeLikes(isSelected: Boolean) {
+        sheetSelectedExcludeLikes.value = isSelected
+        _selectedExcludeLikes.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedFavorites.value = false
+            sheetSelectedDislikeds.value = false
+            sheetSelectedNeutral.value = false
+            sheetSelectedNonNeutral.value = false
+            sheetSelectedExcludeDislikes.value = false
+
+            _selectedFavorites.value = false
+            _selectedDislikeds.value = false
+            _selectedNeutral.value = false
+            _selectedNonNeutral.value = false
+            _selectedExcludeDislikes.value = false
+
         }
     }
 
@@ -243,10 +283,33 @@ class FilterViewModel (
             sheetSelectedFavorites.value = false
             sheetSelectedNeutral.value = false
             sheetSelectedNonNeutral.value = false
+            sheetSelectedExcludeLikes.value = false
+            sheetSelectedExcludeDislikes.value = false
 
             _selectedFavorites.value = false
             _selectedNeutral.value = false
             _selectedNonNeutral.value = false
+            _selectedExcludeLikes.value = false
+            _selectedExcludeDislikes.value = false
+        }
+    }
+
+    fun updateSelectedExcludeDislikes(isSelected: Boolean) {
+        sheetSelectedExcludeDislikes.value = isSelected
+        _selectedExcludeDislikes.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedFavorites.value = false
+            sheetSelectedDislikeds.value = false
+            sheetSelectedNeutral.value = false
+            sheetSelectedNonNeutral.value = false
+            sheetSelectedExcludeLikes.value = false
+
+            _selectedFavorites.value = false
+            _selectedDislikeds.value = false
+            _selectedNeutral.value = false
+            _selectedNonNeutral.value = false
+            _selectedExcludeLikes.value = false
         }
     }
 
@@ -258,10 +321,14 @@ class FilterViewModel (
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
             sheetSelectedNonNeutral.value = false
+            sheetSelectedExcludeLikes.value = false
+            sheetSelectedExcludeDislikes.value = false
 
             _selectedFavorites.value = false
             _selectedDislikeds.value = false
             _selectedNonNeutral.value = false
+            _selectedExcludeLikes.value = false
+            _selectedExcludeDislikes.value = false
         }
     }
 
@@ -273,10 +340,14 @@ class FilterViewModel (
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
             sheetSelectedNeutral.value = false
+            sheetSelectedExcludeLikes.value = false
+            sheetSelectedExcludeDislikes.value = false
 
             _selectedFavorites.value = false
             _selectedDislikeds.value = false
             _selectedNeutral.value = false
+            _selectedExcludeLikes.value = false
+            _selectedExcludeDislikes.value = false
         }
     }
 
@@ -327,8 +398,8 @@ class FilterViewModel (
         sheetSelectedBrands.value = emptyList()
         _selectedBrands.value = emptyList()
 
-        sheetSelectedExcludedBrands.value = emptyList()
-        _selectedExcludedBrands.value = emptyList()
+        sheetSelectedExcludeBrands.value = emptyList()
+        _selectedExcludeBrands.value = emptyList()
     }
 
     fun resetFilter() {
@@ -341,7 +412,7 @@ class FilterViewModel (
         sheetSelectedNonNeutral.value = false
         sheetSelectedInStock.value = false
         sheetSelectedOutOfStock.value = false
-        sheetSelectedExcludedBrands.value = emptyList()
+        sheetSelectedExcludeBrands.value = emptyList()
 
         _selectedBrands.value = emptyList()
         _selectedTypes.value = emptyList()
@@ -352,7 +423,7 @@ class FilterViewModel (
         _selectedNonNeutral.value = false
         _selectedInStock.value = false
         _selectedOutOfStock.value = false
-        _selectedExcludedBrands.value = emptyList()
+        _selectedExcludeBrands.value = emptyList()
     }
 
 
