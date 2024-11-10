@@ -969,6 +969,14 @@ fun AutoCompleteText(
     LaunchedEffect(suggestions) {
         // Delay expanded state evaluation
         expanded = value.isNotEmpty() && suggestions.isNotEmpty()
+        if (suggestions.isEmpty()) {
+            expanded = false
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            expanded = false
+        }
     }
 
     ExposedDropdownMenuBox(
@@ -977,11 +985,6 @@ fun AutoCompleteText(
         modifier = modifier
             .padding(0.dp)
     ) {
-        DisposableEffect(Unit) {
-            onDispose {
-                expanded = false
-            }
-        }
         TextField(
             value = textFieldValueState.copy(text = value),
             onValueChange = {
