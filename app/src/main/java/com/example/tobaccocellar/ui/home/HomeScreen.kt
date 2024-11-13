@@ -822,7 +822,7 @@ private fun CellarListItem(
                 }
                 Column(
                     modifier = Modifier
-                        .width(18.dp)
+                        .width(IntrinsicSize.Max)
                         .padding(0.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.End
