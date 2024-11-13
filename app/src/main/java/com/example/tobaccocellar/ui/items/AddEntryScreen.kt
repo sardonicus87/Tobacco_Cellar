@@ -525,7 +525,11 @@ fun ItemDetailsEntry(
                                         && !brand.startsWith(it, ignoreCase = true) &&
                                         !otherWordsStartsWith.contains(brand)
                             }
-                            suggestions.value = (startsWith + otherWordsStartsWith + contains)
+                            val selected = itemUiState.autoBrands.filter { brand ->
+                                brand == it
+                            }
+
+                            suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
                         } else {
                             suggestions.value = emptyList()
                         }
