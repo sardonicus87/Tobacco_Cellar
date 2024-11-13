@@ -737,16 +737,12 @@ fun OtherFiltersSection(
                         )
                     }
                     CheckboxWithLabel(
-                        text = "Neutral",
+                        text = "Unrated",
                         checked = neutral,
                         onCheckedChange = { filterViewModel.updateSelectedNeutral(it) },
                         modifier = Modifier
                     )
                 }
-                Spacer(
-                    modifier = Modifier
-                        .width(4.dp)
-                )
             }
         }
 
@@ -795,7 +791,8 @@ fun CheckboxWithLabel(
     Row(
         modifier = modifier
             .padding(0.dp)
-            .height(36.dp),
+            .height(36.dp)
+            .offset(x = (-2).dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -811,7 +808,7 @@ fun CheckboxWithLabel(
             text = text,
             modifier = Modifier
                 .offset(x = (-4).dp)
-                .padding(end = 4.dp),
+                .padding(end = 6.dp),
             color = fontColor,
             fontSize = 15.sp,
         )
@@ -831,7 +828,8 @@ fun TriStateCheckWithLabel(
     Row(
         modifier = modifier
             .padding(0.dp)
-            .height(36.dp),
+            .height(36.dp)
+            .offset(x = (-2).dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -849,7 +847,7 @@ fun TriStateCheckWithLabel(
             text = text,
             modifier = Modifier
                 .offset(x = (-4).dp)
-                .padding(end = 4.dp),
+                .padding(end = 6.dp),
             color = fontColor,
             fontSize = 15.sp,
         )
@@ -964,13 +962,13 @@ fun BrandFilterSection(
                     .padding(start = 12.dp)
                     .width(IntrinsicSize.Max)
                     .height(48.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                        RoundedCornerShape(8.dp)
-                    )
+//                    .border(
+//                        1.dp,
+//                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+//                        RoundedCornerShape(8.dp)
+//                    )
                     .background(
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
                         RoundedCornerShape(8.dp)
                     )
                     .padding(horizontal = 8.dp)
