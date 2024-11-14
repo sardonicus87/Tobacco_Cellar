@@ -943,7 +943,22 @@ fun BrandFilterSection(
                     filteredBrands = if (text.isBlank()) {
                         allBrands
                     } else {
-                        allBrands.filter { it.contains(text, ignoreCase = true) }
+//                        allBrands.filter { it.contains(text, ignoreCase = true) }
+//
+                        val startsWith = allBrands.filter { brand ->
+                            brand.startsWith(text, ignoreCase = true)
+                        }
+                        val otherWordsStartsWith = allBrands.filter { brand ->
+                            brand.split(" ").drop(1).any { word ->
+                                word.startsWith(text, ignoreCase = true)
+                            } && !brand.startsWith(text, ignoreCase = true)
+                        }
+                        val contains = allBrands.filter { brand ->
+                            brand.contains(text, ignoreCase = true)
+                                    && !brand.startsWith(text, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(brand)
+                        }
+                        startsWith + otherWordsStartsWith + contains
                     }
                 },
                 modifier = Modifier
