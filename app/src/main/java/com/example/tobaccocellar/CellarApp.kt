@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -83,6 +84,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -943,8 +945,7 @@ fun BrandFilterSection(
                     filteredBrands = if (text.isBlank()) {
                         allBrands
                     } else {
-//                        allBrands.filter { it.contains(text, ignoreCase = true) }
-//
+
                         val startsWith = allBrands.filter { brand ->
                             brand.startsWith(text, ignoreCase = true)
                         }
@@ -977,11 +978,6 @@ fun BrandFilterSection(
                     .padding(start = 12.dp)
                     .width(IntrinsicSize.Max)
                     .height(48.dp)
-//                    .border(
-//                        1.dp,
-//                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-//                        RoundedCornerShape(8.dp)
-//                    )
                     .background(
                         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
                         RoundedCornerShape(8.dp)
@@ -1022,6 +1018,7 @@ fun BrandFilterSection(
             }
         }
 
+        val lazyListState = rememberLazyListState()
 
         Box(
             modifier = Modifier
@@ -1036,6 +1033,7 @@ fun BrandFilterSection(
                     .height(36.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                state = lazyListState
             ) {
                 val unselectedBrands = filteredBrands.filterNot {
                     if ((selectedExcludedBrands.isEmpty())) {
@@ -1067,6 +1065,11 @@ fun BrandFilterSection(
                     }
                 }
             }
+
+            LaunchedEffect(filteredBrands) {
+                lazyListState.animateScrollToItem(0)
+            }
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
