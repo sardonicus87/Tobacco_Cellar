@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -633,6 +634,8 @@ fun ListViewMode(
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
 ) {
+    val columnState = rememberLazyListState()
+
     Box(
         modifier = Modifier
             .padding(0.dp)
@@ -642,6 +645,7 @@ fun ListViewMode(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(0.dp),
+            state = columnState
         ) {
             items(items = itemsList, key = { it.id }) { item ->
                 val haptics = LocalHapticFeedback.current
@@ -677,6 +681,9 @@ fun ListViewMode(
                     showMenu = isMenuShown && menuItemId == item.id,
                 )
             }
+        }
+        LaunchedEffect(itemsList) {
+            columnState.animateScrollToItem(0)
         }
     }
 }
