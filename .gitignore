@@ -14,5 +14,6 @@
 .cxx
 local.properties
 kotlin-compiler
-.kotlin\errors
-.kotlin\sessions
+.kotlin/errors
+.kotlin/sessions
+.idea/
