@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp") version "2.0.0-1.0.21"
+    id("com.google.devtools.ksp")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -40,9 +40,9 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
+//    composeOptions {
 //        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -67,10 +67,8 @@ dependencies {
     implementation(libs.androidx.viewpager2)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.commons.csv)
-    implementation(libs.androidx.activity.compose)
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
-    implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.androidx.core.splashscreen)
 
 

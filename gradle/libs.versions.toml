@@ -1,18 +1,19 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
-agp = "8.5.2"
+agp = "8.7.2"
 commonsCsv = "1.12.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.1"
-kotlin = "2.0.10"
+devtoolsKsp = "2.0.0-1.0.21"
+kotlin = "2.0.21"
 coreKtx = "1.15.0"
 kotlinxCoroutinesAndroid = "1.9.0"
 leakcanaryAndroid = "2.14"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
-composeBom = "2024.10.01"
+composeBom = "2024.11.00"
 monitor = "1.7.2"
-navigationCompose = "2.8.3"
+navigationCompose = "2.8.4"
 roomRuntime = "2.6.1"
 uiTextGoogleFonts = "1.7.5"
 datastoreCoreAndroid = "1.1.1"
@@ -40,7 +41,6 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
-kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanaryAndroid" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
@@ -51,5 +51,6 @@ ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "devtoolsKsp" }
