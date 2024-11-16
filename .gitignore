@@ -19,3 +19,4 @@ kotlin-compiler
 .idea/
 kotlinc.xml
 /.idea/inspectionProfiles
+deploymentTargetSelector.xml
