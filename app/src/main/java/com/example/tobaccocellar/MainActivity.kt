@@ -10,14 +10,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key.Companion.Window
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.tobaccocellar.data.LocalCellarApplication
@@ -53,12 +57,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val application = (application as CellarApplication)
-            WindowInsets.safeDrawing
+            WindowInsets.safeContent
             CompositionLocalProvider(LocalCellarApplication provides application) {
                 TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
                     Surface(
                         modifier = Modifier
-                            .fillMaxSize(),
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.safeContent),
                         color = MaterialTheme.colorScheme.background,
                     ) {
                         CellarApp()
