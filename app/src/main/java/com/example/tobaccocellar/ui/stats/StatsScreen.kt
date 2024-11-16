@@ -718,7 +718,6 @@ private fun DrawScope.drawLabels(
 
         val labelX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
         val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat() - combinedHeight / 2
-
         val normalizedMidpointAngle = (midpointAngle) % 360f
 
         val xOffsetFactor =
@@ -734,13 +733,13 @@ private fun DrawScope.drawLabels(
                 in 45f..90f -> ((90f - normalizedMidpointAngle) / (90f - 45f)) * (-3) // subtract exponentially less, moves up
                 in 91f..135f -> ((135f - normalizedMidpointAngle) / (135f - 91f)) * (-3) // subtract exponentially less, moves up
                 in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-2) // subtract exponentially less, moves up
-                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-1/2) // subtract exponentially more, moves up
+                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-1) // subtract exponentially more, moves up
                 else -> 0f
             }
 
         val outsideMaxX = 6.dp.toPx()
         val outsideMaxY = 6.dp.toPx()
-        val mediumSliceAdjustment = 9.dp.toPx()
+        val mediumSliceAdjustment = 10.dp.toPx()
 
         if (sweepAngle > outsideLabelThreshold && sweepAngle < 50f) {
             when (normalizedMidpointAngle) {
