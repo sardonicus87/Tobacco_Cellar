@@ -734,13 +734,13 @@ private fun DrawScope.drawLabels(
                 in 45f..90f -> ((90f - normalizedMidpointAngle) / (90f - 45f)) * (-3) // subtract exponentially less, moves up
                 in 91f..135f -> ((135f - normalizedMidpointAngle) / (135f - 91f)) * (-3) // subtract exponentially less, moves up
                 in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-2) // subtract exponentially less, moves up
-                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-1/3) // subtract exponentially more, moves up
+                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-1/2) // subtract exponentially more, moves up
                 else -> 0f
             }
 
         val outsideMaxX = 6.dp.toPx()
         val outsideMaxY = 6.dp.toPx()
-        val mediumSliceAdjustment = 15.dp.toPx()
+        val mediumSliceAdjustment = 9.dp.toPx()
 
         if (sweepAngle > outsideLabelThreshold && sweepAngle < 50f) {
             when (normalizedMidpointAngle) {
@@ -753,7 +753,7 @@ private fun DrawScope.drawLabels(
         val mediumSliceAdjustmentDirection =
             when (normalizedMidpointAngle) {
                 in 50f..75f -> (-1f)
-                in 76f..100f -> 0f
+                in 76f..100f -> 1f
                 in 101f..130f -> (-1f)
                 else -> 0f
             }
@@ -793,7 +793,7 @@ private fun DrawScope.drawLabels(
             } else {
                 if (sweepAngle < 50f && sweepAngle > outsideLabelThreshold) {
                     // medium slices at bottom of the chart
-                    if (mediumSliceCount == 3) {
+                    if (mediumSliceCount >= 2) {
                         (labelY - labelHeight / 2) + (mediumSliceAdjustment * mediumSliceAdjustmentDirection)
                     } else {
                         // medium slices anywhere else
