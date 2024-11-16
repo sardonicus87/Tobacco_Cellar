@@ -1239,7 +1239,7 @@ fun BrandFilterSection(
                                         modifier = Modifier
                                             .heightIn(min = 0.dp, max = 280.dp),
                                         userScrollEnabled = true,
-                                        contentPadding = PaddingValues(vertical = 10.dp),
+                                        contentPadding = PaddingValues(bottom = 10.dp),
                                         verticalArrangement = Arrangement.spacedBy((-6).dp),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -1272,7 +1272,7 @@ fun BrandFilterSection(
                                                                 Color.Transparent,
                                                             ),
                                                             startY = 0f,
-                                                            endY = glowOffsetY,
+                                                            endY = glowHeight.toPx(),
                                                         ),
                                                         topLeft = Offset(0f, 0f),
                                                         size = Size(size.width, glowHeight.toPx())
