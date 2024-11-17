@@ -27,8 +27,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -51,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -335,55 +339,104 @@ fun CsvImportBody(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    BrandField(
+                    MappingField(
+                        label = "Brand: ",
                         selectedColumn = mappingOptions.brandColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Brand, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Brand, selectedColumn) },
+                        placeholder = "Required",
                     )
-                    BlendField(
+                    MappingField(
+                        label = "Blend: ",
                         selectedColumn = mappingOptions.blendColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Blend, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Blend, selectedColumn) },
+                        placeholder = "Required",
                     )
-                    TypeField(
+                    MappingField(
+                        label = "Type: ",
                         selectedColumn = mappingOptions.typeColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Type, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Type, selectedColumn) },
                     )
-                    QuantityField(
+                    MappingField(
+                        label = "Quantity: ",
                         selectedColumn = mappingOptions.quantityColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Quantity, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Quantity, selectedColumn) },
                     )
-                    FavoriteField(
+                    MappingField(
+                        label = "Favorite: ",
                         selectedColumn = mappingOptions.favoriteColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Favorite, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Favorite, selectedColumn) },
                     )
-                    DislikedField(
+                    MappingField(
+                        label = "Disliked: ",
                         selectedColumn = mappingOptions.dislikedColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Disliked, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Disliked, selectedColumn) },
                     )
-                    NotesField(
+                    MappingField(
+                        label = "Notes: ",
                         selectedColumn = mappingOptions.notesColumn,
                         csvColumns = csvUiState.columns,
                         onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
-                            CsvImportViewModel.CsvField.Notes, selectedColumn
-                        ) },
+                            CsvImportViewModel.CsvField.Notes, selectedColumn) },
                     )
+
+
+//                    BrandField(
+//                        selectedColumn = mappingOptions.brandColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Brand, selectedColumn
+//                        ) },
+//                    )
+//                    BlendField(
+//                        selectedColumn = mappingOptions.blendColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Blend, selectedColumn
+//                        ) },
+//                    )
+//                    TypeField(
+//                        selectedColumn = mappingOptions.typeColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Type, selectedColumn
+//                        ) },
+//                    )
+//                    QuantityField(
+//                        selectedColumn = mappingOptions.quantityColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Quantity, selectedColumn) },
+//                    )
+//                    FavoriteField(
+//                        selectedColumn = mappingOptions.favoriteColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Favorite, selectedColumn) },
+//                    )
+//                    DislikedField(
+//                        selectedColumn = mappingOptions.dislikedColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Disliked, selectedColumn) },
+//                    )
+//                    NotesField(
+//                        selectedColumn = mappingOptions.notesColumn,
+//                        csvColumns = csvUiState.columns,
+//                        onColumnSelected = { selectedColumn -> viewModel.updateMappingOptions(
+//                            CsvImportViewModel.CsvField.Notes, selectedColumn) },
+//                    )
                 }
 
                 // Confirm and  Import button //
@@ -509,6 +562,96 @@ fun CsvImportBody(
 }
 
 // Field mapping composables //
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MappingField (
+    label: String,
+    selectedColumn: String,
+    csvColumns: List<String>,
+    onColumnSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Row (
+            modifier = modifier
+                .padding(0.dp)
+                .fillMaxWidth(fraction = .7f),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier
+                    .padding(0.dp)
+                    .weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .weight(2f)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = modifier
+                ) {
+                    OutlinedTextField(
+                        value = selectedColumn.ifBlank { "" },
+                        onValueChange = {},
+                        readOnly = true,
+                        modifier = Modifier
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                        trailingIcon =
+                        {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+//                            Icon(
+//                                imageVector = Icons.Filled.ArrowDropDown,
+//                                contentDescription = null,
+//                                modifier = Modifier
+//                                    .clickable { expanded = !expanded }
+//                            )
+                        },
+                        placeholder = { Text(text = placeholder) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                            disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                            focusedContainerColor = LocalCustomColors.current.darkNeutral,
+                            unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
+                            disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                        )
+                    )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        containerColor = LocalCustomColors.current.darkNeutral,
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(text = "") },
+                            onClick = {
+                                onColumnSelected("")
+                                expanded = false
+                            }
+                        )
+                        csvColumns.forEach { column ->
+                            DropdownMenuItem(
+                                text = { Text(text = column) },
+                                onClick = {
+                                    onColumnSelected(column)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun BrandField (
