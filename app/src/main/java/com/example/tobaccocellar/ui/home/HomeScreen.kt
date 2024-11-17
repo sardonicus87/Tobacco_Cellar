@@ -1174,7 +1174,6 @@ fun HeaderCell(
     icon2: Painter? = null,
     iconUp: Painter? = null,
     iconDown: Painter? = null,
- //   columnIndex: Int = 0,
     sorting: Sorting,
     primarySort: Boolean,
     onClick: (() -> Unit)? = null
@@ -1274,7 +1273,6 @@ fun TableCell(
         modifier = modifier
             .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
             .background(backgroundColor)
-            //  .clickable(enabled = onClick != null) { onClick?.invoke() }
             .combinedClickable(
                 enabled = onClick != null,
                 onClick = { focusManager.clearFocus() },
