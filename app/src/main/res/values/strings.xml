@@ -60,7 +60,7 @@
     <string name="item_detail_title">Details</string>
     <string name="settings_nothing">Settings</string>
     <string name="notes_entry">Enter Notes</string>
-    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or 
+    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
         incorrect format.</string>
 
 
