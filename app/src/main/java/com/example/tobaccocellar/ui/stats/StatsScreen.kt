@@ -2,7 +2,6 @@ package com.example.tobaccocellar.ui.stats
 
 
 import android.icu.text.DecimalFormat
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -537,7 +536,7 @@ private fun ChartsFormat(
             showPercentages = true,
             showValues = showValue.value,
             modifier = Modifier
-                .padding(top = 28.dp, bottom = 40.dp)
+                .padding(top = 28.dp, bottom = 44.dp)
                 .fillMaxWidth(fraction = 0.7f),
             onSliceLabelPosition = 0.7f,
             outsideSliceLabelPosition = 0.65f,
@@ -665,10 +664,44 @@ private fun DrawScope.drawLabels(
         val radius =
             if (sweepAngle < outsideLabelThreshold) { outsideRadius } else { insideRadius }
 
-        val labelColor = if (showLabels) { textColor } else { Color.Transparent }
-        val percentColor = if (showLabels && showPercentages) { textColor } else { Color.Transparent }
-        val labelBg = if (showLabels) { backgroundColor } else { Color.Transparent }
-        val percentBg = if (showLabels && showPercentages) { backgroundColor } else { Color.Transparent }
+        val labelColor =
+            if (showLabels) {
+                if (thinSliceCount >= 1) {
+                    colors[data.keys.indexOf(label) % colors.size]
+                } else {
+                    textColor
+                }
+            } else {
+                Color.Transparent
+            }
+        val percentColor =
+            if (showLabels && showPercentages) {
+                if (thinSliceCount >= 1) {
+                    colors[data.keys.indexOf(label) % colors.size]
+                } else {
+                    textColor
+                }
+            } else {
+                Color.Transparent
+            }
+        val labelBg =
+            if (showLabels) {
+                if (thinSliceCount >= 1) {
+                    Color.Black
+                } else {
+                    backgroundColor
+                }
+            } else {
+                Color.Transparent
+            }
+        val percentBg =
+            if (showLabels && showPercentages) {
+                if (thinSliceCount >= 1) {
+                    Color.Black
+                } else {
+                    backgroundColor
+                }
+            } else { Color.Transparent }
 
         val labelPad = " $label "
         val valuePad = "($value) "
@@ -723,17 +756,18 @@ private fun DrawScope.drawLabels(
         val xOffsetFactor =
             when (normalizedMidpointAngle) {
                 in 45f..90f -> (90f - normalizedMidpointAngle) / (90f - 45f) * 2 // add exponetially less, moves right
-                in 91f..135f -> ((135f - normalizedMidpointAngle) / (135f - 91f)) * (-2) // subtract exponentially less, moves left
+                in 91f..135f -> ((135f - normalizedMidpointAngle) / (135f - 91f)) * (-3/2) // subtract exponentially less, moves left
                 in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-1) // subtract exponentially less, moves left
-                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-1) // subtract exponetially more, move left
+                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-5) // subtract exponetially more, move left
                 else -> 0f
             }
         val yOffsetFactor =
             when (normalizedMidpointAngle) {
-                in 45f..90f -> ((90f - normalizedMidpointAngle) / (90f - 45f)) * (-3) // subtract exponentially less, moves up
-                in 91f..135f -> ((135f - normalizedMidpointAngle) / (135f - 91f)) * (-3) // subtract exponentially less, moves up
-                in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-2) // subtract exponentially less, moves up
-                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-1) // subtract exponentially more, moves up
+                in 45f..80f -> ((80f - normalizedMidpointAngle) / (80f - 45f)) * (-3) // subtract exponentially less, moves up
+                in 100f..135f -> ((135f - normalizedMidpointAngle) / (135f - 100f)) * (-2) // subtract exponentially less, moves up
+                in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-3/2) // subtract exponentially less, moves up
+                in 181f..202f -> ((normalizedMidpointAngle - 181f) / (202f - 181f)) * (-1/3)// subtract exponentially more, moves up
+                in 203f..224f -> ((normalizedMidpointAngle - 203f) / (224f - 203f)) * (-2) // subtract exponentially more, moves up
                 else -> 0f
             }
 
@@ -752,7 +786,7 @@ private fun DrawScope.drawLabels(
         val mediumSliceAdjustmentDirection =
             when (normalizedMidpointAngle) {
                 in 50f..75f -> (-1f)
-                in 76f..100f -> 1f
+                in 76f..100f -> (5/2f)
                 in 101f..130f -> (-1f)
                 else -> 0f
             }
@@ -787,7 +821,11 @@ private fun DrawScope.drawLabels(
                     }
                 } else {
                     // normal outside slice labels
-                    (labelY - labelHeight / 2) + (outsideMaxY * yOffsetFactor)
+                    if (midpointAngle > 80f && midpointAngle < 100f) {
+                        (labelY - labelHeight / 2) + 10.dp.toPx()
+                    } else {
+                        (labelY - labelHeight / 2) + (outsideMaxY * yOffsetFactor)
+                    }
                 }
             } else {
                 if (sweepAngle < 50f && sweepAngle > outsideLabelThreshold) {
