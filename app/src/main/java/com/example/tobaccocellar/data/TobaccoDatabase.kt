@@ -4,14 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 
-val MIGRATION_4_1 = object : Migration(4, 1) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-
-    }
-}
+//val MIGRATION_1_2 = object : Migration(1, 2) {
+//    override fun migrate(db: SupportSQLiteDatabase) {
+//
+//    }
+//}
 
 @Database(entities = [Items::class], version = 1, exportSchema = true)
 abstract class TobaccoDatabase : RoomDatabase() {
@@ -25,7 +23,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
         fun getDatabase(context: Context): TobaccoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database")
-                    .addMigrations(MIGRATION_4_1)
+//                    .addMigrations(MIGRATION_1_2)
                     .build()
                     .also { Instance = it }
             }
