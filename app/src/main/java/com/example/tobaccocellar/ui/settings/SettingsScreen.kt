@@ -230,7 +230,7 @@ fun AboutSection(
         )
         Text(
             text = "Cobbled together by Sardonicus with Kotlin and Jetpack Compose. " +
-                    "Uses Apache Commons CSV for reading/writing CSV files.",
+                    "Uses Apache Commons CSV for reading and writing CSV files.",
             modifier = Modifier
                 .padding(vertical = 8.dp, horizontal = 16.dp),
             fontSize = 14.sp,
