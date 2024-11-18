@@ -383,21 +383,7 @@ fun FilteredStats(
 @Composable
 private fun ChartsSection(
     filteredStats: FilteredStats,
-//    viewModel: StatsViewModel
 ) {
-    val pieColors = listOf(
-        LocalCustomColors.current.pieOne,
-        LocalCustomColors.current.pieTwo,
-        LocalCustomColors.current.pieThree,
-        LocalCustomColors.current.pieFour,
-        LocalCustomColors.current.pieFive,
-        LocalCustomColors.current.pieSix,
-        LocalCustomColors.current.pieSeven,
-        LocalCustomColors.current.pieEight,
-        LocalCustomColors.current.pieNine,
-        LocalCustomColors.current.pieTen,
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -487,6 +473,18 @@ private fun ChartsFormat(
 {
     val countVal = chartData.values.sum()
     var showValue = remember { mutableStateOf(false) }
+    val pieColors = listOf(
+        LocalCustomColors.current.pieOne,
+        LocalCustomColors.current.pieTwo,
+        LocalCustomColors.current.pieThree,
+        LocalCustomColors.current.pieFour,
+        LocalCustomColors.current.pieFive,
+        LocalCustomColors.current.pieSix,
+        LocalCustomColors.current.pieSeven,
+        LocalCustomColors.current.pieEight,
+        LocalCustomColors.current.pieNine,
+        LocalCustomColors.current.pieTen,
+    )
 
     Column(
         modifier = Modifier
@@ -555,10 +553,10 @@ private fun ChartsFormat(
 @Composable
 private fun PieChart(
     data: Map<String, Int>,
+    modifier: Modifier = Modifier,
     showLabels: Boolean = true,
     showPercentages: Boolean = true,
     showValues: Boolean = false,
-    modifier: Modifier = Modifier,
     colors: List<Color> = listOf(
         LocalCustomColors.current.pieOne,
         LocalCustomColors.current.pieTwo,
@@ -572,7 +570,6 @@ private fun PieChart(
         LocalCustomColors.current.pieTen),
     onSliceLabelPosition: Float = 0.5f,
     outsideSliceLabelPosition: Float = 0.5f,
-    // Higher float value results in larger slices pushing labels outside
     outsideLabelThreshold: Float = 20f,
     rotationOffset: Float = 270f,
     textColor: Color = Color.Black,
@@ -589,7 +586,6 @@ private fun PieChart(
     ) {
         val centerX = size.width / 2
         val centerY = size.height / 2
-    //    val radiusSlice = min(centerX, centerY) * 0.8f // float is padding between canvas bounds and chart
         val insideLabel = min(centerX, centerY) * onSliceLabelPosition
         val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.3f))
 
