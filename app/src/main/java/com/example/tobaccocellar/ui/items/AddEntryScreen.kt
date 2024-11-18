@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -335,8 +334,6 @@ fun ItemInputForm(
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val titles = listOf("Item Details", "Notes")
-    val pagerState = rememberPagerState(initialPage = 0) { titles.size }
-    val coroutineScope = rememberCoroutineScope()
 
 
     Column(
@@ -345,7 +342,6 @@ fun ItemInputForm(
         verticalArrangement = Arrangement.Top
     ) {
         TabRow(
-        //    selectedTabIndex = pagerState.currentPage,
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier
                 .padding(0.dp, bottom = 8.dp),
@@ -370,26 +366,18 @@ fun ItemInputForm(
             titles.forEachIndexed { index, title ->
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
-                    //    selected = pagerState.currentPage == index,
                         selected = selectedTabIndex == index,
                         onClick = {
-                            // selectedTabIndex = index
                             selectedTabIndex = index
-//                            coroutineScope.launch {
-//                                pagerState.scrollToPage(index)
-//                            }
                         },
                         modifier = Modifier
                             .background(
-//                                if (pagerState.currentPage == index) MaterialTheme.colorScheme.background
-//                                else LocalCustomColors.current.backgroundUnselected
                                 if (selectedTabIndex == index) MaterialTheme.colorScheme.background
                                 else LocalCustomColors.current.backgroundUnselected
                             ),
                         text = {
                             Text(
                                 text = title,
-                            //    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.SemiBold,
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
                             )
                         },
@@ -400,42 +388,23 @@ fun ItemInputForm(
                 }
             }
         }
+        when (selectedTabIndex) {
+            0 -> ItemDetailsEntry(
+                itemDetails = itemDetails,
+                itemUiState = itemUiState,
+                isEditEntry = isEditEntry,
+                onValueChange = onValueChange,
+                modifier = Modifier,
+            )
 
-//        LaunchedEffect(pagerState.currentPage) {
-//            pagerState.scrollToPage(pagerState.currentPage)
-//        }
+            1 -> NotesEntry(
+                itemDetails = itemDetails,
+                onValueChange = onValueChange,
+                modifier = Modifier
+            )
 
-//        HorizontalPager(
-//            state = pagerState,
-//            modifier = Modifier,
-//            verticalAlignment = Alignment.Top,
-//        //    pageSize = PageSize.Fill,
-//        //    beyondViewportPageCount = pagerState.pageCount,
-//        ) {
-            when (selectedTabIndex) {
-                0 -> ItemDetailsEntry(
-                    itemDetails = itemDetails,
-                    itemUiState = itemUiState,
-                    isEditEntry = isEditEntry,
-                    onValueChange = onValueChange,
-                    modifier = Modifier,
-                )
-
-                1 -> NotesEntry(
-                    itemDetails = itemDetails,
-                    onValueChange = onValueChange,
-                    modifier = Modifier
-                )
-
-                else -> throw IllegalArgumentException("Invalid tab position")
-            }
-//        }
-
-//        LaunchedEffect(pagerState) {
-//            snapshotFlow { pagerState.currentPage }.collect { page ->
-//                selectedTabIndex = page
-//            }
-//        }
+            else -> throw IllegalArgumentException("Invalid tab position")
+        }
     }
 }
 
@@ -458,7 +427,6 @@ fun ItemDetailsEntry(
         }
     }
 
-// Required Fields //
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -470,6 +438,8 @@ fun ItemDetailsEntry(
             .padding(top = 8.dp, bottom = 0.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+
+        // Required Fields //
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -491,7 +461,7 @@ fun ItemDetailsEntry(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-// Brand //
+            // Brand //
             Row(
                 modifier = modifier
                     .fillMaxWidth(),
@@ -552,7 +522,7 @@ fun ItemDetailsEntry(
                 )
             }
 
-// Blend //
+            // Blend //
             Row(
                 modifier = modifier
                     .fillMaxWidth(),
@@ -611,13 +581,14 @@ fun ItemDetailsEntry(
                 )
             }
         }
+
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
                 .size(12.dp)
         )
 
-// Optional //
+        // Optional //
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -645,7 +616,7 @@ fun ItemDetailsEntry(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-// Type //
+                // Type //
                 Row(
                     modifier = modifier
                         .fillMaxWidth(),
@@ -665,7 +636,7 @@ fun ItemDetailsEntry(
                     )
                 }
 
-// Quantity //
+                // Quantity //
                 Row(
                     modifier = modifier
                         .padding(0.dp)
@@ -781,7 +752,7 @@ fun ItemDetailsEntry(
                     }
                 }
 
-// Favorite or Disliked? //
+                // Favorite or Disliked? //
                 Row(
                     modifier = modifier
                         .fillMaxWidth()
@@ -927,7 +898,6 @@ fun NotesEntry(
 
 
 /** custom composables */
-
 @Composable
 fun CustomCheckBox(
     checked: Boolean,
@@ -952,7 +922,6 @@ fun CustomCheckBox(
         )
     }
 }
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
