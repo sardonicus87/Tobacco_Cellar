@@ -739,7 +739,7 @@ private fun DrawScope.drawLabels(
         val labelBg =
             if (showLabels) {
                 if (thinSliceCount >= 1) {
-                    Color.Black
+                    Color.Black.copy(alpha = 0.65f)
                 } else {
                     backgroundColor
                 }
@@ -749,7 +749,7 @@ private fun DrawScope.drawLabels(
         val percentBg =
             if (showLabels && showPercentages) {
                 if (thinSliceCount >= 1) {
-                    Color.Black
+                    Color.Black.copy(alpha = 0.65f)
                 } else {
                     backgroundColor
                 }
