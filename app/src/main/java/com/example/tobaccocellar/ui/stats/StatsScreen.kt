@@ -6,6 +6,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -33,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -128,6 +131,7 @@ private fun StatsBody(
     filteredStats: FilteredStats,
     modifier: Modifier = Modifier,
 ) {
+    val separatorColor = MaterialTheme.colorScheme.secondary
 
     Column(
         modifier = modifier
@@ -136,22 +140,50 @@ private fun StatsBody(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        Row(
+        Spacer(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(color = LocalCustomColors.current.backgroundVariant)
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.quick_stats),
+                .height(1.dp)
+        )
+        Box {
+            Row(
                 modifier = Modifier
-                    .padding(start = 8.dp),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.onBackground
+                    .fillMaxWidth()
+                    .background(color = LocalCustomColors.current.backgroundVariant)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.quick_stats),
+                    modifier = Modifier
+                        .padding(start = 8.dp),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Start,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .drawBehind {
+                        val strokeWidth = Dp.Hairline.toPx()
+                        val yOffset = size.height - strokeWidth / 2
+
+                        drawLine(
+                            color = separatorColor,
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, strokeWidth),
+                            strokeWidth = strokeWidth
+                        )
+
+                        drawLine(
+                            color = separatorColor,
+                            start = Offset(0f, yOffset),
+                            end = Offset(size.width, yOffset),
+                            strokeWidth = strokeWidth
+                        )
+                    }
             )
         }
         Spacer(
@@ -236,21 +268,45 @@ private fun StatsBody(
         )
 
         // Charts
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(color = LocalCustomColors.current.backgroundVariant)
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-        ) {
-            Text(
-                text = "Charts",
+        Box {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.onBackground
+                    .background(color = LocalCustomColors.current.backgroundVariant)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "Charts",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Start,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .drawBehind {
+                        val strokeWidth = Dp.Hairline.toPx()
+                        val yOffset = size.height - strokeWidth / 2
+
+                        drawLine(
+                            color = separatorColor,
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, strokeWidth),
+                            strokeWidth = strokeWidth
+                        )
+
+                        drawLine(
+                            color = separatorColor,
+                            start = Offset(0f, yOffset),
+                            end = Offset(size.width, yOffset),
+                            strokeWidth = strokeWidth
+                        )
+                    }
             )
         }
         ChartsSection(
