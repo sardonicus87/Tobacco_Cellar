@@ -570,15 +570,15 @@ fun MappingField (
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             disabledBorderColor = MaterialTheme.colorScheme.onBackground,
-                            focusedContainerColor = LocalCustomColors.current.darkNeutral,
-                            unfocusedContainerColor = LocalCustomColors.current.darkNeutral,
-                            disabledContainerColor = LocalCustomColors.current.darkNeutral,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
                         )
                     )
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
-                        containerColor = LocalCustomColors.current.darkNeutral,
+                        containerColor = LocalCustomColors.current.textField,
                     ) {
                         DropdownMenuItem(
                             text = { Text(text = "") },
