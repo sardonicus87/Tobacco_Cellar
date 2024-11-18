@@ -190,12 +190,12 @@ fun AddEntryBody(
     itemUiState: ItemUiState,
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
-    navigateToEditEntry: (Int) -> Unit,
-    resetExistState: () -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
     modifier: Modifier = Modifier,
+    navigateToEditEntry: (Int) -> Unit = {},
+    resetExistState: () -> Unit = {},
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -1057,7 +1057,7 @@ fun CustomDropdownMenuItem(
     enabled: Boolean = false,
     modifier: Modifier,
     colors: MenuItemColors = MenuDefaults.itemColors(
-        textColor = Color.Unspecified,
+        textColor = LocalContentColor.current,
     ),
 ) {
     Box(

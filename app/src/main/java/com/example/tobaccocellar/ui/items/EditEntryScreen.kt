@@ -96,8 +96,6 @@ fun EditEntryScreen(
                     }
                 },
                 isEditEntry = true,
-                navigateToEditEntry = {},
-                resetExistState = {},
                 modifier = Modifier
                     .padding(0.dp)
                     .fillMaxSize()
