@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// @OptIn(FlowPreview::class)
 class FilterViewModel (
     private val itemsRepository: ItemsRepository
 ): ViewModel() {
