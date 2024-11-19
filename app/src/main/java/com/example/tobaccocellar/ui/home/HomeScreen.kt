@@ -57,7 +57,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -213,6 +215,7 @@ fun HomeScreen(
             }
             HomeBody(
                 items = itemsState.items,
+                filterViewModel = filterViewModel,
                 isTableView = isTableView,
                 onItemClick = navigateToEditEntry,
                 sorting = sorting,
@@ -416,8 +419,8 @@ private fun CustomBlendSearch(
 
 @Composable
 private fun HomeBody(
-    modifier: Modifier = Modifier,
     items: List<Items>,
+    filterViewModel: FilterViewModel,
     isLoading: Boolean,
     isTableView: Boolean,
     sorting: Sorting,
@@ -427,6 +430,7 @@ private fun HomeBody(
     activeItemId: Int?,
     onDismissMenu: () -> Unit,
     onShowMenu: (Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var showNoteDialog by remember { mutableStateOf(false) }
     var noteToDisplay by remember { mutableStateOf("") }
@@ -508,6 +512,7 @@ private fun HomeBody(
                 } else {
                     ListViewMode(
                         itemsList = items,
+                        filterViewModel = filterViewModel,
                         onItemClick = { onItemClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                             showNoteDialog = true },
@@ -625,16 +630,18 @@ fun NoteDialog(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListViewMode(
-    modifier: Modifier = Modifier,
     menuItemId: Int?,
+    filterViewModel: FilterViewModel,
     onDismissMenu: () -> Unit,
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
     itemsList: List<Items>,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val columnState = rememberLazyListState()
+    val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
 
     Box(
         modifier = Modifier
@@ -682,8 +689,14 @@ fun ListViewMode(
                 )
             }
         }
-        LaunchedEffect(itemsList) {
-            columnState.animateScrollToItem(0)
+//        LaunchedEffect(itemsList) {
+//            columnState.scrollToItem(0)
+//        }
+        LaunchedEffect(shouldScrollUp){
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
+            }
         }
     }
 }

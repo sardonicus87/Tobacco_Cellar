@@ -118,6 +118,13 @@ class FilterViewModel (
         initialValue = false
     )
 
+    private val _shouldScrollUp = MutableStateFlow(false)
+    val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp
+
+    fun resetScroll() {
+        _shouldScrollUp.value = false
+    }
+
 
     /** Filtering states **/
 //    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
@@ -165,6 +172,8 @@ class FilterViewModel (
 
     // filter selection update functions //
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedBrands.value += brand
             _selectedBrands.value += brand
@@ -180,6 +189,8 @@ class FilterViewModel (
     }
 
     fun updateSelectedExcludedBrands(brand: String, isSelected: Boolean) {
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedExcludeBrands.value += brand
             _selectedExcludeBrands.value += brand
@@ -213,6 +224,8 @@ class FilterViewModel (
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedUnassigned.value = false
             sheetSelectedTypes.value += type
@@ -229,6 +242,8 @@ class FilterViewModel (
         sheetSelectedUnassigned.value = isSelected
         _selectedUnassigned.value = isSelected
 
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedTypes.value = emptyList()
             _selectedTypes.value = emptyList()
@@ -238,6 +253,8 @@ class FilterViewModel (
     fun updateSelectedFavorites(isSelected: Boolean) {
         sheetSelectedFavorites.value = isSelected
         _selectedFavorites.value = isSelected
+
+        _shouldScrollUp.value = true
 
         if (isSelected) {
             sheetSelectedDislikeds.value = false
@@ -258,6 +275,8 @@ class FilterViewModel (
         sheetSelectedExcludeLikes.value = isSelected
         _selectedExcludeLikes.value = isSelected
 
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
@@ -270,13 +289,14 @@ class FilterViewModel (
             _selectedNeutral.value = false
             _selectedNonNeutral.value = false
             _selectedExcludeDislikes.value = false
-
         }
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
         sheetSelectedDislikeds.value = isSelected
         _selectedDislikeds.value = isSelected
+
+        _shouldScrollUp.value = true
 
         if (isSelected) {
             sheetSelectedFavorites.value = false
@@ -297,6 +317,8 @@ class FilterViewModel (
         sheetSelectedExcludeDislikes.value = isSelected
         _selectedExcludeDislikes.value = isSelected
 
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
@@ -315,6 +337,8 @@ class FilterViewModel (
     fun updateSelectedNeutral(isSelected: Boolean) {
         sheetSelectedNeutral.value = isSelected
         _selectedNeutral.value = isSelected
+
+        _shouldScrollUp.value = true
 
         if (isSelected) {
             sheetSelectedFavorites.value = false
@@ -335,6 +359,8 @@ class FilterViewModel (
         sheetSelectedNonNeutral.value = isSelected
         _selectedNonNeutral.value = isSelected
 
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
@@ -354,6 +380,8 @@ class FilterViewModel (
         sheetSelectedInStock.value = isSelected
         _selectedInStock.value = isSelected
 
+        _shouldScrollUp.value = true
+
         if (isSelected) {
             sheetSelectedOutOfStock.value = false
             _selectedOutOfStock.value = false
@@ -363,6 +391,8 @@ class FilterViewModel (
     fun updateSelectedOutOfStock(isSelected: Boolean) {
         sheetSelectedOutOfStock.value = isSelected
         _selectedOutOfStock.value = isSelected
+
+        _shouldScrollUp.value = true
 
         if (isSelected) {
             sheetSelectedInStock.value = false
@@ -399,6 +429,8 @@ class FilterViewModel (
 
         sheetSelectedExcludeBrands.value = emptyList()
         _selectedExcludeBrands.value = emptyList()
+
+        _shouldScrollUp.value = true
     }
 
     fun resetFilter() {
@@ -412,6 +444,8 @@ class FilterViewModel (
         sheetSelectedInStock.value = false
         sheetSelectedOutOfStock.value = false
         sheetSelectedExcludeBrands.value = emptyList()
+        sheetSelectedExcludeLikes.value = false
+        sheetSelectedExcludeDislikes.value = false
 
         _selectedBrands.value = emptyList()
         _selectedTypes.value = emptyList()
@@ -423,6 +457,10 @@ class FilterViewModel (
         _selectedInStock.value = false
         _selectedOutOfStock.value = false
         _selectedExcludeBrands.value = emptyList()
+        _selectedExcludeLikes.value = false
+        _selectedExcludeDislikes.value = false
+
+        _shouldScrollUp.value = true
     }
 
 
