@@ -28,11 +28,21 @@ class CsvImportViewModel(
 
     /** setting states from the CSV data **/
     fun onCsvLoaded(
-        header: List<String>, firstRecord: List<String>, allRecords: List<List<String>>, recordCount: Int
+        header: List<String>,
+        firstFullRecord: List<String>,
+        allRecords: List<List<String>>,
+        recordCount: Int
     ) {
+        val updatedHeader = header.mapIndexed { index, value ->
+            if (value.isBlank()) "[Column ${index + 1}]" else value
+        }
+        val updatedFirstFullRecord = firstFullRecord.mapIndexed { index, value ->
+            if (value.isBlank()) "[Column ${index + 1}]" else value
+        }
+
         _csvImportState.value = CsvImportState(
-            header = header.toList(),
-            firstRecord = firstRecord.toList(),
+            header = updatedHeader.toList(),
+            firstFullRecord = updatedFirstFullRecord.toList(),
             allRecords = allRecords.toList(),
             recordCount = recordCount
         )
@@ -93,37 +103,49 @@ class CsvImportViewModel(
             else csvImportState.value.allRecords
         val columnIndices = getSelectedColumnIndices()
 
-        val itemsToImport = recordsToImport.map { record ->
-            Items(
-                brand = if (columnIndices[CsvField.Brand] != null &&
-                    columnIndices[CsvField.Brand]!! >= 0 &&
-                    columnIndices[CsvField.Brand]!! < record.size)
-                    record[columnIndices[CsvField.Brand]!!] else "",
-                blend = if (columnIndices[CsvField.Blend] != null &&
-                    columnIndices[CsvField.Blend]!! >=0 &&
-                    columnIndices[CsvField.Blend]!! < record.size)
-                    record[columnIndices[CsvField.Blend]!!] else "",
-                type = if (columnIndices[CsvField.Type] != null &&
-                    columnIndices[CsvField.Type]!! >= 0 &&
-                    columnIndices[CsvField.Type]!! < record.size)
-                    record[columnIndices[CsvField.Type]!!] else "",
-                quantity = if (columnIndices[CsvField.Quantity] != null &&
-                    columnIndices[CsvField.Quantity]!! >= 0 &&
-                    columnIndices[CsvField.Quantity]!! < record.size)
-                    record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 else 1,
-                favorite = if (columnIndices[CsvField.Favorite] != null &&
-                    columnIndices[CsvField.Favorite]!! >= 0 &&
-                    columnIndices[CsvField.Favorite]!! < record.size)
-                    record[columnIndices[CsvField.Favorite]!!].toBoolean() else false,
-                disliked = if (columnIndices[CsvField.Disliked] != null &&
-                    columnIndices[CsvField.Disliked]!! >= 0 &&
-                    columnIndices[CsvField.Disliked]!! < record.size)
-                    record[columnIndices[CsvField.Disliked]!!].toBoolean() else false,
-                notes = if (columnIndices[CsvField.Notes] != null &&
-                    columnIndices[CsvField.Notes]!! >= 0 &&
-                    columnIndices[CsvField.Notes]!! < record.size)
-                    record[columnIndices[CsvField.Notes]!!] else ""
-            )
+        val itemsToImport = recordsToImport.mapNotNull { record ->
+            val brand =
+                if (columnIndices[CsvField.Brand] != null && columnIndices[CsvField.Brand]!!
+                    in record.indices)record[columnIndices[CsvField.Brand]!!]
+                else ""
+            val blend =
+                if (columnIndices[CsvField.Blend] != null && columnIndices[CsvField.Blend]!!
+                    in record.indices)record[columnIndices[CsvField.Blend]!!]
+                else ""
+            if (brand.isBlank() || blend.isBlank()) {
+                null
+            } else {
+
+                Items(
+                    brand = brand,
+                    blend = blend,
+                    type = if (columnIndices[CsvField.Type] != null &&
+                        columnIndices[CsvField.Type]!! >= 0 &&
+                        columnIndices[CsvField.Type]!! < record.size
+                    )
+                        record[columnIndices[CsvField.Type]!!] else "",
+                    quantity = if (columnIndices[CsvField.Quantity] != null &&
+                        columnIndices[CsvField.Quantity]!! >= 0 &&
+                        columnIndices[CsvField.Quantity]!! < record.size
+                    )
+                        record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 else 1,
+                    favorite = if (columnIndices[CsvField.Favorite] != null &&
+                        columnIndices[CsvField.Favorite]!! >= 0 &&
+                        columnIndices[CsvField.Favorite]!! < record.size
+                    )
+                        record[columnIndices[CsvField.Favorite]!!].toBoolean() else false,
+                    disliked = if (columnIndices[CsvField.Disliked] != null &&
+                        columnIndices[CsvField.Disliked]!! >= 0 &&
+                        columnIndices[CsvField.Disliked]!! < record.size
+                    )
+                        record[columnIndices[CsvField.Disliked]!!].toBoolean() else false,
+                    notes = if (columnIndices[CsvField.Notes] != null &&
+                        columnIndices[CsvField.Notes]!! >= 0 &&
+                        columnIndices[CsvField.Notes]!! < record.size
+                    )
+                        record[columnIndices[CsvField.Notes]!!] else ""
+                )
+            }
         }
         try {
             val insertedIds = withContext(Dispatchers.IO) {
@@ -181,7 +203,7 @@ class CsvImportViewModel(
 
 data class CsvImportState(
     val header: List<String> = emptyList(),
-    val firstRecord: List<String> = emptyList(),
+    val firstFullRecord: List<String> = emptyList(),
     val allRecords: List<List<String>> = emptyList(),
     val recordCount: Int = 0,
 )
