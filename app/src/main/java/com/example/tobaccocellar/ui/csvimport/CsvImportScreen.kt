@@ -153,7 +153,7 @@ fun CsvImportBody(
                             is CsvResult.Success -> {
                                 viewModel.onCsvLoaded(
                                     result.header,
-                                    result.firstRecord,
+                                    result.firstFullRecord,
                                     result.allRecords,
                                     result.recordCount
                                 )
@@ -257,7 +257,7 @@ fun CsvImportBody(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = csvImportState.firstRecord.joinToString(", "),
+                        text = csvImportState.firstFullRecord.joinToString(", "),
                         modifier = modifier
                             .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 16.dp),
                     )
@@ -558,12 +558,6 @@ fun MappingField (
                         trailingIcon =
                         {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-//                            Icon(
-//                                imageVector = Icons.Filled.ArrowDropDown,
-//                                contentDescription = null,
-//                                modifier = Modifier
-//                                    .clickable { expanded = !expanded }
-//                            )
                         },
                         placeholder = { Text(text = placeholder) },
                         colors = OutlinedTextFieldDefaults.colors(
