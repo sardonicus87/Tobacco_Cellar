@@ -57,9 +57,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -684,14 +682,11 @@ fun ListViewMode(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ),
-                    onMenuDissmiss = { onDismissMenu() },
+                    onMenuDismiss = { onDismissMenu() },
                     showMenu = isMenuShown && menuItemId == item.id,
                 )
             }
         }
-//        LaunchedEffect(itemsList) {
-//            columnState.scrollToItem(0)
-//        }
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
                 columnState.scrollToItem(0)
@@ -706,7 +701,7 @@ fun ListViewMode(
 private fun CellarListItem(
     modifier: Modifier = Modifier,
     item: Items,
-    onMenuDissmiss: () -> Unit,
+    onMenuDismiss: () -> Unit,
     showMenu: Boolean,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
@@ -889,7 +884,7 @@ private fun CellarListItem(
                     TextButton(
                         onClick = {
                             onItemClick(item)
-                            onMenuDissmiss()
+                            onMenuDismiss()
                         },
                         modifier = Modifier,
                     ) {
@@ -905,7 +900,7 @@ private fun CellarListItem(
                         TextButton(
                             onClick = {
                                 onNoteClick(item)
-                                onMenuDissmiss()
+                                onMenuDismiss()
                             }
                         ) {
                             Text(
