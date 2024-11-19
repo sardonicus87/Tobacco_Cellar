@@ -37,9 +37,9 @@
     <string name="delete_all_question">Are you sure you want to delete all entries in the database?
         This cannot be undone.</string>
     <string name="item_exists">This item already exists, would you like to edit it instead?</string>
-    <string name="csv_import_instructions">Passes the first two lines of the CSV to "possible header"
-        and "possible record", respectively. If the record test looks wrong, please reformat your CSV
-        using standard RFC 4180 formatting.</string>
+    <string name="csv_import_instructions">Select a CSV file to import, then review mapping options.
+        If the record test looks wrong, please reformat your CSV using standard RFC 4180
+        formatting to guarantee a successful import.</string>
     <string name="csv_import_mapping">Indicate if the CSV has a header and map the columns in the CSV
         to the correct database fields. Other than Brand and Blend, all fields are optional.</string>
 
