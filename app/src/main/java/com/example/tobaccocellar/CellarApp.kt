@@ -1067,7 +1067,7 @@ fun BrandFilterSection(
             }
 
             LaunchedEffect(filteredBrands) {
-                lazyListState.animateScrollToItem(0)
+                lazyListState.scrollToItem(0)
             }
 
             Box(
