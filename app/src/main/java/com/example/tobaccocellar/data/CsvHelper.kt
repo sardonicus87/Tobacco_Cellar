@@ -20,12 +20,11 @@ class CsvHelper {
             if (records.isNotEmpty()) {
                 val header = records.first().toList().map { it.toString() }
                 val allRecords = records.map { record -> record.toList().map { it.toString() }}
-                val firstRecord =
-                    if (records.size > 1) allRecords[1].toList().map { it }
-                    else emptyList()
                 val columnCount = records.maxOfOrNull { it.size() } ?: 0
+                val firstFullRecord =
+                    allRecords.drop(1).firstOrNull { it.size == columnCount } ?: emptyList()
                 val recordCount = records.size
-                CsvResult.Success(header, allRecords, firstRecord, columnCount, recordCount)
+                CsvResult.Success(header, allRecords, firstFullRecord, columnCount, recordCount)
             } else {
                 CsvResult.Empty
             }
@@ -63,7 +62,7 @@ sealed class CsvResult {
     data class Success(
         val header: List<String>,
         val allRecords: List<List<String>>,
-        val firstRecord: List<String>,
+        val firstFullRecord: List<String>,
         val columnCount: Int,
         val recordCount: Int
     ) : CsvResult()
