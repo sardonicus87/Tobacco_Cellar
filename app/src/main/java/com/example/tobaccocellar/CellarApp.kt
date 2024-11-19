@@ -1226,7 +1226,7 @@ fun BrandFilterSection(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
                             ) {
-                                val glowColor = LocalCustomColors.current.darkNeutral
+                                val glowColor = MaterialTheme.colorScheme.background
 
                                 Box(
                                     modifier = Modifier
@@ -1253,7 +1253,15 @@ fun BrandFilterSection(
                                                     } else {
                                                         filterViewModel.updateSelectedBrands(brand, false)
                                                     }
-                                                }
+                                                },
+                                                colors = AssistChipDefaults.assistChipColors(
+                                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    containerColor = MaterialTheme.colorScheme.background,
+                                                ),
+                                                border = AssistChipDefaults.assistChipBorder(
+                                                    enabled = true,
+                                                    borderColor = MaterialTheme.colorScheme.outline
+                                                )
                                             )
                                         }
                                     }
@@ -1329,7 +1337,9 @@ fun BrandFilterSection(
                                 Text("Close")
                             }
                         },
-                        containerColor = LocalCustomColors.current.darkNeutral,
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                        textContentColor = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
