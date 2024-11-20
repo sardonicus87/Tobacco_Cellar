@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.tobaccocellar"
+        applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -48,7 +48,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    namespace = "com.example.tobaccocellar"
+    namespace = "com.sardonicus.tobaccocellar"
 }
 
 dependencies {
@@ -72,7 +72,7 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
 
 
-    debugImplementation(libs.leakcanary.android)
+//    debugImplementation(libs.leakcanary.android)
 
 
     implementation(libs.androidx.room.runtime)
