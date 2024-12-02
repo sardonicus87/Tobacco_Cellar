@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import android.R.attr.contentDescription
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -77,6 +78,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -291,6 +294,31 @@ fun ItemExistsDialog(
         confirmButton = {
             TextButton(onClick = onItemExistsConfirm) {
                 Text(stringResource(R.string.yes))
+            }
+        }
+    )
+}
+
+@Composable
+fun ItemExistsEditDialog(
+    onItemExistsConfirm: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.attention)) },
+        text = {
+            Text(
+                text = "Cannot update item with the same Brand and Blend values as an existing entry. The combination of Brand and Blend must be unique for each entry.",
+                softWrap = true,
+            )
+        },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        confirmButton = {
+            TextButton(onClick = onItemExistsConfirm) {
+                Text(stringResource(R.string.ok))
             }
         }
     )
@@ -513,12 +541,27 @@ fun ItemDetailsEntry(
                         .fillMaxWidth(),
                     placeholder = {
                         if (isEditEntry) Text(
-                            text = itemDetails.originalBrand,
+                            text = "(" + itemDetails.originalBrand + ")",
                             modifier = Modifier
                                 .alpha(0.66f),
                             fontSize = 14.sp,
                         )
                     },
+                    trailingIcon = {
+                        if (itemDetails.brand.length > 4) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                contentDescription = "Clear",
+                                modifier = Modifier
+                                    .clickable {
+                                        onValueChange(itemDetails.copy(brand = ""))
+                                    }
+                                    .alpha(0.66f)
+                                    .size(20.dp)
+                                    .focusable(false)
+                            )
+                        }
+                    }
                 )
             }
 
@@ -543,17 +586,17 @@ fun ItemDetailsEntry(
                     singleLine = true,
                     placeholder = {
                         if (isEditEntry) Text(
-                            text = itemDetails.originalBlend,
+                            text = "(" + itemDetails.originalBlend + ")",
                             modifier = Modifier
                                 .alpha(0.66f),
                             fontSize = 14.sp,
                         )
                     },
                     trailingIcon = {
-                        if (itemDetails.blend.length > 5) {
+                        if (itemDetails.blend.length > 4) {
                             Icon(
                                 imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                contentDescription = null,
+                                contentDescription = "Clear",
                                 modifier = Modifier
                                     .clickable {
                                         onValueChange(itemDetails.copy(blend = ""))
@@ -706,10 +749,11 @@ fun ItemDetailsEntry(
                             },
                             modifier = Modifier
                                 .padding(0.dp)
+                                .semantics { contentDescription = "Increase Quantity" }
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.arrow_up),
-                                contentDescription = null,
+                                contentDescription = "Increase Quantity",
                                 modifier = Modifier
                                     .padding(0.dp)
                                     .offset(x = 0.dp, y = (-4).dp)
@@ -739,11 +783,12 @@ fun ItemDetailsEntry(
                             },
                             modifier = Modifier
                                 .padding(0.dp)
+                                .semantics { contentDescription = "Decrease Quantity" }
                                 .offset(x = (-12).dp)
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.arrow_down),
-                                contentDescription = null,
+                                contentDescription = "Decrease Quantity",
                                 modifier = Modifier
                                     .padding(0.dp)
                                     .offset(x = 0.dp, y = 4.dp)
@@ -930,6 +975,7 @@ fun AutoCompleteText(
     modifier: Modifier = Modifier,
     value: String,
     placeholder: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     onValueChange: ((String) -> Unit)?,
     onOptionSelected: (String) -> Unit,
     suggestions: List<String> = emptyList(),
@@ -972,23 +1018,7 @@ fun AutoCompleteText(
                 .focusRequester(focusRequester)
                 .menuAnchor(MenuAnchorType.PrimaryEditable, true),
             enabled = true,
-            trailingIcon = {
-                if (value.length > 5) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .clickable {
-                                if (onValueChange != null) {
-                                    onValueChange("")
-                                }
-                            }
-                            .alpha(0.66f)
-                            .size(20.dp)
-                            .focusable(false)
-                    )
-                }
-            },
+            trailingIcon = trailingIcon,
             singleLine = true,
             placeholder = { if (placeholder != null) placeholder() },
             keyboardOptions = KeyboardOptions(

@@ -31,8 +31,8 @@ class EditEntryViewModel(
     }
 
     private fun copyOriginalDetails(itemDetails: ItemDetails) {
-        itemDetails.originalBrand = "(" + itemDetails.brand + ")"
-        itemDetails.originalBlend = "(" + itemDetails.blend + ")"
+        itemDetails.originalBrand = itemDetails.brand
+        itemDetails.originalBlend = itemDetails.blend
     }
 
     init {
@@ -41,7 +41,7 @@ class EditEntryViewModel(
                 .filterNotNull()
                 .first()
                 .toItemUiState(true)
-                .also {copyOriginalDetails(it.itemDetails)}
+                .also { copyOriginalDetails(it.itemDetails) }
         }
     }
 
@@ -56,6 +56,46 @@ class EditEntryViewModel(
                 _brands.value = it
             }
         }
+    }
+
+    var existState by mutableStateOf(ExistState())
+
+    suspend fun checkItemExistsOnUpdate() {
+        val currentItem = itemUiState.itemDetails
+
+        if (currentItem.brand == itemUiState.itemDetails.originalBrand && currentItem.blend == itemUiState.itemDetails.originalBlend) {
+            existState =
+                ExistState(
+                    exists = false,
+                    transferId = 0,
+                    existCheck = false,
+                )
+        } else {
+            if (itemsRepository.exists(currentItem.brand, currentItem.blend)) {
+                existState =
+                    ExistState(
+                        exists = true,
+                        transferId = 0,
+                        existCheck = true
+                    )
+            } else if (!itemsRepository.exists(currentItem.brand, currentItem.blend)) {
+                existState =
+                    ExistState(
+                        exists = false,
+                        transferId = 0,
+                        existCheck = false,
+                    )
+            }
+        }
+    }
+
+    fun resetExistState() {
+        existState =
+            ExistState(
+                exists = false,
+                transferId = 0,
+                existCheck = false,
+            )
     }
 
     fun updateUiState(itemDetails: ItemDetails) {

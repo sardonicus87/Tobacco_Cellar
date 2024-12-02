@@ -25,7 +25,9 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object EditEntryDestination : NavigationDestination {
     override val route = "edit_entry_title"
@@ -90,8 +92,13 @@ fun EditEntryScreen(
                 onItemValueChange = viewModel::updateUiState,
                 onSaveClick = {
                     coroutineScope.launch {
-                        viewModel.updateItem()
-                        navigateBack()
+                        withContext(Dispatchers.Main) {
+                            viewModel.checkItemExistsOnUpdate()
+                            if (!viewModel.existState.exists) {
+                                viewModel.updateItem()
+                                navigateBack()
+                            }
+                        }
                     }
                 },
                 onDeleteClick = {
@@ -105,6 +112,13 @@ fun EditEntryScreen(
                     .padding(0.dp)
                     .fillMaxSize()
             )
+            if (viewModel.existState.existCheck) {
+                ItemExistsEditDialog(
+                    onItemExistsConfirm = {
+                        viewModel.resetExistState()
+                    },
+                )
+            }
         }
     }
 }
