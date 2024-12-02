@@ -24,3 +24,4 @@ deploymentTargetSelector.xml
 deploymentTargetSelector
 /.idea/deploymentTargetSelector.xml
 /.idea/deploymentTargetSelector
+*.json
