@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -363,10 +365,11 @@ fun RawStats(
             text = totalByType,
             modifier = Modifier
                 .fillMaxWidth(fraction = 0.75f)
+                .semantics { contentDescription = totalByType.toString() }
                 .padding(0.dp),
             fontSize = 15.sp,
             textAlign = TextAlign.Start,
-            softWrap = true
+            softWrap = true,
         )
         Spacer(
             modifier = Modifier
@@ -420,6 +423,7 @@ fun FilteredStats(
             text = totalByTypeFiltered,
             modifier = Modifier
                 .fillMaxWidth(fraction = 0.75f)
+                .semantics { contentDescription = totalByTypeFiltered.toString() }
                 .padding(0.dp),
             fontSize = 15.sp,
             textAlign = TextAlign.Start,
