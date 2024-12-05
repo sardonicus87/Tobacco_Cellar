@@ -179,11 +179,17 @@ fun CellarTopAppBar(
     var expanded by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()) { result ->
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
             exportCsvHandler?.onExportCsvClick(uri)
         }
+    }
+    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+        addCategory(Intent.CATEGORY_OPENABLE)
+        type = "text/csv"
+        putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
     }
 
     TopAppBar(
@@ -225,11 +231,6 @@ fun CellarTopAppBar(
                             text = { Text(text = stringResource(R.string.export_csv)) },
                             onClick = {
                                 expanded = false
-                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                                    addCategory(Intent.CATEGORY_OPENABLE)
-                                    type = "text/csv"
-                                    putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
-                                }
                                 launcher.launch(intent)
                             },
                             modifier = Modifier.padding(0.dp),
