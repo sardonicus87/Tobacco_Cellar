@@ -112,18 +112,21 @@ class CsvImportViewModel(
                 if (columnIndices[CsvField.Blend] != null && columnIndices[CsvField.Blend]!!
                     in record.indices)record[columnIndices[CsvField.Blend]!!]
                 else ""
-            if (brand.isBlank() || blend.isBlank()) {
-                null
-            } else {
 
+            if (brand.isBlank() || blend.isBlank()) { null }
+            else {
                 Items(
                     brand = brand,
                     blend = blend,
                     type = if (columnIndices[CsvField.Type] != null &&
                         columnIndices[CsvField.Type]!! >= 0 &&
-                        columnIndices[CsvField.Type]!! < record.size
-                    )
-                        record[columnIndices[CsvField.Type]!!] else "",
+                        columnIndices[CsvField.Type]!! < record.size) {
+                            val typeFromCsv = record[columnIndices[CsvField.Type]!!]
+                            when (typeFromCsv.uppercase()) {
+                                "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
+                                typeFromCsv.lowercase().replaceFirstChar { it.uppercase() }
+                            } else -> "" }
+                        } else "",
                     quantity = if (columnIndices[CsvField.Quantity] != null &&
                         columnIndices[CsvField.Quantity]!! >= 0 &&
                         columnIndices[CsvField.Quantity]!! < record.size
