@@ -309,7 +309,7 @@ fun ItemExistsEditDialog(
         title = { Text(stringResource(R.string.attention)) },
         text = {
             Text(
-                text = "Cannot update item with the same Brand and Blend values as an existing entry. The combination of Brand and Blend must be unique for each entry.",
+                text = "An entry already exists with this combination of Brand and Blend—the combination of Brand and Blend must be unique for each entry.",
                 softWrap = true,
             )
         },
