@@ -1,6 +1,7 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
-agp = "8.7.2"
+androidlibrary = "8.7.3"
+agp = "8.7.3"
 commonsCsv = "1.12.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.1"
@@ -50,6 +51,7 @@ ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 
 [plugins]
+android-library = { id = "com.android.library", version.ref = "androidlibrary" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
