@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -87,6 +88,7 @@ class AddEntryViewModel(
     suspend fun saveItem() {
         if (validateInput()) {
             itemsRepository.insertItem(itemUiState.itemDetails.toItem())
+            EventBus.emit(ItemAddedEvent)
         }
     }
 
@@ -123,6 +125,10 @@ data class ItemDetails(
     var originalBlend: String = "",
 )
 
+
+object ItemAddedEvent {
+    // for list scroll on new add
+}
 
 /** convert ItemDetails (class) to Items (Database Table entity) **/
 fun ItemDetails.toItem(): Items = Items(
