@@ -351,6 +351,7 @@ private fun DeleteConfirmationDialog(
 }
 
 
+/** Body Elements **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemInputForm(
@@ -444,7 +445,7 @@ fun ItemDetailsEntry(
     isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier,
-){
+) {
     val focusManager = LocalFocusManager.current
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
@@ -688,7 +689,7 @@ fun ItemDetailsEntry(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Quantity:",
+                        text = "Tins:",
                         modifier = Modifier
                             .width(80.dp)
                     )
@@ -702,7 +703,7 @@ fun ItemDetailsEntry(
                         TextField(
                             value = itemDetails.squantity,
                             onValueChange = {
-                                if (it.matches(pattern)) {
+                                if (it.matches(pattern) && it.length <= 2) {
                                     onValueChange(
                                         itemDetails.copy(
                                             squantity = it,
@@ -739,12 +740,21 @@ fun ItemDetailsEntry(
                                         )
                                     )
                                 } else {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            squantity = (itemDetails.squantity.toInt() + 1).toString(),
-                                            quantity = itemDetails.squantity.toInt() + 1
+                                    if (itemDetails.squantity.toInt() < 99) {
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                squantity = (itemDetails.squantity.toInt() + 1).toString(),
+                                                quantity = itemDetails.squantity.toInt() + 1
+                                            )
                                         )
-                                    )
+                                    } else {
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                squantity = "99",
+                                                quantity = 99
+                                            )
+                                        )
+                                    }
                                 }
                             },
                             modifier = Modifier
