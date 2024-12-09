@@ -61,7 +61,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -100,6 +102,8 @@ import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -640,6 +644,7 @@ fun ListViewMode(
 ) {
     val columnState = rememberLazyListState()
     val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
+    val shouldScrollDown by filterViewModel.shouldScrollDown.collectAsState()
 
     Box(
         modifier = Modifier
@@ -687,16 +692,30 @@ fun ListViewMode(
                 )
             }
         }
+
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
                 columnState.scrollToItem(0)
                 filterViewModel.resetScroll()
             }
         }
+
+        val coroutineScope = rememberCoroutineScope()
+
+        LaunchedEffect(shouldScrollDown) {
+            if (shouldScrollDown) {
+                delay(25)
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(itemsList.size - 1)
+                    }
+                }
+                filterViewModel.resetScroll()
+            }
+        }
     }
 }
 
-// Entry layout //
 @Composable
 private fun CellarListItem(
     modifier: Modifier = Modifier,
