@@ -3,6 +3,8 @@ package com.sardonicus.tobaccocellar.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.ui.items.ItemAddedEvent
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -118,19 +120,31 @@ class FilterViewModel (
         initialValue = false
     )
 
+
+    /** Scroll state **/
     private val _shouldScrollUp = MutableStateFlow(false)
     val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp
 
+    private val _shouldScrollDown = MutableStateFlow(false)
+    val shouldScrollDown: StateFlow<Boolean> = _shouldScrollDown
+
     fun resetScroll() {
         _shouldScrollUp.value = false
+        _shouldScrollDown.value = false
+    }
+
+    init {
+        viewModelScope.launch {
+            EventBus.events.collect {
+                if (it is ItemAddedEvent) {
+                    _shouldScrollDown.value = true
+                }
+            }
+        }
     }
 
 
     /** Filtering states **/
-//    private val filterUpdateEvents = MutableSharedFlow<FilterUpdateEvent>()
-//    object FilterUpdateEvent
-//    private var inactivityTimerJob: Job? = null
-
     // inclusionary filter states //
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
     val selectedBrands: StateFlow<List<String>> = _selectedBrands
@@ -181,11 +195,6 @@ class FilterViewModel (
             sheetSelectedBrands.value -= brand
             _selectedBrands.value -= brand
         }
-//        inactivityTimerJob?.cancel()
-//        inactivityTimerJob = viewModelScope.launch {
-//            delay(INACTIVITY_DURATION)
-//            filterUpdateEvents.emit(FilterUpdateEvent)
-//        }
     }
 
     fun updateSelectedExcludedBrands(brand: String, isSelected: Boolean) {
@@ -400,28 +409,6 @@ class FilterViewModel (
         }
     }
 
-
-//    init {
-//        viewModelScope.launch {
-//            filterUpdateEvents.collect {
-//                withTimeoutOrNull(INACTIVITY_DURATION) {
-//                    _selectedBrands.value = sheetSelectedBrands.value
-//                    _selectedTypes.value = sheetSelectedTypes.value
-//                    _selectedUnassigned.value = sheetSelectedUnassigned.value
-//                    _selectedFavorites.value = sheetSelectedFavorites.value
-//                    _selectedDislikeds.value = sheetSelectedDislikeds.value
-//                    _selectedNeutral.value = sheetSelectedNeutral.value
-//                    _selectedNonNeutral.value = sheetSelectedNonNeutral.value
-//                    _selectedInStock.value = sheetSelectedInStock.value
-//                    _selectedOutOfStock.value = sheetSelectedOutOfStock.value
-//                }
-//            }
-//        }
-//    }
-//
-//    companion object {
-//        private const val INACTIVITY_DURATION = 150L
-//    }
 
     fun clearAllSelectedBrands() {
         sheetSelectedBrands.value = emptyList()
