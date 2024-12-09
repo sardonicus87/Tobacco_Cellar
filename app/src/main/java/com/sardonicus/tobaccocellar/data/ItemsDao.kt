@@ -145,6 +145,9 @@ interface ItemsDao {
     @Query("SELECT * FROM items WHERE quantity = 0")
     fun getItemsByZeroQuantity(): Flow<List<Items>>
 
+    @Query("SELECT * FROM items WHERE brand = :brand AND blend = :blend")
+    fun getItemByIndex(brand: String, blend: String): Items?
+
 
     /** Special functions **/
     // Filter function //

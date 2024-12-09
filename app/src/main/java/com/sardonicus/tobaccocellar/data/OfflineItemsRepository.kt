@@ -87,6 +87,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     override fun getItemsByZeroQuantity(): Flow<List<Items>> = itemsDao.getItemsByZeroQuantity()
 
+    override fun getItemByIndex(brand: String, blend: String): Items? = itemsDao.getItemByIndex(brand, blend)
+
 
     /** Special functions **/
     // filtering return function //

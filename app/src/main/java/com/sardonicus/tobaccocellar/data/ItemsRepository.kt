@@ -81,6 +81,8 @@ interface ItemsRepository {
 
     fun getItemsByZeroQuantity(): Flow<List<Items>>
 
+    fun getItemByIndex(brand: String, blend: String): Items?
+
 
     /** Special functions **/
     suspend fun getFilteredItems(
