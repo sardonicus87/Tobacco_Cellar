@@ -80,6 +80,20 @@ class CsvImportViewModel(
         csvUiState = csvUiState.copy(isFormValid = validateForm())
     }
 
+    private val _importOption = MutableStateFlow(ImportOption.SKIP)
+    val importOption = _importOption.asStateFlow()
+
+    fun updateImportOption(option: ImportOption) {
+        _importOption.value = option
+    }
+
+    private val _overwriteSelections = MutableStateFlow<Map<CsvField, Boolean>>(emptyMap())
+    val overwriteSelections = _overwriteSelections.asStateFlow()
+
+    fun updateOverwriteSelection(field: CsvField, overwrite: Boolean) {
+        _overwriteSelections.value = _overwriteSelections.value + (field to overwrite)
+    }
+
 
     /** Confirm and import **/
     private val _importStatus = MutableStateFlow<ImportStatus>(ImportStatus.Idle)
@@ -98,6 +112,10 @@ class CsvImportViewModel(
         _importStatus.value = ImportStatus.Loading
 
         val hasHeader = mappingOptions.hasHeader
+        val importOption = importOption.value
+        var updatedCount = 0
+        var updatedConversions = 0
+
         val recordsToImport =
             if (hasHeader) csvImportState.value.allRecords.drop(1)
             else csvImportState.value.allRecords
@@ -105,56 +123,168 @@ class CsvImportViewModel(
 
         val itemsToImport = recordsToImport.mapNotNull { record ->
             val brand =
-                if (columnIndices[CsvField.Brand] != null && columnIndices[CsvField.Brand]!!
-                    in record.indices)record[columnIndices[CsvField.Brand]!!]
-                else ""
+                if (columnIndices[CsvField.Brand] != null &&
+                    columnIndices[CsvField.Brand]!! in record.indices)
+                    record[columnIndices[CsvField.Brand]!!] else ""
             val blend =
-                if (columnIndices[CsvField.Blend] != null && columnIndices[CsvField.Blend]!!
-                    in record.indices)record[columnIndices[CsvField.Blend]!!]
-                else ""
+                if (columnIndices[CsvField.Blend] != null &&
+                    columnIndices[CsvField.Blend]!! in record.indices)
+                    record[columnIndices[CsvField.Blend]!!] else ""
 
-            if (brand.isBlank() || blend.isBlank()) { null }
-            else {
-                Items(
-                    brand = brand,
-                    blend = blend,
-                    type = if (columnIndices[CsvField.Type] != null &&
-                        columnIndices[CsvField.Type]!! >= 0 &&
-                        columnIndices[CsvField.Type]!! < record.size) {
+            if (brand.isBlank() || blend.isBlank()) {
+                null
+            } else {
+                val existingItem = withContext(Dispatchers.IO) {
+                    itemsRepository.getItemByIndex(brand, blend)
+                }
+
+                if (existingItem != null) {
+                    updatedConversions++
+                    when (importOption) {
+                        ImportOption.UPDATE -> {
+                            val updatedItem = existingItem.copy(
+                                type = if (existingItem.type.isBlank() &&
+                                    columnIndices[CsvField.Type] != null &&
+                                    columnIndices[CsvField.Type]!! in record.indices
+                                ) {
+                                    val typeFromCsv = record[columnIndices[CsvField.Type]!!]
+                                    when (typeFromCsv.uppercase()) {
+                                        "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
+                                            typeFromCsv.lowercase()
+                                                .replaceFirstChar { it.uppercase() }
+                                        }
+                                        else -> ""
+                                    }
+                                } else existingItem.type,
+                                favorite = if (existingItem.favorite == false &&
+                                    existingItem.disliked == false &&
+                                    columnIndices[CsvField.Favorite] != null &&
+                                    columnIndices[CsvField.Favorite]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Favorite]!!].toBoolean()
+                                else existingItem.favorite,
+                                disliked = if (existingItem.favorite == false &&
+                                    existingItem.disliked == false &&
+                                    columnIndices[CsvField.Disliked] != null &&
+                                    columnIndices[CsvField.Disliked]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Disliked]!!].toBoolean()
+                                else existingItem.disliked,
+                                notes = if (existingItem.notes.isBlank() &&
+                                    columnIndices[CsvField.Notes] != null &&
+                                    columnIndices[CsvField.Notes]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Notes]!!]
+                                else existingItem.notes
+                            )
+
+                            withContext(Dispatchers.IO) {
+                                itemsRepository.updateItem(updatedItem)
+                            }
+                            if (existingItem != updatedItem) updatedCount++
+                            null
+                        }
+
+                        ImportOption.OVERWRITE -> {
+                            val overwriteFields = overwriteSelections.value.filterValues { it }.keys
+
+                            val updatedItem = existingItem.copy(
+                                type = if (overwriteFields.contains(CsvField.Type) &&
+                                    columnIndices[CsvField.Type] != null &&
+                                    columnIndices[CsvField.Type]!! in record.indices
+                                ) {
+                                    val typeFromCsv = record[columnIndices[CsvField.Type]!!]
+                                    when (typeFromCsv.uppercase()) {
+                                        "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
+                                            typeFromCsv.lowercase()
+                                                .replaceFirstChar { it.uppercase() }
+                                        }
+                                        else -> ""
+                                    }
+                                } else existingItem.type,
+                                quantity = if (overwriteFields.contains(CsvField.Quantity) &&
+                                    columnIndices[CsvField.Quantity] != null &&
+                                    columnIndices[CsvField.Quantity]!! in record.indices
+                                )
+                                    if (record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 > 99) 0
+                                    else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1
+                                else existingItem.quantity,
+                                favorite = if (overwriteFields.contains(CsvField.Favorite) &&
+                                    columnIndices[CsvField.Favorite] != null &&
+                                    columnIndices[CsvField.Favorite]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Favorite]!!].toBoolean()
+                                else existingItem.favorite,
+                                disliked = if (overwriteFields.contains(CsvField.Disliked) &&
+                                    columnIndices[CsvField.Disliked] != null &&
+                                    columnIndices[CsvField.Disliked]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Disliked]!!].toBoolean()
+                                else existingItem.disliked,
+                                notes = if (overwriteFields.contains(CsvField.Notes) &&
+                                    columnIndices[CsvField.Notes] != null &&
+                                    columnIndices[CsvField.Notes]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Notes]!!]
+                                else existingItem.notes
+                            )
+                            withContext(Dispatchers.IO) {
+                                itemsRepository.updateItem(updatedItem)
+                            }
+                            if (existingItem != updatedItem) updatedCount++
+                            null
+                        }
+                        else -> null
+                    }
+                } else { // Default Import Option SKIP and add new records for above options
+                    Items(
+                        brand = brand,
+                        blend = blend,
+                        type = if (columnIndices[CsvField.Type] != null &&
+                            columnIndices[CsvField.Type]!! >= 0 &&
+                            columnIndices[CsvField.Type]!! < record.size
+                        ) {
                             val typeFromCsv = record[columnIndices[CsvField.Type]!!]
                             when (typeFromCsv.uppercase()) {
                                 "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
-                                typeFromCsv.lowercase().replaceFirstChar { it.uppercase() }
-                            } else -> "" }
+                                    typeFromCsv.lowercase()
+                                        .replaceFirstChar { it.uppercase() }
+                                }
+
+                                else -> ""
+                            }
                         } else "",
-                    quantity = if (columnIndices[CsvField.Quantity] != null &&
-                        columnIndices[CsvField.Quantity]!! >= 0 &&
-                        columnIndices[CsvField.Quantity]!! < record.size
+                        quantity = if (columnIndices[CsvField.Quantity] != null &&
+                            columnIndices[CsvField.Quantity]!! >= 0 &&
+                            columnIndices[CsvField.Quantity]!! < record.size
+                        )
+                            if (record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 > 99) 0
+                            else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 else 1,
+                        favorite = if (columnIndices[CsvField.Favorite] != null &&
+                            columnIndices[CsvField.Favorite]!! >= 0 &&
+                            columnIndices[CsvField.Favorite]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Favorite]!!].toBoolean() else false,
+                        disliked = if (columnIndices[CsvField.Disliked] != null &&
+                            columnIndices[CsvField.Disliked]!! >= 0 &&
+                            columnIndices[CsvField.Disliked]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Disliked]!!].toBoolean() else false,
+                        notes = if (columnIndices[CsvField.Notes] != null &&
+                            columnIndices[CsvField.Notes]!! >= 0 &&
+                            columnIndices[CsvField.Notes]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Notes]!!] else ""
                     )
-                        record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 else 1,
-                    favorite = if (columnIndices[CsvField.Favorite] != null &&
-                        columnIndices[CsvField.Favorite]!! >= 0 &&
-                        columnIndices[CsvField.Favorite]!! < record.size
-                    )
-                        record[columnIndices[CsvField.Favorite]!!].toBoolean() else false,
-                    disliked = if (columnIndices[CsvField.Disliked] != null &&
-                        columnIndices[CsvField.Disliked]!! >= 0 &&
-                        columnIndices[CsvField.Disliked]!! < record.size
-                    )
-                        record[columnIndices[CsvField.Disliked]!!].toBoolean() else false,
-                    notes = if (columnIndices[CsvField.Notes] != null &&
-                        columnIndices[CsvField.Notes]!! >= 0 &&
-                        columnIndices[CsvField.Notes]!! < record.size
-                    )
-                        record[columnIndices[CsvField.Notes]!!] else ""
-                )
+                }
             }
         }
         try {
             val insertedIds = withContext(Dispatchers.IO) {
                 itemsRepository.insertMultiple(itemsToImport) }
-            val successfulConversions = itemsToImport.size
+            val successfulConversions = itemsToImport.size + updatedConversions
             val successfulInsertions = insertedIds.count { it != -1L }
+            val successfulUpdates = updatedCount
             val totalRecords =
                 if (hasHeader) { csvImportState.value.recordCount - 1 }
                 else { csvImportState.value.recordCount }
@@ -164,13 +294,15 @@ class CsvImportViewModel(
             _importStatus.value = ImportStatus.Success(
                 totalRecords = totalRecords,
                 successfulConversions = successfulConversions,
-                successfulInsertions = successfulInsertions
+                successfulInsertions = successfulInsertions,
+                successfulUpdates = successfulUpdates
             )
             _navigateToResults.emit(
                 ImportResults(
                     totalRecords = totalRecords,
                     successfulConversions = successfulConversions,
-                    successfulInsertions = successfulInsertions
+                    successfulInsertions = successfulInsertions,
+                    successfulUpdates = successfulUpdates
                 )
             )
         } catch (e: Exception) {
@@ -228,13 +360,16 @@ data class MappingOptions(
     val notesColumn: String = "",
 )
 
+enum class ImportOption { SKIP, UPDATE, OVERWRITE }
+
 sealed class ImportStatus {
     object Idle : ImportStatus()
     object Loading : ImportStatus()
     data class Success(
         val totalRecords: Int,
         val successfulConversions: Int,
-        val successfulInsertions: Int
+        val successfulInsertions: Int,
+        val successfulUpdates: Int
     ) : ImportStatus()
     data class Error(val exception: Throwable) : ImportStatus()
 }
@@ -242,6 +377,7 @@ sealed class ImportStatus {
 data class ImportResults(
     val totalRecords: Int,
     val successfulConversions: Int,
-    val successfulInsertions: Int
+    val successfulInsertions: Int,
+    val successfulUpdates: Int
 )
 
