@@ -90,8 +90,8 @@ fun CellarNavHost(
                 navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() },
                 navigateToHome = { navController.navigate(HomeDestination.route) },
-                navigateToImportResults = { totalRecords, successCount, successfulInsertions -> navController.navigate(
-                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}")
+                navigateToImportResults = { totalRecords, successCount, successfulInsertions, successfulUpdates -> navController.navigate(
+                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}/${successfulUpdates}")
                 },
             )
         }
@@ -100,7 +100,8 @@ fun CellarNavHost(
             arguments = listOf(
                 navArgument(CsvImportResultsDestination.totalRecordsArg) { type = NavType.IntType },
                 navArgument(CsvImportResultsDestination.successCountArg) { type = NavType.IntType },
-                navArgument(CsvImportResultsDestination.successfulInsertionsArg) { type = NavType.IntType }
+                navArgument(CsvImportResultsDestination.successfulInsertionsArg) { type = NavType.IntType },
+                navArgument(CsvImportResultsDestination.successfulUpdatesArg) { type = NavType.IntType },
             ),
         ) { backStackEntry ->
             val totalRecords =
@@ -109,10 +110,13 @@ fun CellarNavHost(
                 backStackEntry.arguments?.getInt(CsvImportResultsDestination.successCountArg) ?: 0
             val successfulInsertions =
                 backStackEntry.arguments?.getInt(CsvImportResultsDestination.successfulInsertionsArg) ?: 0
+            val successfulUpdates =
+                backStackEntry.arguments?.getInt(CsvImportResultsDestination.successfulUpdatesArg) ?: 0
             CsvImportResultsScreen(
                 totalRecords = totalRecords,
                 successfulConversions = successCount,
                 successfulInsertions = successfulInsertions,
+                successfulUpdates = successfulUpdates,
                 navigateToHome = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
                     popUpTo(HomeDestination.route) { inclusive = false }

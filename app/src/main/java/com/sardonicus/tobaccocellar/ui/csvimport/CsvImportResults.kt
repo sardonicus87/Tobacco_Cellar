@@ -47,8 +47,9 @@ object CsvImportResultsDestination : NavigationDestination {
     const val totalRecordsArg = "total_records"
     const val successCountArg = "success_count"
     const val successfulInsertionsArg = "successful_insertions"
+    const val successfulUpdatesArg = "successful_updates"
 
-    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}"
+    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}/{$successfulUpdatesArg}"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +58,7 @@ fun CsvImportResultsScreen (
     totalRecords: Int,
     successfulConversions: Int,
     successfulInsertions: Int,
+    successfulUpdates: Int,
     navigateToHome: () -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
@@ -87,6 +89,7 @@ fun CsvImportResultsScreen (
                 totalRecords = totalRecords,
                 successfulConversions = successfulConversions,
                 successfulInsertions = successfulInsertions,
+                successfulUpdates = successfulUpdates,
                 navigateToHome = navigateToHome,
                 modifier = modifier
                     .fillMaxSize()
@@ -103,6 +106,7 @@ fun ImportResultsBody(
     totalRecords: Int,
     successfulConversions: Int,
     successfulInsertions: Int,
+    successfulUpdates: Int,
     navigateToHome: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -111,7 +115,7 @@ fun ImportResultsBody(
     val fadeMilis = 500
 
     LaunchedEffect(Unit) {
-        while (visibleItemIndex < 5) { // (total items to fade in, index starts 0)
+        while (visibleItemIndex < if (successfulUpdates > 0) 6 else 5) { // (total items to fade in, index starts 0)
             delay(850) // Adjust delay as needed
             visibleItemIndex++
         }
@@ -160,6 +164,7 @@ fun ImportResultsBody(
                 modifier = Modifier
                     .padding(bottom = 16.dp),
             ) {
+                // Labels
                 Column(
                     modifier = Modifier
                         .padding(0.dp),
@@ -226,11 +231,35 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
+                    if (successfulUpdates > 0) {
+                        if (visibleItemIndex <= 4) {
+                            Text(
+                                text = "Total records updated: ",
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                                color = Color.Transparent
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = visibleItemIndex > 4,
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        ) {
+                            Text(
+                                text = "Total records updated: ",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                            )
+                        }
+                    }
                 }
                 Spacer(
                     modifier = Modifier
                         .width(8.dp)
                 )
+
+                // Counts
                 Column(
                     modifier = Modifier
                         .padding(0.dp),
@@ -297,9 +326,31 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
+                    if (successfulUpdates > 0) {
+                        if (visibleItemIndex <= 4) {
+                            Text(
+                                text = "",
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                                color = Color.Transparent
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = visibleItemIndex > 4,
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        ) {
+                            Text(
+                                text = "$successfulUpdates",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                            )
+                        }
+                    }
                 }
             }
-            if (visibleItemIndex <= 4) {
+            if (visibleItemIndex <= if (successfulUpdates > 0) 5 else 4) {
                 TextButton(
                     onClick = {  },
                     modifier = Modifier
@@ -314,7 +365,7 @@ fun ImportResultsBody(
                 }
             }
             AnimatedVisibility(
-                visible = visibleItemIndex > 4,
+                visible = visibleItemIndex > if (successfulUpdates > 0) 5 else 4,
                 enter = fadeIn(animationSpec = tween(durationMillis = 350))
             ) {
                 TextButton(
