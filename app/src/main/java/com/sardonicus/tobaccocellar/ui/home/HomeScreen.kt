@@ -502,6 +502,7 @@ private fun HomeBody(
                 if (isTableView) {
                     TableViewMode(
                         itemsList = items,
+                        filterViewModel = filterViewModel,
                         onItemClick = { onItemClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                                       showNoteDialog = true },
@@ -941,12 +942,13 @@ private fun CellarListItem(
 /** Table View Mode **/
 @Composable
 fun TableViewMode(
-    modifier: Modifier = Modifier,
     itemsList: List<Items>,
+    filterViewModel: FilterViewModel,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val columnMinWidths = listOf(
         180.dp, // Brand
@@ -959,6 +961,7 @@ fun TableViewMode(
 
     TableLayout(
         items = itemsList,
+        filterViewModel = filterViewModel,
         columnMinWidths = columnMinWidths,
         onItemClick = onItemClick,
         onNoteClick = onNoteClick,
@@ -972,6 +975,7 @@ fun TableViewMode(
 @Composable
 fun TableLayout(
     items: List<Items>,
+    filterViewModel: FilterViewModel,
     columnMinWidths: List<Dp>,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
@@ -1002,12 +1006,13 @@ fun TableLayout(
         if (!sorting.sortAscending) it.reversed() else it
     }
 
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
     ) {
-// Header
+        // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1082,10 +1087,14 @@ fun TableLayout(
                 }
             }
         }
-// Items
+
+        // Items
+        val columnState = rememberLazyListState()
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            state = columnState
         ) {
             items(items = sortedItems, key = { it.id }) { item ->
                 Row(
@@ -1188,6 +1197,33 @@ fun TableLayout(
                         }
                     }
                 }
+            }
+        }
+
+        val coroutineScope = rememberCoroutineScope()
+        val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
+        val shouldScrollDown by filterViewModel.shouldScrollDown.collectAsState()
+
+        LaunchedEffect(shouldScrollUp){
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
+            }
+        }
+
+        LaunchedEffect(sorting) {
+            columnState.scrollToItem(0)
+        }
+
+        LaunchedEffect(shouldScrollDown) {
+            if (shouldScrollDown) {
+                delay(25)
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(sortedItems.size - 1)
+                    }
+                }
+                filterViewModel.resetScroll()
             }
         }
     }
