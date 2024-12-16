@@ -208,7 +208,7 @@ data class HomeUiState(
     val toggleContentDescription: Int =
         if (isTableView) R.string.list_view_toggle else R.string.table_view_toggle,
     val toggleIcon: Int =
-        if (isTableView) R.drawable.list_view else R.drawable.table_view,
+        if (isTableView) R.drawable.table_view else R.drawable.list_view,
 //    val isLoading: Boolean = false
 )
 
