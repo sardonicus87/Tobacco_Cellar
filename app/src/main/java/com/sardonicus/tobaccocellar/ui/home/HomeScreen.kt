@@ -87,6 +87,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -731,169 +732,146 @@ private fun CellarListItem(
             .padding(0.dp)
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 0.dp, top = 0.dp, bottom = 1.dp, end = 0.dp)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
+                .padding(bottom = 1.dp)
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
+            // Entry info
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp)
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(0.dp)
+                    .weight(1f, false),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
+                // Entry Details
                 Column(
                     modifier = Modifier
-                        .padding(0.dp)
-                        .weight(1f, false),
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                        .fillMaxWidth(fraction = .95f),
                 ) {
-                    // Blend Name //
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(fraction = .95f),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = item.blend,
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .weight(1f, false),
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    textDecoration = TextDecoration.None
-                                ),
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 16.sp,
-                                overflow = TextOverflow.Ellipsis,
-                                softWrap = true,
-                                maxLines = 1,
-                            )
-                            Spacer(
-                                modifier = Modifier
-                                    .width(4.dp)
-                            )
-                            if (item.favorite) {
-                                Spacer(
-                                    modifier = Modifier
-                                        .width(2.dp)
-                                )
-                                Icon(
-                                    painter = painterResource(id = R.drawable.heart_filled_24),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(17.dp),
-                                    tint = LocalCustomColors.current.favHeart
-                                )
-                            }
-                            if (item.disliked) {
-                                Spacer(
-                                    modifier = Modifier
-                                        .width(2.dp)
-                                )
-                                Icon(
-                                    painter = painterResource(id = R.drawable.heartbroken_filled_24),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(17.dp),
-                                    tint = LocalCustomColors.current.disHeart
-                                )
-                            }
-                            if (item.notes.isNotEmpty()) {
-                                Spacer(
-                                    modifier = Modifier
-                                        .width(2.dp)
-                                )
-                                Icon(
-                                    painter = painterResource(id = R.drawable.notes_24),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(16.dp),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                            }
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
-                                .offset(y = (-4).dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Start),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            // Brand Name //
-                            Text(
-                                text = item.brand,
-                                modifier = Modifier,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    textDecoration = TextDecoration.None
-                                ),
-                                fontStyle = Italic,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 11.sp
-                            )
-                            // Other Info //
-                            Text(
-                                text = item.type,
-                                modifier = Modifier,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    textDecoration = TextDecoration.None
-                                ),
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-
-                }
-                Column(
-                    modifier = Modifier
-                        .width(IntrinsicSize.Max)
-                        .padding(0.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    horizontalAlignment = Alignment.End
-                ) {
+                    // blend name and fav/dis/notes icons
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.End,
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "x" + item.quantity,
-                            modifier = Modifier,
-                            style =
-                            if (item.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
-                                color = MaterialTheme.colorScheme.error,
-                                textDecoration = TextDecoration.None)
-                                    )
-                            else (MaterialTheme.typography.titleMedium.copy(
+                            text = item.blend,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .weight(1f, false),
+                            style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                textDecoration = TextDecoration.None)
-                                    ),
+                                textDecoration = TextDecoration.None
+                            ),
                             fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp
+                            fontSize = 16.sp,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = true,
+                            maxLines = 1,
+                        )
+                        if (item.favorite) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.heart_filled_24),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 2.dp)
+                                    .size(17.dp),
+                                tint = LocalCustomColors.current.favHeart
+                            )
+                        }
+                        if (item.disliked) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.heartbroken_filled_24),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 2.dp)
+                                    .size(17.dp),
+                                tint = LocalCustomColors.current.disHeart
+                            )
+                        }
+                        if (item.notes.isNotEmpty()) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.notes_24),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(start = 2.dp)
+                                    .size(16.dp),
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
+                    // brand and type
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
+                            .offset(y = (-4).dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Start),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        // Brand Name //
+                        Text(
+                            text = item.brand,
+                            modifier = Modifier,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                textDecoration = TextDecoration.None
+                            ),
+                            fontStyle = Italic,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp
+                        )
+                        // Other Info //
+                        Text(
+                            text = item.type,
+                            modifier = Modifier,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                textDecoration = TextDecoration.None
+                            ),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 11.sp,
                         )
                     }
                 }
             }
+            // Quantity
+            Column(
+                modifier = Modifier
+                    .width(IntrinsicSize.Max)
+                    .padding(0.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "x" + item.quantity,
+                    modifier = Modifier,
+                    style =
+                    if (item.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
+                        color = MaterialTheme.colorScheme.error,
+                        textDecoration = TextDecoration.None)
+                            )
+                    else (MaterialTheme.typography.titleMedium.copy(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        textDecoration = TextDecoration.None)
+                            ),
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 16.sp
+                )
+            }
         }
+
         if (showMenu) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
+                    .padding(bottom = 1.dp)
                     .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.80f))
-                    .padding(0.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -935,6 +913,7 @@ private fun CellarListItem(
                 }
             }
         }
+
     }
 }
 
