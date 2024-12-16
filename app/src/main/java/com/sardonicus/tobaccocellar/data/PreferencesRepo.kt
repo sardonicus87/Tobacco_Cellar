@@ -4,12 +4,14 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -19,6 +21,9 @@ class PreferencesRepo(
     private companion object {
         val IS_TABLE_VIEW = booleanPreferencesKey("is_table_view")
         val THEME_SETTING = stringPreferencesKey("theme_setting")
+        val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
+        val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
+
         const val TAG = "PreferencesRepo"
     }
 
@@ -42,6 +47,7 @@ class PreferencesRepo(
         }
     }
 
+
     /** Setting theme options */
     val themeSetting: Flow<String> = dataStore.data
         .catch {
@@ -60,4 +66,27 @@ class PreferencesRepo(
             preferences[THEME_SETTING] = themeSetting
         }
     }
+
+
+    /** Setting Tin Converter rates */
+    suspend fun getTinOzConversionRate(): Double {
+        return dataStore.data.firstOrNull()?.get(TIN_OZ_CONVERSION_RATE) ?: 1.75
+    }
+
+    suspend fun setTinOzConversionRate(rate: Double) {
+        dataStore.edit { preferences ->
+            preferences[TIN_OZ_CONVERSION_RATE] = rate
+        }
+    }
+
+    suspend fun getTinGramsConversionRate(): Double {
+        return dataStore.data.firstOrNull()?.get(TIN_GRAMS_CONVERSION_RATE) ?: 50.0
+    }
+
+    suspend fun setTinGramsConversionRate(rate: Double) {
+        dataStore.edit { preferences ->
+            preferences[TIN_GRAMS_CONVERSION_RATE] = rate
+        }
+    }
+
 }
