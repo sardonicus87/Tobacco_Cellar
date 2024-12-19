@@ -7,13 +7,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddEntryViewModel(
     private val itemsRepository: ItemsRepository,
+    private val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
 
     /** current item state **/
@@ -30,11 +33,29 @@ class AddEntryViewModel(
             )
     }
 
+    /** tin conversion **/
+    var tinConversion = mutableStateOf(TinConversion())
+        private set
+
+    fun updateTinConversion(tinConversion: TinConversion) {
+        this.tinConversion.value = tinConversion
+    }
+
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         return with(uiState) {
             brand.isNotBlank() && blend.isNotBlank()
         }
     }
+
+    init {
+        viewModelScope.launch {
+            tinConversion.value = TinConversion(
+                ozRate = preferencesRepo.getTinOzConversionRate(),
+                gramsRate = preferencesRepo.getTinGramsConversionRate(),
+            )
+        }
+    }
+
 
     /** check if Item already exists, display optional dialog if so **/
     var existState by mutableStateOf(ExistState())
@@ -83,12 +104,12 @@ class AddEntryViewModel(
         }
     }
 
-
     /** save to or delete from database **/
     suspend fun saveItem() {
         if (validateInput()) {
-            itemsRepository.insertItem(itemUiState.itemDetails.toItem())
-            EventBus.emit(ItemAddedEvent)
+            val newItemId = itemsRepository.insertItem(itemUiState.itemDetails.toItem())
+        //    itemsRepository.insertItem(itemUiState.itemDetails.toItem())
+            EventBus.emit(ItemAddedEvent(newItemId))
         }
     }
 
@@ -125,10 +146,16 @@ data class ItemDetails(
     var originalBlend: String = "",
 )
 
+data class TinConversion(
+    val amount: String = "",
+    val unit: String = "",
+    val ozRate: Double = 1.75,
+    val gramsRate: Double = 50.0,
+)
 
-object ItemAddedEvent {
-    // for list scroll on new add
-}
+data class ItemAddedEvent(
+    val newItemId: Long
+)
 
 /** convert ItemDetails (class) to Items (Database Table entity) **/
 fun ItemDetails.toItem(): Items = Items(
