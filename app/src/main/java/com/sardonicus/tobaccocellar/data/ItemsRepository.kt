@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface ItemsRepository {
 
     /** Database operations **/
-    suspend fun insertItem(item: Items)
+    suspend fun insertItem(item: Items): Long
 
     suspend fun insertMultiple(items: List<Items>): List<Long>
 

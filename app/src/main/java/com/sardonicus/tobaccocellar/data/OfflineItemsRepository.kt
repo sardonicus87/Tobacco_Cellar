@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.data
 
+import android.util.Log
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
@@ -8,7 +9,9 @@ import kotlinx.coroutines.flow.Flow
 class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     /** Database operations **/
-    override suspend fun insertItem(item: Items) = itemsDao.insert(item)
+    override suspend fun insertItem(item: Items): Long {
+        return itemsDao.insert(item)
+    }
 
     override suspend fun insertMultiple(items: List<Items>): List<Long> {
         return itemsDao.insertMultiple(items).toList()

@@ -19,7 +19,7 @@ interface ItemsDao {
     /** Database operations **/
     // Add item //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(item: Items)
+    suspend fun insert(item: Items): Long
 
     // Batch add items //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
