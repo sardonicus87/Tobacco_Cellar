@@ -87,7 +87,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -129,10 +128,9 @@ fun HomeScreen(
 //    val bottomScrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
 //        BottomAppBarDefaults.exitAlwaysScrollBehavior() else null
     val homeUiState by viewmodel.homeUiState.collectAsState()
-    val itemsState by viewmodel.itemsState.collectAsState()
+    val sorting by viewmodel.sorting
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val sorting by viewmodel.sorting
     val isTableView = homeUiState.isTableView
     val activeItemId by viewmodel.menuItemId
     val isMenuShown by viewmodel.isMenuShown
@@ -210,20 +208,19 @@ fun HomeScreen(
                 HomeHeader(
                     modifier = Modifier,
                     homeUiState = homeUiState,
-                    itemsState = itemsState,
                     filterViewModel = filterViewModel,
                     selectView = viewmodel::selectView,
                     isTableView = isTableView,
                 )
             }
             HomeBody(
-                items = itemsState.items,
+                items = homeUiState.items,
                 filterViewModel = filterViewModel,
                 isTableView = isTableView,
                 onItemClick = navigateToEditEntry,
                 sorting = sorting,
                 updateSorting = viewmodel::updateSorting,
-                isLoading = itemsState.isLoading,
+                isLoading = homeUiState.isLoading,
                 onDismissMenu = viewmodel::onDismissMenu,
                 onShowMenu = viewmodel::onShowMenu,
                 isMenuShown = isMenuShown,
@@ -240,7 +237,6 @@ fun HomeScreen(
 private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
-    itemsState: ItemsState,
     filterViewModel: FilterViewModel,
     selectView: (Boolean) -> Unit,
     isTableView: Boolean,
@@ -304,7 +300,6 @@ private fun HomeHeader(
                     }
                 },
                 onImeAction = {
-                    //    filterViewModel.resetFilter()
                     filterViewModel.onBlendSearch(blendSearchText)
                 }
             )
@@ -314,7 +309,7 @@ private fun HomeHeader(
                 .width(12.dp)
         )
         Text(
-            text = "Entries: ${itemsState.items.size}",
+            text = "Entries: ${homeUiState.items.size}",
             modifier = Modifier
                 .widthIn(min = 84.dp),
             textAlign = TextAlign.End,
@@ -645,8 +640,6 @@ fun ListViewMode(
     modifier: Modifier = Modifier,
 ) {
     val columnState = rememberLazyListState()
-    val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-    val shouldScrollDown by filterViewModel.shouldScrollDown.collectAsState()
 
     Box(
         modifier = Modifier
@@ -695,21 +688,28 @@ fun ListViewMode(
             }
         }
 
+        val coroutineScope = rememberCoroutineScope()
+        val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
+        val newItemId by filterViewModel.newItemId.collectAsState()
+        val newItemIndex = itemsList.indexOfFirst { it.id == newItemId }
+
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
-                columnState.scrollToItem(0)
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(0)
+                    }
+                }
                 filterViewModel.resetScroll()
             }
         }
 
-        val coroutineScope = rememberCoroutineScope()
-
-        LaunchedEffect(shouldScrollDown) {
-            if (shouldScrollDown) {
+        LaunchedEffect(newItemIndex) {
+            if (newItemIndex != -1) {
                 delay(25)
                 withFrameNanos {
                     coroutineScope.launch {
-                        columnState.scrollToItem(itemsList.size - 1)
+                        columnState.scrollToItem(newItemIndex)
                     }
                 }
                 filterViewModel.resetScroll()
@@ -935,7 +935,7 @@ fun TableViewMode(
         108.dp, // Type
         64.dp, // Fav/Dis
         64.dp, // Note
-        54.dp // Quantity
+        58.dp // Tins
     )
 
     TableLayout(
@@ -976,7 +976,6 @@ fun TableLayout(
         { item: Items -> item.notes }, // 4
         { item: Items -> item.quantity }, // 5
     )
-
     val sortedItems = when (sorting.columnIndex) {
         0 -> items.sortedBy { it.brand }
         1 -> items.sortedBy { it.blend }
@@ -1000,7 +999,6 @@ fun TableLayout(
             for (columnIndex in columnMinWidths.indices) {
                 Box(
                     modifier = Modifier
-                        //  .width(columnWidths[columnIndex])
                         .width(columnMinWidths[columnIndex])
                         .fillMaxHeight()
                         .padding(0.dp)
@@ -1016,7 +1014,6 @@ fun TableLayout(
                         5 -> Alignment.CenterEnd // quantity
                         else -> Alignment.CenterStart
                     }
-
                     val headerText = when (columnIndex) {
                         0 -> "Brand"
                         1 -> "Blend"
@@ -1026,7 +1023,6 @@ fun TableLayout(
                         5 -> "Qty"
                         else -> ""
                     }
-
                     val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
                         updateSorting(newSortColumn)
                     }
@@ -1034,21 +1030,17 @@ fun TableLayout(
                         0, 1 -> {
                             HeaderCell(
                                 text = headerText,
-                            //    columnIndex = columnIndex,
                                 onClick = { onSortChange(columnIndex) },
                                 primarySort = sorting.columnIndex == columnIndex,
                                 sorting = sorting,
                                 modifier = Modifier
                                     .padding(0.dp)
                                     .align(alignment),
-                                iconUp = painterResource(id = R.drawable.arrow_up),
-                                iconDown = painterResource(id = R.drawable.arrow_down)
                             )
                         }
                         else -> {
                             HeaderCell(
                                 text = headerText,
-                            //    columnIndex = columnIndex,
                                 primarySort = sorting.columnIndex == columnIndex,
                                 sorting = sorting,
                                 modifier = Modifier
@@ -1058,8 +1050,6 @@ fun TableLayout(
                                     painterResource(id = R.drawable.heart_filled_24) else null,
                                 icon2 = if (columnIndex == 3)
                                     painterResource(id = R.drawable.question_mark_24) else null,
-                                iconUp = painterResource(id = R.drawable.arrow_up),
-                                iconDown = painterResource(id = R.drawable.arrow_down)
                             )
                         }
                     }
@@ -1181,28 +1171,38 @@ fun TableLayout(
 
         val coroutineScope = rememberCoroutineScope()
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-        val shouldScrollDown by filterViewModel.shouldScrollDown.collectAsState()
+        val newItemId by filterViewModel.newItemId.collectAsState()
+        val newItemIndex = sortedItems.indexOfFirst { it.id == newItemId }
+      //  val shouldScrollDown by filterViewModel.shouldScrollDown.collectAsState()
 
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
-                columnState.scrollToItem(0)
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(0)
+                    }
+                }
+                filterViewModel.resetScroll()
+            }
+        }
+
+        LaunchedEffect(newItemIndex) {
+            if (newItemIndex != -1) {
+                delay(25)
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(newItemIndex)
+                    }
+                }
                 filterViewModel.resetScroll()
             }
         }
 
         LaunchedEffect(sorting) {
-            columnState.scrollToItem(0)
-        }
-
-        LaunchedEffect(shouldScrollDown) {
-            if (shouldScrollDown) {
-                delay(25)
-                withFrameNanos {
-                    coroutineScope.launch {
-                        columnState.scrollToItem(sortedItems.size - 1)
-                    }
+            withFrameNanos {
+                coroutineScope.launch {
+                    columnState.scrollToItem(0)
                 }
-                filterViewModel.resetScroll()
             }
         }
     }
@@ -1214,8 +1214,6 @@ fun HeaderCell(
     text: String? = null,
     icon1: Painter? = null,
     icon2: Painter? = null,
-    iconUp: Painter? = null,
-    iconDown: Painter? = null,
     sorting: Sorting,
     primarySort: Boolean,
     onClick: (() -> Unit)? = null
@@ -1246,27 +1244,13 @@ fun HeaderCell(
                         fontWeight = FontWeight.Bold,
                     )
                 }
-                if (sorting.sortAscending) {
-                    iconUp?.let {
-                        Image(
-                            painter = it,
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(LocalContentColor.current),
-                            modifier = Modifier
-                                .size(22.dp)
-                        )
-                    }
-                } else {
-                    iconDown?.let {
-                        Image(
-                            painter = it,
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(LocalContentColor.current),
-                            modifier = Modifier
-                                .size(22.dp)
-                        )
-                    }
-                }
+                Image(
+                    painter = painterResource(id = sorting.sortIcon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(22.dp),
+                    colorFilter = ColorFilter.tint(LocalContentColor.current)
+                )
             }
         } else {
             if (text != null) {
