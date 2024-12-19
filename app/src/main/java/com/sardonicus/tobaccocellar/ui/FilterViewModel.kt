@@ -125,23 +125,30 @@ class FilterViewModel (
     private val _shouldScrollUp = MutableStateFlow(false)
     val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp
 
-    private val _shouldScrollDown = MutableStateFlow(false)
-    val shouldScrollDown: StateFlow<Boolean> = _shouldScrollDown
+//    private val _shouldScrollDown = MutableStateFlow(false)
+//    val shouldScrollDown: StateFlow<Boolean> = _shouldScrollDown
+
+    private val _newItemId = MutableStateFlow(-1)
+    val newItemId: StateFlow<Int> = _newItemId.asStateFlow()
+
 
     fun resetScroll() {
         _shouldScrollUp.value = false
-        _shouldScrollDown.value = false
+        _newItemId.value = -1
+        //    _shouldScrollDown.value = false
     }
+
 
     init {
         viewModelScope.launch {
             EventBus.events.collect {
                 if (it is ItemAddedEvent) {
-                    _shouldScrollDown.value = true
+                    _newItemId.value = it.newItemId.toInt()
                 }
             }
         }
     }
+
 
 
     /** Filtering states **/
