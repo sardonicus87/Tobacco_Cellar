@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.items
 
 import android.R.attr.contentDescription
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -22,8 +23,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.Card
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -96,10 +99,12 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -158,8 +163,10 @@ fun AddEntryScreen(
             AddEntryBody(
                 itemUiState = viewModel.itemUiState,
                 existState = viewModel.existState,
+                tinConversion = viewModel.tinConversion.value,
                 resetExistState = viewModel::resetExistState,
                 onItemValueChange = viewModel::updateUiState,
+                onTinValueChange = viewModel::updateTinConversion,
                 onSaveClick = {
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
@@ -191,8 +198,10 @@ fun AddEntryScreen(
 @Composable
 fun AddEntryBody(
     itemUiState: ItemUiState,
+    tinConversion: TinConversion,
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
+    onTinValueChange: (TinConversion) -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
@@ -212,7 +221,9 @@ fun AddEntryBody(
         ItemInputForm(
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
+            tinConversion = tinConversion,
             onValueChange = onItemValueChange,
+            onTinValueChange = onTinValueChange,
             isEditEntry = isEditEntry,
             modifier = Modifier
                 .fillMaxWidth()
@@ -357,8 +368,10 @@ private fun DeleteConfirmationDialog(
 fun ItemInputForm(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
+    tinConversion: TinConversion,
     isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
+    onTinValueChange: (TinConversion) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -421,8 +434,10 @@ fun ItemInputForm(
             0 -> ItemDetailsEntry(
                 itemDetails = itemDetails,
                 itemUiState = itemUiState,
+                tinConversion = tinConversion,
                 isEditEntry = isEditEntry,
                 onValueChange = onValueChange,
+                onTinValueChange = onTinValueChange,
                 modifier = Modifier,
             )
 
@@ -442,11 +457,14 @@ fun ItemInputForm(
 fun ItemDetailsEntry(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
+    tinConversion: TinConversion,
     isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
+    onTinValueChange: (TinConversion) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
+    var showTinConverter by rememberSaveable { mutableStateOf(false) }
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -689,7 +707,7 @@ fun ItemDetailsEntry(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Tins:",
+                        text = "No. of Tins:",
                         modifier = Modifier
                             .width(80.dp)
                     )
@@ -804,6 +822,25 @@ fun ItemDetailsEntry(
                                     .offset(x = 0.dp, y = 4.dp)
                             )
                         }
+                        TextButton(
+                            onClick = {
+                                onTinValueChange(
+                                    tinConversion.copy(
+                                        amount = "",
+                                        unit = ""
+                                    )
+                                )
+                                showTinConverter = true
+                            },
+                            modifier = Modifier
+                                .padding(0.dp)
+                        ) {
+                            Text(
+                                text = "Tin Converter",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                            )
+                        }
                     }
                 }
 
@@ -886,6 +923,24 @@ fun ItemDetailsEntry(
                 }
             }
         }
+
+        if (showTinConverter) {
+            TinConverterDialog(
+                onDismiss = { showTinConverter = false },
+                onConfirm = {
+                    onValueChange(
+                        itemDetails.copy(
+                            squantity = it.toString(),
+                            quantity = it
+                        )
+                    )
+                    showTinConverter = false
+                },
+                tinConversion = tinConversion,
+                onTinValueChange = onTinValueChange,
+                modifier = Modifier
+            )
+        }
     }
 }
 
@@ -953,6 +1008,180 @@ fun NotesEntry(
 
 
 /** custom composables */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TinConverterDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit,
+    tinConversion: TinConversion,
+    onTinValueChange: (TinConversion) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var amount by remember { mutableStateOf(tinConversion.amount) }
+    var unit by remember { mutableStateOf(tinConversion.unit) }
+    var expanded by remember { mutableStateOf(false) }
+    val unitList = listOf("oz", "lb", "grams")
+
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Tin Converter",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
+
+                        TextField(
+                            value = amount,
+                            onValueChange = {
+                                if (it.matches(pattern)) {
+                                    amount = it
+                                    onTinValueChange(
+                                        tinConversion.copy(
+                                            amount = it
+                                        )
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f),
+                            placeholder = {
+                                Text(
+                                    text = "Amount",
+                                )
+                            },
+                            visualTransformation = VisualTransformation.None,
+                            enabled = true,
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField,
+                            ),
+                            shape = MaterialTheme.shapes.extraSmall
+                        )
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = !expanded },
+                            modifier = modifier
+                                .weight(2f)
+                        ) {
+                            TextField(
+                                value = unit,
+                                onValueChange = { },
+                                readOnly = true,
+                                modifier = Modifier
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                },
+                                singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField,
+                                ),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                placeholder = {
+                                    Text(
+                                        text = "Unit"
+                                    )
+                                }
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier,
+                                matchTextFieldWidth = true,
+                                containerColor = LocalCustomColors.current.textField,
+                            ) {
+                                unitList.forEach { option: String ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = option) },
+                                        onClick = {
+                                            expanded = false
+                                            unit = option
+                                            onTinValueChange(
+                                                tinConversion.copy(unit = option)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            val convertedQuantity = convertQuantity(
+                                tinConversion.amount.toDouble(),
+                                tinConversion.unit,
+                                tinConversion.ozRate,
+                                tinConversion.gramsRate
+                            )
+                            onConfirm(convertedQuantity)
+                        },
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .align(Alignment.End)
+                    ) {
+                        Text(
+                            text = "Convert",
+                            modifier = Modifier
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun convertQuantity(amount: Double, unit: String, ozRate: Double, gramsRate: Double): Int {
+    val convertedAmount = when (unit) {
+        "oz" -> amount / ozRate
+        "lb" -> (amount * 16) / ozRate
+        "grams" -> amount / gramsRate
+        else -> amount
+    }
+    return kotlin.math.round(convertedAmount).toInt()
+}
+
 @Composable
 fun CustomCheckBox(
     checked: Boolean,
