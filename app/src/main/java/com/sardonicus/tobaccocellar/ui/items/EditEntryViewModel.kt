@@ -7,6 +7,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -15,12 +16,20 @@ import kotlinx.coroutines.launch
 
 class EditEntryViewModel(
     savedStateHandle: SavedStateHandle,
-    private val itemsRepository: ItemsRepository
+    private val itemsRepository: ItemsRepository,
+    private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
     /** current item state **/
     var itemUiState by mutableStateOf(ItemUiState())
         private set
+
+    var tinConversion = mutableStateOf(TinConversion())
+        private set
+
+    fun updateTinConversion(tinConversion: TinConversion) {
+        this.tinConversion.value = tinConversion
+    }
 
     private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
 
@@ -58,6 +67,19 @@ class EditEntryViewModel(
         }
     }
 
+
+    /** get tin conversion rates from preferences **/
+    init {
+        viewModelScope.launch {
+            tinConversion.value = TinConversion(
+                ozRate = preferencesRepo.getTinOzConversionRate(),
+                gramsRate = preferencesRepo.getTinGramsConversionRate(),
+            )
+        }
+    }
+
+
+    /** check if Item already exists, display optional dialog if so **/
     var existState by mutableStateOf(ExistState())
 
     suspend fun checkItemExistsOnUpdate() {

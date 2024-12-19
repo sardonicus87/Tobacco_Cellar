@@ -89,7 +89,9 @@ fun EditEntryScreen(
             AddEntryBody(
                 itemUiState = viewModel.itemUiState,
                 existState = ExistState(),
+                tinConversion = viewModel.tinConversion.value,
                 onItemValueChange = viewModel::updateUiState,
+                onTinValueChange = viewModel::updateTinConversion,
                 onSaveClick = {
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
