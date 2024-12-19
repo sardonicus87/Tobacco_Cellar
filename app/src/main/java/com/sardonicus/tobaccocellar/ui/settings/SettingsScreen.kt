@@ -1,53 +1,73 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.R.attr.value
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,7 +77,9 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 
 object SettingsDestination : NavigationDestination {
@@ -76,6 +98,8 @@ fun SettingsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
+    val ozRate by viewmodel.tinOzConversionRate.collectAsState()
+    val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -104,6 +128,11 @@ fun SettingsScreen(
                 },
                 saveTheme = { viewmodel.saveThemeSetting(it) },
                 preferencesRepo = viewmodel.preferencesRepo,
+                tinOzConversionRate = ozRate,
+                tinGramsConversionRate = gramsRate,
+                onSetTinConversionRates = { ozRate, gramsRate ->
+                    viewmodel.setTinConversionRates(ozRate, gramsRate)
+                },
                 modifier = modifier
                     .fillMaxWidth(),
             )
@@ -116,11 +145,15 @@ fun SettingsScreen(
 private fun SettingsBody(
     onDeleteAllClick: () -> Unit,
     saveTheme: (String) -> Unit,
+    tinOzConversionRate: Double,
+    tinGramsConversionRate: Double,
+    onSetTinConversionRates: (Double, Double) -> Unit,
     modifier: Modifier = Modifier,
     preferencesRepo: PreferencesRepo,
 ) {
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
+    var showTinRates by rememberSaveable { mutableStateOf(false) }
     var showChangelog by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(enabled = showChangelog) {
@@ -139,63 +172,49 @@ private fun SettingsBody(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 16.dp, bottom = 0.dp, start = 0.dp, end = 0.dp)
+            .padding(0.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
     ) {
         if (!showChangelog) {
-            Text(
-                text = "Display Settings",
-                fontWeight = FontWeight.Bold,
+            Spacer(
                 modifier = Modifier
-                    .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp)
+                    .height(16.dp)
             )
-            TextButton(
-                onClick = { showThemeDialog = true },
-                enabled = true,
+
+            DisplaySettings(
+                showThemeDialog = { showThemeDialog = it },
                 modifier = Modifier
-                    .padding(start = 4.dp)
-            ) {
-                Text(
-                    text = "Theme",
-                    modifier = Modifier
-                        .padding(0.dp)
-                )
-            }
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                thickness = 1.dp,
+                    .padding(horizontal = 16.dp)
             )
-            Text(
-                text = "Database Settings",
-                fontWeight = FontWeight.Bold,
+
+            DatabaseSettings(
+                showTinRates = { showTinRates = it },
+                deleteAllConfirm = { deleteAllConfirm = it },
                 modifier = Modifier
-                    .padding(start = 16.dp, top = 0.dp, bottom = 0.dp, end = 16.dp)
+                    .padding(horizontal = 16.dp)
             )
-            TextButton(
-                onClick = { deleteAllConfirm = true },
-                enabled = true,
-                modifier = Modifier
-                    .padding(start = 4.dp)
-            ) {
-                Text(
-                    text = "Clear Database",
-                    modifier = Modifier
-                        .padding(0.dp)
-                )
-            }
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                thickness = 1.dp,
-            )
+
             AboutSection(
                 showChangelog = { showChangelog = it },
                 modifier = Modifier
+                    .padding(horizontal = 16.dp)
             )
 
-
+            // Popup settings dialogs
+            if (showTinRates) {
+                TinRatesDialog(
+                    onDismiss = { showTinRates = false },
+                    ozRate = tinOzConversionRate,
+                    gramsRate = tinGramsConversionRate,
+                    onSet = { ozRate, gramsRate ->
+                        onSetTinConversionRates(ozRate, gramsRate)
+                        showTinRates = false
+                    },
+                    modifier = Modifier
+                )
+            }
             if (showThemeDialog) {
                 ThemeDialog(
                     onThemeSelected = { newTheme ->
@@ -221,13 +240,90 @@ private fun SettingsBody(
 }
 
 @Composable
+fun DisplaySettings(
+    showThemeDialog: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = "Display Settings",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(bottom = 4.dp),
+            fontSize = 18.sp
+        )
+        Text(
+            text = "Theme",
+            modifier = Modifier
+                .clickable { showThemeDialog(true) }
+                .padding(vertical = 2.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(
+            modifier = Modifier
+                .height(32.dp)
+        )
+    }
+}
+
+@Composable
+fun DatabaseSettings(
+    showTinRates: (Boolean) -> Unit,
+    deleteAllConfirm: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = "Database Settings",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(bottom = 4.dp),
+            fontSize = 18.sp
+        )
+        Text(
+            text = "Change Tin Conversion rates",
+            modifier = Modifier
+                .clickable { showTinRates(true) }
+                .padding(vertical = 2.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "Clear Database",
+            modifier = Modifier
+                .clickable { deleteAllConfirm(true) }
+                .padding(vertical = 2.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(
+            modifier = Modifier
+                .height(32.dp)
+        )
+    }
+}
+
+@Composable
 fun AboutSection(
     showChangelog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val appVersion = BuildConfig.VERSION_NAME
     val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
-
     val versionInfo = buildAnnotatedString {
         withStyle(style = SpanStyle(
             color = MaterialTheme.colorScheme.onBackground,
@@ -249,42 +345,44 @@ fun AboutSection(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(start = 0.dp, top = 0.dp, bottom = 0.dp, end = 0.dp),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
             text = "About Tobacco Cellar",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(bottom = 8.dp, start = 16.dp, top = 0.dp, end = 16.dp)
+                .padding(bottom = 4.dp),
+            fontSize = 18.sp
         )
         Text(
             text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
                     "Uses Apache Commons CSV for reading and writing CSV files.",
             modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = 16.dp),
+                .padding(vertical = 2.dp),
             fontSize = 14.sp,
             softWrap = true,
         )
         Text(
             text = versionInfo,
             modifier = Modifier
-                .padding(horizontal = 16.dp),
+                .padding(vertical = 4.dp),
             fontSize = 14.sp,
             softWrap = true,
         )
-        TextButton(
-            onClick = { showChangelog(true) },
+        Text(
+            text = "Change Log",
             modifier = Modifier
-                .padding(start = 4.dp)
-        ) {
-            Text(
-                text = "Change Log",
-                modifier = Modifier
-                    .padding(0.dp)
-            )
-        }
+                .clickable { showChangelog(true) }
+                .padding(vertical = 2.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(
+            modifier = Modifier
+                .height(32.dp)
+        )
     }
 }
 
@@ -302,14 +400,15 @@ fun ChangeLogDialog(
             .fillMaxWidth()
             .background(color = MaterialTheme.colorScheme.background)
             .heightIn(max = screenHeight)
-            .padding(bottom = 16.dp),
+            .padding(0.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
+        // header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .background(color = LocalCustomColors.current.backgroundVariant),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
@@ -348,12 +447,19 @@ fun ChangeLogDialog(
                     .weight(1f)
             )
         }
+        // log entries
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
         ) {
-            items(items = changeLogEntries.reversed(),  key = { it.versionNumber }) {
+            item {
+                Spacer(
+                    modifier = Modifier
+                        .height(12.dp)
+                )
+            }
+            items(items = changeLogEntries,  key = { it.versionNumber }) {
                 ChangeLogEntryLayout(
                     versionNumber = it.versionNumber,
                     buildDate = it.buildDate,
@@ -520,6 +626,165 @@ fun ChangeLogEntryLayout(
 }
 
 
+/** Dialogs **/
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TinRatesDialog(
+    onDismiss: () -> Unit,
+    ozRate: Double,
+    gramsRate: Double,
+    onSet: (Double, Double) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var tinOzRate by rememberSaveable { mutableStateOf(ozRate.toString()) }
+    var tinGramsRate by rememberSaveable { mutableStateOf(gramsRate.toString()) }
+
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+    ) {
+        Card(
+            modifier = Modifier,
+            shape = MaterialTheme.shapes.extraLarge
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Tin Conversion Rates",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp),
+                    fontSize = 18.sp,
+                    softWrap = false,
+                    color = Color.Transparent
+                )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .offset(x = (-8).dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ){
+                    Text(
+                        text = "One Tin = ",
+                        modifier = Modifier
+                            .padding(end = 8.dp),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                    )
+                    Column(
+                        modifier = Modifier,
+                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
+
+                        Row(
+                            modifier = Modifier,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                        ) {
+                            CustomTextField(
+                                value = tinOzRate,
+                                onValueChange = {
+                                    if (it.matches(pattern)) {
+                                        tinOzRate = it
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(80.dp),
+                                textStyle = LocalTextStyle.current.copy(
+                                    textAlign = TextAlign.End,
+                                  //  color = LocalContentColor.current,
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField,
+                                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    disabledTextColor = MaterialTheme.colorScheme.onBackground,
+                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                ),
+                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                            )
+                            Text(
+                                text = "oz",
+                                modifier = Modifier
+                            )
+                        }
+                        Row(
+                            modifier = Modifier,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                        ) {
+                            CustomTextField(
+                                value = tinGramsRate,
+                                onValueChange = {
+                                    if (it.matches(pattern)) {
+                                        tinGramsRate = it
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(80.dp),
+                                textStyle = LocalTextStyle.current.copy(
+                                    textAlign = TextAlign.End,
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField,
+                                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    disabledTextColor = MaterialTheme.colorScheme.onBackground,
+                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                ),
+                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                            )
+                            Text(
+                                text = "grams",
+                            )
+                        }
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        onSet(
+                            tinOzRate.toDoubleOrNull() ?: 1.75,
+                            tinGramsRate.toDoubleOrNull() ?: 50.0
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .align(Alignment.End)
+                ) {
+                    Text(
+                        text = "Save",
+                        modifier = Modifier
+                            .padding(0.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun ThemeDialog(
     onThemeSelected: (String) -> Unit,
@@ -572,8 +837,6 @@ fun ThemeDialog(
     )
 }
 
-
-/** Dialogs **/
 @Composable
 private fun DeleteAllDialog(
     onDeleteConfirm: () -> Unit,
