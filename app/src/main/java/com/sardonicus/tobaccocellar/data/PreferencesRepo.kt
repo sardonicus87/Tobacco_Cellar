@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
 import kotlinx.coroutines.flow.Flow
@@ -23,11 +24,14 @@ class PreferencesRepo(
         val THEME_SETTING = stringPreferencesKey("theme_setting")
         val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
+        val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
+        val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
 
         const val TAG = "PreferencesRepo"
     }
 
-    /** Setting Homescreen view options */
+    /** Setting HomeScreen view options */
+    // setting list/table view //
     val isTableView: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -44,6 +48,38 @@ class PreferencesRepo(
     suspend fun saveViewPreference(isTableView: Boolean) {
         dataStore.edit { preferences ->
             preferences[IS_TABLE_VIEW] = isTableView
+        }
+    }
+
+    // setting table sort options //
+    val sortColumnIndex: Flow<Int> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading table sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[SORT_COLUMN_INDEX] ?: -1
+        }
+
+    val sortAscending: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading table sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[SORT_ASCENDING] ?: true
+        }
+
+    suspend fun saveTableSortingPreferences(columnIndex: Int, ascending: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SORT_COLUMN_INDEX] = columnIndex
+            preferences[SORT_ASCENDING] = ascending
         }
     }
 
