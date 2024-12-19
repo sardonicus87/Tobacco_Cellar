@@ -52,14 +52,16 @@ object AppViewModelProvider {
 
         initializer {
             AddEntryViewModel(
-                cellarApplication().container.itemsRepository
+                cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo
             )
         }
 
         initializer {
             EditEntryViewModel(
                 this.createSavedStateHandle(),
-                cellarApplication().container.itemsRepository
+                cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo
             )
         }
     }
