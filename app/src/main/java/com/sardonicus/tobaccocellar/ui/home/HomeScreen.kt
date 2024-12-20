@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.home
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -695,11 +696,7 @@ fun ListViewMode(
 
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
-                withFrameNanos {
-                    coroutineScope.launch {
-                        columnState.scrollToItem(0)
-                    }
-                }
+                columnState.scrollToItem(0)
                 filterViewModel.resetScroll()
             }
         }
@@ -1177,11 +1174,7 @@ fun TableLayout(
 
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
-                withFrameNanos {
-                    coroutineScope.launch {
-                        columnState.scrollToItem(0)
-                    }
-                }
+                columnState.scrollToItem(0)
                 filterViewModel.resetScroll()
             }
         }
@@ -1199,11 +1192,7 @@ fun TableLayout(
         }
 
         LaunchedEffect(sorting) {
-            withFrameNanos {
-                coroutineScope.launch {
-                    columnState.scrollToItem(0)
-                }
-            }
+            columnState.scrollToItem(0)
         }
     }
 }
