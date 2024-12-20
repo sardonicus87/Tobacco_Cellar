@@ -173,23 +173,6 @@ class HomeViewModel(
         }
     }
 
-//        if (_sorting.value.columnIndex == columnIndex) {
-//            when {
-//                _sorting.value.sortAscending -> _sorting.value =
-//                    _sorting.value.copy(sortAscending = false)
-//
-//                else -> _sorting.value = Sorting()
-//            }
-//        } else {
-//            _sorting.value = Sorting(columnIndex, true)
-//        }
-//
-//        viewModelScope.launch {
-//            preferencesRepo.saveTableSortingPreferences(
-//                _sorting.value.columnIndex, _sorting.value.sortAscending)
-//        }
-//    }
-
 
     /** csvExport for TopAppBar **/
     private val _showSnackbar = MutableStateFlow(false)
