@@ -351,7 +351,7 @@ fun RawStats(
         Text(
             text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                     "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                    "${rawStats.totalQuantity} total \"quantity\"\n" +
+                    "${rawStats.totalQuantity} total  Tins\n" +
                     "${rawStats.totalZeroQuantity} out of stock",
             modifier = Modifier
                 .fillMaxWidth()
@@ -409,7 +409,7 @@ fun FilteredStats(
         Text(
             text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
                     "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
-                    "${filteredStats.totalQuantity} total \"quantity\"\n" +
+                    "${filteredStats.totalQuantity} total tins\n" +
                     "${filteredStats.totalZeroQuantity} out of stock",
             modifier = Modifier
                 .fillMaxWidth()
@@ -486,7 +486,7 @@ private fun ChartsSection(
                 thickness = 1.dp,
             )
             ChartsFormat(
-                label = "Brands by Quantity",
+                label = "Brands by Tins",
                 chartData = filteredStats.brandsByQuantity
             )
             HorizontalDivider(
@@ -504,7 +504,7 @@ private fun ChartsSection(
                 thickness = 1.dp,
             )
             ChartsFormat(
-                label = "Types by Quantity",
+                label = "Types by Tins",
                 chartData = filteredStats.typesByQuantity
             )
             HorizontalDivider(
