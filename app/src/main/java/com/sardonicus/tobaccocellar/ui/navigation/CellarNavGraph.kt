@@ -13,6 +13,8 @@ import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeScreen
+import com.sardonicus.tobaccocellar.ui.home.HelpDestination
+import com.sardonicus.tobaccocellar.ui.home.HelpScreen
 import com.sardonicus.tobaccocellar.ui.items.AddEntryDestination
 import com.sardonicus.tobaccocellar.ui.items.AddEntryScreen
 import com.sardonicus.tobaccocellar.ui.items.EditEntryDestination
@@ -46,6 +48,9 @@ fun CellarNavHost(
                 navigateToSettings = { navController.navigate(SettingsDestination.route) {
                     launchSingleTop = true
                 } },
+                navigateToHelp = { navController.navigate(HelpDestination.route) {
+                    launchSingleTop = true
+                } },
             )
         }
         composable(route = StatsDestination.route) {
@@ -62,6 +67,11 @@ fun CellarNavHost(
             SettingsScreen(
                 navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() },
+            )
+        }
+        composable(route = HelpDestination.route) {
+            HelpScreen(
+                navigateBack = { navController.navigateUp() },
             )
         }
         composable(route = AddEntryDestination.route) {

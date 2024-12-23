@@ -173,6 +173,7 @@ fun CellarTopAppBar(
     navigateUp: () -> Unit = {},
     navigateToCsvImport: () -> Unit = {},
     navigateToSettings: () -> Unit = {},
+    navigateToHelp: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
@@ -224,7 +225,8 @@ fun CellarTopAppBar(
                                 expanded = false
                                 navigateToCsvImport()
                             },
-                            modifier = Modifier.padding(0.dp),
+                            modifier = Modifier
+                                .padding(0.dp),
                             enabled = currentDestination == HomeDestination,
                         )
                         DropdownMenuItem(
@@ -233,8 +235,20 @@ fun CellarTopAppBar(
                                 expanded = false
                                 launcher.launch(intent)
                             },
-                            modifier = Modifier.padding(0.dp),
+                            modifier = Modifier
+                                .padding(0.dp),
                             enabled = currentDestination == HomeDestination && exportCsvHandler != null,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.help_faq)) },
+                            onClick = {
+                                expanded = false
+                                navigateToHelp()
+                            },
+                            modifier = Modifier
+                                .padding(0.dp),
+                            enabled = true,
                         )
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.settings)) },
@@ -242,9 +256,83 @@ fun CellarTopAppBar(
                                 expanded = false
                                 navigateToSettings()
                             },
-                            modifier = Modifier.padding(0.dp),
+                            modifier = Modifier
+                                .padding(0.dp),
                             enabled = true,
                         )
+
+//                        CustomMenuItem(
+//                            text = {
+//                                Text(
+//                                    text = stringResource(R.string.import_csv),
+//                                    fontSize = 14.sp,
+//                                    fontWeight = FontWeight.Medium,
+//                                    color = MaterialTheme.colorScheme.onSurface,
+//                                )
+//                            },
+//                            onClick = {
+//                                expanded = false
+//                                navigateToCsvImport()
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp),
+//                            enabled = currentDestination == HomeDestination,
+//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+//                        )
+//                        CustomMenuItem(
+//                            text = {
+//                                Text(
+//                                    text = stringResource(R.string.export_csv),
+//                                    fontSize = 14.sp,
+//                                    fontWeight = FontWeight.Medium,
+//                                    color = MaterialTheme.colorScheme.onSurface,
+//                                )
+//                            },
+//                            onClick = {
+//                                expanded = false
+//                                launcher.launch(intent)
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp),
+//                            enabled = currentDestination == HomeDestination && exportCsvHandler != null,
+//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+//                        )
+//                        CustomMenuItem(
+//                            text = {
+//                                Text(
+//                                    text = stringResource(R.string.settings),
+//                                    fontSize = 14.sp,
+//                                    fontWeight = FontWeight.Medium,
+//                                    color = MaterialTheme.colorScheme.onSurface,
+//                                )
+//                            },
+//                            onClick = {
+//                                expanded = false
+//                                navigateToSettings()
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp),
+//                            enabled = true,
+//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+//                        )
+//                        CustomMenuItem(
+//                            text = {
+//                                Text(
+//                                    text = stringResource(R.string.how_to),
+//                                    fontSize = 14.sp,
+//                                    fontWeight = FontWeight.Medium,
+//                                    color = MaterialTheme.colorScheme.onSurface,
+//                                )
+//                            },
+//                            onClick = {
+//                                expanded = false
+//                                navigateToHowTo()
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp),
+//                            enabled = true,
+//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+//                        )
                     }
                 }
             }
