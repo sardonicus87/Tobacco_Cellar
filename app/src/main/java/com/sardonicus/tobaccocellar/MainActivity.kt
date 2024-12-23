@@ -52,14 +52,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val application = (application as CellarApplication)
-            WindowInsets.safeContent
+          //  WindowInsets.safeContent
             CompositionLocalProvider(LocalCellarApplication provides application) {
                 TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
                     Surface(
                         modifier = Modifier
                             .fillMaxSize()
-                            .windowInsetsPadding(WindowInsets.systemBars)
-                            .windowInsetsPadding(WindowInsets.displayCutout),
+//                            .windowInsetsPadding(WindowInsets.systemBars)
+//                            .windowInsetsPadding(WindowInsets.displayCutout)
+                            .windowInsetsPadding(WindowInsets.safeContent),
                         color = MaterialTheme.colorScheme.background,
                     ) {
                         CellarApp()
