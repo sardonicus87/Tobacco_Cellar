@@ -218,7 +218,7 @@ private fun StatsBody(
                         modifier = Modifier
                             .padding(vertical = 2.dp),
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Start,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -252,7 +252,7 @@ private fun StatsBody(
                         modifier = Modifier
                             .padding(vertical = 2.dp),
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Start,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
@@ -529,8 +529,7 @@ private fun ChartsSection(
 private fun ChartsFormat(
     label: String,
     chartData: Map<String, Int>,
-)
-{
+) {
     val countVal = chartData.values.sum()
     var showValue = remember { mutableStateOf(false) }
     val pieColors = listOf(
