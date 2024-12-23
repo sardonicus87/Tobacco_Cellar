@@ -8,7 +8,7 @@ val changeLogEntries = listOf(
 //        buildDate = "",
 //        changes = listOf(),
 //        improvements = listOf(),
-//        bugFixes = emptyList(),
+//        bugFixes = listOf(),
 //    ),
 
     ChangeLogEntryData(
@@ -19,9 +19,9 @@ val changeLogEntries = listOf(
             "Added a converter in add/edit screens for setting the quantity of tins by " +
                     "ounces, pounds, or grams.",
             "Added a setting to the Settings screen for changing the tin conversion rate for " +
-                    "ounces and grams (separate conversion rates)."),
-        improvements = emptyList(),
-        bugFixes = emptyList(),
+                    "ounces and grams (separate conversion rates).",
+            "Added a Help/FAQ that is accessible from the Cellar screen top menu."
+        ),
     ),
     ChangeLogEntryData(
         versionNumber = "1.2.0",
@@ -47,9 +47,9 @@ val changeLogEntries = listOf(
     ChangeLogEntryData(
         versionNumber = "1.0.0",
         buildDate = "20 Nov, 2024",
-        changes = listOf("Initial Release"),
-        improvements = emptyList(),
-        bugFixes = emptyList(),
+        changes = listOf(
+            "Initial Release"
+        ),
     )
 )
 
