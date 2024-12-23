@@ -1,7 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,7 +51,6 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -68,10 +66,13 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -119,6 +120,7 @@ fun HomeScreen(
     navigateToEditEntry: (Int) -> Unit,
     navigateToCsvImport: () -> Unit,
     navigateToSettings: () -> Unit,
+    navigateToHelp: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
@@ -169,6 +171,7 @@ fun HomeScreen(
                 canNavigateBack = false,
                 navigateToCsvImport = navigateToCsvImport,
                 navigateToSettings = navigateToSettings,
+                navigateToHelp = navigateToHelp,
                 showMenu = true,
                 currentDestination = HomeDestination,
                 exportCsvHandler = viewmodel,
@@ -199,37 +202,52 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Surface(
+            HomeHeader(
                 modifier = Modifier,
-                shape = RectangleShape,
-                color = Color.Transparent,
-                tonalElevation = 0.dp,
-                shadowElevation = 1.dp,
-            ) {
-                HomeHeader(
-                    modifier = Modifier,
-                    homeUiState = homeUiState,
+                homeUiState = homeUiState,
+                filterViewModel = filterViewModel,
+                selectView = viewmodel::selectView,
+                isTableView = isTableView,
+            )
+            Box {
+                HomeBody(
+                    items = homeUiState.items,
                     filterViewModel = filterViewModel,
-                    selectView = viewmodel::selectView,
                     isTableView = isTableView,
+                    onItemClick = navigateToEditEntry,
+                    sorting = sorting,
+                    updateSorting = viewmodel::updateSorting,
+                    isLoading = homeUiState.isLoading,
+                    onDismissMenu = viewmodel::onDismissMenu,
+                    onShowMenu = viewmodel::onShowMenu,
+                    isMenuShown = isMenuShown,
+                    activeItemId = activeItemId,
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(0.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .then(
+                            Modifier.drawBehind {
+                                val glowHeight = 2.dp
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Black.copy(alpha = 0.3f),
+                                            Color.Transparent,
+                                        ),
+                                        startY = 0f,
+                                        endY = glowHeight.toPx(),
+                                    ),
+                                    topLeft = Offset(0f, 0f),
+                                    size = Size(size.width, glowHeight.toPx())
+                                )
+                            }
+                        )
                 )
             }
-            HomeBody(
-                items = homeUiState.items,
-                filterViewModel = filterViewModel,
-                isTableView = isTableView,
-                onItemClick = navigateToEditEntry,
-                sorting = sorting,
-                updateSorting = viewmodel::updateSorting,
-                isLoading = homeUiState.isLoading,
-                onDismissMenu = viewmodel::onDismissMenu,
-                onShowMenu = viewmodel::onShowMenu,
-                isMenuShown = isMenuShown,
-                activeItemId = activeItemId,
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(0.dp),
-            )
         }
     }
 }
@@ -650,8 +668,9 @@ fun ListViewMode(
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
+                .background(LocalCustomColors.current.backgroundVariant)
                 .padding(0.dp),
-            state = columnState
+            state = columnState,
         ) {
             items(items = itemsList, key = { it.id }) { item ->
                 val haptics = LocalHapticFeedback.current
