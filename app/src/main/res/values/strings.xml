@@ -11,6 +11,7 @@
     <string name="import_results_title">CSV Import Results</string>
     <string name="settings_title">Settings</string>
     <string name="license_title">Licenses</string>
+    <string name="help_faq_title">Help/FAQ</string>
 
     // Button Text //
     <string name="filter_items">Filter</string>
@@ -26,6 +27,8 @@
 
     <string name="import_csv">Import CSV</string>
     <string name="export_csv">Export CSV</string>
+    <string name="help_faq">Help/FAQ</string>
+
     <string name="select_csv">Select CSV</string>
 
 
@@ -40,8 +43,8 @@
     <string name="csv_import_instructions">Select a CSV file to import, then review mapping options.
         If the record test looks wrong, please reformat your CSV using standard RFC 4180
         formatting to guarantee a successful import.</string>
-    <string name="csv_import_mapping">Indicate if the CSV has a header and map the columns in the CSV
-        to the correct database fields. Other than Brand and Blend, all fields are optional.</string>
+    <string name="csv_import_mapping">Indicate if the CSV has a header, select import options,
+        and map the columns in the CSV to the correct database fields.</string>
 
 
     /Labels/
@@ -56,7 +59,6 @@
 
 
     <string name="settings">Settings</string>
-    <string name="stats_nothing">Stats placeholder</string>
     <string name="item_detail_title">Details</string>
     <string name="settings_nothing">Settings</string>
     <string name="notes_entry">Enter Notes</string>
