@@ -1159,7 +1159,8 @@ fun TinConverterDialog(
                         },
                         modifier = Modifier
                             .padding(top = 8.dp)
-                            .align(Alignment.End)
+                            .align(Alignment.End),
+                        enabled = tinConversion.isConversionValid,
                     ) {
                         Text(
                             text = "Convert",

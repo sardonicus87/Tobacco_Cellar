@@ -33,17 +33,18 @@ class AddEntryViewModel(
             )
     }
 
+
     /** tin conversion **/
     var tinConversion = mutableStateOf(TinConversion())
         private set
 
     fun updateTinConversion(tinConversion: TinConversion) {
         this.tinConversion.value = tinConversion
+            .copy(isConversionValid = validateConversion(tinConversion))
     }
-
-    private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
-        return with(uiState) {
-            brand.isNotBlank() && blend.isNotBlank()
+    private fun validateConversion(tinConversion: TinConversion = this.tinConversion.value): Boolean {
+        return with(tinConversion) {
+            amount.isNotBlank() && unit.isNotBlank()
         }
     }
 
@@ -105,6 +106,12 @@ class AddEntryViewModel(
     }
 
     /** save to or delete from database **/
+    private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
+        return with(uiState) {
+            brand.isNotBlank() && blend.isNotBlank()
+        }
+    }
+
     suspend fun saveItem() {
         if (validateInput()) {
             val newItemId = itemsRepository.insertItem(itemUiState.itemDetails.toItem())
@@ -151,6 +158,7 @@ data class TinConversion(
     val unit: String = "",
     val ozRate: Double = 1.75,
     val gramsRate: Double = 50.0,
+    val isConversionValid: Boolean = false,
 )
 
 data class ItemAddedEvent(
