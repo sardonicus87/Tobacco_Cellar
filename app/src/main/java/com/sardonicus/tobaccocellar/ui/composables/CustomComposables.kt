@@ -1,13 +1,20 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
@@ -19,100 +26,70 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 
-//@Composable
-//fun CustomTextField(
-//    value: String,
-//    onValueChange: (String) -> Unit,
-//    modifier: Modifier = Modifier,
-//    enabled: Boolean = true,
-//    readOnly: Boolean = false,
-//    textStyle:  TextStyle = TextStyle.Default,
-//    placeholder: @Composable (() -> Unit)? = null,
-//    leadingIcon: @Composable (() -> Unit)? = null,
-//    trailingIcon: @Composable (() -> Unit)? = null,
-//    prefix: @Composable (() -> Unit)? = null,
-//    suffix: @Composable (() -> Unit)? = null,
-//    supportingText: @Composable (() -> Unit)? = null,
-//    isError: Boolean = false,
-//    visualTransformation: VisualTransformation = VisualTransformation.None,
-//    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-//    keyboardActions: KeyboardActions = KeyboardActions.Default,
-//    singleLine: Boolean = false,
-//    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
-//    minLines: Int = 1,
-//    interactionSource: MutableInteractionSource? = null,
-//    shape: Shape = TextFieldDefaults.shape,
-//    colors: TextFieldColors = TextFieldDefaults.colors(),
-//) {
-//    var showCursor by remember { mutableStateOf(false) }
-//    var hasFocus by remember { mutableStateOf(false) }
-//    val focusManager = LocalFocusManager.current
+/** Dropdown menu item with inner-padding access */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomMenuItem(
+    text: @Composable (() -> Unit),
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
+    colors: MenuItemColors = MenuDefaults.itemColors(
+        textColor = LocalContentColor.current
+    ),
+    contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+) {
+//    val contentColor = when {
+//        !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = ALPHA_DISABLED)
+//        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = ALPHA_FULL)
+//    }
 //
-//    BasicTextField(
-//        value = value,
-//        onValueChange = onValueChange,
-//        modifier = modifier
-//            .onFocusChanged { focusState ->
-//                hasFocus = focusState.hasFocus
-//                showCursor = focusState.hasFocus
-//                if (!focusState.hasFocus) {
-//                    focusManager.clearFocus()
-//                }
-//            }
-//            .background(colors.unfocusedContainerColor, shape),
-//        enabled = enabled,
-//        readOnly = readOnly,
-//        textStyle = textStyle,
-//        keyboardOptions = keyboardOptions,
-//        keyboardActions = keyboardActions,
-//        singleLine = singleLine,
-//        maxLines = maxLines,
-//        minLines = minLines,
-//        visualTransformation = visualTransformation,
-//        interactionSource = interactionSource,
-//        cursorBrush =
-//            if (showCursor) {
-//                if (isError) SolidColor(colors.errorCursorColor)
-//                else SolidColor(colors.cursorColor)
-//            }
-//            else { SolidColor(Color.Transparent) },
-//        decorationBox = { innerTextField ->
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                verticalAlignment = Alignment.CenterVertically,
-//                horizontalArrangement = Arrangement.Start,
-//            ) {
-//                if (leadingIcon != null) leadingIcon()
-//                if (prefix != null) prefix()
-//                Box(
-//                    modifier = Modifier
-//                        .background(
-//                            color =
-//                            if (enabled) {
-//                                if (hasFocus) colors.focusedContainerColor
-//                                else if (isError) colors.errorContainerColor
-//                                else colors.unfocusedContainerColor
-//                            } else colors.disabledContainerColor,
-//                            shape = shape
-//                        )
-//                        .weight(1f)
-//                        .padding(horizontal = 4.dp),
-//                    contentAlignment = Alignment.CenterStart
-//                ) {
-//                    if (value.isEmpty() && !hasFocus) {
-//                        if (placeholder != null) placeholder()
-//                    }
-//                    innerTextField()
-//                }
-//                if (suffix != null) suffix()
-//                if (trailingIcon != null) trailingIcon()
-//                if (supportingText != null) supportingText()
-//            }
-//        }
-//    )
-//}
+//    CompositionLocalProvider(LocalContentColor provides contentColor) {
+//    }
 
+//    val textString = String()
+//
+//    Box(
+//        modifier = modifier
+//            .clickable(enabled) { onClick() }
+//            .fillMaxWidth()
+//            .padding(contentPadding),
+//    ) {
+//        text(
+//        )
+//        if (enabled) {
+//            colors.copy(
+//                textColor = colors.textColor
+//            )
+//        }
+//        if (leadingIcon != null) {
+//            leadingIcon()
+//        }
+//        if (trailingIcon != null) {
+//            trailingIcon()
+//        }
+//    }
+
+    Box(
+        modifier = modifier
+            .clickable(enabled) { onClick() }
+            .fillMaxWidth()
+            .padding(contentPadding),
+    ) {
+        text()
+        if (enabled) {
+            colors.copy(
+                textColor = colors.textColor
+            )
+        }
+    }
+
+}
+
+/** TextField with inner-padding access */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTextField(
