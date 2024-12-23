@@ -412,7 +412,7 @@ fun CsvImportBody(
                             AnimatedVisibility(
                                 visible = showHelp,
                                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
-                                exit = fadeOut(animationSpec = tween(durationMillis = 150))
+                                exit = fadeOut(animationSpec = tween(durationMillis = 300))
                             ) {
                                 CsvHelpBody(
                                     modifier = Modifier
