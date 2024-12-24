@@ -1,8 +1,12 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.R.attr.onClick
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +20,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -54,11 +59,15 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.UrlAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -309,13 +318,40 @@ fun DatabaseSettings(
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun AboutSection(
     showChangelog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val appVersion = BuildConfig.VERSION_NAME
     val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
+    val emailIntent = Intent(Intent.ACTION_SENDTO).apply{
+        data = Uri.parse("mailto:sardonicus.notadev@gmail.com")
+        putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
+    }
+
+    val contactString = buildAnnotatedString {
+        withStyle(style = SpanStyle(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Normal)
+        ) { append("Contact me if you experience any bugs: ") }
+        val emailStart = length
+        withStyle(style = SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Normal,
+            textDecoration = TextDecoration.Underline
+        )) { append("sardonicus.notadev@gmail.com") }
+        val emailEnd = length
+        addStringAnnotation(
+            tag = "Email",
+            annotation = "mailto:sardonicus.notadev@gmail.com",
+            start = emailStart,
+            end = emailEnd
+        )
+    }
+
     val versionInfo = buildAnnotatedString {
         withStyle(style = SpanStyle(
             color = MaterialTheme.colorScheme.onBackground,
@@ -334,6 +370,7 @@ fun AboutSection(
             fontWeight = FontWeight.Normal)
         ) { append(dbVersion) }
     }
+
 
     Column(
         modifier = modifier
@@ -356,17 +393,51 @@ fun AboutSection(
             softWrap = true,
         )
         Text(
+            text = contactString,
+            modifier = Modifier
+                .wrapContentWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {
+                        val annotations =
+                            contactString.getStringAnnotations("Email", 0, contactString.length)
+                        annotations
+                            .firstOrNull()
+                            ?.let { annotation ->
+                                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse(annotation.item)
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        emailIntent,
+                                        "Send Email"
+                                    )
+                                )
+                            }
+                    }
+                )
+                .padding(top = 6.dp, bottom = 4.dp),
+            fontSize = 14.sp,
+            softWrap = true,
+        )
+
+        Spacer(
+            modifier = Modifier
+                .height(12.dp)
+        )
+        Text(
             text = versionInfo,
             modifier = Modifier
-                .padding(vertical = 4.dp),
+                .padding(top = 4.dp),
             fontSize = 14.sp,
             softWrap = true,
         )
         Text(
-            text = "Change Log",
+            text = "Change Log ",
             modifier = Modifier
                 .clickable { showChangelog(true) }
-                .padding(vertical = 2.dp),
+                .padding(vertical = 1.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
