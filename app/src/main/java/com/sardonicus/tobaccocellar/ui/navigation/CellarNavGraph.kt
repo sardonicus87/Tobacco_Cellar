@@ -71,7 +71,8 @@ fun CellarNavHost(
         }
         composable(route = HelpDestination.route) {
             HelpScreen(
-                navigateBack = { navController.navigateUp() },
+                navigateBack = { navController.popBackStack() },
+                onNavigateUp = { navController.navigateUp() },
             )
         }
         composable(route = AddEntryDestination.route) {
