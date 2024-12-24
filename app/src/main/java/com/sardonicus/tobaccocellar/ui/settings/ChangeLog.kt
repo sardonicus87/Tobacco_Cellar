@@ -13,7 +13,7 @@ val changeLogEntries = listOf(
 
     ChangeLogEntryData(
         versionNumber = "1.3.0",
-        buildDate = "13 Dec, 2024",
+        buildDate = "22 Dec, 2024",
         changes = listOf(
             "Renamed \"Quantity\" to \"Tins\". Tins is now the baseline quantity unit.",
             "Added a converter in add/edit screens for setting the quantity of tins by " +
@@ -22,6 +22,10 @@ val changeLogEntries = listOf(
                     "ounces and grams (separate conversion rates).",
             "Added a Help/FAQ that is accessible from the Cellar screen top menu."
         ),
+        improvements = listOf(
+            "List and Table positions are now saved when performing a blend search, clearing the " +
+            "search results now returns to the previous position."
+        )
     ),
     ChangeLogEntryData(
         versionNumber = "1.2.0",
