@@ -13,7 +13,7 @@ val changeLogEntries = listOf(
 
     ChangeLogEntryData(
         versionNumber = "1.3.0",
-        buildDate = "22 Dec, 2024",
+        buildDate = "23 Dec, 2024",
         changes = listOf(
             "Renamed \"Quantity\" to \"Tins\". Tins is now the baseline quantity unit.",
             "Added a converter in add/edit screens for setting the quantity of tins by " +
