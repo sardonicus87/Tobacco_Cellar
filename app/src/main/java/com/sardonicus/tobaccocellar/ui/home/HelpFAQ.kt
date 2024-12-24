@@ -200,10 +200,10 @@ private fun CellarView(
 ) {
     var showFullscreen by remember { mutableStateOf(false) }
     var fullImage by remember { mutableStateOf<Painter?>(null) }
-    val viewMode = painterResource(id = R.drawable.view_mode)
-    val listMenu = painterResource(id = R.drawable.list_menu)
-    val tableMenu = painterResource(id = R.drawable.table_1)
-    val tableMenu2 = painterResource(id = R.drawable.table_2)
+    val viewMode = painterResource(id = R.drawable.help_view_mode)
+    val listMenu = painterResource(id = R.drawable.help_list_menu)
+    val tableMenu = painterResource(id = R.drawable.help_table_1)
+    val tableMenu2 = painterResource(id = R.drawable.help_table_2)
 
     Column(
         horizontalAlignment = Alignment.Start,
@@ -395,7 +395,7 @@ private fun Filtering(
 ) {
     var showFullscreen by remember { mutableStateOf(false) }
     var fullImage by remember { mutableStateOf<Painter?>(null) }
-    val filterSheet = painterResource(id = R.drawable.filter_sheet)
+    val filterSheet = painterResource(id = R.drawable.help_filter_sheet)
 
     Column(
         modifier = modifier

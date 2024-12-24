@@ -841,7 +841,7 @@ fun CsvHelpBody(
             softWrap = true,
         )
         Image(
-            painter = painterResource(id = R.drawable.help_parse_test),
+            painter = painterResource(id = R.drawable.csvhelp_parse_test),
             contentDescription = "Parse test image",
             modifier = Modifier
                 .fillMaxWidth(fraction = 0.8f)
@@ -866,7 +866,7 @@ fun CsvHelpBody(
             softWrap = true,
         )
         Image(
-            painter = painterResource(id = R.drawable.help_import_options),
+            painter = painterResource(id = R.drawable.csvhelp_import_options),
             contentDescription = "Import options image",
             modifier = Modifier
                 .fillMaxWidth(fraction = 0.8f)
@@ -976,7 +976,7 @@ fun CsvHelpBody(
             softWrap = true,
         )
         Image(
-            painter = painterResource(id = R.drawable.help_mapping_options),
+            painter = painterResource(id = R.drawable.csvhelp_mapping_options),
             contentDescription = "Import mapping image",
             modifier = Modifier
                 .fillMaxWidth(fraction = 0.8f)
