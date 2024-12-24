@@ -272,7 +272,7 @@ private fun HomeHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(LocalCustomColors.current.backgroundVariant)
+            .background(LocalCustomColors.current.homeHeaderBg)
             .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -323,6 +323,10 @@ private fun HomeHeader(
                     filterViewModel.updateSearchText(it)
                     if (it.isEmpty()) {
                         filterViewModel.onBlendSearch(it)
+                        filterViewModel.updateSearchIconOpacity(0.5f)
+                    }
+                    if (it.isNotEmpty()) {
+                        filterViewModel.updateSearchIconOpacity(1f)
                     }
                 },
                 onImeAction = {
@@ -353,12 +357,15 @@ private fun CustomBlendSearch(
     modifier: Modifier = Modifier,
     placeholder: String = "Blend Search",
     leadingIcon: @Composable () -> Unit = {
+        val filterViewModel = LocalCellarApplication.current.filterViewModel
+        val iconAlpha = filterViewModel.searchIconOpacity.collectAsState().value
         Icon(
             painter = painterResource(id = R.drawable.search),
             contentDescription = null,
             modifier = Modifier
                 .padding(0.dp)
                 .size(20.dp),
+            tint = LocalContentColor.current.copy(alpha = iconAlpha)
         )
     },
     onImeAction: () -> Unit = {}
@@ -431,7 +438,10 @@ private fun CustomBlendSearch(
                         contentDescription = null,
                         modifier = Modifier
                             .size(20.dp)
-                            .clickable(onClick = { onValueChange("") })
+                            .clickable(onClick = {
+                                onValueChange("")
+                                }
+                            )
                             .padding(0.dp),
                     )
                 }
