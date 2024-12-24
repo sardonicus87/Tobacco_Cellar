@@ -957,8 +957,8 @@ fun CsvHelpBody(
                 Column {
                     Text(
                         text = "\"Overwrite\" will replace the selected fields (checkbox on "+
-                                "the right) with the values in the CSV file, including blank/" +
-                                "empty values.\n",
+                                "the right) with the values in the CSV file, including overwriting " +
+                                "entry data with blank/empty values.\n",
                         modifier = modifier
                             .align(Alignment.Start),
                         softWrap = true,
