@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -7,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -131,6 +133,7 @@ fun HomeScreen(
 //    val bottomScrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
 //        BottomAppBarDefaults.exitAlwaysScrollBehavior() else null
     val homeUiState by viewmodel.homeUiState.collectAsState()
+    val blendSearchText by filterViewModel.blendSearchText.collectAsState()
     val sorting by viewmodel.sorting
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -138,6 +141,7 @@ fun HomeScreen(
     val activeItemId by viewmodel.menuItemId
     val isMenuShown by viewmodel.isMenuShown
     val focusManager = LocalFocusManager.current
+    val currentPosition by viewmodel.currentPosition.collectAsState()
 
 
     if (showSnackbar.value) {
@@ -206,6 +210,7 @@ fun HomeScreen(
                 modifier = Modifier,
                 homeUiState = homeUiState,
                 filterViewModel = filterViewModel,
+                blendSearchText = blendSearchText,
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
             )
@@ -214,6 +219,9 @@ fun HomeScreen(
                     items = homeUiState.items,
                     filterViewModel = filterViewModel,
                     isTableView = isTableView,
+                    updateScrollPosition = viewmodel::updateScrollPosition,
+                    currentPosition = currentPosition,
+                    blendSearchText = blendSearchText,
                     onItemClick = navigateToEditEntry,
                     sorting = sorting,
                     updateSorting = viewmodel::updateSorting,
@@ -257,11 +265,10 @@ private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
     filterViewModel: FilterViewModel,
+    blendSearchText: String,
     selectView: (Boolean) -> Unit,
     isTableView: Boolean,
 ) {
-    val blendSearchText by filterViewModel.blendSearchText.collectAsState()
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -437,6 +444,9 @@ private fun CustomBlendSearch(
 @Composable
 private fun HomeBody(
     items: List<Items>,
+    updateScrollPosition: (Int, Int) -> Unit,
+    blendSearchText: String,
+    currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
     isLoading: Boolean,
     isTableView: Boolean,
@@ -517,6 +527,9 @@ private fun HomeBody(
                 if (isTableView) {
                     TableViewMode(
                         itemsList = items,
+                        updateScrollPosition = updateScrollPosition,
+                        blendSearchText = blendSearchText,
+                        currentPosition = currentPosition,
                         filterViewModel = filterViewModel,
                         onItemClick = { onItemClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
@@ -530,6 +543,9 @@ private fun HomeBody(
                 } else {
                     ListViewMode(
                         itemsList = items,
+                        updateScrollPosition = updateScrollPosition,
+                        blendSearchText = blendSearchText,
+                        currentPosition = currentPosition,
                         filterViewModel = filterViewModel,
                         onItemClick = { onItemClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
@@ -654,6 +670,9 @@ fun ListViewMode(
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
     itemsList: List<Items>,
+    blendSearchText: String,
+    updateScrollPosition: (Int, Int) -> Unit,
+    currentPosition: Map<Int, Int>,
     onItemClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
     modifier: Modifier = Modifier,
@@ -713,6 +732,30 @@ fun ListViewMode(
         val newItemId by filterViewModel.newItemId.collectAsState()
         val newItemIndex = itemsList.indexOfFirst { it.id == newItemId }
 
+        LaunchedEffect(blendSearchText) {
+            if (blendSearchText.isEmpty()) {
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                }
+            }
+
+            if (blendSearchText.isNotEmpty()) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+                if (firstVisibleItem != null) {
+                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                }
+            }
+        }
+
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
                 columnState.scrollToItem(0)
@@ -733,6 +776,7 @@ fun ListViewMode(
         }
     }
 }
+
 
 @Composable
 private fun CellarListItem(
@@ -943,6 +987,9 @@ fun TableViewMode(
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
+    blendSearchText: String,
+    updateScrollPosition: (Int, Int) -> Unit,
+    currentPosition: Map<Int, Int>,
     modifier: Modifier = Modifier
 ) {
     val columnMinWidths = listOf(
@@ -956,6 +1003,9 @@ fun TableViewMode(
 
     TableLayout(
         items = itemsList,
+        blendSearchText = blendSearchText,
+        updateScrollPosition = updateScrollPosition,
+        currentPosition = currentPosition,
         filterViewModel = filterViewModel,
         columnMinWidths = columnMinWidths,
         onItemClick = onItemClick,
@@ -970,6 +1020,9 @@ fun TableViewMode(
 @Composable
 fun TableLayout(
     items: List<Items>,
+    blendSearchText: String,
+    updateScrollPosition: (Int, Int) -> Unit,
+    currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
     columnMinWidths: List<Dp>,
     onItemClick: (Items) -> Unit,
@@ -1189,7 +1242,30 @@ fun TableLayout(
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val newItemId by filterViewModel.newItemId.collectAsState()
         val newItemIndex = sortedItems.indexOfFirst { it.id == newItemId }
-      //  val shouldScrollDown by filterViewModel.shouldScrollDown.collectAsState()
+
+        LaunchedEffect(blendSearchText) {
+            if (blendSearchText.isEmpty()) {
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                }
+            }
+
+            if (blendSearchText.isNotEmpty()) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+                if (firstVisibleItem != null) {
+                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                }
+            }
+        }
 
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
@@ -1213,6 +1289,7 @@ fun TableLayout(
         LaunchedEffect(sorting) {
             columnState.scrollToItem(0)
         }
+
     }
 }
 

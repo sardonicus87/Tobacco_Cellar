@@ -3,9 +3,10 @@ package com.sardonicus.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
@@ -171,6 +172,15 @@ class HomeViewModel(
                 newSorting.columnIndex, newSorting.sortAscending
             )
         }
+    }
+
+
+    /** remember scroll position on search **/
+    private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
+    val currentPosition: StateFlow<Map<Int, Int>> = _currentPosition.asStateFlow()
+
+    fun updateScrollPosition(index: Int, offset: Int) {
+        _currentPosition.value = mapOf(0 to index, 1 to offset)
     }
 
 
