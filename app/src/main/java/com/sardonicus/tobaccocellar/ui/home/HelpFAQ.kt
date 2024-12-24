@@ -64,6 +64,7 @@ object HelpDestination : NavigationDestination {
 @Composable
 fun HelpScreen(
     navigateBack: () -> Unit,
+    onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -76,6 +77,7 @@ fun HelpScreen(
                 title = stringResource(HelpDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
+                navigateUp = onNavigateUp,
                 showMenu = false,
                 modifier = Modifier,
             )
@@ -120,17 +122,6 @@ private fun HelpBody(
                 .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
             softWrap = true,
         )
-
-//        Text(
-//            text = "Welcome to the \"Tobacco Cellar\" help screen. Please click the headers " +
-//                    "below to expand each section.",
-//            modifier = Modifier
-//                .padding(horizontal = 12.dp, vertical = 12.dp),
-//        )
-//        HelpSection(
-//            title = "Basic Use",
-//            content = { BasicUse() }
-//        )
 
         HelpSection(
             title = "Cellar Screen",
@@ -529,7 +520,7 @@ private fun AddingItems(
             softWrap = true,
         )
         Text(
-            text = "All entries require a unique combination of \"Brand\" and \"Blend\". Multiple" +
+            text = "All entries require a unique combination of \"Brand\" and \"Blend\". Multiple " +
                     "entries can contain the same brand OR blend, but only one entry can contain " +
                     "the same brand AND blend (if you want to add individual tins, a future " +
                     "update will allow for this). All other fields are optional, allowing " +
