@@ -72,8 +72,6 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
 
 
-//    debugImplementation(libs.leakcanary.android)
-
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.monitor)
