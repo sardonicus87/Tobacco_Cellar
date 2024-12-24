@@ -134,7 +134,9 @@ fun CustomTextField(
             singleLine = singleLine,
             enabled = enabled,
             interactionSource = interactionSource,
-            colors = colors,
+            colors = colors.copy(
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
             shape = shape,
             contentPadding = contentPadding,
         )
