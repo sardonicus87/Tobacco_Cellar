@@ -42,6 +42,7 @@ class AddEntryViewModel(
         this.tinConversion.value = tinConversion
             .copy(isConversionValid = validateConversion(tinConversion))
     }
+
     private fun validateConversion(tinConversion: TinConversion = this.tinConversion.value): Boolean {
         return with(tinConversion) {
             amount.isNotBlank() && unit.isNotBlank()
