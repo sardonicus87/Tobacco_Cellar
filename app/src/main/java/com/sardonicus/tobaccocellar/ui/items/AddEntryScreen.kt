@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.items
 
 import android.R.attr.contentDescription
 import android.util.Log
+import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -9,16 +10,25 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -78,6 +88,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -488,7 +499,7 @@ fun ItemDetailsEntry(
 
         // Required Fields //
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.Start,
@@ -502,7 +513,7 @@ fun ItemDetailsEntry(
             )
         }
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -510,7 +521,7 @@ fun ItemDetailsEntry(
 
             // Brand //
             Row(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -586,7 +597,7 @@ fun ItemDetailsEntry(
 
             // Blend //
             Row(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -652,13 +663,13 @@ fun ItemDetailsEntry(
 
         // Optional //
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.Start,
@@ -672,7 +683,7 @@ fun ItemDetailsEntry(
                 )
             }
             Column(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -680,7 +691,7 @@ fun ItemDetailsEntry(
 
                 // Type //
                 Row(
-                    modifier = modifier
+                    modifier = Modifier
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -700,7 +711,7 @@ fun ItemDetailsEntry(
 
                 // Quantity //
                 Row(
-                    modifier = modifier
+                    modifier = Modifier
                         .padding(0.dp)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -713,8 +724,9 @@ fun ItemDetailsEntry(
                     )
                     Row(
                         modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                            .padding(0.dp)
+                            .height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val pattern = remember { Regex("^(\\s*|\\d+)\$") }
@@ -748,101 +760,203 @@ fun ItemDetailsEntry(
                             ),
                             shape = MaterialTheme.shapes.extraSmall
                         )
-                        IconButton(
-                            onClick = {
-                                if (itemDetails.squantity.isEmpty()) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            squantity = "1",
-                                            quantity = 1
-                                        )
-                                    )
-                                } else {
-                                    if (itemDetails.squantity.toInt() < 99) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                squantity = (itemDetails.squantity.toInt() + 1).toString(),
-                                                quantity = itemDetails.squantity.toInt() + 1
-                                            )
-                                        )
-                                    } else {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                squantity = "99",
-                                                quantity = 99
-                                            )
-                                        )
-                                    }
-                                }
-                            },
+                        Row(
                             modifier = Modifier
                                 .padding(0.dp)
-                                .semantics { contentDescription = "Increase Quantity" }
+                                .fillMaxHeight(),
+                            horizontalArrangement = Arrangement.spacedBy(0.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.arrow_up),
                                 contentDescription = "Increase Quantity",
                                 modifier = Modifier
-                                    .padding(0.dp)
-                                    .offset(x = 0.dp, y = (-4).dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                if (itemDetails.squantity.isEmpty()) {
-                                    /* do nothing */
-                                } else {
-                                    if (itemDetails.squantity.toInt() > 0) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                squantity = (itemDetails.squantity.toInt() - 1).toString(),
-                                                quantity = itemDetails.quantity - 1
+                                    .align(Alignment.Top)
+                                    .clickable {
+                                        if (itemDetails.squantity.isEmpty()) {
+                                            onValueChange(
+                                                itemDetails.copy(
+                                                    squantity = "1",
+                                                    quantity = 1
+                                                )
                                             )
-                                        )
-                                    } else if (itemDetails.squantity.toInt() == 0) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                squantity = "0",
-                                                quantity = 0
-                                            )
-                                        )
+                                        } else {
+                                            if (itemDetails.squantity.toInt() < 99) {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = (itemDetails.squantity.toInt() + 1).toString(),
+                                                        quantity = itemDetails.squantity.toInt() + 1
+                                                    )
+                                                )
+                                            } else {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = "99",
+                                                        quantity = 99
+                                                    )
+                                                )
+                                            }
+                                        }
                                     }
-                                }
-                            },
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .semantics { contentDescription = "Decrease Quantity" }
-                                .offset(x = (-12).dp)
-                        ) {
+                                    .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
+                                    .offset(x = 1.dp, y = 2.dp)
+                            )
                             Icon(
                                 painter = painterResource(id = R.drawable.arrow_down),
                                 contentDescription = "Decrease Quantity",
                                 modifier = Modifier
-                                    .padding(0.dp)
-                                    .offset(x = 0.dp, y = 4.dp)
-                            )
-                        }
-                        TextButton(
-                            onClick = {
-                                onTinValueChange(
-                                    tinConversion.copy(
-                                        amount = "",
-                                        unit = ""
+                                    .align(Alignment.Bottom)
+                                    .clickable {
+                                        if (itemDetails.squantity.isEmpty()) {
+                                            /* do nothing */
+                                        } else {
+                                            if (itemDetails.squantity.toInt() > 0) {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = (itemDetails.squantity.toInt() - 1).toString(),
+                                                        quantity = itemDetails.quantity - 1
+                                                    )
+                                                )
+                                            } else if (itemDetails.squantity.toInt() == 0) {
+                                                onValueChange(
+                                                    itemDetails.copy(
+                                                        squantity = "0",
+                                                        quantity = 0
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                    .padding(
+                                        start = 2.dp,
+                                        end = 8.dp,
+                                        top = 4.dp,
+                                        bottom = 4.dp
                                     )
-                                )
-                                showTinConverter = true
-                            },
-                            modifier = Modifier
-                                .padding(0.dp)
-                        ) {
-                            Text(
-                                text = "Tin Converter",
-                                modifier = Modifier
-                                    .padding(0.dp),
+                                    .offset(x = (-1).dp, y = (-2).dp)
                             )
                         }
                     }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = "Tin Converter",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickable {
+                                    onTinValueChange(
+                                        tinConversion.copy(
+                                            amount = "",
+                                            unit = ""
+                                        )
+                                    )
+                                    showTinConverter = true
+                                }
+                                .padding(2.dp)
+                        )
+                    }
                 }
+
+//                        IconButton(
+//                            onClick = {
+//                                if (itemDetails.squantity.isEmpty()) {
+//                                    onValueChange(
+//                                        itemDetails.copy(
+//                                            squantity = "1",
+//                                            quantity = 1
+//                                        )
+//                                    )
+//                                } else {
+//                                    if (itemDetails.squantity.toInt() < 99) {
+//                                        onValueChange(
+//                                            itemDetails.copy(
+//                                                squantity = (itemDetails.squantity.toInt() + 1).toString(),
+//                                                quantity = itemDetails.squantity.toInt() + 1
+//                                            )
+//                                        )
+//                                    } else {
+//                                        onValueChange(
+//                                            itemDetails.copy(
+//                                                squantity = "99",
+//                                                quantity = 99
+//                                            )
+//                                        )
+//                                    }
+//                                }
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp)
+//                                .semantics { contentDescription = "Increase Quantity" }
+//                        ) {
+//                            Icon(
+//                                painter = painterResource(id = R.drawable.arrow_up),
+//                                contentDescription = "Increase Quantity",
+//                                modifier = Modifier
+//                                    .padding(0.dp)
+//                                    .offset(x = 0.dp, y = (-4).dp)
+//                            )
+//                        }
+//                        IconButton(
+//                            onClick = {
+//                                if (itemDetails.squantity.isEmpty()) {
+//                                    /* do nothing */
+//                                } else {
+//                                    if (itemDetails.squantity.toInt() > 0) {
+//                                        onValueChange(
+//                                            itemDetails.copy(
+//                                                squantity = (itemDetails.squantity.toInt() - 1).toString(),
+//                                                quantity = itemDetails.quantity - 1
+//                                            )
+//                                        )
+//                                    } else if (itemDetails.squantity.toInt() == 0) {
+//                                        onValueChange(
+//                                            itemDetails.copy(
+//                                                squantity = "0",
+//                                                quantity = 0
+//                                            )
+//                                        )
+//                                    }
+//                                }
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp)
+//                                .semantics { contentDescription = "Decrease Quantity" }
+//                                .offset(x = (-12).dp)
+//                        ) {
+//                            Icon(
+//                                painter = painterResource(id = R.drawable.arrow_down),
+//                                contentDescription = "Decrease Quantity",
+//                                modifier = Modifier
+//                                    .padding(0.dp)
+//                                    .offset(x = 0.dp, y = 4.dp)
+//                            )
+//                        }
+//                        TextButton(
+//                            onClick = {
+//                                onTinValueChange(
+//                                    tinConversion.copy(
+//                                        amount = "",
+//                                        unit = ""
+//                                    )
+//                                )
+//                                showTinConverter = true
+//                            },
+//                            modifier = Modifier
+//                                .padding(0.dp)
+//                        ) {
+//                            Text(
+//                                text = "Tin Converter",
+//                                modifier = Modifier
+//                                    .padding(0.dp),
+//                            )
+//                        }
+//                    }
+//                }
 
                 // Favorite or Disliked? //
                 Row(
@@ -928,16 +1042,47 @@ fun ItemDetailsEntry(
             TinConverterDialog(
                 onDismiss = { showTinConverter = false },
                 onConfirm = {
-                    onValueChange(
-                        itemDetails.copy(
-                            squantity = it.toString(),
-                            quantity = it
+                    if (it < 99) {
+                        onValueChange(
+                            itemDetails.copy(
+                                squantity = it.toString(),
+                                quantity = it
+                            )
                         )
-                    )
+                    } else {
+                        onValueChange(
+                            itemDetails.copy(
+                                squantity = "99",
+                                quantity = 99
+                            )
+                        )
+                    }
+                    showTinConverter = false
+                },
+                onAddConversion = {
+                    val existingAmount = itemDetails.squantity.toInt()
+                    val newAmount = existingAmount + it
+
+                    if (newAmount < 99) {
+                        onValueChange(
+                            itemDetails.copy(
+                                squantity = newAmount.toString(),
+                                quantity = newAmount
+                            )
+                        )
+                    } else {
+                        onValueChange(
+                            itemDetails.copy(
+                                squantity = "99",
+                                quantity = 99
+                            )
+                        )
+                    }
                     showTinConverter = false
                 },
                 tinConversion = tinConversion,
                 onTinValueChange = onTinValueChange,
+                isEditEntry = isEditEntry,
                 modifier = Modifier
             )
         }
@@ -1013,8 +1158,10 @@ fun NotesEntry(
 fun TinConverterDialog(
     onDismiss: () -> Unit,
     onConfirm: (Int) -> Unit,
+    onAddConversion: (Int) -> Unit,
     tinConversion: TinConversion,
     onTinValueChange: (TinConversion) -> Unit,
+    isEditEntry: Boolean,
     modifier: Modifier = Modifier
 ) {
     var amount by remember { mutableStateOf(tinConversion.amount) }
@@ -1057,8 +1204,11 @@ fun TinConverterDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Spacer(
+                            modifier = Modifier
+                                .weight(.5f)
+                        )
                         val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
-
                         TextField(
                             value = amount,
                             onValueChange = {
@@ -1072,7 +1222,7 @@ fun TinConverterDialog(
                                 }
                             },
                             modifier = Modifier
-                                .weight(1f),
+                                .weight(2f),
                             placeholder = {
                                 Text(
                                     text = "Amount",
@@ -1082,7 +1232,10 @@ fun TinConverterDialog(
                             enabled = true,
                             singleLine = true,
                             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
                             colors = TextFieldDefaults.colors(
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
@@ -1096,7 +1249,7 @@ fun TinConverterDialog(
                         ExposedDropdownMenuBox(
                             expanded = expanded,
                             onExpandedChange = { expanded = !expanded },
-                            modifier = modifier
+                            modifier = Modifier
                                 .weight(2f)
                         ) {
                             TextField(
@@ -1121,7 +1274,7 @@ fun TinConverterDialog(
                                 shape = MaterialTheme.shapes.extraSmall,
                                 placeholder = {
                                     Text(
-                                        text = "Unit"
+                                        text = "Unit",
                                     )
                                 }
                             )
@@ -1146,26 +1299,57 @@ fun TinConverterDialog(
                                 }
                             }
                         }
-                    }
-                    Button(
-                        onClick = {
-                            val convertedQuantity = convertQuantity(
-                                tinConversion.amount.toDouble(),
-                                tinConversion.unit,
-                                tinConversion.ozRate,
-                                tinConversion.gramsRate
-                            )
-                            onConfirm(convertedQuantity)
-                        },
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .align(Alignment.End),
-                        enabled = tinConversion.isConversionValid,
-                    ) {
-                        Text(
-                            text = "Convert",
+                        Spacer(
                             modifier = Modifier
+                                .weight(.5f)
                         )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                val convertedQuantity = convertQuantity(
+                                    tinConversion.amount.toDouble(),
+                                    tinConversion.unit,
+                                    tinConversion.ozRate,
+                                    tinConversion.gramsRate
+                                )
+                                onConfirm(convertedQuantity)
+                            },
+                            modifier = Modifier,
+                            enabled = tinConversion.isConversionValid,
+                        ) {
+                            Text(
+                                text = if (isEditEntry)"Change" else "Convert",
+                                modifier = Modifier
+                            )
+                        }
+                        if (isEditEntry) {
+                            Button(
+                                onClick = {
+                                    val convertedQuantity = convertQuantity(
+                                        tinConversion.amount.toDouble(),
+                                        tinConversion.unit,
+                                        tinConversion.ozRate,
+                                        tinConversion.gramsRate
+                                    )
+                                    onAddConversion(convertedQuantity)
+                                },
+                                modifier = Modifier
+                                    .height(40.dp),
+                                enabled = tinConversion.isConversionValid,
+                            ) {
+                                Text(
+                                    text = "Add To",
+                                    modifier = Modifier
+                                )
+                            }
+                        }
                     }
                 }
             }
