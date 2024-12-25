@@ -24,13 +24,6 @@ class EditEntryViewModel(
     var itemUiState by mutableStateOf(ItemUiState())
         private set
 
-    var tinConversion = mutableStateOf(TinConversion())
-        private set
-
-    fun updateTinConversion(tinConversion: TinConversion) {
-        this.tinConversion.value = tinConversion
-    }
-
     private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
@@ -68,7 +61,21 @@ class EditEntryViewModel(
     }
 
 
-    /** get tin conversion rates from preferences **/
+    /** tin conversion **/
+    var tinConversion = mutableStateOf(TinConversion())
+        private set
+
+    fun updateTinConversion(tinConversion: TinConversion) {
+        this.tinConversion.value = tinConversion
+            .copy(isConversionValid = validateConversion(tinConversion))
+    }
+
+    private fun validateConversion(tinConversion: TinConversion = this.tinConversion.value): Boolean {
+        return with(tinConversion) {
+            amount.isNotBlank() && unit.isNotBlank()
+        }
+    }
+
     init {
         viewModelScope.launch {
             tinConversion.value = TinConversion(
