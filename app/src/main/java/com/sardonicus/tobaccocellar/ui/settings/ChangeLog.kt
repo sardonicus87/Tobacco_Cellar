@@ -12,6 +12,26 @@ val changeLogEntries = listOf(
 //    ),
 
     ChangeLogEntryData(
+        versionNumber = "1.3.1",
+        buildDate = "25 Dec, 2024",
+        changes = listOf(
+            "Added an \"Add\" button to the \"Tin Converter\" in the Edit Entry screen. " +
+                    "\"Change\" will overwrite the existing amount with the converted amount, " +
+                    "\"Add To\" will add the converted amount to the existing value.",
+        ),
+        improvements = listOf(
+            "Keyboard action set on some dialogs' text fields that were missed (\"Tin " +
+                    "Converter\" and \"Change Tin Conversion Rates\").",
+            "UI tweaks: \"Blend Search\" icon now has dynamic opacity based on whether or not " +
+                    "the search field is blank. Made the color of headings on some screens more " +
+                    "contrasting."
+        ),
+        bugFixes = listOf(
+            "Fixed top bar \"Back\" button not working on the Help/FAQ screen.",
+            "\"Tin Converter\" not working on Edit Entry screen."
+        ),
+    ),
+    ChangeLogEntryData(
         versionNumber = "1.3.0",
         buildDate = "23 Dec, 2024",
         changes = listOf(
