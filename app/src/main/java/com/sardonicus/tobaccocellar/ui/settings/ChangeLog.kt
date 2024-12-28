@@ -10,7 +10,23 @@ val changeLogEntries = listOf(
 //        improvements = listOf(),
 //        bugFixes = listOf(),
 //    ),
-
+    ChangeLogEntryData(
+        versionNumber = "",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Stats charts that were previously limited to the top 10 results now return data " +
+                    "for everything that fits the filtering criteria. If there are more than " +
+                    "10 points of comparison, the first 9 are returned and the rest are combined " +
+                    "into an \"Other\" category.",
+            "Fixed some UI issues of some components (like extra side padding on Filter Sheet) " +
+                    "related to upcoming Android 15 forced edge-to-edge.",
+            "Added a hint text above the buttons on the \"Tin Converter\" to show the calculated " +
+                    "values before confirming."
+        ),
+        bugFixes = listOf(
+        ),
+    ),
     ChangeLogEntryData(
         versionNumber = "1.3.1",
         buildDate = "25 Dec, 2024",
