@@ -139,23 +139,44 @@ class StatsViewModel(
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
-                            .take(10)
-                            .associate { it.key to it.value },
+                            .let {
+                                if (it.size > 10) {
+                                    val topNine = it.take(9).associate { it.key to it.value }
+                                    val otherCount = it.drop(9).sumOf { it.value }
+                                    topNine + ("Other" to otherCount)
+                                } else {
+                                    it.associate { it.key to it.value }
+                                }
+                            },
                         brandsByQuantity = filteredItems
                             .groupingBy { it.brand }
                             .fold(0) { acc, item -> acc + item.quantity }
                             .entries
                             .sortedByDescending { it.value }
-                            .take(10)
-                            .associate { it.key to it.value },
+                            .let {
+                                if (it.size > 10) {
+                                    val topNine = it.take(9).associate { it.key to it.value }
+                                    val otherCount = it.drop(9).sumOf { it.value }
+                                    topNine + ("Other" to otherCount)
+                                } else {
+                                    it.associate { it.key to it.value }
+                                }
+                            },
                         brandsByFavorites = filteredItems
                             .filter{ it.favorite }
                             .groupingBy { it.brand }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
-                            .take(10)
-                            .associate { it.key to it.value },
+                            .let {
+                                if (it.size > 10) {
+                                    val topNine = it.take(9).associate { it.key to it.value }
+                                    val otherCount = it.drop(9).sumOf { it.value }
+                                    topNine + ("Other" to otherCount)
+                                } else {
+                                    it.associate { it.key to it.value }
+                                }
+                            },
                         typesByEntries = filteredItems
                             .groupingBy { if (it.type.isBlank()) "Unassigned" else it.type }
                             .eachCount()
