@@ -27,10 +27,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -38,6 +40,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
@@ -360,7 +363,6 @@ fun CellarBottomAppBar(
     navigateToAddEntry: () -> Unit = {},
     filterViewModel: FilterViewModel,
 ) {
-
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -369,10 +371,12 @@ fun CellarBottomAppBar(
         containerColor = LocalCustomColors.current.appBarContainer,
         contentColor = LocalCustomColors.current.navIcon,
         contentPadding = PaddingValues(0.dp),
+    //    windowInsets = WindowInsets.navigationBars
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+            //    .height(52.dp)
                 .padding(0.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -398,11 +402,11 @@ fun CellarBottomAppBar(
                             .size(26.dp)
                             .offset(y = (-8).dp),
                         tint =
-                        if (currentDestination == HomeDestination && !clickToAdd) {
-                            onPrimaryLight
-                        } else {
-                            LocalContentColor.current
-                        },
+                            if (currentDestination == HomeDestination && !clickToAdd) {
+                                onPrimaryLight
+                            } else {
+                                LocalContentColor.current
+                            },
                     )
                 }
                 Text(
@@ -412,16 +416,17 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight =
-                    if (currentDestination == HomeDestination && !clickToAdd) {
-                        FontWeight.SemiBold
-                    } else {
-                        FontWeight.Normal },
+                        if (currentDestination == HomeDestination && !clickToAdd) {
+                            FontWeight.SemiBold
+                        } else {
+                            FontWeight.Normal
+                        },
                     color =
-                    if (currentDestination == HomeDestination && !clickToAdd) {
-                        onPrimaryLight
-                    } else {
-                        LocalContentColor.current
-                    },
+                        if (currentDestination == HomeDestination && !clickToAdd) {
+                            onPrimaryLight
+                        } else {
+                            LocalContentColor.current
+                        },
                 )
             }
 
@@ -444,11 +449,11 @@ fun CellarBottomAppBar(
                             .size(26.dp)
                             .offset(y = (-8).dp),
                         tint =
-                        if (currentDestination == StatsDestination && !clickToAdd) {
-                            onPrimaryLight
-                        } else {
-                            LocalContentColor.current
-                        },
+                            if (currentDestination == StatsDestination && !clickToAdd) {
+                                onPrimaryLight
+                            } else {
+                                LocalContentColor.current
+                            },
                     )
                 }
                 Text(
@@ -457,16 +462,17 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight =
-                    if (currentDestination == StatsDestination && !clickToAdd) {
-                        FontWeight.SemiBold
-                    } else {
-                        FontWeight.Normal },
-                    color =
-                    if (currentDestination == StatsDestination && !clickToAdd) {
-                        onPrimaryLight
-                    } else {
-                        LocalContentColor.current
-                    },
+                        if (currentDestination == StatsDestination && !clickToAdd) {
+                            FontWeight.SemiBold
+                        } else {
+                            FontWeight.Normal
+                        },
+                        color =
+                        if (currentDestination == StatsDestination && !clickToAdd) {
+                            onPrimaryLight
+                        } else {
+                            LocalContentColor.current
+                        },
                 )
             }
 
@@ -489,8 +495,10 @@ fun CellarBottomAppBar(
                             .size(26.dp)
                             .offset(y = (-8).dp),
                         tint = if (filterViewModel.isBottomSheetOpen) {
-                            onPrimaryLight
-                        } else { LocalContentColor.current },
+                                onPrimaryLight
+                            } else {
+                                LocalContentColor.current
+                            },
                     )
                 }
                 Text(
@@ -499,14 +507,16 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight =
-                    if (filterViewModel.isBottomSheetOpen) {
-                        FontWeight.SemiBold
-                    } else {
-                        FontWeight.Normal
-                    },
+                        if (filterViewModel.isBottomSheetOpen) {
+                            FontWeight.SemiBold
+                        } else {
+                            FontWeight.Normal
+                        },
                     color = if (filterViewModel.isBottomSheetOpen) {
-                        onPrimaryLight
-                    } else { LocalContentColor.current }
+                            onPrimaryLight
+                        } else {
+                            LocalContentColor.current
+                        }
                 )
             }
 
@@ -516,14 +526,14 @@ fun CellarBottomAppBar(
                     .padding(vertical = 4.dp)
                     .weight(1f),
                 contentAlignment = Alignment.Center,
-                //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
-                //  horizontalAlignment = Alignment.CenterHorizontally,
+                    //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
+                    //  horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 IconButton(
                     onClick = {
                         clickToAdd = true
                         navigateToAddEntry()
-                    },
+                              },
                     modifier = Modifier
                         .padding(0.dp)
                 ) {
@@ -533,9 +543,12 @@ fun CellarBottomAppBar(
                         modifier = Modifier
                             .size(26.dp)
                             .offset(y = (-8).dp),
-                        tint = if (clickToAdd) {
-                            onPrimaryLight
-                        } else { LocalContentColor.current },
+                        tint =
+                            if (clickToAdd) {
+                                onPrimaryLight
+                            } else {
+                                LocalContentColor.current
+                            },
                     )
                 }
                 Text(
@@ -544,14 +557,16 @@ fun CellarBottomAppBar(
                         .offset(y = 13.dp),
                     fontSize = 11.sp,
                     fontWeight =
-                    if (clickToAdd) {
-                        FontWeight.SemiBold
-                    } else {
-                        FontWeight.Normal
-                    },
+                        if (clickToAdd) {
+                            FontWeight.SemiBold
+                        } else {
+                            FontWeight.Normal
+                        },
                     color = if (clickToAdd) {
-                        onPrimaryLight
-                    } else { LocalContentColor.current }
+                            onPrimaryLight
+                        } else {
+                            LocalContentColor.current
+                        }
                 )
             }
         }
@@ -572,7 +587,7 @@ fun FilterBottomSheet(
             .fillMaxWidth()
             .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
             .imePadding()
-            .navigationBarsPadding()
+            //    .navigationBarsPadding()
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -702,9 +717,13 @@ fun OtherFiltersSection(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Spacer(
+            modifier = Modifier
+                .weight(.5f)
+        )
         Column(
             modifier = Modifier
                 .border(
@@ -837,6 +856,12 @@ fun OtherFiltersSection(
             }
         }
 
+        Spacer(
+            modifier = Modifier
+                .weight(.25f)
+                .widthIn(min = 12.dp)
+        )
+
         Column(
             modifier = Modifier
                 .border(
@@ -866,6 +891,10 @@ fun OtherFiltersSection(
                 modifier = Modifier
             )
         }
+        Spacer(
+            modifier = Modifier
+                .weight(.5f)
+        )
     }
 }
 
