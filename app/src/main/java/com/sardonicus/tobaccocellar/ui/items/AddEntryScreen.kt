@@ -1083,6 +1083,7 @@ fun ItemDetailsEntry(
                 tinConversion = tinConversion,
                 onTinValueChange = onTinValueChange,
                 isEditEntry = isEditEntry,
+                itemDetails = itemDetails,
                 modifier = Modifier
             )
         }
@@ -1162,6 +1163,7 @@ fun TinConverterDialog(
     tinConversion: TinConversion,
     onTinValueChange: (TinConversion) -> Unit,
     isEditEntry: Boolean,
+    itemDetails: ItemDetails,
     modifier: Modifier = Modifier
 ) {
     var amount by remember { mutableStateOf(tinConversion.amount) }
@@ -1195,9 +1197,10 @@ fun TinConverterDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
+                    // converter inputs //
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -1222,10 +1225,13 @@ fun TinConverterDialog(
                                 }
                             },
                             modifier = Modifier
-                                .weight(2f),
+                                .weight(1.8f),
                             placeholder = {
                                 Text(
                                     text = "Amount",
+                                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                                    modifier = Modifier,
+                                    style = LocalTextStyle.current.copy(textAlign = TextAlign.End)
                                 )
                             },
                             visualTransformation = VisualTransformation.None,
@@ -1250,7 +1256,7 @@ fun TinConverterDialog(
                             expanded = expanded,
                             onExpandedChange = { expanded = !expanded },
                             modifier = Modifier
-                                .weight(2f)
+                                .weight(2.2f)
                         ) {
                             TextField(
                                 value = unit,
@@ -1275,6 +1281,7 @@ fun TinConverterDialog(
                                 placeholder = {
                                     Text(
                                         text = "Unit",
+                                        color = LocalContentColor.current.copy(alpha = 0.5f)
                                     )
                                 }
                             )
@@ -1304,53 +1311,92 @@ fun TinConverterDialog(
                                 .weight(.5f)
                         )
                     }
+                    // buttons //
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(0.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Button(
-                            onClick = {
-                                val convertedQuantity = convertQuantity(
-                                    tinConversion.amount.toDouble(),
-                                    tinConversion.unit,
-                                    tinConversion.ozRate,
-                                    tinConversion.gramsRate
-                                )
-                                onConfirm(convertedQuantity)
-                            },
+                        val convertedQuantity = if (tinConversion.isConversionValid) {
+                            convertQuantity(
+                                tinConversion.amount.toDouble(),
+                                tinConversion.unit,
+                                tinConversion.ozRate,
+                                tinConversion.gramsRate
+                            )
+                        } else { 0 }
+
+                        // convert/change button //
+                        Column(
                             modifier = Modifier,
-                            enabled = tinConversion.isConversionValid,
+                            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (isEditEntry)"Change" else "Convert",
-                                modifier = Modifier
+                                text = "(${convertedQuantity} tins)",
+                                modifier = Modifier,
+                                fontSize = 12.sp,
+                                color =
+                                    if (tinConversion.isConversionValid)
+                                        LocalContentColor.current.copy(alpha = 0.5f)
+                                    else Color.Transparent
                             )
-                        }
-                        if (isEditEntry) {
                             Button(
                                 onClick = {
-                                    val convertedQuantity = convertQuantity(
-                                        tinConversion.amount.toDouble(),
-                                        tinConversion.unit,
-                                        tinConversion.ozRate,
-                                        tinConversion.gramsRate
-                                    )
-                                    onAddConversion(convertedQuantity)
+                                    onConfirm(convertedQuantity)
                                 },
-                                modifier = Modifier
-                                    .height(40.dp),
+                                modifier = Modifier,
                                 enabled = tinConversion.isConversionValid,
                             ) {
                                 Text(
-                                    text = "Add To",
+                                    text = if (isEditEntry) "Change" else "Convert",
                                     modifier = Modifier
                                 )
                             }
                         }
+
+                        // add to button for edit entry //
+                        if (isEditEntry) {
+                            Column(
+                                modifier = Modifier,
+                                verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                val newAmount =
+                                    if (tinConversion.isConversionValid) {
+                                        itemDetails.squantity.toInt() + convertedQuantity
+                                    } else { 0 }
+
+                                Text(
+                                    text = "(${newAmount} tins)",
+                                    modifier = Modifier,
+                                    fontSize = 12.sp,
+                                    color =
+                                        if (tinConversion.isConversionValid)
+                                            LocalContentColor.current.copy(alpha = 0.5f)
+                                        else Color.Transparent
+                                )
+                                Button(
+                                    onClick = {
+                                        onAddConversion(convertedQuantity)
+                                    },
+                                    modifier = Modifier,
+                                    enabled = tinConversion.isConversionValid,
+                                ) {
+                                    Text(
+                                        text = "Add To",
+                                        modifier = Modifier
+                                    )
+                                }
+                            }
+                        }
                     }
+                    Spacer(
+                        modifier = Modifier
+                            .height(4.dp)
+                    )
                 }
             }
         }
