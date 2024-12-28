@@ -457,8 +457,8 @@ private fun ChartsSection(
                 .height(10.dp)
         )
         Text(
-            text = "*Charts are filter-reactive and display a maximum of the top 10 results. " +
-                    "Some charts may be redundant/irrelevant depending on the chosen filters.",
+            text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
+                    "depending on the chosen filters.",
             color = LocalContentColor.current.copy(alpha = 0.75f),
             modifier = Modifier
                 .fillMaxWidth(),
@@ -598,10 +598,10 @@ private fun ChartsFormat(
             onSliceLabelPosition = 0.7f,
             outsideSliceLabelPosition = 0.65f,
             outsideLabelThreshold = 25f,
-            rotationOffset = 225f,
+            rotationOffset = 270f,
             textColor = Color.Black,
             labelBackground = Color.White.copy(alpha = 0.55f),
-            sortData = true
+            sortData = false
         )
     }
 }
@@ -633,7 +633,7 @@ private fun PieChart(
     rotationOffset: Float = 270f,
     textColor: Color = Color.Black,
     labelBackground: Color = Color.Unspecified,
-    sortData: Boolean = true,
+    sortData: Boolean = false,
 ) {
     val total = data.values.sum()
     val sortedData = if (sortData) { data.toList().sortedByDescending { it.second }.toMap() } else { data }
