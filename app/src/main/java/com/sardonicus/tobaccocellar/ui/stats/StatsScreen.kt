@@ -458,7 +458,8 @@ private fun ChartsSection(
         )
         Text(
             text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
-                    "depending on the chosen filters.",
+                    "depending on the chosen filters. This section is experimental and is " +
+                    "subject to change.",
             color = LocalContentColor.current.copy(alpha = 0.75f),
             modifier = Modifier
                 .fillMaxWidth(),
@@ -646,7 +647,7 @@ private fun PieChart(
         val centerX = size.width / 2
         val centerY = size.height / 2
         val insideLabel = min(centerX, centerY) * onSliceLabelPosition
-        val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.3f))
+        val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.35f))
 
         drawSlices(
             sortedData, colors, total, rotationOffset
@@ -698,31 +699,39 @@ private fun DrawScope.drawLabels(
     outsideRadius: Float,
     outsideLabelThreshold: Float,
 ) {
-    val thinSliceThreshold = 9f
     var currentStartAngle = startAngle
-    var mediumSliceCount = 0
     var outsideLabelCount = 0
-    var thinSliceCount = 0
+    val sliceCount = data.size
 
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
         val midpointAngle = currentStartAngle + sweepAngle / 2
 
-        if (sweepAngle < outsideLabelThreshold ) {
-            if (sweepAngle < thinSliceThreshold) {
-                thinSliceCount++
-            } else {
-                outsideLabelCount++
-            }
+        val isOther = label == "Other"
+
+        if (sweepAngle < outsideLabelThreshold && !isOther) {
+            outsideLabelCount++
         }
 
         val radius =
-            if (sweepAngle < outsideLabelThreshold) { outsideRadius } else { insideRadius }
+            if (sweepAngle < outsideLabelThreshold && outsideLabelCount > 1) {
+                outsideRadius
+            } else {
+                if (sliceCount > 5 && isOther) {
+                    insideRadius * .85f
+                } else {
+                    insideRadius
+                }
+            }
 
         val labelColor =
             if (showLabels) {
-                if (thinSliceCount >= 1) {
-                    colors[data.keys.indexOf(label) % colors.size]
+                if (sliceCount > 5) {
+                    if (outsideLabelCount >= 1 && !isOther) {
+                        colors[data.keys.indexOf(label) % colors.size]
+                    } else {
+                        textColor
+                    }
                 } else {
                     textColor
                 }
@@ -731,8 +740,12 @@ private fun DrawScope.drawLabels(
             }
         val percentColor =
             if (showLabels && showPercentages) {
-                if (thinSliceCount >= 1) {
-                    colors[data.keys.indexOf(label) % colors.size]
+                if (sliceCount > 5) {
+                    if (outsideLabelCount >= 1 && !isOther) {
+                        colors[data.keys.indexOf(label) % colors.size]
+                    } else {
+                        textColor
+                    }
                 } else {
                     textColor
                 }
@@ -741,8 +754,12 @@ private fun DrawScope.drawLabels(
             }
         val labelBg =
             if (showLabels) {
-                if (thinSliceCount >= 1) {
-                    Color.Black.copy(alpha = 0.65f)
+                if (sliceCount > 5) {
+                    if (outsideLabelCount >= 1 && !isOther) {
+                        Color.Black.copy(alpha = 0.65f)
+                    } else {
+                        backgroundColor
+                    }
                 } else {
                     backgroundColor
                 }
@@ -751,8 +768,12 @@ private fun DrawScope.drawLabels(
             }
         val percentBg =
             if (showLabels && showPercentages) {
-                if (thinSliceCount >= 1) {
-                    Color.Black.copy(alpha = 0.65f)
+                if (sliceCount > 5) {
+                    if (outsideLabelCount >= 1 && !isOther) {
+                        Color.Black.copy(alpha = 0.65f)
+                    } else {
+                        backgroundColor
+                    }
                 } else {
                     backgroundColor
                 }
@@ -806,113 +827,30 @@ private fun DrawScope.drawLabels(
 
         val labelX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
         val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat() - combinedHeight / 2
-        val normalizedMidpointAngle = (midpointAngle) % 360f
 
-        val xOffsetFactor =
-            when (normalizedMidpointAngle) {
-                in 45f..90f -> (90f - normalizedMidpointAngle) / (90f - 45f) * 2 // add exponetially less, moves right
-                in 91f..135f -> ((135f - normalizedMidpointAngle) / (135f - 91f)) * (-3/2) // subtract exponentially less, moves left
-                in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-1) // subtract exponentially less, moves left
-                in 181f..224f -> ((normalizedMidpointAngle - 180f) / (224f - 180f)) * (-5) // subtract exponetially more, move left
-                else -> 0f
-            }
-        val yOffsetFactor =
-            when (normalizedMidpointAngle) {
-                in 45f..80f -> ((80f - normalizedMidpointAngle) / (80f - 45f)) * (-3) // subtract exponentially less, moves up
-                in 100f..135f -> ((135f - normalizedMidpointAngle) / (135f - 100f)) * (-2) // subtract exponentially less, moves up
-                in 136f..180f -> ((180f - normalizedMidpointAngle) / (180f - 136f)) * (-3/2) // subtract exponentially less, moves up
-                in 181f..202f -> ((normalizedMidpointAngle - 181f) / (202f - 181f)) * (-1/3)// subtract exponentially more, moves up
-                in 203f..224f -> ((normalizedMidpointAngle - 203f) / (224f - 203f)) * (-2) // subtract exponentially more, moves up
-                else -> 0f
-            }
+        val totalOutsideLabels = data.count { it.value < outsideLabelThreshold }
+        val totalListHeight = (combinedHeight * 2f) * totalOutsideLabels
 
-        val outsideMaxX = 6.dp.toPx()
-        val outsideMaxY = 6.dp.toPx()
-        val mediumSliceAdjustment = 10.dp.toPx()
-
-        if (sweepAngle > outsideLabelThreshold && sweepAngle < 50f) {
-            when (normalizedMidpointAngle) {
-                in 50f..130f -> mediumSliceCount++
-                else -> {}
-            }
-        }
-
-
-        val mediumSliceAdjustmentDirection =
-            when (normalizedMidpointAngle) {
-                in 50f..75f -> (-1f)
-                in 76f..100f -> (5/2f)
-                in 101f..130f -> (-1f)
-                else -> 0f
-            }
+        val listX = outsideRadius * (-0.4f) // multiplying by negative puts it on the left of the chart
+        val listY = ((centerY - totalListHeight / 2) + ((combinedHeight * 2f) * (totalOutsideLabels - (outsideLabelCount + 1)))) - (combinedHeight / 2)
 
         val adjustedLabelX =
-            if (sweepAngle < outsideLabelThreshold) {
-                if (sweepAngle < thinSliceThreshold) {
-                    // very narrow slices
-                    if (thinSliceCount % 2 == 0) {
-                        (labelX - labelWidth / 2) + 5.dp.toPx()
-                    } else {
-                        (labelX - labelWidth / 2) - 10.dp.toPx()
-                    }
-                } else {
-                    // normal outside slice labels
-                    (labelX - labelWidth / 2) + (outsideMaxX * xOffsetFactor)
-                }
+            if (sweepAngle < outsideLabelThreshold && sliceCount > 5) {
+                // list placement
+                listX
             } else {
-                // normal inside slice labels
+                // normal on slice labels
                 labelX - labelWidth / 2
             }
 
         val adjustedLabelY =
-            if (sweepAngle < outsideLabelThreshold) {
-                if (sweepAngle < thinSliceThreshold) {
-                    // very narrow slices evens
-                    if (thinSliceCount % 2 == 0) {
-                        (labelY - labelHeight / 2) - 20.dp.toPx()
-                    } else {
-                        // very narrow slices odds
-                        (labelY - labelHeight / 2) + 2.dp.toPx()
-                    }
-                } else {
-                    // normal outside slice labels
-                    if (midpointAngle > 80f && midpointAngle < 100f) {
-                        (labelY - labelHeight / 2) + 10.dp.toPx()
-                    } else {
-                        (labelY - labelHeight / 2) + (outsideMaxY * yOffsetFactor)
-                    }
-                }
+            if (sweepAngle < outsideLabelThreshold && sliceCount > 5) {
+                // list placement math
+                listY
             } else {
-                if (sweepAngle < 50f && sweepAngle > outsideLabelThreshold) {
-                    // medium slices at bottom of the chart
-                    if (mediumSliceCount >= 2) {
-                        (labelY - labelHeight / 2) + (mediumSliceAdjustment * mediumSliceAdjustmentDirection)
-                    } else {
-                        // medium slices anywhere else
-                        labelY - labelHeight / 2
-                    }
-                } else {
-                    // inside slice labels
-                    labelY - labelHeight / 2
-                }
+                // normal on slice labels
+                labelY - labelHeight / 2
             }
-
-//        val adjustedLabelX =
-//            if (sweepAngle < outsideLabelThreshold) {
-//                (labelX - labelWidth / 2) + (xOffsetFactor * 20.dp.toPx())
-//            } else {
-//                labelX - labelWidth / 2
-//            }
-//
-//        val adjustedLabelY =
-//            if (sweepAngle < outsideLabelThreshold) {
-//                (labelY - labelHeight / 2) + (yOffsetFactor * 30.dp.toPx())
-//            } else {
-//                labelY - labelHeight / 2
-//            }
-
-//        val adjustedLabelX = labelX - labelWidth / 2
-//        val adjustedLabelY = labelY - labelHeight / 2
 
 
         val percentageX = adjustedLabelX + (labelWidth - percentageWidth) / 2
