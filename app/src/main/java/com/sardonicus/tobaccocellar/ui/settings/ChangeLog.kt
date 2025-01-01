@@ -15,14 +15,15 @@ val changeLogEntries = listOf(
         buildDate = "",
         changes = listOf(),
         improvements = listOf(
-            "Stats charts that were previously limited to the top 10 results now return data " +
+            "Stats pie charts that were previously limited to the top 10 results now return data " +
                     "for everything that fits the (filtered) criteria. If there are more than " +
                     "10 points of comparison, the first 9 are returned and the rest are combined " +
-                    "into an \"Other\" category.",
+                    "into an \"(Other)\" category.",
             "Pie chart labelling changed, now if a slice is too thin to show the label on it, " +
                     "the label is listed to the left and takes the same color as the slice it " +
-                    "represents.",
-            "Fixed some UI issues of some components (such as extra side padding on Filter Sheet " +
+                    "represents and the percentage/value is listed at the edge of the slice.",
+            "Pie chart labeling placement more accurately centered on slices.",
+            "Fixed some UI issues of some components (such as extra side-padding on Filter Sheet " +
                     "when in landscape) related to Android 15 forced edge-to-edge.",
             "Added a hint text above the buttons on the \"Tin Converter\" to show the calculated " +
                     "values before confirming."
