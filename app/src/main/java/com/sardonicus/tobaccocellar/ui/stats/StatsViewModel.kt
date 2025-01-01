@@ -143,7 +143,7 @@ class StatsViewModel(
                                 if (it.size > 10) {
                                     val topNine = it.take(9).associate { it.key to it.value }
                                     val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("Other" to otherCount)
+                                    topNine + ("(Other)" to otherCount)
                                 } else {
                                     it.associate { it.key to it.value }
                                 }
@@ -157,7 +157,7 @@ class StatsViewModel(
                                 if (it.size > 10) {
                                     val topNine = it.take(9).associate { it.key to it.value }
                                     val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("Other" to otherCount)
+                                    topNine + ("(Other)" to otherCount)
                                 } else {
                                     it.associate { it.key to it.value }
                                 }
@@ -172,7 +172,7 @@ class StatsViewModel(
                                 if (it.size > 10) {
                                     val topNine = it.take(9).associate { it.key to it.value }
                                     val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("Other" to otherCount)
+                                    topNine + ("(Other)" to otherCount)
                                 } else {
                                     it.associate { it.key to it.value }
                                 }
