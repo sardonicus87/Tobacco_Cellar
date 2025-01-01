@@ -555,6 +555,7 @@ private fun ChartsFormat(
         Text(
             text = label,
             modifier = Modifier,
+            fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
             textAlign = TextAlign.Center
         )
@@ -596,8 +597,8 @@ private fun ChartsFormat(
             modifier = Modifier
                 .padding(top = 28.dp, bottom = 44.dp)
                 .fillMaxWidth(fraction = 0.7f),
-            onSliceLabelPosition = 0.7f,
-            outsideSliceLabelPosition = 0.65f,
+            onSliceLabelPosition = 0.6f,
+            outsideSliceLabelPosition = 0.6f,
             outsideLabelThreshold = 25f,
             rotationOffset = 270f,
             textColor = Color.Black,
@@ -647,7 +648,9 @@ private fun PieChart(
         val centerX = size.width / 2
         val centerY = size.height / 2
         val insideLabel = min(centerX, centerY) * onSliceLabelPosition
-        val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.35f))
+      //  val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.20f))
+      //  val insideLabel = ((min(centerX, centerY) * 1f)) - ((min(centerX, centerY) * onSliceLabelPosition))
+        val outsideLabel = (min(centerX, centerY) * (1f)) + ((20.dp.toPx() * outsideSliceLabelPosition))
 
         drawSlices(
             sortedData, colors, total, rotationOffset
@@ -702,88 +705,87 @@ private fun DrawScope.drawLabels(
     var currentStartAngle = startAngle
     var outsideLabelCount = 0
     val sliceCount = data.size
+    val totalOutsideLabels = data.values.count { (it.toFloat() / total) * 360f < outsideLabelThreshold }
 
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
         val midpointAngle = currentStartAngle + sweepAngle / 2
-
-        val isOther = label == "Other"
-
+        val isOther = label == "(Other)"
         if (sweepAngle < outsideLabelThreshold && !isOther) {
             outsideLabelCount++
         }
 
-        val radius =
-            if (sweepAngle < outsideLabelThreshold && outsideLabelCount > 1) {
-                outsideRadius
+        val radius = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
+            outsideRadius
+        } else {
+            if (sliceCount > 5 && isOther) {
+                insideRadius * .5f
             } else {
-                if (sliceCount > 5 && isOther) {
-                    insideRadius * .85f
-                } else {
-                    insideRadius
-                }
+                insideRadius
             }
+        }
 
-        val labelColor =
-            if (showLabels) {
-                if (sliceCount > 5) {
-                    if (outsideLabelCount >= 1 && !isOther) {
-                        colors[data.keys.indexOf(label) % colors.size]
-                    } else {
-                        textColor
-                    }
+
+        /** label coloring */
+        val labelColor = if (showLabels) {
+            if (totalOutsideLabels > 1) {
+                if (outsideLabelCount >= 1 && !isOther) {
+                    colors[data.keys.indexOf(label) % colors.size]
                 } else {
                     textColor
                 }
             } else {
-                Color.Transparent
+                textColor
             }
-        val percentColor =
-            if (showLabels && showPercentages) {
-                if (sliceCount > 5) {
-                    if (outsideLabelCount >= 1 && !isOther) {
-                        colors[data.keys.indexOf(label) % colors.size]
-                    } else {
-                        textColor
-                    }
+        } else {
+            Color.Transparent
+        }
+        val percentColor = if (showLabels && showPercentages) {
+            if (totalOutsideLabels > 1) {
+                if (outsideLabelCount >= 1 && !isOther) {
+                    colors[data.keys.indexOf(label) % colors.size]
                 } else {
                     textColor
                 }
             } else {
-                Color.Transparent
+                textColor
             }
-        val labelBg =
-            if (showLabels) {
-                if (sliceCount > 5) {
-                    if (outsideLabelCount >= 1 && !isOther) {
-                        Color.Black.copy(alpha = 0.65f)
-                    } else {
-                        backgroundColor
-                    }
+        } else {
+            Color.Transparent
+        }
+        val labelBg = if (showLabels) {
+            if (totalOutsideLabels > 1) {
+                if (outsideLabelCount >= 1 && !isOther) {
+                    Color.Black.copy(alpha = 0.65f)
                 } else {
                     backgroundColor
                 }
             } else {
-                Color.Transparent
+                backgroundColor
             }
-        val percentBg =
-            if (showLabels && showPercentages) {
-                if (sliceCount > 5) {
-                    if (outsideLabelCount >= 1 && !isOther) {
-                        Color.Black.copy(alpha = 0.65f)
-                    } else {
-                        backgroundColor
-                    }
-                } else {
+        } else {
+            Color.Transparent
+        }
+        val percentBg = if (showLabels && showPercentages) {
+            if (totalOutsideLabels > 1) {
+                if (outsideLabelCount >= 1 && !isOther) {
+                    Color.Black.copy(alpha = 0.65f)
+                }  else {
                     backgroundColor
                 }
-            } else { Color.Transparent }
+            } else {
+                backgroundColor
+            }
+        } else {
+            Color.Transparent
+        }
 
+
+        /** label text formatting */
         val labelPad = " $label "
         val valuePad = "($value) "
         val decimalFormat = DecimalFormat(" #.##% ")
-        val percentageCal =
-            if (showValues) {
+        val percentageCal = if (showValues) {
                 decimalFormat.format(value.toDouble() / total) + valuePad
             } else {
                 decimalFormat.format(value.toDouble() / total)
@@ -793,9 +795,9 @@ private fun DrawScope.drawLabels(
             text = AnnotatedString(labelPad),
             style = TextStyle(
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 background = labelBg,
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Start,
             ),
             constraints = Constraints(maxWidth = 250),
             maxLines = 1,
@@ -806,55 +808,87 @@ private fun DrawScope.drawLabels(
             text = AnnotatedString(percentageCal),
             style = TextStyle(
                 fontSize = 11.sp,
-                background = percentBg
+                background = percentBg,
+                textAlign = TextAlign.Center,
             )
         )
 
+
+        /** label positioning */
         val labelWidth = textLabel.size.width.toFloat()
         val labelHeight = textLabel.size.height.toFloat()
         val percentageWidth = percentageLabel.size.width.toFloat()
         val percentageHeight = percentageLabel.size.height.toFloat()
-        val combinedHeight =
-            if (showLabels && showPercentages) {
-                labelHeight + (percentageHeight * .2f)
+        val combinedHeight = if (showLabels && showPercentages) {
+            labelHeight + percentageHeight // * .2f)
+        } else {
+            if (showLabels) {
+                labelHeight
             } else {
-                if (showLabels) {
-                    labelHeight
-                } else {
-                    percentageHeight
-                }
+                percentageHeight
             }
+        }
 
         val labelX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
-        val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat() - combinedHeight / 2
+        val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat() // - combinedHeight / 2
+        val percentageX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
+        val percentageY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat()
 
-        val totalOutsideLabels = data.count { it.value < outsideLabelThreshold }
-        val totalListHeight = (combinedHeight * 2f) * totalOutsideLabels
-
+        val outsideList = (labelHeight * 1.25) * (outsideLabelCount - 1)
+        val listHeight = (labelHeight * 1.25) * totalOutsideLabels
         val listX = outsideRadius * (-0.4f) // multiplying by negative puts it on the left of the chart
-        val listY = ((centerY - totalListHeight / 2) + ((combinedHeight * 2f) * (totalOutsideLabels - (outsideLabelCount + 1)))) - (combinedHeight / 2)
-
-        val adjustedLabelX =
-            if (sweepAngle < outsideLabelThreshold && sliceCount > 5) {
-                // list placement
-                listX
-            } else {
-                // normal on slice labels
-                labelX - labelWidth / 2
-            }
-
-        val adjustedLabelY =
-            if (sweepAngle < outsideLabelThreshold && sliceCount > 5) {
-                // list placement math
-                listY
-            } else {
-                // normal on slice labels
-                labelY - labelHeight / 2
-            }
+        val listY = outsideList + (centerY - (listHeight / 2))
 
 
-        val percentageX = adjustedLabelX + (labelWidth - percentageWidth) / 2
-        val percentageY = adjustedLabelY + labelHeight
+        /** additional adjustment based on quadrant */
+        val normalizedMidpointAngle = (midpointAngle) % 360f
+        val xOffsetFactor = when (normalizedMidpointAngle) {
+            in 0f..90f -> (normalizedMidpointAngle - 0f) / (180f) // 0 to 0.5
+            in 90f..180f -> (normalizedMidpointAngle - 0f) / (180f) // 0.5 to 1
+            in 180f..270f -> (360f - normalizedMidpointAngle) / (180f)  // 1 to 0.5
+            in 270f..360f -> (360f - normalizedMidpointAngle) / (180f) // 0.5 to 0
+            else -> 0f
+        }
+        val yOffsetFactor = when (normalizedMidpointAngle) {
+            in 0f..90f -> (90f - normalizedMidpointAngle) / (180f) // 0.5 to 0
+            in 90f..180f -> (normalizedMidpointAngle - 90f) / (180f) // 0 to 0.5
+            in 180f..270f -> (normalizedMidpointAngle - 90f) / (180f)  // 0.5 to 1
+            in 270f..360f -> (450f - normalizedMidpointAngle) / (180f) // 1 to 0.5
+            else -> 0f
+        }
+
+
+        /** final adjustment */
+        val adjustedLabelX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
+            // list placement
+            listX
+        } else {
+            // normal on slice labels
+            labelX - (labelWidth * xOffsetFactor)
+        }
+        val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
+            // list placement math
+            listY.toFloat()
+        } else {
+            // normal on slice labels
+            labelY - (combinedHeight * yOffsetFactor)
+        }
+
+        val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
+            // outside slice placement
+            percentageX - (percentageWidth * xOffsetFactor)
+        } else {
+            // normal inside slice placement
+            adjustedLabelX + (labelWidth - percentageWidth) / 2
+        }
+        val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
+            // outside slice placement
+            percentageY - (percentageHeight * yOffsetFactor)
+        } else {
+            // normal inside slice placement
+            adjustedLabelY + labelHeight
+        }
+
 
         drawText(
             textLayoutResult = textLabel,
@@ -869,8 +903,8 @@ private fun DrawScope.drawLabels(
             textLayoutResult = percentageLabel,
             brush = SolidColor(percentColor),
             topLeft = Offset(
-                x = percentageX,
-                y = percentageY
+                x = adjustedPercentageX,
+                y = adjustedPercentageY
             )
         )
 
