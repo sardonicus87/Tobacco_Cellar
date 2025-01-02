@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -534,7 +535,7 @@ private fun AddingItems(
                     "leaving the \"No. of Tins\" field blank will presume the quantity to be one. " +
                     "Next to this field, there are \"increase/decrease\" buttons for quickly " +
                     "updating the quantity. Next to this is a button to open a \"Tin Converter\". " +
-                    "The maximum quantity of Tins is limited to 99.",
+                    "The maximum quantity of tins is limited to 99.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -639,6 +640,7 @@ private fun HelpSection(
 }
 
 // Fullscreen Image //
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FullscreenImage(
     imagePainter: Painter,
