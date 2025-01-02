@@ -8,23 +8,38 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.captionBar
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key.Companion.Window
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
 
 class MainActivity : ComponentActivity() {
 
     private var backPressedOnce = false
 
+    @OptIn(ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
@@ -49,15 +64,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val application = (application as CellarApplication)
-
             CompositionLocalProvider(LocalCellarApplication provides application) {
                 TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
-                    Surface(
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .background(Color.Black)
+                          //  .consumeWindowInsets(WindowInsets.statusBarsIgnoringVisibility)
+                           // .consumeWindowInsets(WindowInsets.navigationBars)
+                            .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
-                            .windowInsetsPadding(WindowInsets.systemBars),
-                        color = MaterialTheme.colorScheme.background,
+                           // .windowInsetsPadding(WindowInsets.statusBars) ,
+                       // color = MaterialTheme.colorScheme.background,
                     ) {
                         CellarApp()
                     }
