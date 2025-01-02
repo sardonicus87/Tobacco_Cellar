@@ -856,7 +856,10 @@ private fun DrawScope.drawLabels(
             in 270f..360f -> (450f - normalizedMidpointAngle) / (180f) // 1 to 0.5
             else -> 0f
         }
-
+        val topOffsetSwitch = when (normalizedMidpointAngle) {
+            in 255f..270f -> 1
+            else -> 0
+        }
 
         /** final adjustment */
         val adjustedLabelX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
@@ -882,13 +885,24 @@ private fun DrawScope.drawLabels(
             adjustedLabelX + (labelWidth - percentageWidth) / 2
         }
         val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            // outside slice placement
-            percentageY - (percentageHeight * yOffsetFactor)
+            if (sweepAngle < 5f && normalizedMidpointAngle > 254f) {
+                // very thin slices at the top of the chart
+                val additionalOffset = if (outsideLabelCount % 2 == 0) {
+                    (-1 * (percentageHeight * 0.25f))
+                    // -3.dp.toPx()
+                    } else {
+                    (percentageHeight * 0.75f)
+                    // 10.dp.toPx()
+                }
+                (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset * topOffsetSwitch)
+            } else {
+                // outside slice placement
+                percentageY - (percentageHeight * yOffsetFactor)
+            }
         } else {
             // normal inside slice placement
             adjustedLabelY + labelHeight
         }
-
 
         drawText(
             textLayoutResult = textLabel,
