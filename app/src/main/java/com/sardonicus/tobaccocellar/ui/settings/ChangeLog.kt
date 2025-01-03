@@ -3,13 +3,23 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 val changeLogEntries = listOf(
 
-//    ChangeLogEntryData(
-//        versionNumber = "",
-//        buildDate = "",
-//        changes = listOf(),
-//        improvements = listOf(),
-//        bugFixes = listOf(),
-//    ),
+    ChangeLogEntryData(
+        versionNumber = "",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(),
+        bugFixes = listOf(),
+    ),
+    ChangeLogEntryData(
+        versionNumber = "1.x.x",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Stats list label aligned to top of chart rather than center.",
+            "Adjusted pie slice colors (greater differentiation between the two yellows)."
+        ),
+        bugFixes = listOf(),
+    ),
     ChangeLogEntryData(
         versionNumber = "1.4.0",
         buildDate = "2 Jan, 2025",
@@ -31,8 +41,6 @@ val changeLogEntries = listOf(
                     "issues remain for some things (such as the full screen image in the \"Help/" +
                     "FAQ\" screen) depending on whether you're on an Android 15 device or a pre-" +
                     "Android 15 device.",
-        ),
-        bugFixes = listOf(
         ),
     ),
     ChangeLogEntryData(
@@ -100,7 +108,6 @@ val changeLogEntries = listOf(
         ),
     )
 )
-
 
 
 data class ChangeLogEntryData(
