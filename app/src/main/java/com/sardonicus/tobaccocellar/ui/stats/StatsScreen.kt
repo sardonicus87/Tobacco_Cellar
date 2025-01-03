@@ -837,7 +837,7 @@ private fun DrawScope.drawLabels(
         val outsideList = (labelHeight * 1.25) * (outsideLabelCount - 1)
         val listHeight = (labelHeight * 1.25) * totalOutsideLabels
         val listX = outsideRadius * (-0.4f) // multiplying by negative puts it on the left of the chart
-        val listY = outsideList + (centerY - (listHeight / 2))
+        val listY = outsideList
 
 
         /** additional adjustment based on quadrant */
