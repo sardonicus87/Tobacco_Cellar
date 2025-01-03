@@ -108,7 +108,7 @@ val pieOneLight = Color(0xFF03B1FF)
 val pieTwoLight = Color(0xFF00FDFE)
 val pieThreeLight = Color(0xFF01A802)
 val pieFourLight = Color(0xFF00FD01)
-val pieFiveLight = Color(0xFFF4FF81)
+val pieFiveLight = Color(0xFFFAFFBF)
 val pieSixLight = Color(0xFFFFEA00)
 val pieSevenLight = Color(0xFFFBC02D)
 val pieEightLight = Color(0xFFFF9100)
@@ -120,12 +120,12 @@ val pieOneDark = Color(0xFF03B1FF)
 val pieTwoDark = Color(0xFF00FDFE)
 val pieThreeDark = Color(0xFF01A802)
 val pieFourDark = Color(0xFF00FD01)
-val pieFiveDark = Color(0xFFF4FF81)
-val pieSixDark = Color(0xFFFFEA00)
-val pieSevenDark = Color(0xFFFBC02D)
-val pieEightDark = Color(0xFFFF9100)
-val pieNineDark = Color(0xFFFF3D00)
-val pieTenDark = Color(0xFF7E57C2)
+val pieFiveDark = Color(0xFFFAFFBF) // original 0xFFF4FF81
+val pieSixDark = Color(0xFFFFEA00) // original 0xFFFFEA00
+val pieSevenDark = Color(0xFFFBC02D) // original 0xFFFBC02D
+val pieEightDark = Color(0xFFFF9100) // original 0xFFFF9100
+val pieNineDark = Color(0xFFFF3D00) // original 0xFFFF3D00
+val pieTenDark = Color(0xFF7E57C2) // original 0xFF7E57C2
 
 // light medium //
 val primaryLightMediumContrast = Color(0xFF004D34)
