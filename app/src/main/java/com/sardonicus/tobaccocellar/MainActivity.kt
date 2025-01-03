@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black)
+                            .background(Color.Transparent)
                           //  .consumeWindowInsets(WindowInsets.statusBarsIgnoringVisibility)
                            // .consumeWindowInsets(WindowInsets.navigationBars)
                             .windowInsetsPadding(WindowInsets.systemBars)
