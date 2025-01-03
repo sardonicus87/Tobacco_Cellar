@@ -445,7 +445,7 @@ private fun Filtering(
         Text(
             text = "Selected brands are shown in the box below. and can be removed by tapping " +
                     "the close icon on each brand. The box has limited space, so brands that " +
-                    "exceed this space are placed in an overflow. To see the full list of brand" +
+                    "exceed this space are placed in an overflow. To see the full list of brand " +
                     "selections, tap the overflow button. This will open a popup with the full " +
                     "list of chosen brands. The \"Clear All\" button in this overflow only " +
                     "removes the selected brands.",
@@ -640,13 +640,42 @@ private fun HelpSection(
 }
 
 // Fullscreen Image //
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun FullscreenImage(
     imagePainter: Painter,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+//    BasicAlertDialog(
+//        onDismissRequest = onDismiss,
+//        modifier = modifier
+//            .fillMaxSize(),
+//        properties = DialogProperties(
+//            dismissOnBackPress = true,
+//            dismissOnClickOutside = true,
+//            usePlatformDefaultWidth = false
+//        )
+//    ) {
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .background(Color.Black.copy(alpha = 0.5f))
+//                .clickable(onClick = onDismiss),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Image(
+//                painter = imagePainter,
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .align(Alignment.Center),
+//                //    .fillMaxWidth(),
+//                alignment = Alignment.Center,
+//                contentScale = ContentScale.Fit,
+//            )
+//        }
+//    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -665,10 +694,10 @@ private fun FullscreenImage(
                 painter = imagePainter,
                 contentDescription = null,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .align(Alignment.Center),
                 alignment = Alignment.Center,
-                contentScale = ContentScale.Fit,
+                contentScale = ContentScale.Inside,
             )
         }
     }
