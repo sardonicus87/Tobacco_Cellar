@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
-import android.R.attr.onClick
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -60,9 +59,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.UrlAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -523,15 +520,18 @@ fun ChangeLogDialog(
                         .height(12.dp)
                 )
             }
-            items(items = changeLogEntries,  key = { it.versionNumber }) {
-                ChangeLogEntryLayout(
-                    versionNumber = it.versionNumber,
-                    buildDate = it.buildDate,
-                    changes = it.changes,
-                    improvements = it.improvements,
-                    bugFixes = it.bugFixes,
-                    modifier = Modifier
-                )
+            items(items = changeLogEntries, key = { it.versionNumber }
+            ) {
+                if (it.versionNumber.isNotBlank()) {
+                    ChangeLogEntryLayout(
+                        versionNumber = it.versionNumber,
+                        buildDate = it.buildDate,
+                        changes = it.changes,
+                        improvements = it.improvements,
+                        bugFixes = it.bugFixes,
+                        modifier = Modifier
+                    )
+                }
             }
         }
     }
