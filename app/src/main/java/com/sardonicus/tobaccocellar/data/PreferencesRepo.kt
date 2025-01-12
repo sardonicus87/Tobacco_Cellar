@@ -26,11 +26,12 @@ class PreferencesRepo(
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
+        fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
     }
 
-    /** Setting HomeScreen view options */
+    /** Setting HomeScreen view options **/
     // setting list/table view //
     val isTableView: Flow<Boolean> = dataStore.data
         .catch {
@@ -84,7 +85,7 @@ class PreferencesRepo(
     }
 
 
-    /** Setting theme options */
+    /** Setting theme options **/
     val themeSetting: Flow<String> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -104,7 +105,7 @@ class PreferencesRepo(
     }
 
 
-    /** Setting Tin Converter rates */
+    /** Setting Tin Converter rates **/
     suspend fun getTinOzConversionRate(): Double {
         return dataStore.data.firstOrNull()?.get(TIN_OZ_CONVERSION_RATE) ?: 1.75
     }
@@ -124,5 +125,26 @@ class PreferencesRepo(
             preferences[TIN_GRAMS_CONVERSION_RATE] = rate
         }
     }
+
+
+    /** Sync status **/
+    suspend fun setItemSyncState(itemId: Int, isSynced: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[itemsSyncKey(itemId)] = isSynced
+        }
+    }
+
+    fun getItemSyncState(itemId: Int): Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }
+        .map { preferences ->
+            preferences[itemsSyncKey(itemId)] ?: false
+        }
 
 }
