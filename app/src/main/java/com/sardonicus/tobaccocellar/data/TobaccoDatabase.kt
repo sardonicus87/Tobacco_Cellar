@@ -68,8 +68,8 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 ON 'items_components_cross_ref' ('componentId')
             """
         )
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'subGenre' TEXT NOT NULL")
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'cut' TEXT NOT NULL")
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'subGenre' TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'cut' TEXT NOT NULL DEFAULT ''")
         db.execSQL("ALTER TABLE 'items' ADD COLUMN 'inProduction' INTEGER NOT NULL DEFAULT 1")
     }
 }
