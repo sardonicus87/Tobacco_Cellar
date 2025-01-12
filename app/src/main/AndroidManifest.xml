@@ -10,6 +10,7 @@
         android:roundIcon="@mipmap/tc_launcher1_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Start"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="34">
         <activity
             android:name=".MainActivity"
