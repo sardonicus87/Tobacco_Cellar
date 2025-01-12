@@ -1,8 +1,12 @@
 package com.sardonicus.tobaccocellar.data
 
+import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.Junction
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 
 @Entity(
     tableName = "items",
@@ -18,4 +22,86 @@ data class Items(
     val favorite: Boolean,
     val disliked: Boolean,
     val notes: String,
+    val subGenre: String,
+    val cut: String,
+    val inProduction: Boolean,
+)
+
+
+@Entity(
+    tableName = "tins",
+    foreignKeys = [
+        ForeignKey(
+            entity = Items::class,
+            parentColumns = ["id"],
+            childColumns = ["itemsId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = (["itemsId", "tinLabel"]), unique = true)]
+)
+data class Tins(
+    @PrimaryKey(autoGenerate = true)
+    val tinId: Int = 0,
+    val itemsId: Int,
+    val tinLabel: String,
+    val container: String,
+    val tinQuantity: Double,
+    val unit: String,
+    val manufactureDate: Long?,
+    val cellarDate: Long?,
+    val openDate: Long?,
+)
+
+@Entity(
+    tableName = "components",
+    indices = [Index(value = (["componentName"]), unique = true)]
+)
+data class Components(
+    @PrimaryKey(autoGenerate = true)
+    val componentId: Int = 0,
+    val componentName: String,
+)
+
+@Entity(
+    tableName = "items_components_cross_ref",
+    primaryKeys = ["itemId", "componentId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = Items::class,
+            parentColumns = ["id"],
+            childColumns = ["itemId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Components::class,
+            parentColumns = ["componentId"],
+            childColumns = ["componentId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = (["componentId"]))]
+)
+data class ItemsComponentsCrossRef(
+    val itemId: Int,
+    val componentId: Int,
+)
+
+data class ItemsTinsAndComponents(
+    @Embedded val item: Items,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "itemsId"
+    )
+    val tins: List<Tins>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "componentId",
+        associateBy = Junction(
+            value = ItemsComponentsCrossRef::class,
+            parentColumn = "itemId",
+            entityColumn = "componentId"
+        )
+    )
+    val components: List<Components> = emptyList(),
 )
