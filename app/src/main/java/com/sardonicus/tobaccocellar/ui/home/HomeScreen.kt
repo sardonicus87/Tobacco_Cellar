@@ -139,7 +139,7 @@ fun HomeScreen(
     val activeItemId by viewmodel.menuItemId
     val isMenuShown by viewmodel.isMenuShown
     val focusManager = LocalFocusManager.current
-    val currentPosition by viewmodel.currentPosition.collectAsState()
+    val currentPosition by filterViewModel.currentPosition.collectAsState()
 
 
     if (showSnackbar.value) {
@@ -217,7 +217,7 @@ fun HomeScreen(
                     items = homeUiState.items,
                     filterViewModel = filterViewModel,
                     isTableView = isTableView,
-                    updateScrollPosition = viewmodel::updateScrollPosition,
+                    updateScrollPosition = filterViewModel::updateScrollPosition,
                     currentPosition = currentPosition,
                     blendSearchText = blendSearchText,
                     onItemClick = navigateToEditEntry,
@@ -737,8 +737,9 @@ fun ListViewMode(
 
         val coroutineScope = rememberCoroutineScope()
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-        val newItemId by filterViewModel.newItemId.collectAsState()
-        val newItemIndex = itemsList.indexOfFirst { it.id == newItemId }
+        val savedItemId by filterViewModel.savedItemId.collectAsState()
+        val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
+    //    val shouldReturn by filterViewModel.shouldReturn.collectAsState()
 
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
@@ -771,17 +772,51 @@ fun ListViewMode(
             }
         }
 
-        LaunchedEffect(newItemIndex) {
-            if (newItemIndex != -1) {
+        LaunchedEffect(savedItemIndex) {
+            if (savedItemIndex != -1) {
                 delay(25)
                 withFrameNanos {
                     coroutineScope.launch {
-                        columnState.scrollToItem(newItemIndex)
+                        if (savedItemIndex > 1 && savedItemIndex < (itemsList.size - 1)) {
+                            val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                            columnState.scrollToItem(savedItemIndex, offset)
+                        } else {
+                            columnState.scrollToItem(savedItemIndex)
+                        }
                     }
                 }
                 filterViewModel.resetScroll()
             }
         }
+
+//        LaunchedEffect(isMenuShown) {
+//            if (isMenuShown) {
+//                val layoutInfo = columnState.layoutInfo
+//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+//
+//                if (firstVisibleItem != null) {
+//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+//                    filterViewModel.returnScroll()
+//                }
+//            }
+//        }
+
+//        LaunchedEffect(shouldReturn) {
+//            if (shouldReturn) {
+//                delay(25)
+//                val index = currentPosition[0]
+//                val offset = currentPosition[1]
+//
+//                if (index != null && offset != null) {
+//                    withFrameNanos {
+//                        coroutineScope.launch {
+//                            columnState.scrollToItem(index, offset)
+//                        }
+//                    }
+//                }
+//                filterViewModel.resetScroll()
+//            }
+//        }
     }
 }
 
@@ -1136,6 +1171,7 @@ fun TableLayout(
 
         // Items
         val columnState = rememberLazyListState()
+//        var itemClicked by remember { mutableStateOf(false) }
 
         LazyColumn(
             modifier = Modifier
@@ -1174,7 +1210,10 @@ fun TableLayout(
                                         modifier = Modifier
                                             .align(alignment),
                                         contentAlignment = alignment,
-                                        onClick = { onItemClick(item) }
+                                        onClick = {
+                                        //    filterViewModel.returnScroll()
+                                            onItemClick(item)
+                                        }
                                     )
                                 }
                                 3 -> { // fav/disliked
@@ -1248,8 +1287,9 @@ fun TableLayout(
 
         val coroutineScope = rememberCoroutineScope()
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-        val newItemId by filterViewModel.newItemId.collectAsState()
-        val newItemIndex = sortedItems.indexOfFirst { it.id == newItemId }
+        val savedItemId by filterViewModel.savedItemId.collectAsState()
+        val savedItemIndex = sortedItems.indexOfFirst { it.id == savedItemId }
+        val shouldReturn by filterViewModel.shouldReturn.collectAsState()
 
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
@@ -1275,6 +1315,18 @@ fun TableLayout(
             }
         }
 
+//        LaunchedEffect(itemClicked){
+//            if (itemClicked) {
+//                val layoutInfo = columnState.layoutInfo
+//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+//
+//                if (firstVisibleItem != null) {
+//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+//                    filterViewModel.returnScroll()
+//                }
+//            }
+//        }
+
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
                 columnState.scrollToItem(0)
@@ -1282,12 +1334,17 @@ fun TableLayout(
             }
         }
 
-        LaunchedEffect(newItemIndex) {
-            if (newItemIndex != -1) {
+        LaunchedEffect(savedItemIndex) {
+            if (savedItemIndex != -1) {
                 delay(25)
                 withFrameNanos {
                     coroutineScope.launch {
-                        columnState.scrollToItem(newItemIndex)
+                        if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
+                            val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                            columnState.scrollToItem(savedItemIndex, offset)
+                        } else {
+                            columnState.scrollToItem(savedItemIndex)
+                        }
                     }
                 }
                 filterViewModel.resetScroll()
@@ -1298,6 +1355,22 @@ fun TableLayout(
             columnState.scrollToItem(0)
         }
 
+//        LaunchedEffect(shouldReturn) {
+//            if (shouldReturn) {
+//                delay(25)
+//                val index = currentPosition[0]
+//                val offset = currentPosition[1]
+//
+//                if (index != null && offset != null) {
+//                    withFrameNanos {
+//                        coroutineScope.launch {
+//                            columnState.scrollToItem(index, offset)
+//                        }
+//                    }
+//                }
+//                filterViewModel.resetScroll()
+//            }
+//        }
     }
 }
 
