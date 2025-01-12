@@ -175,15 +175,6 @@ class HomeViewModel(
     }
 
 
-    /** remember scroll position on search **/
-    private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
-    val currentPosition: StateFlow<Map<Int, Int>> = _currentPosition.asStateFlow()
-
-    fun updateScrollPosition(index: Int, offset: Int) {
-        _currentPosition.value = mapOf(0 to index, 1 to offset)
-    }
-
-
     /** csvExport for TopAppBar **/
     private val _showSnackbar = MutableStateFlow(false)
     val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()

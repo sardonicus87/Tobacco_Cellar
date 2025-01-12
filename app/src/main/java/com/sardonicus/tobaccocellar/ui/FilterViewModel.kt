@@ -3,7 +3,7 @@ package com.sardonicus.tobaccocellar.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsRepository
-import com.sardonicus.tobaccocellar.ui.items.ItemAddedEvent
+import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -132,20 +132,36 @@ class FilterViewModel (
     private val _shouldScrollUp = MutableStateFlow(false)
     val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp
 
-    private val _newItemId = MutableStateFlow(-1)
-    val newItemId: StateFlow<Int> = _newItemId.asStateFlow()
+    private val _savedItemId = MutableStateFlow(-1)
+    val savedItemId: StateFlow<Int> = _savedItemId.asStateFlow()
+
+    private val _shouldReturn = MutableStateFlow(false)
+    val shouldReturn: StateFlow<Boolean> = _shouldReturn.asStateFlow()
+
+    // remember scroll position //
+    private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
+    val currentPosition: StateFlow<Map<Int, Int>> = _currentPosition.asStateFlow()
+
+    fun updateScrollPosition(index: Int, offset: Int) {
+        _currentPosition.value = mapOf(0 to index, 1 to offset)
+    }
+
+    fun returnScroll() {
+        _shouldReturn.value = true
+    }
 
     fun resetScroll() {
         _shouldScrollUp.value = false
-        _newItemId.value = -1
+        _shouldReturn.value = false
+        _savedItemId.value = -1
+        _currentPosition.value = mapOf(0 to 0, 1 to 0)
     }
-
 
     init {
         viewModelScope.launch {
             EventBus.events.collect {
-                if (it is ItemAddedEvent) {
-                    _newItemId.value = it.newItemId.toInt()
+                if (it is ItemSavedEvent) {
+                    _savedItemId.value = it.savedItemId.toInt()
                 }
             }
         }
