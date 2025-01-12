@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface ItemsRepository {
 
     /** Database operations **/
+    // Items //
     suspend fun insertItem(item: Items): Long
 
     suspend fun insertMultiple(items: List<Items>): List<Long>
@@ -17,17 +18,34 @@ interface ItemsRepository {
 
     suspend fun deleteAllItems()
 
+    // Components //
+    suspend fun insertComponent(component: Components): Long
+
+    suspend fun insertComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
+
+    suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int)
+
+//    suspend fun updateComponents(id: Int, components: List<String>)
+//
+//    suspend fun updateComponentCrossRef(id: Int, components: List<String>)
+
 
     /** Get all items **/
     fun getAllItemsStream(): Flow<List<Items>>
 
     fun getAllItemsExport(): List<Items>
 
+    fun getAllComponentsStream(): Flow<List<Components>>
+
 
     /** Get single item **/
     fun getItemStream(id: Int): Flow<Items?>
 
+    fun getComponentsForItemStream(id: Int): Flow<List<Components>>
+
     suspend fun getItemIdByIndex(brand: String, blend: String): Int
+
+    suspend fun getComponentIdByName(name: String): Int?
 
 
     /** Checks **/
@@ -41,11 +59,17 @@ interface ItemsRepository {
 
     fun getAllTypesStream(): Flow<List<String>>
 
+    fun getAllSubGenresStream(): Flow<List<String>>
+
+    fun getAllCutsStream(): Flow<List<String>>
+
     fun getAllFavoritesStream(): Flow<List<Boolean>>
 
     fun getAllDislikeStream(): Flow<List<Boolean>>
 
     fun getAllZeroQuantityStream(): Flow<List<Boolean>>
+
+    fun getAllCompNamesStream(): Flow<List<String>>
 
 
     /** Get counts **/
@@ -84,16 +108,16 @@ interface ItemsRepository {
     fun getItemByIndex(brand: String, blend: String): Items?
 
 
-    /** Special functions **/
-    suspend fun getFilteredItems(
-        brands: List<String>?,
-        types: List<String>?,
-        favorites: Boolean?,
-        dislikeds: Boolean?,
-        neutral: Boolean?,
-        nonNeutral: Boolean?,
-        inStock: Boolean?,
-        outOfStock: Boolean?,
-    ): Flow<List<Items>>
+//    /** Special functions **/
+//    suspend fun getFilteredItems(
+//        brands: List<String>?,
+//        types: List<String>?,
+//        favorites: Boolean?,
+//        dislikeds: Boolean?,
+//        neutral: Boolean?,
+//        nonNeutral: Boolean?,
+//        inStock: Boolean?,
+//        outOfStock: Boolean?,
+//    ): Flow<List<Items>>
 
 }

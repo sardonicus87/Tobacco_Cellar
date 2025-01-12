@@ -5,9 +5,8 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.RawQuery
+import androidx.room.Transaction
 import androidx.room.Update
-import androidx.sqlite.db.SupportSQLiteQuery
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
@@ -37,9 +36,20 @@ interface ItemsDao {
     @Query("DELETE FROM items")
     suspend fun deleteAllItems()
 
+    // Components //
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertComponent(component: Components): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
+
+    @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId AND componentId = :componentId")
+    suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int)
+
 
     /** Get all items **/
     // Get all items flow //
+    @Transaction
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItems(): Flow<List<Items>>
 
@@ -47,14 +57,34 @@ interface ItemsDao {
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItemsExport(): List<Items>
 
+    // Get all components flow //
+    @Query("SELECT * FROM components ORDER BY componentName ASC")
+    fun getAllComponents(): Flow<List<Components>>
+
 
     /** Get single item **/
     // Get item by id //
     @Query("SELECT * FROM items WHERE id = :id")
     fun getItem(id: Int): Flow<Items>
 
+    // Get components by item id //
+    @Transaction
+    @Query(
+        """
+        SELECT T2.* 
+        FROM items_components_cross_ref AS T1 
+        INNER JOIN components AS T2
+        ON T1.componentId = T2.componentId
+        WHERE T1.itemId = :itemId
+        """
+    )
+    fun getComponentsForItemStream(itemId: Int): Flow<List<Components>>
+
     @Query("SELECT id FROM items WHERE brand = :brand AND blend = :blend")
     suspend fun getItemIdByIndex(brand: String, blend: String): Int
+
+    @Query("SELECT componentId FROM components WHERE componentName = :name")
+    suspend fun getComponentIdByName(name: String): Int?
 
 
     /** Checks **/
@@ -75,6 +105,14 @@ interface ItemsDao {
     @Query("SELECT type FROM items ORDER BY type ASC")
     fun getAllTypes(): Flow<List<String>>
 
+    // Get all subgenres flow //
+    @Query("SELECT DISTINCT subGenre FROM items ORDER BY subGenre ASC")
+    fun getAllSubGenres(): Flow<List<String>>
+
+    // Get all cuts flow //
+    @Query("SELECT DISTINCT cut FROM items ORDER BY cut ASC")
+    fun getAllCuts(): Flow<List<String>>
+
     // Get all favorites flow //
     @Query("SELECT favorite FROM items")
     fun getAllFavorites(): Flow<List<Boolean>>
@@ -86,6 +124,10 @@ interface ItemsDao {
     // Get all zero quantities flow //
     @Query("SELECT quantity FROM items WHERE quantity = 0")
     fun getAllZeroQuantity(): Flow<List<Boolean>>
+
+    // Get all component names flow //
+    @Query("SELECT componentName FROM components ORDER BY componentName ASC")
+    fun getAllCompNames(): Flow<List<String>>
 
 
     /** Get counts **/
@@ -149,10 +191,10 @@ interface ItemsDao {
     fun getItemByIndex(brand: String, blend: String): Items?
 
 
-    /** Special functions **/
-    // Filter function //
-    @RawQuery(observedEntities = [Items::class])
-    fun getFilteredItems(query: SupportSQLiteQuery): Flow<List<Items>>
+//    /** Special functions **/
+//    // Filter function //
+//    @RawQuery(observedEntities = [Items::class])
+//    fun getFilteredItems(query: SupportSQLiteQuery): Flow<List<Items>>
 
 
 }
