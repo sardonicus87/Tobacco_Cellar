@@ -4,14 +4,81 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
-//val MIGRATION_1_2 = object : Migration(1, 2) {
-//    override fun migrate(db: SupportSQLiteDatabase) {
-//
-//    }
-//}
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+                CREATE TABLE IF NOT EXISTS 'tins' (
+                    'tinId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    'itemsId' INTEGER NOT NULL,
+                    'tinLabel' TEXT NOT NULL,
+                    'container' TEXT NOT NULL,
+                    'tinQuantity' REAL NOT NULL,
+                    'unit' TEXT NOT NULL,
+                    'manufactureDate' INTEGER,
+                    'cellarDate' INTEGER,
+                    'openDate' INTEGER,
+                    FOREIGN KEY('itemsId') REFERENCES 'items' ('id')
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+            """
+        )
+        db.execSQL(
+            """
+                CREATE UNIQUE INDEX IF NOT EXISTS
+                'index_tins_itemsId_tinLabel'
+                ON 'tins' ('itemsId', 'tinLabel')
+            """
+        )
+        db.execSQL(
+            """
+                CREATE TABLE IF NOT EXISTS 'components' (
+                    'componentId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    'componentName' TEXT NOT NULL
+                )
+            """
+        )
+        db.execSQL(
+            """
+                CREATE UNIQUE INDEX IF NOT EXISTS
+                'index_components_componentName'
+                ON 'components' ('componentName')
+            """
+        )
+        db.execSQL(
+            """
+                CREATE TABLE IF NOT EXISTS 'items_components_cross_ref' (
+                    'itemId' INTEGER NOT NULL,
+                    'componentId' INTEGER NOT NULL,
+                    PRIMARY KEY ('itemId', 'componentId'),
+                    FOREIGN KEY('itemId') REFERENCES 'items' ('id')
+                    ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY('componentId') REFERENCES 'components' ('componentId')
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+            """
+        )
+        db.execSQL(
+            """
+                CREATE INDEX IF NOT EXISTS
+                'index_items_components_cross_ref_componentId'
+                ON 'items_components_cross_ref' ('componentId')
+            """
+        )
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'subGenre' TEXT NOT NULL")
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'cut' TEXT NOT NULL")
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'inProduction' INTEGER NOT NULL DEFAULT 1")
+    }
+}
 
-@Database(entities = [Items::class], version = 1, exportSchema = true)
+@Database(
+    entities = [Items::class, Tins::class, Components::class, ItemsComponentsCrossRef::class],
+    version = 2,
+    exportSchema = true
+)
 abstract class TobaccoDatabase : RoomDatabase() {
 
     abstract fun itemsDao(): ItemsDao
@@ -23,7 +90,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
         fun getDatabase(context: Context): TobaccoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database")
-//                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2)
                     .build()
                     .also { Instance = it }
             }
