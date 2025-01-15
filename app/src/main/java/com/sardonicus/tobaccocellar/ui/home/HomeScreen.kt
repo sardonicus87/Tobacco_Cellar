@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -739,7 +740,7 @@ fun ListViewMode(
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
-    //    val shouldReturn by filterViewModel.shouldReturn.collectAsState()
+        val shouldReturn by filterViewModel.shouldReturn.collectAsState()
 
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
@@ -747,6 +748,7 @@ fun ListViewMode(
                 val offset = currentPosition[1]
 
                 if (index != null && offset != null) {
+                    delay(25)
                     withFrameNanos {
                         coroutineScope.launch {
                             columnState.scrollToItem(index, offset)
@@ -789,34 +791,33 @@ fun ListViewMode(
             }
         }
 
-//        LaunchedEffect(isMenuShown) {
-//            if (isMenuShown) {
-//                val layoutInfo = columnState.layoutInfo
-//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-//
-//                if (firstVisibleItem != null) {
-//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-//                    filterViewModel.returnScroll()
-//                }
-//            }
-//        }
+        LaunchedEffect(menuItemId) {
+            if (isMenuShown) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 
-//        LaunchedEffect(shouldReturn) {
-//            if (shouldReturn) {
-//                delay(25)
-//                val index = currentPosition[0]
-//                val offset = currentPosition[1]
-//
-//                if (index != null && offset != null) {
-//                    withFrameNanos {
-//                        coroutineScope.launch {
-//                            columnState.scrollToItem(index, offset)
-//                        }
-//                    }
-//                }
-//                filterViewModel.resetScroll()
-//            }
-//        }
+                if (firstVisibleItem != null) {
+                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                }
+            }
+        }
+
+        LaunchedEffect(itemsList) {
+            if (shouldReturn) {
+                delay(25)
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                    filterViewModel.resetScroll()
+                }
+            }
+        }
     }
 }
 
@@ -1171,7 +1172,7 @@ fun TableLayout(
 
         // Items
         val columnState = rememberLazyListState()
-//        var itemClicked by remember { mutableStateOf(false) }
+        var itemClicked by remember { mutableStateOf(false) }
 
         LazyColumn(
             modifier = Modifier
@@ -1211,7 +1212,7 @@ fun TableLayout(
                                             .align(alignment),
                                         contentAlignment = alignment,
                                         onClick = {
-                                        //    filterViewModel.returnScroll()
+                                            itemClicked = true
                                             onItemClick(item)
                                         }
                                     )
@@ -1297,6 +1298,7 @@ fun TableLayout(
                 val offset = currentPosition[1]
 
                 if (index != null && offset != null) {
+                    delay(25)
                     withFrameNanos {
                         coroutineScope.launch {
                             columnState.scrollToItem(index, offset)
@@ -1314,18 +1316,6 @@ fun TableLayout(
                 }
             }
         }
-
-//        LaunchedEffect(itemClicked){
-//            if (itemClicked) {
-//                val layoutInfo = columnState.layoutInfo
-//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-//
-//                if (firstVisibleItem != null) {
-//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-//                    filterViewModel.returnScroll()
-//                }
-//            }
-//        }
 
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
@@ -1355,22 +1345,31 @@ fun TableLayout(
             columnState.scrollToItem(0)
         }
 
-//        LaunchedEffect(shouldReturn) {
-//            if (shouldReturn) {
-//                delay(25)
-//                val index = currentPosition[0]
-//                val offset = currentPosition[1]
-//
-//                if (index != null && offset != null) {
-//                    withFrameNanos {
-//                        coroutineScope.launch {
-//                            columnState.scrollToItem(index, offset)
-//                        }
-//                    }
-//                }
-//                filterViewModel.resetScroll()
-//            }
-//        }
+        LaunchedEffect(itemClicked) {
+            val layoutInfo = columnState.layoutInfo
+            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+            if (firstVisibleItem != null) {
+                updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+            }
+        }
+
+        LaunchedEffect(sortedItems) {
+            if (shouldReturn) {
+                delay(25)
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                    filterViewModel.resetScroll()
+                }
+            }
+        }
     }
 }
 
