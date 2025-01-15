@@ -14,10 +14,10 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 CREATE TABLE IF NOT EXISTS 'tins' (
                     'tinId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     'itemsId' INTEGER NOT NULL,
-                    'tinLabel' TEXT NOT NULL,
-                    'container' TEXT NOT NULL,
+                    'tinLabel' TEXT NOT NULL DEFAULT '',
+                    'container' TEXT NOT NULL DEFAULT '',
                     'tinQuantity' REAL NOT NULL,
-                    'unit' TEXT NOT NULL,
+                    'unit' TEXT NOT NULL DEFAULT '',
                     'manufactureDate' INTEGER,
                     'cellarDate' INTEGER,
                     'openDate' INTEGER,
@@ -37,7 +37,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             """
                 CREATE TABLE IF NOT EXISTS 'components' (
                     'componentId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                    'componentName' TEXT NOT NULL
+                    'componentName' TEXT NOT NULL DEFAULT ''
                 )
             """
         )
