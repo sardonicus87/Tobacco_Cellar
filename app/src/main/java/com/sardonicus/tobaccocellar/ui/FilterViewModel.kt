@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
+import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -162,6 +163,9 @@ class FilterViewModel (
             EventBus.events.collect {
                 if (it is ItemSavedEvent) {
                     _savedItemId.value = it.savedItemId.toInt()
+                }
+                if (it is ItemUpdatedEvent) {
+                    _shouldReturn.value = true
                 }
             }
         }
