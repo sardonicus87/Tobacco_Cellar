@@ -176,6 +176,7 @@ fun CellarTopAppBar(
     navigateToHelp: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -204,6 +205,7 @@ fun CellarTopAppBar(
                         contentDescription = null
                     )
                 }
+                filterViewModel.returnScroll()
             }
         },
         actions = {
@@ -360,7 +362,6 @@ fun CellarBottomAppBar(
     navigateToAddEntry: () -> Unit = {},
     filterViewModel: FilterViewModel,
 ) {
-
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -717,10 +718,6 @@ fun OtherFiltersSection(
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-//        Spacer(
-//            modifier = Modifier
-//                .weight(.5f, false)
-//        )
         Column(
             modifier = Modifier
                 .border(
@@ -838,12 +835,6 @@ fun OtherFiltersSection(
                 }
             }
         }
-
-//        Spacer(
-//            modifier = Modifier
-//                .weight(.5f)
-//        )
-
         Column(
             modifier = Modifier
                 .border(
@@ -873,10 +864,6 @@ fun OtherFiltersSection(
                 modifier = Modifier
             )
         }
-//        Spacer(
-//            modifier = Modifier
-//                .weight(.5f, false)
-//        )
     }
 }
 
@@ -886,6 +873,8 @@ fun CheckboxWithLabel(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    fontSize: TextUnit = 15.sp,
+    height: Dp = 36.dp,
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
     colors: CheckboxColors = CheckboxDefaults.colors(),
@@ -893,7 +882,7 @@ fun CheckboxWithLabel(
     Row(
         modifier = modifier
             .padding(0.dp)
-            .height(36.dp)
+            .height(height)
             .offset(x = (-2).dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
@@ -912,7 +901,7 @@ fun CheckboxWithLabel(
                 .offset(x = (-4).dp)
                 .padding(end = 6.dp),
             color = fontColor,
-            fontSize = 15.sp,
+            fontSize = fontSize,
         )
     }
 }
@@ -1014,7 +1003,6 @@ fun TypeFilterSection(
     }
 }
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BrandFilterSection(
@@ -1033,6 +1021,7 @@ fun BrandFilterSection(
     Column(
         modifier = modifier
     ) {
+        // Search bar and brand include/exclude button //
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -1073,6 +1062,7 @@ fun BrandFilterSection(
                 singleLine = true,
                 maxLines = 1,
             )
+            // Brand include/exclude button
             Column(
                 modifier = Modifier
                     .padding(start = 12.dp)
@@ -1118,8 +1108,8 @@ fun BrandFilterSection(
             }
         }
 
+        // Selectable brands row //
         val lazyListState = rememberLazyListState()
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1209,7 +1199,9 @@ fun BrandFilterSection(
             )
         }
 
+        // Selected brands chip box //
         BoxWithConstraints {
+            val boxWithConstraintsScope = this
             val maxWidth = (maxWidth * 0.32f) - 4.dp
             val chipCountToShow = 5
             val overflowCount =
