@@ -594,11 +594,16 @@ fun NoteDialog(
             modifier = Modifier
                 .padding(0.dp)
                 .wrapContentWidth()
-                .wrapContentHeight(),
+                .wrapContentHeight()
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                    RoundedCornerShape(8.dp)
+                ),
             shape = RoundedCornerShape(16.dp),
         //    elevation = CardDefaults.cardElevation(5.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.Unspecified,
+                containerColor = MaterialTheme.colorScheme.background,
         //        contentColor = MaterialTheme.colorScheme.onBackground,
             ),
         ) {
@@ -776,7 +781,7 @@ fun ListViewMode(
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
-                delay(25)
+                delay(50)
                 withFrameNanos {
                     coroutineScope.launch {
                         if (savedItemIndex > 1 && savedItemIndex < (itemsList.size - 1)) {
@@ -804,7 +809,7 @@ fun ListViewMode(
 
         LaunchedEffect(itemsList) {
             if (shouldReturn) {
-                delay(25)
+                delay(50)
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
@@ -1326,7 +1331,7 @@ fun TableLayout(
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
-                delay(25)
+                delay(50)
                 withFrameNanos {
                     coroutineScope.launch {
                         if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
@@ -1356,7 +1361,7 @@ fun TableLayout(
 
         LaunchedEffect(sortedItems) {
             if (shouldReturn) {
-                delay(25)
+                delay(50)
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
