@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.stats
 
 
 import android.icu.text.DecimalFormat
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -874,7 +875,11 @@ private fun DrawScope.drawLabels(
             listY.toFloat()
         } else {
             // normal on slice labels
-            labelY - (combinedHeight * yOffsetFactor)
+            if (sweepAngle < 10f && normalizedMidpointAngle > 254f) {
+                (labelY - (combinedHeight * yOffsetFactor)) - combinedHeight
+            } else {
+                labelY - (combinedHeight * yOffsetFactor)
+            }
         }
 
         val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
@@ -885,7 +890,7 @@ private fun DrawScope.drawLabels(
             adjustedLabelX + (labelWidth - percentageWidth) / 2
         }
         val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            if (sweepAngle < 5f && normalizedMidpointAngle > 254f) {
+            if (sweepAngle < 10f && normalizedMidpointAngle > 254f) {
                 // very thin slices at the top of the chart
                 val additionalOffset = if (outsideLabelCount % 2 == 0) {
                     (-1 * (percentageHeight * 0.25f))
@@ -903,6 +908,8 @@ private fun DrawScope.drawLabels(
             // normal inside slice placement
             adjustedLabelY + labelHeight
         }
+
+        Log.d("Pie Charts", "Label: $label, midpointAngle: $normalizedMidpointAngle, sweepAngle: $sweepAngle")
 
         drawText(
             textLayoutResult = textLabel,
