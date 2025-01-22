@@ -1,7 +1,9 @@
 package com.sardonicus.tobaccocellar.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.AddItemClickedEvent
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
@@ -139,6 +141,9 @@ class FilterViewModel (
     private val _shouldReturn = MutableStateFlow(false)
     val shouldReturn: StateFlow<Boolean> = _shouldReturn.asStateFlow()
 
+    private val _addEntryClick = MutableStateFlow(false)
+    val addEntryClick: StateFlow<Boolean> = _addEntryClick.asStateFlow()
+
     // remember scroll position //
     private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
     val currentPosition: StateFlow<Map<Int, Int>> = _currentPosition.asStateFlow()
@@ -149,23 +154,32 @@ class FilterViewModel (
 
     fun returnScroll() {
         _shouldReturn.value = true
+
+        Log.d("FilterViewModel", "returnScroll called")
     }
 
     fun resetScroll() {
         _shouldScrollUp.value = false
         _shouldReturn.value = false
+        _addEntryClick.value = false
         _savedItemId.value = -1
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
+
+        Log.d("FilterViewModel", "resetScroll called")
     }
 
     init {
         viewModelScope.launch {
             EventBus.events.collect {
                 if (it is ItemSavedEvent) {
+                    _shouldReturn.value = false
                     _savedItemId.value = it.savedItemId.toInt()
                 }
                 if (it is ItemUpdatedEvent) {
                     _shouldReturn.value = true
+                }
+                if (it is AddItemClickedEvent) {
+                    _addEntryClick.value = true
                 }
             }
         }
