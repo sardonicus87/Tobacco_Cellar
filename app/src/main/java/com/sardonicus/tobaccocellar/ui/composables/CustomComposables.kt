@@ -5,7 +5,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,16 +17,30 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MenuItemColors
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 
 /** Dropdown menu item with inner-padding access */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +89,12 @@ fun CustomMenuItem(
 //        }
 //    }
 
+    TextField(
+        value = "",
+        onValueChange = {},
+        modifier = modifier
+    )
+
     Box(
         modifier = modifier
             .clickable(enabled) { onClick() }
@@ -98,6 +120,7 @@ fun CustomTextField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     readOnly: Boolean = false,
+    isError: Boolean = false,
     textStyle: TextStyle = LocalTextStyle.current,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
@@ -108,6 +131,10 @@ fun CustomTextField(
     shape: Shape = TextFieldDefaults.shape,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     contentPadding:  PaddingValues = contentPaddingWithoutLabel(),
+    leadingIcon: @Composable (() -> Unit)? = null,
+    placeholder: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    supportingText: @Composable (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -133,12 +160,79 @@ fun CustomTextField(
             innerTextField = innerTextField,
             singleLine = singleLine,
             enabled = enabled,
+            isError = isError,
             interactionSource = interactionSource,
             colors = colors.copy(
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
             shape = shape,
             contentPadding = contentPadding,
+            leadingIcon = leadingIcon,
+            placeholder = placeholder,
+            trailingIcon = trailingIcon,
+            supportingText = supportingText,
+        )
+    }
+}
+
+
+/** Auto-resizing Text() composable **/
+@Composable
+fun AutoSizeText(
+    text: String,
+    fontSize: TextUnit,
+    minFontSize: TextUnit,
+    modifier: Modifier = Modifier,
+    width: Dp = Dp.Unspecified,
+    height: Dp = Dp.Unspecified,
+    color: Color = Color.Unspecified,
+    fontStyle: FontStyle? = null,
+    fontWeight: FontWeight? = null,
+    fontFamily: FontFamily? = null,
+    letterSpacing: TextUnit = TextUnit.Unspecified,
+    textDecoration: TextDecoration? = null,
+    textAlign: TextAlign? = null,
+    lineHeight: TextUnit = LocalTextStyle.current.lineHeight,
+    overflow: TextOverflow = TextOverflow.Clip,
+    softWrap: Boolean = true,
+    maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 1,
+    style: TextStyle = LocalTextStyle.current
+) {
+    var fontMultiplier by remember { mutableFloatStateOf(1f) }
+    fun updateFontSize(multiplier: Float) {
+        val newSize = fontSize * multiplier
+        if (newSize > minFontSize) { fontMultiplier = multiplier }
+    }
+
+    Box (
+        modifier = Modifier
+            .width(width)
+            .height(height)
+    ) {
+        Text(
+            text = text,
+            modifier = modifier,
+            color = color,
+            fontStyle = fontStyle,
+            fontWeight = fontWeight,
+            fontFamily = fontFamily,
+            letterSpacing = letterSpacing,
+            textDecoration = textDecoration,
+            textAlign = textAlign,
+            overflow = overflow,
+            softWrap = softWrap,
+            maxLines = maxLines,
+            minLines = minLines,
+            onTextLayout = {
+                if (it.hasVisualOverflow) {
+                    updateFontSize(fontMultiplier * 0.99f)
+                }
+            },
+            style = style.copy(
+                fontSize = fontSize * fontMultiplier,
+                lineHeight = lineHeight * fontMultiplier,
+            )
         )
     }
 }
