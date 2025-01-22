@@ -62,6 +62,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -584,7 +585,7 @@ fun NoteDialog(
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier
-            .padding(8.dp),
+            .padding(0.dp),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true
@@ -596,11 +597,12 @@ fun NoteDialog(
                 .wrapContentWidth()
                 .wrapContentHeight()
                 .border(
-                    1.dp,
+                    Dp.Hairline,
                     MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                    RoundedCornerShape(8.dp)
-                ),
-            shape = RoundedCornerShape(16.dp),
+                    MaterialTheme.shapes.large
+                )
+            ,
+            shape = MaterialTheme.shapes.large,
         //    elevation = CardDefaults.cardElevation(5.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.background,
@@ -625,7 +627,7 @@ fun NoteDialog(
                             .weight(1f)
                     )
                     Text(
-                        text = "Note",
+                        text = "Notes",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 20.sp,
                         maxLines = 1,
@@ -647,6 +649,7 @@ fun NoteDialog(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
+                                tint = LocalContentColor.current.copy(alpha = 0.66f),
                                 modifier = Modifier
                                     .padding(0.dp)
                             )
@@ -656,8 +659,8 @@ fun NoteDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
@@ -746,6 +749,7 @@ fun ListViewMode(
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
+        val addEntryClick by filterViewModel.addEntryClick.collectAsState()
 
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
@@ -759,6 +763,7 @@ fun ListViewMode(
                             columnState.scrollToItem(index, offset)
                         }
                     }
+                    filterViewModel.resetScroll()
                 }
             }
 
@@ -768,6 +773,7 @@ fun ListViewMode(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -781,7 +787,7 @@ fun ListViewMode(
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
-                delay(50)
+                delay(55)
                 withFrameNanos {
                     coroutineScope.launch {
                         if (savedItemIndex > 1 && savedItemIndex < (itemsList.size - 1)) {
@@ -803,6 +809,7 @@ fun ListViewMode(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -820,6 +827,18 @@ fun ListViewMode(
                         }
                     }
                     filterViewModel.resetScroll()
+                }
+            }
+        }
+
+        LaunchedEffect(addEntryClick) {
+            if (addEntryClick) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+                if (firstVisibleItem != null) {
+                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -996,7 +1015,7 @@ private fun CellarListItem(
                         modifier = Modifier,
                     ) {
                         Text(
-                            text = "Edit item",
+                            text = "Edit Item",
                             modifier = Modifier,
                             color = LocalContentColor.current,
                             fontWeight = FontWeight.SemiBold,
@@ -1011,7 +1030,7 @@ private fun CellarListItem(
                             }
                         ) {
                             Text(
-                                text = "View note",
+                                text = "View Notes",
                                 modifier = Modifier,
                                 color = LocalContentColor.current,
                                 fontWeight = FontWeight.SemiBold,
@@ -1221,7 +1240,7 @@ fun TableLayout(
                                             onItemClick(item)
                                         }
                                     )
-                                }
+                                } // blend
                                 3 -> { // fav/disliked
                                     val favDisValue = cellValue as Int
                                     val icon = when (favDisValue) {
@@ -1249,7 +1268,7 @@ fun TableLayout(
                                             contentAlignment = alignment
                                         )
                                     }
-                                }
+                                } // fav/disliked
                                 4 -> { // notes
                                     if (cellValue != "") {
                                         Image(
@@ -1267,7 +1286,7 @@ fun TableLayout(
                                             contentAlignment = alignment,
                                         )
                                     }
-                                }
+                                } // notes
                                 5 -> { // quantity
                                     TableCell(
                                         value = "x$cellValue",
@@ -1275,8 +1294,8 @@ fun TableLayout(
                                             .align(alignment),
                                         contentAlignment = alignment,
                                     )
-                                }
-                                else -> { // brand, type
+                                } // quantity
+                                else -> { // [0] brand, [2] type
                                     TableCell(
                                         value = cellValue,
                                         modifier = Modifier
@@ -1296,6 +1315,7 @@ fun TableLayout(
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = sortedItems.indexOfFirst { it.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
+        val addEntryClick by filterViewModel.addEntryClick.collectAsState()
 
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
@@ -1309,6 +1329,7 @@ fun TableLayout(
                             columnState.scrollToItem(index, offset)
                         }
                     }
+                    filterViewModel.resetScroll()
                 }
             }
 
@@ -1318,6 +1339,7 @@ fun TableLayout(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -1331,7 +1353,7 @@ fun TableLayout(
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
-                delay(50)
+                delay(55)
                 withFrameNanos {
                     coroutineScope.launch {
                         if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
@@ -1356,6 +1378,7 @@ fun TableLayout(
 
             if (firstVisibleItem != null) {
                 updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                filterViewModel.returnScroll()
             }
         }
 
@@ -1372,6 +1395,18 @@ fun TableLayout(
                         }
                     }
                     filterViewModel.resetScroll()
+                }
+            }
+        }
+
+        LaunchedEffect(addEntryClick) {
+            if (addEntryClick) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+                if (firstVisibleItem != null) {
+                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.returnScroll()
                 }
             }
         }
