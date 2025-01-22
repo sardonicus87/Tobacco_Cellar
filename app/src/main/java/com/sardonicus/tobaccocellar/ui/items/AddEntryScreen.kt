@@ -1,42 +1,46 @@
 package com.sardonicus.tobaccocellar.ui.items
 
-import android.R.attr.contentDescription
 import android.util.Log
-import android.view.WindowManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,6 +60,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MenuItemColors
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -66,11 +72,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,19 +89,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -102,22 +111,32 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
+import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
+import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 
 object AddEntryDestination : NavigationDestination {
@@ -138,7 +157,7 @@ fun AddEntryScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -173,11 +192,20 @@ fun AddEntryScreen(
         ) {
             AddEntryBody(
                 itemUiState = viewModel.itemUiState,
+                componentUiState = viewModel.componentList,
+                tinDetails = viewModel.tinDetailsState,
+                tinDetailsList = viewModel.tinDetailsList,
+                syncedTins = viewModel.calculateSyncTins(),
                 existState = viewModel.existState,
                 tinConversion = viewModel.tinConversion.value,
                 resetExistState = viewModel::resetExistState,
                 onItemValueChange = viewModel::updateUiState,
-                onTinValueChange = viewModel::updateTinConversion,
+                onTinValueChange = viewModel::updateTinDetails,
+                onComponentChange = viewModel::updateComponentList,
+                onTinConverterChange = viewModel::updateTinConversion,
+                addTin = viewModel::addTin,
+                removeTin = viewModel::removeTin,
+                isTinLabelValid = viewModel::isTinLabelValid,
                 onSaveClick = {
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
@@ -189,12 +217,7 @@ fun AddEntryScreen(
                         }
                     }
                 },
-                onDeleteClick = {
-                    coroutineScope.launch {
-                        viewModel.deleteItem()
-                        navigateBack()
-                    }
-                },
+                onDeleteClick = { },
                 isEditEntry = false,
                 navigateToEditEntry = navigateToEditEntry,
                 modifier = modifier
@@ -209,10 +232,19 @@ fun AddEntryScreen(
 @Composable
 fun AddEntryBody(
     itemUiState: ItemUiState,
+    componentUiState: ComponentList,
+    tinDetails: TinDetails,
+    tinDetailsList: List<TinDetails>,
+    syncedTins: Int,
     tinConversion: TinConversion,
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
-    onTinValueChange: (TinConversion) -> Unit,
+    onTinValueChange: (TinDetails) -> Unit,
+    isTinLabelValid: (String, Int) -> Boolean,
+    onComponentChange: (String) -> Unit,
+    onTinConverterChange: (TinConversion) -> Unit,
+    addTin: () -> Unit,
+    removeTin: (Int) -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
@@ -227,14 +259,24 @@ fun AddEntryBody(
             .fillMaxWidth()
             .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ItemInputForm(
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
+            componentUiState = componentUiState,
+            tinDetails = tinDetails,
+            tinDetailsList = tinDetailsList,
+            syncedTins = syncedTins,
             tinConversion = tinConversion,
             onValueChange = onItemValueChange,
             onTinValueChange = onTinValueChange,
+            isTinLabelValid = isTinLabelValid,
+            onComponentChange = onComponentChange,
+            onTinConverterChange = onTinConverterChange,
+            addTin = addTin,
+            removeTin = removeTin,
             isEditEntry = isEditEntry,
             modifier = Modifier
                 .fillMaxWidth()
@@ -379,14 +421,23 @@ private fun DeleteConfirmationDialog(
 fun ItemInputForm(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
+    componentUiState: ComponentList,
+    tinDetails: TinDetails,
+    tinDetailsList: List<TinDetails>,
+    syncedTins: Int,
     tinConversion: TinConversion,
     isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
-    onTinValueChange: (TinConversion) -> Unit,
+    onTinValueChange: (TinDetails) -> Unit,
+    isTinLabelValid: (String, Int) -> Boolean,
+    onComponentChange: (String) -> Unit,
+    onTinConverterChange: (TinConversion) -> Unit,
+    addTin: () -> Unit,
+    removeTin: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val titles = listOf("Item Details", "Notes")
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val titles = listOf("Basic Details", "More Details", "Tins")
 
 
     Column(
@@ -442,18 +493,34 @@ fun ItemInputForm(
             }
         }
         when (selectedTabIndex) {
-            0 -> ItemDetailsEntry(
+            0 -> BasicDetails(
                 itemDetails = itemDetails,
                 itemUiState = itemUiState,
+                syncedTins = syncedTins,
                 tinConversion = tinConversion,
                 isEditEntry = isEditEntry,
                 onValueChange = onValueChange,
-                onTinValueChange = onTinValueChange,
+                onTinValueChange = onTinConverterChange,
                 modifier = Modifier,
             )
 
-            1 -> NotesEntry(
+            1 -> MoreDetails(
                 itemDetails = itemDetails,
+                itemUiState = itemUiState,
+                componentList = componentUiState,
+                onValueChange = onValueChange,
+                onComponentChange = onComponentChange,
+                modifier = Modifier
+            )
+
+            2 -> TinsEntry(
+                tinDetails = tinDetails,
+                tinDetailsList = tinDetailsList,
+                onTinValueChange = onTinValueChange,
+                isTinLabelValid = isTinLabelValid,
+                addTin = addTin,
+                removeTin = removeTin,
+                itemUiState = itemUiState,
                 onValueChange = onValueChange,
                 modifier = Modifier
             )
@@ -465,9 +532,10 @@ fun ItemInputForm(
 
 
 @Composable
-fun ItemDetailsEntry(
+fun BasicDetails(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
+    syncedTins: Int,
     tinConversion: TinConversion,
     isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
@@ -493,154 +561,311 @@ fun ItemDetailsEntry(
                     focusManager.clearFocus()
                 }
             )
-            .padding(top = 8.dp, bottom = 0.dp, start = 8.dp, end = 8.dp),
+            .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-
-        // Required Fields //
+        // Brand //
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Required Fields:",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                text = "Brand:",
                 modifier = Modifier
+                    .width(80.dp)
             )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
 
-            // Brand //
-            Row(
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = itemDetails.brand,
+                onValueChange = {
+                    onValueChange(itemDetails.copy(brand = it))
+
+                    if (it.length >= 2) {
+                        val startsWith = itemUiState.autoBrands.filter { brand ->
+                            brand.startsWith(it, ignoreCase = true)
+                        }
+                        val otherWordsStartsWith = itemUiState.autoBrands.filter { brand ->
+                            brand.split(" ").drop(1).any { word ->
+                                word.startsWith(it, ignoreCase = true)
+                            } && !brand.startsWith(it, ignoreCase = true)
+                        }
+                        val contains = itemUiState.autoBrands.filter { brand ->
+                            brand.contains(it, ignoreCase = true)
+                                    && !brand.startsWith(it, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(brand)
+                        }
+                        val selected = itemUiState.autoBrands.filter { brand ->
+                            brand == it
+                        }
+
+                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                onOptionSelected = { suggestion, currentText ->
+                    onValueChange(itemDetails.copy(brand = suggestion))
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
                 modifier = Modifier
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Brand:",
-                    modifier = Modifier
-                        .width(80.dp)
-                )
-
-                val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
-                AutoCompleteText(
-                    value = itemDetails.brand,
-                    onValueChange = {
-                        onValueChange(itemDetails.copy(brand = it))
-
-                        if (it.length >= 2) {
-                            val startsWith = itemUiState.autoBrands.filter { brand ->
-                                brand.startsWith(it, ignoreCase = true)
-                            }
-                            val otherWordsStartsWith = itemUiState.autoBrands.filter { brand ->
-                                brand.split(" ").drop(1).any { word ->
-                                    word.startsWith(it, ignoreCase = true)
-                                } && !brand.startsWith(it, ignoreCase = true)
-                            }
-                            val contains = itemUiState.autoBrands.filter { brand ->
-                                brand.contains(it, ignoreCase = true)
-                                        && !brand.startsWith(it, ignoreCase = true) &&
-                                        !otherWordsStartsWith.contains(brand)
-                            }
-                            val selected = itemUiState.autoBrands.filter { brand ->
-                                brand == it
-                            }
-
-                            suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
-                        } else {
-                            suggestions.value = emptyList()
-                        }
-                    },
-                    onOptionSelected = {
-                        onValueChange(itemDetails.copy(brand = it))
-                        suggestions.value = emptyList()
-                    },
-                    suggestions = suggestions.value,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    placeholder = {
-                        if (isEditEntry) Text(
+                placeholder = {
+                    if (isEditEntry) {
+                        Text(
                             text = "(" + itemDetails.originalBrand + ")",
                             modifier = Modifier
                                 .alpha(0.66f),
                             fontSize = 14.sp,
                         )
-                    },
-                    trailingIcon = {
-                        if (itemDetails.brand.length > 4) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                contentDescription = "Clear",
-                                modifier = Modifier
-                                    .clickable {
-                                        onValueChange(itemDetails.copy(brand = ""))
-                                    }
-                                    .alpha(0.66f)
-                                    .size(20.dp)
-                                    .focusable(false)
-                            )
-                        }
+                    } else {
+                        Text(
+                            text = "Required",
+                            modifier = Modifier
+                                .alpha(0.66f),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
+                },
+                trailingIcon = {
+                    if (itemDetails.brand.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onValueChange(itemDetails.copy(brand = ""))
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
                 )
-            }
+            )
+        }
 
-            // Blend //
-            Row(
+        // Blend //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Blend:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+            TextField(
+                value = itemDetails.blend,
+                onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
                 modifier = Modifier
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Blend:",
-                    modifier = Modifier
-                        .width(80.dp)
-                )
-                TextField(
-                    value = itemDetails.blend,
-                    onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    enabled = true,
-                    singleLine = true,
-                    placeholder = {
-                        if (isEditEntry) Text(
+                enabled = true,
+                singleLine = true,
+                placeholder = {
+                    if (isEditEntry) {
+                        Text(
                             text = "(" + itemDetails.originalBlend + ")",
                             modifier = Modifier
                                 .alpha(0.66f),
                             fontSize = 14.sp,
                         )
-                    },
-                    trailingIcon = {
-                        if (itemDetails.blend.length > 4) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                contentDescription = "Clear",
-                                modifier = Modifier
-                                    .clickable {
-                                        onValueChange(itemDetails.copy(blend = ""))
-                                    }
-                                    .alpha(0.66f)
-                                    .size(20.dp)
-                                    .focusable(false)
-                            )
+                    } else {
+                        Text(
+                            text = "Required",
+                            modifier = Modifier
+                                .alpha(0.66f),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                trailingIcon = {
+                    if (itemDetails.blend.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onValueChange(itemDetails.copy(blend = ""))
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedContainerColor = LocalCustomColors.current.textField,
+                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                    disabledContainerColor = LocalCustomColors.current.textField,
+                ),
+                shape = MaterialTheme.shapes.extraSmall
+            )
+        }
+
+        // Type //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Type:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+            CustomDropDown(
+                selectedValue = itemDetails.type,
+                onValueChange = { onValueChange(itemDetails.copy(type = it)) },
+                options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
+                modifier = Modifier
+                    .fillMaxWidth(),
+            )
+        }
+
+        // SubGenre //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Sub Genre:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = itemDetails.subGenre,
+                onValueChange = {
+                    onValueChange(itemDetails.copy(subGenre = it))
+
+                    if (it.length >= 2) {
+                        val startsWith = itemUiState.autoGenres.filter { genre ->
+                            genre.startsWith(it, ignoreCase = true)
+                        }
+                        val otherWordsStartsWith = itemUiState.autoGenres.filter { genre ->
+                            genre.split(" ").drop(1).any { word ->
+                                word.startsWith(it, ignoreCase = true)
+                            } && !genre.startsWith(it, ignoreCase = true)
+                        }
+                        val contains = itemUiState.autoGenres.filter { genre ->
+                            genre.contains(it, ignoreCase = true)
+                                    && !genre.startsWith(it, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(genre)
+                        }
+                        val selected = itemUiState.autoGenres.filter { genre ->
+                            genre == it
+                        }
+
+                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                onOptionSelected = { suggestion, currentText ->
+                    onValueChange(itemDetails.copy(subGenre = suggestion))
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    if (itemDetails.subGenre.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onValueChange(itemDetails.copy(subGenre = ""))
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                )
+            )
+        }
+
+        // No. of Tins //
+        Row(
+            modifier = Modifier
+                .padding(0.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "No. of Tins:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val pattern = remember { Regex("^(\\s*|\\d+)\$") }
+
+                TextField(
+                    value =
+                        if (itemDetails.isSynced) syncedTins.toString()
+                        else itemDetails.quantityString,
+                    onValueChange = {
+                        if (!itemDetails.isSynced) {
+                            if (it.matches(pattern) && it.length <= 2) {
+                                onValueChange(
+                                    itemDetails.copy(
+                                        quantityString = it,
+                                        quantity = it.toIntOrNull() ?: 1
+                                    )
+                                )
+                            }
                         }
                     },
+                    modifier = Modifier
+                        .width(54.dp)
+                        .padding(0.dp),
+                    visualTransformation = VisualTransformation.None,
+                    enabled = !itemDetails.isSynced,
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
                     keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
                     ),
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
@@ -648,48 +873,882 @@ fun ItemDetailsEntry(
                         disabledIndicatorColor = Color.Transparent,
                         focusedContainerColor = LocalCustomColors.current.textField,
                         unfocusedContainerColor = LocalCustomColors.current.textField,
-                        disabledContainerColor = LocalCustomColors.current.textField,
+                        disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.66f),
+                        disabledTextColor = LocalContentColor.current,
                     ),
                     shape = MaterialTheme.shapes.extraSmall
+                )
+                Row(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxHeight(),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.arrow_up),
+                        contentDescription = "Increase Quantity",
+                        modifier = Modifier
+                            .align(Alignment.Top)
+                            .clickable(enabled = !itemDetails.isSynced) {
+                                if (itemDetails.quantityString.isEmpty()) {
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            quantityString = "1",
+                                            quantity = 1
+                                        )
+                                    )
+                                } else {
+                                    if (itemDetails.quantityString.toInt() < 99) {
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                quantityString = (itemDetails.quantityString.toInt() + 1).toString(),
+                                                quantity = itemDetails.quantityString.toInt() + 1
+                                            )
+                                        )
+                                    } else {
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                quantityString = "99",
+                                                quantity = 99
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
+                            .offset(x = 1.dp, y = 2.dp)
+                    )
+                    Icon(
+                        painter = painterResource(id = R.drawable.arrow_down),
+                        contentDescription = "Decrease Quantity",
+                        modifier = Modifier
+                            .align(Alignment.Bottom)
+                            .clickable(enabled = !itemDetails.isSynced) {
+                                if (itemDetails.quantityString.isEmpty()) {
+                                    /* do nothing */
+                                } else {
+                                    if (itemDetails.quantityString.toInt() > 0) {
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                quantityString = (itemDetails.quantityString.toInt() - 1).toString(),
+                                                quantity = itemDetails.quantity - 1
+                                            )
+                                        )
+                                    } else if (itemDetails.quantityString.toInt() == 0) {
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                quantityString = "0",
+                                                quantity = 0
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            .padding(
+                                start = 2.dp,
+                                end = 8.dp,
+                                top = 4.dp,
+                                bottom = 4.dp
+                            )
+                            .offset(x = (-1).dp, y = (-2).dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .clickable(enabled = !itemDetails.isSynced) {
+                                onTinValueChange(
+                                    tinConversion.copy(
+                                        amount = "",
+                                        unit = ""
+                                    )
+                                )
+                                showTinConverter = true
+                            }
+                            .background(
+                                color = if (itemDetails.isSynced) MaterialTheme.colorScheme.outlineVariant.copy(
+                                    alpha = 0.5f
+                                ) else
+                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(vertical = 4.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically)
+                    ) {
+                        Text(
+                            text = "Convert\nTins",
+                            fontSize = 13.sp,
+                            lineHeight = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color =  if (itemDetails.isSynced) Color.Gray.copy(alpha = 0.7f) else
+                                MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier,
+                            textAlign = TextAlign.Center,
+                            letterSpacing = 0.sp
+                        )
+                    }
+
+                    CheckboxWithLabel(
+                        text = "Sync?",
+                        checked = itemDetails.isSynced,
+                        onCheckedChange = {
+                            onValueChange(itemDetails.copy(isSynced = it))
+                        },
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        height = 22.dp
+                    )
+
+                }
+            }
+        }
+
+        // Favorite or Disliked? //
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, bottom = 2.dp, start = 12.dp, end = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(0.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Favorite?",
+                    modifier = Modifier
+                        .offset(x = 0.dp, y = 1.dp)
+                )
+                CustomCheckBox(
+                    checked = itemDetails.favorite,
+                    onCheckedChange = {
+                        if (itemDetails.favorite) {
+                            onValueChange(itemDetails.copy(favorite = it))
+                        } else {
+                            onValueChange(
+                                itemDetails.copy(
+                                    favorite = it,
+                                    disliked = false
+                                )
+                            )
+                        }
+                    },
+                    checkedIcon = R.drawable.heart_filled_24,
+                    uncheckedIcon = R.drawable.heart_outline_24,
+                    modifier = Modifier
+                        .padding(0.dp),
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContentColor = LocalCustomColors.current.favHeart,
+                    )
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .padding(0.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Disliked?",
+                    modifier = Modifier
+                        .offset(x = 0.dp, y = 1.dp)
+                )
+                CustomCheckBox(
+                    checked = itemDetails.disliked,
+                    onCheckedChange = {
+                        if (itemDetails.disliked) {
+                            onValueChange(itemDetails.copy(disliked = it))
+                        } else {
+                            onValueChange(
+                                itemDetails.copy(
+                                    disliked = it,
+                                    favorite = false
+                                )
+                            )
+                        }
+                    },
+                    checkedIcon = R.drawable.heartbroken_filled_24,
+                    uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                    modifier = Modifier
+                        .padding(0.dp),
+                    colors = IconButtonDefaults.iconToggleButtonColors(
+                        checkedContentColor = LocalCustomColors.current.disHeart,
+                    )
                 )
             }
         }
 
-        Spacer(
+        // Production Status //
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .size(12.dp)
-        )
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "In Production?",
+                modifier = Modifier
+                    .offset(x = 0.dp, y = 1.dp)
+            )
+            CustomCheckBox(
+                checked = itemDetails.inProduction,
+                onCheckedChange = {
+                    onValueChange(itemDetails.copy(inProduction = it))
+                },
+                checkedIcon = R.drawable.check_box_24,
+                uncheckedIcon = R.drawable.check_box_outline_24,
+                modifier = Modifier
+            )
+        }
+    }
 
-        // Optional //
+    if (showTinConverter) {
+        TinConverterDialog(
+            onDismiss = { showTinConverter = false },
+            onConfirm = {
+                if (it < 99) {
+                    onValueChange(
+                        itemDetails.copy(
+                            quantityString = it.toString(),
+                            quantity = it
+                        )
+                    )
+                } else {
+                    onValueChange(
+                        itemDetails.copy(
+                            quantityString = "99",
+                            quantity = 99
+                        )
+                    )
+                }
+                showTinConverter = false
+            },
+            onAddConversion = {
+                val existingAmount = itemDetails.quantityString.toInt()
+                val newAmount = existingAmount + it
+
+                if (newAmount < 99) {
+                    onValueChange(
+                        itemDetails.copy(
+                            quantityString = newAmount.toString(),
+                            quantity = newAmount
+                        )
+                    )
+                } else {
+                    onValueChange(
+                        itemDetails.copy(
+                            quantityString = "99",
+                            quantity = 99
+                        )
+                    )
+                }
+                showTinConverter = false
+            },
+            tinConversion = tinConversion,
+            onTinValueChange = onTinValueChange,
+            isEditEntry = isEditEntry,
+            itemDetails = itemDetails,
+            modifier = Modifier
+        )
+    }
+
+}
+
+
+@Composable
+fun MoreDetails(
+    itemDetails: ItemDetails,
+    itemUiState: ItemUiState,
+    componentList: ComponentList,
+    onValueChange: (ItemDetails) -> Unit,
+    onComponentChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Cut //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Cut:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = itemDetails.cut,
+                onValueChange = {
+                    onValueChange(itemDetails.copy(cut = it))
+
+                    if (it.length >= 2) {
+                        val startsWith = itemUiState.autoCuts.filter { cut ->
+                            cut.startsWith(it, ignoreCase = true)
+                        }
+                        val otherWordsStartsWith = itemUiState.autoCuts.filter { cut ->
+                            cut.split(" ").drop(1).any { word ->
+                                word.startsWith(it, ignoreCase = true)
+                            } && !cut.startsWith(it, ignoreCase = true)
+                        }
+                        val contains = itemUiState.autoCuts.filter { cut ->
+                            cut.contains(it, ignoreCase = true)
+                                    && !cut.startsWith(it, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(cut)
+                        }
+                        val selected = itemUiState.autoCuts.filter { cut ->
+                            cut == it
+                        }
+
+                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                onOptionSelected = { suggestion, currentText ->
+                    onValueChange(itemDetails.copy(cut = suggestion))
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    if (itemDetails.cut.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onValueChange(itemDetails.copy(cut = ""))
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
+                )
+            )
+        }
+
+        // Components //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AutoSizeText(
+                text = "Components: ",
+                fontSize = 16.sp,
+                minFontSize = 8.sp,
+                width = 80.dp,
+                modifier = Modifier
+                    .padding(bottom = 20.dp),
+                maxLines = 1,
+                softWrap = false,
+            )
+
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = componentList.componentString,
+                onValueChange = { string ->
+                    onComponentChange(string)
+
+                    val substring = if (string.contains(", ")) {
+                        string.substringAfterLast(", ", "")
+                    } else {
+                        string
+                    }
+
+                    if (substring.length >= 2) {
+                        val startsWith = componentList.autoComps.filter { comp ->
+                            comp.startsWith(substring, ignoreCase = true)
+                        }
+
+                        val otherWordsStartsWith = componentList.autoComps.filter { comp ->
+                            comp.split(" ").drop(1).any { word ->
+                                word.startsWith(substring, ignoreCase = true)
+                            } && !comp.startsWith(substring, ignoreCase = true)
+                        }
+
+                        val contains = componentList.autoComps.filter { comp ->
+                            comp.contains(substring, ignoreCase = true)
+                                    && !comp.startsWith(substring, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(comp)
+                        }
+
+                        val selected = componentList.autoComps.filter { comp ->
+                            string.split(", ").filter { string.isNotBlank() }.contains(comp)
+                        }
+                        Log.d("Autocompletes", "selected: $selected")
+
+                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                        Log.d("Autocompletes", "suggestions: ${suggestions.value}")
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                onOptionSelected = { suggestion, currentText ->
+                    val updatedText = if (currentText.contains(", ")) {
+                        currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", " }
+                        else { suggestion }
+
+                    onComponentChange(updatedText)
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    if (componentList.componentString.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onComponentChange("")
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                maxLines = 1,
+                supportingText = {
+                    Text(
+                        text = "(Separate with comma + space)",
+                        modifier = Modifier
+                            .alpha(0.66f),
+                    //    fontSize = 13.sp,
+                        softWrap = false,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
+                    )
+                }
+            )
+        }
+
+        // Notes //
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(0.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            Row(
+            Text(
+                text = "Notes:",
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Optional:",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    .padding(bottom = 4.dp)
+            )
+            TextField(
+                value = itemDetails.notes,
+                onValueChange = {
+                    var updatedText = it
+                    if (it.contains("\n")) {
+                        val lines = it.lines()
+                        if (lines.size > 1) {
+                            val lastLine = lines[lines.size - 2]
+                            val currentLine = lines.last()
+                            val lastWord = lastLine.substringAfterLast(" ")
+                            if (currentLine.startsWith(lastWord) && currentLine.length > 1) {
+                                if (currentLine.length == lastWord.length + 1) {
+                                    updatedText = it.dropLast(lastWord.length + 1)
+                                } else {
+                                    updatedText = it.dropLast(lastWord.length)
+                                }
+                            }
+                        }
+                    }
+                    onValueChange(itemDetails.copy(notes = updatedText))
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.None,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedContainerColor = LocalCustomColors.current.textField,
+                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                    disabledContainerColor = LocalCustomColors.current.textField,
+                ),
+                shape = MaterialTheme.shapes.extraSmall,
+                singleLine = false,
+                maxLines = 6,
+                minLines = 6,
+            )
+        }
+    }
+}
+
+
+@Composable
+fun TinsEntry(
+    tinDetails: TinDetails,
+    tinDetailsList: List<TinDetails>,
+    onTinValueChange: (TinDetails) -> Unit,
+    isTinLabelValid: (String, Int) -> Boolean,
+    itemUiState: ItemUiState,
+    onValueChange: (ItemDetails) -> Unit,
+    addTin: () -> Unit,
+    removeTin: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val focusManager = LocalFocusManager.current
+    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
+        this.clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }) {
+            onClick()
+        }
+    }
+
+    LaunchedEffect(tinDetailsList) {
+        onValueChange(itemUiState.itemDetails)
+        if (itemUiState.itemDetails.isSynced) {
+            val syncTins = itemUiState.itemDetails.syncedQuantity
+            onValueChange(itemUiState.itemDetails.copy(quantity = syncTins, quantityString = syncTins.toString()))
+        }
+    }
+
+    Box {
+        val glowColor = MaterialTheme.colorScheme.background
+
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .noRippleClickable(
+                    onClick = {
+                        focusManager.clearFocus()
+                    }
+                )
+                .heightIn(max = 450.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 6.dp, horizontal = 8.dp)
+                .background(color = LocalCustomColors.current.darkNeutral, RoundedCornerShape(4.dp))
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+        ) {
+            Spacer(
+                modifier = Modifier
+                    .height(6.dp)
+            )
+
+            if (tinDetailsList.isEmpty()) {
+                Button(
+                    onClick = { addTin() },
                     modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                ) {
+                    Text(
+                        text = "Add Tin",
+                        modifier = Modifier
+                    )
+                }
+                Spacer(
+                    modifier = Modifier
+                        .height(6.dp)
+                )
+            } else {
+                tinDetailsList.forEachIndexed { index, tinDetails ->
+                    IndividualTin(
+                        tinDetails = tinDetails,
+                        tinDetailsList = tinDetailsList,
+                        tempTinId = tinDetails.tempTinId,
+                        onTinValueChange = onTinValueChange,
+                        showError = tinDetails.labelIsNotValid,
+                        isTinLabelValid = isTinLabelValid,
+                        removeTin = { removeTin(index) },
+                        itemUiState = itemUiState,
+                        onValueChange = onValueChange,
+                        modifier = Modifier
+                            .padding(bottom = 4.dp)
+                            .background(color = MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
+                    )
+                }
+                IconButton(
+                    onClick = { addTin() },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.add_outline),
+                        contentDescription = "Add Tin",
+                        modifier = Modifier
+                            .size(30.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(
+                    modifier = Modifier
+                        .height(6.dp)
                 )
             }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .align(Alignment.TopStart)
+                .then(
+                    Modifier.drawBehind {
+                        val glowHeight = 6.dp
+                        val glowOffsetY =
+                            size.height - (glowHeight.toPx())
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    glowColor,
+                                    Color.Transparent,
+                                ),
+                                startY = 0f,
+                                endY = glowHeight.toPx(),
+                            ),
+                            topLeft = Offset(0f, 0f),
+                            size = Size(size.width, glowHeight.toPx())
+                        )
 
-                // Type //
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    glowColor,
+                                ),
+                                startY = glowOffsetY,
+                                endY = size.height,
+                            ),
+                            topLeft = Offset(0f, glowOffsetY),
+                            size = Size(size.width, glowHeight.toPx())
+                        )
+                    }
+                )
+        )
+    }
+}
+
+
+/** custom composables */
+@Composable
+fun IndividualTin(
+    tinDetails: TinDetails,
+    tinDetailsList: List<TinDetails>,
+    tempTinId: Int,
+    onTinValueChange: (TinDetails) -> Unit,
+    isTinLabelValid: (String, Int) -> Boolean,
+    showError: Boolean,
+    removeTin: () -> Unit,
+    itemUiState: ItemUiState,
+    onValueChange: (ItemDetails) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LaunchedEffect(tinDetails) {
+        onValueChange(itemUiState.itemDetails)
+    }
+
+    LaunchedEffect(tempTinId) {
+        if (tempTinId == 1 && tinDetailsList.size == 1) {
+            onTinValueChange(tinDetails.copy(detailsExpanded = true))
+        }
+    }
+
+    Column (
+        modifier = modifier
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+        horizontalAlignment = Alignment.Start
+    ) {
+
+
+        // Header Row //
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            val boxWithConstraintsScope = this
+            val maxWidth = maxWidth
+            val textFieldMax = maxWidth - 72.dp
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
+            ) {
+                // Expand/Contract Button/Indicator //
+                Box(
+                    modifier = Modifier
+                        .weight(0.5f),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    Icon(
+                        imageVector = if (tinDetails.detailsExpanded) {
+                            Icons.Default.KeyboardArrowUp
+                          //  ImageVector.vectorResource(id = R.drawable.arrow_down)
+                        } else {
+                            Icons.Default.KeyboardArrowDown
+                          //  ImageVector.vectorResource(id = R.drawable.arrow_up)
+                        },
+                        contentDescription = "Expand/contract details",
+                        modifier = Modifier
+                            .clickable {
+                                onTinValueChange(tinDetails.copy(detailsExpanded = !tinDetails.detailsExpanded))
+                            }
+                            .padding(4.dp)
+                            .size(22.dp),
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                    )
+                }
+
+                // Label //
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                //    var showError by remember { mutableStateOf(false) }
+
+                    CustomTextField(
+                        value = tinDetails.tinLabel,
+                        onValueChange = {
+                            onTinValueChange(
+                                tinDetails.copy(
+                                    tinLabel = it,
+                                    labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId))
+                                )
+                        },
+                        modifier = Modifier
+                            .widthIn(max = textFieldMax)
+                            .onFocusChanged {
+                                if (!it.isFocused) {
+                                //    showError = isTinLabelValid(tinDetails.tinLabel, tempTinId)
+                                    onTinValueChange(tinDetails.copy(labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)))
+                                }
+                            },
+                        textStyle = LocalTextStyle.current.copy(
+                            textAlign = TextAlign.Center,
+                            color = if (showError) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                        //    color = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        placeholder = {
+                            Text(
+                                text = "Label (Required)",
+                                modifier = Modifier
+                                    .alpha(0.66f),
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Medium,
+                                softWrap = false,
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                                alpha = 0.5f
+                            ),
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                                alpha = 0.5f
+                            ),
+                            disabledIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                                alpha = 0.5f
+                            ),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                            cursorColor = Color.Transparent,
+                            focusedTextColor = if (showError) MaterialTheme.colorScheme.error else
+                                LocalContentColor.current,
+                            unfocusedTextColor = if (showError) MaterialTheme.colorScheme.error else
+                                LocalContentColor.current,
+                            disabledTextColor = if (showError) MaterialTheme.colorScheme.error else
+                                LocalContentColor.current,
+//                            focusedTextColor = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else
+//                                LocalContentColor.current,
+//                            unfocusedTextColor = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else
+//                                LocalContentColor.current,
+//                            disabledTextColor = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else
+//                                LocalContentColor.current,
+                        ),
+                        contentPadding = PaddingValues(vertical = 2.dp, horizontal = 0.dp),
+                        singleLine = true,
+                        maxLines = 1,
+                        minLines = 1,
+                    )
+                    Text(
+                        text = "Label must be unique within each entry.",
+                        color = if (showError) MaterialTheme.colorScheme.error else Color.Transparent,
+                    //    color = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else Color.Transparent,
+                        style = MaterialTheme.typography.bodySmall,
+                        softWrap = false,
+                        modifier = Modifier
+                            .padding(bottom = 4.dp, top = 1.dp)
+                    )
+                }
+
+                // Remove Button //
+                Box(
+                    modifier = Modifier
+                        .weight(0.5f),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.remove_circle_outline),
+                        contentDescription = "Close",
+                        modifier = Modifier
+                            .clickable {
+                                removeTin()
+                            }
+                            .padding(4.dp)
+                            .size(20.dp),
+                        tint = LocalCustomColors.current.pieNine.copy(alpha = 0.8f)
+                    )
+                }
+            }
+        }
+
+        if (tinDetails.detailsExpanded) {
+            Column (
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
+            ) {
+                // Container //
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -697,463 +1756,465 @@ fun ItemDetailsEntry(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Type:",
+                        text = "Container Type:",
                         modifier = Modifier
                             .width(80.dp)
                     )
-                    TypeDropDown(
-                        selectedValue = itemDetails.type,
-                        onValueChange = { onValueChange(itemDetails.copy(type = it)) },
+
+                    val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+                    AutoCompleteText(
+                        value = tinDetails.container,
+                        onValueChange = {
+                            onTinValueChange(tinDetails.copy(container = it))
+
+                            if (it.length >= 2) {
+                                val startsWith = itemUiState.autoContainers.filter { container ->
+                                    container.startsWith(it, ignoreCase = true)
+                                }
+                                val otherWordsStartsWith = itemUiState.autoContainers.filter { container ->
+                                    container.split(" ").drop(1).any { word ->
+                                        word.startsWith(it, ignoreCase = true)
+                                    } && !container.startsWith(it, ignoreCase = true)
+                                }
+                                val contains = itemUiState.autoContainers.filter { container ->
+                                    container.contains(it, ignoreCase = true)
+                                            && !container.startsWith(it, ignoreCase = true) &&
+                                            !otherWordsStartsWith.contains(container)
+                                }
+                                val selected = itemUiState.autoContainers.filter { container ->
+                                    container == it
+                                }
+
+                                suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                            } else {
+                                suggestions.value = emptyList()
+                            }
+                        },
+                        onOptionSelected = { suggestion, currentText ->
+                            onTinValueChange(tinDetails.copy(container = suggestion))
+                            suggestions.value = emptyList()
+                        },
+                        suggestions = suggestions.value,
                         modifier = Modifier
                             .fillMaxWidth(),
+                        trailingIcon = {
+                            if (tinDetails.container.length > 4) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier
+                                        .clickable {
+                                            onTinValueChange(tinDetails.copy(container = ""))
+                                        }
+                                        .alpha(0.66f)
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next,
+                        )
                     )
                 }
 
-                // Quantity //
+                // Amount //
                 Row(
                     modifier = Modifier
-                        .padding(0.dp)
                         .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "No. of Tins:",
+                        text = "Amount:",
                         modifier = Modifier
                             .width(80.dp)
                     )
-                    Row(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .height(IntrinsicSize.Min),
-                        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val pattern = remember { Regex("^(\\s*|\\d+)\$") }
-                        TextField(
-                            value = itemDetails.squantity,
-                            onValueChange = {
-                                if (it.matches(pattern) && it.length <= 2) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            squantity = it,
-                                            quantity = it.toIntOrNull() ?: 1
-                                        )
+
+                    val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
+                    TextField(
+                        value = tinDetails.tinQuantityString,
+                        onValueChange = {
+                            if (it.matches(pattern)) {
+                                onTinValueChange(
+                                    tinDetails.copy(
+                                        tinQuantityString = it,
+                                        tinQuantity = it.toDoubleOrNull() ?: 0.0
                                     )
-                                }
-                            },
-                            modifier = Modifier
-                                .width(54.dp)
-                                .padding(0.dp),
-                            visualTransformation = VisualTransformation.None,
-                            enabled = true,
-                            singleLine = true,
-                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                                focusedContainerColor = LocalCustomColors.current.textField,
-                                unfocusedContainerColor = LocalCustomColors.current.textField,
-                                disabledContainerColor = LocalCustomColors.current.textField,
-                            ),
-                            shape = MaterialTheme.shapes.extraSmall
-                        )
-                        Row(
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .fillMaxHeight(),
-                            horizontalArrangement = Arrangement.spacedBy(0.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.arrow_up),
-                                contentDescription = "Increase Quantity",
-                                modifier = Modifier
-                                    .align(Alignment.Top)
-                                    .clickable {
-                                        if (itemDetails.squantity.isEmpty()) {
-                                            onValueChange(
-                                                itemDetails.copy(
-                                                    squantity = "1",
-                                                    quantity = 1
-                                                )
-                                            )
-                                        } else {
-                                            if (itemDetails.squantity.toInt() < 99) {
-                                                onValueChange(
-                                                    itemDetails.copy(
-                                                        squantity = (itemDetails.squantity.toInt() + 1).toString(),
-                                                        quantity = itemDetails.squantity.toInt() + 1
-                                                    )
-                                                )
-                                            } else {
-                                                onValueChange(
-                                                    itemDetails.copy(
-                                                        squantity = "99",
-                                                        quantity = 99
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    }
-                                    .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
-                                    .offset(x = 1.dp, y = 2.dp)
-                            )
-                            Icon(
-                                painter = painterResource(id = R.drawable.arrow_down),
-                                contentDescription = "Decrease Quantity",
-                                modifier = Modifier
-                                    .align(Alignment.Bottom)
-                                    .clickable {
-                                        if (itemDetails.squantity.isEmpty()) {
-                                            /* do nothing */
-                                        } else {
-                                            if (itemDetails.squantity.toInt() > 0) {
-                                                onValueChange(
-                                                    itemDetails.copy(
-                                                        squantity = (itemDetails.squantity.toInt() - 1).toString(),
-                                                        quantity = itemDetails.quantity - 1
-                                                    )
-                                                )
-                                            } else if (itemDetails.squantity.toInt() == 0) {
-                                                onValueChange(
-                                                    itemDetails.copy(
-                                                        squantity = "0",
-                                                        quantity = 0
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    }
-                                    .padding(
-                                        start = 2.dp,
-                                        end = 8.dp,
-                                        top = 4.dp,
-                                        bottom = 4.dp
-                                    )
-                                    .offset(x = (-1).dp, y = (-2).dp)
-                            )
-                        }
-                    }
-                    Box(
+                                )
+                            }
+                        },
                         modifier = Modifier
                             .weight(1f),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "Tin Converter",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clickable {
-                                    onTinValueChange(
-                                        tinConversion.copy(
-                                            amount = "",
-                                            unit = ""
-                                        )
-                                    )
-                                    showTinConverter = true
-                                }
-                                .padding(2.dp)
-                        )
-                    }
+                        enabled = true,
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+
+                    CustomDropDown(
+                        selectedValue = tinDetails.unit,
+                        onValueChange = {
+                            onTinValueChange(
+                                tinDetails.copy(unit = it)
+                            )
+                        },
+                        options = listOf("", "oz", "lbs", "grams"),
+                        placeholder = {
+                            Text(
+                                text = "Unit",
+                                modifier = Modifier
+                                    .alpha(0.66f),
+                                fontSize = 14.sp,
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(2f),
+                    )
                 }
 
-//                        IconButton(
-//                            onClick = {
-//                                if (itemDetails.squantity.isEmpty()) {
-//                                    onValueChange(
-//                                        itemDetails.copy(
-//                                            squantity = "1",
-//                                            quantity = 1
-//                                        )
-//                                    )
-//                                } else {
-//                                    if (itemDetails.squantity.toInt() < 99) {
-//                                        onValueChange(
-//                                            itemDetails.copy(
-//                                                squantity = (itemDetails.squantity.toInt() + 1).toString(),
-//                                                quantity = itemDetails.squantity.toInt() + 1
-//                                            )
-//                                        )
-//                                    } else {
-//                                        onValueChange(
-//                                            itemDetails.copy(
-//                                                squantity = "99",
-//                                                quantity = 99
-//                                            )
-//                                        )
-//                                    }
-//                                }
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp)
-//                                .semantics { contentDescription = "Increase Quantity" }
-//                        ) {
-//                            Icon(
-//                                painter = painterResource(id = R.drawable.arrow_up),
-//                                contentDescription = "Increase Quantity",
-//                                modifier = Modifier
-//                                    .padding(0.dp)
-//                                    .offset(x = 0.dp, y = (-4).dp)
-//                            )
-//                        }
-//                        IconButton(
-//                            onClick = {
-//                                if (itemDetails.squantity.isEmpty()) {
-//                                    /* do nothing */
-//                                } else {
-//                                    if (itemDetails.squantity.toInt() > 0) {
-//                                        onValueChange(
-//                                            itemDetails.copy(
-//                                                squantity = (itemDetails.squantity.toInt() - 1).toString(),
-//                                                quantity = itemDetails.quantity - 1
-//                                            )
-//                                        )
-//                                    } else if (itemDetails.squantity.toInt() == 0) {
-//                                        onValueChange(
-//                                            itemDetails.copy(
-//                                                squantity = "0",
-//                                                quantity = 0
-//                                            )
-//                                        )
-//                                    }
-//                                }
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp)
-//                                .semantics { contentDescription = "Decrease Quantity" }
-//                                .offset(x = (-12).dp)
-//                        ) {
-//                            Icon(
-//                                painter = painterResource(id = R.drawable.arrow_down),
-//                                contentDescription = "Decrease Quantity",
-//                                modifier = Modifier
-//                                    .padding(0.dp)
-//                                    .offset(x = 0.dp, y = 4.dp)
-//                            )
-//                        }
-//                        TextButton(
-//                            onClick = {
-//                                onTinValueChange(
-//                                    tinConversion.copy(
-//                                        amount = "",
-//                                        unit = ""
-//                                    )
-//                                )
-//                                showTinConverter = true
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp)
-//                        ) {
-//                            Text(
-//                                text = "Tin Converter",
-//                                modifier = Modifier
-//                                    .padding(0.dp),
-//                            )
-//                        }
-//                    }
-//                }
+                Spacer(
+                    modifier = Modifier
+                        .height(8.dp)
+                )
 
-                // Favorite or Disliked? //
+                // Date entry //
                 Row(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Favorite?",
-                            modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp)
-                        )
-                        CustomCheckBox(
-                            checked = itemDetails.favorite,
-                            onCheckedChange = {
-                                if (itemDetails.favorite) {
-                                    onValueChange(itemDetails.copy(favorite = it))
-                                } else {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            favorite = it,
-                                            disliked = false
-                                        )
-                                    )
-                                }
-                            },
-                            checkedIcon = R.drawable.heart_filled_24,
-                            uncheckedIcon = R.drawable.heart_outline_24,
-                            modifier = Modifier
-                                .padding(0.dp),
-                            colors = IconButtonDefaults.iconToggleButtonColors(
-                                checkedContentColor = LocalCustomColors.current.favHeart,
-                            )
-                        )
+                    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+                    var datePickerLabel by rememberSaveable { mutableStateOf("") }
+                    fun showPicker (label: String) {
+                        datePickerLabel = label
+                        showDatePicker = true
                     }
-                    Row(
+
+                    var manuIsFocused by rememberSaveable { mutableStateOf(false) }
+                    val manuFocusRequester = remember { FocusRequester() }
+                    var cellaredIsFocused by rememberSaveable { mutableStateOf(false) }
+                    val cellaredFocusRequester = remember { FocusRequester() }
+                    var openedIsFocused by rememberSaveable { mutableStateOf(false) }
+                    val openedFocusRequester = remember { FocusRequester() }
+                    val interactionSource = remember { MutableInteractionSource() }
+
+                    // Manufacture //
+                    OutlinedTextField(
+                        value = if (tinDetails.manufactureDateString.isEmpty()) {
+                            " "
+                        } else {
+                            tinDetails.manufactureDateString
+                        },
+                        onValueChange = { },
                         modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Disliked?",
-                            modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp)
-                        )
-                        CustomCheckBox(
-                            checked = itemDetails.disliked,
-                            onCheckedChange = {
-                                if (itemDetails.disliked) {
-                                    onValueChange(itemDetails.copy(disliked = it))
-                                } else {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            disliked = it,
-                                            favorite = false
+                            .weight(1f)
+                            .onFocusChanged { manuIsFocused = it.isFocused }
+                            .focusRequester(manuFocusRequester),
+                        enabled = true,
+                        readOnly = true,
+                        singleLine = true,
+                        interactionSource = interactionSource,
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    manuFocusRequester.requestFocus()
+                                    showPicker("Manufacture")
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Select date",
+                                    tint = LocalContentColor.current
+                                )
+                            }
+                        },
+                        label = {
+                            Text("Manuf.")
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next,
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            disabledContainerColor = MaterialTheme.colorScheme.background,
+                            focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+
+                    // Cellar //
+                    OutlinedTextField(
+                        value = if (tinDetails.cellarDateString.isEmpty() && !cellaredIsFocused) {
+                            " " }
+                            else { tinDetails.cellarDateString },
+                        onValueChange = { },
+                        label = {
+                            Text(
+                                text = "Cellared",
+                                modifier = Modifier,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { cellaredIsFocused = it.isFocused }
+                            .focusRequester(cellaredFocusRequester),
+                        enabled = true,
+                        readOnly = true,
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                cellaredFocusRequester.requestFocus()
+                                showPicker("Cellared")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Select date",
+                                    tint = LocalContentColor.current
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next,
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            disabledContainerColor = MaterialTheme.colorScheme.background,
+                            focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+
+                    // Opened //
+                    OutlinedTextField(
+                        value = if (tinDetails.openDateString.isEmpty() && !openedIsFocused) {
+                            " " }
+                        else { tinDetails.openDateString },
+                        onValueChange = { },
+                        label = {
+                            Text(
+                                text = "Opened",
+                                modifier = Modifier,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { openedIsFocused = it.isFocused }
+                            .focusRequester(openedFocusRequester),
+                        enabled = true,
+                        readOnly = true,
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                openedFocusRequester.requestFocus()
+                                showPicker("Opened")
+                            //    focusRequester.requestFocus()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Select date",
+                                    tint = LocalContentColor.current
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next,
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            disabledContainerColor = MaterialTheme.colorScheme.background,
+                            focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+
+                    if (showDatePicker) {
+                        CustomDatePickerDialog(
+                            onDismiss = { showDatePicker = false },
+                            onDateSelected = {
+                            //    val selectedDate = Date(it ?: 0)
+
+                                val dateString = if (it != null) {
+                                    val instant = Instant.ofEpochMilli(it)
+                                    val formatter =
+                                        DateTimeFormatter
+                                            .ofPattern("MM/yy")
+                                            .withZone(ZoneId.systemDefault())
+
+                                    formatter.format(instant)
+                                } else { "" }
+
+                                when (datePickerLabel) {
+                                    "Manufacture" -> {
+                                        onTinValueChange(
+                                            tinDetails.copy(
+                                                manufactureDate = it,
+                                                manufactureDateString = dateString
+                                            )
                                         )
-                                    )
+                                    }
+                                    "Cellared" -> {
+                                        onTinValueChange(
+                                            tinDetails.copy(
+                                                cellarDate = it,
+                                                cellarDateString = dateString
+                                            )
+                                        )
+                                    }
+                                    "Opened" -> {
+                                        onTinValueChange(
+                                            tinDetails.copy(
+                                                openDate = it,
+                                                openDateString = dateString
+                                            )
+                                        )
+                                    }
                                 }
                             },
-                            checkedIcon = R.drawable.heartbroken_filled_24,
-                            uncheckedIcon = R.drawable.heartbroken_outlined_24,
-                            modifier = Modifier
-                                .padding(0.dp),
-                            colors = IconButtonDefaults.iconToggleButtonColors(
-                                checkedContentColor = LocalCustomColors.current.disHeart,
-                            )
+                            modifier = Modifier,
+                            label = datePickerLabel,
+                            currentMillis = when (datePickerLabel) {
+                                "Manufacture" -> { tinDetails.manufactureDate }
+                                "Cellared" -> { tinDetails.cellarDate }
+                                "Opened" -> { tinDetails.openDate }
+                                else -> { null }
+                            }
                         )
                     }
                 }
             }
-        }
-
-        if (showTinConverter) {
-            TinConverterDialog(
-                onDismiss = { showTinConverter = false },
-                onConfirm = {
-                    if (it < 99) {
-                        onValueChange(
-                            itemDetails.copy(
-                                squantity = it.toString(),
-                                quantity = it
-                            )
-                        )
-                    } else {
-                        onValueChange(
-                            itemDetails.copy(
-                                squantity = "99",
-                                quantity = 99
-                            )
-                        )
-                    }
-                    showTinConverter = false
-                },
-                onAddConversion = {
-                    val existingAmount = itemDetails.squantity.toInt()
-                    val newAmount = existingAmount + it
-
-                    if (newAmount < 99) {
-                        onValueChange(
-                            itemDetails.copy(
-                                squantity = newAmount.toString(),
-                                quantity = newAmount
-                            )
-                        )
-                    } else {
-                        onValueChange(
-                            itemDetails.copy(
-                                squantity = "99",
-                                quantity = 99
-                            )
-                        )
-                    }
-                    showTinConverter = false
-                },
-                tinConversion = tinConversion,
-                onTinValueChange = onTinValueChange,
-                isEditEntry = isEditEntry,
-                itemDetails = itemDetails,
+        } else {
+            Text(
+                text = "Expand...",
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                color = LocalContentColor.current.copy(alpha = 0.5f),
                 modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clickable {
+                        onTinValueChange(tinDetails.copy(detailsExpanded = true))
+                    }
+                    .fillMaxWidth()
             )
         }
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotesEntry(
-    itemDetails: ItemDetails,
-    onValueChange: (ItemDetails) -> Unit,
-    modifier: Modifier = Modifier
-){
-    Column(
-        modifier = modifier
-            .padding(top = 24.dp, bottom = 16.dp, start = 24.dp, end = 24.dp)
-    ) {
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
-        )
-        TextField(
-            value = itemDetails.notes,
-            onValueChange = {
-                var updatedText = it
-                if (it.contains("\n")) {
-                    val lines = it.lines()
-                    if (lines.size > 1) {
-                        val lastLine = lines[lines.size - 2]
-                        val currentLine = lines.last()
-                        val lastWord = lastLine.substringAfterLast(" ")
-                        if (currentLine.startsWith(lastWord)) {
-                            if (currentLine.length == lastWord.length + 1) {
-                                updatedText = it.dropLast(lastWord.length + 1)
-                            } else {
-                                updatedText = it.dropLast(lastWord.length)
-                            }
-                        }
-                    }
+fun CustomDatePickerDialog(
+    onDismiss: () -> Unit,
+    onDateSelected: (Long?) -> Unit,
+    currentMillis: Long? = null,
+    modifier: Modifier = Modifier,
+    label: String = "Select",
+) {
+    val datePickerState = rememberDatePickerState(
+        initialDisplayMode = DisplayMode.Input,
+        initialSelectedDateMillis = currentMillis
+    )
+    val datePickerFormatter = remember { DatePickerDefaults.dateFormatter() }
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedDate = datePickerState.selectedDateMillis
+                    if (selectedDate != null) {
+                        val utcDate =
+                            LocalDateTime.ofInstant(
+                                Instant.ofEpochMilli(selectedDate), ZoneOffset.UTC
+                            )
+                        val timeZoneDate = ZonedDateTime.of(utcDate, ZoneId.systemDefault())
+                        val timeZoneDateLong = timeZoneDate.toInstant().toEpochMilli()
+                        onDateSelected(timeZoneDateLong)
+                    } else { onDateSelected(null) }
+
+                    onDismiss()
                 }
-                onValueChange(itemDetails.copy(notes = updatedText))
-            },
-            modifier = Modifier
-                .fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.None,
-            ),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = LocalCustomColors.current.textField,
-                unfocusedContainerColor = LocalCustomColors.current.textField,
-                disabledContainerColor = LocalCustomColors.current.textField,
-            ),
-            shape = MaterialTheme.shapes.extraSmall,
-            singleLine = false,
-            maxLines = 6,
-            minLines = 6,
+            ) {
+                Text(text = "Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                }
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        colors = DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.background,
+        ),
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
         )
-        Spacer(
-            modifier = Modifier
-                .height(6.dp)
+    ) {
+        DatePicker(
+            state = datePickerState,
+            modifier = Modifier,
+            title = {
+                Text(
+                    text = "${label} Date",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp)
+                )
+            },
+            headline = {
+                Text("Select a date", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp))
+            },
+            dateFormatter = datePickerFormatter,
+            showModeToggle = true,
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                headlineContentColor = MaterialTheme.colorScheme.onBackground,
+            )
         )
     }
 }
 
 
-/** custom composables */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TinConverterDialog(
@@ -1366,7 +2427,7 @@ fun TinConverterDialog(
                             ) {
                                 val newAmount =
                                     if (tinConversion.isConversionValid) {
-                                        itemDetails.squantity.toInt() + convertedQuantity
+                                        itemDetails.quantityString.toInt() + convertedQuantity
                                     } else { 0 }
 
                                 Text(
@@ -1425,7 +2486,8 @@ fun CustomCheckBox(
     IconToggleButton(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
-        modifier = modifier,
+        modifier = modifier
+            .size(34.dp),
         colors = colors
     ) {
         Icon(
@@ -1433,7 +2495,7 @@ fun CustomCheckBox(
                 ImageVector.vectorResource(id = checkedIcon)
             } else ImageVector.vectorResource(id = uncheckedIcon),
             contentDescription = null,
-            modifier = modifier
+            modifier = Modifier
         )
     }
 }
@@ -1447,8 +2509,14 @@ fun AutoCompleteText(
     placeholder: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     onValueChange: ((String) -> Unit)?,
-    onOptionSelected: (String) -> Unit,
+    onOptionSelected: (String, String) -> Unit,
     suggestions: List<String> = emptyList(),
+    label: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    singleLine: Boolean = false,
+    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+    minLines: Int = 1,
+    supportingText: @Composable (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
@@ -1491,11 +2559,7 @@ fun AutoCompleteText(
             trailingIcon = trailingIcon,
             singleLine = true,
             placeholder = { if (placeholder != null) placeholder() },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next,
-            ),
+            keyboardOptions = keyboardOptions,
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
@@ -1504,7 +2568,11 @@ fun AutoCompleteText(
                 unfocusedContainerColor = LocalCustomColors.current.textField,
                 disabledContainerColor = LocalCustomColors.current.textField,
             ),
-            shape = MaterialTheme.shapes.extraSmall
+            shape = MaterialTheme.shapes.extraSmall,
+            label = label,
+            maxLines = maxLines,
+            minLines = minLines,
+            supportingText = supportingText
         )
         DropdownMenu(
             expanded = expanded && focusState.value && suggestions.isNotEmpty(),
@@ -1530,11 +2598,20 @@ fun AutoCompleteText(
                         )
                     },
                     onClick = {
-                        onOptionSelected(label)
+                        val currentText = textFieldValueState.text
+                        onOptionSelected(label, currentText)
+
+                        val updatedText = if (currentText.contains(", ")) {
+                            currentText.substringBeforeLast(", ", "") + ", " + label + ", "
+                        } else {
+                            label
+                        }
+
                         textFieldValueState = TextFieldValue(
-                            text = label,
-                            selection = TextRange(label.length)
+                            text = updatedText,
+                            selection = TextRange(updatedText.length)
                         )
+
                         expanded = false
                     },
                     enabled = true,
@@ -1577,13 +2654,14 @@ fun CustomDropdownMenuItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TypeDropDown(
+fun CustomDropDown(
     selectedValue: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    options: List<String>,
+    modifier: Modifier = Modifier,
+    placeholder: @Composable (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other")
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -1595,6 +2673,7 @@ fun TypeDropDown(
             value = selectedValue,
             onValueChange = {},
             modifier = Modifier
+                .fillMaxWidth()
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -1609,7 +2688,8 @@ fun TypeDropDown(
                 unfocusedContainerColor = LocalCustomColors.current.textField,
                 disabledContainerColor = LocalCustomColors.current.textField,
             ),
-            shape = MaterialTheme.shapes.extraSmall
+            shape = MaterialTheme.shapes.extraSmall,
+            placeholder = placeholder
         )
         ExposedDropdownMenu(
             expanded = expanded,

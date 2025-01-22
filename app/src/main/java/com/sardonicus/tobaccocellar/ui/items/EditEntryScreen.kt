@@ -90,11 +90,18 @@ fun EditEntryScreen(
             AddEntryBody(
                 itemUiState = viewModel.itemUiState,
                 componentUiState = viewModel.componentList,
+                tinDetails = viewModel.tinDetailsState,
+                tinDetailsList = viewModel.tinDetailsList,
+                syncedTins = viewModel.calculateSyncTins(),
                 existState = ExistState(),
                 tinConversion = viewModel.tinConversion.value,
                 onItemValueChange = viewModel::updateUiState,
+                onTinValueChange = viewModel::updateTinDetails,
                 onComponentChange = viewModel::updateComponentList,
-                onTinValueChange = viewModel::updateTinConversion,
+                onTinConverterChange = viewModel::updateTinConversion,
+                addTin = viewModel::addTin,
+                removeTin = viewModel::removeTin,
+                isTinLabelValid = viewModel::isTinLabelValid,
                 onSaveClick = {
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
