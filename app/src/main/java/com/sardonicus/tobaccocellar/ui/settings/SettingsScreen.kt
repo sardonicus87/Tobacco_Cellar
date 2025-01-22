@@ -187,6 +187,10 @@ private fun SettingsBody(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
             )
+            Spacer(
+                modifier = Modifier
+                    .height(32.dp)
+            )
 
             DatabaseSettings(
                 showTinRates = { showTinRates = it },
@@ -195,10 +199,19 @@ private fun SettingsBody(
                     .padding(horizontal = 16.dp)
             )
 
+            Spacer(
+                modifier = Modifier
+                    .height(32.dp)
+            )
+
             AboutSection(
                 showChangelog = { showChangelog = it },
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
+            )
+            Spacer(
+                modifier = Modifier
+                    .height(32.dp)
             )
 
             // Popup settings dialogs
@@ -265,10 +278,6 @@ fun DisplaySettings(
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(
-            modifier = Modifier
-                .height(32.dp)
-        )
     }
 }
 
@@ -308,10 +317,6 @@ fun DatabaseSettings(
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(
-            modifier = Modifier
-                .height(32.dp)
         )
     }
 }
@@ -422,7 +427,7 @@ fun AboutSection(
 
         Spacer(
             modifier = Modifier
-                .height(12.dp)
+                .height(14.dp)
         )
         Text(
             text = versionInfo,
@@ -439,10 +444,6 @@ fun AboutSection(
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(
-            modifier = Modifier
-                .height(32.dp)
         )
     }
 }
