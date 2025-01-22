@@ -89,6 +89,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -119,12 +121,18 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
+import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,7 +143,7 @@ fun CellarApp(
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
-    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+//    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
@@ -205,7 +213,6 @@ fun CellarTopAppBar(
                         contentDescription = null
                     )
                 }
-                filterViewModel.returnScroll()
             }
         },
         actions = {
@@ -360,8 +367,10 @@ fun CellarBottomAppBar(
     navigateToHome: () -> Unit = {},
     navigateToStats: () -> Unit = {},
     navigateToAddEntry: () -> Unit = {},
-    filterViewModel: FilterViewModel,
+    filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -379,7 +388,7 @@ fun CellarBottomAppBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            var clickToAdd by remember { mutableStateOf(false) }
+            var clickToAdd by rememberSaveable { mutableStateOf(false) }
 
             // Cellar //
             Box(
@@ -530,8 +539,13 @@ fun CellarBottomAppBar(
                 IconButton(
                     onClick = {
                         clickToAdd = true
+                        coroutineScope.launch {
+                            withContext(Dispatchers.Main) {
+                                EventBus.emit(AddItemClickedEvent)
+                            }
+                        }
                         navigateToAddEntry()
-                              },
+                    },
                     modifier = Modifier
                         .padding(0.dp)
                 ) {
@@ -1562,4 +1576,4 @@ fun Chip(
 }
 
 
-
+data object AddItemClickedEvent
