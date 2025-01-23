@@ -6,7 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Items
+import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -65,7 +68,19 @@ class CsvImportViewModel(
         mappingOptions = mappingOptions.copy(hasHeader = hasHeader)
     }
 
-    enum class CsvField { Brand, Blend, Type, Quantity, Favorite, Disliked, Notes }
+    enum class CsvField {
+        Brand,
+        Blend,
+        Type,
+        Quantity,
+        Favorite,
+        Disliked,
+        Notes,
+        SubGenre,
+        Cut,
+        Production,
+        Components,
+    }
 
     fun updateMappingOptions(field: CsvField, selectedColumn: String) {
         mappingOptions = when (field) {
@@ -76,6 +91,10 @@ class CsvImportViewModel(
             CsvField.Favorite -> mappingOptions.copy(favoriteColumn = selectedColumn.ifBlank { "" })
             CsvField.Disliked -> mappingOptions.copy(dislikedColumn = selectedColumn.ifBlank { "" })
             CsvField.Notes -> mappingOptions.copy(notesColumn = selectedColumn.ifBlank { "" })
+            CsvField.SubGenre -> mappingOptions.copy(subGenreColumn = selectedColumn.ifBlank { "" })
+            CsvField.Cut -> mappingOptions.copy(cutColumn = selectedColumn.ifBlank { "" })
+            CsvField.Production -> mappingOptions.copy(productionColumn = selectedColumn.ifBlank { "" })
+            CsvField.Components -> mappingOptions.copy(componentsColumn = selectedColumn.ifBlank { "" })
         }
         csvUiState = csvUiState.copy(isFormValid = validateForm())
     }
@@ -93,6 +112,49 @@ class CsvImportViewModel(
     fun updateOverwriteSelection(field: CsvField, overwrite: Boolean) {
         _overwriteSelections.value = _overwriteSelections.value + (field to overwrite)
     }
+
+    // components handling //
+    private fun componentSplitter(components: String): List<String> {
+        return components.split(",").map { it.trim() }
+    }
+
+    private suspend fun insertComponents(components: List<String>) {
+        val normalizedComponents = components.map { it.lowercase() }
+        val existingComps = withContext(Dispatchers.IO) { itemsRepository.getAllComponentsStream().first() }
+        val normalizedExistingComps = existingComps.map { it.componentName.lowercase() }
+        val newComponents = normalizedComponents.filter { csvComp ->
+            normalizedExistingComps.none {
+                it == csvComp
+            }
+        }
+
+        if (newComponents.isNotEmpty()) {
+            val componentsToAdd = newComponents.map { component ->
+                Components(
+                    componentName = components.find {
+                        it.lowercase() == component } ?: component
+                )
+            }
+
+            withContext(Dispatchers.IO) {
+                itemsRepository.insertMultipleComponents(componentsToAdd)
+            }
+        }
+    }
+
+    private suspend fun insertComponentsCrossRef(components: List<String>, itemId: Int) {
+        val componentIds = withContext(Dispatchers.IO) {
+            itemsRepository.getComponentsByName(components.map { it.lowercase() }).first().map { it.componentId}
+        }
+        val crossReferences = componentIds.map {
+            ItemsComponentsCrossRef(itemId, it)
+        }
+
+        withContext(Dispatchers.IO) {
+            itemsRepository.insertMultipleComponentsCrossRef(crossReferences)
+        }
+    }
+
 
 
     /** Confirm and import **/
@@ -130,6 +192,10 @@ class CsvImportViewModel(
                 if (columnIndices[CsvField.Blend] != null &&
                     columnIndices[CsvField.Blend]!! in record.indices)
                     record[columnIndices[CsvField.Blend]!!] else ""
+            val components =
+                if (columnIndices[CsvField.Components] != null &&
+                    columnIndices[CsvField.Components]!! in record.indices)
+                    record[columnIndices[CsvField.Components]!!] else ""
 
             if (brand.isBlank() || blend.isBlank()) {
                 null
@@ -137,6 +203,7 @@ class CsvImportViewModel(
                 val existingItem = withContext(Dispatchers.IO) {
                     itemsRepository.getItemByIndex(brand, blend)
                 }
+                val componentsList = componentSplitter(components)
 
                 if (existingItem != null) {
                     updatedConversions++
@@ -175,8 +242,29 @@ class CsvImportViewModel(
                                     columnIndices[CsvField.Notes]!! in record.indices
                                 )
                                     record[columnIndices[CsvField.Notes]!!]
-                                else existingItem.notes
+                                else existingItem.notes,
+                                subGenre = if (existingItem.subGenre.isBlank() &&
+                                    columnIndices[CsvField.SubGenre] != null &&
+                                    columnIndices[CsvField.SubGenre]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.SubGenre]!!]
+                                else existingItem.subGenre,
+                                cut = if (existingItem.cut.isBlank() &&
+                                    columnIndices[CsvField.Cut] != null &&
+                                    columnIndices[CsvField.Cut]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Cut]!!]
+                                else existingItem.cut,
                             )
+                            val existingComponents = withContext(Dispatchers.IO) {
+                                itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
+                                    it.componentName
+                                }
+                            }
+                            if (existingComponents.isEmpty() && componentsList.isNotEmpty()) {
+                                insertComponents(componentsList)
+                                insertComponentsCrossRef(componentsList, existingItem.id)
+                            }
 
                             withContext(Dispatchers.IO) {
                                 itemsRepository.updateItem(updatedItem)
@@ -206,7 +294,7 @@ class CsvImportViewModel(
                                     columnIndices[CsvField.Quantity] != null &&
                                     columnIndices[CsvField.Quantity]!! in record.indices
                                 )
-                                    if (record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 > 99) 0
+                                    if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99) 0
                                     else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1
                                 else existingItem.quantity,
                                 favorite = if (overwriteFields.contains(CsvField.Favorite) &&
@@ -226,8 +314,38 @@ class CsvImportViewModel(
                                     columnIndices[CsvField.Notes]!! in record.indices
                                 )
                                     record[columnIndices[CsvField.Notes]!!]
-                                else existingItem.notes
+                                else existingItem.notes,
+                                subGenre = if (overwriteFields.contains(CsvField.SubGenre) &&
+                                    columnIndices[CsvField.SubGenre] != null &&
+                                    columnIndices[CsvField.SubGenre]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.SubGenre]!!]
+                                else existingItem.subGenre,
+                                cut = if (overwriteFields.contains(CsvField.Cut) &&
+                                    columnIndices[CsvField.Cut] != null &&
+                                    columnIndices[CsvField.Cut]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Cut]!!]
+                                else existingItem.cut,
+                                inProduction = if (overwriteFields.contains(CsvField.Production) &&
+                                    columnIndices[CsvField.Production] != null &&
+                                    columnIndices[CsvField.Production]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Production]!!].toBoolean()
+                                else existingItem.inProduction,
                             )
+
+                            if (overwriteFields.contains(CsvField.Components) &&
+                                columnIndices[CsvField.Components] != null &&
+                                columnIndices[CsvField.Components]!! in record.indices
+                            ) {
+                                withContext(Dispatchers.IO) {
+                                    itemsRepository.deleteComponentsCrossRefByItemId(existingItem.id)
+                                }
+                                insertComponents(componentsList)
+                                insertComponentsCrossRef(componentsList, existingItem.id)
+                            }
+
                             withContext(Dispatchers.IO) {
                                 itemsRepository.updateItem(updatedItem)
                             }
@@ -258,7 +376,7 @@ class CsvImportViewModel(
                             columnIndices[CsvField.Quantity]!! >= 0 &&
                             columnIndices[CsvField.Quantity]!! < record.size
                         )
-                            if (record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 > 99) 0
+                            if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99) 0
                             else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1 else 1,
                         favorite = if (columnIndices[CsvField.Favorite] != null &&
                             columnIndices[CsvField.Favorite]!! >= 0 &&
@@ -274,14 +392,45 @@ class CsvImportViewModel(
                             columnIndices[CsvField.Notes]!! >= 0 &&
                             columnIndices[CsvField.Notes]!! < record.size
                         )
-                            record[columnIndices[CsvField.Notes]!!] else ""
+                            record[columnIndices[CsvField.Notes]!!] else "",
+                        subGenre = if (columnIndices[CsvField.SubGenre] != null &&
+                            columnIndices[CsvField.SubGenre]!! >= 0 &&
+                            columnIndices[CsvField.SubGenre]!! < record.size
+                        )
+                            record[columnIndices[CsvField.SubGenre]!!] else "",
+                        cut = if (columnIndices[CsvField.Cut] != null &&
+                            columnIndices[CsvField.Cut]!! >= 0 &&
+                            columnIndices[CsvField.Cut]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Cut]!!] else "",
+                        inProduction = if (columnIndices[CsvField.Production] != null &&
+                            columnIndices[CsvField.Production]!! >= 0 &&
+                            columnIndices[CsvField.Production]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Production]!!].toBoolean() else true
                     )
                 }
             }
         }
         try {
             val insertedIds = withContext(Dispatchers.IO) {
-                itemsRepository.insertMultiple(itemsToImport) }
+                itemsRepository.insertMultipleItems(itemsToImport) }
+            withContext(Dispatchers.IO) {
+                itemsToImport.forEachIndexed { index, items ->
+                    val comps = if (
+                        columnIndices[CsvField.Components] != null &&
+                        columnIndices[CsvField.Components]!!
+                        in csvImportState.value.allRecords[index].indices) {
+                            csvImportState.value.allRecords[index][columnIndices[CsvField.Components]!!]
+                        } else ""
+                    val components = componentSplitter(comps)
+                    insertComponents(components)
+
+                    if (insertedIds[index] != -1L) {
+                        insertComponentsCrossRef(components, insertedIds[index].toInt())
+                    }
+                }
+            }
             val successfulConversions = itemsToImport.size + updatedConversions
             val successfulInsertions = insertedIds.count { it != -1L }
             val successfulUpdates = updatedCount
@@ -321,7 +470,11 @@ class CsvImportViewModel(
             CsvField.Quantity to header.indexOf(mappingOptions.quantityColumn),
             CsvField.Favorite to header.indexOf(mappingOptions.favoriteColumn),
             CsvField.Disliked to header.indexOf(mappingOptions.dislikedColumn),
-            CsvField.Notes to header.indexOf(mappingOptions.notesColumn)
+            CsvField.Notes to header.indexOf(mappingOptions.notesColumn),
+            CsvField.SubGenre to header.indexOf(mappingOptions.subGenreColumn),
+            CsvField.Cut to header.indexOf(mappingOptions.cutColumn),
+            CsvField.Production to header.indexOf(mappingOptions.productionColumn),
+            CsvField.Components to header.indexOf(mappingOptions.componentsColumn),
         )
     }
 
@@ -358,6 +511,10 @@ data class MappingOptions(
     val favoriteColumn: String = "",
     val dislikedColumn: String = "",
     val notesColumn: String = "",
+    val subGenreColumn: String = "",
+    val cutColumn: String = "",
+    val productionColumn: String = "",
+    val componentsColumn: String = "",
 )
 
 enum class ImportOption { SKIP, UPDATE, OVERWRITE }

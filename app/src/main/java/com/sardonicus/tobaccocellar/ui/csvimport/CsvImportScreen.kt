@@ -17,10 +17,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,7 +26,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.triStateToggleable
@@ -37,8 +34,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
@@ -50,6 +45,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -63,6 +59,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -81,13 +78,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
@@ -432,12 +427,7 @@ fun CsvImportBody(
                                             MaterialTheme.colorScheme.secondaryContainer,
                                             RoundedCornerShape(8.dp)
                                         )
-                                        .padding(
-                                            top = 8.dp,
-                                            bottom = 8.dp,
-                                            start = 12.dp,
-                                            end = 12.dp
-                                        ),
+                                        .padding(vertical = 8.dp, horizontal = 12.dp),
                                 ) {
                                     Text(
                                         text = stringResource(R.string.possible_header),
@@ -449,12 +439,7 @@ fun CsvImportBody(
                                     Text(
                                         text = csvImportState.header.joinToString(", "),
                                         modifier = Modifier
-                                            .padding(
-                                                start = 8.dp,
-                                                top = 0.dp,
-                                                end = 0.dp,
-                                                bottom = 8.dp
-                                            ),
+                                            .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 8.dp),
                                     )
                                     Text(
                                         text = stringResource(R.string.possible_record),
@@ -466,12 +451,7 @@ fun CsvImportBody(
                                     Text(
                                         text = csvImportState.firstFullRecord.joinToString(", "),
                                         modifier = Modifier
-                                            .padding(
-                                                start = 8.dp,
-                                                top = 0.dp,
-                                                end = 0.dp,
-                                                bottom = 0.dp
-                                            ),
+                                            .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 0.dp),
                                     )
                                 }
 
@@ -480,23 +460,13 @@ fun CsvImportBody(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = 16.dp)
-                                        .padding(
-                                            start = 8.dp,
-                                            top = 8.dp,
-                                            end = 8.dp,
-                                            bottom = 8.dp
-                                        ),
+                                        .padding(8.dp),
                                 ) {
                                     // Has header option and record count //
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(
-                                                start = 0.dp,
-                                                top = 0.dp,
-                                                end = 0.dp,
-                                                bottom = 8.dp
-                                            ),
+                                            .padding(bottom = 8.dp),
                                         horizontalArrangement = Arrangement.Start,
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
@@ -540,12 +510,7 @@ fun CsvImportBody(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(
-                                                start = 0.dp,
-                                                top = 0.dp,
-                                                end = 0.dp,
-                                                bottom = 0.dp
-                                            ),
+                                            .padding(0.dp),
                                         horizontalArrangement = Arrangement.spacedBy(
                                             8.dp,
                                             Alignment.Start
@@ -634,18 +599,13 @@ fun CsvImportBody(
                                 // column mapping options //
                                 Column(
                                     modifier = Modifier
-                                        .padding(
-                                            start = 24.dp,
-                                            top = 8.dp,
-                                            end = 24.dp,
-                                            bottom = 16.dp
-                                        )
+                                        .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
                                         .fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
                                     MappingField(
-                                        label = "Brand: ",
+                                        label = "Brand:",
                                         selectedColumn = mappingOptions.brandColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -657,7 +617,7 @@ fun CsvImportBody(
                                         showCheckbox = false
                                     )
                                     MappingField(
-                                        label = "Blend: ",
+                                        label = "Blend:",
                                         selectedColumn = mappingOptions.blendColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -668,7 +628,7 @@ fun CsvImportBody(
                                         placeholder = "Required",
                                     )
                                     MappingField(
-                                        label = "Type: ",
+                                        label = "Type:",
                                         selectedColumn = mappingOptions.typeColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -688,7 +648,69 @@ fun CsvImportBody(
                                         showCheckbox = true
                                     )
                                     MappingField(
-                                        label = "Quantity: ",
+                                        label = "Subgenre:",
+                                        selectedColumn = mappingOptions.subGenreColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.SubGenre, selectedColumn
+                                            )
+                                        },
+                                        overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.SubGenre]
+                                            ?: false,
+                                        onOverwrite = {
+                                            viewModel.updateOverwriteSelection(
+                                                CsvImportViewModel.CsvField.SubGenre,
+                                                it
+                                            )
+                                        },
+                                        importOption = importOption,
+                                        showCheckbox = true
+                                    )
+                                    MappingField(
+                                        label = "Cut:",
+                                        selectedColumn = mappingOptions.cutColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.Cut, selectedColumn
+                                            )
+                                        },
+                                        overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Cut]
+                                            ?: false,
+                                        onOverwrite = {
+                                            viewModel.updateOverwriteSelection(
+                                                CsvImportViewModel.CsvField.Cut,
+                                                it
+                                            )
+                                        },
+                                        importOption = importOption,
+                                        showCheckbox = true
+                                    )
+                                    // Components //
+                                    MappingField(
+                                        label = "Components:",
+                                        selectedColumn = mappingOptions.componentsColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.Components, selectedColumn
+                                            )
+                                        },
+                                        overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Components]
+                                            ?: false,
+                                        onOverwrite = {
+                                            viewModel.updateOverwriteSelection(
+                                                CsvImportViewModel.CsvField.Components,
+                                                it
+                                            )
+                                        },
+                                        importOption = importOption,
+                                        showCheckbox = true
+                                    )
+
+                                    MappingField(
+                                        label = "Quantity:",
                                         selectedColumn = mappingOptions.quantityColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -708,7 +730,7 @@ fun CsvImportBody(
                                         showCheckbox = true
                                     )
                                     MappingField(
-                                        label = "Favorite: ",
+                                        label = "Favorite:",
                                         selectedColumn = mappingOptions.favoriteColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -728,7 +750,7 @@ fun CsvImportBody(
                                         showCheckbox = true
                                     )
                                     MappingField(
-                                        label = "Disliked: ",
+                                        label = "Disliked:",
                                         selectedColumn = mappingOptions.dislikedColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -748,7 +770,27 @@ fun CsvImportBody(
                                         showCheckbox = true
                                     )
                                     MappingField(
-                                        label = "Notes: ",
+                                        label = "Production\nStatus:",
+                                        selectedColumn = mappingOptions.productionColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.Production, selectedColumn
+                                            )
+                                        },
+                                        overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Production]
+                                            ?: false,
+                                        onOverwrite = {
+                                            viewModel.updateOverwriteSelection(
+                                                CsvImportViewModel.CsvField.Production,
+                                                it
+                                            )
+                                        },
+                                        importOption = importOption,
+                                        showCheckbox = true
+                                    )
+                                    MappingField(
+                                        label = "Notes:",
                                         selectedColumn = mappingOptions.notesColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -1113,7 +1155,7 @@ fun LabeledCheckbox(
 // Field mapping composables //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MappingField (
+fun MappingField(
     label: String,
     selectedColumn: String,
     csvColumns: List<String>,
@@ -1126,27 +1168,52 @@ fun MappingField (
     placeholder: String = "",
 ) {
     var expanded by remember { mutableStateOf(false) }
-
+    var fontSize by remember { mutableStateOf(16.sp) }
+    val minFontSize = 11.sp
+    var fontMultiplier by remember { mutableFloatStateOf(1f) }
+    fun updateFontSize(multiplier: Float) {
+        val newSize = fontSize * multiplier
+        if (newSize > minFontSize) {
+            fontMultiplier = multiplier
+        }
+    }
 
     Column {
-        Row (
+        Row(
             modifier = modifier
                 .padding(0.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = label,
+            Box(
                 modifier = Modifier
-                    .padding(0.dp)
-                    //    .weight(1f)
+                    .padding(end = 10.dp)
+                    .height(42.dp)
                     .width(90.dp),
-            )
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier,
+                    textAlign = TextAlign.Start,
+                    softWrap = false,
+                    maxLines = 2,
+                    overflow = TextOverflow.Visible,
+                    style = LocalTextStyle.current.copy(
+                        lineHeight = LocalTextStyle.current.lineHeight * fontMultiplier,
+                        fontSize = LocalTextStyle.current.fontSize * fontMultiplier,
+                    ),
+                    onTextLayout = {
+                        if (it.hasVisualOverflow) {
+                            updateFontSize(fontMultiplier * 0.99f)
+                        }
+                    }
+                )
+            }
             Box(
                 modifier = Modifier
                     .padding(0.dp)
-                    //  .weight(2f)
                     .weight(1f)
             ) {
                 ExposedDropdownMenuBox(
@@ -1156,7 +1223,7 @@ fun MappingField (
                 ) {
                     OutlinedTextField(
                         value = selectedColumn.ifBlank { "" },
-                        onValueChange = {},
+                        onValueChange = { },
                         readOnly = true,
                         modifier = Modifier
                             .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
@@ -1172,8 +1239,10 @@ fun MappingField (
                             focusedContainerColor = LocalCustomColors.current.textField,
                             unfocusedContainerColor = LocalCustomColors.current.textField,
                             disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        singleLine = true,
+
                         )
-                    )
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
@@ -1201,7 +1270,6 @@ fun MappingField (
 
             Column(
                 modifier = Modifier
-                //    .weight(.5f)
                     .width(48.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center,
