@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.AddItemClickedEvent
@@ -154,8 +153,6 @@ class FilterViewModel (
 
     fun returnScroll() {
         _shouldReturn.value = true
-
-        Log.d("FilterViewModel", "returnScroll called")
     }
 
     fun resetScroll() {
@@ -164,8 +161,6 @@ class FilterViewModel (
         _addEntryClick.value = false
         _savedItemId.value = -1
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
-
-        Log.d("FilterViewModel", "resetScroll called")
     }
 
     init {
