@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import com.sardonicus.tobaccocellar.data.Tins
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import java.time.format.FormatStyle
 import kotlin.String
 import kotlin.collections.List
 import kotlin.math.roundToInt
@@ -96,9 +96,12 @@ class AddEntryViewModel(
                 manufactureDate = tinDetails.manufactureDate,
                 cellarDate = tinDetails.cellarDate,
                 openDate = tinDetails.openDate,
-                manufactureDateString = tinDetails.manufactureDateString,
-                cellarDateString = tinDetails.cellarDateString,
-                openDateString = tinDetails.openDateString,
+                manufactureDateShort = tinDetails.manufactureDateShort,
+                cellarDateShort = tinDetails.cellarDateShort,
+                openDateShort = tinDetails.openDateShort,
+                manufactureDateLong = tinDetails.manufactureDateLong,
+                cellarDateLong = tinDetails.cellarDateLong,
+                openDateLong = tinDetails.openDateLong,
                 detailsExpanded = tinDetails.detailsExpanded,
                 labelIsNotValid = labelInvalid.value
             )
@@ -356,9 +359,12 @@ data class TinDetails(
     val manufactureDate: Long? = null,
     val cellarDate: Long? = null,
     val openDate: Long? = null,
-    var manufactureDateString: String = "",
-    var cellarDateString: String = "",
-    var openDateString: String = "",
+    var manufactureDateShort: String = "",
+    var cellarDateShort: String = "",
+    var openDateShort: String = "",
+    var manufactureDateLong: String = "",
+    var cellarDateLong: String = "",
+    var openDateLong: String = "",
     var detailsExpanded: Boolean = false,
     var labelIsNotValid: Boolean = false
 )
@@ -463,16 +469,28 @@ fun Tins.toTinDetails(): TinDetails = TinDetails(
     manufactureDate = manufactureDate,
     cellarDate = cellarDate,
     openDate = openDate,
-    manufactureDateString = formatDate(manufactureDate),
-    cellarDateString = formatDate(cellarDate),
-    openDateString = formatDate(openDate),
+    manufactureDateShort = formatShortDate(manufactureDate),
+    cellarDateShort = formatShortDate(cellarDate),
+    openDateShort = formatShortDate(openDate),
+    manufactureDateLong = formatLongDate(manufactureDate),
+    cellarDateLong = formatLongDate(cellarDate),
+    openDateLong = formatLongDate(openDate),
 )
 
-fun formatDate(millis: Long?): String {
+fun formatShortDate(millis: Long?): String {
     return if (millis != null) {
         val instant = Instant.ofEpochMilli(millis)
         val formatter = DateTimeFormatter.ofPattern("MM/yy").withZone(ZoneId.systemDefault())
         formatter.format(instant)
+    } else { "" }
+}
+
+fun formatLongDate(millis: Long?): String {
+    return if (millis != null) {
+        val instant = Instant.ofEpochMilli(millis)
+        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        formatter.format(localDate)
     } else { "" }
 }
 

@@ -78,7 +78,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,6 +98,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -137,6 +137,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 
 object AddEntryDestination : NavigationDestination {
@@ -1492,7 +1493,10 @@ fun TinsEntry(
                         onValueChange = onValueChange,
                         modifier = Modifier
                             .padding(bottom = 4.dp)
-                            .background(color = MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
+                            .background(
+                                color = MaterialTheme.colorScheme.background,
+                                shape = RoundedCornerShape(8.dp)
+                            )
                     )
                 }
                 IconButton(
@@ -1653,8 +1657,15 @@ fun IndividualTin(
                             .widthIn(max = textFieldMax)
                             .onFocusChanged {
                                 if (!it.isFocused) {
-                                //    showError = isTinLabelValid(tinDetails.tinLabel, tempTinId)
-                                    onTinValueChange(tinDetails.copy(labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)))
+                                    //    showError = isTinLabelValid(tinDetails.tinLabel, tempTinId)
+                                    onTinValueChange(
+                                        tinDetails.copy(
+                                            labelIsNotValid = isTinLabelValid(
+                                                tinDetails.tinLabel,
+                                                tempTinId
+                                            )
+                                        )
+                                    )
                                 }
                             },
                         textStyle = LocalTextStyle.current.copy(
@@ -1914,16 +1925,26 @@ fun IndividualTin(
                     val openedFocusRequester = remember { FocusRequester() }
                     val interactionSource = remember { MutableInteractionSource() }
 
+                    var dateFieldWidth by remember { mutableStateOf(0) }
+
+                    Log.d("field width", "$dateFieldWidth")
+
                     // Manufacture //
                     OutlinedTextField(
-                        value = if (tinDetails.manufactureDateString.isEmpty()) {
-                            " "
-                        } else {
-                            tinDetails.manufactureDateString
+                        value = if (tinDetails.manufactureDateShort.isEmpty()) {
+                            " " } else {
+                            if (dateFieldWidth > 420) {
+                                tinDetails.manufactureDateLong
+                            } else {
+                                tinDetails.manufactureDateShort
+                            }
                         },
                         onValueChange = { },
                         modifier = Modifier
                             .weight(1f)
+                            .onGloballyPositioned {
+                                dateFieldWidth = it.size.width
+                            }
                             .onFocusChanged { manuIsFocused = it.isFocused }
                             .focusRequester(manuFocusRequester),
                         enabled = true,
@@ -1964,9 +1985,14 @@ fun IndividualTin(
 
                     // Cellar //
                     OutlinedTextField(
-                        value = if (tinDetails.cellarDateString.isEmpty() && !cellaredIsFocused) {
-                            " " }
-                            else { tinDetails.cellarDateString },
+                        value = if (tinDetails.cellarDateShort.isEmpty()) {
+                            " " } else {
+                            if (dateFieldWidth > 420) {
+                                tinDetails.cellarDateLong
+                            } else {
+                                tinDetails.cellarDateShort
+                            }
+                        },
                         onValueChange = { },
                         label = {
                             Text(
@@ -2011,9 +2037,14 @@ fun IndividualTin(
 
                     // Opened //
                     OutlinedTextField(
-                        value = if (tinDetails.openDateString.isEmpty() && !openedIsFocused) {
-                            " " }
-                        else { tinDetails.openDateString },
+                        value = if (tinDetails.openDateShort.isEmpty()) {
+                            " " } else {
+                            if (dateFieldWidth > 420) {
+                                tinDetails.openDateLong
+                            } else {
+                                tinDetails.openDateShort
+                            }
+                        },
                         onValueChange = { },
                         label = {
                             Text(
@@ -2062,16 +2093,26 @@ fun IndividualTin(
                         CustomDatePickerDialog(
                             onDismiss = { showDatePicker = false },
                             onDateSelected = {
-                            //    val selectedDate = Date(it ?: 0)
-
-                                val dateString = if (it != null) {
+                                val dateStringShort = if (it != null) {
                                     val instant = Instant.ofEpochMilli(it)
-                                    val formatter =
+
+                                    val shortFormat =
                                         DateTimeFormatter
                                             .ofPattern("MM/yy")
                                             .withZone(ZoneId.systemDefault())
 
-                                    formatter.format(instant)
+                                    shortFormat.format(instant)
+                                } else { "" }
+
+                                val dateStringLong = if (it != null) {
+                                    val instant = Instant.ofEpochMilli(it)
+
+                                    val longFormat =
+                                        DateTimeFormatter
+                                            .ofLocalizedDate(FormatStyle.MEDIUM)
+                                    val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+
+                                    longFormat.format(localDate)
                                 } else { "" }
 
                                 when (datePickerLabel) {
@@ -2079,7 +2120,8 @@ fun IndividualTin(
                                         onTinValueChange(
                                             tinDetails.copy(
                                                 manufactureDate = it,
-                                                manufactureDateString = dateString
+                                                manufactureDateShort = dateStringShort,
+                                                manufactureDateLong = dateStringLong
                                             )
                                         )
                                     }
@@ -2087,7 +2129,8 @@ fun IndividualTin(
                                         onTinValueChange(
                                             tinDetails.copy(
                                                 cellarDate = it,
-                                                cellarDateString = dateString
+                                                cellarDateShort = dateStringShort,
+                                                cellarDateLong = dateStringLong
                                             )
                                         )
                                     }
@@ -2095,7 +2138,8 @@ fun IndividualTin(
                                         onTinValueChange(
                                             tinDetails.copy(
                                                 openDate = it,
-                                                openDateString = dateString
+                                                openDateShort = dateStringShort,
+                                                openDateLong = dateStringLong
                                             )
                                         )
                                     }
@@ -2190,7 +2234,8 @@ fun CustomDatePickerDialog(
     ) {
         DatePicker(
             state = datePickerState,
-            modifier = Modifier,
+            modifier = Modifier
+                .verticalScroll(rememberScrollState()),
             title = {
                 Text(
                     text = "${label} Date",
@@ -2201,7 +2246,13 @@ fun CustomDatePickerDialog(
                 )
             },
             headline = {
-                Text("Select a date", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp))
+                Text(
+                    text = "Select a date",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                )
             },
             dateFormatter = datePickerFormatter,
             showModeToggle = true,

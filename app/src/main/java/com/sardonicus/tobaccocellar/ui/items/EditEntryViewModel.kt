@@ -318,9 +318,12 @@ class EditEntryViewModel(
                 manufactureDate = tinDetails.manufactureDate,
                 cellarDate = tinDetails.cellarDate,
                 openDate = tinDetails.openDate,
-                manufactureDateString = tinDetails.manufactureDateString,
-                cellarDateString = tinDetails.cellarDateString,
-                openDateString = tinDetails.openDateString,
+                manufactureDateShort = tinDetails.manufactureDateShort,
+                cellarDateShort = tinDetails.cellarDateShort,
+                openDateShort = tinDetails.openDateShort,
+                manufactureDateLong = tinDetails.manufactureDateLong,
+                cellarDateLong = tinDetails.cellarDateLong,
+                openDateLong = tinDetails.openDateLong,
                 detailsExpanded = tinDetails.detailsExpanded,
                 labelIsNotValid = labelInvalid.value
             )
