@@ -37,25 +37,78 @@ class CsvHelper {
         }
     }
 
-    fun exportToCsv(data: List<Items>): String {
+    fun exportToCsv(data: List<ItemsWithComponents>): String {
         val csvWriter = StringWriter()
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
-            .setHeader("Brand","Blend","Type","Quantity","Favorite","Disliked","Notes")
+            .setHeader("Brand", "Blend", "Type", "Sub-Genre", "Cut", "No. of Tins", "Favorite",
+                "Disliked", "Production Status", "Notes", "Components")
             .build()
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
-        for (item in data) {
-            csvPrinter.printRecord(item.brand, item.blend, item.type, item.quantity, item.favorite, item.disliked, item.notes)
+        for (itemWithComponents in data) {
+            val componentsString = itemWithComponents.components.joinToString(", ") { it.componentName }
+
+            csvPrinter.printRecord(
+                itemWithComponents.item.brand,
+                itemWithComponents.item.blend,
+                itemWithComponents.item.type,
+                itemWithComponents.item.subGenre,
+                itemWithComponents.item.cut,
+                itemWithComponents.item.quantity,
+                itemWithComponents.item.favorite,
+                itemWithComponents.item.disliked,
+                itemWithComponents.item.inProduction,
+                itemWithComponents.item.notes,
+                componentsString
+            )
         }
 
         csvPrinter.flush()
         return csvWriter.toString()
     }
-}
 
+    fun exportTinsToCsv(data: List<TinExportData>): String {
+        val csvWriter = StringWriter()
+        val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
+            .setQuoteMode(QuoteMode.ALL)
+            .setEscape('"')
+            .setHeader("Brand", "Blend", "Type", "Sub-Genre", "Cut", "Favorite", "Disliked",
+                "Production Status", "Notes", "Components", "Container", "Quantity",
+                "Manufacture Date", "Cellar Date", "Open Date"
+            )
+            .build()
+
+        val csvPrinter = CSVPrinter(csvWriter, csvFormat)
+
+        for (tinData in data) {
+            csvPrinter.printRecord(
+                tinData.brand,
+                tinData.blend,
+                tinData.type,
+                tinData.subGenre,
+                tinData.cut,
+                tinData.favorite,
+                tinData.disliked,
+                tinData.inProduction,
+                tinData.notes,
+                tinData.components,
+                tinData.container,
+                tinData.quantity,
+                tinData.manufactureDate,
+                tinData.cellarDate,
+                tinData.openDate
+            )
+        }
+
+        csvPrinter.flush()
+        return csvWriter.toString()
+    }
+
+
+}
 
 
 sealed class CsvResult {

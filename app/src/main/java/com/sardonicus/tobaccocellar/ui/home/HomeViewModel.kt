@@ -186,8 +186,8 @@ class HomeViewModel(
     override fun onExportCsvClick(uri: Uri?) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val items = itemsRepository.getAllItemsExport()
-                val csvData = csvHelper.exportToCsv(items)
+                val itemsWithComponents = itemsRepository.getAllItemsWithComponents()
+                val csvData = csvHelper.exportToCsv(itemsWithComponents)
                 if (uri != null) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
                             outputStream ->
@@ -199,6 +199,27 @@ class HomeViewModel(
                         .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                     val file = File(documentsDirectory, "tobacco_cellar.csv")
                     file.writeText(csvData)
+                }
+            }
+        }
+    }
+
+    override fun onTinsExportCsvClick(uri: Uri?) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val tinExportData = itemsRepository.getTinExportData()
+                val tinCsvData = csvHelper.exportTinsToCsv(tinExportData)
+                if (uri != null) {
+                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
+                            outputStream ->
+                        outputStream.write(tinCsvData.toByteArray())
+                        _showSnackbar.value = true
+                    }
+                } else {
+                    val documentsDirectory = Environment
+                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    val file = File(documentsDirectory, "tobacco_cellar_as_tins.csv")
+                    file.writeText(tinCsvData)
                 }
             }
         }

@@ -3,7 +3,6 @@
 
 package com.sardonicus.tobaccocellar
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,14 +25,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +50,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -121,7 +120,6 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
-import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
@@ -130,7 +128,6 @@ import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -186,9 +183,10 @@ fun CellarTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var menuState by rememberSaveable { mutableStateOf(MenuState.MAIN) }
 
-    val launcher = rememberLauncherForActivityResult(
+    val exportCsvLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -196,10 +194,23 @@ fun CellarTopAppBar(
             exportCsvHandler?.onExportCsvClick(uri)
         }
     }
-    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+    val exportCsvIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
         addCategory(Intent.CATEGORY_OPENABLE)
         type = "text/csv"
         putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
+    }
+    val exportAsTinsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            exportCsvHandler?.onTinsExportCsvClick(uri)
+        }
+    }
+    val exportAsTinsIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+        addCategory(Intent.CATEGORY_OPENABLE)
+        type = "text/csv"
+        putExtra(Intent.EXTRA_TITLE, "tobacco_cellar_as_tins.csv")
     }
 
     TopAppBar(
@@ -228,120 +239,112 @@ fun CellarTopAppBar(
                         modifier = Modifier,
                         containerColor = LocalCustomColors.current.textField,
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(R.string.import_csv)) },
-                            onClick = {
-                                expanded = false
-                                navigateToCsvImport()
-                            },
-                            modifier = Modifier
-                                .padding(0.dp),
-                            enabled = currentDestination == HomeDestination,
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(R.string.export_csv)) },
-                            onClick = {
-                                expanded = false
-                                launcher.launch(intent)
-                            },
-                            modifier = Modifier
-                                .padding(0.dp),
-                            enabled = currentDestination == HomeDestination && exportCsvHandler != null,
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(R.string.help_faq)) },
-                            onClick = {
-                                expanded = false
-                                navigateToHelp()
-                            },
-                            modifier = Modifier
-                                .padding(0.dp),
-                            enabled = true,
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(R.string.settings)) },
-                            onClick = {
-                                expanded = false
-                                navigateToSettings()
-                            },
-                            modifier = Modifier
-                                .padding(0.dp),
-                            enabled = true,
-                        )
+                        when (menuState) {
+                            MenuState.MAIN -> {
+                                DropdownMenuItem(
+                                    text = { Text(text = stringResource(R.string.import_csv)) },
+                                    onClick = {
+                                        expanded = false
+                                        navigateToCsvImport()
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled = currentDestination == HomeDestination,
+                                )
+                                DropdownMenuItem(
+                                //    text = { Text(text = stringResource(R.string.export_csv)) },
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(text = "Export CSV ")
+                                            Icon(
+                                                Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                                "Export Options",
+                                            modifier = Modifier.size(20.dp),
+                                            tint = LocalContentColor.current.copy(alpha = 0.75f))
+                                        }
+                                    },
+                                    onClick = {
+                                    //    expanded = false
+                                    //    exportCsvLauncher.launch(exportCsvIntent)
+                                        menuState = MenuState.EXPORT_CSV
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled =
+                                        currentDestination == HomeDestination && exportCsvHandler != null,
+                                    contentPadding = PaddingValues(
+                                        horizontal = 12.dp,
+                                        vertical = 0.dp
+                                    ),
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(text = stringResource(R.string.help_faq)) },
+                                    onClick = {
+                                        expanded = false
+                                        navigateToHelp()
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled = true,
+                                )
 
-//                        CustomMenuItem(
-//                            text = {
-//                                Text(
-//                                    text = stringResource(R.string.import_csv),
-//                                    fontSize = 14.sp,
-//                                    fontWeight = FontWeight.Medium,
-//                                    color = MaterialTheme.colorScheme.onSurface,
-//                                )
-//                            },
-//                            onClick = {
-//                                expanded = false
-//                                navigateToCsvImport()
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp),
-//                            enabled = currentDestination == HomeDestination,
-//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-//                        )
-//                        CustomMenuItem(
-//                            text = {
-//                                Text(
-//                                    text = stringResource(R.string.export_csv),
-//                                    fontSize = 14.sp,
-//                                    fontWeight = FontWeight.Medium,
-//                                    color = MaterialTheme.colorScheme.onSurface,
-//                                )
-//                            },
-//                            onClick = {
-//                                expanded = false
-//                                launcher.launch(intent)
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp),
-//                            enabled = currentDestination == HomeDestination && exportCsvHandler != null,
-//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-//                        )
-//                        CustomMenuItem(
-//                            text = {
-//                                Text(
-//                                    text = stringResource(R.string.settings),
-//                                    fontSize = 14.sp,
-//                                    fontWeight = FontWeight.Medium,
-//                                    color = MaterialTheme.colorScheme.onSurface,
-//                                )
-//                            },
-//                            onClick = {
-//                                expanded = false
-//                                navigateToSettings()
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp),
-//                            enabled = true,
-//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-//                        )
-//                        CustomMenuItem(
-//                            text = {
-//                                Text(
-//                                    text = stringResource(R.string.how_to),
-//                                    fontSize = 14.sp,
-//                                    fontWeight = FontWeight.Medium,
-//                                    color = MaterialTheme.colorScheme.onSurface,
-//                                )
-//                            },
-//                            onClick = {
-//                                expanded = false
-//                                navigateToHowTo()
-//                            },
-//                            modifier = Modifier
-//                                .padding(0.dp),
-//                            enabled = true,
-//                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-//                        )
+                                DropdownMenuItem(
+                                    text = { Text(text = stringResource(R.string.settings)) },
+                                    onClick = {
+                                        expanded = false
+                                        navigateToSettings()
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled = true,
+                                )
+                            }
+                            MenuState.EXPORT_CSV -> {
+                                DropdownMenuItem(
+                                    text = {
+                                        Icon(
+                                            Icons.AutoMirrored.Default.KeyboardArrowLeft,
+                                            "Back",
+                                            modifier = Modifier.size(20.dp),
+                                            tint = LocalContentColor.current.copy(alpha = 0.75f)
+                                        )
+                                    },
+                                    onClick = { menuState = MenuState.MAIN }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(text = "Normal Export") },
+                                    onClick = {
+                                        expanded = false
+                                        exportCsvLauncher.launch(exportCsvIntent)
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled =
+                                        currentDestination == HomeDestination && exportCsvHandler != null,
+                                    contentPadding = PaddingValues(
+                                        horizontal = 12.dp,
+                                        vertical = 0.dp
+                                    ),
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(text = "Export as Tins") },
+                                    onClick = {
+                                        expanded = false
+                                        exportAsTinsLauncher.launch(exportAsTinsIntent)
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled =
+                                        currentDestination == HomeDestination && exportCsvHandler != null,
+                                    contentPadding = PaddingValues(
+                                        horizontal = 12.dp,
+                                        vertical = 0.dp
+                                    ),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -357,6 +360,11 @@ fun CellarTopAppBar(
         scrollBehavior = scrollBehavior,
     //    windowInsets = WindowInsets.systemBars,
     )
+}
+
+enum class MenuState {
+    MAIN,
+    EXPORT_CSV
 }
 
 
@@ -888,6 +896,7 @@ fun CheckboxWithLabel(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = 15.sp,
+    lineHeight: TextUnit = TextUnit.Unspecified,
     height: Dp = 36.dp,
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
@@ -916,6 +925,7 @@ fun CheckboxWithLabel(
                 .padding(end = 6.dp),
             color = fontColor,
             fontSize = fontSize,
+            lineHeight = lineHeight,
         )
     }
 }
