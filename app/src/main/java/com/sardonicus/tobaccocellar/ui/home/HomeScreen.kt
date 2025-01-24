@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.home
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -62,7 +61,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -104,10 +102,14 @@ import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.home.BlendSearchEvent
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -269,6 +271,8 @@ private fun HomeHeader(
     selectView: (Boolean) -> Unit,
     isTableView: Boolean,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -330,6 +334,11 @@ private fun HomeHeader(
                     }
                 },
                 onImeAction = {
+                    coroutineScope.launch {
+                        withContext(Dispatchers.Main) {
+                            EventBus.emit(BlendSearchEvent)
+                        }
+                    }
                     filterViewModel.onBlendSearch(blendSearchText)
                 }
             )
@@ -373,6 +382,7 @@ private fun CustomBlendSearch(
     var showCursor by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
 
     BasicTextField(
         value = value,
@@ -694,6 +704,7 @@ fun ListViewMode(
     onNoteClick: (Items) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val columnState = rememberLazyListState()
 
     Box(
@@ -744,13 +755,14 @@ fun ListViewMode(
             }
         }
 
-        val coroutineScope = rememberCoroutineScope()
+
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val addEntryClick by filterViewModel.addEntryClick.collectAsState()
 
+        // Return Positions //
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
                 val index = currentPosition[0]
@@ -773,7 +785,6 @@ fun ListViewMode(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -787,10 +798,10 @@ fun ListViewMode(
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
-                delay(55)
+                delay(50)
                 withFrameNanos {
                     coroutineScope.launch {
-                        if (savedItemIndex > 1 && savedItemIndex < (itemsList.size - 1)) {
+                        if (savedItemIndex > 0 && savedItemIndex < (itemsList.size - 1)) {
                             val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                             columnState.scrollToItem(savedItemIndex, offset)
                         } else {
@@ -799,18 +810,6 @@ fun ListViewMode(
                     }
                 }
                 filterViewModel.resetScroll()
-            }
-        }
-
-        LaunchedEffect(menuItemId) {
-            if (isMenuShown) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                if (firstVisibleItem != null) {
-                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    filterViewModel.returnScroll()
-                }
             }
         }
 
@@ -831,6 +830,19 @@ fun ListViewMode(
             }
         }
 
+        // Update scroll position //
+        LaunchedEffect(menuItemId) {
+            if (isMenuShown) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+                if (firstVisibleItem != null) {
+                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.returnScroll()
+                }
+            }
+        }
+
         LaunchedEffect(addEntryClick) {
             if (addEntryClick) {
                 val layoutInfo = columnState.layoutInfo
@@ -838,7 +850,6 @@ fun ListViewMode(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -1317,6 +1328,7 @@ fun TableLayout(
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val addEntryClick by filterViewModel.addEntryClick.collectAsState()
 
+        // Return Positions //
         LaunchedEffect(blendSearchText) {
             if (blendSearchText.isEmpty()) {
                 val index = currentPosition[0]
@@ -1339,7 +1351,6 @@ fun TableLayout(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -1353,7 +1364,7 @@ fun TableLayout(
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
-                delay(55)
+                delay(50)
                 withFrameNanos {
                     coroutineScope.launch {
                         if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
@@ -1365,20 +1376,6 @@ fun TableLayout(
                     }
                 }
                 filterViewModel.resetScroll()
-            }
-        }
-
-        LaunchedEffect(sorting) {
-            columnState.scrollToItem(0)
-        }
-
-        LaunchedEffect(itemClicked) {
-            val layoutInfo = columnState.layoutInfo
-            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-            if (firstVisibleItem != null) {
-                updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                filterViewModel.returnScroll()
             }
         }
 
@@ -1399,6 +1396,21 @@ fun TableLayout(
             }
         }
 
+        LaunchedEffect(sorting) {
+            columnState.scrollToItem(0)
+        }
+
+        // Update positions //
+        LaunchedEffect(itemClicked) {
+            val layoutInfo = columnState.layoutInfo
+            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+            if (firstVisibleItem != null) {
+                updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                filterViewModel.returnScroll()
+            }
+        }
+
         LaunchedEffect(addEntryClick) {
             if (addEntryClick) {
                 val layoutInfo = columnState.layoutInfo
@@ -1406,7 +1418,6 @@ fun TableLayout(
 
                 if (firstVisibleItem != null) {
                     updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    filterViewModel.returnScroll()
                 }
             }
         }
@@ -1527,3 +1538,5 @@ fun TableCell(
         )
     }
 }
+
+data object BlendSearchEvent

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.AddItemClickedEvent
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.ui.home.BlendSearchEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -175,6 +176,10 @@ class FilterViewModel (
                 }
                 if (it is AddItemClickedEvent) {
                     _addEntryClick.value = true
+                    _shouldReturn.value = true
+                }
+                if (it is BlendSearchEvent) {
+                    _shouldReturn.value = true
                 }
             }
         }
