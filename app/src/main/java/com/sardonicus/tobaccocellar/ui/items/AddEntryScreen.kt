@@ -879,82 +879,95 @@ fun BasicDetails(
                     ),
                     shape = MaterialTheme.shapes.extraSmall
                 )
+
+                // Tin field options //
                 Row(
                     modifier = Modifier
                         .padding(0.dp)
-                        .fillMaxHeight(),
-                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                        .fillMaxHeight()
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.arrow_up),
-                        contentDescription = "Increase Quantity",
+                    // Increase/Decrease Buttons //
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.Top)
-                            .clickable(enabled = !itemDetails.isSynced) {
-                                if (itemDetails.quantityString.isEmpty()) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            quantityString = "1",
-                                            quantity = 1
-                                        )
-                                    )
-                                } else {
-                                    if (itemDetails.quantityString.toInt() < 99) {
+                            .padding(0.dp)
+                            .fillMaxHeight(),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.arrow_up),
+                            contentDescription = "Increase Quantity",
+                            modifier = Modifier
+                                .align(Alignment.Top)
+                                .clickable(enabled = !itemDetails.isSynced) {
+                                    if (itemDetails.quantityString.isEmpty()) {
                                         onValueChange(
                                             itemDetails.copy(
-                                                quantityString = (itemDetails.quantityString.toInt() + 1).toString(),
-                                                quantity = itemDetails.quantityString.toInt() + 1
+                                                quantityString = "1",
+                                                quantity = 1
                                             )
                                         )
                                     } else {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                quantityString = "99",
-                                                quantity = 99
+                                        if (itemDetails.quantityString.toInt() < 99) {
+                                            onValueChange(
+                                                itemDetails.copy(
+                                                    quantityString = (itemDetails.quantityString.toInt() + 1).toString(),
+                                                    quantity = itemDetails.quantityString.toInt() + 1
+                                                )
                                             )
-                                        )
+                                        } else {
+                                            onValueChange(
+                                                itemDetails.copy(
+                                                    quantityString = "99",
+                                                    quantity = 99
+                                                )
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                            .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
-                            .offset(x = 1.dp, y = 2.dp)
-                    )
-                    Icon(
-                        painter = painterResource(id = R.drawable.arrow_down),
-                        contentDescription = "Decrease Quantity",
-                        modifier = Modifier
-                            .align(Alignment.Bottom)
-                            .clickable(enabled = !itemDetails.isSynced) {
-                                if (itemDetails.quantityString.isEmpty()) {
-                                    /* do nothing */
-                                } else {
-                                    if (itemDetails.quantityString.toInt() > 0) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                quantityString = (itemDetails.quantityString.toInt() - 1).toString(),
-                                                quantity = itemDetails.quantity - 1
+                                .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
+                                .offset(x = 1.dp, y = 2.dp)
+                        )
+                        Icon(
+                            painter = painterResource(id = R.drawable.arrow_down),
+                            contentDescription = "Decrease Quantity",
+                            modifier = Modifier
+                                .align(Alignment.Bottom)
+                                .clickable(enabled = !itemDetails.isSynced) {
+                                    if (itemDetails.quantityString.isEmpty()) {
+                                        /* do nothing */
+                                    } else {
+                                        if (itemDetails.quantityString.toInt() > 0) {
+                                            onValueChange(
+                                                itemDetails.copy(
+                                                    quantityString = (itemDetails.quantityString.toInt() - 1).toString(),
+                                                    quantity = itemDetails.quantity - 1
+                                                )
                                             )
-                                        )
-                                    } else if (itemDetails.quantityString.toInt() == 0) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                quantityString = "0",
-                                                quantity = 0
+                                        } else if (itemDetails.quantityString.toInt() == 0) {
+                                            onValueChange(
+                                                itemDetails.copy(
+                                                    quantityString = "0",
+                                                    quantity = 0
+                                                )
                                             )
-                                        )
+                                        }
                                     }
                                 }
-                            }
-                            .padding(
-                                start = 2.dp,
-                                end = 8.dp,
-                                top = 4.dp,
-                                bottom = 4.dp
-                            )
-                            .offset(x = (-1).dp, y = (-2).dp)
-                    )
+                                .padding(
+                                    start = 2.dp,
+                                    end = 8.dp,
+                                    top = 4.dp,
+                                    bottom = 4.dp
+                                )
+                                .offset(x = (-1).dp, y = (-2).dp)
+                        )
+                    }
 
+                    // Tin Converter //
                     Column(
                         modifier = Modifier
                             .clickable(enabled = !itemDetails.isSynced) {
@@ -990,6 +1003,7 @@ fun BasicDetails(
                         )
                     }
 
+                    // Sync Tins //
                     CheckboxWithLabel(
                         text = "Sync?",
                         checked = itemDetails.isSynced,
@@ -1000,7 +1014,6 @@ fun BasicDetails(
                         fontSize = 14.sp,
                         height = 22.dp
                     )
-
                 }
             }
         }
