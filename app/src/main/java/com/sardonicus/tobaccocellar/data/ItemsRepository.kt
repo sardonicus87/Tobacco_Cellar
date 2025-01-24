@@ -10,7 +10,7 @@ interface ItemsRepository {
     // Items //
     suspend fun insertItem(item: Items): Long
 
-    suspend fun insertMultiple(items: List<Items>): List<Long>
+    suspend fun insertMultipleItems(items: List<Items>): List<Long>
 
     suspend fun updateItem(item: Items)
 
@@ -25,9 +25,18 @@ interface ItemsRepository {
 
     suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int)
 
-//    suspend fun updateComponents(id: Int, components: List<String>)
-//
-//    suspend fun updateComponentCrossRef(id: Int, components: List<String>)
+    suspend fun deleteComponentsCrossRefByItemId(itemId: Int)
+
+    suspend fun insertMultipleComponents(components: List<Components>): List<Long>
+
+    suspend fun insertMultipleComponentsCrossRef(crossRefs: List<ItemsComponentsCrossRef>)
+
+    // Tins //
+    suspend fun insertTin(tin: Tins): Long
+
+    suspend fun updateTin(tin: Tins)
+
+    suspend fun deleteTin(tinId: Int)
 
 
     /** Get all items **/
@@ -35,13 +44,19 @@ interface ItemsRepository {
 
     fun getAllItemsExport(): List<Items>
 
+    suspend fun getAllItemsWithComponents(): List<ItemsWithComponents>
+
     fun getAllComponentsStream(): Flow<List<Components>>
+
+    suspend fun getTinExportData(): List<TinExportData>
 
 
     /** Get single item **/
     fun getItemStream(id: Int): Flow<Items?>
 
     fun getComponentsForItemStream(id: Int): Flow<List<Components>>
+
+    fun getTinsForItemStream(id: Int): Flow<List<Tins>>
 
     suspend fun getItemIdByIndex(brand: String, blend: String): Int
 
@@ -70,6 +85,8 @@ interface ItemsRepository {
     fun getAllZeroQuantityStream(): Flow<List<Boolean>>
 
     fun getAllCompNamesStream(): Flow<List<String>>
+
+    fun getAllTinContainersStream(): Flow<List<String>>
 
 
     /** Get counts **/
@@ -106,6 +123,8 @@ interface ItemsRepository {
     fun getItemsByZeroQuantity(): Flow<List<Items>>
 
     fun getItemByIndex(brand: String, blend: String): Items?
+
+    fun getComponentsByName(components: List<String>): Flow<List<Components>>
 
 
 //    /** Special functions **/

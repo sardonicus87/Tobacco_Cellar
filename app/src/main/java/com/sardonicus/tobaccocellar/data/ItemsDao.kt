@@ -22,7 +22,7 @@ interface ItemsDao {
 
     // Batch add items //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertMultiple(items: List<Items>): LongArray
+    suspend fun insertMultipleItems(items: List<Items>): LongArray
 
     // Update item in database //
     @Update
@@ -45,6 +45,25 @@ interface ItemsDao {
 
     @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId AND componentId = :componentId")
     suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int)
+
+    @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId")
+    suspend fun deleteComponentsCrossRefByItemId(itemId: Int)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMultipleComponents(components: List<Components>): LongArray
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMultipleComponentsCrossRef(crossRefs: List<ItemsComponentsCrossRef>)
+
+    // Tins //
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTin(tin: Tins): Long
+
+    @Update
+    suspend fun update(tin: Tins)
+
+    @Query("DELETE FROM tins WHERE tinId = :tinId")
+    suspend fun deleteTin(tinId: Int)
 
 
     /** Get all items **/
@@ -79,6 +98,10 @@ interface ItemsDao {
         """
     )
     fun getComponentsForItemStream(itemId: Int): Flow<List<Components>>
+
+    // Get tins by item id //
+    @Query("SELECT * FROM tins WHERE itemsId = :itemsId")
+    fun getTinsForItemStream(itemsId: Int): Flow<List<Tins>>
 
     @Query("SELECT id FROM items WHERE brand = :brand AND blend = :blend")
     suspend fun getItemIdByIndex(brand: String, blend: String): Int
@@ -128,6 +151,10 @@ interface ItemsDao {
     // Get all component names flow //
     @Query("SELECT componentName FROM components ORDER BY componentName ASC")
     fun getAllCompNames(): Flow<List<String>>
+
+    // Get all tin containers flow //
+    @Query("SELECT DISTINCT container FROM tins ORDER BY container ASC")
+    fun getAllTinContainers(): Flow<List<String>>
 
 
     /** Get counts **/
@@ -189,6 +216,10 @@ interface ItemsDao {
 
     @Query("SELECT * FROM items WHERE brand = :brand AND blend = :blend")
     fun getItemByIndex(brand: String, blend: String): Items?
+
+    @Query("SELECT * FROM components WHERE componentName IN (:components)")
+    fun getComponentsByName(components: List<String>): Flow<List<Components>>
+
 
 
 //    /** Special functions **/

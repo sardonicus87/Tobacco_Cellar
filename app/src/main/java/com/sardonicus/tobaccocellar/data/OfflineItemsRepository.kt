@@ -1,8 +1,10 @@
 package com.sardonicus.tobaccocellar.data
 
+import com.sardonicus.tobaccocellar.ui.items.formatLongDate
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
@@ -12,8 +14,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         return itemsDao.insert(item)
     }
 
-    override suspend fun insertMultiple(items: List<Items>): List<Long> {
-        return itemsDao.insertMultiple(items).toList()
+    override suspend fun insertMultipleItems(items: List<Items>): List<Long> {
+        return itemsDao.insertMultipleItems(items).toList()
     }
 
     override suspend fun updateItem(item: Items) = itemsDao.update(item)
@@ -35,6 +37,18 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         itemsDao.deleteComponentsCrossRef(itemId, componentId)
     }
 
+    override suspend fun deleteComponentsCrossRefByItemId(itemId: Int) {
+        itemsDao.deleteComponentsCrossRefByItemId(itemId)
+    }
+
+    override suspend fun insertMultipleComponents(components: List<Components>): List<Long> {
+        return itemsDao.insertMultipleComponents(components).toList()
+    }
+
+    override suspend fun insertMultipleComponentsCrossRef(crossRefs: List<ItemsComponentsCrossRef>) {
+        itemsDao.insertMultipleComponentsCrossRef(crossRefs)
+    }
+
 //    override suspend fun updateComponents(id: Int, components: List<String>) {
 //        itemsDao.updateComponents(id, components)
 //    }
@@ -43,19 +57,74 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 //        itemsDao.updateComponentCrossRef(id, components)
 //    }
 
+    // Tins //
+    override suspend fun insertTin(tin: Tins): Long {
+        return itemsDao.insertTin(tin)
+    }
+
+    override suspend fun updateTin(tin: Tins) {
+        itemsDao.update(tin)
+    }
+
+    override suspend fun deleteTin(tinId: Int) {
+        itemsDao.deleteTin(tinId)
+    }
+
 
     /** Get all items **/
     override fun getAllItemsStream(): Flow<List<Items>> = itemsDao.getAllItems()
 
     override fun getAllItemsExport(): List<Items> = itemsDao.getAllItemsExport()
 
+    override suspend fun getAllItemsWithComponents(): List<ItemsWithComponents> {
+        val items = itemsDao.getAllItemsExport()
+        return items.map {
+            val components = itemsDao.getComponentsForItemStream(it.id).first()
+            ItemsWithComponents(it, components)
+        }
+    }
+
     override fun getAllComponentsStream(): Flow<List<Components>> = itemsDao.getAllComponents()
+
+    override suspend fun getTinExportData(): List<TinExportData> {
+        val items = itemsDao.getAllItemsExport()
+        val tinExportData = mutableListOf<TinExportData>()
+
+        for (item in items) {
+            val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
+            val tins = itemsDao.getTinsForItemStream(item.id).first()
+
+            for (tin in tins) {
+                val tinExport = TinExportData(
+                    brand = item.brand,
+                    blend = item.blend,
+                    type = item.type,
+                    subGenre = item.subGenre,
+                    cut = item.cut,
+                    favorite = item.favorite,
+                    disliked = item.disliked,
+                    inProduction = item.inProduction,
+                    notes = item.notes,
+                    components = components,
+                    container = tin.container,
+                    quantity = "${tin.tinQuantity} ${tin.unit}",
+                    manufactureDate = formatLongDate(tin.manufactureDate),
+                    cellarDate = formatLongDate(tin.cellarDate),
+                    openDate = formatLongDate(tin.openDate)
+                )
+                tinExportData.add(tinExport)
+            }
+        }
+        return tinExportData
+    }
 
 
     /** Get single item **/
     override fun getItemStream(id: Int): Flow<Items?> = itemsDao.getItem(id)
 
     override fun getComponentsForItemStream(id: Int): Flow<List<Components>> = itemsDao.getComponentsForItemStream(id)
+
+    override fun getTinsForItemStream(id: Int): Flow<List<Tins>> = itemsDao.getTinsForItemStream(id)
 
     override suspend fun getItemIdByIndex(brand: String, blend: String) =
         itemsDao.getItemIdByIndex(brand, blend)
@@ -87,6 +156,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override fun getAllZeroQuantityStream(): Flow<List<Boolean>> = itemsDao.getAllZeroQuantity()
 
     override fun getAllCompNamesStream(): Flow<List<String>> = itemsDao.getAllCompNames()
+
+    override fun getAllTinContainersStream(): Flow<List<String>> = itemsDao.getAllTinContainers()
 
 
     /** Get counts **/
@@ -123,6 +194,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override fun getItemsByZeroQuantity(): Flow<List<Items>> = itemsDao.getItemsByZeroQuantity()
 
     override fun getItemByIndex(brand: String, blend: String): Items? = itemsDao.getItemByIndex(brand, blend)
+
+    override fun getComponentsByName(components: List<String>): Flow<List<Components>> = itemsDao.getComponentsByName(components)
 
 
 //    /** Special functions **/
