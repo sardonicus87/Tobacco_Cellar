@@ -102,7 +102,6 @@ import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.home.BlendSearchEvent
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -760,7 +759,7 @@ fun ListViewMode(
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-        val addEntryClick by filterViewModel.addEntryClick.collectAsState()
+        val addEntryClick by filterViewModel.getPosition.collectAsState()
 
         // Return Positions //
         LaunchedEffect(blendSearchText) {
@@ -1326,7 +1325,7 @@ fun TableLayout(
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = sortedItems.indexOfFirst { it.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-        val addEntryClick by filterViewModel.addEntryClick.collectAsState()
+        val getPosition by filterViewModel.getPosition.collectAsState()
 
         // Return Positions //
         LaunchedEffect(blendSearchText) {
@@ -1411,8 +1410,8 @@ fun TableLayout(
             }
         }
 
-        LaunchedEffect(addEntryClick) {
-            if (addEntryClick) {
+        LaunchedEffect(getPosition) {
+            if (getPosition) {
                 val layoutInfo = columnState.layoutInfo
                 val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 

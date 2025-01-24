@@ -453,7 +453,14 @@ fun CellarBottomAppBar(
                 contentAlignment = Alignment.Center,
             ) {
                 IconButton(
-                    onClick = navigateToStats,
+                    onClick = {
+                        coroutineScope.launch {
+                            withContext(Dispatchers.Main) {
+                                EventBus.emit(StatsClickedEvent)
+                            }
+                        }
+                        navigateToStats
+                    },
                     modifier = Modifier
                         .padding(0.dp)
                 ) {
@@ -593,6 +600,9 @@ fun CellarBottomAppBar(
     }
 }
 
+data object AddItemClickedEvent
+
+data object StatsClickedEvent
 
 /** Filter sheet stuff **/
 @Composable
@@ -1584,6 +1594,3 @@ fun Chip(
         border = border
     )
 }
-
-
-data object AddItemClickedEvent

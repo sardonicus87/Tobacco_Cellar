@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.AddItemClickedEvent
+import com.sardonicus.tobaccocellar.StatsClickedEvent
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.ui.home.BlendSearchEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
@@ -141,8 +142,8 @@ class FilterViewModel (
     private val _shouldReturn = MutableStateFlow(false)
     val shouldReturn: StateFlow<Boolean> = _shouldReturn.asStateFlow()
 
-    private val _addEntryClick = MutableStateFlow(false)
-    val addEntryClick: StateFlow<Boolean> = _addEntryClick.asStateFlow()
+    private val _getPosition = MutableStateFlow(false)
+    val getPosition: StateFlow<Boolean> = _getPosition.asStateFlow()
 
     // remember scroll position //
     private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
@@ -159,7 +160,7 @@ class FilterViewModel (
     fun resetScroll() {
         _shouldScrollUp.value = false
         _shouldReturn.value = false
-        _addEntryClick.value = false
+        _getPosition.value = false
         _savedItemId.value = -1
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
     }
@@ -175,10 +176,15 @@ class FilterViewModel (
                     _shouldReturn.value = true
                 }
                 if (it is AddItemClickedEvent) {
-                    _addEntryClick.value = true
+                    _getPosition.value = true
                     _shouldReturn.value = true
                 }
                 if (it is BlendSearchEvent) {
+                    _getPosition.value = true
+                    _shouldReturn.value = true
+                }
+                if (it is StatsClickedEvent) {
+                    _getPosition.value = true
                     _shouldReturn.value = true
                 }
             }
