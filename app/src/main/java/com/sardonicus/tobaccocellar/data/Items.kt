@@ -87,13 +87,13 @@ data class ItemsComponentsCrossRef(
     val componentId: Int,
 )
 
-data class ItemsTinsAndComponents(
+data class ItemsWithComponents(
+    val item: Items,
+    val components: List<Components> = emptyList(),
+)
+
+data class ItemsComponentsAndTins(
     @Embedded val item: Items,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "itemsId"
-    )
-    val tins: List<Tins>,
     @Relation(
         parentColumn = "id",
         entityColumn = "componentId",
@@ -102,6 +102,27 @@ data class ItemsTinsAndComponents(
             parentColumn = "itemId",
             entityColumn = "componentId"
         )
-    )
-    val components: List<Components> = emptyList(),
+    ) val components: List<Components> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "itemsId"
+    ) val tins: List<Tins>,
+)
+
+data class TinExportData(
+    val brand: String,
+    val blend: String,
+    val type: String,
+    val subGenre: String,
+    val cut: String,
+    val favorite: Boolean,
+    val disliked: Boolean,
+    val inProduction: Boolean,
+    val notes: String,
+    val components: String,
+    val container: String,
+    val quantity: String,
+    val manufactureDate: String,
+    val cellarDate: String,
+    val openDate: String,
 )
