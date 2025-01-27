@@ -48,8 +48,9 @@ object CsvImportResultsDestination : NavigationDestination {
     const val successCountArg = "success_count"
     const val successfulInsertionsArg = "successful_insertions"
     const val successfulUpdatesArg = "successful_updates"
+    const val successfulTinsArg = "successful_tins"
 
-    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}/{$successfulUpdatesArg}"
+    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}/{$successfulUpdatesArg}/{$successfulTinsArg}"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,6 +60,7 @@ fun CsvImportResultsScreen (
     successfulConversions: Int,
     successfulInsertions: Int,
     successfulUpdates: Int,
+    successfulTins: Int,
     navigateToHome: () -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
@@ -90,6 +92,7 @@ fun CsvImportResultsScreen (
                 successfulConversions = successfulConversions,
                 successfulInsertions = successfulInsertions,
                 successfulUpdates = successfulUpdates,
+                successfulTins = successfulTins,
                 navigateToHome = navigateToHome,
                 modifier = modifier
                     .fillMaxSize()
@@ -107,6 +110,7 @@ fun ImportResultsBody(
     successfulConversions: Int,
     successfulInsertions: Int,
     successfulUpdates: Int,
+    successfulTins: Int,
     navigateToHome: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -115,7 +119,16 @@ fun ImportResultsBody(
     val fadeMilis = 500
 
     LaunchedEffect(Unit) {
-        while (visibleItemIndex < if (successfulUpdates > 0) 6 else 5) { // (total items to fade in, index starts 0)
+        val totalIndex =
+            if (successfulUpdates > 0 && successfulTins > 0) 7
+            else if (successfulUpdates > 0 && successfulTins == 0) 6
+            else if (successfulUpdates == 0 && successfulTins > 0) 6
+            else 5
+
+//        while (visibleItemIndex < if
+//                (successfulUpdates > 0 && successfulTins > 0) 7 else if
+//                ((successfulUpdates > 0 && successfulTins == 0) || (successfulUpdates == 0 && successfulTins > 0)) 6 else 5) { // (total items to fade in, index starts 0)
+        while (visibleItemIndex < totalIndex) {
             delay(850) // Adjust delay as needed
             visibleItemIndex++
         }
@@ -138,9 +151,10 @@ fun ImportResultsBody(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Results header
             if (visibleItemIndex <= 0) {
                 Text(
-                    text = "",
+                    text = "CSV Import Results",
                     modifier = Modifier
                         .padding(bottom = 16.dp),
                     fontSize = 34.sp,
@@ -160,6 +174,8 @@ fun ImportResultsBody(
                     fontWeight = FontWeight.Bold,
                 )
             }
+
+            // Data
             Row(
                 modifier = Modifier
                     .padding(bottom = 16.dp),
@@ -171,6 +187,7 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Total Records
                     if (visibleItemIndex <= 1) {
                         Text(
                             text = "Total records found: ",
@@ -191,6 +208,8 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
+
+                    // Successful Conversions
                     if (visibleItemIndex <= 2) {
                         Text(
                             text = "Successful conversions: ",
@@ -211,6 +230,8 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
+
+                    // Records Imported
                     if (visibleItemIndex <= 3) {
                         Text(
                             text = "Total records imported: ",
@@ -231,7 +252,10 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
-                    if (successfulUpdates > 0) {
+
+                    // Successful Updates And Tins
+                    if (successfulUpdates > 0 && successfulTins > 0) {
+                        // Successful Updates
                         if (visibleItemIndex <= 4) {
                             Text(
                                 text = "Total records updated: ",
@@ -252,8 +276,58 @@ fun ImportResultsBody(
                                 fontSize = 18.sp,
                             )
                         }
+                        // Successful Tins
+                        if (visibleItemIndex <= 5) {
+                            Text(
+                                text = "Total tins inserted: ",
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                                color = Color.Transparent
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = visibleItemIndex > 5,
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        ) {
+                            Text(
+                                text = "Total tins inserted: ",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                            )
+                        }
+                    }
+
+                    // Successful Updates or Tins only
+                    if (
+                        (successfulUpdates > 0 && successfulTins == 0) ||
+                        (successfulUpdates == 0 && successfulTins > 0)
+                        ) {
+                        val label = if (successfulUpdates > 0) "Total records updated: " else "Total tins inserted: "
+                        if (visibleItemIndex <= 4) {
+                            Text(
+                                text = label,
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                                color = Color.Transparent
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = visibleItemIndex > 4,
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        ) {
+                            Text(
+                                text = label,
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                            )
+                        }
                     }
                 }
+
                 Spacer(
                     modifier = Modifier
                         .width(8.dp)
@@ -266,6 +340,7 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Total Records
                     if (visibleItemIndex <= 1) {
                         Text(
                             text = "123",
@@ -286,6 +361,8 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
+
+                    // Successful Conversions
                     if (visibleItemIndex <= 2) {
                         Text(
                             text = "",
@@ -306,6 +383,8 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
+
+                    // Records Imported
                     if (visibleItemIndex <= 3) {
                         Text(
                             text = "",
@@ -326,7 +405,10 @@ fun ImportResultsBody(
                             fontSize = 18.sp,
                         )
                     }
-                    if (successfulUpdates > 0) {
+
+                    // Successful Updates And Tins
+                    if (successfulUpdates > 0 && successfulTins > 0) {
+                        // Successful Updates
                         if (visibleItemIndex <= 4) {
                             Text(
                                 text = "",
@@ -347,10 +429,69 @@ fun ImportResultsBody(
                                 fontSize = 18.sp,
                             )
                         }
+
+                        // Successful Tins
+                        if (visibleItemIndex <= 5) {
+                            Text(
+                                text = "",
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                                color = Color.Transparent
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = visibleItemIndex > 5,
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        ) {
+                            Text(
+                                text = "$successfulTins",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                            )
+                        }
+                    }
+
+                    // Successful Updates or Tins only
+                    if (
+                        (successfulUpdates > 0 && successfulTins == 0) ||
+                        (successfulUpdates == 0 && successfulTins > 0)
+                        ) {
+                        val count = if (successfulUpdates > 0) successfulUpdates else successfulTins
+
+                        if (visibleItemIndex <= 4) {
+                            Text(
+                                text = "",
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                                color = Color.Transparent
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = visibleItemIndex > 4,
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        ) {
+                            Text(
+                                text = "$count",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                fontSize = 18.sp,
+                            )
+                        }
                     }
                 }
             }
-            if (visibleItemIndex <= if (successfulUpdates > 0) 5 else 4) {
+
+            // Navigate to Cellar
+            val finalIndex =
+                if (successfulUpdates > 0 && successfulTins > 0) 6
+                else if (successfulUpdates > 0 && successfulTins == 0) 5
+                else if (successfulUpdates == 0 && successfulTins > 0) 5
+                else 4
+
+            if (visibleItemIndex <= finalIndex) {
                 TextButton(
                     onClick = {  },
                     modifier = Modifier
@@ -365,7 +506,7 @@ fun ImportResultsBody(
                 }
             }
             AnimatedVisibility(
-                visible = visibleItemIndex > if (successfulUpdates > 0) 5 else 4,
+                visible = visibleItemIndex > finalIndex,
                 enter = fadeIn(animationSpec = tween(durationMillis = 350))
             ) {
                 TextButton(
@@ -380,6 +521,37 @@ fun ImportResultsBody(
                     )
                 }
             }
+
+//            if (visibleItemIndex <= if (successfulUpdates > 0) 5 else 4) {
+//                TextButton(
+//                    onClick = {  },
+//                    modifier = Modifier
+//                        .fillMaxWidth(),
+//                    shape = MaterialTheme.shapes.small,
+//                ) {
+//                    Text(
+//                        text = "",
+//                        fontSize = 25.sp,
+//                        color = Color.Transparent
+//                    )
+//                }
+//            }
+//            AnimatedVisibility(
+//                visible = visibleItemIndex > if (successfulUpdates > 0) 5 else 4,
+//                enter = fadeIn(animationSpec = tween(durationMillis = 350))
+//            ) {
+//                TextButton(
+//                    onClick = { navigateToHome() },
+//                    modifier = Modifier
+//                        .fillMaxWidth(),
+//                    shape = MaterialTheme.shapes.small,
+//                ) {
+//                    Text(
+//                        text = "Back to Cellar",
+//                        fontSize = 25.sp,
+//                    )
+//                }
+//            }
         }
         Spacer(
             modifier = Modifier
