@@ -42,8 +42,10 @@ class CsvHelper {
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
-            .setHeader("Brand", "Blend", "Type", "Sub-Genre", "Cut", "No. of Tins", "Favorite",
-                "Disliked", "Production Status", "Notes", "Components")
+            .setHeader(
+                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "No. of Tins", "Favorite",
+                "Disliked", "Production Status", "Notes", "Components"
+            )
             .build()
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
@@ -75,7 +77,8 @@ class CsvHelper {
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
-            .setHeader("Brand", "Blend", "Type", "Sub-Genre", "Cut", "Favorite", "Disliked",
+            .setHeader(
+                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Favorite", "Disliked",
                 "Production Status", "Notes", "Components", "Container", "Quantity",
                 "Manufacture Date", "Cellar Date", "Open Date"
             )
