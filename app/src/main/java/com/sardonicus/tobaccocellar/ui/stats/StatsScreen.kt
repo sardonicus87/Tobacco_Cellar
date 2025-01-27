@@ -909,8 +909,6 @@ private fun DrawScope.drawLabels(
             adjustedLabelY + labelHeight
         }
 
-        Log.d("Pie Charts", "Label: $label, midpointAngle: $normalizedMidpointAngle, sweepAngle: $sweepAngle")
-
         drawText(
             textLayoutResult = textLabel,
             brush = SolidColor(labelColor),
