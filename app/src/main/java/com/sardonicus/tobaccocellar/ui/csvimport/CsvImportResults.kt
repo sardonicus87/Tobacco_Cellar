@@ -3,6 +3,7 @@
 package com.sardonicus.tobaccocellar.ui.csvimport
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -49,8 +50,10 @@ object CsvImportResultsDestination : NavigationDestination {
     const val successfulInsertionsArg = "successful_insertions"
     const val successfulUpdatesArg = "successful_updates"
     const val successfulTinsArg = "successful_tins"
+    const val updateFlagArg = "update_flag"
+    const val tinFlagArg = "tin_flag"
 
-    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}/{$successfulUpdatesArg}/{$successfulTinsArg}"
+    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}/{$successfulUpdatesArg}/{$successfulTinsArg}/{$updateFlagArg}/{$tinFlagArg}"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,12 +64,18 @@ fun CsvImportResultsScreen (
     successfulInsertions: Int,
     successfulUpdates: Int,
     successfulTins: Int,
+    updateFlag: Boolean,
+    tinFlag: Boolean,
     navigateToHome: () -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
+    BackHandler(enabled = true) {
+        navigateToHome()
+    }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -93,6 +102,8 @@ fun CsvImportResultsScreen (
                 successfulInsertions = successfulInsertions,
                 successfulUpdates = successfulUpdates,
                 successfulTins = successfulTins,
+                updateFlag = updateFlag,
+                tinFlag = tinFlag,
                 navigateToHome = navigateToHome,
                 modifier = modifier
                     .fillMaxSize()
@@ -111,25 +122,29 @@ fun ImportResultsBody(
     successfulInsertions: Int,
     successfulUpdates: Int,
     successfulTins: Int,
+    updateFlag: Boolean,
+    tinFlag: Boolean,
     navigateToHome: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var visibleItemIndex by remember { mutableStateOf(0) }
     val fadeMilis = 500
+    var indexCondition by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        val totalIndex =
-            if (successfulUpdates > 0 && successfulTins > 0) 7
-            else if (successfulUpdates > 0 && successfulTins == 0) 6
-            else if (successfulUpdates == 0 && successfulTins > 0) 6
-            else 5
+        val totalIndex = when {
+            updateFlag && tinFlag -> 7
+            tinFlag || updateFlag -> 6
+            else -> 5
+        }
+        indexCondition = totalIndex
 
 //        while (visibleItemIndex < if
 //                (successfulUpdates > 0 && successfulTins > 0) 7 else if
 //                ((successfulUpdates > 0 && successfulTins == 0) || (successfulUpdates == 0 && successfulTins > 0)) 6 else 5) { // (total items to fade in, index starts 0)
         while (visibleItemIndex < totalIndex) {
-            delay(850) // Adjust delay as needed
+            delay(850)
             visibleItemIndex++
         }
     }
@@ -253,8 +268,8 @@ fun ImportResultsBody(
                         )
                     }
 
-                    // Successful Updates And Tins
-                    if (successfulUpdates > 0 && successfulTins > 0) {
+                    // Updates and Tins
+                    if (indexCondition == 7) {
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
                             Text(
@@ -299,12 +314,9 @@ fun ImportResultsBody(
                         }
                     }
 
-                    // Successful Updates or Tins only
-                    if (
-                        (successfulUpdates > 0 && successfulTins == 0) ||
-                        (successfulUpdates == 0 && successfulTins > 0)
-                        ) {
-                        val label = if (successfulUpdates > 0) "Total records updated: " else "Total tins inserted: "
+                    // Updates or Tins
+                    if (indexCondition == 6) {
+                        val label = if (updateFlag) "Total records updated: " else "Total tins inserted: "
                         if (visibleItemIndex <= 4) {
                             Text(
                                 text = label,
@@ -330,7 +342,7 @@ fun ImportResultsBody(
 
                 Spacer(
                     modifier = Modifier
-                        .width(8.dp)
+                        .width(12.dp)
                 )
 
                 // Counts
@@ -343,7 +355,7 @@ fun ImportResultsBody(
                     // Total Records
                     if (visibleItemIndex <= 1) {
                         Text(
-                            text = "123",
+                            text = "$totalRecords",
                             modifier = Modifier
                                 .padding(bottom = 0.dp),
                             fontSize = 18.sp,
@@ -354,18 +366,19 @@ fun ImportResultsBody(
                         visible = visibleItemIndex > 1,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
                     ) {
-                        Text(
-                            text = "$totalRecords",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                        )
+                            Text(
+                                text = "$totalRecords",
+                                modifier = Modifier
+                                    .padding(bottom = 0.dp),
+                                fontSize = 18.sp,
+                            )
+
                     }
 
                     // Successful Conversions
                     if (visibleItemIndex <= 2) {
                         Text(
-                            text = "",
+                            text = "$successfulConversions",
                             modifier = Modifier
                                 .padding(bottom = 0.dp),
                             fontSize = 18.sp,
@@ -387,7 +400,7 @@ fun ImportResultsBody(
                     // Records Imported
                     if (visibleItemIndex <= 3) {
                         Text(
-                            text = "",
+                            text = "$successfulInsertions",
                             modifier = Modifier
                                 .padding(bottom = 0.dp),
                             fontSize = 18.sp,
@@ -406,12 +419,12 @@ fun ImportResultsBody(
                         )
                     }
 
-                    // Successful Updates And Tins
-                    if (successfulUpdates > 0 && successfulTins > 0) {
+                    // Updates and Tins
+                    if (indexCondition == 7) {
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
                             Text(
-                                text = "",
+                                text = "$successfulUpdates",
                                 modifier = Modifier
                                     .padding(bottom = 0.dp),
                                 fontSize = 18.sp,
@@ -433,7 +446,7 @@ fun ImportResultsBody(
                         // Successful Tins
                         if (visibleItemIndex <= 5) {
                             Text(
-                                text = "",
+                                text = "$successfulTins",
                                 modifier = Modifier
                                     .padding(bottom = 0.dp),
                                 fontSize = 18.sp,
@@ -454,15 +467,12 @@ fun ImportResultsBody(
                     }
 
                     // Successful Updates or Tins only
-                    if (
-                        (successfulUpdates > 0 && successfulTins == 0) ||
-                        (successfulUpdates == 0 && successfulTins > 0)
-                        ) {
-                        val count = if (successfulUpdates > 0) successfulUpdates else successfulTins
+                    if (indexCondition == 6) {
+                        val count = if (updateFlag) successfulUpdates else successfulTins
 
                         if (visibleItemIndex <= 4) {
                             Text(
-                                text = "",
+                                text = "$count",
                                 modifier = Modifier
                                     .padding(bottom = 0.dp),
                                 fontSize = 18.sp,
@@ -486,9 +496,8 @@ fun ImportResultsBody(
 
             // Navigate to Cellar
             val finalIndex =
-                if (successfulUpdates > 0 && successfulTins > 0) 6
-                else if (successfulUpdates > 0 && successfulTins == 0) 5
-                else if (successfulUpdates == 0 && successfulTins > 0) 5
+                if (indexCondition == 7) 6
+                else if (indexCondition == 6) 5
                 else 4
 
             if (visibleItemIndex <= finalIndex) {
@@ -499,7 +508,7 @@ fun ImportResultsBody(
                     shape = MaterialTheme.shapes.small,
                 ) {
                     Text(
-                        text = "",
+                        text = "Back to Cellar",
                         fontSize = 25.sp,
                         color = Color.Transparent
                     )
