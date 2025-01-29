@@ -70,6 +70,14 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         itemsDao.deleteTin(tinId)
     }
 
+    override suspend fun insertMultipleTins(tins: List<Tins>): List<Long> {
+        return itemsDao.insertMultipleTins(tins).toList()
+    }
+
+    override suspend fun deleteAllTinsForItem(itemId: Int) {
+        itemsDao.deleteAllTinsForItem(itemId)
+    }
+
 
     /** Get all items **/
     override fun getAllItemsStream(): Flow<List<Items>> = itemsDao.getAllItems()

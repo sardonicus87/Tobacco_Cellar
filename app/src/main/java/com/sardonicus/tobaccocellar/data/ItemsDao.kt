@@ -65,6 +65,12 @@ interface ItemsDao {
     @Query("DELETE FROM tins WHERE tinId = :tinId")
     suspend fun deleteTin(tinId: Int)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMultipleTins(tins: List<Tins>): LongArray
+
+    @Query("DELETE FROM tins WHERE itemsId = :itemId")
+    suspend fun deleteAllTinsForItem(itemId: Int)
+
 
     /** Get all items **/
     // Get all items flow //

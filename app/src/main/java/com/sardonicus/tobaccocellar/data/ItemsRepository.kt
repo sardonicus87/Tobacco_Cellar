@@ -38,6 +38,10 @@ interface ItemsRepository {
 
     suspend fun deleteTin(tinId: Int)
 
+    suspend fun insertMultipleTins(tins: List<Tins>): List<Long>
+
+    suspend fun deleteAllTinsForItem(itemId: Int)
+
 
     /** Get all items **/
     fun getAllItemsStream(): Flow<List<Items>>
