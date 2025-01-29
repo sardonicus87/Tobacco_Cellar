@@ -125,11 +125,7 @@ import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
-import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -183,6 +179,8 @@ fun CellarTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     var expanded by rememberSaveable { mutableStateOf(false) }
     var menuState by rememberSaveable { mutableStateOf(MenuState.MAIN) }
 
@@ -228,7 +226,12 @@ fun CellarTopAppBar(
         },
         actions = {
             if (showMenu) {
-                IconButton(onClick = { expanded = !expanded }) {
+                IconButton(
+                    onClick = {
+                        expanded = !expanded
+                        filterViewModel.getPositionTrigger()
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = null
@@ -377,8 +380,6 @@ fun CellarBottomAppBar(
     navigateToAddEntry: () -> Unit = {},
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    val coroutineScope = rememberCoroutineScope()
-
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -454,12 +455,8 @@ fun CellarBottomAppBar(
             ) {
                 IconButton(
                     onClick = {
-                        coroutineScope.launch {
-                            withContext(Dispatchers.Main) {
-                                EventBus.emit(StatsClickedEvent)
-                            }
-                        }
-                        navigateToStats
+                        filterViewModel.getPositionTrigger()
+                        navigateToStats()
                     },
                     modifier = Modifier
                         .padding(0.dp)
@@ -554,11 +551,7 @@ fun CellarBottomAppBar(
                 IconButton(
                     onClick = {
                         clickToAdd = true
-                        coroutineScope.launch {
-                            withContext(Dispatchers.Main) {
-                                EventBus.emit(AddItemClickedEvent)
-                            }
-                        }
+                        filterViewModel.getPositionTrigger()
                         navigateToAddEntry()
                     },
                     modifier = Modifier
@@ -599,10 +592,6 @@ fun CellarBottomAppBar(
         }
     }
 }
-
-data object AddItemClickedEvent
-
-data object StatsClickedEvent
 
 /** Filter sheet stuff **/
 @Composable
