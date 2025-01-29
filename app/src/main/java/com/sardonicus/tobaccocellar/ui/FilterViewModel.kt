@@ -2,10 +2,9 @@ package com.sardonicus.tobaccocellar.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sardonicus.tobaccocellar.AddItemClickedEvent
-import com.sardonicus.tobaccocellar.StatsClickedEvent
 import com.sardonicus.tobaccocellar.data.ItemsRepository
-import com.sardonicus.tobaccocellar.ui.home.BlendSearchEvent
+import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
+import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -142,8 +141,14 @@ class FilterViewModel (
     private val _shouldReturn = MutableStateFlow(false)
     val shouldReturn: StateFlow<Boolean> = _shouldReturn.asStateFlow()
 
-    private val _getPosition = MutableStateFlow(false)
-    val getPosition: StateFlow<Boolean> = _getPosition.asStateFlow()
+    private val _getPosition = MutableStateFlow(0)
+    val getPosition: StateFlow<Int> = _getPosition.asStateFlow()
+
+    private val _searchCleared = MutableStateFlow(false)
+    val searchCleared: StateFlow<Boolean> = _searchCleared.asStateFlow()
+
+    private val _searchPerformed = MutableStateFlow(false)
+    val searchPerformed: StateFlow<Boolean> = _searchPerformed
 
     // remember scroll position //
     private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
@@ -153,6 +158,11 @@ class FilterViewModel (
         _currentPosition.value = mapOf(0 to index, 1 to offset)
     }
 
+    fun getPositionTrigger() {
+        _getPosition.value++
+        _shouldReturn.value = true
+    }
+
     fun returnScroll() {
         _shouldReturn.value = true
     }
@@ -160,7 +170,9 @@ class FilterViewModel (
     fun resetScroll() {
         _shouldScrollUp.value = false
         _shouldReturn.value = false
-        _getPosition.value = false
+        _getPosition.value = 0
+        _searchCleared.value = false
+        _searchPerformed.value = false
         _savedItemId.value = -1
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
     }
@@ -175,17 +187,13 @@ class FilterViewModel (
                 if (it is ItemUpdatedEvent) {
                     _shouldReturn.value = true
                 }
-                if (it is AddItemClickedEvent) {
-                    _getPosition.value = true
-                    _shouldReturn.value = true
+                if (it is SearchClearedEvent) {
+                    _shouldReturn.value = false
+                    _searchCleared.value = true
+                    _searchPerformed.value = false
                 }
-                if (it is BlendSearchEvent) {
-                    _getPosition.value = true
-                    _shouldReturn.value = true
-                }
-                if (it is StatsClickedEvent) {
-                    _getPosition.value = true
-                    _shouldReturn.value = true
+                if (it is SearchPerformedEvent) {
+                    _searchPerformed.value = true
                 }
             }
         }
