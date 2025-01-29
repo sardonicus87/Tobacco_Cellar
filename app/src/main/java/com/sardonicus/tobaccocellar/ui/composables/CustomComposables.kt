@@ -26,7 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -41,6 +43,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import kotlinx.coroutines.launch
 
 /** Dropdown menu item with inner-padding access */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,18 +200,23 @@ fun AutoSizeText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
+    contentAlignment: Alignment = Alignment.Center
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var fontMultiplier by remember { mutableFloatStateOf(1f) }
     fun updateFontSize(multiplier: Float) {
         val newSize = fontSize * multiplier
-        if (newSize > minFontSize) { fontMultiplier = multiplier }
+        if (newSize > minFontSize) {
+            fontMultiplier = multiplier
+        }
     }
 
     Box (
         modifier = Modifier
             .width(width)
-            .height(height)
+            .height(height),
+        contentAlignment = contentAlignment
     ) {
         Text(
             text = text,
@@ -226,7 +234,9 @@ fun AutoSizeText(
             minLines = minLines,
             onTextLayout = {
                 if (it.hasVisualOverflow) {
-                    updateFontSize(fontMultiplier * 0.99f)
+                    coroutineScope.launch {
+                        updateFontSize(fontMultiplier * 0.98f)
+                    }
                 }
             },
             style = style.copy(
