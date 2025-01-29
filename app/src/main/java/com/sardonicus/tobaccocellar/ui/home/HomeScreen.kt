@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -105,10 +106,8 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -235,7 +234,7 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(0.dp),
                 )
-                Box(
+                Box( // header shadow
                     modifier = Modifier
                         .matchParentSize()
                         .then(
@@ -271,6 +270,7 @@ private fun HomeHeader(
     isTableView: Boolean,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
     Row(
         modifier = modifier
@@ -334,11 +334,35 @@ private fun HomeHeader(
                 },
                 onImeAction = {
                     coroutineScope.launch {
-                        withContext(Dispatchers.Main) {
-                            EventBus.emit(BlendSearchEvent)
-                        }
+                        EventBus.emit(SearchPerformedEvent)
+                        filterViewModel.getPositionTrigger()
+                        delay(20)
+                        filterViewModel.onBlendSearch(blendSearchText)
                     }
-                    filterViewModel.onBlendSearch(blendSearchText)
+                //    filterViewModel.onBlendSearch(blendSearchText)
+                },
+                trailingIcon = {
+                    if (blendSearchText.isNotEmpty()) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.clear_24),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable(
+                                    onClick = {
+                                        filterViewModel.updateSearchText("")
+                                        filterViewModel.onBlendSearch("")
+
+                                        if (searchPerformed) {
+                                            coroutineScope.launch {
+                                                EventBus.emit(SearchClearedEvent)
+                                            }
+                                        }
+                                    }
+                                )
+                                .padding(0.dp),
+                        )
+                    }
                 }
             )
         }
@@ -358,6 +382,9 @@ private fun HomeHeader(
     }
 }
 
+data object SearchClearedEvent
+data object SearchPerformedEvent
+
 @Composable
 private fun CustomBlendSearch(
     value: String,
@@ -376,6 +403,7 @@ private fun CustomBlendSearch(
             tint = LocalContentColor.current.copy(alpha = iconAlpha)
         )
     },
+    trailingIcon: @Composable () -> Unit = {},
     onImeAction: () -> Unit = {}
 ) {
     var showCursor by remember { mutableStateOf(false) }
@@ -441,19 +469,20 @@ private fun CustomBlendSearch(
                     }
                     innerTextField()
                 }
-                if (value.isNotEmpty()) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.clear_24),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clickable(onClick = {
-                                onValueChange("")
-                                }
-                            )
-                            .padding(0.dp),
-                    )
-                }
+                trailingIcon()
+//                if (value.isNotEmpty()) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.clear_24),
+//                        contentDescription = null,
+//                        modifier = Modifier
+//                            .size(20.dp)
+//                            .clickable(onClick = {
+//                                onValueChange("")
+//                                }
+//                            )
+//                            .padding(0.dp),
+//                    )
+//                }
             }
         }
     )
@@ -743,6 +772,7 @@ fun ListViewMode(
                             },
                             onLongClick = {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                filterViewModel.getPositionTrigger()
                                 onShowMenu(item.id)
                             },
                             indication = null,
@@ -759,31 +789,50 @@ fun ListViewMode(
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-        val addEntryClick by filterViewModel.getPosition.collectAsState()
+        val getPosition by filterViewModel.getPosition.collectAsState()
+        val searchCleared by filterViewModel.searchCleared.collectAsState()
+        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
         // Return Positions //
-        LaunchedEffect(blendSearchText) {
-            if (blendSearchText.isEmpty()) {
+//        LaunchedEffect(blendSearchText) {
+//            if (blendSearchText.isEmpty()) {
+//                val index = currentPosition[0]
+//                val offset = currentPosition[1]
+//
+//                if (index != null && offset != null) {
+//                    delay(25)
+//                    withFrameNanos {
+//                        coroutineScope.launch {
+//                            columnState.scrollToItem(index, offset)
+//                        }
+//                    }
+//                    filterViewModel.resetScroll()
+//                }
+//            }
+
+//            if (blendSearchText.isNotEmpty()) {
+//                val layoutInfo = columnState.layoutInfo
+//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+//
+//                if (firstVisibleItem != null) {
+//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+//                }
+//            }
+//        }
+
+        LaunchedEffect(searchCleared) {
+            if (searchCleared) {
+                delay(50)
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
                 if (index != null && offset != null) {
-                    delay(25)
                     withFrameNanos {
                         coroutineScope.launch {
                             columnState.scrollToItem(index, offset)
                         }
                     }
                     filterViewModel.resetScroll()
-                }
-            }
-
-            if (blendSearchText.isNotEmpty()) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                if (firstVisibleItem != null) {
-                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
                 }
             }
         }
@@ -813,8 +862,8 @@ fun ListViewMode(
         }
 
         LaunchedEffect(itemsList) {
-            if (shouldReturn) {
-                delay(50)
+            delay(50)
+            if (shouldReturn && !searchPerformed && !shouldScrollUp) {
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
@@ -830,20 +879,8 @@ fun ListViewMode(
         }
 
         // Update scroll position //
-        LaunchedEffect(menuItemId) {
-            if (isMenuShown) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                if (firstVisibleItem != null) {
-                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    filterViewModel.returnScroll()
-                }
-            }
-        }
-
-        LaunchedEffect(addEntryClick) {
-            if (addEntryClick) {
+        LaunchedEffect(getPosition) {
+            if (getPosition > 0) {
                 val layoutInfo = columnState.layoutInfo
                 val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 
@@ -852,6 +889,18 @@ fun ListViewMode(
                 }
             }
         }
+
+//        LaunchedEffect(menuItemId) {
+//            if (isMenuShown) {
+//                val layoutInfo = columnState.layoutInfo
+//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+//
+//                if (firstVisibleItem != null) {
+//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+//                    filterViewModel.returnScroll()
+//                }
+//            }
+//        }
     }
 }
 
@@ -1131,7 +1180,6 @@ fun TableLayout(
         if (!sorting.sortAscending) it.reversed() else it
     }
 
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1206,7 +1254,7 @@ fun TableLayout(
 
         // Items
         val columnState = rememberLazyListState()
-        var itemClicked by remember { mutableStateOf(false) }
+        val coroutineScope = rememberCoroutineScope()
 
         LazyColumn(
             modifier = Modifier
@@ -1246,7 +1294,7 @@ fun TableLayout(
                                             .align(alignment),
                                         contentAlignment = alignment,
                                         onClick = {
-                                            itemClicked = true
+                                            filterViewModel.getPositionTrigger()
                                             onItemClick(item)
                                         }
                                     )
@@ -1320,40 +1368,16 @@ fun TableLayout(
             }
         }
 
-        val coroutineScope = rememberCoroutineScope()
+
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = sortedItems.indexOfFirst { it.id == savedItemId }
+        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+        val searchCleared by filterViewModel.searchCleared.collectAsState()
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val getPosition by filterViewModel.getPosition.collectAsState()
 
         // Return Positions //
-        LaunchedEffect(blendSearchText) {
-            if (blendSearchText.isEmpty()) {
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
-
-                if (index != null && offset != null) {
-                    delay(25)
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-            }
-
-            if (blendSearchText.isNotEmpty()) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                if (firstVisibleItem != null) {
-                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                }
-            }
-        }
-
         LaunchedEffect(shouldScrollUp){
             if (shouldScrollUp) {
                 columnState.scrollToItem(0)
@@ -1378,9 +1402,27 @@ fun TableLayout(
             }
         }
 
-        LaunchedEffect(sortedItems) {
-            if (shouldReturn) {
+        LaunchedEffect(searchCleared) {
+            if (searchCleared) {
                 delay(50)
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                    filterViewModel.resetScroll()
+                }
+            }
+        }
+
+        LaunchedEffect(sortedItems) {
+            delay(50)
+
+            if (shouldReturn && !searchPerformed && !shouldScrollUp) {
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
@@ -1399,19 +1441,35 @@ fun TableLayout(
             columnState.scrollToItem(0)
         }
 
+//        LaunchedEffect(blendSearchText) {
+//            if (blendSearchText.isEmpty()) {
+//                val index = currentPosition[0]
+//                val offset = currentPosition[1]
+//
+//                if (index != null && offset != null) {
+//                    delay(25)
+//                    withFrameNanos {
+//                        coroutineScope.launch {
+//                            columnState.scrollToItem(index, offset)
+//                        }
+//                    }
+//                    filterViewModel.resetScroll()
+//                }
+//            }
+//
+//            if (blendSearchText.isNotEmpty()) {
+//                val layoutInfo = columnState.layoutInfo
+//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+//
+//                if (firstVisibleItem != null) {
+//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+//                }
+//            }
+//        }
+
         // Update positions //
-        LaunchedEffect(itemClicked) {
-            val layoutInfo = columnState.layoutInfo
-            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-            if (firstVisibleItem != null) {
-                updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                filterViewModel.returnScroll()
-            }
-        }
-
         LaunchedEffect(getPosition) {
-            if (getPosition) {
+            if (getPosition > 0) {
                 val layoutInfo = columnState.layoutInfo
                 val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 
@@ -1537,5 +1595,3 @@ fun TableCell(
         )
     }
 }
-
-data object BlendSearchEvent
