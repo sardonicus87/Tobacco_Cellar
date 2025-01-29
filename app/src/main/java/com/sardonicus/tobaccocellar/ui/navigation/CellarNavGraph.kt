@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
+import androidx.compose.animation.EnterTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -11,10 +12,10 @@ import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportDestination
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsDestination
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
-import com.sardonicus.tobaccocellar.ui.home.HomeDestination
-import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.home.HelpDestination
 import com.sardonicus.tobaccocellar.ui.home.HelpScreen
+import com.sardonicus.tobaccocellar.ui.home.HomeDestination
+import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.items.AddEntryDestination
 import com.sardonicus.tobaccocellar.ui.items.AddEntryScreen
 import com.sardonicus.tobaccocellar.ui.items.EditEntryDestination
@@ -101,18 +102,22 @@ fun CellarNavHost(
                 navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() },
                 navigateToHome = { navController.navigate(HomeDestination.route) },
-                navigateToImportResults = { totalRecords, successCount, successfulInsertions, successfulUpdates -> navController.navigate(
-                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}/${successfulUpdates}")
+                navigateToImportResults = { totalRecords, successCount, successfulInsertions, successfulUpdates, successfulTins, updateFlag, tinFlag -> navController.navigate(
+                    "${CsvImportResultsDestination.route}/${totalRecords}/${successCount}/${successfulInsertions}/${successfulUpdates}/${successfulTins}/${updateFlag}/${tinFlag}")
                 },
             )
         }
         composable(
             route = CsvImportResultsDestination.routeWithArgs,
+            enterTransition = { EnterTransition.None },
             arguments = listOf(
                 navArgument(CsvImportResultsDestination.totalRecordsArg) { type = NavType.IntType },
                 navArgument(CsvImportResultsDestination.successCountArg) { type = NavType.IntType },
                 navArgument(CsvImportResultsDestination.successfulInsertionsArg) { type = NavType.IntType },
                 navArgument(CsvImportResultsDestination.successfulUpdatesArg) { type = NavType.IntType },
+                navArgument(CsvImportResultsDestination.successfulTinsArg) { type = NavType.IntType },
+                navArgument(CsvImportResultsDestination.updateFlagArg) { type = NavType.BoolType },
+                navArgument(CsvImportResultsDestination.tinFlagArg) { type = NavType.BoolType },
             ),
         ) { backStackEntry ->
             val totalRecords =
@@ -123,11 +128,21 @@ fun CellarNavHost(
                 backStackEntry.arguments?.getInt(CsvImportResultsDestination.successfulInsertionsArg) ?: 0
             val successfulUpdates =
                 backStackEntry.arguments?.getInt(CsvImportResultsDestination.successfulUpdatesArg) ?: 0
+            val successfulTins =
+                backStackEntry.arguments?.getInt(CsvImportResultsDestination.successfulTinsArg) ?: 0
+            val updateFlag =
+                backStackEntry.arguments?.getBoolean(CsvImportResultsDestination.updateFlagArg) ?: false
+            val tinFlag =
+                backStackEntry.arguments?.getBoolean(CsvImportResultsDestination.tinFlagArg) ?: false
+
             CsvImportResultsScreen(
                 totalRecords = totalRecords,
                 successfulConversions = successCount,
                 successfulInsertions = successfulInsertions,
                 successfulUpdates = successfulUpdates,
+                successfulTins = successfulTins,
+                updateFlag = updateFlag,
+                tinFlag = tinFlag,
                 navigateToHome = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
                     popUpTo(HomeDestination.route) { inclusive = false }
