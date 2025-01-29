@@ -40,6 +40,7 @@ object AppViewModelProvider {
         initializer {
             CsvImportViewModel(
                 cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo,
             )
         }
 
