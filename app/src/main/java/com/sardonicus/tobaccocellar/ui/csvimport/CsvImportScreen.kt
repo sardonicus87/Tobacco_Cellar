@@ -89,6 +89,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.CsvResult
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
@@ -102,7 +103,7 @@ object CsvImportDestination : NavigationDestination {
 @Composable
 fun CsvImportScreen(
     modifier: Modifier = Modifier,
-    navigateToImportResults: (Int, Int, Int, Int) -> Unit,
+    navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
     navigateToHome: () -> Unit,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
@@ -142,6 +143,8 @@ fun CsvImportScreen(
                 mappingOptions = mappingOptions,
                 importOption = importOption,
                 onHeaderChange = { isChecked -> viewModel.updateHeaderOptions(isChecked) },
+                updateCollateTinsOption = { isChecked -> viewModel.updateCollateTinsOption(isChecked) },
+                updateDateFormat = { dateFormat -> viewModel.updateDateFormat(dateFormat) },
                 navigateToImportResults = navigateToImportResults,
                 navigateToHome = navigateToHome,
                 modifier = modifier
@@ -154,9 +157,11 @@ fun CsvImportScreen(
 
 @Composable
 fun CsvImportBody(
-    navigateToImportResults: (Int, Int, Int, Int) -> Unit,
+    navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
     navigateToHome: () -> Unit,
     onHeaderChange: (isChecked: Boolean) -> Unit,
+    updateCollateTinsOption: (isChecked: Boolean) -> Unit,
+    updateDateFormat: (dateFormat: String) -> Unit,
     csvImportState: CsvImportState,
     csvUiState: CsvUiState,
     mappingOptions: MappingOptions,
@@ -228,7 +233,10 @@ fun CsvImportBody(
                 success.totalRecords,
                 success.successfulConversions,
                 success.successfulInsertions,
-                success.successfulUpdates
+                success.successfulUpdates,
+                success.successfulTins,
+                success.updateFlag,
+                success.tinFlag,
             )
         }
     }
@@ -448,8 +456,12 @@ fun CsvImportBody(
                                             .fillMaxWidth(),
                                         fontWeight = FontWeight.Bold,
                                     )
+                                    val parseTest =
+                                        if (csvImportState.firstFullRecord.isEmpty()) "(Parse error)"
+                                        else csvImportState.firstFullRecord.joinToString(", ")
+
                                     Text(
-                                        text = csvImportState.firstFullRecord.joinToString(", "),
+                                        text = parseTest,
                                         modifier = Modifier
                                             .padding(start = 8.dp, top = 0.dp, end = 0.dp, bottom = 0.dp),
                                     )
@@ -506,15 +518,58 @@ fun CsvImportBody(
                                             )
                                         }
                                     }
+                                    // Collate Tins option and warning //
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp),
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .padding(0.dp),
+                                            horizontalAlignment = Alignment.Start,
+                                            verticalArrangement = Arrangement.Center,
+                                        ) {
+                                            LabeledCheckbox(
+                                                text = "Collate tins?",
+                                                maxLines = 1,
+                                                checked = mappingOptions.collateTins,
+                                                onCheckedChange = { isChecked ->
+                                                    updateCollateTinsOption(isChecked)
+                                                },
+                                                modifier = Modifier,
+                                            )
+                                        }
+                                        // Warning //
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(0.dp),
+                                            horizontalAlignment = Alignment.Start,
+                                            verticalArrangement = Arrangement.Center,
+                                        ) {
+                                            AutoSizeText(
+                                                text = if (mappingOptions.collateTins && importOption == ImportOption.OVERWRITE) {
+                                                    "Warning: Overwrite will erase existing tins." }
+                                                    else { "" },
+                                                modifier = Modifier,
+                                                fontSize = 15.sp,
+                                                minFontSize = 8.sp,
+                                                height = 24.dp,
+                                                maxLines = 1,
+                                                textAlign = TextAlign.Start,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
                                     // Existing Records options //
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(0.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(
-                                            8.dp,
-                                            Alignment.Start
-                                        ),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Text(
@@ -599,7 +654,12 @@ fun CsvImportBody(
                                 // column mapping options //
                                 Column(
                                     modifier = Modifier
-                                        .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
+                                        .padding(
+                                            start = 20.dp,
+                                            top = 8.dp,
+                                            end = 20.dp,
+                                            bottom = 16.dp
+                                        )
                                         .fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -710,7 +770,7 @@ fun CsvImportBody(
                                     )
 
                                     MappingField(
-                                        label = "Quantity:",
+                                        label = "No. of Tins:",
                                         selectedColumn = mappingOptions.quantityColumn,
                                         csvColumns = csvUiState.columns,
                                         onColumnSelected = { selectedColumn ->
@@ -727,7 +787,8 @@ fun CsvImportBody(
                                             )
                                         },
                                         importOption = importOption,
-                                        showCheckbox = true
+                                        showCheckbox = true,
+                                        enabled = !mappingOptions.collateTins
                                     )
                                     MappingField(
                                         label = "Favorite:",
@@ -811,6 +872,101 @@ fun CsvImportBody(
                                     )
                                 }
 
+                                // Tins mapping options
+                                Column(modifier = Modifier
+                                    .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
+                                    .fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Tins Mapping",
+                                        modifier = Modifier,
+                                        textAlign = TextAlign.Center,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (mappingOptions.collateTins) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
+                                    )
+                                    MappingField(
+                                        label = "Container:",
+                                        selectedColumn = mappingOptions.containerColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.Container, selectedColumn
+                                            )
+                                        },
+                                        enabled = mappingOptions.collateTins
+                                    )
+                                    MappingField(
+                                        label = "Quantity:",
+                                        selectedColumn = mappingOptions.tinQuantityColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.TinQuantity, selectedColumn
+                                            )
+                                        },
+                                        enabled = mappingOptions.collateTins
+                                    )
+
+//                                    Spacer(
+//                                        modifier = Modifier
+//                                            .height(12.dp)
+//                                    )
+                                    var dateFormatSelected by rememberSaveable { mutableStateOf(false) }
+
+                                    DateFormatField(
+                                        label = "CSV Date\nFormat:",
+                                        selectedFormat = mappingOptions.dateFormat,
+                                        onFormatSelected = { selectedFormat ->
+                                            viewModel.updateDateFormat(selectedFormat)
+                                            dateFormatSelected = if (selectedFormat.isNotBlank()) true else false
+                                        },
+                                        enabled = mappingOptions.collateTins,
+                                        modifier = Modifier
+                                    )
+
+                                    MappingField(
+                                        label = "Manufacture\nDate:",
+                                        selectedColumn = mappingOptions.manufactureDateColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.ManufactureDate,
+                                                selectedColumn
+                                            )
+                                        },
+                                        enabled = mappingOptions.collateTins && dateFormatSelected,
+                                        placeholder = if (!dateFormatSelected) "(must select date format)" else ""
+                                    )
+                                    MappingField(
+                                        label = "Cellar Date:",
+                                        selectedColumn = mappingOptions.cellarDateColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.CellarDate,
+                                                selectedColumn
+                                            )
+                                        },
+                                        enabled = mappingOptions.collateTins && dateFormatSelected,
+                                        placeholder = if (!dateFormatSelected) "(must select date format)" else ""
+                                    )
+                                    MappingField(
+                                        label = "Open Date:",
+                                        selectedColumn = mappingOptions.openDateColumn,
+                                        csvColumns = csvUiState.columns,
+                                        onColumnSelected = { selectedColumn ->
+                                            viewModel.updateMappingOptions(
+                                                CsvImportViewModel.CsvField.OpenDate,
+                                                selectedColumn
+                                            )
+                                        },
+                                        enabled = mappingOptions.collateTins && dateFormatSelected,
+                                        placeholder = if (!dateFormatSelected) "(must select date format)" else ""
+                                    )
+                                }
+
                                 // Confirm and  Import button //
                                 Button(
                                     onClick = {
@@ -875,170 +1031,381 @@ fun CsvHelpBody(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "When you import a file, the box at the top of the screen...",
-            modifier = modifier
-                .align(Alignment.Start)
-                .padding(bottom = 8.dp),
-            softWrap = true,
-        )
-        Image(
-            painter = painterResource(id = R.drawable.csvhelp_parse_test),
-            contentDescription = "Parse test image",
-            modifier = Modifier
-                .fillMaxWidth(fraction = 0.8f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .padding(0.dp),
-            contentScale = ContentScale.Inside
-        )
-        Text(
-            text = "...will show you the first line of the file (labeled \"Possible header\") " +
-                    "and another line after (labeled \"Record parse test\"). This is to verify " +
-                    "whether or not there is a header and what a record looks like.\n\nIf there " +
-                    "is no header, the \"Possible header\" line will look like a record. If the " +
-                    "record parse test looks wrong, try reformatting your CSV file to " +
-                    "RFC 4180 formatting to ensure a successful read.\n\nBelow this are " +
-                    "the import options.",
-            modifier = modifier
-                .align(Alignment.Start)
-                .padding(top = 12.dp, bottom = 8.dp),
-            softWrap = true,
-        )
-        Image(
-            painter = painterResource(id = R.drawable.csvhelp_import_options),
-            contentDescription = "Import options image",
-            modifier = Modifier
-                .fillMaxWidth(fraction = 0.8f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .padding(0.dp),
-            contentScale = ContentScale.Inside
-        )
-        Text(
-            text = "Use the \"Has header?\" checkbox to skip the first line if it is a header. " +
-                    "The record count on the right will show the number of records found in the " +
-                    "CSV (minus the header if the option is selected for that). Use this as well " +
-                    "to ensure the CSV file is being properly read.\n\nThe next line contains " +
-                    "options for handling records that already match entries in the database:",
-            modifier = modifier
-                .align(Alignment.Start)
-                .padding(top = 12.dp, bottom = 0.dp),
-            softWrap = true,
-        )
+        // Verifying data integrity
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp)
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
+            Text(
+                text = "Verifying Data before Import",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(vertical = 8.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+            )
+            Image(
+                painter = painterResource(id = R.drawable.csvhelp_parse_test),
+                contentDescription = "Parse test image",
                 modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "-  ",
-                        modifier = modifier
-                            .align(Alignment.Start),
-                        softWrap = true,
+                    .fillMaxWidth(fraction = 0.8f)
+                    .wrapContentSize(align = Alignment.Center)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        RoundedCornerShape(4.dp)
                     )
-                }
-                Column {
-                    Text(
-                        text = "\"Skip\" will skip matching entries.",
-                        modifier = modifier
-                            .align(Alignment.Start),
-                        softWrap = true,
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        RoundedCornerShape(4.dp)
                     )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "-  ",
-                        modifier = modifier
-                            .align(Alignment.Start),
-                        softWrap = true,
-                    )
-                }
-                Column {
-                    Text(
-                        text = "\"Update\" will fill-in/update only the empty fields in the " +
-                                "database.",
-                        modifier = modifier
-                            .align(Alignment.Start),
-                        softWrap = true,
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "-  ",
-                        modifier = modifier
-                            .align(Alignment.Start),
-                        softWrap = true,
-                    )
-                }
-                Column {
-                    Text(
-                        text = "\"Overwrite\" will replace the selected fields (checkbox on "+
-                                "the right) with the values in the CSV file, including overwriting " +
-                                "entry data with blank/empty values.\n",
-                        modifier = modifier
-                            .align(Alignment.Start),
-                        softWrap = true,
-                    )
-                }
-            }
+                    .padding(0.dp),
+                contentScale = ContentScale.Inside
+            )
+            Text(
+                text = "After selecting a file, a box will show you the first line of the file " +
+                        "(labeled \"Possible header\") and another line (labeled \"Record parse " +
+                        "test\"). Use this to verify whether or not there is a header and what " +
+                        "a record looks like.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(top = 16.dp, bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "If there is no header, \"Possible header\" will look like a record. " +
+                        "If the record parse test looks wrong, try reformatting your CSV file to " +
+                        "RFC 4180 formatting to ensure a successful read.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "In the import options section, there is also a \"Record count\" that shows " +
+                        "the number of lines (records) in the file.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 16.dp),
+                softWrap = true,
+            )
         }
-        Text(
-            text = "All three options always import new records, they only affect records that " +
-                    "match existing entries in the database.\n\nFinally, the import mapping is " +
-                    "the last step.",
-            modifier = modifier
-                .align(Alignment.Start)
-                .padding(bottom = 8.dp),
-            softWrap = true,
-        )
-        Image(
-            painter = painterResource(id = R.drawable.csvhelp_mapping_options),
-            contentDescription = "Import mapping image",
-            modifier = Modifier
-                .fillMaxWidth(fraction = 0.8f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .padding(0.dp),
-            contentScale = ContentScale.Inside
-        )
-        Text(
-            text = "The labels on the left represent the fields in the database. " +
-                    "Please use the dropdown boxes in the center to select which column in the " +
-                    "CSV file to map to the given database field. All fields other than \"Brand\"" +
-                    " and \"Blend\" are optional.",
-            modifier = modifier
-                .align(Alignment.Start)
-                .padding(top = 12.dp, bottom = 8.dp),
-            softWrap = true,
-        )
+
+        // Import options //
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "Import Options",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(vertical = 8.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+            )
+            Image(
+                painter = painterResource(id = R.drawable.csvhelp_import_options),
+                contentDescription = "Import options image",
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.8f)
+                    .wrapContentSize(align = Alignment.Center)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        RoundedCornerShape(4.dp)
+                    )
+                    .padding(0.dp),
+                contentScale = ContentScale.Inside
+            )
+            Text(
+                text = "Use the \"Has header?\" checkbox to skip the first line if it is a header. " +
+                        "The record count on the right will decrease by 1 if the \"Has header?\" " +
+                        "option is chosen.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(top = 16.dp, bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "Use the \"Collate tins?\" option to attempt to parse the individual records " +
+                        "as tins if your CSV has a separate line for each tin (individual tins are " +
+                        "handled separately in the database and attached to entries).",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+
+            Text(
+                text = "The next line contains options for handling records that already match " +
+                        "entries in the database. Each entry must be a unique combination of Brand " +
+                        "+ Blend.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 0.dp),
+                softWrap = true,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, bottom = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column {
+                        Text(
+                            text = "-  ",
+                            modifier = modifier
+                                .align(Alignment.Start),
+                            softWrap = true,
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "\"Skip\" will skip matching entries.",
+                            modifier = modifier
+                                .align(Alignment.Start),
+                            softWrap = true,
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column {
+                        Text(
+                            text = "-  ",
+                            modifier = modifier
+                                .align(Alignment.Start),
+                            softWrap = true,
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "\"Update\" will fill-in only the empty fields in the database " +
+                                    "entries.",
+                            modifier = modifier
+                                .align(Alignment.Start),
+                            softWrap = true,
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column {
+                        Text(
+                            text = "-  ",
+                            modifier = modifier
+                                .align(Alignment.Start),
+                            softWrap = true,
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "\"Overwrite\" will replace the selected fields (checkbox on "+
+                                    "the right) with the values in the CSV file, including overwriting " +
+                                    "entry data with blank/empty values.",
+                            modifier = modifier
+                                .align(Alignment.Start),
+                            softWrap = true,
+                        )
+                    }
+                }
+            }
+            Text(
+                text = "All three options always import new records, they only affect records that " +
+                        "match existing entries in the database.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "If you wish to update tins by existing values with new values from the CSV, " +
+                        "use the \"Overwrite\" option, \"Update\" will only fill in values that are " +
+                        "blank.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "WARNING: Using \"Overwrite\" with \"Collate tins\" will always delete all " +
+                        "existing tins and replace them with tins generated from CSV records. If you " +
+                        "wish to update entries while maintaining your existing tins, do not use " +
+                        "Collate with Overwrite.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 16.dp),
+                softWrap = true,
+            )
+        }
+
+        // Import mapping //
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "Import Mapping",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(vertical = 8.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+            )
+            Image(
+                painter = painterResource(id = R.drawable.csvhelp_mapping_options),
+                contentDescription = "Import mapping image",
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.8f)
+                    .wrapContentSize(align = Alignment.Center)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        RoundedCornerShape(4.dp)
+                    )
+                    .padding(0.dp),
+                contentScale = ContentScale.Inside
+            )
+            Text(
+                text = "The labels on the left represent the fields in the database. Use the " +
+                        "dropdown boxes to select which CSV column to map to which field. " +
+                        "All fields other than \"Brand\" and \"Blend\" are optional.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(top = 16.dp, bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "The checkboxes to the right are for the \"Overwrite\" option. " +
+                        "Only those fields that are checked will be allowed to be overwritten.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "If you select the tin collation option, the Number of Tins field is disabled, " +
+                        "this field will be calculated by the \"Quantity\" field in tins mapping.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 16.dp),
+                softWrap = true,
+            )
+        }
+
+        // Tins mapping //
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "Tins Mapping",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(vertical = 8.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+            )
+            Text(
+                text = "\"Tins\" here represents any container, it doesn't have to actually be " +
+                        "in a tin.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "The tins mapping fields are enabled by selecting the \"collate tins\" " +
+                        "option. When collating, the CSV is iterated through and 1 tin is added " +
+                        "per each line that contains the same Brand and Blend (a tin label will " +
+                        "be automatically generated). Upon import, the tins will be linked to " +
+                        "their parent Brand + Blend entries.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "Tin collation will only work properly if each individual tin has its " +
+                        "own line in the CSV, or to put it another way, if each record in the " +
+                        "CSV is one tin.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "The quantity field will attempt to separate the numerical quantity from " +
+                        "the unit and map them to the respective tin fields of \"quantity\" and " +
+                        "\"unit\". For instance, if the column containing your tin quantities has " +
+                        "a value of \"12 oz\", the database \"quantity\" field will be \"12\" and " +
+                        "the \"unit\" field will be oz.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "Date mapping is not guaranteed. Select the date format that was used in " +
+                        "the CSV column that contains the date. Several date formats are " +
+                        "currently supported. Date formats will work regardless of month/day/year " +
+                        "delimiter (/, -, or .), or if days have leading 0's. The date format " +
+                        "applies to all three fields.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "Only map dates if your manufacture, cellar or open date values each have " +
+                        "their own columns and that the dates themselves are in one column (month " +
+                        "day and year). Date tracking where day/month/years are split across " +
+                        "different columns is not supported.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+            Text(
+                text = "For dates that have two digit years, all years are presumed to be after " +
+                        "1900 and before the current year. If the two digit year value is " +
+                        "greater than the current year, it's presumed to be 19__; if it is less " +
+                        "than or equal to the current year, it is presumed to be 20__.",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+        }
         Spacer(
             modifier = Modifier
                 .height(24.dp)
@@ -1113,6 +1480,7 @@ fun LabeledCheckbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
+    maxLines: Int = Int.MAX_VALUE,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     colors: CheckboxColors = CheckboxDefaults.colors(),
 ) {
@@ -1127,6 +1495,7 @@ fun LabeledCheckbox(
             text = text,
             modifier = Modifier,
             color = fontColor,
+            maxLines = maxLines,
         )
         TriStateCheckbox(
             state = ToggleableState(checked),
@@ -1155,12 +1524,165 @@ fun LabeledCheckbox(
 // Field mapping composables //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun DateFormatField(
+    label: String,
+    selectedFormat: String,
+    onFormatSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    showCheckbox: Boolean = false,
+    overwriteSelected: Boolean = false,
+    onOverwrite: (Boolean) -> Unit = {},
+    importOption: ImportOption = ImportOption.SKIP,
+    placeholder: String = "",
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var fontSize by remember { mutableStateOf(16.sp) }
+    val minFontSize = 11.sp
+    var fontMultiplier by remember { mutableFloatStateOf(1f) }
+    fun updateFontSize(multiplier: Float) {
+        val newSize = fontSize * multiplier
+        if (newSize > minFontSize) {
+            fontMultiplier = multiplier
+        }
+    }
+
+    val formats = listOf(
+        "01/24 or 01/2024 (MM/YY)",
+        "24/01 or 2024/01 (YY/MM)",
+        "01/27/24 or 01/27/2024 (MM/DD/YY)",
+        "27/01/24 or 27/01/2024 (DD/MM/YY)",
+        "24/01/01 or 2024/01/01 (YY/MM/DD)",
+        "January 27, 2024 or Jan 27, 2024",
+        "27 January, 2024 or 27 Jan, 2024"
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Row(
+            modifier = modifier
+                .padding(0.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .height(42.dp)
+                    .width(90.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier,
+                    textAlign = TextAlign.Start,
+                    softWrap = false,
+                    maxLines = 2,
+                    overflow = TextOverflow.Visible,
+                    style = LocalTextStyle.current.copy(
+                        lineHeight = LocalTextStyle.current.lineHeight * fontMultiplier,
+                        fontSize = LocalTextStyle.current.fontSize * fontMultiplier,
+                    ),
+                    onTextLayout = {
+                        if (it.hasVisualOverflow) {
+                            updateFontSize(fontMultiplier * 0.99f)
+                        }
+                    },
+                    color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .weight(1f)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier
+                ) {
+                    OutlinedTextField(
+                        value = selectedFormat.ifBlank { "" },
+                        onValueChange = { },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled),
+                        trailingIcon =
+                        {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        placeholder = {
+                            Text(text = placeholder)
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                            disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.38f),
+                        ),
+                        singleLine = true,
+                        enabled = enabled
+                        )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        containerColor = LocalCustomColors.current.textField,
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(text = "") },
+                            onClick = {
+                                onFormatSelected("")
+                                expanded = false
+                            }
+                        )
+                        formats.forEach { format ->
+                            DropdownMenuItem(
+                                text = { Text(text = format) },
+                                onClick = {
+                                    onFormatSelected(format)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .width(48.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                if (showCheckbox) {
+                    Checkbox(
+                        checked = overwriteSelected,
+                        onCheckedChange = onOverwrite,
+                        modifier = Modifier
+                            .offset(x = 6.dp),
+                        enabled = importOption == ImportOption.OVERWRITE && enabled,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun MappingField(
     label: String,
     selectedColumn: String,
     csvColumns: List<String>,
     onColumnSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     showCheckbox: Boolean = false,
     overwriteSelected: Boolean = false,
     onOverwrite: (Boolean) -> Unit = {},
@@ -1208,7 +1730,8 @@ fun MappingField(
                         if (it.hasVisualOverflow) {
                             updateFontSize(fontMultiplier * 0.99f)
                         }
-                    }
+                    },
+                    color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
                 )
             }
             Box(
@@ -1219,30 +1742,41 @@ fun MappingField(
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
-                    modifier = modifier
+                    modifier = Modifier
+                        .fillMaxWidth()
                 ) {
                     OutlinedTextField(
                         value = selectedColumn.ifBlank { "" },
                         onValueChange = { },
                         readOnly = true,
                         modifier = Modifier
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled),
                         trailingIcon =
                         {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         },
-                        placeholder = { Text(text = placeholder) },
+                        placeholder = {
+                        //    Text(text = placeholder)
+                            AutoSizeText(
+                                text = placeholder,
+                                fontSize = LocalTextStyle.current.fontSize,
+                                minFontSize = 8.sp,
+                                maxLines = 1,
+                                height = 24.dp,
+                            )
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
-                            disabledBorderColor = MaterialTheme.colorScheme.onBackground,
+                            disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
                             focusedContainerColor = LocalCustomColors.current.textField,
                             unfocusedContainerColor = LocalCustomColors.current.textField,
-                            disabledContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.38f),
                         ),
                         singleLine = true,
-
-                        )
+                        enabled = enabled
+                    )
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
@@ -1280,13 +1814,11 @@ fun MappingField(
                         onCheckedChange = onOverwrite,
                         modifier = Modifier
                             .offset(x = 6.dp),
-                        enabled = importOption == ImportOption.OVERWRITE,
+                        enabled = importOption == ImportOption.OVERWRITE && enabled,
                     )
                 }
             }
         }
     }
 }
-
-
 
