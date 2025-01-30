@@ -102,7 +102,28 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
             val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
             val tins = itemsDao.getTinsForItemStream(item.id).first()
 
-            for (tin in tins) {
+            if (tins.isNotEmpty()) {
+                for (tin in tins) {
+                    val tinExport = TinExportData(
+                        brand = item.brand,
+                        blend = item.blend,
+                        type = item.type,
+                        subGenre = item.subGenre,
+                        cut = item.cut,
+                        favorite = item.favorite,
+                        disliked = item.disliked,
+                        inProduction = item.inProduction,
+                        notes = item.notes,
+                        components = components,
+                        container = tin.container,
+                        quantity = "${tin.tinQuantity} ${tin.unit}",
+                        manufactureDate = formatLongDate(tin.manufactureDate),
+                        cellarDate = formatLongDate(tin.cellarDate),
+                        openDate = formatLongDate(tin.openDate)
+                    )
+                    tinExportData.add(tinExport)
+                }
+            } else {
                 val tinExport = TinExportData(
                     brand = item.brand,
                     blend = item.blend,
@@ -114,11 +135,11 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
                     inProduction = item.inProduction,
                     notes = item.notes,
                     components = components,
-                    container = tin.container,
-                    quantity = "${tin.tinQuantity} ${tin.unit}",
-                    manufactureDate = formatLongDate(tin.manufactureDate),
-                    cellarDate = formatLongDate(tin.cellarDate),
-                    openDate = formatLongDate(tin.openDate)
+                    container = "",
+                    quantity = "",
+                    manufactureDate = "",
+                    cellarDate = "",
+                    openDate = ""
                 )
                 tinExportData.add(tinExport)
             }
