@@ -1,6 +1,10 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -12,6 +16,8 @@ import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportDestination
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsDestination
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
+import com.sardonicus.tobaccocellar.ui.home.BlendDetailsDestination
+import com.sardonicus.tobaccocellar.ui.home.BlendDetailsScreen
 import com.sardonicus.tobaccocellar.ui.home.HelpDestination
 import com.sardonicus.tobaccocellar.ui.home.HelpScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
@@ -37,7 +43,13 @@ fun CellarNavHost(
         startDestination = startDestination,
         modifier = modifier,
     ) {
-        composable(route = HomeDestination.route) {
+        composable(
+            route = HomeDestination.route,
+            enterTransition = {
+                if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
+                EnterTransition.None } else { null }
+                              },
+        ) {
             HomeScreen(
                 navigateToStats = { navController.navigate(StatsDestination.route) {
                     launchSingleTop = true
@@ -45,6 +57,7 @@ fun CellarNavHost(
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
+                navigateToBlendDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
                 navigateToSettings = { navController.navigate(SettingsDestination.route) {
                     launchSingleTop = true
@@ -94,6 +107,22 @@ fun CellarNavHost(
                     launchSingleTop = true
                     popUpTo(HomeDestination.route) { inclusive = true }
                 } },
+                onNavigateUp = { navController.navigateUp() },
+            )
+        }
+        composable(
+            route = BlendDetailsDestination.routeWithArgs,
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { it }) },
+            arguments = listOf(navArgument(BlendDetailsDestination.itemsIdArg) {
+                type = NavType.IntType
+            })
+        ) {
+            BlendDetailsScreen(
+                navigateBack = { navController.navigate(HomeDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(HomeDestination.route) { inclusive = true }
+                }  },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
