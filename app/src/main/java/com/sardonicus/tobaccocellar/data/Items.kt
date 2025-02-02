@@ -93,7 +93,7 @@ data class ItemsWithComponents(
 )
 
 data class ItemsComponentsAndTins(
-    @Embedded val item: Items,
+    @Embedded val items: Items,
     @Relation(
         parentColumn = "id",
         entityColumn = "componentId",
