@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportViewModel
+import com.sardonicus.tobaccocellar.ui.home.BlendDetailsViewModel
 import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
 import com.sardonicus.tobaccocellar.ui.items.AddEntryViewModel
 import com.sardonicus.tobaccocellar.ui.items.EditEntryViewModel
@@ -34,6 +35,14 @@ object AppViewModelProvider {
                 cellarApplication().filterViewModel,
                 cellarApplication().csvHelper,
                 cellarApplication()
+            )
+        }
+
+        initializer {
+            BlendDetailsViewModel(
+                this.createSavedStateHandle(),
+                cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo
             )
         }
 
