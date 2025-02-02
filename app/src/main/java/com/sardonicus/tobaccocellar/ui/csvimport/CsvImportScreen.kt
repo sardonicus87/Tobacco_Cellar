@@ -654,15 +654,10 @@ fun CsvImportBody(
                                 // column mapping options //
                                 Column(
                                     modifier = Modifier
-                                        .padding(
-                                            start = 20.dp,
-                                            top = 8.dp,
-                                            end = 20.dp,
-                                            bottom = 16.dp
-                                        )
+                                        .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
                                         .fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(0.dp),
                                 ) {
                                     MappingField(
                                         label = "Brand:",
@@ -874,10 +869,10 @@ fun CsvImportBody(
 
                                 // Tins mapping options
                                 Column(modifier = Modifier
-                                    .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
+                                    .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
                                     .fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
                                 ) {
                                     Text(
                                         text = "Tins Mapping",
@@ -909,10 +904,10 @@ fun CsvImportBody(
                                         enabled = mappingOptions.collateTins
                                     )
 
-//                                    Spacer(
-//                                        modifier = Modifier
-//                                            .height(12.dp)
-//                                    )
+                                    Spacer(
+                                        modifier = Modifier
+                                            .height(8.dp)
+                                    )
                                     var dateFormatSelected by rememberSaveable { mutableStateOf(false) }
 
                                     DateFormatField(
@@ -926,45 +921,65 @@ fun CsvImportBody(
                                         modifier = Modifier
                                     )
 
-                                    MappingField(
-                                        label = "Manufacture\nDate:",
-                                        selectedColumn = mappingOptions.manufactureDateColumn,
-                                        csvColumns = csvUiState.columns,
-                                        onColumnSelected = { selectedColumn ->
-                                            viewModel.updateMappingOptions(
-                                                CsvImportViewModel.CsvField.ManufactureDate,
-                                                selectedColumn
+                                    Box(
+                                        modifier = Modifier,
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column {
+                                            MappingField(
+                                                label = "Manufacture\nDate:",
+                                                selectedColumn = mappingOptions.manufactureDateColumn,
+                                                csvColumns = csvUiState.columns,
+                                                onColumnSelected = { selectedColumn ->
+                                                    viewModel.updateMappingOptions(
+                                                        CsvImportViewModel.CsvField.ManufactureDate,
+                                                        selectedColumn
+                                                    )
+                                                },
+                                                enabled = mappingOptions.collateTins && dateFormatSelected
                                             )
-                                        },
-                                        enabled = mappingOptions.collateTins && dateFormatSelected,
-                                        placeholder = if (!dateFormatSelected) "(must select date format)" else ""
-                                    )
-                                    MappingField(
-                                        label = "Cellar Date:",
-                                        selectedColumn = mappingOptions.cellarDateColumn,
-                                        csvColumns = csvUiState.columns,
-                                        onColumnSelected = { selectedColumn ->
-                                            viewModel.updateMappingOptions(
-                                                CsvImportViewModel.CsvField.CellarDate,
-                                                selectedColumn
+                                            MappingField(
+                                                label = "Cellar Date:",
+                                                selectedColumn = mappingOptions.cellarDateColumn,
+                                                csvColumns = csvUiState.columns,
+                                                onColumnSelected = { selectedColumn ->
+                                                    viewModel.updateMappingOptions(
+                                                        CsvImportViewModel.CsvField.CellarDate,
+                                                        selectedColumn
+                                                    )
+                                                },
+                                                enabled = mappingOptions.collateTins && dateFormatSelected
                                             )
-                                        },
-                                        enabled = mappingOptions.collateTins && dateFormatSelected,
-                                        placeholder = if (!dateFormatSelected) "(must select date format)" else ""
-                                    )
-                                    MappingField(
-                                        label = "Open Date:",
-                                        selectedColumn = mappingOptions.openDateColumn,
-                                        csvColumns = csvUiState.columns,
-                                        onColumnSelected = { selectedColumn ->
-                                            viewModel.updateMappingOptions(
-                                                CsvImportViewModel.CsvField.OpenDate,
-                                                selectedColumn
+                                            MappingField(
+                                                label = "Open Date:",
+                                                selectedColumn = mappingOptions.openDateColumn,
+                                                csvColumns = csvUiState.columns,
+                                                onColumnSelected = { selectedColumn ->
+                                                    viewModel.updateMappingOptions(
+                                                        CsvImportViewModel.CsvField.OpenDate,
+                                                        selectedColumn
+                                                    )
+                                                },
+                                                enabled = mappingOptions.collateTins && dateFormatSelected,
                                             )
-                                        },
-                                        enabled = mappingOptions.collateTins && dateFormatSelected,
-                                        placeholder = if (!dateFormatSelected) "(must select date format)" else ""
-                                    )
+                                        }
+                                        if (mappingOptions.collateTins && !dateFormatSelected) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(Color.Black.copy(alpha = 0.50f), RoundedCornerShape(4.dp))
+                                                    .matchParentSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "(must select date format)",
+                                                    modifier = Modifier
+                                                        .background(Color.Black.copy(alpha = 0.33f)),
+                                                    textAlign = TextAlign.Center,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // Confirm and  Import button //
@@ -1356,8 +1371,11 @@ fun CsvHelpBody(
             )
             Text(
                 text = "Tin collation will only work properly if each individual tin has its " +
-                        "own line in the CSV, or to put it another way, if each record in the " +
-                        "CSV is one tin.",
+                        "own line in the CSV. The \"Skip\" option with tin collation will only " +
+                        "create tins for new entries. The \"Update\" option will only create " +
+                        "tins for entries that have no attached tins, and the \"Overwrite\" " +
+                        "option will erase all existing tins and will create tins for all items" +
+                        "regardless of whether or not they had tins before.",
                 modifier = modifier
                     .align(Alignment.Start)
                     .padding(bottom = 12.dp),
@@ -1559,11 +1577,11 @@ fun DateFormatField(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
+            .padding(vertical = 4.dp)
     ) {
         Row(
-            modifier = modifier
-                .padding(0.dp)
+            modifier = Modifier
+                .padding(start = 8.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -1700,10 +1718,13 @@ fun MappingField(
         }
     }
 
-    Column {
+    Column(
+        modifier = modifier
+            .padding(vertical = 4.dp)
+    ) {
         Row(
-            modifier = modifier
-                .padding(0.dp)
+            modifier = Modifier
+                .padding(start = 8.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -1757,14 +1778,14 @@ fun MappingField(
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         },
                         placeholder = {
-                        //    Text(text = placeholder)
-                            AutoSizeText(
-                                text = placeholder,
-                                fontSize = LocalTextStyle.current.fontSize,
-                                minFontSize = 8.sp,
-                                maxLines = 1,
-                                height = 24.dp,
-                            )
+                            Text(text = placeholder)
+//                            AutoSizeText(
+//                                text = placeholder,
+//                                fontSize = LocalTextStyle.current.fontSize,
+//                                minFontSize = 8.sp,
+//                                maxLines = 1,
+//                                height = 24.dp,
+//                            )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,

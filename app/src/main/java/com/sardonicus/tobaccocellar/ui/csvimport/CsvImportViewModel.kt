@@ -44,10 +44,10 @@ class CsvImportViewModel(
         recordCount: Int
     ) {
         val updatedHeader = header.mapIndexed { index, value ->
-            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate(13)
+            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate(11)
         }
         val updatedFirstFullRecord = firstFullRecord.mapIndexed { index, value ->
-            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate(13)
+            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate(11)
         }
 
         _csvImportState.value = CsvImportState(
@@ -60,7 +60,7 @@ class CsvImportViewModel(
 
     private fun String.truncate(maxLength: Int): String {
         return if (length > maxLength) {
-            substring(0, minOf(10, maxLength - 3)) + "..."
+            substring(0, minOf(8, maxLength - 3)) + "..."
         } else {
             this
         }
