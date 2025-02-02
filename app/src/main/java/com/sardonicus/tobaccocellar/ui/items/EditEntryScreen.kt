@@ -45,8 +45,7 @@ fun EditEntryScreen(
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: EditEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
-
-){
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -63,7 +62,6 @@ fun EditEntryScreen(
             onClick()
         }
     }
-
 
     Scaffold(
         modifier = modifier
