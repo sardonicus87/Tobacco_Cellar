@@ -558,7 +558,9 @@ fun ChangeLogEntryLayout(
             text = "Version $versionNumber  ($buildDate)",
             modifier = Modifier,
             fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Start,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground
         )
         HorizontalDivider(
             modifier = Modifier
@@ -576,7 +578,7 @@ fun ChangeLogEntryLayout(
                     text = "Changes:",
                     modifier = Modifier,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight = FontWeight.Medium,
                 )
                 Column(
                     modifier = Modifier
@@ -613,7 +615,7 @@ fun ChangeLogEntryLayout(
                     text = "Improvements:",
                     modifier = Modifier,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight = FontWeight.Medium,
                 )
                 Column(
                     modifier = Modifier
@@ -650,7 +652,7 @@ fun ChangeLogEntryLayout(
                     text = "Bug Fixes:",
                     modifier = Modifier,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontWeight = FontWeight.Medium,
                 )
                 Column(
                     modifier = Modifier
