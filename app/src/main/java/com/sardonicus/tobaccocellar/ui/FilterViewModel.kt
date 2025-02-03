@@ -46,7 +46,7 @@ class FilterViewModel (
 
     /** HomeScreen HomeHeader blend search **/
     private val _searchIconOpacity = MutableStateFlow(0.5f)
-    val searchIconOpacity: StateFlow<Float> = _searchIconOpacity
+    val searchIconOpacity: StateFlow<Float> = _searchIconOpacity.asStateFlow()
 
     fun updateSearchIconOpacity(opacity: Float) {
         _searchIconOpacity.value = opacity
@@ -64,6 +64,13 @@ class FilterViewModel (
 
     fun updateSearchText(text: String) {
         _blendSearchText.value = text
+    }
+
+    private val _blendSearchFocused = MutableStateFlow(false)
+    val blendSearchFocused: StateFlow<Boolean> = _blendSearchFocused.asStateFlow()
+
+    fun updateSearchFocused(focused: Boolean) {
+        _blendSearchFocused.value = focused
     }
 
 
