@@ -248,8 +248,10 @@ private fun CellarView(
                 .height(12.dp)
         )
         Text(
-            text = "In List View, long-press any item to open a menu overlay to access options " +
-                    "to edit the item, or view notes (if a note is present).",
+            text = "In List View, long-press any entry to open a menu overlay to access the " +
+                    "option to edit the entry. Otherwise, tapping an entry will navigate to the " +
+                    "details for that entry (if no menu overlay is open on any other item and the " +
+                    "blend search field is not focused).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -273,17 +275,6 @@ private fun CellarView(
             alignment = Alignment.Center
         )
         Text(
-            text = "Tapping anywhere outside of the item or pressing the phone's back button " +
-                    "will dismiss this menu.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
-        )
-        Text(
             text = "In Table View, items can be sorted by tapping the \"Brand\" or \"Blend\" " +
                     "columns. The default sorting is by the order the items were entered into the " +
                     "database. The first tap will sort the column ascending, the second " +
@@ -293,7 +284,9 @@ private fun CellarView(
             softWrap = true,
         )
         Text(
-            text = "Long-pressing the blend name will take you to the edit screen for that item.",
+            text = "Long-pressing the brand or blend cell will take you to the edit screen for " +
+                    "that entry. Tapping will take you to the blend details if the blend search " +
+                    "field is not focused.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
