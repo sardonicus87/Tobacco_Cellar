@@ -3,15 +3,13 @@ package com.sardonicus.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
-import com.sardonicus.tobaccocellar.data.Items
+import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -71,7 +69,7 @@ class HomeViewModel(
             filterViewModel.selectedExcludeLikes,
             filterViewModel.selectedExcludeDislikes,
             filterViewModel.blendSearchValue,
-            itemsRepository.getAllItemsStream(),
+            itemsRepository.getEverythingStream(),
             preferencesRepo.isTableView
         ) { values ->
             val brands = values[0] as List<String>
@@ -87,28 +85,28 @@ class HomeViewModel(
             val excludedLikes = values[10] as Boolean
             val excludedDislikes = values[11] as Boolean
             val blendSearchValue = values[12] as String
-            val allItems = values[13] as List<Items>
+            val allItems = values[13] as List<ItemsComponentsAndTins>
             val isTableView = values[14] as Boolean
 
             val filteredItems =
                 if (blendSearchValue.isBlank()) {
                     allItems.filter { items ->
-                        (brands.isEmpty() || brands.contains(items.brand)) &&
-                                (types.isEmpty() || types.contains(items.type)) &&
-                                (!unassigned || items.type.isBlank()) &&
-                                (!favorites || items.favorite) &&
-                                (!dislikeds || items.disliked) &&
-                                (!neutral || (!items.favorite && !items.disliked)) &&
-                                (!nonNeutral || (items.favorite || items.disliked)) &&
-                                (!inStock || items.quantity > 0) &&
-                                (!outOfStock || items.quantity == 0) &&
-                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.brand)) &&
-                                (!excludedLikes || !items.favorite) &&
-                                (!excludedDislikes || !items.disliked)
+                        (brands.isEmpty() || brands.contains(items.items.brand)) &&
+                                (types.isEmpty() || types.contains(items.items.type)) &&
+                                (!unassigned || items.items.type.isBlank()) &&
+                                (!favorites || items.items.favorite) &&
+                                (!dislikeds || items.items.disliked) &&
+                                (!neutral || (!items.items.favorite && !items.items.disliked)) &&
+                                (!nonNeutral || (items.items.favorite || items.items.disliked)) &&
+                                (!inStock || items.items.quantity > 0) &&
+                                (!outOfStock || items.items.quantity == 0) &&
+                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
+                                (!excludedLikes || !items.items.favorite) &&
+                                (!excludedDislikes || !items.items.disliked)
                     }
                 } else {
                     allItems.filter { items ->
-                        items.blend.contains(blendSearchValue, ignoreCase = true)
+                        items.items.blend.contains(blendSearchValue, ignoreCase = true)
                     }
                 }
             HomeUiState(
@@ -124,21 +122,21 @@ class HomeViewModel(
             )
 
 
-    /** List View item menu overlay **/
+    /** List View item menu overlay and expand details **/
     private val _isMenuShown = mutableStateOf(false)
     val isMenuShown: State<Boolean> = _isMenuShown
 
-    private val _menuItemId = mutableStateOf<Int?>(null)
-    val menuItemId: State<Int?> = _menuItemId
+    private val _activeMenuId = mutableStateOf<Int?>(null)
+    val activeMenuId: State<Int?> = _activeMenuId
 
     fun onShowMenu(itemId: Int) {
         _isMenuShown.value = true
-        _menuItemId.value = itemId
+        _activeMenuId.value = itemId
     }
 
     fun onDismissMenu() {
         _isMenuShown.value = false
-        _menuItemId.value = null
+        _activeMenuId.value = null
     }
 
 
@@ -228,7 +226,7 @@ class HomeViewModel(
 }
 
 data class HomeUiState(
-    val items: List<Items> = listOf(),
+    val items: List<ItemsComponentsAndTins> = listOf(),
     val isTableView: Boolean = false,
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
