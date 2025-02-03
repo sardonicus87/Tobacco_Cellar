@@ -1,9 +1,9 @@
 package com.sardonicus.tobaccocellar.ui.home
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -100,6 +100,7 @@ import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
+import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -119,6 +120,7 @@ object HomeDestination : NavigationDestination {
 fun HomeScreen(
     navigateToStats: () -> Unit,
     navigateToAddEntry: () -> Unit,
+    navigateToBlendDetails: (Int) -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     navigateToCsvImport: () -> Unit,
     navigateToSettings: () -> Unit,
@@ -138,10 +140,11 @@ fun HomeScreen(
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val isTableView = homeUiState.isTableView
-    val activeItemId by viewmodel.menuItemId
+    val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
     val focusManager = LocalFocusManager.current
     val currentPosition by filterViewModel.currentPosition.collectAsState()
+    val blendSearchFocused by filterViewModel.blendSearchFocused.collectAsState()
 
 
     if (showSnackbar.value) {
@@ -216,20 +219,22 @@ fun HomeScreen(
             )
             Box {
                 HomeBody(
-                    items = homeUiState.items,
-                    filterViewModel = filterViewModel,
+                    isLoading = homeUiState.isLoading,
                     isTableView = isTableView,
+                    items = homeUiState.items,
                     updateScrollPosition = filterViewModel::updateScrollPosition,
                     currentPosition = currentPosition,
                     blendSearchText = blendSearchText,
-                    onItemClick = navigateToEditEntry,
+                    filterViewModel = filterViewModel,
+                    onDetailsClick = navigateToBlendDetails,
+                    onEditClick = navigateToEditEntry,
+                    activeMenuId = activeMenuId,
+                    onShowMenu = viewmodel::onShowMenu,
+                    onDismissMenu = viewmodel::onDismissMenu,
+                    isMenuShown = isMenuShown,
+                    blendSearchFocused = blendSearchFocused,
                     sorting = sorting,
                     updateSorting = viewmodel::updateSorting,
-                    isLoading = homeUiState.isLoading,
-                    onDismissMenu = viewmodel::onDismissMenu,
-                    onShowMenu = viewmodel::onShowMenu,
-                    isMenuShown = isMenuShown,
-                    activeItemId = activeItemId,
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(0.dp),
@@ -239,7 +244,7 @@ fun HomeScreen(
                         .matchParentSize()
                         .then(
                             Modifier.drawBehind {
-                                val glowHeight = 2.dp
+                                val glowHeight = 3.dp
                                 drawRect(
                                     brush = Brush.verticalGradient(
                                         colors = listOf(
@@ -332,6 +337,11 @@ private fun HomeHeader(
                         filterViewModel.updateSearchIconOpacity(1f)
                     }
                 },
+                modifier = Modifier
+                    .onFocusChanged {
+                        if (it.isFocused) filterViewModel.updateSearchFocused(true)
+                        else filterViewModel.updateSearchFocused(false)
+                    },
                 onImeAction = {
                     coroutineScope.launch {
                         EventBus.emit(SearchPerformedEvent)
@@ -339,7 +349,6 @@ private fun HomeHeader(
                         delay(20)
                         filterViewModel.onBlendSearch(blendSearchText)
                     }
-                //    filterViewModel.onBlendSearch(blendSearchText)
                 },
                 trailingIcon = {
                     if (blendSearchText.isNotEmpty()) {
@@ -352,6 +361,7 @@ private fun HomeHeader(
                                     onClick = {
                                         filterViewModel.updateSearchText("")
                                         filterViewModel.onBlendSearch("")
+                                        filterViewModel.updateSearchIconOpacity(0.5f)
 
                                         if (searchPerformed) {
                                             coroutineScope.launch {
@@ -491,20 +501,22 @@ private fun CustomBlendSearch(
 
 @Composable
 private fun HomeBody(
-    items: List<Items>,
-    updateScrollPosition: (Int, Int) -> Unit,
-    blendSearchText: String,
-    currentPosition: Map<Int, Int>,
-    filterViewModel: FilterViewModel,
     isLoading: Boolean,
     isTableView: Boolean,
+    items: List<ItemsComponentsAndTins>,
+    updateScrollPosition: (Int, Int) -> Unit,
+    currentPosition: Map<Int, Int>,
+    blendSearchText: String,
+    filterViewModel: FilterViewModel,
+    onDetailsClick: (Int) -> Unit,
+    onEditClick: (Int) -> Unit,
+    activeMenuId: Int?,
+    onShowMenu: (Int) -> Unit,
+    onDismissMenu: () -> Unit,
+    isMenuShown: Boolean,
+    blendSearchFocused: Boolean,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
-    onItemClick: (Int) -> Unit,
-    isMenuShown: Boolean,
-    activeItemId: Int?,
-    onDismissMenu: () -> Unit,
-    onShowMenu: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showNoteDialog by remember { mutableStateOf(false) }
@@ -576,10 +588,12 @@ private fun HomeBody(
                     TableViewMode(
                         itemsList = items,
                         updateScrollPosition = updateScrollPosition,
-                        blendSearchText = blendSearchText,
                         currentPosition = currentPosition,
+                        blendSearchText = blendSearchText,
                         filterViewModel = filterViewModel,
-                        onItemClick = { onItemClick(it.id) },
+                        blendSearchFocused = blendSearchFocused,
+                        onDetailsClick = { onDetailsClick(it.id) },
+                        onEditClick = { onEditClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                                       showNoteDialog = true },
                         sorting = sorting,
@@ -592,15 +606,17 @@ private fun HomeBody(
                     ListViewMode(
                         itemsList = items,
                         updateScrollPosition = updateScrollPosition,
-                        blendSearchText = blendSearchText,
                         currentPosition = currentPosition,
+                        blendSearchText = blendSearchText,
                         filterViewModel = filterViewModel,
-                        onItemClick = { onItemClick(it.id) },
+                        blendSearchFocused = blendSearchFocused,
+                        onDetailsClick = { onDetailsClick(it.id) },
+                        onEditClick = { onEditClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                             showNoteDialog = true },
-                        menuItemId = activeItemId,
-                        onDismissMenu = onDismissMenu,
+                        activeMenuId = activeMenuId,
                         onShowMenu = onShowMenu,
+                        onDismissMenu = onDismissMenu,
                         isMenuShown = isMenuShown,
                         modifier = Modifier
                             .padding(0.dp)
@@ -719,17 +735,19 @@ fun NoteDialog(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListViewMode(
-    menuItemId: Int?,
-    filterViewModel: FilterViewModel,
-    onDismissMenu: () -> Unit,
-    onShowMenu: (Int) -> Unit,
-    isMenuShown: Boolean,
-    itemsList: List<Items>,
-    blendSearchText: String,
+    itemsList: List<ItemsComponentsAndTins>,
     updateScrollPosition: (Int, Int) -> Unit,
     currentPosition: Map<Int, Int>,
-    onItemClick: (Items) -> Unit,
+    blendSearchText: String,
+    filterViewModel: FilterViewModel,
+    blendSearchFocused: Boolean,
+    onDetailsClick: (Items) -> Unit,
+    onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
+    activeMenuId: Int?,
+    onShowMenu: (Int) -> Unit,
+    isMenuShown: Boolean,
+    onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -743,43 +761,54 @@ fun ListViewMode(
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
-                .background(LocalCustomColors.current.backgroundVariant)
                 .padding(0.dp),
             state = columnState,
         ) {
-            items(items = itemsList, key = { it.id }) { item ->
+            items(items = itemsList, key = { it.items.id }) { item ->
                 val haptics = LocalHapticFeedback.current
                 val focusManager = LocalFocusManager.current
 
-                BackHandler(enabled = isMenuShown && menuItemId == item.id) {
+                BackHandler(enabled = isMenuShown && activeMenuId == item.items.id) {
                     onDismissMenu()
                 }
 
                 CellarListItem(
                     item = item,
-                    onItemClick = { onItemClick(item) },
-                    onNoteClick = { onNoteClick(item) },
+                    onDetailsClick = { onDetailsClick(item.items) },
+                    onEditClick = { onEditClick(item.items) },
+                    onNoteClick = { onNoteClick(item.items) },
                     modifier = Modifier
                         .padding(0.dp)
                         .combinedClickable(
                             onClick = {
-                                if (isMenuShown && menuItemId == item.id) {
-                                    // do nothing
-                                } else {
-                                    onDismissMenu()
+                                if (blendSearchFocused) {
                                     focusManager.clearFocus()
+                                } else {
+                                    if (isMenuShown && activeMenuId == item.items.id) {
+                                        // do nothing
+                                    } else {
+                                        if (isMenuShown) {
+                                            onDismissMenu()
+                                            focusManager.clearFocus()
+                                        } else {
+                                            filterViewModel.getPositionTrigger()
+                                            onDetailsClick(item.items)
+                                        }
+                                    }
                                 }
                             },
                             onLongClick = {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 filterViewModel.getPositionTrigger()
-                                onShowMenu(item.id)
+                                onShowMenu(item.items.id)
                             },
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ),
-                    onMenuDismiss = { onDismissMenu() },
-                    showMenu = isMenuShown && menuItemId == item.id,
+                    onMenuDismiss = {
+                        onDismissMenu()
+                    },
+                    showMenu = isMenuShown && activeMenuId == item.items.id,
                 )
             }
         }
@@ -787,7 +816,7 @@ fun ListViewMode(
 
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
-        val savedItemIndex = itemsList.indexOfFirst { it.id == savedItemId }
+        val savedItemIndex = itemsList.indexOfFirst { it.items.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val getPosition by filterViewModel.getPosition.collectAsState()
         val searchCleared by filterViewModel.searchCleared.collectAsState()
@@ -908,10 +937,11 @@ fun ListViewMode(
 @Composable
 private fun CellarListItem(
     modifier: Modifier = Modifier,
-    item: Items,
+    item: ItemsComponentsAndTins,
     onMenuDismiss: () -> Unit,
     showMenu: Boolean,
-    onItemClick: (Items) -> Unit,
+    onDetailsClick: (Items) -> Unit,
+    onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
 ) {
     Box(
@@ -921,7 +951,6 @@ private fun CellarListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 1.dp)
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -947,7 +976,7 @@ private fun CellarListItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = item.blend,
+                            text = item.items.blend,
                             modifier = Modifier
                                 .padding(end = 4.dp)
                                 .weight(1f, false),
@@ -961,7 +990,7 @@ private fun CellarListItem(
                             softWrap = true,
                             maxLines = 1,
                         )
-                        if (item.favorite) {
+                        if (item.items.favorite) {
                             Icon(
                                 painter = painterResource(id = R.drawable.heart_filled_24),
                                 contentDescription = null,
@@ -971,7 +1000,7 @@ private fun CellarListItem(
                                 tint = LocalCustomColors.current.favHeart
                             )
                         }
-                        if (item.disliked) {
+                        if (item.items.disliked) {
                             Icon(
                                 painter = painterResource(id = R.drawable.heartbroken_filled_24),
                                 contentDescription = null,
@@ -981,7 +1010,7 @@ private fun CellarListItem(
                                 tint = LocalCustomColors.current.disHeart
                             )
                         }
-                        if (item.notes.isNotEmpty()) {
+                        if (item.items.notes.isNotEmpty()) {
                             Icon(
                                 painter = painterResource(id = R.drawable.notes_24),
                                 contentDescription = null,
@@ -1003,7 +1032,7 @@ private fun CellarListItem(
                     ) {
                         // Brand Name //
                         Text(
-                            text = item.brand,
+                            text = item.items.brand,
                             modifier = Modifier,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1015,7 +1044,7 @@ private fun CellarListItem(
                         )
                         // Other Info //
                         Text(
-                            text = item.type,
+                            text = item.items.type,
                             modifier = Modifier,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1036,10 +1065,10 @@ private fun CellarListItem(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "x" + item.quantity,
+                    text = "x" + item.items.quantity,
                     modifier = Modifier,
                     style =
-                    if (item.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
+                    if (item.items.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
                         color = MaterialTheme.colorScheme.error,
                         textDecoration = TextDecoration.None)
                             )
@@ -1057,8 +1086,8 @@ private fun CellarListItem(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .padding(bottom = 1.dp)
-                    .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.80f))
+                    .padding(0.dp)
+                    .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.75f))
             ) {
                 Row(
                     modifier = Modifier
@@ -1068,7 +1097,7 @@ private fun CellarListItem(
                 ) {
                     TextButton(
                         onClick = {
-                            onItemClick(item)
+                            onEditClick(item.items)
                             onMenuDismiss()
                         },
                         modifier = Modifier,
@@ -1081,36 +1110,58 @@ private fun CellarListItem(
                             fontSize = 14.sp
                         )
                     }
-                    if (item.notes.isNotEmpty()) {
-                        TextButton(
-                            onClick = {
-                                onNoteClick(item)
-                                onMenuDismiss()
-                            }
-                        ) {
-                            Text(
-                                text = "View Notes",
-                                modifier = Modifier,
-                                color = LocalContentColor.current,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
+//                    TextButton(
+//                        onClick = {
+//                            onDetailsClick(item.items)
+//                            onMenuDismiss()
+//                        },
+//                        modifier = Modifier,
+//                    ) {
+//                        Text(
+//                            text = "View Details",
+//                            modifier = Modifier,
+//                            color = LocalContentColor.current,
+//                            fontWeight = FontWeight.SemiBold,
+//                            fontSize = 14.sp
+//                        )
+//                    }
+//                    if (item.items.notes.isNotEmpty()) {
+//                        TextButton(
+//                            onClick = {
+//                                onNoteClick(item.items)
+//                                onMenuDismiss()
+//                            }
+//                        ) {
+//                            Text(
+//                                text = "View Notes",
+//                                modifier = Modifier,
+//                                color = LocalContentColor.current,
+//                                fontWeight = FontWeight.SemiBold,
+//                                fontSize = 14.sp
+//                            )
+//                        }
+//                    }
                 }
             }
         }
-
     }
+    Spacer(
+        modifier = Modifier
+            .height(1.dp)
+            .background(LocalCustomColors.current.backgroundVariant)
+    )
 }
+
 
 
 /** Table View Mode **/
 @Composable
 fun TableViewMode(
-    itemsList: List<Items>,
+    itemsList: List<ItemsComponentsAndTins>,
     filterViewModel: FilterViewModel,
-    onItemClick: (Items) -> Unit,
+    blendSearchFocused: Boolean,
+    onDetailsClick: (Items) -> Unit,
+    onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
@@ -1134,8 +1185,10 @@ fun TableViewMode(
         updateScrollPosition = updateScrollPosition,
         currentPosition = currentPosition,
         filterViewModel = filterViewModel,
+        blendSearchFocused = blendSearchFocused,
         columnMinWidths = columnMinWidths,
-        onItemClick = onItemClick,
+        onDetailsClick = onDetailsClick,
+        onEditClick = onEditClick,
         onNoteClick = onNoteClick,
         sorting = sorting,
         updateSorting = updateSorting,
@@ -1144,15 +1197,18 @@ fun TableViewMode(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TableLayout(
-    items: List<Items>,
+    items: List<ItemsComponentsAndTins>,
     blendSearchText: String,
     updateScrollPosition: (Int, Int) -> Unit,
     currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
+    blendSearchFocused: Boolean,
     columnMinWidths: List<Dp>,
-    onItemClick: (Items) -> Unit,
+    onDetailsClick: (Items) -> Unit,
+    onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
@@ -1173,8 +1229,8 @@ fun TableLayout(
         { item: Items -> item.quantity }, // 5
     )
     val sortedItems = when (sorting.columnIndex) {
-        0 -> items.sortedBy { it.brand }
-        1 -> items.sortedBy { it.blend }
+        0 -> items.sortedBy { it.items.brand }
+        1 -> items.sortedBy { it.items.blend }
         else -> items
     }.let {
         if (!sorting.sortAscending) it.reversed() else it
@@ -1255,13 +1311,15 @@ fun TableLayout(
         // Items
         val columnState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
+        val haptics = LocalHapticFeedback.current
+        val focusManager = LocalFocusManager.current
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth(),
             state = columnState
         ) {
-            items(items = sortedItems, key = { it.id }) { item ->
+            items(items = sortedItems, key = { it.items.id }) { item ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1276,7 +1334,7 @@ fun TableLayout(
                                 .align(Alignment.CenterVertically)
                                 .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
                         ) {
-                            val cellValue = columnMapping[columnIndex](item)
+                            val cellValue = columnMapping[columnIndex](item.items)
                             val alignment = when (columnIndex) {
                                 0 -> Alignment.CenterStart // brand
                                 1 -> Alignment.CenterStart // blend
@@ -1287,15 +1345,55 @@ fun TableLayout(
                                 else -> Alignment.CenterStart
                             }
                             when (columnIndex) {
+                                0 -> { // brand
+                                    TableCell(
+                                        value = cellValue,
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .align(alignment),
+                                        contentAlignment = alignment,
+                                        onClick = {
+                                            if (blendSearchFocused) {
+                                                focusManager.clearFocus()
+                                            } else {
+                                                filterViewModel.getPositionTrigger()
+                                                onDetailsClick(item.items)
+                                            }
+                                        },
+                                        onLongClick = {
+                                            if (blendSearchFocused) {
+                                                focusManager.clearFocus()
+                                            } else {
+                                                filterViewModel.getPositionTrigger()
+                                                onEditClick(item.items)
+                                            }
+                                        }
+                                    )
+                                } // brand
                                 1 -> { // blend
                                     TableCell(
                                         value = cellValue,
                                         modifier = Modifier
+                                            .matchParentSize()
                                             .align(alignment),
                                         contentAlignment = alignment,
                                         onClick = {
-                                            filterViewModel.getPositionTrigger()
-                                            onItemClick(item)
+                                            if (blendSearchFocused) {
+                                                focusManager.clearFocus()
+                                            } else {
+                                                focusManager.clearFocus()
+                                                filterViewModel.getPositionTrigger()
+                                                onDetailsClick(item.items)
+                                            }
+                                        },
+                                        onLongClick = {
+                                            if (blendSearchFocused) {
+                                                focusManager.clearFocus()
+                                            } else {
+                                                focusManager.clearFocus()
+                                                filterViewModel.getPositionTrigger()
+                                                onEditClick(item.items)
+                                            }
                                         }
                                     )
                                 } // blend
@@ -1335,7 +1433,7 @@ fun TableLayout(
                                             modifier = Modifier
                                                 .size(20.dp)
                                                 .align(alignment)
-                                                .clickable { onNoteClick(item) },
+                                                .clickable { onNoteClick(item.items) },
                                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary),
                                         )
                                     } else {
@@ -1353,7 +1451,7 @@ fun TableLayout(
                                         contentAlignment = alignment,
                                     )
                                 } // quantity
-                                else -> { // [0] brand, [2] type
+                                else -> { // [2] type
                                     TableCell(
                                         value = cellValue,
                                         modifier = Modifier
@@ -1371,7 +1469,7 @@ fun TableLayout(
 
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
-        val savedItemIndex = sortedItems.indexOfFirst { it.id == savedItemId }
+        val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
         val searchPerformed by filterViewModel.searchPerformed.collectAsState()
         val searchCleared by filterViewModel.searchCleared.collectAsState()
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
@@ -1563,23 +1661,29 @@ fun TableCell(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Transparent,
     contentAlignment: Alignment = Alignment.Center,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null
 ) {
     val haptics = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
 
     Box(
         modifier = modifier
-            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
-            .background(backgroundColor)
             .combinedClickable(
-                enabled = onClick != null,
-                onClick = { focusManager.clearFocus() },
-                onLongClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                enabled =  (onLongClick != null) || (onClick != null),
+                onClick = {
+                    focusManager.clearFocus()
                     onClick?.invoke()
                 },
-            ),
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick?.invoke()
+                },
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            )
+            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
+            .background(backgroundColor),
         contentAlignment = contentAlignment
     ) {
         val text = when (value) {
