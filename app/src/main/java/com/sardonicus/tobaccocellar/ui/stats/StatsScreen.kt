@@ -894,10 +894,8 @@ private fun DrawScope.drawLabels(
                 // very thin slices at the top of the chart
                 val additionalOffset = if (outsideLabelCount % 2 == 0) {
                     (-1 * (percentageHeight * 0.25f))
-                    // -3.dp.toPx()
                     } else {
                     (percentageHeight * 0.75f)
-                    // 10.dp.toPx()
                 }
                 (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset * topOffsetSwitch)
             } else {
