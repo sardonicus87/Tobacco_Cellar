@@ -258,8 +258,8 @@ fun AddEntryBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp),
+        //    .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -449,13 +449,12 @@ fun ItemInputForm(
         TabRow(
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier
-                .padding(0.dp, bottom = 8.dp),
+                .padding(bottom = 1.dp),
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = LocalContentColor.current,
             indicator = { tabPositions ->
                 SecondaryIndicator(
                     modifier = Modifier
-                    //    .tabIndicatorOffset(tabPositions[pagerState.currentPage])
                         .tabIndicatorOffset(tabPositions[selectedTabIndex]),
                     color = MaterialTheme.colorScheme.inversePrimary
                 )
@@ -493,40 +492,92 @@ fun ItemInputForm(
                 }
             }
         }
-        when (selectedTabIndex) {
-            0 -> BasicDetails(
-                itemDetails = itemDetails,
-                itemUiState = itemUiState,
-                syncedTins = syncedTins,
-                tinConversion = tinConversion,
-                isEditEntry = isEditEntry,
-                onValueChange = onValueChange,
-                onTinValueChange = onTinConverterChange,
-                modifier = Modifier,
-            )
+        Box {
+            val glowColor = MaterialTheme.colorScheme.background
 
-            1 -> MoreDetails(
-                itemDetails = itemDetails,
-                itemUiState = itemUiState,
-                componentList = componentUiState,
-                onValueChange = onValueChange,
-                onComponentChange = onComponentChange,
+            Column(
                 modifier = Modifier
-            )
+                    .padding(0.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight(.66f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+    //            val boxWithConstraintsScope = this
+    //            val height = boxWithConstraintsScope.maxHeight
 
-            2 -> TinsEntry(
-                tinDetails = tinDetails,
-                tinDetailsList = tinDetailsList,
-                onTinValueChange = onTinValueChange,
-                isTinLabelValid = isTinLabelValid,
-                addTin = addTin,
-                removeTin = removeTin,
-                itemUiState = itemUiState,
-                onValueChange = onValueChange,
+                when (selectedTabIndex) {
+                    0 -> BasicDetails(
+                        itemDetails = itemDetails,
+                        itemUiState = itemUiState,
+                        syncedTins = syncedTins,
+                        tinConversion = tinConversion,
+                        isEditEntry = isEditEntry,
+                        onValueChange = onValueChange,
+                        onTinValueChange = onTinConverterChange,
+                        modifier = Modifier,
+                    )
+
+                    1 -> MoreDetails(
+                        itemDetails = itemDetails,
+                        itemUiState = itemUiState,
+                        componentList = componentUiState,
+                        onValueChange = onValueChange,
+                        onComponentChange = onComponentChange,
+                        modifier = Modifier
+                    )
+
+                    2 -> TinsEntry(
+                        tinDetails = tinDetails,
+                        tinDetailsList = tinDetailsList,
+                        onTinValueChange = onTinValueChange,
+                        isTinLabelValid = isTinLabelValid,
+                        addTin = addTin,
+                        removeTin = removeTin,
+                        itemUiState = itemUiState,
+                        onValueChange = onValueChange,
+                        modifier = Modifier
+                    )
+
+                    else -> throw IllegalArgumentException("Invalid tab position")
+                }
+            }
+            Box(
                 modifier = Modifier
-            )
+                    .matchParentSize()
+                    .align(Alignment.TopStart)
+                    .then(
+                        Modifier.drawBehind {
+                            val glowHeight = 6.dp
+                            val glowOffsetY =
+                                size.height - (glowHeight.toPx())
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        glowColor,
+                                        Color.Transparent,
+                                    ),
+                                    startY = 0f,
+                                    endY = glowHeight.toPx(),
+                                ),
+                                topLeft = Offset(0f, 0f),
+                                size = Size(size.width, glowHeight.toPx())
+                            )
 
-            else -> throw IllegalArgumentException("Invalid tab position")
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        glowColor,
+                                    ),
+                                    startY = glowOffsetY,
+                                    endY = size.height,
+                                ),
+                                topLeft = Offset(0f, glowOffsetY),
+                                size = Size(size.width, glowHeight.toPx())
+                            )
+                        }
+                    )
+            )
         }
     }
 }
@@ -746,7 +797,7 @@ fun BasicDetails(
             )
         }
 
-        // SubGenre //
+        // Subgenre //
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -754,7 +805,7 @@ fun BasicDetails(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Sub Genre:",
+                text = "Subgenre:",
                 modifier = Modifier
                     .width(80.dp)
             )
@@ -1454,120 +1505,81 @@ fun TinsEntry(
         }
     }
 
-    Box {
-        val glowColor = MaterialTheme.colorScheme.background
+    Spacer(
+        modifier = Modifier
+            .height(7.dp)
+    )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .noRippleClickable(
+                onClick = {
+                    focusManager.clearFocus()
+                }
+            )
+            .padding(vertical = 6.dp, horizontal = 8.dp)
+            .background(color = LocalCustomColors.current.darkNeutral, RoundedCornerShape(4.dp))
+            .padding(horizontal = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+    ) {
+        Spacer(
+            modifier = Modifier
+                .height(6.dp)
+        )
 
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .noRippleClickable(
-                    onClick = {
-                        focusManager.clearFocus()
-                    }
+        if (tinDetailsList.isEmpty()) {
+            Button(
+                onClick = { addTin() },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally),
+            ) {
+                Text(
+                    text = "Add Tin",
+                    modifier = Modifier
                 )
-                .heightIn(max = 450.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 6.dp, horizontal = 8.dp)
-                .background(color = LocalCustomColors.current.darkNeutral, RoundedCornerShape(4.dp))
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-        ) {
+            }
             Spacer(
                 modifier = Modifier
                     .height(6.dp)
             )
-
-            if (tinDetailsList.isEmpty()) {
-                Button(
-                    onClick = { addTin() },
+        } else {
+            tinDetailsList.forEachIndexed { index, tinDetails ->
+                IndividualTin(
+                    tinDetails = tinDetails,
+                    tinDetailsList = tinDetailsList,
+                    tempTinId = tinDetails.tempTinId,
+                    onTinValueChange = onTinValueChange,
+                    showError = tinDetails.labelIsNotValid,
+                    isTinLabelValid = isTinLabelValid,
+                    removeTin = { removeTin(index) },
+                    itemUiState = itemUiState,
+                    onValueChange = onValueChange,
                     modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                ) {
-                    Text(
-                        text = "Add Tin",
-                        modifier = Modifier
-                    )
-                }
-                Spacer(
-                    modifier = Modifier
-                        .height(6.dp)
-                )
-            } else {
-                tinDetailsList.forEachIndexed { index, tinDetails ->
-                    IndividualTin(
-                        tinDetails = tinDetails,
-                        tinDetailsList = tinDetailsList,
-                        tempTinId = tinDetails.tempTinId,
-                        onTinValueChange = onTinValueChange,
-                        showError = tinDetails.labelIsNotValid,
-                        isTinLabelValid = isTinLabelValid,
-                        removeTin = { removeTin(index) },
-                        itemUiState = itemUiState,
-                        onValueChange = onValueChange,
-                        modifier = Modifier
-                            .padding(bottom = 4.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.background,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                    )
-                }
-                IconButton(
-                    onClick = { addTin() },
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.add_outline),
-                        contentDescription = "Add Tin",
-                        modifier = Modifier
-                            .size(30.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Spacer(
-                    modifier = Modifier
-                        .height(6.dp)
+                        .padding(bottom = 4.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.background,
+                            shape = RoundedCornerShape(8.dp)
+                        )
                 )
             }
-        }
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .align(Alignment.TopStart)
-                .then(
-                    Modifier.drawBehind {
-                        val glowHeight = 6.dp
-                        val glowOffsetY =
-                            size.height - (glowHeight.toPx())
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    glowColor,
-                                    Color.Transparent,
-                                ),
-                                startY = 0f,
-                                endY = glowHeight.toPx(),
-                            ),
-                            topLeft = Offset(0f, 0f),
-                            size = Size(size.width, glowHeight.toPx())
-                        )
-
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    glowColor,
-                                ),
-                                startY = glowOffsetY,
-                                endY = size.height,
-                            ),
-                            topLeft = Offset(0f, glowOffsetY),
-                            size = Size(size.width, glowHeight.toPx())
-                        )
-                    }
+            IconButton(
+                onClick = { addTin() },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(id = R.drawable.add_outline),
+                    contentDescription = "Add Tin",
+                    modifier = Modifier
+                        .size(30.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
-        )
+            }
+            Spacer(
+                modifier = Modifier
+                    .height(6.dp)
+            )
+        }
     }
 }
 
@@ -1595,6 +1607,15 @@ fun IndividualTin(
             onTinValueChange(tinDetails.copy(detailsExpanded = true))
         }
     }
+
+    LaunchedEffect(tinDetailsList) {
+        onTinValueChange(
+            tinDetails.copy(
+                labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)
+            )
+        )
+    }
+
 
     Column (
         modifier = modifier
@@ -1655,36 +1676,18 @@ fun IndividualTin(
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                //    var showError by remember { mutableStateOf(false) }
-
                     CustomTextField(
                         value = tinDetails.tinLabel,
                         onValueChange = {
                             onTinValueChange(
-                                tinDetails.copy(
-                                    tinLabel = it,
-                                    labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId))
-                                )
+                                tinDetails.copy(tinLabel = it)
+                            )
                         },
                         modifier = Modifier
-                            .widthIn(max = textFieldMax)
-                            .onFocusChanged {
-                                if (!it.isFocused) {
-                                    //    showError = isTinLabelValid(tinDetails.tinLabel, tempTinId)
-                                    onTinValueChange(
-                                        tinDetails.copy(
-                                            labelIsNotValid = isTinLabelValid(
-                                                tinDetails.tinLabel,
-                                                tempTinId
-                                            )
-                                        )
-                                    )
-                                }
-                            },
+                            .widthIn(max = textFieldMax),
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
                             color = if (showError) MaterialTheme.colorScheme.error else LocalContentColor.current,
-                        //    color = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else LocalContentColor.current,
                             fontWeight = FontWeight.Medium,
                         ),
                         placeholder = {
@@ -1722,12 +1725,6 @@ fun IndividualTin(
                                 LocalContentColor.current,
                             disabledTextColor = if (showError) MaterialTheme.colorScheme.error else
                                 LocalContentColor.current,
-//                            focusedTextColor = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else
-//                                LocalContentColor.current,
-//                            unfocusedTextColor = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else
-//                                LocalContentColor.current,
-//                            disabledTextColor = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else
-//                                LocalContentColor.current,
                         ),
                         contentPadding = PaddingValues(vertical = 2.dp, horizontal = 0.dp),
                         singleLine = true,
@@ -1737,7 +1734,6 @@ fun IndividualTin(
                     Text(
                         text = "Label must be unique within each entry.",
                         color = if (showError) MaterialTheme.colorScheme.error else Color.Transparent,
-                    //    color = if (tinDetails.labelIsNotValid) MaterialTheme.colorScheme.error else Color.Transparent,
                         style = MaterialTheme.typography.bodySmall,
                         softWrap = false,
                         modifier = Modifier
