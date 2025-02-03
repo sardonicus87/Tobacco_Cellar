@@ -42,6 +42,8 @@ interface ItemsRepository {
 
     suspend fun deleteAllTinsForItem(itemId: Int)
 
+    suspend fun getTinExportData(): List<TinExportData>
+
 
     /** Get all items **/
     fun getAllItemsStream(): Flow<List<Items>>
@@ -52,11 +54,13 @@ interface ItemsRepository {
 
     fun getAllComponentsStream(): Flow<List<Components>>
 
-    suspend fun getTinExportData(): List<TinExportData>
+    fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>>
 
 
     /** Get single item **/
     fun getItemStream(id: Int): Flow<Items?>
+
+    fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
 
     fun getComponentsForItemStream(id: Int): Flow<List<Components>>
 

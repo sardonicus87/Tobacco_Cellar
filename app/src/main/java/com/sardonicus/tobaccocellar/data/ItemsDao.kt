@@ -76,7 +76,7 @@ interface ItemsDao {
     // Get all items flow //
     @Transaction
     @Query("SELECT * FROM items ORDER BY id ASC")
-    fun getAllItems(): Flow<List<Items>>
+    fun getAllItemsStream(): Flow<List<Items>>
 
     // Get all items list //
     @Query("SELECT * FROM items ORDER BY id ASC")
@@ -86,11 +86,21 @@ interface ItemsDao {
     @Query("SELECT * FROM components ORDER BY componentName ASC")
     fun getAllComponents(): Flow<List<Components>>
 
+    // Get all items with components and tins flow //
+    @Transaction
+    @Query("SELECT * FROM items ORDER BY id ASC")
+    fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>>
+
 
     /** Get single item **/
     // Get item by id //
     @Query("SELECT * FROM items WHERE id = :id")
-    fun getItem(id: Int): Flow<Items>
+    fun getItemStream(id: Int): Flow<Items>
+
+    // Get item details by id //
+    @Transaction
+    @Query("SELECT * FROM items WHERE id = :id")
+    fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins>
 
     // Get components by item id //
     @Transaction

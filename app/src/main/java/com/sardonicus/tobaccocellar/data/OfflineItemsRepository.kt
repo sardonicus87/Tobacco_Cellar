@@ -78,22 +78,6 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         itemsDao.deleteAllTinsForItem(itemId)
     }
 
-
-    /** Get all items **/
-    override fun getAllItemsStream(): Flow<List<Items>> = itemsDao.getAllItems()
-
-    override fun getAllItemsExport(): List<Items> = itemsDao.getAllItemsExport()
-
-    override suspend fun getAllItemsWithComponents(): List<ItemsWithComponents> {
-        val items = itemsDao.getAllItemsExport()
-        return items.map {
-            val components = itemsDao.getComponentsForItemStream(it.id).first()
-            ItemsWithComponents(it, components)
-        }
-    }
-
-    override fun getAllComponentsStream(): Flow<List<Components>> = itemsDao.getAllComponents()
-
     override suspend fun getTinExportData(): List<TinExportData> {
         val items = itemsDao.getAllItemsExport()
         val tinExportData = mutableListOf<TinExportData>()
@@ -148,8 +132,28 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     }
 
 
+    /** Get all items **/
+    override fun getAllItemsStream(): Flow<List<Items>> = itemsDao.getAllItemsStream()
+
+    override fun getAllItemsExport(): List<Items> = itemsDao.getAllItemsExport()
+
+    override suspend fun getAllItemsWithComponents(): List<ItemsWithComponents> {
+        val items = itemsDao.getAllItemsExport()
+        return items.map {
+            val components = itemsDao.getComponentsForItemStream(it.id).first()
+            ItemsWithComponents(it, components)
+        }
+    }
+
+    override fun getAllComponentsStream(): Flow<List<Components>> = itemsDao.getAllComponents()
+
+    override fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>> = itemsDao.getEverythingStream()
+
+
     /** Get single item **/
-    override fun getItemStream(id: Int): Flow<Items?> = itemsDao.getItem(id)
+    override fun getItemStream(id: Int): Flow<Items?> = itemsDao.getItemStream(id)
+
+    override fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?> = itemsDao.getItemDetailsStream(id)
 
     override fun getComponentsForItemStream(id: Int): Flow<List<Components>> = itemsDao.getComponentsForItemStream(id)
 
