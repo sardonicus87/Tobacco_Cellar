@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Items
+import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -76,7 +77,7 @@ class StatsViewModel(
             filterViewModel.selectedExcludeBrands,
             filterViewModel.selectedExcludeLikes,
             filterViewModel.selectedExcludeDislikes,
-            itemsRepository.getAllItemsStream()
+            itemsRepository.getEverythingStream()
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
@@ -90,24 +91,24 @@ class StatsViewModel(
             val excludedBrands = values[9] as List<String>
             val excludedLikes = values[10] as Boolean
             val excludedDislikes = values[11] as Boolean
-            val allItems = values[12] as List<Items>
+            val allItems = values[12] as List<ItemsComponentsAndTins>
 
             val filteredItems = allItems.filter { items ->
-                (brands.isEmpty() || brands.contains(items.brand)) &&
-                        (types.isEmpty() || types.contains(items.type)) &&
-                        (!unassigned || items.type.isBlank()) &&
-                        (!favorites || items.favorite) &&
-                        (!dislikeds || items.disliked) &&
-                        (!neutral || (!items.favorite && !items.disliked)) &&
-                        (!nonNeutral || (items.favorite || items.disliked)) &&
-                        (!inStock || items.quantity > 0) &&
-                        (!outOfStock || items.quantity == 0) &&
-                        (excludedBrands.isEmpty() || !excludedBrands.contains(items.brand)) &&
-                        (!excludedLikes || !items.favorite) &&
-                        (!excludedDislikes || !items.disliked)
+                (brands.isEmpty() || brands.contains(items.items.brand)) &&
+                        (types.isEmpty() || types.contains(items.items.type)) &&
+                        (!unassigned || items.items.type.isBlank()) &&
+                        (!favorites || items.items.favorite) &&
+                        (!dislikeds || items.items.disliked) &&
+                        (!neutral || (!items.items.favorite && !items.items.disliked)) &&
+                        (!nonNeutral || (items.items.favorite || items.items.disliked)) &&
+                        (!inStock || items.items.quantity > 0) &&
+                        (!outOfStock || items.items.quantity == 0) &&
+                        (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
+                        (!excludedLikes || !items.items.favorite) &&
+                        (!excludedDislikes || !items.items.disliked)
             }
 
-            val unassignedCount = filteredItems.count { it.type.isBlank() }
+            val unassignedCount = filteredItems.count { it.items.type.isBlank() }
 
 
             flow {
@@ -123,19 +124,19 @@ class StatsViewModel(
                         outOfStock = outOfStock,
 
                         itemsCount = filteredItems.size,
-                        brandsCount = filteredItems.groupingBy { it.brand }.eachCount().size,
-                        favoriteCount = filteredItems.count { it.favorite },
-                        dislikedCount = filteredItems.count { it.disliked },
+                        brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
+                        favoriteCount = filteredItems.count { it.items.favorite },
+                        dislikedCount = filteredItems.count { it.items.disliked },
                         totalByType = filteredItems.groupingBy {
-                            if (it.type.isBlank()) "Unassigned" else it.type }
+                            if (it.items.type.isBlank()) "Unassigned" else it.items.type }
                             .eachCount(),
                         unassignedCount = unassignedCount,
-                        totalQuantity = filteredItems.sumOf { it.quantity },
-                        totalZeroQuantity = filteredItems.count { it.quantity == 0 },
+                        totalQuantity = filteredItems.sumOf { it.items.quantity },
+                        totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
 
 
                         brandsByEntries = filteredItems
-                            .groupingBy { it.brand }
+                            .groupingBy { it.items.brand }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
@@ -149,8 +150,8 @@ class StatsViewModel(
                                 }
                             },
                         brandsByQuantity = filteredItems
-                            .groupingBy { it.brand }
-                            .fold(0) { acc, item -> acc + item.quantity }
+                            .groupingBy { it.items.brand }
+                            .fold(0) { acc, item -> acc + item.items.quantity }
                             .entries
                             .sortedByDescending { it.value }
                             .let {
@@ -163,8 +164,8 @@ class StatsViewModel(
                                 }
                             },
                         brandsByFavorites = filteredItems
-                            .filter{ it.favorite }
-                            .groupingBy { it.brand }
+                            .filter{ it.items.favorite }
+                            .groupingBy { it.items.brand }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
@@ -178,19 +179,19 @@ class StatsViewModel(
                                 }
                             },
                         typesByEntries = filteredItems
-                            .groupingBy { if (it.type.isBlank()) "Unassigned" else it.type }
+                            .groupingBy { if (it.items.type.isBlank()) "Unassigned" else it.items.type }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .associate { it.key to it.value },
                         typesByQuantity = filteredItems
-                            .groupingBy { if (it.type.isBlank()) "Unassigned" else it.type }
-                            .fold(0) { acc, item -> acc + item.quantity }
+                            .groupingBy { if (it.items.type.isBlank()) "Unassigned" else it.items.type }
+                            .fold(0) { acc, item -> acc + item.items.quantity }
                             .entries
                             .sortedByDescending { it.value }
                             .associate { it.key to it.value },
                         ratingsByEntries = filteredItems
-                            .groupingBy { if (it.favorite) "Favorite" else if (it.disliked) "Disliked" else "Neutral" }
+                            .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
