@@ -11,14 +11,50 @@ val changeLogEntries = listOf(
         bugFixes = listOf(),
     ),
     ChangeLogEntryData(
-        versionNumber = "1.x.x",
-        buildDate = "",
-        changes = listOf(),
-        improvements = listOf(
-            "Stats list label aligned to top of chart rather than center.",
-            "Adjusted pie slice colors (greater differentiation between the two yellows)."
+        versionNumber = "2.0.0",
+        buildDate = "4 Feb, 2025",
+        changes = listOf(
+            "Expanded database to include new fields: subgenre (user-defined), cut (user-" +
+                    "defined), ingredients (user-defined), and production status (in or out).",
+            "Added database support for tracking individual tins. Fields include: label, " +
+                    "container type, quantity and unit of measure, manufacturing date, cellar " +
+                    "date, and opened date (all per each container).",
+            "Added an option to synchronize the \"No. of Tins\" field with the summed total of " +
+                    "the tins added to the entry. This synchronized state is saved per each entry.",
+            "Updated Add/Edit Entry screens to account for the expanded database fields.",
+            "Updated CSV Import Wizard and CSV Help file for new database fields. Please see the " +
+                    "\"Help\" section on the CSV Import screen for more details.",
+            "Added additional CSV export option that exports the data as individual tins (" +
+                    "duplicates entries per each tin with entry and individual tin data as " +
+                    "individual records).",
+            "Added entry details screen for viewing all of the values of a specific entry. Access " +
+                    "by tapping an item rather than long-pressing, navigation will trigger if " +
+                    "the menu overlay is not open on any item or blend search is not focused."
         ),
-        bugFixes = listOf(),
+        improvements = listOf(
+            "Stats chart label list for thin slices aligned to top of chart (rather than center) " +
+            "and adjusted pie slice colors (greater differentiation between the two yellows).",
+            "Cellar screen List and Table views' scroll positions further refined. When returning " +
+                    "to the Cellar screen: updating an item returns to the previous position. " +
+                    "Saving an item returns to the new item at the top with a slight offset " +
+                    "Most any other navigation away should return to the same position the list " +
+                    "was in when left (including performing a quick blend search).",
+            "In table view, now tapping or long-pressing the \"Brand\" cell will also trigger " +
+                    "navigation to entry details or edit entry (respectively). This behavior may " +
+                    "change in the future. Additionally, tapping anywhere in the cell will now " +
+                    "trigger the navigation, not just clicking on the text.",
+            "CSV Import Wizard mapping dropdown menus now extend their width in landscape " +
+                    "orientation.",
+            "Made the Help/FAQ section more concise.",
+            "Other minor UI improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed a bug on the Add/Edit screen where rotating the screen caused the input form " +
+                    "to switch back to the first tab.",
+            "Fixed a bug where multiple blank lines in the notes field would cause it to stop " +
+                    "working.",
+            "Fixed the \"flash\" when transitioning to CSV import results.",
+        ),
     ),
     ChangeLogEntryData(
         versionNumber = "1.4.0",
@@ -26,7 +62,7 @@ val changeLogEntries = listOf(
         changes = listOf(
             "Stats pie charts that were previously limited to the top 10 results now return data " +
                     "for everything that fits the (filtered) criteria. If there are more than " +
-                    "10 points of comparison, the first 9 are returned and the rest are combined " +
+                    "10 points of comparison, the top 9 are returned and the rest are combined " +
                     "into an \"(Other)\" category.",
             "Added a hint text above the buttons on the \"Tin Converter\" to show the calculated " +
                     "values before confirming."
