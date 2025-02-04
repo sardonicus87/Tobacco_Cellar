@@ -112,6 +112,7 @@ fun BlendDetailsScreen(
             else if (blendDetails.details != null) {
                 BlendDetailsBody(
                     blendDetails = blendDetails.details!!,
+                    viewModel = viewModel,
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
                 )
@@ -148,6 +149,7 @@ fun BlendDetailsScreen(
 @Composable
 fun BlendDetailsBody(
     blendDetails: ItemsComponentsAndTins,
+    viewModel: BlendDetailsViewModel,
     modifier: Modifier = Modifier
 ) {
     fun buildString(title: String, value: String, color: Color = Color.Unspecified): AnnotatedString {
@@ -163,8 +165,6 @@ fun BlendDetailsBody(
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
         modifier = modifier
             .fillMaxWidth()
-//            .padding(vertical = 8.dp, horizontal = 4.dp)
-//            .background(color = MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
             .padding(horizontal = 16.dp)
     ) {
         // Blend Name
@@ -341,6 +341,7 @@ fun BlendDetailsBody(
                         verticalArrangement = Arrangement.Top,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(start = 12.dp)
                     ) {
                         Text(
                             text = it.tinLabel,
@@ -349,7 +350,7 @@ fun BlendDetailsBody(
                         )
                         Column(
                             horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.Top,
+                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                             modifier = Modifier
                                 .padding(start = 12.dp)
                         ) {
@@ -381,6 +382,13 @@ fun BlendDetailsBody(
                                     ),
                                     modifier = Modifier,
                                 )
+                                Text(
+                                    text = "(${viewModel.calculateAge(it.manufactureDate)} old)",
+                                    modifier = Modifier
+                                        .padding(start = 16.dp),
+                                    fontSize = 12.sp,
+                                    lineHeight = 12.sp,
+                                )
                             }
                             if (it.cellarDate != null) {
                                 Text(
@@ -389,6 +397,13 @@ fun BlendDetailsBody(
                                         formatLongDate(it.cellarDate),
                                         MaterialTheme.colorScheme.tertiary),
                                     modifier = Modifier,
+                                )
+                                Text(
+                                    text = "(${viewModel.calculateAge(it.cellarDate)} in cellar)",
+                                    modifier = Modifier
+                                        .padding(start = 16.dp),
+                                    fontSize = 12.sp,
+                                    lineHeight = 12.sp,
                                 )
                             }
                             if (it.openDate != null) {
@@ -399,16 +414,28 @@ fun BlendDetailsBody(
                                         MaterialTheme.colorScheme.tertiary),
                                     modifier = Modifier,
                                 )
+                                Text(
+                                    text = "(${viewModel.calculateAge(it.openDate)} open)",
+                                    modifier = Modifier
+                                        .padding(start = 16.dp),
+                                    fontSize = 12.sp,
+                                    lineHeight = 12.sp,
+                                )
+                                Spacer(
+                                    modifier = Modifier
+                                        .height(12.dp)
+                                )
                             }
-                            Spacer(
-                                modifier = Modifier
-                                    .height(12.dp)
-                            )
                         }
                     }
                 }
             }
         }
+
+        Spacer(
+            modifier = Modifier
+                .height(20.dp)
+        )
     }
 }
 
