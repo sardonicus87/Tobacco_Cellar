@@ -49,6 +49,7 @@ val changeLogEntries = listOf(
             "Other minor UI improvements."
         ),
         bugFixes = listOf(
+            "Potentially fixed a bug where the app would intermittently crash due to table view sorting.",
             "Fixed a bug on the Add/Edit screen where rotating the screen caused the input form " +
                     "to switch back to the first tab.",
             "Fixed a bug where multiple blank lines in the notes field would cause it to stop " +
