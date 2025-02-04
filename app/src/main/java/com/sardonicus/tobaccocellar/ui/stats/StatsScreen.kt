@@ -2,7 +2,6 @@ package com.sardonicus.tobaccocellar.ui.stats
 
 
 import android.icu.text.DecimalFormat
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
