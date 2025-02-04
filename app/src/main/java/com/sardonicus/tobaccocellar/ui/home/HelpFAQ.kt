@@ -123,31 +123,61 @@ private fun HelpBody(
                 .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
             softWrap = true,
         )
-
-        HelpSection(
-            title = "Cellar Screen",
-            content = { CellarView() }
-        )
-        HelpSection(
-            title = "Stats Screen",
-            content = { StatsPage() }
-        )
-        HelpSection(
-            title = "Filtering",
-            content = { Filtering() }
-        )
-        HelpSection(
-            title = "Adding Items",
-            content = { AddingItems() }
-        )
-        HelpSection(
-            title = "Adding Tins",
-            content = { AddingTins() }
-        )
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
-        )
+        // Help section
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(0.dp)
+        ) {
+            Text(
+                text = "Help:",
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                softWrap = true,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+            )
+            HelpSection(
+                title = "Cellar Screen",
+                content = { CellarView() }
+            )
+            HelpSection(
+                title = "Stats Screen",
+                content = { StatsPage() }
+            )
+            HelpSection(
+                title = "Filtering",
+                content = { Filtering() }
+            )
+            HelpSection(
+                title = "Adding Items",
+                content = { AddingItems() }
+            )
+            HelpSection(
+                title = "Adding Tins",
+                content = { AddingTins() }
+            )
+        }
+//        Column(
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            modifier = modifier
+//                .fillMaxWidth()
+//                .padding(0.dp)
+//        ) {
+//            Text(
+//                text = "FAQ:",
+//                modifier = Modifier
+//                    .padding(horizontal = 12.dp, vertical = 12.dp),
+//                softWrap = true,
+//                fontWeight = FontWeight.Bold,
+//                fontSize = 20.sp,
+//            )
+//            HelpSection(
+//                title = "Basic Use",
+//                content = { BasicUse() }
+//            )
+//        }
     }
 }
 
@@ -217,10 +247,8 @@ private fun CellarView(
         Text(
             text = "Also found in the header is a \"Quick Search\" for blends. This search only " +
                     "returns results based on the \"Blend\" field, and works independently of " +
-                    "your chosen filters. It will return all blends containing the search text " +
-                    "regardless of whether or not they match any chosen filters. To return to the " +
-                    "list or table, click the clear button or erase the search text. Any " +
-                    "previously chosen filters will be re-applied.",
+                    "filtering. To return to the full list/table, click the clear button or erase " +
+                    "the search text. Any previously chosen filters will be re-applied.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -248,10 +276,9 @@ private fun CellarView(
                 .height(12.dp)
         )
         Text(
-            text = "In List View, long-press any entry to open a menu overlay to access the " +
-                    "option to edit the entry. Otherwise, tapping an entry will navigate to the " +
-                    "details for that entry (if no menu overlay is open on any other item and the " +
-                    "blend search field is not focused).",
+            text = "In List View, tapping an entry will navigate to the full details for that " +
+                    "entry (if menu overlay is not open on any other item and the blend search " +
+                    "is not focused). Long-press to access edit item option.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -370,14 +397,6 @@ private fun StatsPage(
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
-        Text(
-            text = "This makes comparison quick, easy, and broad through the creative use of " +
-                    "filtering and looking at the correct chart. Some charts may be irrelevant " +
-                    "depending on the chosen filters.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
     }
 }
 
@@ -396,10 +415,9 @@ private fun Filtering(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = "The \"Filter Sheet\" opens on top of the Cellar and Stats screens. " +
-                    "Any chosen filters persist through navigation around the app and affect " +
-                    "both the Cellar and Stats screens. Filters have no effect on the " +
-                    "Blend Search.",
+            text = "The \"Filter Sheet\" opens on top of the Cellar and Stats screens. Any " +
+                    "filters persist through navigation around the app and affect both the " +
+                    "Cellar and Stats screens. Filters have no effect on the quick Blend Search.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -432,22 +450,20 @@ private fun Filtering(
             alignment = Alignment.Center
         )
         Text(
-            text = "The first part of the sheet is brand filtering. Simply tap the name of a " +
-                    "brand in the row below the search bar to add the brand to the brand filter " +
-                    "list. The \"Search Brands\" field is just a filter for this row of brands. " +
-                    "There is a button next to the search bar that switches the chosen brands " +
-                    "filter between include or excluding selected brands.",
+            text = "The first part is brand filtering. Simply tap the name of a brand in the row " +
+                    "below the search bar to add it to the brand filter list. The \"Search " +
+                    "Brands\" field is just a filter for this row of brands. The button next to " +
+                    "the search bar switches the brands filter between include or exclude filtering.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
             text = "Selected brands are shown in the box below and can be removed by tapping " +
-                    "the close icon on each brand. The box has limited space, so brands that " +
-                    "exceed this space are placed in an overflow. To see the full list of brand " +
-                    "selections, tap the overflow button. This will open a popup with the full " +
-                    "list of chosen brands. The \"Clear All\" button in this overflow only " +
-                    "removes the selected brands.",
+                    "the close icon on each brand. Brands that exceed this space are placed in an " +
+                    "overflow. To see the full list of brand selections, tap the overflow button. " +
+                    "A popup will show the ful list of selected brands. The \"Clear All\" button " +
+                    "here only removes the selected brands.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -472,7 +488,7 @@ private fun Filtering(
         )
         Text(
             text = "The box to the right contains filtering for whether or not a blend is " +
-                    "in-stock, and is based on the quantity of tins. For ease of use, this is " +
+                    "in-stock, and is based on the \"No. of Tins\". For ease of use, this is " +
                     "why leaving the \"Tins\" field blank when adding will presume a quantity of " +
                     "1 for those that wish to use the \"Tins\" field just for quick reference " +
                     "of whether or not they have a given blend on-hand. See the \"Add Items\" " +
@@ -519,8 +535,7 @@ private fun AddingItems(
         Text(
             text = "All entries require a unique combination of \"Brand\" and \"Blend\". Multiple " +
                     "entries can contain the same brand OR blend, but only one entry can contain " +
-                    "the same brand AND blend. All other fields are optional, allowing " +
-                    "flexibility in use.",
+                    "the same brand AND blend. All other fields are optional.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -537,11 +552,9 @@ private fun AddingItems(
         )
         Text(
             text = "The purpose of the \"Tin Converter\" is to convert quantity amounts of " +
-                    "ounces, pounds, or grams into the \"No. of Tins\". All entries quantities " +
-                    "are set to this as a common unit for consistency and accuracy with " +
-                    "statistics. The default conversion rate is 1 Tin = either 1.75 oz or 50 grams. " +
-                    "The conversion rate can be changed in the settings screen, and the rates for " +
-                    "oz and grams are independent of one another.",
+                    "ounces, pounds, or grams into the \"No. of Tins\". The default conversion " +
+                    "rate is 1 Tin = either 1.75 oz or 50 grams. The conversion rate can be " +
+                    "changed in the settings screen, (oz and grams rates are independent of one another).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -616,9 +629,9 @@ private fun AddingTins(
         )
         Text(
             text = "Each \"tin\" must have a unique label within a given entry. When collating " +
-                    "tins in CSV import, the label will be \"Lot __\". The same label can be " +
-                    "reused under different entries, but must be unique within an entry. All " +
-                    "values are optional.",
+                    "tins in CSV import, the label will be automatically generated as \"Lot __\". " +
+                    "The same label can be reused under different entries. All other fields are " +
+                    "optional.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -634,8 +647,8 @@ private fun AddingTins(
         Text(
             text = "The date fields on this entry screen will show the chosen date as MM/YY if " +
                     "the field is not wide enough to show the full date. Otherwise, it will show " +
-                    "the chosen date based on your locale settings. But rest assured, regardless " +
-                    "of how it is displayed here, the full selected day, month and year are saved.",
+                    "the chosen date based on your locale settings. Regardless of how it is " +
+                    "displayed here, the full selected day, month and year are saved.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
