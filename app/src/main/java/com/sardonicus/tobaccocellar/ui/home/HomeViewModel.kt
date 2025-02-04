@@ -42,8 +42,18 @@ class HomeViewModel(
             filterViewModel
 
             combine(
-                preferencesRepo.sortColumnIndex,
+                preferencesRepo.sortColumnIndex
+                    .stateIn(
+                        scope = viewModelScope,
+                        started = SharingStarted.Lazily,
+                        initialValue = -1
+                    ),
                 preferencesRepo.sortAscending
+                    .stateIn(
+                        scope = viewModelScope,
+                        started = SharingStarted.Lazily,
+                        initialValue = true
+                    )
             ) { columnIndex, sortAscending ->
                 Sorting(columnIndex, sortAscending)
             }.collect {
