@@ -37,6 +37,9 @@ class HomeViewModel(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
+    private val _sorting = mutableStateOf(Sorting())
+    val sorting: State<Sorting> = _sorting
+
     init {
         viewModelScope.launch {
             filterViewModel
@@ -159,9 +162,6 @@ class HomeViewModel(
 
 
     /** Toggle Sorting **/
-    private val _sorting = mutableStateOf(Sorting())
-    val sorting: State<Sorting> = _sorting
-
     fun updateSorting(columnIndex: Int) {
         val currentSorting = _sorting.value
         val newSorting =
