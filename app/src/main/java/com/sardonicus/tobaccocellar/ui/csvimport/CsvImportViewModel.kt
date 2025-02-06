@@ -345,9 +345,9 @@ class CsvImportViewModel(
                 container = tinData.container,
                 tinQuantity = tinData.quantity,
                 unit = tinData.unit,
-                manufactureDate = null,
-                cellarDate = null,
-                openDate = null
+                manufactureDate = tinData.manufactureDate,
+                cellarDate = tinData.cellarDate,
+                openDate = tinData.openDate
             )
         }
         withContext(Dispatchers.IO) {
@@ -560,12 +560,15 @@ class CsvImportViewModel(
                                     record[columnIndices[CsvField.Cut]!!]
                                 else existingItem.cut,
                             )
+
                             val existingComponents = withContext(Dispatchers.IO) {
                                 itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
                                     it.componentName
                                 }
                             }
+                            var compsAdded = false
                             if (existingComponents.isEmpty() && componentsList.isNotEmpty()) {
+                                compsAdded = true
                                 insertComponents(componentsList)
                                 insertComponentsCrossRef(componentsList, existingItem.id)
                             }
@@ -585,12 +588,14 @@ class CsvImportViewModel(
                                     }
                                 }
                             }
-
                             withContext(Dispatchers.IO) {
                                 itemsRepository.updateItem(updatedItem)
                             }
-                            if (existingItem != updatedItem || tinsAddedToItem) updatedCount++
+                            if (existingItem != updatedItem) updatedCount++
+                            if (existingItem == updatedItem && compsAdded) updatedCount++
+                            if (existingItem == updatedItem && tinsAddedToItem) updatedCount++
                             tinsAddedToItem = false
+                            compsAdded = false
                             null
                         }
 
@@ -663,6 +668,7 @@ class CsvImportViewModel(
                                 else existingItem.inProduction,
                             )
 
+                            var compsAdded = false
                             if (overwriteFields.contains(CsvField.Components) &&
                                 columnIndices[CsvField.Components] != null &&
                                 columnIndices[CsvField.Components]!! in record.indices
@@ -693,8 +699,11 @@ class CsvImportViewModel(
                             withContext(Dispatchers.IO) {
                                 itemsRepository.updateItem(updatedItem)
                             }
-                            if (existingItem != updatedItem || tinsAddedToItem) updatedCount++
+                            if (existingItem != updatedItem) updatedCount++
+                            if (existingItem == updatedItem && compsAdded) updatedCount++
+                            if (existingItem == updatedItem && tinsAddedToItem) updatedCount++
                             tinsAddedToItem = false
+                            compsAdded = false
                             null
                         }
                         else -> null
