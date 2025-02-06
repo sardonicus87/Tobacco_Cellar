@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -215,12 +218,35 @@ fun BlendDetailsBody(
             val productionStatus = if (blendDetails.items.inProduction) "in production" else "not in production"
             val productionStatusColor = if (blendDetails.items.inProduction) LocalContentColor.current else MaterialTheme.colorScheme.error
 
-            Text(
-                text = "Details",
-                modifier = Modifier,
-                fontWeight = FontWeight.Bold,
-                fontSize = 17.sp,
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = "Details",
+                    modifier = Modifier,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                )
+                Spacer(
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                if (blendDetails.items.favorite || blendDetails.items.disliked) {
+                    val icon = if (blendDetails.items.favorite) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24
+                    val tint = if (blendDetails.items.favorite) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
+                    Icon(
+                        painter = painterResource(id = icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .size(20.dp),
+                        tint = tint
+                    )
+                }
+            }
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Top,
@@ -228,34 +254,41 @@ fun BlendDetailsBody(
                     .fillMaxWidth()
                     .padding(start = 12.dp)
             ) {
+                val type = if (blendDetails.items.type.isBlank()) "Unassigned" else blendDetails.items.type
                 Text(
                     text = buildString(
-                        "Type: ",
+                        type,
                         blendDetails.items.type,
                         MaterialTheme.colorScheme.tertiary),
                     modifier = Modifier,
                 )
-                Text(
-                    text = buildString(
-                        "Subgenre: ",
-                        blendDetails.items.subGenre,
-                        MaterialTheme.colorScheme.tertiary),
-                    modifier = Modifier,
-                )
-                Text(
-                    text = buildString(
-                        "Cut: ",
-                        blendDetails.items.cut,
-                        MaterialTheme.colorScheme.tertiary),
-                    modifier = Modifier,
-                )
-                Text(
-                    text = buildString(
-                        "Components: ",
-                        blendDetails.components.joinToString(", ") { it.componentName },
-                        MaterialTheme.colorScheme.tertiary),
-                    modifier = Modifier,
-                )
+                if (blendDetails.items.subGenre.isNotBlank()) {
+                    Text(
+                        text = buildString(
+                            "Subgenre: ",
+                            blendDetails.items.subGenre,
+                            MaterialTheme.colorScheme.tertiary),
+                        modifier = Modifier,
+                    )
+                }
+                if (blendDetails.items.cut.isNotBlank()) {
+                    Text(
+                        text = buildString(
+                            "Cut: ",
+                            blendDetails.items.cut,
+                            MaterialTheme.colorScheme.tertiary),
+                        modifier = Modifier,
+                    )
+                }
+                if (blendDetails.components.isNotEmpty()) {
+                    Text(
+                        text = buildString(
+                            "Components: ",
+                            blendDetails.components.joinToString(", ") { it.componentName },
+                            MaterialTheme.colorScheme.tertiary),
+                        modifier = Modifier,
+                    )
+                }
                 Text(
                     text = buildAnnotatedString {
                         withStyle(
@@ -278,7 +311,7 @@ fun BlendDetailsBody(
 
 
         // Notes?
-        if (blendDetails.items.notes.isNotEmpty()) {
+        if (blendDetails.items.notes.isNotBlank()) {
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Top,
