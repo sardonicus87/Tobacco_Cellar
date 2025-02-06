@@ -499,7 +499,7 @@ fun ItemInputForm(
                 modifier = Modifier
                     .padding(0.dp)
                     .fillMaxWidth()
-                    .fillMaxHeight(.66f)
+                    .fillMaxHeight(.70f)
                     .verticalScroll(rememberScrollState()),
             ) {
     //            val boxWithConstraintsScope = this
