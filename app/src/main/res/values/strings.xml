@@ -65,6 +65,7 @@
     <string name="notes_entry">Enter Notes</string>
     <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
         incorrect format.</string>
+    <string name="bulk_edit_title">Bulk Edit</string>
 
 
 </resources>
