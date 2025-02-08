@@ -458,8 +458,7 @@ private fun ChartsSection(
         )
         Text(
             text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
-                    "depending on the chosen filters. This section is experimental and is " +
-                    "subject to change.",
+                    "depending on the chosen filters.",
             color = LocalContentColor.current.copy(alpha = 0.75f),
             modifier = Modifier
                 .fillMaxWidth(),
@@ -874,11 +873,11 @@ private fun DrawScope.drawLabels(
             listY.toFloat()
         } else {
             // normal on slice labels
-            if (sweepAngle < 10f && normalizedMidpointAngle > 254f) {
-                (labelY - (combinedHeight * yOffsetFactor)) - combinedHeight
-            } else {
+//            if (sweepAngle < 10f && normalizedMidpointAngle > 254f) {
+//                (labelY - (combinedHeight * yOffsetFactor)) - combinedHeight
+//            } else {
                 labelY - (combinedHeight * yOffsetFactor)
-            }
+//            }
         }
 
         val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
