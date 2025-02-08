@@ -502,46 +502,43 @@ fun ItemInputForm(
                     .fillMaxHeight(.70f)
                     .verticalScroll(rememberScrollState()),
             ) {
-    //            val boxWithConstraintsScope = this
-    //            val height = boxWithConstraintsScope.maxHeight
-
                 when (selectedTabIndex) {
-                    0 -> BasicDetails(
-                        itemDetails = itemDetails,
-                        itemUiState = itemUiState,
-                        syncedTins = syncedTins,
-                        tinConversion = tinConversion,
-                        isEditEntry = isEditEntry,
-                        onValueChange = onValueChange,
-                        onTinValueChange = onTinConverterChange,
-                        modifier = Modifier,
-                    )
-
-                    1 -> MoreDetails(
-                        itemDetails = itemDetails,
-                        itemUiState = itemUiState,
-                        componentList = componentUiState,
-                        onValueChange = onValueChange,
-                        onComponentChange = onComponentChange,
-                        modifier = Modifier
-                    )
-
-                    2 -> TinsEntry(
-                        tinDetails = tinDetails,
-                        tinDetailsList = tinDetailsList,
-                        onTinValueChange = onTinValueChange,
-                        isTinLabelValid = isTinLabelValid,
-                        addTin = addTin,
-                        removeTin = removeTin,
-                        itemUiState = itemUiState,
-                        onValueChange = onValueChange,
-                        modifier = Modifier
-                    )
-
+                    0 ->
+                        BasicDetails(
+                            itemDetails = itemDetails,
+                            itemUiState = itemUiState,
+                            syncedTins = syncedTins,
+                            tinConversion = tinConversion,
+                            isEditEntry = isEditEntry,
+                            onValueChange = onValueChange,
+                            onTinValueChange = onTinConverterChange,
+                            modifier = Modifier,
+                        )
+                    1 ->
+                        MoreDetails(
+                            itemDetails = itemDetails,
+                            itemUiState = itemUiState,
+                            componentList = componentUiState,
+                            onValueChange = onValueChange,
+                            onComponentChange = onComponentChange,
+                            modifier = Modifier
+                        )
+                    2 ->
+                        TinsEntry(
+                            tinDetails = tinDetails,
+                            tinDetailsList = tinDetailsList,
+                            onTinValueChange = onTinValueChange,
+                            isTinLabelValid = isTinLabelValid,
+                            addTin = addTin,
+                            removeTin = removeTin,
+                            itemUiState = itemUiState,
+                            onValueChange = onValueChange,
+                            modifier = Modifier
+                        )
                     else -> throw IllegalArgumentException("Invalid tab position")
                 }
             }
-            Box(
+            Box( // fade effect
                 modifier = Modifier
                     .matchParentSize()
                     .align(Alignment.TopStart)
@@ -2542,13 +2539,15 @@ fun CustomCheckBox(
     uncheckedIcon: Int,
     modifier: Modifier = Modifier,
     colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(),
+    enabled: Boolean = true,
 ) {
     IconToggleButton(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
         modifier = modifier
             .size(34.dp),
-        colors = colors
+        colors = colors,
+        enabled = enabled
     ) {
         Icon(
             imageVector = if (checked) {
@@ -2577,6 +2576,7 @@ fun AutoCompleteText(
     maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
     minLines: Int = 1,
     supportingText: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
@@ -2615,7 +2615,7 @@ fun AutoCompleteText(
                 .onFocusChanged { focusState.value = it.isFocused }
                 .focusRequester(focusRequester)
                 .menuAnchor(MenuAnchorType.PrimaryEditable, true),
-            enabled = true,
+            enabled = enabled,
             trailingIcon = trailingIcon,
             singleLine = true,
             placeholder = { if (placeholder != null) placeholder() },
@@ -2626,13 +2626,14 @@ fun AutoCompleteText(
                 disabledIndicatorColor = Color.Transparent,
                 focusedContainerColor = LocalCustomColors.current.textField,
                 unfocusedContainerColor = LocalCustomColors.current.textField,
-                disabledContainerColor = LocalCustomColors.current.textField,
+                disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
             ),
             shape = MaterialTheme.shapes.extraSmall,
             label = label,
             maxLines = maxLines,
             minLines = minLines,
-            supportingText = supportingText
+            supportingText = supportingText,
+
         )
         DropdownMenu(
             expanded = expanded && focusState.value && suggestions.isNotEmpty(),
@@ -2720,6 +2721,7 @@ fun CustomDropDown(
     options: List<String>,
     modifier: Modifier = Modifier,
     placeholder: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -2734,7 +2736,7 @@ fun CustomDropDown(
             onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -2746,10 +2748,11 @@ fun CustomDropDown(
                 disabledIndicatorColor = Color.Transparent,
                 focusedContainerColor = LocalCustomColors.current.textField,
                 unfocusedContainerColor = LocalCustomColors.current.textField,
-                disabledContainerColor = LocalCustomColors.current.textField,
+                disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
             ),
             shape = MaterialTheme.shapes.extraSmall,
-            placeholder = placeholder
+            placeholder = placeholder,
+            enabled = enabled
         )
         ExposedDropdownMenu(
             expanded = expanded,
