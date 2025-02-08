@@ -20,9 +20,16 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     override suspend fun updateItem(item: Items) = itemsDao.update(item)
 
+    override suspend fun updateMultipleItems(items: List<Items>) {
+        for (item in items) {
+            itemsDao.update(item)
+        }
+    }
+
     override suspend fun deleteItem(item: Items) = itemsDao.delete(item)
 
     override suspend fun deleteAllItems() = itemsDao.deleteAllItems()
+
 
     // Components //
     override suspend fun insertComponent(component: Components): Long {
