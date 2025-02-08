@@ -257,8 +257,8 @@ fun BlendDetailsBody(
                 val type = if (blendDetails.items.type.isBlank()) "Unassigned" else blendDetails.items.type
                 Text(
                     text = buildString(
+                        "Type: ",
                         type,
-                        blendDetails.items.type,
                         MaterialTheme.colorScheme.tertiary),
                     modifier = Modifier,
                 )
@@ -280,7 +280,7 @@ fun BlendDetailsBody(
                         modifier = Modifier,
                     )
                 }
-                if (blendDetails.components.isNotEmpty()) {
+                if (blendDetails.components.joinToString("") { it.componentName }.isNotBlank()) {
                     Text(
                         text = buildString(
                             "Components: ",
