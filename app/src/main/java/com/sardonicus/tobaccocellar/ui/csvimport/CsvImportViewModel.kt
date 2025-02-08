@@ -788,9 +788,11 @@ class CsvImportViewModel(
 
                     if (insertedIds[index] != -1L) {
                         insertComponentsCrossRef(components, insertedIds[index].toInt())
-                        insertTins(itemId, tinDataList)
-                        tinDataList.forEach { _ -> addedTins++ }
-                        preferencesRepo.setItemSyncState(insertedIds[index].toInt(), true)
+                        if (collateTins) {
+                            insertTins(itemId, tinDataList)
+                            tinDataList.forEach { _ -> addedTins++ }
+                            preferencesRepo.setItemSyncState(insertedIds[index].toInt(), true)
+                        }
                     }
                 }
             }
