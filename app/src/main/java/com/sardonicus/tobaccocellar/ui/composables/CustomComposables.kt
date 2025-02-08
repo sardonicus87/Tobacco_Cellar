@@ -30,6 +30,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -113,6 +117,104 @@ fun CustomMenuItem(
     }
 
 }
+
+
+/** Fade effect boxes. Parent must be a box and must add ".matchParentSize()" and ".align(Alignment.TopStart)" to modifier */
+@Composable
+fun VerticalFadeBox(
+    fadeColor: Color,
+    fadeHeight: Dp,
+    modifier: Modifier = Modifier,
+    topFade: Boolean = true,
+    bottomFade: Boolean = true,
+) {
+    Box(
+        modifier = modifier
+            .then(
+                Modifier.drawBehind {
+                    val fadeOffsetY =
+                        size.height - (fadeHeight.toPx())
+                    if (topFade) {
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    fadeColor,
+                                    Color.Transparent,
+                                ),
+                                startY = 0f,
+                                endY = fadeHeight.toPx(),
+                            ),
+                            topLeft = Offset(0f, 0f),
+                            size = Size(size.width, fadeHeight.toPx())
+                        )
+                    }
+                    if (bottomFade) {
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    fadeColor,
+                                ),
+                                startY = fadeOffsetY,
+                                endY = size.height,
+                            ),
+                            topLeft = Offset(0f, fadeOffsetY),
+                            size = Size(size.width, fadeHeight.toPx())
+                        )
+                    }
+                }
+            )
+    )
+}
+
+/** Fade effect boxes. Parent must be a box and must add ".matchParentSize()" and ".align(Alignment.TopStart)" to modifier. */
+@Composable
+fun HorizontalFadeBox(
+    fadeColor: Color,
+    fadeWidth: Dp,
+    modifier: Modifier = Modifier,
+    startFade: Boolean = true,
+    endFade: Boolean = true,
+) {
+    Box(
+        modifier = modifier
+            .then(
+                Modifier.drawBehind {
+                    val fadeOffsetX =
+                        size.width - (fadeWidth.toPx())
+                    if (startFade) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    fadeColor,
+                                    Color.Transparent,
+                                ),
+                                startX = 0f,
+                                endX = fadeWidth.toPx(),
+                            ),
+                            topLeft = Offset(0f, 0f),
+                            size = Size(fadeWidth.toPx(), size.height)
+                        )
+                    }
+                    if (endFade) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    fadeColor,
+                                ),
+                                startX = fadeOffsetX,
+                                endX = size.width,
+                            ),
+                            topLeft = Offset(fadeOffsetX, 0f),
+                            size = Size(fadeWidth.toPx(), size.height)
+                        )
+                    }
+                }
+            )
+    )
+}
+
 
 /** TextField with inner-padding access */
 @OptIn(ExperimentalMaterial3Api::class)
