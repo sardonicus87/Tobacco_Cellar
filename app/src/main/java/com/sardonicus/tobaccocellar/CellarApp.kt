@@ -172,6 +172,7 @@ fun CellarTopAppBar(
     modifier: Modifier = Modifier,
     currentDestination: NavigationDestination? = null,
     navigateUp: () -> Unit = {},
+    navigateToBulkEdit: () -> Unit = {},
     navigateToCsvImport: () -> Unit = {},
     navigateToSettings: () -> Unit = {},
     navigateToHelp: () -> Unit = {},
@@ -245,6 +246,16 @@ fun CellarTopAppBar(
                         when (menuState) {
                             MenuState.MAIN -> {
                                 DropdownMenuItem(
+                                    text = { Text(text = stringResource(R.string.bulk_edit_title)) },
+                                    onClick = {
+                                        expanded = false
+                                        navigateToBulkEdit()
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled = currentDestination == HomeDestination,
+                                )
+                                DropdownMenuItem(
                                     text = { Text(text = stringResource(R.string.import_csv)) },
                                     onClick = {
                                         expanded = false
@@ -255,7 +266,6 @@ fun CellarTopAppBar(
                                     enabled = currentDestination == HomeDestination,
                                 )
                                 DropdownMenuItem(
-                                //    text = { Text(text = stringResource(R.string.export_csv)) },
                                     text = {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically
@@ -389,98 +399,97 @@ fun CellarBottomAppBar(
         contentPadding = PaddingValues(0.dp),
         windowInsets = WindowInsets.displayCutout
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            //    .height(52.dp)
-            //    .padding(bottom = padding),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            var clickToAdd by rememberSaveable { mutableStateOf(false) }
-
-            // Cellar //
-            Box(
+        Box {
+            Row(
                 modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                IconButton(
-                    onClick = navigateToHome,
+                var clickToAdd by remember { mutableStateOf(false) }
+
+                // Cellar //
+                Box(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 4.dp)
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.table_view_old),
-                        contentDescription = stringResource(R.string.home_title),
+                    IconButton(
+                        onClick = navigateToHome,
                         modifier = Modifier
-                            .size(26.dp)
-                            .offset(y = (-8).dp),
-                        tint =
+                            .padding(0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.table_view_old),
+                            contentDescription = stringResource(R.string.home_title),
+                            modifier = Modifier
+                                .size(26.dp)
+                                .offset(y = (-8).dp),
+                            tint =
                             if (currentDestination == HomeDestination && !clickToAdd) {
                                 onPrimaryLight
                             } else {
                                 LocalContentColor.current
                             },
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.home_title),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .offset(y = 13.dp),
-                    fontSize = 11.sp,
-                    fontWeight =
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.home_title),
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .offset(y = 13.dp),
+                        fontSize = 11.sp,
+                        fontWeight =
                         if (currentDestination == HomeDestination && !clickToAdd) {
                             FontWeight.SemiBold
                         } else {
                             FontWeight.Normal
                         },
-                    color =
+                        color =
                         if (currentDestination == HomeDestination && !clickToAdd) {
                             onPrimaryLight
                         } else {
                             LocalContentColor.current
                         },
-                )
-            }
+                    )
+                }
 
-            // Stats //
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                IconButton(
-                    onClick = {
-                        filterViewModel.getPositionTrigger()
-                        navigateToStats()
-                    },
+                // Stats //
+                Box(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 4.dp)
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.bar_chart),
-                        contentDescription = stringResource(R.string.stats_title),
+                    IconButton(
+                        onClick = {
+                            filterViewModel.getPositionTrigger()
+                            navigateToStats()
+                        },
                         modifier = Modifier
-                            .size(26.dp)
-                            .offset(y = (-8).dp),
-                        tint =
+                            .padding(0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.bar_chart),
+                            contentDescription = stringResource(R.string.stats_title),
+                            modifier = Modifier
+                                .size(26.dp)
+                                .offset(y = (-8).dp),
+                            tint =
                             if (currentDestination == StatsDestination && !clickToAdd) {
                                 onPrimaryLight
                             } else {
                                 LocalContentColor.current
                             },
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.stats_title),
-                    modifier = Modifier
-                        .offset(y = 13.dp),
-                    fontSize = 11.sp,
-                    fontWeight =
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.stats_title),
+                        modifier = Modifier
+                            .offset(y = 13.dp),
+                        fontSize = 11.sp,
+                        fontWeight =
                         if (currentDestination == StatsDestination && !clickToAdd) {
                             FontWeight.SemiBold
                         } else {
@@ -492,103 +501,125 @@ fun CellarBottomAppBar(
                         } else {
                             LocalContentColor.current
                         },
-                )
-            }
+                    )
+                }
 
-            // Filter //
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                IconButton(
-                    onClick = { filterViewModel.openBottomSheet() },
+                // Filter //
+                Box(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 4.dp)
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.filter_24),
-                        contentDescription = stringResource(R.string.filter_items),
+                    IconButton(
+                        onClick = { filterViewModel.openBottomSheet() },
                         modifier = Modifier
-                            .size(26.dp)
-                            .offset(y = (-8).dp),
-                        tint = if (filterViewModel.isBottomSheetOpen) {
+                            .padding(0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.filter_24),
+                            contentDescription = stringResource(R.string.filter_items),
+                            modifier = Modifier
+                                .size(26.dp)
+                                .offset(y = (-8).dp),
+                            tint = if (filterViewModel.isBottomSheetOpen) {
                                 onPrimaryLight
                             } else {
                                 LocalContentColor.current
                             },
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.filter_items),
-                    modifier = Modifier
-                        .offset(y = 13.dp),
-                    fontSize = 11.sp,
-                    fontWeight =
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.filter_items),
+                        modifier = Modifier
+                            .offset(y = 13.dp),
+                        fontSize = 11.sp,
+                        fontWeight =
                         if (filterViewModel.isBottomSheetOpen) {
                             FontWeight.SemiBold
                         } else {
                             FontWeight.Normal
                         },
-                    color = if (filterViewModel.isBottomSheetOpen) {
+                        color = if (filterViewModel.isBottomSheetOpen) {
                             onPrimaryLight
                         } else {
                             LocalContentColor.current
                         }
-                )
-            }
+                    )
+                }
 
-            // Add //
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
+                // Add //
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 4.dp)
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
                     //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
                     //  horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                IconButton(
-                    onClick = {
-                        clickToAdd = true
-                        filterViewModel.getPositionTrigger()
-                        navigateToAddEntry()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.add),
-                        contentDescription = stringResource(R.string.add),
+                    IconButton(
+                        onClick = {
+                            clickToAdd = true
+                            filterViewModel.getPositionTrigger()
+                            navigateToAddEntry()
+                        },
                         modifier = Modifier
-                            .size(26.dp)
-                            .offset(y = (-8).dp),
-                        tint =
+                            .padding(0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.add),
+                            contentDescription = stringResource(R.string.add),
+                            modifier = Modifier
+                                .size(26.dp)
+                                .offset(y = (-8).dp),
+                            tint =
                             if (clickToAdd) {
                                 onPrimaryLight
                             } else {
                                 LocalContentColor.current
                             },
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.add),
-                    modifier = Modifier
-                        .offset(y = 13.dp),
-                    fontSize = 11.sp,
-                    fontWeight =
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.add),
+                        modifier = Modifier
+                            .offset(y = 13.dp),
+                        fontSize = 11.sp,
+                        fontWeight =
                         if (clickToAdd) {
                             FontWeight.SemiBold
                         } else {
                             FontWeight.Normal
                         },
-                    color = if (clickToAdd) {
+                        color = if (clickToAdd) {
                             onPrimaryLight
                         } else {
                             LocalContentColor.current
                         }
-                )
+                    )
+                }
             }
+            Box( // top-edge highlight effect
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        Modifier.drawBehind {
+                            val glowHeight = 2.dp
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.07f),
+                                        Color.Transparent,
+                                    ),
+                                    startY = 0f,
+                                    endY = glowHeight.toPx(),
+                                ),
+                                topLeft = Offset(0f, 0f),
+                                size = Size(size.width, glowHeight.toPx())
+                            )
+                        }
+                    )
+            )
         }
     }
 }

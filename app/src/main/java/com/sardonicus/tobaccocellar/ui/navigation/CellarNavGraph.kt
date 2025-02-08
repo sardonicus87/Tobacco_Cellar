@@ -22,6 +22,8 @@ import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.items.AddEntryDestination
 import com.sardonicus.tobaccocellar.ui.items.AddEntryScreen
+import com.sardonicus.tobaccocellar.ui.items.BulkEditDestination
+import com.sardonicus.tobaccocellar.ui.items.BulkEditScreen
 import com.sardonicus.tobaccocellar.ui.items.EditEntryDestination
 import com.sardonicus.tobaccocellar.ui.items.EditEntryScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsDestination
@@ -55,6 +57,7 @@ fun CellarNavHost(
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
+                navigateToBulkEdit = { navController.navigate(BulkEditDestination.route) },
                 navigateToBlendDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
                 navigateToSettings = { navController.navigate(SettingsDestination.route) {
@@ -124,6 +127,13 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() },
             )
         }
+        composable(route = BulkEditDestination.route) {
+            BulkEditScreen(
+                navigateBack = { navController.navigateUp() },
+                onNavigateUp = { navController.navigateUp() },
+            )
+        }
+
         composable(route = CsvImportDestination.route) {
             CsvImportScreen(
                 navigateBack = { navController.navigateUp() },
