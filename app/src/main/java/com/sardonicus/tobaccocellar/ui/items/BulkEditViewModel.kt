@@ -9,18 +9,22 @@ import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.Tins
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 class BulkEditViewModel (
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
 
+    /** UI stuff */
     val bulkEditUiState: StateFlow<BulkEditUiState> =
         combine(
             itemsRepository.getAllItemsStream(),
@@ -62,6 +66,7 @@ class BulkEditViewModel (
             cutSelected = editing.cutSelected,
             ratingSelected = editing.ratingSelected,
             productionSelected = editing.productionSelected,
+            syncTinsSelected = editing.syncTinsSelected,
 
             type = editing.type,
             disliked = editing.disliked,
@@ -69,6 +74,7 @@ class BulkEditViewModel (
             subGenre = editing.subGenre,
             cut = editing.cut,
             inProduction = editing.inProduction,
+            syncTins = editing.syncTins,
         )
     }
 
@@ -84,8 +90,29 @@ class BulkEditViewModel (
         )
     }
 
+    var anyFieldSelected by mutableStateOf(false)
+
+    fun fieldSelected(): Boolean {
+        anyFieldSelected = editingState.typeSelected || editingState.genreSelected ||
+                editingState.cutSelected || editingState.ratingSelected ||
+                editingState.productionSelected || editingState.syncTinsSelected
+        return anyFieldSelected
+    }
+
     private fun resetEditingState() {
         editingState = EditingState()
+    }
+
+    fun resetSelectedItems() {
+        editingState = editingState.copy(
+            selectedItems = listOf()
+        )
+    }
+
+    fun selectAll() {
+        editingState = editingState.copy(
+            selectedItems = bulkEditUiState.value.items
+        )
     }
 
     private fun resetTabIndex() {
@@ -93,8 +120,43 @@ class BulkEditViewModel (
     }
 
 
-    fun batchEdit() {
+    /** helper functions for tin sync */
+    private var ozRate: Double = 0.0
+    private var gramsRate: Double = 0.0
+
+    init {
         viewModelScope.launch {
+            ozRate = preferencesRepo.getTinOzConversionRate()
+            gramsRate = preferencesRepo.getTinGramsConversionRate()
+        }
+    }
+
+    private suspend fun calculateSyncTins(tins: List<Tins>): Int {
+        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
+            (it.tinQuantity * 16) / ozRate
+        }
+        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
+            it.tinQuantity / ozRate
+        }
+        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
+            it.tinQuantity / gramsRate
+        }
+        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
+    }
+
+    private val _saveIndicator = MutableStateFlow(false)
+    val saveIndicator: StateFlow<Boolean> = _saveIndicator.asStateFlow()
+
+    fun setLoadingState(loading: Boolean) {
+        _saveIndicator.value = loading
+    }
+
+
+    /** Save function */
+    fun batchEditSave() {
+        viewModelScope.launch {
+            setLoadingState(true)
+
             val itemsToUpdate = editingState.selectedItems.map {
                 it.copy(
                     type = if (editingState.typeSelected) editingState.type else it.type,
@@ -102,16 +164,33 @@ class BulkEditViewModel (
                     cut = if (editingState.cutSelected) editingState.cut else it.cut,
                     disliked = if (editingState.ratingSelected) editingState.disliked else it.disliked,
                     favorite = if (editingState.ratingSelected) editingState.favorite else it.favorite,
-                    inProduction = if (editingState.productionSelected) editingState.inProduction else it.inProduction
+                    inProduction = if (editingState.productionSelected) editingState.inProduction else it.inProduction,
                 )
             }
             itemsRepository.updateMultipleItems(itemsToUpdate)
+
+            if (editingState.syncTinsSelected) {
+                editingState.selectedItems.forEach {
+                    preferencesRepo.setItemSyncState(it.id, editingState.syncTins)
+
+                    val tins = itemsRepository.getTinsForItemStream(it.id).first()
+                    val syncedQuantity = calculateSyncTins(tins)
+                    if (editingState.syncTins == true) {
+                        itemsRepository.updateItem(
+                            it.copy(
+                                quantity = syncedQuantity,
+                            )
+                        )
+                    }
+                }
+            }
+
+            setLoadingState(false)
             resetEditingState()
             resetTabIndex()
             _showSnackbar.value = true
         }
     }
-
 }
 
 
@@ -131,6 +210,7 @@ data class EditingState(
     val cutSelected: Boolean = false,
     val ratingSelected: Boolean = false,
     val productionSelected: Boolean = false,
+    val syncTinsSelected: Boolean = false,
 
     var type: String = "",
     var disliked: Boolean = false,
@@ -138,4 +218,5 @@ data class EditingState(
     var subGenre: String = "",
     var cut: String = "",
     var inProduction: Boolean = true,
+    var syncTins: Boolean = false,
 )

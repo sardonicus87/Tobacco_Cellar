@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,20 +58,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -115,6 +110,7 @@ fun BulkEditScreen(
     val bulkEditUiState by viewModel.bulkEditUiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val showSnackbar = viewModel.showSnackbar.collectAsState()
+    val saveIndicator by viewModel.saveIndicator.collectAsState()
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -166,14 +162,18 @@ fun BulkEditScreen(
         ) {
             BulkEditBody(
                 loading = bulkEditUiState.loading,
+                saveIndicator = saveIndicator,
                 tabIndex = viewModel.tabIndex,
                 onTabChange = { viewModel.tabIndex = it },
                 items = bulkEditUiState.items,
                 selectedItems = viewModel.editingState.selectedItems,
                 editingState = viewModel.editingState,
                 updateSelection = viewModel::updateSelection,
+                clearSelections = viewModel::resetSelectedItems,
+                selectAll = viewModel::selectAll,
                 onValueChange = viewModel::onValueChange,
-                batchEdit = viewModel::batchEdit,
+                batchEditValidation = viewModel::fieldSelected,
+                batchEdit = viewModel::batchEditSave,
                 autoGenres = bulkEditUiState.autoGenres,
                 autoCuts = bulkEditUiState.autoCuts,
                 modifier = modifier
@@ -188,13 +188,17 @@ fun BulkEditScreen(
 @Composable
 fun BulkEditBody(
     loading: Boolean,
+    saveIndicator: Boolean,
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
     items: List<Items>,
     selectedItems: List<Items>,
     editingState: EditingState,
     updateSelection: (Items) -> Unit,
+    clearSelections: () -> Unit,
+    selectAll: () -> Unit,
     onValueChange: (EditingState) -> Unit,
+    batchEditValidation: () -> Boolean,
     batchEdit: () -> Unit,
     autoGenres: List<String>,
     autoCuts: List<String>,
@@ -229,89 +233,119 @@ fun BulkEditBody(
                 )
 
             }
-        }
-        else {
-        //    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+        } else {
             val titles = listOf("Select Items", "Batch Edit")
 
-            Column(
-                modifier = modifier
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start
-            ) {
-                TabRow(
-                    selectedTabIndex = tabIndex,
-                    modifier = Modifier
-                        .padding(bottom = 1.dp),
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = LocalContentColor.current,
-                    indicator = { tabPositions ->
-                        SecondaryIndicator(
-                            modifier = Modifier
-                                .tabIndicatorOffset(tabPositions[tabIndex]),
-                            color = MaterialTheme.colorScheme.inversePrimary
-                        )
-                    },
-                    divider = {
-                        HorizontalDivider(
-                            modifier = Modifier,
-                            thickness = Dp.Hairline,
-                            color = DividerDefaults.color,
-                        )
-                    },
+            Box {
+                Column(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
                 ) {
-                    titles.forEachIndexed { index, title ->
-                        CompositionLocalProvider(LocalRippleConfiguration provides null) {
-                            Tab(
-                                selected = tabIndex == index,
-                                onClick = {
-                                 //   selectedTabIndex = index
-                                    onTabChange(index)
-                                },
+                    TabRow(
+                        selectedTabIndex = tabIndex,
+                        modifier = Modifier
+                            .padding(bottom = 1.dp),
+                        containerColor = MaterialTheme.colorScheme.background,
+                        contentColor = LocalContentColor.current,
+                        indicator = { tabPositions ->
+                            SecondaryIndicator(
                                 modifier = Modifier
-                                    .background(
-                                        if (tabIndex == index) MaterialTheme.colorScheme.background
-                                        else LocalCustomColors.current.backgroundUnselected
-                                    ),
-                                text = {
-                                    Text(
-                                        text = title,
-                                        fontWeight = if (tabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
-                                    )
-                                },
-                                selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                                unselectedContentColor = MaterialTheme.colorScheme.outline,
-                                interactionSource = remember { MutableInteractionSource() }
+                                    .tabIndicatorOffset(tabPositions[tabIndex]),
+                                color = MaterialTheme.colorScheme.inversePrimary
                             )
+                        },
+                        divider = {
+                            HorizontalDivider(
+                                modifier = Modifier,
+                                thickness = Dp.Hairline,
+                                color = DividerDefaults.color,
+                            )
+                        },
+                    ) {
+                        titles.forEachIndexed { index, title ->
+                            CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                                Tab(
+                                    selected = tabIndex == index,
+                                    onClick = {
+                                        //   selectedTabIndex = index
+                                        onTabChange(index)
+                                    },
+                                    modifier = Modifier
+                                        .background(
+                                            if (tabIndex == index) MaterialTheme.colorScheme.background
+                                            else LocalCustomColors.current.backgroundUnselected
+                                        ),
+                                    text = {
+                                        Text(
+                                            text = title,
+                                            fontWeight = if (tabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
+                                        )
+                                    },
+                                    selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                                    unselectedContentColor = MaterialTheme.colorScheme.outline,
+                                    interactionSource = remember { MutableInteractionSource() }
+                                )
+                            }
+                        }
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
+                    ) {
+                        when (tabIndex) {
+                            0 ->
+                                BulkSelections(
+                                    items = items,
+                                    selectedItems = selectedItems,
+                                    updateSelection = updateSelection,
+                                    clearSelections = clearSelections,
+                                    selectAll = selectAll,
+                                    modifier = Modifier
+                                )
+
+                            1 ->
+                                BulkEditing(
+                                    editingState = editingState,
+                                    onValueChange = onValueChange,
+                                    batchEditValidation = batchEditValidation,
+                                    batchEdit = batchEdit,
+                                    autoGenres = autoGenres,
+                                    autoCuts = autoCuts,
+                                    modifier = Modifier
+                                )
+
+                            else -> throw IllegalArgumentException("Invalid tab position")
                         }
                     }
                 }
-                Column(
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth()
-                        .fillMaxHeight(),
-                ) {
-                    when (tabIndex) {
-                        0 ->
-                            BulkSelections(
-                                items = items,
-                                selectedItems = selectedItems,
-                                updateSelection = updateSelection,
-                                modifier = Modifier
-                            )
-                        1 ->
-                            BulkEditing(
-                                editingState = editingState,
-                                onValueChange = onValueChange,
-                                batchEdit = batchEdit,
-                                autoGenres = autoGenres,
-                                autoCuts = autoCuts,
-                                modifier = Modifier
-                            )
-                        else -> throw IllegalArgumentException("Invalid tab position")
+                if (saveIndicator) {
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = .38f)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1.5f)
+                        )
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(0.dp)
+                                .size(48.dp)
+                                .weight(0.5f),
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .weight(2f)
+                        )
                     }
+
                 }
             }
         }
@@ -324,14 +358,41 @@ fun BulkSelections(
     items: List<Items>,
     selectedItems: List<Items>,
     updateSelection: (Items) -> Unit,
+    clearSelections: () -> Unit,
+    selectAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            TextButton(
+                onClick = { selectAll() },
+                modifier = Modifier,
+            ) {
+                Text(
+                    text = "Select All",
+                )
+            }
+            TextButton(
+                onClick = { clearSelections() },
+                modifier = Modifier,
+                enabled = selectedItems.isNotEmpty(),
+            ) {
+                Text(
+                    text = "Clear Selections",
+                )
+            }
+        }
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
@@ -341,12 +402,12 @@ fun BulkSelections(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            item(span = { GridItemSpan(2) }) {
-                Spacer(
-                    modifier = Modifier
-                        .height(8.dp)
-                )
-            }
+//            item(span = { GridItemSpan(2) }) {
+//                Spacer(
+//                    modifier = Modifier
+//                        .height(8.dp)
+//                )
+//            }
             items(items, key = { it.id }) {
                 val selected = selectedItems.contains(it)
                 BulkSelectionsItem(
@@ -374,6 +435,7 @@ fun BulkSelections(
 fun BulkEditing(
     editingState: EditingState,
     onValueChange: (EditingState) -> Unit,
+    batchEditValidation: () -> Boolean,
     batchEdit: () -> Unit,
     autoGenres: List<String>,
     autoCuts: List<String>,
@@ -767,10 +829,7 @@ fun BulkEditing(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        4.dp,
-                        Alignment.CenterHorizontally
-                    ),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -794,6 +853,65 @@ fun BulkEditing(
                     )
                 }
             }
+
+            // Sync Tins //
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(42.dp)
+                ) {
+                    Checkbox(
+                        checked = editingState.syncTinsSelected,
+                        onCheckedChange = {
+                            onValueChange(editingState.copy(syncTinsSelected = it))
+                        }
+                    )
+                }
+                AutoSizeText(
+                    text = "Sync entry/\ntin quantity",
+                    fontSize = 16.sp,
+                    minFontSize = 8.sp,
+                    modifier = Modifier
+                        .padding(end = 4.dp),
+                    width = 70.dp,
+                    height = 36.dp,
+                    contentAlignment = Alignment.CenterStart,
+                    color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
+                        alpha = 0.50f
+                    ) else LocalContentColor.current
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Sync Tins?",
+                        modifier = Modifier
+                            .offset(x = 0.dp, y = 1.dp),
+                        color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
+                            alpha = 0.50f
+                        ) else LocalContentColor.current
+                    )
+                    CustomCheckBox(
+                        checked = editingState.syncTins,
+                        onCheckedChange = {
+                            onValueChange(editingState.copy(syncTins = it))
+                        },
+                        checkedIcon = R.drawable.check_box_24,
+                        uncheckedIcon = R.drawable.check_box_outline_24,
+                        modifier = Modifier
+                            .padding(0.dp),
+                        enabled = editingState.syncTinsSelected
+                    )
+                }
+            }
         }
 
         Spacer(
@@ -806,7 +924,7 @@ fun BulkEditing(
             onClick = { confirmEdit = true },
             modifier = Modifier
                 .align(Alignment.CenterHorizontally),
-            enabled = selectedItems.isNotEmpty(),
+            enabled = selectedItems.isNotEmpty() && batchEditValidation(),
         ) {
             Text(
                 text = "Batch Save",
