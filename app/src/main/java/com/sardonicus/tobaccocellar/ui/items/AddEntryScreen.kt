@@ -438,7 +438,7 @@ fun ItemInputForm(
     modifier: Modifier = Modifier
 ) {
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-    val titles = listOf("Basic Details", "More Details", "Tins")
+    val titles = listOf("Details", "Notes", "Tins")
 
 
     Column(
@@ -499,7 +499,7 @@ fun ItemInputForm(
                 modifier = Modifier
                     .padding(0.dp)
                     .fillMaxWidth()
-                    .fillMaxHeight(.70f)
+                    .fillMaxHeight(.75f)
                     .verticalScroll(rememberScrollState()),
             ) {
                 when (selectedTabIndex) {
@@ -511,6 +511,8 @@ fun ItemInputForm(
                             tinConversion = tinConversion,
                             isEditEntry = isEditEntry,
                             onValueChange = onValueChange,
+                            componentList = componentUiState,
+                            onComponentChange = onComponentChange,
                             onTinValueChange = onTinConverterChange,
                             modifier = Modifier,
                         )
@@ -519,8 +521,8 @@ fun ItemInputForm(
                             itemDetails = itemDetails,
                             itemUiState = itemUiState,
                             componentList = componentUiState,
-                            onValueChange = onValueChange,
                             onComponentChange = onComponentChange,
+                            onValueChange = onValueChange,
                             modifier = Modifier
                         )
                     2 ->
@@ -587,12 +589,14 @@ fun BasicDetails(
     syncedTins: Int,
     tinConversion: TinConversion,
     isEditEntry: Boolean,
+    componentList: ComponentList,
+    onComponentChange: (String) -> Unit,
     onValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinConversion) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    var showTinConverter by rememberSaveable { mutableStateOf(false) }
+//    var showTinConverter by rememberSaveable { mutableStateOf(false) }
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -867,6 +871,193 @@ fun BasicDetails(
             )
         }
 
+        // Cut //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Cut:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = itemDetails.cut,
+                onValueChange = {
+                    onValueChange(itemDetails.copy(cut = it))
+
+                    if (it.length >= 2) {
+                        val startsWith = itemUiState.autoCuts.filter { cut ->
+                            cut.startsWith(it, ignoreCase = true)
+                        }
+                        val otherWordsStartsWith = itemUiState.autoCuts.filter { cut ->
+                            cut.split(" ").drop(1).any { word ->
+                                word.startsWith(it, ignoreCase = true)
+                            } && !cut.startsWith(it, ignoreCase = true)
+                        }
+                        val contains = itemUiState.autoCuts.filter { cut ->
+                            cut.contains(it, ignoreCase = true)
+                                    && !cut.startsWith(it, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(cut)
+                        }
+                        val selected = itemUiState.autoCuts.filter { cut ->
+                            cut == it
+                        }
+
+                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                onOptionSelected = { suggestion, currentText ->
+                    onValueChange(itemDetails.copy(cut = suggestion))
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    if (itemDetails.cut.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onValueChange(itemDetails.copy(cut = ""))
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
+                )
+            )
+        }
+
+        // Components //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AutoSizeText(
+                text = "Components:",
+                fontSize = 16.sp,
+                minFontSize = 8.sp,
+                width = 80.dp,
+                modifier = Modifier,
+                maxLines = 1,
+                softWrap = false,
+                contentAlignment = Alignment.CenterStart
+            )
+
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = componentList.componentString,
+                onValueChange = { string ->
+                    onComponentChange(string)
+
+                    val substring = if (string.contains(", ")) {
+                        string.substringAfterLast(", ", "")
+                    } else {
+                        string
+                    }
+
+                    if (substring.length >= 2) {
+                        val startsWith = componentList.autoComps.filter { comp ->
+                            comp.startsWith(substring, ignoreCase = true)
+                        }
+
+                        val otherWordsStartsWith = componentList.autoComps.filter { comp ->
+                            comp.split(" ").drop(1).any { word ->
+                                word.startsWith(substring, ignoreCase = true)
+                            } && !comp.startsWith(substring, ignoreCase = true)
+                        }
+
+                        val contains = componentList.autoComps.filter { comp ->
+                            comp.contains(substring, ignoreCase = true)
+                                    && !comp.startsWith(substring, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(comp)
+                        }
+
+                        val selected = componentList.autoComps.filter { comp ->
+                            string.split(", ").filter { string.isNotBlank() }.contains(comp)
+                        }
+
+                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                onOptionSelected = { suggestion, currentText ->
+                    val updatedText =
+                        if (currentText.contains(", ")) {
+                            currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", " }
+                        else { "$suggestion, " }
+                    onComponentChange(updatedText)
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    if (componentList.componentString.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onComponentChange("")
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                maxLines = 1,
+                placeholder = {
+                    Text(
+                        text = "(Separate with comma + space)",
+                        modifier = Modifier
+                            .alpha(0.66f),
+                        fontSize = 13.sp,
+                        softWrap = false,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
+                    )
+                },
+//                supportingText = {
+//                    Text(
+//                        text = "(Separate with comma + space)",
+//                        modifier = Modifier
+//                            .alpha(0.66f),
+//                        //    fontSize = 13.sp,
+//                        softWrap = false,
+//                        maxLines = 1,
+//                        overflow = TextOverflow.Clip,
+//                    )
+//                }
+            )
+        }
+
         // No. of Tins //
         Row(
             modifier = Modifier
@@ -875,10 +1066,19 @@ fun BasicDetails(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "No. of Tins:",
-                modifier = Modifier
-                    .width(80.dp)
+//            Text(
+//                text = "No. of Tins:",
+//                modifier = Modifier
+//                    .width(80.dp)
+//            )
+            AutoSizeText(
+                text = "No. of\nTins:",
+                fontSize = 16.sp,
+                minFontSize = 8.sp,
+                modifier = Modifier,
+                width = 80.dp,
+                height = 48.dp,
+                contentAlignment = Alignment.CenterStart
             )
             Row(
                 modifier = Modifier
@@ -934,7 +1134,7 @@ fun BasicDetails(
                         .padding(0.dp)
                         .fillMaxHeight()
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Increase/Decrease Buttons //
@@ -1016,40 +1216,40 @@ fun BasicDetails(
                     }
 
                     // Tin Converter //
-                    Column(
-                        modifier = Modifier
-                            .clickable(enabled = !itemDetails.isSynced) {
-                                onTinValueChange(
-                                    tinConversion.copy(
-                                        amount = "",
-                                        unit = ""
-                                    )
-                                )
-                                showTinConverter = true
-                            }
-                            .background(
-                                color = if (itemDetails.isSynced) MaterialTheme.colorScheme.outlineVariant.copy(
-                                    alpha = 0.5f
-                                ) else
-                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(vertical = 4.dp, horizontal = 6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically)
-                    ) {
-                        Text(
-                            text = "Convert\nTins",
-                            fontSize = 13.sp,
-                            lineHeight = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color =  if (itemDetails.isSynced) Color.Gray.copy(alpha = 0.7f) else
-                                MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier,
-                            textAlign = TextAlign.Center,
-                            letterSpacing = 0.sp
-                        )
-                    }
+//                    Column(
+//                        modifier = Modifier
+//                            .clickable(enabled = !itemDetails.isSynced) {
+//                                onTinValueChange(
+//                                    tinConversion.copy(
+//                                        amount = "",
+//                                        unit = ""
+//                                    )
+//                                )
+//                                showTinConverter = true
+//                            }
+//                            .background(
+//                                color = if (itemDetails.isSynced) MaterialTheme.colorScheme.outlineVariant.copy(
+//                                    alpha = 0.5f
+//                                ) else
+//                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
+//                                shape = RoundedCornerShape(8.dp)
+//                            )
+//                            .padding(vertical = 4.dp, horizontal = 6.dp),
+//                        horizontalAlignment = Alignment.CenterHorizontally,
+//                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically)
+//                    ) {
+//                        Text(
+//                            text = "Convert\nTins",
+//                            fontSize = 13.sp,
+//                            lineHeight = 13.sp,
+//                            fontWeight = FontWeight.SemiBold,
+//                            color =  if (itemDetails.isSynced) Color.Gray.copy(alpha = 0.7f) else
+//                                MaterialTheme.colorScheme.onSecondaryContainer,
+//                            modifier = Modifier,
+//                            textAlign = TextAlign.Center,
+//                            letterSpacing = 0.sp
+//                        )
+//                    }
 
                     // Sync Tins //
                     CheckboxWithLabel(
@@ -1169,56 +1369,55 @@ fun BasicDetails(
         }
     }
 
-    if (showTinConverter) {
-        TinConverterDialog(
-            onDismiss = { showTinConverter = false },
-            onConfirm = {
-                if (it < 99) {
-                    onValueChange(
-                        itemDetails.copy(
-                            quantityString = it.toString(),
-                            quantity = it
-                        )
-                    )
-                } else {
-                    onValueChange(
-                        itemDetails.copy(
-                            quantityString = "99",
-                            quantity = 99
-                        )
-                    )
-                }
-                showTinConverter = false
-            },
-            onAddConversion = {
-                val existingAmount = itemDetails.quantityString.toInt()
-                val newAmount = existingAmount + it
-
-                if (newAmount < 99) {
-                    onValueChange(
-                        itemDetails.copy(
-                            quantityString = newAmount.toString(),
-                            quantity = newAmount
-                        )
-                    )
-                } else {
-                    onValueChange(
-                        itemDetails.copy(
-                            quantityString = "99",
-                            quantity = 99
-                        )
-                    )
-                }
-                showTinConverter = false
-            },
-            tinConversion = tinConversion,
-            onTinValueChange = onTinValueChange,
-            isEditEntry = isEditEntry,
-            itemDetails = itemDetails,
-            modifier = Modifier
-        )
-    }
-
+//    if (showTinConverter) {
+//        TinConverterDialog(
+//            onDismiss = { showTinConverter = false },
+//            onConfirm = {
+//                if (it < 99) {
+//                    onValueChange(
+//                        itemDetails.copy(
+//                            quantityString = it.toString(),
+//                            quantity = it
+//                        )
+//                    )
+//                } else {
+//                    onValueChange(
+//                        itemDetails.copy(
+//                            quantityString = "99",
+//                            quantity = 99
+//                        )
+//                    )
+//                }
+//                showTinConverter = false
+//            },
+//            onAddConversion = {
+//                val existingAmount = itemDetails.quantityString.toInt()
+//                val newAmount = existingAmount + it
+//
+//                if (newAmount < 99) {
+//                    onValueChange(
+//                        itemDetails.copy(
+//                            quantityString = newAmount.toString(),
+//                            quantity = newAmount
+//                        )
+//                    )
+//                } else {
+//                    onValueChange(
+//                        itemDetails.copy(
+//                            quantityString = "99",
+//                            quantity = 99
+//                        )
+//                    )
+//                }
+//                showTinConverter = false
+//            },
+//            tinConversion = tinConversion,
+//            onTinValueChange = onTinValueChange,
+//            isEditEntry = isEditEntry,
+//            itemDetails = itemDetails,
+//            modifier = Modifier
+//        )
+//    }
 }
 
 
@@ -1236,183 +1435,181 @@ fun MoreDetails(
             .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Cut //
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Cut:",
-                modifier = Modifier
-                    .width(80.dp)
-            )
-
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
-            AutoCompleteText(
-                value = itemDetails.cut,
-                onValueChange = {
-                    onValueChange(itemDetails.copy(cut = it))
-
-                    if (it.length >= 2) {
-                        val startsWith = itemUiState.autoCuts.filter { cut ->
-                            cut.startsWith(it, ignoreCase = true)
-                        }
-                        val otherWordsStartsWith = itemUiState.autoCuts.filter { cut ->
-                            cut.split(" ").drop(1).any { word ->
-                                word.startsWith(it, ignoreCase = true)
-                            } && !cut.startsWith(it, ignoreCase = true)
-                        }
-                        val contains = itemUiState.autoCuts.filter { cut ->
-                            cut.contains(it, ignoreCase = true)
-                                    && !cut.startsWith(it, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(cut)
-                        }
-                        val selected = itemUiState.autoCuts.filter { cut ->
-                            cut == it
-                        }
-
-                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
-                onOptionSelected = { suggestion, currentText ->
-                    onValueChange(itemDetails.copy(cut = suggestion))
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
-                modifier = Modifier
-                    .fillMaxWidth(),
-                trailingIcon = {
-                    if (itemDetails.cut.length > 4) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                            contentDescription = "Clear",
-                            modifier = Modifier
-                                .clickable {
-                                    onValueChange(itemDetails.copy(cut = ""))
-                                }
-                                .alpha(0.66f)
-                                .size(20.dp)
-                                .focusable(false)
-                        )
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next,
-                )
-            )
-        }
-
-        // Components //
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AutoSizeText(
-                text = "Components: ",
-                fontSize = 16.sp,
-                minFontSize = 8.sp,
-                width = 80.dp,
-                modifier = Modifier
-                    .padding(bottom = 20.dp),
-                maxLines = 1,
-                softWrap = false,
-            )
-
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
-            AutoCompleteText(
-                value = componentList.componentString,
-                onValueChange = { string ->
-                    onComponentChange(string)
-
-                    val substring = if (string.contains(", ")) {
-                        string.substringAfterLast(", ", "")
-                    } else {
-                        string
-                    }
-
-                    if (substring.length >= 2) {
-                        val startsWith = componentList.autoComps.filter { comp ->
-                            comp.startsWith(substring, ignoreCase = true)
-                        }
-
-                        val otherWordsStartsWith = componentList.autoComps.filter { comp ->
-                            comp.split(" ").drop(1).any { word ->
-                                word.startsWith(substring, ignoreCase = true)
-                            } && !comp.startsWith(substring, ignoreCase = true)
-                        }
-
-                        val contains = componentList.autoComps.filter { comp ->
-                            comp.contains(substring, ignoreCase = true)
-                                    && !comp.startsWith(substring, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(comp)
-                        }
-
-                        val selected = componentList.autoComps.filter { comp ->
-                            string.split(", ").filter { string.isNotBlank() }.contains(comp)
-                        }
-                        Log.d("Autocompletes", "selected: $selected")
-
-                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
-                        Log.d("Autocompletes", "suggestions: ${suggestions.value}")
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
-                onOptionSelected = { suggestion, currentText ->
-                    val updatedText = if (currentText.contains(", ")) {
-                        currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", " }
-                        else { suggestion }
-
-                    onComponentChange(updatedText)
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
-                modifier = Modifier
-                    .fillMaxWidth(),
-                trailingIcon = {
-                    if (componentList.componentString.length > 4) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                            contentDescription = "Clear",
-                            modifier = Modifier
-                                .clickable {
-                                    onComponentChange("")
-                                }
-                                .alpha(0.66f)
-                                .size(20.dp)
-                                .focusable(false)
-                        )
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
-                ),
-                maxLines = 1,
-                supportingText = {
-                    Text(
-                        text = "(Separate with comma + space)",
-                        modifier = Modifier
-                            .alpha(0.66f),
-                    //    fontSize = 13.sp,
-                        softWrap = false,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                    )
-                }
-            )
-        }
+//        // Cut //
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth(),
+//            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = "Cut:",
+//                modifier = Modifier
+//                    .width(80.dp)
+//            )
+//
+//            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+//
+//            AutoCompleteText(
+//                value = itemDetails.cut,
+//                onValueChange = {
+//                    onValueChange(itemDetails.copy(cut = it))
+//
+//                    if (it.length >= 2) {
+//                        val startsWith = itemUiState.autoCuts.filter { cut ->
+//                            cut.startsWith(it, ignoreCase = true)
+//                        }
+//                        val otherWordsStartsWith = itemUiState.autoCuts.filter { cut ->
+//                            cut.split(" ").drop(1).any { word ->
+//                                word.startsWith(it, ignoreCase = true)
+//                            } && !cut.startsWith(it, ignoreCase = true)
+//                        }
+//                        val contains = itemUiState.autoCuts.filter { cut ->
+//                            cut.contains(it, ignoreCase = true)
+//                                    && !cut.startsWith(it, ignoreCase = true) &&
+//                                    !otherWordsStartsWith.contains(cut)
+//                        }
+//                        val selected = itemUiState.autoCuts.filter { cut ->
+//                            cut == it
+//                        }
+//
+//                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+//                    } else {
+//                        suggestions.value = emptyList()
+//                    }
+//                },
+//                onOptionSelected = { suggestion, currentText ->
+//                    onValueChange(itemDetails.copy(cut = suggestion))
+//                    suggestions.value = emptyList()
+//                },
+//                suggestions = suggestions.value,
+//                modifier = Modifier
+//                    .fillMaxWidth(),
+//                trailingIcon = {
+//                    if (itemDetails.cut.length > 4) {
+//                        Icon(
+//                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+//                            contentDescription = "Clear",
+//                            modifier = Modifier
+//                                .clickable {
+//                                    onValueChange(itemDetails.copy(cut = ""))
+//                                }
+//                                .alpha(0.66f)
+//                                .size(20.dp)
+//                                .focusable(false)
+//                        )
+//                    }
+//                },
+//                keyboardOptions = KeyboardOptions(
+//                    capitalization = KeyboardCapitalization.None,
+//                    keyboardType = KeyboardType.Text,
+//                    imeAction = ImeAction.Next,
+//                )
+//            )
+//        }
+//
+//        // Components //
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth(),
+//            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            AutoSizeText(
+//                text = "Components: ",
+//                fontSize = 16.sp,
+//                minFontSize = 8.sp,
+//                width = 80.dp,
+//                modifier = Modifier
+//                    .padding(bottom = 20.dp),
+//                maxLines = 1,
+//                softWrap = false,
+//            )
+//
+//            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+//
+//            AutoCompleteText(
+//                value = componentList.componentString,
+//                onValueChange = { string ->
+//                    onComponentChange(string)
+//
+//                    val substring = if (string.contains(", ")) {
+//                        string.substringAfterLast(", ", "")
+//                    } else {
+//                        string
+//                    }
+//
+//                    if (substring.length >= 2) {
+//                        val startsWith = componentList.autoComps.filter { comp ->
+//                            comp.startsWith(substring, ignoreCase = true)
+//                        }
+//
+//                        val otherWordsStartsWith = componentList.autoComps.filter { comp ->
+//                            comp.split(" ").drop(1).any { word ->
+//                                word.startsWith(substring, ignoreCase = true)
+//                            } && !comp.startsWith(substring, ignoreCase = true)
+//                        }
+//
+//                        val contains = componentList.autoComps.filter { comp ->
+//                            comp.contains(substring, ignoreCase = true)
+//                                    && !comp.startsWith(substring, ignoreCase = true) &&
+//                                    !otherWordsStartsWith.contains(comp)
+//                        }
+//
+//                        val selected = componentList.autoComps.filter { comp ->
+//                            string.split(", ").filter { string.isNotBlank() }.contains(comp)
+//                        }
+//
+//                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+//                    } else {
+//                        suggestions.value = emptyList()
+//                    }
+//                },
+//                onOptionSelected = { suggestion, currentText ->
+//                    val updatedText = if (currentText.contains(", ")) {
+//                        currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", " }
+//                        else { suggestion + ", " }
+//
+//                    onComponentChange(updatedText)
+//                    suggestions.value = emptyList()
+//                },
+//                suggestions = suggestions.value,
+//                modifier = Modifier
+//                    .fillMaxWidth(),
+//                trailingIcon = {
+//                    if (componentList.componentString.length > 4) {
+//                        Icon(
+//                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+//                            contentDescription = "Clear",
+//                            modifier = Modifier
+//                                .clickable {
+//                                    onComponentChange("")
+//                                }
+//                                .alpha(0.66f)
+//                                .size(20.dp)
+//                                .focusable(false)
+//                        )
+//                    }
+//                },
+//                keyboardOptions = KeyboardOptions(
+//                    capitalization = KeyboardCapitalization.None,
+//                    keyboardType = KeyboardType.Text,
+//                    imeAction = ImeAction.Done,
+//                ),
+//                maxLines = 1,
+//                supportingText = {
+//                    Text(
+//                        text = "(Separate with comma + space)",
+//                        modifier = Modifier
+//                            .alpha(0.66f),
+//                    //    fontSize = 13.sp,
+//                        softWrap = false,
+//                        maxLines = 1,
+//                        overflow = TextOverflow.Clip,
+//                    )
+//                }
+//            )
+//        }
 
         // Notes //
         Column(
@@ -1599,18 +1796,18 @@ fun IndividualTin(
         onValueChange(itemUiState.itemDetails)
     }
 
-    LaunchedEffect(tempTinId) {
-        if (tempTinId == 1 && tinDetailsList.size == 1) {
-            onTinValueChange(tinDetails.copy(detailsExpanded = true))
-        }
-    }
-
     LaunchedEffect(tinDetailsList) {
         onTinValueChange(
             tinDetails.copy(
                 labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)
             )
         )
+    }
+
+    LaunchedEffect(tempTinId) {
+        if (tempTinId == 1 && tinDetailsList.size == 1) {
+            onTinValueChange(tinDetails.copy(detailsExpanded = true))
+        }
     }
 
 
@@ -2272,264 +2469,264 @@ fun CustomDatePickerDialog(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TinConverterDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit,
-    onAddConversion: (Int) -> Unit,
-    tinConversion: TinConversion,
-    onTinValueChange: (TinConversion) -> Unit,
-    isEditEntry: Boolean,
-    itemDetails: ItemDetails,
-    modifier: Modifier = Modifier
-) {
-    var amount by remember { mutableStateOf(tinConversion.amount) }
-    var unit by remember { mutableStateOf(tinConversion.unit) }
-    var expanded by remember { mutableStateOf(false) }
-    val unitList = listOf("oz", "lb", "grams")
-
-    BasicAlertDialog(
-        onDismissRequest = onDismiss,
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Tin Converter",
-                    modifier = Modifier
-                        .padding(bottom = 16.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    // converter inputs //
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Spacer(
-                            modifier = Modifier
-                                .weight(.5f)
-                        )
-                        val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
-                        TextField(
-                            value = amount,
-                            onValueChange = {
-                                if (it.matches(pattern)) {
-                                    amount = it
-                                    onTinValueChange(
-                                        tinConversion.copy(
-                                            amount = it
-                                        )
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1.8f),
-                            placeholder = {
-                                Text(
-                                    text = "Amount",
-                                    color = LocalContentColor.current.copy(alpha = 0.5f),
-                                    modifier = Modifier,
-                                    style = LocalTextStyle.current.copy(textAlign = TextAlign.End)
-                                )
-                            },
-                            visualTransformation = VisualTransformation.None,
-                            enabled = true,
-                            singleLine = true,
-                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                                focusedContainerColor = LocalCustomColors.current.textField,
-                                unfocusedContainerColor = LocalCustomColors.current.textField,
-                                disabledContainerColor = LocalCustomColors.current.textField,
-                            ),
-                            shape = MaterialTheme.shapes.extraSmall
-                        )
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = !expanded },
-                            modifier = Modifier
-                                .weight(2.2f)
-                        ) {
-                            TextField(
-                                value = unit,
-                                onValueChange = { },
-                                readOnly = true,
-                                modifier = Modifier
-                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                                },
-                                singleLine = true,
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = LocalCustomColors.current.textField,
-                                    unfocusedContainerColor = LocalCustomColors.current.textField,
-                                    disabledContainerColor = LocalCustomColors.current.textField,
-                                ),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                placeholder = {
-                                    Text(
-                                        text = "Unit",
-                                        color = LocalContentColor.current.copy(alpha = 0.5f)
-                                    )
-                                }
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
-                                modifier = Modifier,
-                                matchTextFieldWidth = true,
-                                containerColor = LocalCustomColors.current.textField,
-                            ) {
-                                unitList.forEach { option: String ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = option) },
-                                        onClick = {
-                                            expanded = false
-                                            unit = option
-                                            onTinValueChange(
-                                                tinConversion.copy(unit = option)
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(
-                            modifier = Modifier
-                                .weight(.5f)
-                        )
-                    }
-                    // buttons //
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val convertedQuantity = if (tinConversion.isConversionValid) {
-                            convertQuantity(
-                                tinConversion.amount.toDouble(),
-                                tinConversion.unit,
-                                tinConversion.ozRate,
-                                tinConversion.gramsRate
-                            )
-                        } else { 0 }
-
-                        // convert/change button //
-                        Column(
-                            modifier = Modifier,
-                            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "(${convertedQuantity} tins)",
-                                modifier = Modifier,
-                                fontSize = 12.sp,
-                                color =
-                                    if (tinConversion.isConversionValid)
-                                        LocalContentColor.current.copy(alpha = 0.5f)
-                                    else Color.Transparent
-                            )
-                            Button(
-                                onClick = {
-                                    onConfirm(convertedQuantity)
-                                },
-                                modifier = Modifier,
-                                enabled = tinConversion.isConversionValid,
-                            ) {
-                                Text(
-                                    text = if (isEditEntry) "Change" else "Convert",
-                                    modifier = Modifier
-                                )
-                            }
-                        }
-
-                        // add to button for edit entry //
-                        if (isEditEntry) {
-                            Column(
-                                modifier = Modifier,
-                                verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                val newAmount =
-                                    if (tinConversion.isConversionValid) {
-                                        itemDetails.quantityString.toInt() + convertedQuantity
-                                    } else { 0 }
-
-                                Text(
-                                    text = "(${newAmount} tins)",
-                                    modifier = Modifier,
-                                    fontSize = 12.sp,
-                                    color =
-                                        if (tinConversion.isConversionValid)
-                                            LocalContentColor.current.copy(alpha = 0.5f)
-                                        else Color.Transparent
-                                )
-                                Button(
-                                    onClick = {
-                                        onAddConversion(convertedQuantity)
-                                    },
-                                    modifier = Modifier,
-                                    enabled = tinConversion.isConversionValid,
-                                ) {
-                                    Text(
-                                        text = "Add To",
-                                        modifier = Modifier
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .height(4.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-fun convertQuantity(amount: Double, unit: String, ozRate: Double, gramsRate: Double): Int {
-    val convertedAmount = when (unit) {
-        "oz" -> amount / ozRate
-        "lb" -> (amount * 16) / ozRate
-        "grams" -> amount / gramsRate
-        else -> amount
-    }
-    return kotlin.math.round(convertedAmount).toInt()
-}
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun TinConverterDialog(
+//    onDismiss: () -> Unit,
+//    onConfirm: (Int) -> Unit,
+//    onAddConversion: (Int) -> Unit,
+//    tinConversion: TinConversion,
+//    onTinValueChange: (TinConversion) -> Unit,
+//    isEditEntry: Boolean,
+//    itemDetails: ItemDetails,
+//    modifier: Modifier = Modifier
+//) {
+//    var amount by remember { mutableStateOf(tinConversion.amount) }
+//    var unit by remember { mutableStateOf(tinConversion.unit) }
+//    var expanded by remember { mutableStateOf(false) }
+//    val unitList = listOf("oz", "lb", "grams")
+//
+//    BasicAlertDialog(
+//        onDismissRequest = onDismiss,
+//        modifier = modifier
+//            .fillMaxWidth()
+//    ) {
+//        Card(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .background(MaterialTheme.colorScheme.background)
+//                    .padding(16.dp),
+//                verticalArrangement = Arrangement.Top,
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                Text(
+//                    text = "Tin Converter",
+//                    modifier = Modifier
+//                        .padding(bottom = 16.dp),
+//                    fontSize = 18.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//                Column(
+//                    modifier = Modifier
+//                        .fillMaxWidth(),
+//                    verticalArrangement = Arrangement.spacedBy(4.dp),
+//                    horizontalAlignment = Alignment.Start
+//                ) {
+//                    // converter inputs //
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth(),
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                    ) {
+//                        Spacer(
+//                            modifier = Modifier
+//                                .weight(.5f)
+//                        )
+//                        val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
+//                        TextField(
+//                            value = amount,
+//                            onValueChange = {
+//                                if (it.matches(pattern)) {
+//                                    amount = it
+//                                    onTinValueChange(
+//                                        tinConversion.copy(
+//                                            amount = it
+//                                        )
+//                                    )
+//                                }
+//                            },
+//                            modifier = Modifier
+//                                .weight(1.8f),
+//                            placeholder = {
+//                                Text(
+//                                    text = "Amount",
+//                                    color = LocalContentColor.current.copy(alpha = 0.5f),
+//                                    modifier = Modifier,
+//                                    style = LocalTextStyle.current.copy(textAlign = TextAlign.End)
+//                                )
+//                            },
+//                            visualTransformation = VisualTransformation.None,
+//                            enabled = true,
+//                            singleLine = true,
+//                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+//                            keyboardOptions = KeyboardOptions(
+//                                keyboardType = KeyboardType.Number,
+//                                imeAction = ImeAction.Done
+//                            ),
+//                            colors = TextFieldDefaults.colors(
+//                                focusedIndicatorColor = Color.Transparent,
+//                                unfocusedIndicatorColor = Color.Transparent,
+//                                disabledIndicatorColor = Color.Transparent,
+//                                focusedContainerColor = LocalCustomColors.current.textField,
+//                                unfocusedContainerColor = LocalCustomColors.current.textField,
+//                                disabledContainerColor = LocalCustomColors.current.textField,
+//                            ),
+//                            shape = MaterialTheme.shapes.extraSmall
+//                        )
+//                        ExposedDropdownMenuBox(
+//                            expanded = expanded,
+//                            onExpandedChange = { expanded = !expanded },
+//                            modifier = Modifier
+//                                .weight(2.2f)
+//                        ) {
+//                            TextField(
+//                                value = unit,
+//                                onValueChange = { },
+//                                readOnly = true,
+//                                modifier = Modifier
+//                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+//                                trailingIcon = {
+//                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+//                                },
+//                                singleLine = true,
+//                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
+//                                colors = TextFieldDefaults.colors(
+//                                    focusedIndicatorColor = Color.Transparent,
+//                                    unfocusedIndicatorColor = Color.Transparent,
+//                                    disabledIndicatorColor = Color.Transparent,
+//                                    focusedContainerColor = LocalCustomColors.current.textField,
+//                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+//                                    disabledContainerColor = LocalCustomColors.current.textField,
+//                                ),
+//                                shape = MaterialTheme.shapes.extraSmall,
+//                                placeholder = {
+//                                    Text(
+//                                        text = "Unit",
+//                                        color = LocalContentColor.current.copy(alpha = 0.5f)
+//                                    )
+//                                }
+//                            )
+//                            ExposedDropdownMenu(
+//                                expanded = expanded,
+//                                onDismissRequest = { expanded = false },
+//                                modifier = Modifier,
+//                                matchTextFieldWidth = true,
+//                                containerColor = LocalCustomColors.current.textField,
+//                            ) {
+//                                unitList.forEach { option: String ->
+//                                    DropdownMenuItem(
+//                                        text = { Text(text = option) },
+//                                        onClick = {
+//                                            expanded = false
+//                                            unit = option
+//                                            onTinValueChange(
+//                                                tinConversion.copy(unit = option)
+//                                            )
+//                                        }
+//                                    )
+//                                }
+//                            }
+//                        }
+//                        Spacer(
+//                            modifier = Modifier
+//                                .weight(.5f)
+//                        )
+//                    }
+//                    // buttons //
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(0.dp),
+//                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        val convertedQuantity = if (tinConversion.isConversionValid) {
+//                            convertQuantity(
+//                                tinConversion.amount.toDouble(),
+//                                tinConversion.unit,
+//                                tinConversion.ozRate,
+//                                tinConversion.gramsRate
+//                            )
+//                        } else { 0 }
+//
+//                        // convert/change button //
+//                        Column(
+//                            modifier = Modifier,
+//                            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
+//                            horizontalAlignment = Alignment.CenterHorizontally
+//                        ) {
+//                            Text(
+//                                text = "(${convertedQuantity} tins)",
+//                                modifier = Modifier,
+//                                fontSize = 12.sp,
+//                                color =
+//                                    if (tinConversion.isConversionValid)
+//                                        LocalContentColor.current.copy(alpha = 0.5f)
+//                                    else Color.Transparent
+//                            )
+//                            Button(
+//                                onClick = {
+//                                    onConfirm(convertedQuantity)
+//                                },
+//                                modifier = Modifier,
+//                                enabled = tinConversion.isConversionValid,
+//                            ) {
+//                                Text(
+//                                    text = if (isEditEntry) "Change" else "Convert",
+//                                    modifier = Modifier
+//                                )
+//                            }
+//                        }
+//
+//                        // add to button for edit entry //
+//                        if (isEditEntry) {
+//                            Column(
+//                                modifier = Modifier,
+//                                verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
+//                                horizontalAlignment = Alignment.CenterHorizontally
+//                            ) {
+//                                val newAmount =
+//                                    if (tinConversion.isConversionValid) {
+//                                        itemDetails.quantityString.toInt() + convertedQuantity
+//                                    } else { 0 }
+//
+//                                Text(
+//                                    text = "(${newAmount} tins)",
+//                                    modifier = Modifier,
+//                                    fontSize = 12.sp,
+//                                    color =
+//                                        if (tinConversion.isConversionValid)
+//                                            LocalContentColor.current.copy(alpha = 0.5f)
+//                                        else Color.Transparent
+//                                )
+//                                Button(
+//                                    onClick = {
+//                                        onAddConversion(convertedQuantity)
+//                                    },
+//                                    modifier = Modifier,
+//                                    enabled = tinConversion.isConversionValid,
+//                                ) {
+//                                    Text(
+//                                        text = "Add To",
+//                                        modifier = Modifier
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    }
+//                    Spacer(
+//                        modifier = Modifier
+//                            .height(4.dp)
+//                    )
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//fun convertQuantity(amount: Double, unit: String, ozRate: Double, gramsRate: Double): Int {
+//    val convertedAmount = when (unit) {
+//        "oz" -> amount / ozRate
+//        "lb" -> (amount * 16) / ozRate
+//        "grams" -> amount / gramsRate
+//        else -> amount
+//    }
+//    return kotlin.math.round(convertedAmount).toInt()
+//}
 
 @Composable
 fun CustomCheckBox(
@@ -2618,7 +2815,7 @@ fun AutoCompleteText(
             enabled = enabled,
             trailingIcon = trailingIcon,
             singleLine = true,
-            placeholder = { if (placeholder != null) placeholder() },
+            placeholder = placeholder,
             keyboardOptions = keyboardOptions,
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
