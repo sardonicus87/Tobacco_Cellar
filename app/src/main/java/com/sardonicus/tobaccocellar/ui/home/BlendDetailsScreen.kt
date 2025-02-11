@@ -204,15 +204,8 @@ fun BlendDetailsBody(
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
                 .fillMaxWidth()
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    RoundedCornerShape(8.dp)
-                )
-                .background(
-                    color = LocalCustomColors.current.darkNeutral,
-                    shape = RoundedCornerShape(8.dp)
-                )
+                .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+                .background(color = LocalCustomColors.current.darkNeutral, shape = RoundedCornerShape(8.dp))
                 .padding(vertical = 8.dp, horizontal = 12.dp)
         ) {
             val productionStatus = if (blendDetails.items.inProduction) "in production" else "not in production"
