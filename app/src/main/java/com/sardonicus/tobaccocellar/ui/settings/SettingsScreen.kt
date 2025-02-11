@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -67,6 +69,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -126,6 +129,7 @@ fun SettingsScreen(
                     }
                 },
                 saveTheme = { viewmodel.saveThemeSetting(it) },
+                saveQuantity = { viewmodel.saveQuantityOption(it) },
                 preferencesRepo = viewmodel.preferencesRepo,
                 tinOzConversionRate = ozRate,
                 tinGramsConversionRate = gramsRate,
@@ -144,6 +148,7 @@ fun SettingsScreen(
 private fun SettingsBody(
     onDeleteAllClick: () -> Unit,
     saveTheme: (String) -> Unit,
+    saveQuantity: (String) -> Unit,
     tinOzConversionRate: Double,
     tinGramsConversionRate: Double,
     onSetTinConversionRates: (Double, Double) -> Unit,
@@ -154,6 +159,7 @@ private fun SettingsBody(
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
     var showTinRates by rememberSaveable { mutableStateOf(false) }
     var showChangelog by rememberSaveable { mutableStateOf(false) }
+    var showQuantityDialog by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(enabled = showChangelog) {
         showChangelog = false
@@ -184,37 +190,87 @@ private fun SettingsBody(
 
             DisplaySettings(
                 showThemeDialog = { showThemeDialog = it },
+                showQuantityDialog = { showQuantityDialog = it },
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
             )
-            Spacer(
-                modifier = Modifier
-                    .height(32.dp)
-            )
+//            Spacer(
+//                modifier = Modifier
+//                    .height(32.dp)
+//            )
 
             DatabaseSettings(
                 showTinRates = { showTinRates = it },
                 deleteAllConfirm = { deleteAllConfirm = it },
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    //    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
             )
 
-            Spacer(
-                modifier = Modifier
-                    .height(32.dp)
-            )
+//            Spacer(
+//                modifier = Modifier
+//                    .height(32.dp)
+//            )
 
             AboutSection(
                 showChangelog = { showChangelog = it },
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    //    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
             )
-            Spacer(
-                modifier = Modifier
-                    .height(32.dp)
-            )
+//            Spacer(
+//                modifier = Modifier
+//                    .height(32.dp)
+//            )
 
             // Popup settings dialogs
+            if (showThemeDialog) {
+                ThemeDialog(
+                    onThemeSelected = { newTheme ->
+                        saveTheme(newTheme)
+                    },
+                    preferencesRepo = preferencesRepo,
+                    onClose = { showThemeDialog = false }
+                )
+            }
+            if (showQuantityDialog) {
+                QuantityDialog(
+                    onDismiss = { showQuantityDialog = false },
+                    preferencesRepo = preferencesRepo,
+                    modifier = Modifier,
+                    onQuantityOption = { saveQuantity(it)}
+                )
+            }
             if (showTinRates) {
                 TinRatesDialog(
                     onDismiss = { showTinRates = false },
@@ -225,15 +281,6 @@ private fun SettingsBody(
                         showTinRates = false
                     },
                     modifier = Modifier
-                )
-            }
-            if (showThemeDialog) {
-                ThemeDialog(
-                    onThemeSelected = { newTheme ->
-                        saveTheme(newTheme)
-                    },
-                    preferencesRepo = preferencesRepo,
-                    onClose = { showThemeDialog = false }
                 )
             }
             if (deleteAllConfirm) {
@@ -254,6 +301,7 @@ private fun SettingsBody(
 @Composable
 fun DisplaySettings(
     showThemeDialog: (Boolean) -> Unit,
+    showQuantityDialog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -273,7 +321,18 @@ fun DisplaySettings(
             text = "Theme",
             modifier = Modifier
                 .clickable { showThemeDialog(true) }
-                .padding(vertical = 2.dp),
+                .padding(vertical = 2.dp)
+                .padding(start = 8.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "Cellar Quantity Display",
+            modifier = Modifier
+                .clickable { showQuantityDialog(true) }
+                .padding(vertical = 2.dp)
+                .padding(start = 8.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
@@ -301,10 +360,11 @@ fun DatabaseSettings(
             fontSize = 18.sp
         )
         Text(
-            text = "Change Tin Conversion rates",
+            text = "Change Tin Conversion Rates",
             modifier = Modifier
                 .clickable { showTinRates(true) }
-                .padding(vertical = 2.dp),
+                .padding(vertical = 2.dp)
+                .padding(start = 8.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
@@ -313,7 +373,8 @@ fun DatabaseSettings(
             text = "Clear Database",
             modifier = Modifier
                 .clickable { deleteAllConfirm(true) }
-                .padding(vertical = 2.dp),
+                .padding(vertical = 2.dp)
+                .padding(start = 8.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
@@ -387,64 +448,71 @@ fun AboutSection(
                 .padding(bottom = 4.dp),
             fontSize = 18.sp
         )
-        Text(
-            text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
-                    "Uses Apache Commons CSV for reading and writing CSV files.",
+        Column(
             modifier = Modifier
-                .padding(vertical = 2.dp),
-            fontSize = 14.sp,
-            softWrap = true,
-        )
-        Text(
-            text = contactString,
-            modifier = Modifier
-                .wrapContentWidth()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        val annotations =
-                            contactString.getStringAnnotations("Email", 0, contactString.length)
-                        annotations
-                            .firstOrNull()
-                            ?.let { annotation ->
-                                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse(annotation.item)
-                                }
-                                context.startActivity(
-                                    Intent.createChooser(
-                                        emailIntent,
-                                        "Send Email"
+                .padding(start = 8.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
+                        "Uses Apache Commons CSV for reading and writing CSV files.",
+                modifier = Modifier
+                    .padding(vertical = 2.dp),
+                fontSize = 14.sp,
+                softWrap = true,
+            )
+            Text(
+                text = contactString,
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            val annotations =
+                                contactString.getStringAnnotations("Email", 0, contactString.length)
+                            annotations
+                                .firstOrNull()
+                                ?.let { annotation ->
+                                    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                        data = Uri.parse(annotation.item)
+                                    }
+                                    context.startActivity(
+                                        Intent.createChooser(
+                                            emailIntent,
+                                            "Send Email"
+                                        )
                                     )
-                                )
-                            }
-                    }
-                )
-                .padding(top = 6.dp, bottom = 4.dp),
-            fontSize = 14.sp,
-            softWrap = true,
-        )
+                                }
+                        }
+                    )
+                    .padding(top = 6.dp, bottom = 4.dp),
+                fontSize = 14.sp,
+                softWrap = true,
+            )
 
-        Spacer(
-            modifier = Modifier
-                .height(14.dp)
-        )
-        Text(
-            text = versionInfo,
-            modifier = Modifier
-                .padding(top = 4.dp),
-            fontSize = 14.sp,
-            softWrap = true,
-        )
-        Text(
-            text = "Change Log ",
-            modifier = Modifier
-                .clickable { showChangelog(true) }
-                .padding(vertical = 1.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
+            Spacer(
+                modifier = Modifier
+                    .height(14.dp)
+            )
+            Text(
+                text = versionInfo,
+                modifier = Modifier
+                    .padding(top = 4.dp),
+                fontSize = 14.sp,
+                softWrap = true,
+            )
+            Text(
+                text = "Change Log ",
+                modifier = Modifier
+                    .clickable { showChangelog(true) }
+                    .padding(vertical = 1.dp),
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
@@ -694,6 +762,127 @@ fun ChangeLogEntryLayout(
 
 
 /** Dialogs **/
+@Composable
+fun ThemeDialog(
+    onThemeSelected: (String) -> Unit,
+    onClose: () -> Unit,
+    preferencesRepo: PreferencesRepo,
+    modifier: Modifier = Modifier
+) {
+    val currentTheme by preferencesRepo.themeSetting.collectAsState(initial = ThemeSetting.SYSTEM.value)
+
+    AlertDialog(
+        onDismissRequest = { onClose() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column (
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                listOf(ThemeSetting.LIGHT, ThemeSetting.DARK, ThemeSetting.SYSTEM).forEach { theme ->
+                    Row(
+                        modifier = Modifier
+                            .padding(bottom = 0.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
+                    ) {
+                        RadioButton(
+                            selected = currentTheme == theme.value,
+                            onClick = { onThemeSelected(theme.value) },
+                            modifier = Modifier
+                                .size(36.dp)
+                        )
+                        Text(
+                            text = theme.value,
+                            modifier = Modifier
+                                .clickable { onThemeSelected(theme.value) },
+                            fontSize = 15.sp,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onClose() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+    )
+}
+
+@Composable
+fun QuantityDialog(
+    onDismiss: () -> Unit,
+    onQuantityOption: (String) -> Unit,
+    preferencesRepo: PreferencesRepo,
+    modifier: Modifier = Modifier
+) {
+    val currentQuantity by preferencesRepo.quantityOption.collectAsState(initial = QuantityOption.TINS)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column (
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                Text(
+                    text = "Displayed quantities for ounces and grams are based on the summed " +
+                            "quantities of tins. If no tins are present, the \"No. of Tins\" " +
+                            "value will be displayed instead.",
+                    modifier = Modifier
+                        .padding(bottom = 12.dp),
+                    fontSize = 14.sp,
+                    color = LocalContentColor.current.copy(alpha = 0.75f)
+                )
+                listOf(QuantityOption.TINS, QuantityOption.OUNCES, QuantityOption.GRAMS).forEach {
+                    Row(
+                        modifier = Modifier
+                            .padding(bottom = 0.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
+                    ) {
+                        RadioButton(
+                            selected = currentQuantity == it,
+                            onClick = { onQuantityOption(it.value) },
+                            modifier = Modifier
+                                .size(36.dp)
+                        )
+                        Text(
+                            text = it.value,
+                            modifier = Modifier
+                                .clickable { onQuantityOption(it.value) },
+                            fontSize = 15.sp,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TinRatesDialog(
@@ -851,58 +1040,6 @@ fun TinRatesDialog(
             }
         }
     }
-}
-
-@Composable
-fun ThemeDialog(
-    onThemeSelected: (String) -> Unit,
-    onClose: () -> Unit,
-    preferencesRepo: PreferencesRepo,
-    modifier: Modifier = Modifier
-) {
-    val currentTheme by preferencesRepo.themeSetting.collectAsState(initial = ThemeSetting.SYSTEM.value)
-
-    AlertDialog(
-        onDismissRequest = { onClose() },
-        modifier = modifier
-            .padding(0.dp),
-        text = {
-            Column (
-                modifier = modifier
-                    .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy((-2).dp)
-            ) {
-                listOf(ThemeSetting.LIGHT, ThemeSetting.DARK, ThemeSetting.SYSTEM).forEach { theme ->
-                    Row(
-                        modifier = Modifier
-                            .padding(0.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = currentTheme == theme.value,
-                            onClick = { onThemeSelected(theme.value) }
-                        )
-                        Text(
-                            text = theme.value,
-                            modifier = Modifier
-                                .clickable { onThemeSelected(theme.value) }
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onClose() },
-                modifier = Modifier
-                    .padding(0.dp)
-            ) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-    )
 }
 
 @Composable
