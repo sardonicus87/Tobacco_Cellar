@@ -2,13 +2,64 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 
 val changeLogEntries = listOf(
-
     ChangeLogEntryData(
         versionNumber = "",
         buildDate = "",
         changes = listOf(),
         improvements = listOf(),
         bugFixes = listOf(),
+    ),
+
+    ChangeLogEntryData(
+        versionNumber = "2.2.0",
+        buildDate = "11 Feb, 2025",
+        changes = listOf(
+            "Removed \"Tin Converter\" from add/edit entry screens and moved the \"Cut\" and \"" +
+                    "Components\" fields to the first tab.",
+            "Added an option in the settings to change the quantity displayed on the Cellar screen."
+        ),
+        improvements = listOf(
+            "Expanded Help/FAQ with a new section on editing entries.",
+            "Added \"tin sync\" to batch edit options.",
+            "Added loading indicator to batch edit screen as well as buttons to \"Select All\" " +
+                    "and \"Clear Selections\".",
+            "Settings screen UI improvements."
+        ),
+        bugFixes = listOf(
+            "Components field autocomplete wasn't automatically putting a comma + space when " +
+                    "selecting a suggestion when the field was empty.",
+            "Fixed a bug when adding tins in the add/edit screens where if a tin were added when " +
+                    "there were none, tbe first tin entry should have started in expanded state."
+        ),
+    ),
+    ChangeLogEntryData(
+        versionNumber = "2.1.0",
+        buildDate = "8 Feb, 2025",
+        changes = listOf(
+            "Added a batch edit option for mass editing some fields."
+        ),
+        improvements = listOf(
+            "Hide empty fields in entry details screen."
+        ),
+        bugFixes = listOf(
+            "Fixed CSV Import date mapping wasn't working at all. Date's might still not import, " +
+                    "but now they should now at least attempt to import.",
+            "Fixed CSV Import bug where new records would have the \"Sync Tins?\" option set even" +
+                    "when not selecting to collate tins.",
+            "Fixed incorrect counting of number of updates in CSV import when tins or components " +
+                    "were added.",
+            "Fixed \"Add\" button highlight in bottom bar sometimes getting stuck.",
+            "Fixed error in Entry Details where type label was the blend type instead of \"Type: \"."
+        ),
+    ),
+    ChangeLogEntryData(
+        versionNumber = "2.0.1",
+        buildDate = "4 Feb, 2025",
+        changes = listOf(),
+        improvements = listOf(),
+        bugFixes = listOf(
+            "Fixed app startup crash introduced in version 2.0.0."
+        ),
     ),
     ChangeLogEntryData(
         versionNumber = "2.0.0",
