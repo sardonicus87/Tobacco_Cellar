@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
+import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
@@ -26,6 +27,7 @@ class PreferencesRepo(
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
+        val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -49,6 +51,31 @@ class PreferencesRepo(
     suspend fun saveViewPreference(isTableView: Boolean) {
         dataStore.edit { preferences ->
             preferences[IS_TABLE_VIEW] = isTableView
+        }
+    }
+
+    // setting quantity displayed options //
+    val quantityOption: Flow<QuantityOption> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading quantity preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            val savedValue = preferences[QUANTITY_OPTION] ?: QuantityOption.TINS.value
+            when (savedValue) {
+                QuantityOption.TINS.value -> QuantityOption.TINS
+                QuantityOption.OUNCES.value -> QuantityOption.OUNCES
+                QuantityOption.GRAMS.value -> QuantityOption.GRAMS
+                else -> QuantityOption.TINS
+            }
+        }
+
+    suspend fun saveQuantityPreference(option: String) {
+        dataStore.edit { preferences ->
+            preferences[QUANTITY_OPTION] = option
         }
     }
 

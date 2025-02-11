@@ -223,9 +223,9 @@ fun HomeScreen(
                     isLoading = homeUiState.isLoading,
                     isTableView = isTableView,
                     items = homeUiState.items,
+                    formattedQuantity = homeUiState.formattedQuantities,
                     updateScrollPosition = filterViewModel::updateScrollPosition,
                     currentPosition = currentPosition,
-                    blendSearchText = blendSearchText,
                     filterViewModel = filterViewModel,
                     onDetailsClick = navigateToBlendDetails,
                     onEditClick = navigateToEditEntry,
@@ -505,9 +505,9 @@ private fun HomeBody(
     isLoading: Boolean,
     isTableView: Boolean,
     items: List<ItemsComponentsAndTins>,
+    formattedQuantity: Map<Int, String>,
     updateScrollPosition: (Int, Int) -> Unit,
     currentPosition: Map<Int, Int>,
-    blendSearchText: String,
     filterViewModel: FilterViewModel,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
@@ -588,9 +588,9 @@ private fun HomeBody(
                 if (isTableView) {
                     TableViewMode(
                         itemsList = items,
+                        formattedQuantity = formattedQuantity,
                         updateScrollPosition = updateScrollPosition,
                         currentPosition = currentPosition,
-                        blendSearchText = blendSearchText,
                         filterViewModel = filterViewModel,
                         blendSearchFocused = blendSearchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
@@ -606,9 +606,9 @@ private fun HomeBody(
                 } else {
                     ListViewMode(
                         itemsList = items,
+                        formattedQuantity = formattedQuantity,
                         updateScrollPosition = updateScrollPosition,
                         currentPosition = currentPosition,
-                        blendSearchText = blendSearchText,
                         filterViewModel = filterViewModel,
                         blendSearchFocused = blendSearchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
@@ -737,9 +737,9 @@ fun NoteDialog(
 @Composable
 fun ListViewMode(
     itemsList: List<ItemsComponentsAndTins>,
+    formattedQuantity: Map<Int, String>,
     updateScrollPosition: (Int, Int) -> Unit,
     currentPosition: Map<Int, Int>,
-    blendSearchText: String,
     filterViewModel: FilterViewModel,
     blendSearchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
@@ -775,6 +775,8 @@ fun ListViewMode(
 
                 CellarListItem(
                     item = item,
+                    formattedQuantity = formattedQuantity[item.items.id] ?: "--",
+                    filterViewModel = filterViewModel,
                     onDetailsClick = { onDetailsClick(item.items) },
                     onEditClick = { onEditClick(item.items) },
                     onNoteClick = { onNoteClick(item.items) },
@@ -824,32 +826,6 @@ fun ListViewMode(
         val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
         // Return Positions //
-//        LaunchedEffect(blendSearchText) {
-//            if (blendSearchText.isEmpty()) {
-//                val index = currentPosition[0]
-//                val offset = currentPosition[1]
-//
-//                if (index != null && offset != null) {
-//                    delay(25)
-//                    withFrameNanos {
-//                        coroutineScope.launch {
-//                            columnState.scrollToItem(index, offset)
-//                        }
-//                    }
-//                    filterViewModel.resetScroll()
-//                }
-//            }
-
-//            if (blendSearchText.isNotEmpty()) {
-//                val layoutInfo = columnState.layoutInfo
-//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-//
-//                if (firstVisibleItem != null) {
-//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-//                }
-//            }
-//        }
-
         LaunchedEffect(searchCleared) {
             if (searchCleared) {
                 delay(50)
@@ -919,18 +895,6 @@ fun ListViewMode(
                 }
             }
         }
-
-//        LaunchedEffect(menuItemId) {
-//            if (isMenuShown) {
-//                val layoutInfo = columnState.layoutInfo
-//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-//
-//                if (firstVisibleItem != null) {
-//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-//                    filterViewModel.returnScroll()
-//                }
-//            }
-//        }
     }
 }
 
@@ -939,6 +903,8 @@ fun ListViewMode(
 private fun CellarListItem(
     modifier: Modifier = Modifier,
     item: ItemsComponentsAndTins,
+    formattedQuantity: String,
+    filterViewModel: FilterViewModel,
     onMenuDismiss: () -> Unit,
     showMenu: Boolean,
     onDetailsClick: (Items) -> Unit,
@@ -1066,7 +1032,8 @@ private fun CellarListItem(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "x" + item.items.quantity,
+                //    text = "x" + item.items.quantity,
+                    text = formattedQuantity,
                     modifier = Modifier,
                     style =
                     if (item.items.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
@@ -1098,6 +1065,7 @@ private fun CellarListItem(
                 ) {
                     TextButton(
                         onClick = {
+                            filterViewModel.getPositionTrigger()
                             onEditClick(item.items)
                             onMenuDismiss()
                         },
@@ -1159,6 +1127,7 @@ private fun CellarListItem(
 @Composable
 fun TableViewMode(
     itemsList: List<ItemsComponentsAndTins>,
+    formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     blendSearchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
@@ -1166,7 +1135,6 @@ fun TableViewMode(
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
-    blendSearchText: String,
     updateScrollPosition: (Int, Int) -> Unit,
     currentPosition: Map<Int, Int>,
     modifier: Modifier = Modifier
@@ -1177,12 +1145,12 @@ fun TableViewMode(
         108.dp, // Type
         64.dp, // Fav/Dis
         64.dp, // Note
-        58.dp // Tins
+        84.dp // Tins
     )
 
     TableLayout(
         items = itemsList,
-        blendSearchText = blendSearchText,
+        formattedQuantity = formattedQuantity,
         updateScrollPosition = updateScrollPosition,
         currentPosition = currentPosition,
         filterViewModel = filterViewModel,
@@ -1202,7 +1170,7 @@ fun TableViewMode(
 @Composable
 fun TableLayout(
     items: List<ItemsComponentsAndTins>,
-    blendSearchText: String,
+    formattedQuantity: Map<Int, String>,
     updateScrollPosition: (Int, Int) -> Unit,
     currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
@@ -1227,7 +1195,7 @@ fun TableLayout(
             }
         },
         { item: Items -> item.notes }, // 4
-        { item: Items -> item.quantity }, // 5
+        { item: Items -> item.id }, // 5
     )
     val sortedItems = when (sorting.columnIndex) {
         0 -> items.sortedBy { it.items.brand }
@@ -1253,6 +1221,7 @@ fun TableLayout(
                     modifier = Modifier
                         .width(columnMinWidths[columnIndex])
                         .fillMaxHeight()
+                        .align(Alignment.CenterVertically)
                         .padding(0.dp)
                         .background(MaterialTheme.colorScheme.primaryContainer)
                         .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
@@ -1263,7 +1232,7 @@ fun TableLayout(
                         2 -> Alignment.Center // type
                         3 -> Alignment.Center // fav/dis
                         4 -> Alignment.Center // notes
-                        5 -> Alignment.CenterEnd // quantity
+                        5 -> Alignment.Center // quantity
                         else -> Alignment.CenterStart
                     }
                     val headerText = when (columnIndex) {
@@ -1287,7 +1256,9 @@ fun TableLayout(
                                 sorting = sorting,
                                 modifier = Modifier
                                     .padding(0.dp)
+                                    .matchParentSize()
                                     .align(alignment),
+                                contentAlignment = alignment
                             )
                         }
                         else -> {
@@ -1302,6 +1273,7 @@ fun TableLayout(
                                     painterResource(id = R.drawable.heart_filled_24) else null,
                                 icon2 = if (columnIndex == 3)
                                     painterResource(id = R.drawable.question_mark_24) else null,
+                                contentAlignment = alignment
                             )
                         }
                     }
@@ -1445,8 +1417,10 @@ fun TableLayout(
                                     }
                                 } // notes
                                 5 -> { // quantity
+                                    val formattedQty = formattedQuantity[item.items.id] ?: "--"
                                     TableCell(
-                                        value = "x$cellValue",
+                                    //    value = "x$cellValue",
+                                        value = formattedQty,
                                         modifier = Modifier
                                             .align(alignment),
                                         contentAlignment = alignment,
@@ -1540,32 +1514,6 @@ fun TableLayout(
             columnState.scrollToItem(0)
         }
 
-//        LaunchedEffect(blendSearchText) {
-//            if (blendSearchText.isEmpty()) {
-//                val index = currentPosition[0]
-//                val offset = currentPosition[1]
-//
-//                if (index != null && offset != null) {
-//                    delay(25)
-//                    withFrameNanos {
-//                        coroutineScope.launch {
-//                            columnState.scrollToItem(index, offset)
-//                        }
-//                    }
-//                    filterViewModel.resetScroll()
-//                }
-//            }
-//
-//            if (blendSearchText.isNotEmpty()) {
-//                val layoutInfo = columnState.layoutInfo
-//                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-//
-//                if (firstVisibleItem != null) {
-//                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-//                }
-//            }
-//        }
-
         // Update positions //
         LaunchedEffect(getPosition) {
             if (getPosition > 0) {
@@ -1588,7 +1536,8 @@ fun HeaderCell(
     icon2: Painter? = null,
     sorting: Sorting,
     primarySort: Boolean,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    contentAlignment: Alignment = Alignment.Center,
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -1602,7 +1551,7 @@ fun HeaderCell(
                 }
             )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
-        contentAlignment = Alignment.Center
+        contentAlignment = contentAlignment
     ) {
         if (primarySort) {
             Row(

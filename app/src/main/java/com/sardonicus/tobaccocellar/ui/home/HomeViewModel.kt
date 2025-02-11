@@ -12,7 +12,9 @@ import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,10 +22,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.math.round
 
 class HomeViewModel(
     private val itemsRepository: ItemsRepository,
@@ -71,7 +75,8 @@ class HomeViewModel(
             filterViewModel.selectedExcludeDislikes,
             filterViewModel.blendSearchValue,
             itemsRepository.getEverythingStream(),
-            preferencesRepo.isTableView
+            preferencesRepo.isTableView,
+            preferencesRepo.quantityOption
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
@@ -88,6 +93,7 @@ class HomeViewModel(
             val blendSearchValue = values[12] as String
             val allItems = values[13] as List<ItemsComponentsAndTins>
             val isTableView = values[14] as Boolean
+            val quantityOption = values[15] as QuantityOption
 
             val filteredItems =
                 if (blendSearchValue.isBlank()) {
@@ -110,9 +116,20 @@ class HomeViewModel(
                         items.items.blend.contains(blendSearchValue, ignoreCase = true)
                     }
                 }
+
+            val formattedQuantities = filteredItems.associate {
+                val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
+                val totalQuantity = calculateTotalQuantity(it, quantityOption)
+                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, tins)
+                it.items.id to formattedQuantity
+            }
+
+
             HomeUiState(
                 items = filteredItems,
                 isTableView = isTableView,
+                quantityDisplay = quantityOption,
+                formattedQuantities = formattedQuantities,
                 isLoading = false
             )
         }
@@ -167,6 +184,81 @@ class HomeViewModel(
             preferencesRepo.saveTableSortingPreferences(
                 newSorting.columnIndex, newSorting.sortAscending
             )
+        }
+    }
+
+
+    /** helper functions for quantity display **/
+    private suspend fun calculateTotalQuantity(
+        items: ItemsComponentsAndTins,
+        quantityOption: QuantityOption
+    ): Double {
+        val tins = itemsRepository.getTinsForItemStream(items.items.id).first()
+        return if (tins.isEmpty()) {
+            items.items.quantity.toDouble()
+        } else {
+            when (quantityOption) {
+                QuantityOption.TINS -> items.items.quantity.toDouble()
+                QuantityOption.OUNCES -> calculateOunces(tins)
+                QuantityOption.GRAMS -> calculateGrams(tins)
+                else -> 0.0
+            }
+        }
+    }
+
+    private fun calculateOunces(tins: List<Tins>): Double {
+        return tins.sumOf {
+            when (it.unit) {
+                "oz" -> it.tinQuantity.toDouble()
+                "lbs" -> it.tinQuantity.toDouble() * 16
+                "grams" -> it.tinQuantity.toDouble() / 28.3495
+                else -> 0.0
+            }
+        }
+    }
+
+    private fun calculateGrams(tins: List<Tins>): Double {
+        return tins.sumOf {
+            when (it.unit) {
+                "oz" -> it.tinQuantity.toDouble() * 28.3495
+                "lbs" -> it.tinQuantity.toDouble() * 453.592
+                "grams" -> it.tinQuantity.toDouble()
+                else -> 0.0
+            }
+        }
+    }
+
+    private fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>): String {
+        return when (quantityOption) {
+            QuantityOption.TINS -> "x${quantity.toInt()}"
+            QuantityOption.OUNCES -> {
+                if (tins.isNotEmpty()) {
+                    if (quantity >= 16) {
+                        val pounds = quantity / 16
+                        formatDecimal(pounds) + " lbs"
+                    } else {
+                        formatDecimal(quantity) + " oz"
+                    }
+                } else {
+                    "(x${quantity.toInt()})"
+                } }
+            QuantityOption.GRAMS -> {
+                if (tins.isNotEmpty()) {
+                    formatDecimal(quantity) + " g"
+                } else {
+                    "(x${quantity.toInt()})"
+                }
+            }
+            else -> { "--" }
+        }
+    }
+
+    private fun formatDecimal(number: Double): String {
+        val rounded = round(number * 10) / 10
+        return if (rounded == rounded.toInt().toDouble()) {
+            rounded.toInt().toString()
+        } else {
+            rounded.toString()
         }
     }
 
@@ -226,6 +318,8 @@ class HomeViewModel(
 data class HomeUiState(
     val items: List<ItemsComponentsAndTins> = listOf(),
     val isTableView: Boolean = false,
+    val quantityDisplay: QuantityOption = QuantityOption.TINS,
+    val formattedQuantities: Map<Int, String> = mapOf(),
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
     val toggleIcon: Int =
