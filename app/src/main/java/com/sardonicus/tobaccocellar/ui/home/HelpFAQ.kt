@@ -155,6 +155,10 @@ private fun HelpBody(
                 content = { AddingItems() }
             )
             HelpSection(
+                title = "Editing Items",
+                content = { EditingItems() }
+            )
+            HelpSection(
                 title = "Adding Tins",
                 content = { AddingTins() }
             )
@@ -544,25 +548,24 @@ private fun AddingItems(
             text = "Most fields that are left blank will remain blank when clicking save, however " +
                     "leaving the \"No. of Tins\" field blank will presume the quantity to be 1." +
                     "Next to this field, there are \"increase/decrease\" buttons for quickly " +
-                    "updating the quantity, followed by a button to open a \"Tin Converter\". " +
-                    "The maximum quantity of tins is limited to 99.",
+                    "updating the number of tins.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
+//        Text(
+//            text = "The purpose of the \"Tin Converter\" is to convert quantity amounts of " +
+//                    "ounces, pounds, or grams into the \"No. of Tins\". The default conversion " +
+//                    "rate is 1 Tin = either 1.75 oz or 50 grams. The conversion rate can be " +
+//                    "changed in the settings screen, (oz and grams rates are independent of one another).",
+//            modifier = Modifier
+//                .padding(horizontal = 16.dp, vertical = 0.dp),
+//            softWrap = true,
+//        )
         Text(
-            text = "The purpose of the \"Tin Converter\" is to convert quantity amounts of " +
-                    "ounces, pounds, or grams into the \"No. of Tins\". The default conversion " +
-                    "rate is 1 Tin = either 1.75 oz or 50 grams. The conversion rate can be " +
-                    "changed in the settings screen, (oz and grams rates are independent of one another).",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The \"Sync?\" check box allows you to synchronize the No. of Tins with the " +
-                    "total quantities of individual tins/containers. The total tins are calculated"
-                    + "based on the aforementioned conversion rate.",
+            text = "The \"Sync?\" check box allows you to synchronize the No. of Tins field with " +
+                    "the total quantities of individual tins/containers. The total tins are " +
+                    "calculated based on the aforementioned conversion rate.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -579,6 +582,44 @@ private fun AddingItems(
                     "the \"Import CSV\" option in the top app bar on the \"Cellar\" screen. " +
                     "For more information and help on adding items by CSV, please see the \"Help\" " +
                     "button at the top of the CSV Import Wizard screen.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+    }
+}
+
+@Composable
+private fun EditingItems(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+    ) {
+        Text(
+            text = "Items can be edited by long-pressing the entry in the cellar screen, by " +
+                    "using the bulk edit option in the top bar overflow menu, or through a CSV " +
+                    "import and selecting the \"Update\" or \"Overwrite\" option (see help file " +
+                    "on CSV Import for more information).",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The edit entry screen is the same as the add entry screen and functions the " +
+                    "same way, just with the existing data pre-loaded in all of the fields.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Batch editing is limited to a select few fields. The screen contains two " +
+                    "tabs, one to select items to edit and another to make the edits. Select the " +
+                    "checkbox only for the fields you wish to edit. Selecting a field and leaving " +
+                    "it blank will result in erasing that field for the selected entries.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
