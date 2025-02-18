@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -76,7 +77,13 @@ class HomeViewModel(
             filterViewModel.blendSearchValue,
             itemsRepository.getEverythingStream(),
             preferencesRepo.isTableView,
-            preferencesRepo.quantityOption
+            preferencesRepo.quantityOption,
+            filterViewModel.selectedComponent,
+            filterViewModel.compMatchAll,
+            filterViewModel.selectedSubgenre,
+            filterViewModel.selectedCut,
+            filterViewModel.selectedProduction,
+            filterViewModel.selectedOutOfProduction
         ) { values ->
             val brands = values[0] as List<String>
             val types = values[1] as List<String>
@@ -94,13 +101,34 @@ class HomeViewModel(
             val allItems = values[13] as List<ItemsComponentsAndTins>
             val isTableView = values[14] as Boolean
             val quantityOption = values[15] as QuantityOption
+            val components = values[16] as List<String>
+            val matchAll = values[17] as Boolean
+            val subgenres = values[18] as List<String>
+            val cuts = values[19] as List<String>
+            val production = values[20] as Boolean
+            val outOfProduction = values[21] as Boolean
 
             val filteredItems =
                 if (blendSearchValue.isBlank()) {
                     allItems.filter { items ->
+//                        val itemComponentNames = items.components.map { it.componentName }
+//                        val hasComponent = components.isEmpty() || itemComponentNames.any { components.contains(it) }
+
+//                        val itemComponentNames = items.components.map { it.componentName }
+//                        val hasComponent = when {
+//                            components.contains("(None Assigned)") -> itemComponentNames.isEmpty()
+//                            components.isEmpty() -> true
+//                            else -> itemComponentNames.any { components.contains(it) }
+//                        }
+
+                        val componentMatching = when (matchAll) {
+                            true -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
+                            false -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
+                        }
+
+                        /** ( [filter not selected side] || [filter selected side] ) */
                         (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                                (types.isEmpty() || types.contains(items.items.type)) &&
-                                (!unassigned || items.items.type.isBlank()) &&
+                                ((types.isEmpty() && !unassigned) || (types.contains(items.items.type) || (unassigned && items.items.type.isBlank()))) &&
                                 (!favorites || items.items.favorite) &&
                                 (!dislikeds || items.items.disliked) &&
                                 (!neutral || (!items.items.favorite && !items.items.disliked)) &&
@@ -109,7 +137,12 @@ class HomeViewModel(
                                 (!outOfStock || items.items.quantity == 0) &&
                                 (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
                                 (!excludedLikes || !items.items.favorite) &&
-                                (!excludedDislikes || !items.items.disliked)
+                                (!excludedDislikes || !items.items.disliked) &&
+                                componentMatching &&
+                                ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
+                                ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
+                                (!production || items.items.inProduction) &&
+                                (!outOfProduction || !items.items.inProduction)
                     }
                 } else {
                     allItems.filter { items ->
@@ -189,13 +222,15 @@ class HomeViewModel(
 
 
     /** helper functions for quantity display **/
-    private suspend fun calculateTotalQuantity(
-        items: ItemsComponentsAndTins,
-        quantityOption: QuantityOption
-    ): Double {
+    private suspend fun calculateTotalQuantity(items: ItemsComponentsAndTins, quantityOption: QuantityOption): Double {
         val tins = itemsRepository.getTinsForItemStream(items.items.id).first()
         return if (tins.isEmpty()) {
-            items.items.quantity.toDouble()
+            when (quantityOption) {
+                QuantityOption.TINS -> items.items.quantity.toDouble()
+                QuantityOption.OUNCES -> items.items.quantity.toDouble()
+                QuantityOption.GRAMS -> items.items.quantity.toDouble()
+                else -> 0.0
+            }
         } else {
             when (quantityOption) {
                 QuantityOption.TINS -> items.items.quantity.toDouble()
@@ -240,13 +275,14 @@ class HomeViewModel(
                         formatDecimal(quantity) + " oz"
                     }
                 } else {
-                    "(x${quantity.toInt()})"
-                } }
+                    "x${quantity.toInt()}"
+                }
+            }
             QuantityOption.GRAMS -> {
                 if (tins.isNotEmpty()) {
                     formatDecimal(quantity) + " g"
                 } else {
-                    "(x${quantity.toInt()})"
+                    "x${quantity.toInt()}"
                 }
             }
             else -> { "--" }
@@ -254,11 +290,16 @@ class HomeViewModel(
     }
 
     private fun formatDecimal(number: Double): String {
-        val rounded = round(number * 10) / 10
-        return if (rounded == rounded.toInt().toDouble()) {
-            rounded.toInt().toString()
-        } else {
-            rounded.toString()
+        val rounded = round(number * 100) / 100
+        val formatted = String.format("%.2f", rounded)
+        return when {
+            formatted.endsWith("00") -> {
+                    formatted.substringBefore(".")
+            }
+            formatted.endsWith("0") -> {
+                    formatted.substring(0, formatted.length - 1)
+            }
+            else -> formatted
         }
     }
 
