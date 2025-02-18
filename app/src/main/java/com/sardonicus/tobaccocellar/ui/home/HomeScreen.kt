@@ -843,12 +843,12 @@ fun ListViewMode(
             }
         }
 
-        LaunchedEffect(shouldScrollUp){
-            if (shouldScrollUp) {
-                columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
-            }
-        }
+//        LaunchedEffect(shouldScrollUp){
+//            if (shouldScrollUp) {
+//                columnState.scrollToItem(0)
+//                filterViewModel.resetScroll()
+//            }
+//        }
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
@@ -868,7 +868,7 @@ fun ListViewMode(
         }
 
         LaunchedEffect(itemsList) {
-            delay(50)
+            delay(25)
             if (shouldReturn && !searchPerformed && !shouldScrollUp) {
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
@@ -881,6 +881,10 @@ fun ListViewMode(
                     }
                     filterViewModel.resetScroll()
                 }
+            }
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
             }
         }
 
@@ -1031,19 +1035,22 @@ private fun CellarListItem(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.End
             ) {
+                val outOfStock = if (
+                    formattedQuantity == "0 oz" ||
+                    formattedQuantity == "x0" ||
+                    formattedQuantity == "0 g"
+                ) true else false
+
                 Text(
-                //    text = "x" + item.items.quantity,
                     text = formattedQuantity,
                     modifier = Modifier,
                     style =
-                    if (item.items.quantity == 0) (MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.error,
-                        textDecoration = TextDecoration.None)
-                            )
-                    else (MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        textDecoration = TextDecoration.None)
-                            ),
+                        if (outOfStock) (MaterialTheme.typography.titleMedium.copy(
+                            color = MaterialTheme.colorScheme.error,
+                            textDecoration = TextDecoration.None))
+                        else (MaterialTheme.typography.titleMedium.copy(
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            textDecoration = TextDecoration.None)),
                     fontWeight = FontWeight.Normal,
                     fontSize = 16.sp
                 )
@@ -1145,7 +1152,7 @@ fun TableViewMode(
         108.dp, // Type
         64.dp, // Fav/Dis
         64.dp, // Note
-        84.dp // Tins
+        98.dp // Tins
     )
 
     TableLayout(
@@ -1314,7 +1321,7 @@ fun TableLayout(
                                 2 -> Alignment.Center // type
                                 3 -> Alignment.Center // fav/dis
                                 4 -> Alignment.Center // notes
-                                5 -> Alignment.CenterEnd // quantity
+                                5 -> Alignment.Center // quantity
                                 else -> Alignment.CenterStart
                             }
                             when (columnIndex) {
@@ -1418,12 +1425,20 @@ fun TableLayout(
                                 } // notes
                                 5 -> { // quantity
                                     val formattedQty = formattedQuantity[item.items.id] ?: "--"
+                                    val outOfStock = if (
+                                        formattedQuantity[item.items.id] == "0 oz" ||
+                                        formattedQuantity[item.items.id] == "x0" ||
+                                        formattedQuantity[item.items.id] == "0 g"
+                                    ) true else false
+
                                     TableCell(
                                     //    value = "x$cellValue",
                                         value = formattedQty,
                                         modifier = Modifier
                                             .align(alignment),
                                         contentAlignment = alignment,
+                                        color = if (outOfStock) MaterialTheme.colorScheme.error
+                                                else MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                 } // quantity
                                 else -> { // [2] type
@@ -1433,7 +1448,7 @@ fun TableLayout(
                                             .align(alignment),
                                         contentAlignment = alignment,
                                     )
-                                }
+                                } // [2] type
                             }
                         }
                     }
@@ -1451,12 +1466,12 @@ fun TableLayout(
         val getPosition by filterViewModel.getPosition.collectAsState()
 
         // Return Positions //
-        LaunchedEffect(shouldScrollUp){
-            if (shouldScrollUp) {
-                columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
-            }
-        }
+//        LaunchedEffect(shouldScrollUp){
+//            if (shouldScrollUp) {
+//                columnState.scrollToItem(0)
+//                filterViewModel.resetScroll()
+//            }
+//        }
 
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
@@ -1493,8 +1508,7 @@ fun TableLayout(
         }
 
         LaunchedEffect(sortedItems) {
-            delay(50)
-
+            delay(25)
             if (shouldReturn && !searchPerformed && !shouldScrollUp) {
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
@@ -1507,6 +1521,10 @@ fun TableLayout(
                     }
                     filterViewModel.resetScroll()
                 }
+            }
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
             }
         }
 
@@ -1611,6 +1629,7 @@ fun TableCell(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Transparent,
     contentAlignment: Alignment = Alignment.Center,
+    color: Color = MaterialTheme.colorScheme.onSecondaryContainer,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
@@ -1643,7 +1662,7 @@ fun TableCell(
         }
         Text(
             text = text,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            color = color,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
