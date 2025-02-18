@@ -172,6 +172,10 @@ interface ItemsDao {
     @Query("SELECT DISTINCT container FROM tins ORDER BY container ASC")
     fun getAllTinContainers(): Flow<List<String>>
 
+    // Get all subgenres flow //
+    @Query("SELECT DISTINCT subGenre FROM items ORDER BY subGenre ASC")
+    fun getAllSubgenres(): Flow<List<String>>
+
 
     /** Get counts **/
     // total item count //

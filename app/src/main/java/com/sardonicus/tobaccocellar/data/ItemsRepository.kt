@@ -98,6 +98,8 @@ interface ItemsRepository {
 
     fun getAllTinContainersStream(): Flow<List<String>>
 
+    fun getAllSubgenresStream(): Flow<List<String>>
+
 
     /** Get counts **/
     fun getItemsCount(): Flow<Int>

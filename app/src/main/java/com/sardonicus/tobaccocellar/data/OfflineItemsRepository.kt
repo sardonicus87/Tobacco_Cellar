@@ -199,6 +199,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     override fun getAllTinContainersStream(): Flow<List<String>> = itemsDao.getAllTinContainers()
 
+    override fun getAllSubgenresStream(): Flow<List<String>> = itemsDao.getAllSubgenres()
+
 
     /** Get counts **/
     override fun getItemsCount(): Flow<Int> = itemsDao.getItemsCount()
