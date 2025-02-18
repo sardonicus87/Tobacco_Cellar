@@ -351,7 +351,7 @@ fun RawStats(
         Text(
             text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                     "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                    "${rawStats.totalQuantity} total  Tins\n" +
+                    "${rawStats.totalQuantity} total tins\n" +
                     "${rawStats.totalZeroQuantity} out of stock",
             modifier = Modifier
                 .fillMaxWidth()
