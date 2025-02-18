@@ -364,6 +364,16 @@ private fun CellarView(
                 .padding(0.dp),
             contentScale = ContentScale.Inside
         )
+        Text(
+            text = "The quantity displayed is the \"No. of Tins\" by default. In the settings " +
+                    "screen, there is an option to change this quantity display to being oz/lbs " +
+                    "or grams. This display value is based on the sum of the quantities entered " +
+                    "for each tin. If no tins are given for an entry, the default will revert to " +
+                    "the value saved in \"No. of Tins\".",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
     }
 
     if (showFullscreen) {
@@ -454,6 +464,12 @@ private fun Filtering(
             alignment = Alignment.Center
         )
         Text(
+            text = "The filter sheet has two pages, swipe left/right to swap between pages.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
             text = "The first part is brand filtering. Simply tap the name of a brand in the row " +
                     "below the search bar to add it to the brand filter list. The \"Search " +
                     "Brands\" field is just a filter for this row of brands. The button next to " +
@@ -475,7 +491,7 @@ private fun Filtering(
         Text(
             text = "The next section is for filtering by blend type. Tap the button to add it " +
                     "to the filtering, tap again to remove it. The \"Unassigned\" button will " +
-                    "show only entries that have a blank blend type.",
+                    "filter for entries that have a blank blend type.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -497,6 +513,26 @@ private fun Filtering(
                     "1 for those that wish to use the \"Tins\" field just for quick reference " +
                     "of whether or not they have a given blend on-hand. See the \"Add Items\" " +
                     "section for more details.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The second page contains three sections that all work mostly the same for " +
+                    "Subgenres, cuts and components. The overflow chip will be highlighted if " +
+                    "any selected filters in this section aren't shown on the screen. Tapping " +
+                    "the overflow chip will show a full list of available selections for that " +
+                    "section.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "One key difference is the additional option in Components filtering for " +
+                    "matching. Selecting \"Any\" will return blends that contain any of the " +
+                    "selected components. Selecting \"All\" will return only those blends that " +
+                    "contain all of the selected components (though they may contain other " +
+                    "components in addition to the selected ones).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -553,15 +589,6 @@ private fun AddingItems(
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
-//        Text(
-//            text = "The purpose of the \"Tin Converter\" is to convert quantity amounts of " +
-//                    "ounces, pounds, or grams into the \"No. of Tins\". The default conversion " +
-//                    "rate is 1 Tin = either 1.75 oz or 50 grams. The conversion rate can be " +
-//                    "changed in the settings screen, (oz and grams rates are independent of one another).",
-//            modifier = Modifier
-//                .padding(horizontal = 16.dp, vertical = 0.dp),
-//            softWrap = true,
-//        )
         Text(
             text = "The \"Sync?\" check box allows you to synchronize the No. of Tins field with " +
                     "the total quantities of individual tins/containers. The total tins are " +
