@@ -33,10 +33,8 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -440,7 +438,6 @@ fun ItemInputForm(
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val titles = listOf("Details", "Notes", "Tins")
 
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -499,12 +496,12 @@ fun ItemInputForm(
                 modifier = Modifier
                     .padding(0.dp)
                     .fillMaxWidth()
-                    .fillMaxHeight(.75f)
+                    .fillMaxHeight(.65f)
                     .verticalScroll(rememberScrollState()),
             ) {
                 when (selectedTabIndex) {
                     0 ->
-                        BasicDetails(
+                        DetailsEntry(
                             itemDetails = itemDetails,
                             itemUiState = itemUiState,
                             syncedTins = syncedTins,
@@ -517,11 +514,8 @@ fun ItemInputForm(
                             modifier = Modifier,
                         )
                     1 ->
-                        MoreDetails(
+                        NotesEntry(
                             itemDetails = itemDetails,
-                            itemUiState = itemUiState,
-                            componentList = componentUiState,
-                            onComponentChange = onComponentChange,
                             onValueChange = onValueChange,
                             modifier = Modifier
                         )
@@ -583,7 +577,7 @@ fun ItemInputForm(
 
 
 @Composable
-fun BasicDetails(
+fun DetailsEntry(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
     syncedTins: Int,
@@ -1001,6 +995,7 @@ fun BasicDetails(
                         suggestions.value = emptyList()
                     }
                 },
+                componentField = true,
                 onOptionSelected = { suggestion, currentText ->
                     val updatedText =
                         if (currentText.contains(", ")) {
@@ -1066,11 +1061,6 @@ fun BasicDetails(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-//            Text(
-//                text = "No. of Tins:",
-//                modifier = Modifier
-//                    .width(80.dp)
-//            )
             AutoSizeText(
                 text = "No. of\nTins:",
                 fontSize = 16.sp,
@@ -1422,12 +1412,9 @@ fun BasicDetails(
 
 
 @Composable
-fun MoreDetails(
+fun NotesEntry(
     itemDetails: ItemDetails,
-    itemUiState: ItemUiState,
-    componentList: ComponentList,
     onValueChange: (ItemDetails) -> Unit,
-    onComponentChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1435,182 +1422,6 @@ fun MoreDetails(
             .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-//        // Cut //
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth(),
-//            horizontalArrangement = Arrangement.spacedBy(8.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Text(
-//                text = "Cut:",
-//                modifier = Modifier
-//                    .width(80.dp)
-//            )
-//
-//            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-//
-//            AutoCompleteText(
-//                value = itemDetails.cut,
-//                onValueChange = {
-//                    onValueChange(itemDetails.copy(cut = it))
-//
-//                    if (it.length >= 2) {
-//                        val startsWith = itemUiState.autoCuts.filter { cut ->
-//                            cut.startsWith(it, ignoreCase = true)
-//                        }
-//                        val otherWordsStartsWith = itemUiState.autoCuts.filter { cut ->
-//                            cut.split(" ").drop(1).any { word ->
-//                                word.startsWith(it, ignoreCase = true)
-//                            } && !cut.startsWith(it, ignoreCase = true)
-//                        }
-//                        val contains = itemUiState.autoCuts.filter { cut ->
-//                            cut.contains(it, ignoreCase = true)
-//                                    && !cut.startsWith(it, ignoreCase = true) &&
-//                                    !otherWordsStartsWith.contains(cut)
-//                        }
-//                        val selected = itemUiState.autoCuts.filter { cut ->
-//                            cut == it
-//                        }
-//
-//                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
-//                    } else {
-//                        suggestions.value = emptyList()
-//                    }
-//                },
-//                onOptionSelected = { suggestion, currentText ->
-//                    onValueChange(itemDetails.copy(cut = suggestion))
-//                    suggestions.value = emptyList()
-//                },
-//                suggestions = suggestions.value,
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                trailingIcon = {
-//                    if (itemDetails.cut.length > 4) {
-//                        Icon(
-//                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-//                            contentDescription = "Clear",
-//                            modifier = Modifier
-//                                .clickable {
-//                                    onValueChange(itemDetails.copy(cut = ""))
-//                                }
-//                                .alpha(0.66f)
-//                                .size(20.dp)
-//                                .focusable(false)
-//                        )
-//                    }
-//                },
-//                keyboardOptions = KeyboardOptions(
-//                    capitalization = KeyboardCapitalization.None,
-//                    keyboardType = KeyboardType.Text,
-//                    imeAction = ImeAction.Next,
-//                )
-//            )
-//        }
-//
-//        // Components //
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth(),
-//            horizontalArrangement = Arrangement.spacedBy(8.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            AutoSizeText(
-//                text = "Components: ",
-//                fontSize = 16.sp,
-//                minFontSize = 8.sp,
-//                width = 80.dp,
-//                modifier = Modifier
-//                    .padding(bottom = 20.dp),
-//                maxLines = 1,
-//                softWrap = false,
-//            )
-//
-//            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-//
-//            AutoCompleteText(
-//                value = componentList.componentString,
-//                onValueChange = { string ->
-//                    onComponentChange(string)
-//
-//                    val substring = if (string.contains(", ")) {
-//                        string.substringAfterLast(", ", "")
-//                    } else {
-//                        string
-//                    }
-//
-//                    if (substring.length >= 2) {
-//                        val startsWith = componentList.autoComps.filter { comp ->
-//                            comp.startsWith(substring, ignoreCase = true)
-//                        }
-//
-//                        val otherWordsStartsWith = componentList.autoComps.filter { comp ->
-//                            comp.split(" ").drop(1).any { word ->
-//                                word.startsWith(substring, ignoreCase = true)
-//                            } && !comp.startsWith(substring, ignoreCase = true)
-//                        }
-//
-//                        val contains = componentList.autoComps.filter { comp ->
-//                            comp.contains(substring, ignoreCase = true)
-//                                    && !comp.startsWith(substring, ignoreCase = true) &&
-//                                    !otherWordsStartsWith.contains(comp)
-//                        }
-//
-//                        val selected = componentList.autoComps.filter { comp ->
-//                            string.split(", ").filter { string.isNotBlank() }.contains(comp)
-//                        }
-//
-//                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
-//                    } else {
-//                        suggestions.value = emptyList()
-//                    }
-//                },
-//                onOptionSelected = { suggestion, currentText ->
-//                    val updatedText = if (currentText.contains(", ")) {
-//                        currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", " }
-//                        else { suggestion + ", " }
-//
-//                    onComponentChange(updatedText)
-//                    suggestions.value = emptyList()
-//                },
-//                suggestions = suggestions.value,
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                trailingIcon = {
-//                    if (componentList.componentString.length > 4) {
-//                        Icon(
-//                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-//                            contentDescription = "Clear",
-//                            modifier = Modifier
-//                                .clickable {
-//                                    onComponentChange("")
-//                                }
-//                                .alpha(0.66f)
-//                                .size(20.dp)
-//                                .focusable(false)
-//                        )
-//                    }
-//                },
-//                keyboardOptions = KeyboardOptions(
-//                    capitalization = KeyboardCapitalization.None,
-//                    keyboardType = KeyboardType.Text,
-//                    imeAction = ImeAction.Done,
-//                ),
-//                maxLines = 1,
-//                supportingText = {
-//                    Text(
-//                        text = "(Separate with comma + space)",
-//                        modifier = Modifier
-//                            .alpha(0.66f),
-//                    //    fontSize = 13.sp,
-//                        softWrap = false,
-//                        maxLines = 1,
-//                        overflow = TextOverflow.Clip,
-//                    )
-//                }
-//            )
-//        }
-
         // Notes //
         Column(
             modifier = Modifier
@@ -1662,8 +1473,8 @@ fun MoreDetails(
                 ),
                 shape = MaterialTheme.shapes.extraSmall,
                 singleLine = false,
-                maxLines = 6,
-                minLines = 6,
+                maxLines = 8,
+                minLines = 8,
             )
         }
     }
@@ -1712,7 +1523,8 @@ fun TinsEntry(
                 }
             )
             .padding(vertical = 6.dp, horizontal = 8.dp)
-            .background(color = LocalCustomColors.current.darkNeutral, RoundedCornerShape(4.dp))
+            .background(color = if (tinDetailsList.isEmpty()) Color.Transparent else
+                LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
     ) {
@@ -2774,15 +2586,16 @@ fun AutoCompleteText(
     minLines: Int = 1,
     supportingText: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
+    componentField: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
     val focusRequester = remember { FocusRequester() }
     val focusState = remember { mutableStateOf(false) }
 
-    LaunchedEffect(suggestions) {
+    LaunchedEffect(Unit) {
         // Delay expanded state evaluation
-        expanded = value.isNotEmpty() && suggestions.isNotEmpty()
+        expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
         if (suggestions.isEmpty()) {
             expanded = false
         }
@@ -2794,7 +2607,7 @@ fun AutoCompleteText(
     }
 
     ExposedDropdownMenuBox(
-        expanded = expanded && focusState.value && suggestions.isNotEmpty(),
+        expanded = expanded, // && focusState.value && suggestions.isNotEmpty(),
         onExpandedChange = { expanded = !expanded },
         modifier = modifier
             .padding(0.dp)
@@ -2804,7 +2617,7 @@ fun AutoCompleteText(
             onValueChange = {
                 textFieldValueState = it
                 onValueChange?.invoke(it.text)
-                expanded = it.text.isNotEmpty() && suggestions.isNotEmpty()
+            //    expanded = it.text.isNotEmpty() && suggestions.isNotEmpty()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -2862,7 +2675,11 @@ fun AutoCompleteText(
                         val updatedText = if (currentText.contains(", ")) {
                             currentText.substringBeforeLast(", ", "") + ", " + label + ", "
                         } else {
-                            label
+                            if (componentField) {
+                                label + ", "
+                            } else {
+                                label
+                            }
                         }
 
                         textFieldValueState = TextFieldValue(
