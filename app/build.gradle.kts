@@ -12,8 +12,8 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.2.0"
+        versionCode = 9
+        versionName = "2.3.0"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -77,7 +77,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.core.splashscreen)
-
 
 
     implementation(libs.androidx.room.runtime)
