@@ -8,14 +8,17 @@ import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FilterViewModel (
     private val itemsRepository: ItemsRepository
@@ -32,8 +35,6 @@ class FilterViewModel (
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
     val bottomSheetState: StateFlow<BottomSheetState> = _bottomSheetState.asStateFlow()
-    val isBottomSheetOpen: Boolean
-        get() = _bottomSheetState.value == BottomSheetState.OPENED
 
     fun openBottomSheet() {
         _bottomSheetState.value = BottomSheetState.OPENED
@@ -86,9 +87,16 @@ class FilterViewModel (
     val sheetSelectedInStock = MutableStateFlow(false)
     val sheetSelectedOutOfStock = MutableStateFlow(false)
     val sheetSelectedExcludeBrands = MutableStateFlow<List<String>>(emptyList())
-    val sheetSelectedExcludeSwitch = MutableStateFlow(false)
+    val sheetSelectedExcludeBrandSwitch = MutableStateFlow(false)
     val sheetSelectedExcludeLikes = MutableStateFlow(false)
     val sheetSelectedExcludeDislikes = MutableStateFlow(false)
+
+    val sheetSelectedSubgenres = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedCuts = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedComponents = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedComponentMatchAll = MutableStateFlow(false)
+    val sheetSelectedProduction = MutableStateFlow(false)
+    val sheetSelectedOutOfProduction = MutableStateFlow(false)
 
 
     // filter applied state for clear all button //
@@ -104,7 +112,12 @@ class FilterViewModel (
         sheetSelectedOutOfStock,
         sheetSelectedExcludeBrands,
         sheetSelectedExcludeLikes,
-        sheetSelectedExcludeDislikes
+        sheetSelectedExcludeDislikes,
+        sheetSelectedSubgenres,
+        sheetSelectedCuts,
+        sheetSelectedComponents,
+        sheetSelectedProduction,
+        sheetSelectedOutOfProduction,
     ) {
         val brands = it[0] as List<String>
         val types = it[1] as List<String>
@@ -118,6 +131,11 @@ class FilterViewModel (
         val excludeBrands = it[9] as List<String>
         val excludeLikes = it[10] as Boolean
         val excludeDislikes = it[11] as Boolean
+        val subgenres = it[12] as List<String>
+        val cuts = it[13] as List<String>
+        val components = it[14] as List<String>
+        val production = it[15] as Boolean
+        val outOfProduction = it[16] as Boolean
 
         brands.isNotEmpty() ||
             types.isNotEmpty() ||
@@ -130,7 +148,12 @@ class FilterViewModel (
             outOfStock ||
             excludeBrands.isNotEmpty() ||
             excludeLikes ||
-            excludeDislikes
+            excludeDislikes ||
+            subgenres.isNotEmpty() ||
+            cuts.isNotEmpty() ||
+            components.isNotEmpty() ||
+            production ||
+            outOfProduction
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -138,9 +161,9 @@ class FilterViewModel (
     )
 
 
-    /** Scroll state **/
+    /** Cellar screen scroll state **/
     private val _shouldScrollUp = MutableStateFlow(false)
-    val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp
+    val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp.asStateFlow()
 
     private val _savedItemId = MutableStateFlow(-1)
     val savedItemId: StateFlow<Int> = _savedItemId.asStateFlow()
@@ -155,7 +178,7 @@ class FilterViewModel (
     val searchCleared: StateFlow<Boolean> = _searchCleared.asStateFlow()
 
     private val _searchPerformed = MutableStateFlow(false)
-    val searchPerformed: StateFlow<Boolean> = _searchPerformed
+    val searchPerformed: StateFlow<Boolean> = _searchPerformed.asStateFlow()
 
     // remember scroll position //
     private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
@@ -207,7 +230,6 @@ class FilterViewModel (
     }
 
 
-
     /** Filtering states **/
     // inclusionary filter states //
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
@@ -237,6 +259,24 @@ class FilterViewModel (
     private val _selectedOutOfStock = MutableStateFlow(false)
     val selectedOutOfStock: StateFlow<Boolean> = _selectedOutOfStock
 
+    private val _selectedSubgenre = MutableStateFlow<List<String>>(emptyList())
+    val selectedSubgenre: StateFlow<List<String>> = _selectedSubgenre
+
+    private val _selectedCut = MutableStateFlow<List<String>>(emptyList())
+    val selectedCut: StateFlow<List<String>> = _selectedCut
+
+    private val _selectedComponent = MutableStateFlow<List<String>>(emptyList())
+    val selectedComponent: StateFlow<List<String>> = _selectedComponent
+
+    private val _compMatchAll = MutableStateFlow(false)
+    val compMatchAll: StateFlow<Boolean> = _compMatchAll
+
+    private val _selectedProduction = MutableStateFlow(false)
+    val selectedProduction: StateFlow<Boolean> = _selectedProduction
+
+    private val _selectedOutOfProduction = MutableStateFlow(false)
+    val selectedOutOfProduction: StateFlow<Boolean> = _selectedOutOfProduction
+
     // exclusionary filter states //
     private val _selectedExcludeBrands = MutableStateFlow<List<String>>(emptyList())
     val selectedExcludeBrands: StateFlow<List<String>> = _selectedExcludeBrands
@@ -247,11 +287,86 @@ class FilterViewModel (
     private val _selectedExcludeDislikes = MutableStateFlow(false)
     val selectedExcludeDislikes: StateFlow<Boolean> = _selectedExcludeDislikes
 
+    fun overflowCheck(selected: List<String>, available: List<String>, shown: Int): Boolean {
+        val overflowedItems = available.drop(shown)
+        return selected.any { overflowedItems.contains(it) }
+    }
+
 
     // filter selection update functions //
-    fun updateSelectedBrands(brand: String, isSelected: Boolean) {
-        _shouldScrollUp.value = true
+    fun updateSelectedSubgenre(subgenre: String, isSelected: Boolean) {
+        if (isSelected) {
+            sheetSelectedSubgenres.value += subgenre
+            _selectedSubgenre.value += subgenre
+        } else {
+            sheetSelectedSubgenres.value -= subgenre
+            _selectedSubgenre.value -= subgenre
+        }
 
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedCut(cut: String, isSelected: Boolean) {
+        if (isSelected) {
+            sheetSelectedCuts.value += cut
+            _selectedCut.value += cut
+        } else {
+            sheetSelectedCuts.value -= cut
+            _selectedCut.value -= cut
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedComponent(component: String, isSelected: Boolean) {
+        if (isSelected) {
+            sheetSelectedComponents.value += component
+            _selectedComponent.value += component
+        } else {
+            sheetSelectedComponents.value -= component
+            _selectedComponent.value -= component
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateCompMatchAll(isSelected: Boolean) {
+        sheetSelectedComponentMatchAll.value = isSelected
+        _compMatchAll.value = isSelected
+
+        if (isSelected) {
+            if (sheetSelectedComponents.value.contains("(None Assigned)")) {
+                sheetSelectedComponents.value -= "(None Assigned)"
+                _selectedComponent.value -= "(None Assigned)"
+            }
+        }
+    }
+
+    fun updateSelectedProduction(isSelected: Boolean) {
+        sheetSelectedProduction.value = isSelected
+        _selectedProduction.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedOutOfProduction.value = false
+            _selectedOutOfProduction.value = false
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedOutOfProduction(isSelected: Boolean) {
+        sheetSelectedOutOfProduction.value = isSelected
+        _selectedOutOfProduction.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedProduction.value = false
+            _selectedProduction.value = false
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedBrands(brand: String, isSelected: Boolean) {
         if (isSelected) {
             sheetSelectedBrands.value += brand
             _selectedBrands.value += brand
@@ -259,11 +374,11 @@ class FilterViewModel (
             sheetSelectedBrands.value -= brand
             _selectedBrands.value -= brand
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedExcludedBrands(brand: String, isSelected: Boolean) {
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedExcludeBrands.value += brand
             _selectedExcludeBrands.value += brand
@@ -271,10 +386,12 @@ class FilterViewModel (
             sheetSelectedExcludeBrands.value -= brand
             _selectedExcludeBrands.value -= brand
         }
+
+        _shouldScrollUp.value = true
     }
 
-    fun updateSelectedExcludeSwitch(isSelected: Boolean) {
-        sheetSelectedExcludeSwitch.value = isSelected
+    fun updateSelectedExcludeBrandsSwitch(isSelected: Boolean) {
+        sheetSelectedExcludeBrandSwitch.value = isSelected
 
         if (isSelected) {
             if (sheetSelectedBrands.value.isNotEmpty()) {
@@ -294,21 +411,22 @@ class FilterViewModel (
             }
         }
 
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
-        _shouldScrollUp.value = true
-
         if (isSelected) {
-            sheetSelectedUnassigned.value = false
+        //    sheetSelectedUnassigned.value = false
             sheetSelectedTypes.value += type
 
-            _selectedUnassigned.value = false
+        //    _selectedUnassigned.value = false
             _selectedTypes.value += type
         } else {
             sheetSelectedTypes.value -= type
             _selectedTypes.value -= type
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedUnassigned(isSelected: Boolean) {
@@ -317,18 +435,16 @@ class FilterViewModel (
 
         _shouldScrollUp.value = true
 
-        if (isSelected) {
-            sheetSelectedTypes.value = emptyList()
-            _selectedTypes.value = emptyList()
-        }
+//        if (isSelected) {
+//            sheetSelectedTypes.value = emptyList()
+//            _selectedTypes.value = emptyList()
+//        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
         sheetSelectedFavorites.value = isSelected
         _selectedFavorites.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedDislikeds.value = false
             sheetSelectedNeutral.value = false
@@ -342,14 +458,14 @@ class FilterViewModel (
             _selectedExcludeLikes.value = false
             _selectedExcludeDislikes.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedExcludeLikes(isSelected: Boolean) {
         sheetSelectedExcludeLikes.value = isSelected
         _selectedExcludeLikes.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
@@ -363,14 +479,14 @@ class FilterViewModel (
             _selectedNonNeutral.value = false
             _selectedExcludeDislikes.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
         sheetSelectedDislikeds.value = isSelected
         _selectedDislikeds.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedNeutral.value = false
@@ -384,14 +500,14 @@ class FilterViewModel (
             _selectedExcludeLikes.value = false
             _selectedExcludeDislikes.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedExcludeDislikes(isSelected: Boolean) {
         sheetSelectedExcludeDislikes.value = isSelected
         _selectedExcludeDislikes.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
@@ -405,14 +521,14 @@ class FilterViewModel (
             _selectedNonNeutral.value = false
             _selectedExcludeLikes.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedNeutral(isSelected: Boolean) {
         sheetSelectedNeutral.value = isSelected
         _selectedNeutral.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedFavorites.value = false
             sheetSelectedDislikeds.value = false
@@ -426,13 +542,13 @@ class FilterViewModel (
             _selectedExcludeLikes.value = false
             _selectedExcludeDislikes.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedNonNeutral(isSelected: Boolean) {
         sheetSelectedNonNeutral.value = isSelected
         _selectedNonNeutral.value = isSelected
-
-        _shouldScrollUp.value = true
 
         if (isSelected) {
             sheetSelectedFavorites.value = false
@@ -447,30 +563,31 @@ class FilterViewModel (
             _selectedExcludeLikes.value = false
             _selectedExcludeDislikes.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
         sheetSelectedInStock.value = isSelected
         _selectedInStock.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedOutOfStock.value = false
             _selectedOutOfStock.value = false
         }
+        _shouldScrollUp.value = true
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
         sheetSelectedOutOfStock.value = isSelected
         _selectedOutOfStock.value = isSelected
 
-        _shouldScrollUp.value = true
-
         if (isSelected) {
             sheetSelectedInStock.value = false
             _selectedInStock.value = false
         }
+
+        _shouldScrollUp.value = true
     }
 
 
@@ -483,6 +600,7 @@ class FilterViewModel (
 
         _shouldScrollUp.value = true
     }
+
 
     fun resetFilter() {
         sheetSelectedBrands.value = emptyList()
@@ -497,6 +615,11 @@ class FilterViewModel (
         sheetSelectedExcludeBrands.value = emptyList()
         sheetSelectedExcludeLikes.value = false
         sheetSelectedExcludeDislikes.value = false
+        sheetSelectedSubgenres.value = emptyList()
+        sheetSelectedCuts.value = emptyList()
+        sheetSelectedComponents.value = emptyList()
+        sheetSelectedProduction.value = false
+        sheetSelectedOutOfProduction.value = false
 
         _selectedBrands.value = emptyList()
         _selectedTypes.value = emptyList()
@@ -510,19 +633,83 @@ class FilterViewModel (
         _selectedExcludeBrands.value = emptyList()
         _selectedExcludeLikes.value = false
         _selectedExcludeDislikes.value = false
+        _selectedSubgenre.value = emptyList()
+        _selectedCut.value = emptyList()
+        _selectedComponent.value = emptyList()
+        _selectedProduction.value = false
+        _selectedOutOfProduction.value = false
 
         _shouldScrollUp.value = true
     }
 
 
-    // get vals //
+    // get available fields for filter //
     private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
     val availableBrands: StateFlow<List<String>> = _availableBrands
 
+    private val _availableSubgenres = MutableStateFlow<List<String>>(emptyList())
+    val availableSubgenres: StateFlow<List<String>> = _availableSubgenres
+
+    private val _availableCuts = MutableStateFlow<List<String>>(emptyList())
+    val availableCuts: StateFlow<List<String>> = _availableCuts
+
+    private val _availableComponents = MutableStateFlow<List<String>>(emptyList())
+    val availableComponents: StateFlow<List<String>> = _availableComponents
+
     init {
         viewModelScope.launch {
-            itemsRepository.getAllBrandsStream().collectLatest { brands ->
-                _availableBrands.value = brands
+            withContext(Dispatchers.IO) {
+                itemsRepository.getAllBrandsStream().collectLatest { brands ->
+                    _availableBrands.value = brands
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                itemsRepository.getAllSubgenresStream()
+                    .map {
+                        it.map {
+                            if (it.isBlank()) {
+                                "(Unassigned)"
+                            } else {
+                                it
+                            }
+                        }
+                    }
+                    .collectLatest { subgenres ->
+                        _availableSubgenres.value = subgenres
+                    }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                itemsRepository.getAllCutsStream()
+                    .map {
+                        it.map {
+                            if (it.isBlank()) {
+                                "(Unassigned)"
+                            } else {
+                                it
+                            }
+                        }
+                    }
+                    .collectLatest { cuts ->
+                        _availableCuts.value = cuts
+                    }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                itemsRepository.getAllComponentsStream()
+                    .collectLatest { components ->
+                        _availableComponents.value = components.map {
+                            if (it.componentName.isBlank()) {
+                                "(None Assigned)"
+                            } else {
+                                it.componentName
+                            }
+                        }
+                    }
             }
         }
     }
