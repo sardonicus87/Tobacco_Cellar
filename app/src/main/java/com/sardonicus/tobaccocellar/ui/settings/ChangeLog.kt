@@ -11,6 +11,37 @@ val changeLogEntries = listOf(
     ),
 
     ChangeLogEntryData(
+        versionNumber = "2.3.0",
+        buildDate = "18 Feb, 2025",
+        changes = listOf(
+            "Added a second page to the filter sheet with additional filtering options for new fields."
+        ),
+        improvements = listOf(
+            "Updated Help/FAQ with more details about the new quantity display option and new " +
+                    "filtering options.",
+            "Removed the mutual exclusion of \"Unassigned\" vs other types in type filtering.",
+            "Fixed a small typo on the \"Stats\" screen.",
+            "Quantity display options for oz/lbs and grams now rounds to two decimal places " +
+                    "instead of one.",
+            "Made text on blend details selectable (highlight and copy text).",
+            "Attempt to make autocomplete suggestions more efficient (suggestion box hanging when " +
+                    "a suggestion is selected on some devices).",
+        ),
+        bugFixes = listOf(
+            "Fixed a bug when selecting a suggestion on the components field, the cursor would " +
+                    "not be at the end if it was the first component listed (after the \", \").",
+            "Fixed a bug where clearing or removing filters sometimes didn't return the list to " +
+                    "the top.",
+            "Fixed a minor bug where highlighting of Filter icon in bottom bar was not working.",
+            "Fixed a bug on blend details screen where individual tin spacing was ignored if " +
+                    "tin didn't have opened date field.",
+            "Fixed a bug where the quantity was still red (out of stock) when selecting a " +
+                    "quantity option other than No. of Tins and this field was 0 despite tins " +
+                    "having quantities."
+        ),
+    ),
+
+    ChangeLogEntryData(
         versionNumber = "2.2.0",
         buildDate = "11 Feb, 2025",
         changes = listOf(
