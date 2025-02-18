@@ -4,7 +4,6 @@ import android.app.Application
 import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
