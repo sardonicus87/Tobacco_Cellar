@@ -9,8 +9,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlin.collections.filter
 
@@ -20,44 +22,26 @@ class StatsViewModel(
 ): ViewModel() {
 
     /** Raw stats */
-    val rawStats: StateFlow<RawStats> = combine(
-        combine(
-            itemsRepository.getItemsCount(),
-            itemsRepository.getBrandsCount(),
-            itemsRepository.getTotalFavorite(),
-            itemsRepository.getTotalDislike()
-        ) { count, brands, favorite, disliked ->
-            SetOne(count, brands, favorite, disliked)
-        },
-        combine(
-            itemsRepository.getTotalByBrand(),
-            itemsRepository.getTotalByType(),
-            itemsRepository.getTotalQuantity(),
-            itemsRepository.getTotalZeroQuantity()
-        ) { byBrand, byType, quantity, zero ->
-            SetTwo(byBrand, byType, quantity, zero)
-        }
-    ) { setOne, setTwo ->
-        val brandMap = setTwo.byBrand.associate { it.brand to it.bcount }
-        val typeMap = setTwo.byType.associate {
-            if (it.type.isBlank()) "Unassigned" to it.tcount
-            else it.type to it.tcount
-        }
-        RawStats(
-            itemsCount = setOne.count,
-            brandsCount = setOne.brands,
-            favoriteCount = setOne.favorite,
-            dislikedCount = setOne.dislike,
-            totalByBrand = brandMap,
-            totalByType = typeMap,
-            totalQuantity = setTwo.quantity,
-            totalZeroQuantity = setTwo.zero,
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(),
-        initialValue = RawStats()
-    )
+    val rawStats: StateFlow<RawStats> =
+        itemsRepository.getEverythingStream()
+            .map {
+                RawStats(
+                    itemsCount = it.size,
+                    brandsCount = it.groupingBy { it.items.brand }.eachCount().size,
+                    favoriteCount = it.count { it.items.favorite },
+                    dislikedCount = it.count { it.items.disliked },
+                    totalByBrand = it.groupingBy { it.items.brand }.eachCount(),
+                    totalByType = it.groupingBy {
+                        if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
+                    totalQuantity = it.sumOf { it.items.quantity },
+                    totalZeroQuantity = it.count { it.items.quantity == 0 }
+                )
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(),
+                initialValue = RawStats()
+            )
 
 
     /** Filtered stats */
