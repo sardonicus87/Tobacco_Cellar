@@ -1113,7 +1113,7 @@ fun DetailsEntry(
                         focusedContainerColor = LocalCustomColors.current.textField,
                         unfocusedContainerColor = LocalCustomColors.current.textField,
                         disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.66f),
-                        disabledTextColor = LocalContentColor.current,
+                        disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
                     ),
                     shape = MaterialTheme.shapes.extraSmall
                 )
