@@ -5,8 +5,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +38,10 @@ interface ItemsDao {
     @Query("DELETE FROM items")
     suspend fun deleteAllItems()
 
+    @RawQuery
+    suspend fun vacuumDatabase(supportSQLiteQuery: SupportSQLiteQuery): Int
+
+
     // Components //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertComponent(component: Components): Long
@@ -54,6 +60,10 @@ interface ItemsDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMultipleComponentsCrossRef(crossRefs: List<ItemsComponentsCrossRef>)
+
+    @Transaction
+    @Query("DELETE FROM components WHERE componentId NOT IN (SELECT componentId FROM items_components_cross_ref)")
+    suspend fun deleteOrphanedComponents()
 
     // Tins //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -78,6 +88,10 @@ interface ItemsDao {
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItemsStream(): Flow<List<Items>>
 
+    // Get all items ids //
+    @Query("SELECT id FROM items ORDER BY id ASC")
+    fun getAllItemIds(): List<Int>
+
     // Get all items list //
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getAllItemsExport(): List<Items>
@@ -85,6 +99,14 @@ interface ItemsDao {
     // Get all components flow //
     @Query("SELECT * FROM components ORDER BY componentName ASC")
     fun getAllComponents(): Flow<List<Components>>
+
+    // Get all tins flow //
+    @Query("SELECT * FROM tins ORDER BY tinId ASC")
+    fun getAllTins(): Flow<List<Tins>>
+
+    // Get all items components cross ref flow //
+    @Query("SELECT * FROM items_components_cross_ref ORDER BY itemId ASC")
+    fun getAllItemsComponentsCrossRef(): Flow<List<ItemsComponentsCrossRef>>
 
     // Get all items with components and tins flow //
     @Transaction
@@ -239,13 +261,5 @@ interface ItemsDao {
 
     @Query("SELECT * FROM components WHERE componentName IN (:components)")
     fun getComponentsByName(components: List<String>): Flow<List<Components>>
-
-
-
-//    /** Special functions **/
-//    // Filter function //
-//    @RawQuery(observedEntities = [Items::class])
-//    fun getFilteredItems(query: SupportSQLiteQuery): Flow<List<Items>>
-
 
 }

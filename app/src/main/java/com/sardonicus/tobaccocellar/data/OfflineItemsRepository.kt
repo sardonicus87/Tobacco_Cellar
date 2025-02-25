@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.data
 
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.sardonicus.tobaccocellar.ui.items.formatLongDate
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
@@ -30,6 +31,11 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
 
     override suspend fun deleteAllItems() = itemsDao.deleteAllItems()
 
+    override suspend fun optimizeDatabase() {
+        itemsDao.deleteOrphanedComponents()
+        itemsDao.vacuumDatabase(SimpleSQLiteQuery("VACUUM"))
+    }
+
 
     // Components //
     override suspend fun insertComponent(component: Components): Long {
@@ -56,13 +62,6 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
         itemsDao.insertMultipleComponentsCrossRef(crossRefs)
     }
 
-//    override suspend fun updateComponents(id: Int, components: List<String>) {
-//        itemsDao.updateComponents(id, components)
-//    }
-//
-//    override suspend fun updateComponentCrossRef(id: Int, components: List<String>) {
-//        itemsDao.updateComponentCrossRef(id, components)
-//    }
 
     // Tins //
     override suspend fun insertTin(tin: Tins): Long {
@@ -142,6 +141,8 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     /** Get all items **/
     override fun getAllItemsStream(): Flow<List<Items>> = itemsDao.getAllItemsStream()
 
+    override fun getAllItemIds(): List<Int> = itemsDao.getAllItemIds()
+
     override fun getAllItemsExport(): List<Items> = itemsDao.getAllItemsExport()
 
     override suspend fun getAllItemsWithComponents(): List<ItemsWithComponents> {
@@ -153,6 +154,10 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     }
 
     override fun getAllComponentsStream(): Flow<List<Components>> = itemsDao.getAllComponents()
+
+    override fun getAllTinsStream(): Flow<List<Tins>> = itemsDao.getAllTins()
+
+    override fun getAllItemsComponentsCrossRefStream(): Flow<List<ItemsComponentsCrossRef>> = itemsDao.getAllItemsComponentsCrossRef()
 
     override fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>> = itemsDao.getEverythingStream()
 
@@ -238,94 +243,4 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override fun getItemByIndex(brand: String, blend: String): Items? = itemsDao.getItemByIndex(brand, blend)
 
     override fun getComponentsByName(components: List<String>): Flow<List<Components>> = itemsDao.getComponentsByName(components)
-
-
-//    /** Special functions **/
-//    // filtering return function //
-//    override suspend fun getFilteredItems(
-//        brands: List<String>?,
-//        types: List<String>?,
-//        favorites: Boolean?,
-//        dislikeds: Boolean?,
-//        neutral: Boolean?,
-//        nonNeutral: Boolean?,
-//        inStock: Boolean?,
-//        outOfStock: Boolean?,
-//    ): Flow<List<Items>> {
-//        val queryBuilder = SupportSQLiteQueryBuilder.builder("items")
-//        val args = mutableListOf<Any>()
-//        val whereClauses = mutableListOf<String>()
-//
-//        if (!brands.isNullOrEmpty()) {
-//            val brandClause = StringBuilder()
-//            brandClause.append("brand IN (")
-//            for (i in brands.indices) {
-//                brandClause.append("?")
-//                if (i < brands.size - 1) {
-//                    brandClause.append(", ")
-//                }
-//                args.add(brands[i])
-//            }
-//            brandClause.append(")")
-//            whereClauses.add(brandClause.toString())
-//        }
-//
-//        if (!types.isNullOrEmpty()) {
-//            val typeClause = StringBuilder()
-//            typeClause.append("type IN (")
-//            for (i in types.indices) {
-//                typeClause.append("?")
-//                if (i < types.size - 1) {
-//                    typeClause.append(", ")
-//                }
-//                args.add(types[i])
-//            }
-//            typeClause.append(")")
-//            whereClauses.add(typeClause.toString())
-//        }
-//
-//        if (favorites != null && favorites) {
-//            if (favorites) {
-//                whereClauses.add("favorite = ?")
-//                args.add(1)
-//            }
-//        }
-//
-//        if (dislikeds != null && dislikeds) {
-//            if (dislikeds) {
-//                whereClauses.add("disliked = ?")
-//                args.add(1)
-//            }
-//        }
-//
-//        if (neutral != null && neutral) {
-//            whereClauses.add("favorite = ? AND disliked = ?")
-//            args.add(0)
-//            args.add(0)
-//        }
-//
-//        if (nonNeutral != null && nonNeutral) {
-//            whereClauses.add("favorite = ? OR disliked = ?")
-//            args.add(1)
-//            args.add(1)
-//        }
-//
-//        if (inStock != null && inStock) {
-//            whereClauses.add("quantity > 0")
-//        }
-//
-//        if (outOfStock != null) {
-//            if (outOfStock) {
-//                whereClauses.add("quantity = 0")
-//            }
-//        }
-//
-//        if (whereClauses.isNotEmpty()) {
-//            val whereClause = whereClauses.joinToString(" AND ")
-//            queryBuilder.selection(whereClause, args.toTypedArray())
-//        }
-//
-//        val query = queryBuilder.create()
-//        return itemsDao.getFilteredItems(query)
-//    }
 }

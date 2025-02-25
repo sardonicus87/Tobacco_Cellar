@@ -20,6 +20,8 @@ interface ItemsRepository {
 
     suspend fun deleteAllItems()
 
+    suspend fun optimizeDatabase()
+
     // Components //
     suspend fun insertComponent(component: Components): Long
 
@@ -50,11 +52,17 @@ interface ItemsRepository {
     /** Get all items **/
     fun getAllItemsStream(): Flow<List<Items>>
 
+    fun getAllItemIds(): List<Int>
+
     fun getAllItemsExport(): List<Items>
 
     suspend fun getAllItemsWithComponents(): List<ItemsWithComponents>
 
     fun getAllComponentsStream(): Flow<List<Components>>
+
+    fun getAllTinsStream(): Flow<List<Tins>>
+
+    fun getAllItemsComponentsCrossRefStream(): Flow<List<ItemsComponentsCrossRef>>
 
     fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>>
 
@@ -137,18 +145,5 @@ interface ItemsRepository {
     fun getItemByIndex(brand: String, blend: String): Items?
 
     fun getComponentsByName(components: List<String>): Flow<List<Components>>
-
-
-//    /** Special functions **/
-//    suspend fun getFilteredItems(
-//        brands: List<String>?,
-//        types: List<String>?,
-//        favorites: Boolean?,
-//        dislikeds: Boolean?,
-//        neutral: Boolean?,
-//        nonNeutral: Boolean?,
-//        inStock: Boolean?,
-//        outOfStock: Boolean?,
-//    ): Flow<List<Items>>
 
 }
