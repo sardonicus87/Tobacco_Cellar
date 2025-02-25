@@ -89,6 +89,7 @@ import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.CsvResult
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
@@ -253,27 +254,7 @@ fun CsvImportBody(
     ) {
         when (importStatus) {
             is ImportStatus.Loading -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1.5f)
-                    )
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(48.dp)
-                            .weight(0.5f),
-                    )
-                    Spacer(
-                        modifier = Modifier
-                            .weight(2f)
-                    )
-                }
+                FullScreenLoading()
             }
             is ImportStatus.Error -> {
                 ImportError(

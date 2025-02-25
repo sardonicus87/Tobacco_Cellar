@@ -103,6 +103,7 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -146,7 +147,6 @@ fun HomeScreen(
     val currentPosition by filterViewModel.currentPosition.collectAsState()
     val blendSearchFocused by filterViewModel.blendSearchFocused.collectAsState()
 
-
     if (showSnackbar.value) {
         LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
@@ -156,7 +156,6 @@ fun HomeScreen(
             viewmodel.snackbarShown()
         }
     }
-
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -199,7 +198,13 @@ fun HomeScreen(
                 hostState = snackbarHostState,
                 modifier = Modifier
                     .padding(0.dp),
-                snackbar = { Snackbar(it) }
+                snackbar = {
+                    Snackbar(
+                        snackbarData = it,
+                        modifier = Modifier
+                            .padding(bottom = 20.dp)
+                    )
+                }
             )
         },
     ) { innerPadding ->
@@ -539,27 +544,7 @@ private fun HomeBody(
             .padding(0.dp)
     ) {
         if (isLoading) {
-            Column (
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .weight(1.5f)
-                )
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(48.dp)
-                        .weight(0.5f),
-                )
-                Spacer(
-                    modifier = Modifier
-                        .weight(2f)
-                )
-            }
+            FullScreenLoading()
         } else {
             if (items.isEmpty()) {
                 Column(
