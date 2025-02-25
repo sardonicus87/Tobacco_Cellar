@@ -27,7 +27,6 @@ data class Items(
     val inProduction: Boolean,
 )
 
-
 @Entity(
     tableName = "tins",
     foreignKeys = [
