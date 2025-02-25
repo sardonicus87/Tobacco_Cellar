@@ -1,13 +1,17 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -41,11 +45,16 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,14 +80,17 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
+import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
@@ -101,9 +113,23 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
     val ozRate by viewmodel.tinOzConversionRate.collectAsState()
     val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
+    val snackbarState = viewmodel.snackbarState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val loading by viewmodel.loading.collectAsState()
+
+    if (snackbarState.value.show) {
+        LaunchedEffect(snackbarState) {
+            snackbarHostState.showSnackbar(
+                message = snackbarState.value.message,
+                duration = SnackbarDuration.Short
+            )
+            viewmodel.snackbarShown()
+        }
+    }
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(SettingsDestination.titleRes),
@@ -111,6 +137,20 @@ fun SettingsScreen(
                 navigateUp = onNavigateUp,
                 canNavigateBack = canNavigateBack,
                 showMenu = false,
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .padding(0.dp),
+                snackbar = {
+                    Snackbar(
+                        snackbarData = it,
+                        modifier = Modifier
+                            .padding(bottom = 20.dp)
+                    )
+                }
             )
         },
     ) { innerPadding ->
@@ -121,23 +161,33 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            SettingsBody(
-                onDeleteAllClick = {
-                    coroutineScope.launch {
-                        viewmodel.deleteAllItems()
-                    }
-                },
-                saveTheme = { viewmodel.saveThemeSetting(it) },
-                saveQuantity = { viewmodel.saveQuantityOption(it) },
-                preferencesRepo = viewmodel.preferencesRepo,
-                tinOzConversionRate = ozRate,
-                tinGramsConversionRate = gramsRate,
-                onSetTinConversionRates = { ozRate, gramsRate ->
-                    viewmodel.setTinConversionRates(ozRate, gramsRate)
-                },
-                modifier = modifier
-                    .fillMaxWidth(),
-            )
+           Box {
+                SettingsBody(
+                    viewmodel = viewmodel,
+                    onDeleteAllClick = {
+                        coroutineScope.launch {
+                            viewmodel.deleteAllItems()
+                        }
+                    },
+                    optimizeDatabase = { viewmodel.optimizeDatabase() },
+                    saveTheme = { viewmodel.saveThemeSetting(it) },
+                    saveQuantity = { viewmodel.saveQuantityOption(it) },
+                    preferencesRepo = viewmodel.preferencesRepo,
+                    tinOzConversionRate = ozRate,
+                    tinGramsConversionRate = gramsRate,
+                    onSetTinConversionRates = { ozRate, gramsRate ->
+                        viewmodel.setTinConversionRates(ozRate, gramsRate)
+                    },
+                    modifier = modifier
+                        .fillMaxWidth(),
+                )
+               if (loading) {
+                   FullScreenLoading(
+                       skrimColor = Color.Black,
+                       skrimAlpha = 0.5f
+                   )
+               }
+            }
         }
     }
 }
@@ -145,7 +195,9 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsBody(
+    viewmodel: SettingsViewModel,
     onDeleteAllClick: () -> Unit,
+    optimizeDatabase: () -> Unit,
     saveTheme: (String) -> Unit,
     saveQuantity: (String) -> Unit,
     tinOzConversionRate: Double,
@@ -159,9 +211,30 @@ private fun SettingsBody(
     var showTinRates by rememberSaveable { mutableStateOf(false) }
     var showChangelog by rememberSaveable { mutableStateOf(false) }
     var showQuantityDialog by rememberSaveable { mutableStateOf(false) }
+    var backup by rememberSaveable { mutableStateOf(false) }
+    var restore by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(enabled = showChangelog) {
         showChangelog = false
+    }
+
+    val context = LocalContext.current
+    val activity = context as Activity
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
+    ) {
+        it?.let {
+            viewmodel.saveBackup(context, it)
+        }
+    }
+
+    val openLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) {
+        it?.let {
+            viewmodel.restoreBackup(context, it)
+        }
     }
 
     if (showChangelog) {
@@ -171,7 +244,6 @@ private fun SettingsBody(
             modifier = Modifier
         )
     }
-
 
     Column(
         modifier = modifier
@@ -203,16 +275,14 @@ private fun SettingsBody(
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
             )
-//            Spacer(
-//                modifier = Modifier
-//                    .height(32.dp)
-//            )
 
             DatabaseSettings(
                 showTinRates = { showTinRates = it },
                 deleteAllConfirm = { deleteAllConfirm = it },
+                showBackup = { backup = it },
+                showRestsore = { restore = it },
+                optimizeDatabase = optimizeDatabase,
                 modifier = Modifier
-                    //    .padding(horizontal = 16.dp)
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
                         1.dp,
@@ -225,16 +295,10 @@ private fun SettingsBody(
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
             )
-
-//            Spacer(
-//                modifier = Modifier
-//                    .height(32.dp)
-//            )
 
             AboutSection(
                 showChangelog = { showChangelog = it },
                 modifier = Modifier
-                    //    .padding(horizontal = 16.dp)
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
                         1.dp,
@@ -247,10 +311,6 @@ private fun SettingsBody(
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
             )
-//            Spacer(
-//                modifier = Modifier
-//                    .height(32.dp)
-//            )
 
             // Popup settings dialogs
             if (showThemeDialog) {
@@ -267,7 +327,7 @@ private fun SettingsBody(
                     onDismiss = { showQuantityDialog = false },
                     preferencesRepo = preferencesRepo,
                     modifier = Modifier,
-                    onQuantityOption = { saveQuantity(it)}
+                    onQuantityOption = { saveQuantity(it) }
                 )
             }
             if (showTinRates) {
@@ -293,6 +353,29 @@ private fun SettingsBody(
                         .padding(0.dp)
                 )
             }
+            if (backup) {
+                BackupDialog(
+                    onDismiss = { backup = false },
+                    onSave = {
+                        backup = false
+                        launcher.launch(it)
+                    },
+                    viewmodel = viewmodel,
+                    modifier = Modifier
+                )
+            }
+            if (restore) {
+                RestoreDialog(
+                    onDismiss = { restore = false },
+                    onRestore = {
+                        restore = false
+                        openLauncher.launch(arrayOf("application/octet-stream"))
+                    },
+                    viewmodel = viewmodel,
+                    modifier = Modifier
+                )
+            }
+
         }
     }
 }
@@ -319,9 +402,9 @@ fun DisplaySettings(
         Text(
             text = "Theme",
             modifier = Modifier
+                .padding(start = 4.dp)
                 .clickable { showThemeDialog(true) }
-                .padding(vertical = 2.dp)
-                .padding(start = 8.dp),
+                .padding(vertical = 2.dp, horizontal = 4.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
@@ -329,9 +412,9 @@ fun DisplaySettings(
         Text(
             text = "Cellar Quantity Display",
             modifier = Modifier
+                .padding(start = 4.dp)
                 .clickable { showQuantityDialog(true) }
-                .padding(vertical = 2.dp)
-                .padding(start = 8.dp),
+                .padding(vertical = 2.dp, horizontal = 4.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
@@ -343,6 +426,9 @@ fun DisplaySettings(
 fun DatabaseSettings(
     showTinRates: (Boolean) -> Unit,
     deleteAllConfirm: (Boolean) -> Unit,
+    showBackup: (Boolean) -> Unit,
+    showRestsore: (Boolean) -> Unit,
+    optimizeDatabase: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -352,7 +438,7 @@ fun DatabaseSettings(
         horizontalAlignment = Alignment.Start
     ) {
         Text(
-            text = "Database Settings",
+            text = "App & Database Settings",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .padding(bottom = 4.dp),
@@ -361,23 +447,55 @@ fun DatabaseSettings(
         Text(
             text = "Change Tin Conversion Rates",
             modifier = Modifier
+                .padding(start = 4.dp)
                 .clickable { showTinRates(true) }
-                .padding(vertical = 2.dp)
-                .padding(start = 8.dp),
+                .padding(vertical = 2.dp, horizontal = 4.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Clear Database",
+            text = "Clean & Optimize Database",
             modifier = Modifier
-                .clickable { deleteAllConfirm(true) }
-                .padding(vertical = 2.dp)
-                .padding(start = 8.dp),
+                .padding(start = 4.dp)
+                .clickable { optimizeDatabase() }
+                .padding(vertical = 2.dp, horizontal = 4.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.primary
         )
+        Text(
+            text = "Backup Database/Settings",
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .clickable { showBackup(true) }
+                .padding(vertical = 2.dp, horizontal = 4.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = "Restore Database/Settings",
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .clickable { showRestsore(true) }
+                .padding(vertical = 2.dp, horizontal = 4.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "Delete Database",
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .clickable { deleteAllConfirm(true) }
+                .padding(vertical = 2.dp, horizontal = 4.dp),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.error
+        )
+
     }
 }
 
@@ -1060,6 +1178,164 @@ private fun DeleteAllDialog(
         confirmButton = {
             TextButton(onClick = onDeleteConfirm) {
                 Text(stringResource(R.string.yes))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+    )
+}
+
+@Composable
+private fun BackupDialog(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    viewmodel: SettingsViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val backupState by viewmodel.backupState.collectAsState()
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        ),
+        text = {
+            Column (
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                Text(
+                    text = "Select what to backup. If you check both boxes, a single file will " +
+                            "be created that holds both. The restore function can optionally " +
+                            "restore either the database or the settings from the joint backup " +
+                            "file.",
+                    modifier = Modifier
+                        .padding(bottom = 12.dp),
+                    fontSize = 15.sp,
+                    color = LocalContentColor.current.copy(alpha = 0.75f)
+                )
+                CheckboxWithLabel(
+                    text = "Database",
+                    checked = backupState.databaseChecked,
+                    onCheckedChange = {
+                        viewmodel.onBackupOptionChanged(
+                            backupState.copy(databaseChecked = it)
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 0.dp),
+                )
+                CheckboxWithLabel(
+                    text = "Settings",
+                    checked = backupState.settingsChecked,
+                    onCheckedChange = {
+                        viewmodel.onBackupOptionChanged(
+                            backupState.copy(settingsChecked = it)
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 0.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val suggestedFilename = backupState.suggestedFilename
+                    onSave(suggestedFilename)
+                },
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = backupState.databaseChecked || backupState.settingsChecked
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+    )
+}
+
+@Composable
+private fun RestoreDialog(
+    onDismiss: () -> Unit,
+    onRestore: () -> Unit,
+    viewmodel: SettingsViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val restoreState by viewmodel.restoreState.collectAsState()
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        ),
+        text = {
+            Column (
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                Text(
+                    text = "Select what to restore.\n\nWARNING: Restore will overwrite any existing " +
+                            "settings and/or database data (depending on which is selected). " +
+                            "Either or both can be restored from a joint database/settings backup " +
+                            "file.",
+                    modifier = Modifier
+                        .padding(bottom = 12.dp),
+                    fontSize = 15.sp,
+                    color = LocalContentColor.current.copy(alpha = 0.75f)
+                )
+                CheckboxWithLabel(
+                    text = "Database",
+                    checked = restoreState.databaseChecked,
+                    onCheckedChange = {
+                        viewmodel.onRestoreOptionChanged(
+                            restoreState.copy(databaseChecked = it)
+                        ) },
+                    modifier = Modifier
+                        .padding(bottom = 0.dp),
+                )
+                CheckboxWithLabel(
+                    text = "Settings",
+                    checked = restoreState.settingsChecked,
+                    onCheckedChange = {
+                        viewmodel.onRestoreOptionChanged(
+                            restoreState.copy(settingsChecked = it)
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 0.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onRestore()
+                    onDismiss()
+                },
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = restoreState.databaseChecked || restoreState.settingsChecked
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text(stringResource(R.string.cancel))
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
