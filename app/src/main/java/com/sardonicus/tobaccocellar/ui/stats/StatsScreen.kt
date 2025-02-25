@@ -869,15 +869,11 @@ private fun DrawScope.drawLabels(
             labelX - (labelWidth * xOffsetFactor)
         }
         val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            // list placement math
+            // list placement
             listY.toFloat()
         } else {
             // normal on slice labels
-//            if (sweepAngle < 10f && normalizedMidpointAngle > 254f) {
-//                (labelY - (combinedHeight * yOffsetFactor)) - combinedHeight
-//            } else {
-                labelY - (combinedHeight * yOffsetFactor)
-//            }
+            labelY - (combinedHeight * yOffsetFactor)
         }
 
         val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
