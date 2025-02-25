@@ -86,6 +86,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -210,28 +211,7 @@ fun BulkEditBody(
         verticalArrangement = Arrangement.Top
     ) {
         if (loading) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .weight(1.5f)
-                )
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(48.dp)
-                        .weight(0.5f),
-                )
-                Spacer(
-                    modifier = Modifier
-                        .weight(2f)
-                )
-
-            }
+            FullScreenLoading()
         } else {
             val titles = listOf("Select Items", "Batch Edit")
 
@@ -401,12 +381,6 @@ fun BulkSelections(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-//            item(span = { GridItemSpan(2) }) {
-//                Spacer(
-//                    modifier = Modifier
-//                        .height(8.dp)
-//                )
-//            }
             items(items, key = { it.id }) {
                 val selected = selectedItems.contains(it)
                 BulkSelectionsItem(
@@ -926,7 +900,7 @@ fun BulkEditing(
             enabled = selectedItems.isNotEmpty() && batchEditValidation(),
         ) {
             Text(
-                text = "Batch Save",
+                text = "Save",
                 modifier = Modifier
             )
         }
@@ -980,6 +954,7 @@ fun BulkSelectionsItem(
     val background = if (selected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f) else LocalCustomColors.current.darkNeutral
     val textColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onBackground
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val weight = if (selected) FontWeight.Bold else FontWeight.Normal
 
     Column(
         modifier = modifier
@@ -1000,7 +975,8 @@ fun BulkSelectionsItem(
             maxLines = 1,
             fontSize = 15.sp,
             overflow = TextOverflow.Ellipsis,
-            color = textColor
+            color = textColor,
+            fontWeight = weight
         )
         Text(
             text = item.brand,
@@ -1009,8 +985,8 @@ fun BulkSelectionsItem(
             maxLines = 1,
             fontSize = 13.sp,
             fontStyle = FontStyle.Italic,
-            fontWeight = FontWeight.Normal,
-            color = textColor
+            color = textColor,
+            fontWeight = weight
         )
 
     }
