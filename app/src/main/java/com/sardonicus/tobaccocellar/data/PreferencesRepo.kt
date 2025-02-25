@@ -13,6 +13,7 @@ import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.io.IOException
@@ -173,5 +174,13 @@ class PreferencesRepo(
         .map { preferences ->
             preferences[itemsSyncKey(itemId)] ?: false
         }
+
+    suspend fun getItemSyncStateString(itemId: Int): String {
+        return try {
+            getItemSyncState(itemId).first().toString()
+        } catch (e: IOException) {
+            ""
+        }
+    }
 
 }
