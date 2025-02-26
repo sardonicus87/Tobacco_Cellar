@@ -134,9 +134,17 @@ class PreferencesRepo(
 
 
     /** Setting Tin Converter rates **/
-    suspend fun getTinOzConversionRate(): Double {
-        return dataStore.data.firstOrNull()?.get(TIN_OZ_CONVERSION_RATE) ?: 1.75
-    }
+    val tinOzConversionRate: Flow<Double> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[TIN_OZ_CONVERSION_RATE] ?: 1.75
+        }
 
     suspend fun setTinOzConversionRate(rate: Double) {
         dataStore.edit { preferences ->
@@ -144,9 +152,17 @@ class PreferencesRepo(
         }
     }
 
-    suspend fun getTinGramsConversionRate(): Double {
-        return dataStore.data.firstOrNull()?.get(TIN_GRAMS_CONVERSION_RATE) ?: 50.0
-    }
+    val tinGramsConversionRate: Flow<Double> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[TIN_GRAMS_CONVERSION_RATE] ?: 50.0
+        }
 
     suspend fun setTinGramsConversionRate(rate: Double) {
         dataStore.edit { preferences ->
