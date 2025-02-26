@@ -603,11 +603,7 @@ fun DetailsEntry(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable(
-                onClick = {
-                    focusManager.clearFocus()
-                }
-            )
+            .noRippleClickable(onClick = { focusManager.clearFocus() })
             .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -1517,11 +1513,9 @@ fun TinsEntry(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable(
-                onClick = {
+            .noRippleClickable(onClick = {
                     focusManager.clearFocus()
-                }
-            )
+                })
             .padding(vertical = 6.dp, horizontal = 8.dp)
             .background(color = if (tinDetailsList.isEmpty()) Color.Transparent else
                 LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
