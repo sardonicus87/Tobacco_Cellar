@@ -61,6 +61,10 @@ class HomeViewModel(
     /** States and Flows **/
     val homeUiState: StateFlow<HomeUiState> =
         combine(
+            preferencesRepo.isTableView,
+            preferencesRepo.quantityOption,
+            itemsRepository.getEverythingStream(),
+            filterViewModel.blendSearchValue,
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
             filterViewModel.selectedUnassigned,
@@ -73,10 +77,6 @@ class HomeViewModel(
             filterViewModel.selectedExcludeBrands,
             filterViewModel.selectedExcludeLikes,
             filterViewModel.selectedExcludeDislikes,
-            filterViewModel.blendSearchValue,
-            itemsRepository.getEverythingStream(),
-            preferencesRepo.isTableView,
-            preferencesRepo.quantityOption,
             filterViewModel.selectedComponent,
             filterViewModel.compMatchAll,
             filterViewModel.selectedSubgenre,
@@ -84,22 +84,22 @@ class HomeViewModel(
             filterViewModel.selectedProduction,
             filterViewModel.selectedOutOfProduction
         ) { values ->
-            val brands = values[0] as List<String>
-            val types = values[1] as List<String>
-            val unassigned = values[2] as Boolean
-            val favorites = values[3] as Boolean
-            val dislikeds = values[4] as Boolean
-            val neutral = values[5] as Boolean
-            val nonNeutral = values[6] as Boolean
-            val inStock = values[7] as Boolean
-            val outOfStock = values[8] as Boolean
-            val excludedBrands = values[9] as List<String>
-            val excludedLikes = values[10] as Boolean
-            val excludedDislikes = values[11] as Boolean
-            val blendSearchValue = values[12] as String
-            val allItems = values[13] as List<ItemsComponentsAndTins>
-            val isTableView = values[14] as Boolean
-            val quantityOption = values[15] as QuantityOption
+            val isTableView = values[0] as Boolean
+            val quantityOption = values[1] as QuantityOption
+            val allItems = values[2] as List<ItemsComponentsAndTins>
+            val blendSearchValue = values[3] as String
+            val brands = values[4] as List<String>
+            val types = values[5] as List<String>
+            val unassigned = values[6] as Boolean
+            val favorites = values[7] as Boolean
+            val dislikeds = values[8] as Boolean
+            val neutral = values[9] as Boolean
+            val nonNeutral = values[10] as Boolean
+            val inStock = values[11] as Boolean
+            val outOfStock = values[12] as Boolean
+            val excludedBrands = values[13] as List<String>
+            val excludedLikes = values[14] as Boolean
+            val excludedDislikes = values[15] as Boolean
             val components = values[16] as List<String>
             val matchAll = values[17] as Boolean
             val subgenres = values[18] as List<String>
