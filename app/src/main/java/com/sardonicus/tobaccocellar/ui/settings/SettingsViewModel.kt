@@ -35,6 +35,12 @@ class SettingsViewModel(
     private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM.value)
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
 
+    private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
+    val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
+
+    private val _tinGramsConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.gramsRate)
+    val tinGramsConversionRate: StateFlow<Double> = _tinGramsConversionRate.asStateFlow()
+
     private val _snackbarState = MutableStateFlow(SnackbarState())
     val snackbarState: StateFlow<SnackbarState> = _snackbarState.asStateFlow()
 
@@ -53,13 +59,13 @@ class SettingsViewModel(
         _loading.value = loading
     }
 
-    // theme and quantity option initialization //
+    // option initializations //
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.themeSetting.first().let { savedThemeSetting ->
-                    _themeSetting.value = savedThemeSetting
-                    if (savedThemeSetting == ThemeSetting.SYSTEM.value) {
+                preferencesRepo.themeSetting.first().let {
+                    _themeSetting.value = it
+                    if (it == ThemeSetting.SYSTEM.value) {
                         preferencesRepo.saveThemeSetting(ThemeSetting.SYSTEM.value)
                     }
                 }
@@ -67,10 +73,30 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.quantityOption.first().let { savedQuantityOption ->
-                    _quantityOption.value = savedQuantityOption
-                    if (savedQuantityOption == QuantityOption.TINS) {
+                preferencesRepo.quantityOption.first().let {
+                    _quantityOption.value = it
+                    if (it == QuantityOption.TINS) {
                         preferencesRepo.saveQuantityPreference(QuantityOption.TINS.value)
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.tinOzConversionRate.first().let {
+                    _tinOzConversionRate.value = it
+                    if (it == TinConversionRates.DEFAULT.ozRate) {
+                        preferencesRepo.setTinOzConversionRate(TinConversionRates.DEFAULT.ozRate)
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.tinGramsConversionRate.first().let {
+                    _tinGramsConversionRate.value = it
+                    if (it == TinConversionRates.DEFAULT.gramsRate) {
+                        preferencesRepo.setTinGramsConversionRate(TinConversionRates.DEFAULT.gramsRate)
                     }
                 }
             }
@@ -93,19 +119,6 @@ class SettingsViewModel(
     /** Database Settings */
     suspend fun deleteAllItems() {
         itemsRepository.deleteAllItems()
-    }
-
-    private val _tinOzConversionRate = MutableStateFlow(1.75)
-    val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
-
-    private val _tinGramsConversionRate = MutableStateFlow(50.0)
-    val tinGramsConversionRate: StateFlow<Double> = _tinGramsConversionRate.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _tinOzConversionRate.value = preferencesRepo.getTinOzConversionRate()
-            _tinGramsConversionRate.value = preferencesRepo.getTinGramsConversionRate()
-        }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
@@ -355,8 +368,8 @@ class SettingsViewModel(
 
         val settingsLengthBytes = bytes.copyOfRange(5, 9)
         val settingsLength = byteArrayToInt(settingsLengthBytes)
-        val databaseAndSyncStateBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
         val settingsBytes = bytes.copyOfRange(bytes.size - settingsLength, bytes.size)
+        val databaseAndSyncStateBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
 
         return FileContentState(databaseAndSyncStateBytes.isNotEmpty(), settingsBytes.isNotEmpty())
     }
@@ -364,14 +377,22 @@ class SettingsViewModel(
     private fun parseBackup(bytes: ByteArray): Triple<ByteArray, ByteArray, ByteArray> {
         val settingsLengthBytes = bytes.copyOfRange(5, 9)
         val settingsLength = byteArrayToInt(settingsLengthBytes)
-        val databaseAndSyncStateBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
+        val settingsBytes = bytes.copyOfRange(bytes.size - settingsLength, bytes.size)
 
-        val databaseLengthBytes = databaseAndSyncStateBytes.copyOfRange(0, 4)
+        val databaseAndSyncStateBytes = if (bytes.size > 9 + settingsLength)
+            { bytes.copyOfRange(9, bytes.size - settingsLength) } else { ByteArray(0) }
+
+        val databaseLengthBytes = if (databaseAndSyncStateBytes.size >= 4) {
+            databaseAndSyncStateBytes.copyOfRange(0, 4)
+        } else { byteArrayOf(0, 0, 0, 0) }
         val databaseLength = byteArrayToInt(databaseLengthBytes)
 
-        val databaseBytes = databaseAndSyncStateBytes.copyOfRange(4, 4 + databaseLength)
-        val itemSyncStateBytes = databaseAndSyncStateBytes.copyOfRange(4 + databaseLength, databaseAndSyncStateBytes.size)
-        val settingsBytes = bytes.copyOfRange(bytes.size - settingsLength, bytes.size)
+        val databaseBytes = if (databaseLength > 0 && databaseAndSyncStateBytes.size >= 4 + databaseLength) {
+            databaseAndSyncStateBytes.copyOfRange(4, 4 + databaseLength)
+        } else { ByteArray(0) }
+        val itemSyncStateBytes = if (databaseLength > 0 && databaseAndSyncStateBytes.size >= 4 + databaseLength) {
+            databaseAndSyncStateBytes.copyOfRange(4 + databaseLength, databaseAndSyncStateBytes.size)
+        } else { ByteArray(0) }
 
         return Triple(databaseBytes, itemSyncStateBytes, settingsBytes)
     }
@@ -464,7 +485,9 @@ class SettingsViewModel(
 }
 
 
-data class ThemeSetting(val value: String) {
+data class ThemeSetting(
+    val value: String
+) {
     companion object {
         val LIGHT = ThemeSetting("Light")
         val DARK = ThemeSetting("Dark")
@@ -472,11 +495,22 @@ data class ThemeSetting(val value: String) {
     }
 }
 
-data class QuantityOption(val value: String) {
+data class QuantityOption(
+    val value: String
+) {
     companion object {
         val TINS = QuantityOption("\"No. of Tins\" (default)")
         val OUNCES = QuantityOption("Ounces/Pounds")
         val GRAMS = QuantityOption("Grams")
+    }
+}
+
+data class TinConversionRates(
+    val ozRate: Double,
+    val gramsRate: Double
+) {
+    companion object {
+        val DEFAULT = TinConversionRates(1.75, 50.0)
     }
 }
 
@@ -520,22 +554,6 @@ fun byteArrayToInt(bytes: ByteArray): Int {
             (bytes[2].toInt() and 0xFF shl 8) or
             (bytes[3].toInt() and 0xFF)
 }
-
-//suspend fun backupDatabase(context:  Context, backupFile: File) {
-//    withContext(Dispatchers. IO)  {
-//        val db = Room.databaseBuilder(
-//            context, TobaccoDatabase::class. java,  "tobacco_database"
-//        ).build()
-//
-//        try {
-//            db.close()
-//            val dbFile = File(getDatabaseFilePath( context) )
-//            copyFile(dbFile, backupFile)
-//        } catch (e: Exception) {
-//            throw e
-//        }
-//    }
-//}
 
 suspend fun backupDatabase(context: Context, backupFile: File) {
     val dbPath = getDatabaseFilePath(context)
@@ -614,8 +632,8 @@ fun getDatabaseFilePath(context: Context): String {
 suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val quantityOption = preferencesRepo.quantityOption.first().value
     val themeSetting = preferencesRepo.themeSetting.first()
-    val tinOzConversionRate = preferencesRepo.getTinOzConversionRate().toString()
-    val tinGramsConversionRate = preferencesRepo.getTinGramsConversionRate().toString()
+    val tinOzConversionRate = preferencesRepo.tinOzConversionRate.first().toString()
+    val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first().toString()
 
     return """
             quantityOption=$quantityOption
