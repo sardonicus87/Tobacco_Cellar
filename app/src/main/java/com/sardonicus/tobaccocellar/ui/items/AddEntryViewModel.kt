@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -150,8 +151,8 @@ class AddEntryViewModel(
     init {
         viewModelScope.launch {
             tinConversion.value = TinConversion(
-                ozRate = preferencesRepo.getTinOzConversionRate(),
-                gramsRate = preferencesRepo.getTinGramsConversionRate(),
+                ozRate = preferencesRepo.tinOzConversionRate.first(),
+                gramsRate = preferencesRepo.tinGramsConversionRate.first(),
             )
         }
     }

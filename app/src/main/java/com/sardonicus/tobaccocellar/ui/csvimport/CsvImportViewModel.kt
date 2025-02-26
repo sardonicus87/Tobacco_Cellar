@@ -92,22 +92,8 @@ class CsvImportViewModel(
     }
 
     enum class CsvField {
-        Brand,
-        Blend,
-        Type,
-        Quantity,
-        Favorite,
-        Disliked,
-        Notes,
-        SubGenre,
-        Cut,
-        Production,
-        Components,
-        Container,
-        TinQuantity,
-        ManufactureDate,
-        CellarDate,
-        OpenDate,
+        Brand, Blend, Type, Quantity, Favorite, Disliked, Notes, SubGenre, Cut, Production,
+        Components, Container, TinQuantity, ManufactureDate, CellarDate, OpenDate,
     }
 
     fun updateMappingOptions(field: CsvField, selectedColumn: String) {
@@ -356,8 +342,8 @@ class CsvImportViewModel(
     }
 
     suspend fun calculateSyncTinsQuantity(tinDataList: List<TinData>): Int {
-        val ozRate = preferencesRepo.getTinOzConversionRate()
-        val gramsRate = preferencesRepo.getTinGramsConversionRate()
+        val ozRate = preferencesRepo.tinOzConversionRate.first()
+        val gramsRate = preferencesRepo.tinGramsConversionRate.first()
 
         val totalLbsTins = tinDataList.filter { it.unit == "lbs" }.sumOf {
             (it.quantity * 16) / ozRate }

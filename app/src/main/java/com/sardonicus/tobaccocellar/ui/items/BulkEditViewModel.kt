@@ -126,8 +126,8 @@ class BulkEditViewModel (
 
     init {
         viewModelScope.launch {
-            ozRate = preferencesRepo.getTinOzConversionRate()
-            gramsRate = preferencesRepo.getTinGramsConversionRate()
+            ozRate = preferencesRepo.tinOzConversionRate.first()
+            gramsRate = preferencesRepo.tinGramsConversionRate.first()
         }
     }
 

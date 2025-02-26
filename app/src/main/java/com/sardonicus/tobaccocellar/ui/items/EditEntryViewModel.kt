@@ -198,8 +198,8 @@ class EditEntryViewModel(
     init {
         viewModelScope.launch {
             tinConversion.value = TinConversion(
-                ozRate = preferencesRepo.getTinOzConversionRate(),
-                gramsRate = preferencesRepo.getTinGramsConversionRate(),
+                ozRate = preferencesRepo.tinOzConversionRate.first(),
+                gramsRate = preferencesRepo.tinGramsConversionRate.first(),
             )
         }
     }
