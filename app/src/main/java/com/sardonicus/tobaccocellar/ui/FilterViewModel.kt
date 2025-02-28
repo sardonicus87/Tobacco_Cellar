@@ -24,13 +24,6 @@ class FilterViewModel (
     private val itemsRepository: ItemsRepository
 ): ViewModel() {
 
-    // this is just to get the ItemsRepo injection to be recognized as used and make sure it's working //
-    init {
-        viewModelScope.launch {
-            val brands = itemsRepository.getAllBrandsStream()
-        }
-    }
-
 
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
