@@ -4,12 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -193,12 +197,12 @@ class SettingsViewModel(
         val databaseChecked = _backupState.value.databaseChecked
         val settingsChecked = _backupState.value.settingsChecked
         val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val baseFilename = "TobaccoCellar_backup_$currentDate"
+        val baseFilename = "TobaccoCellar_"
 
         val filename = when {
-            databaseChecked && settingsChecked -> "${baseFilename}_DbAndSettings.tcbu"
-            databaseChecked -> "${baseFilename}_Database.tcbu"
-            settingsChecked -> "${baseFilename}_Settings.tcbu"
+            databaseChecked && settingsChecked -> "${baseFilename}Complete_backup_$currentDate.tcbu"
+            databaseChecked -> "${baseFilename}Database_backup_$currentDate.tcbu"
+            settingsChecked -> "${baseFilename}Settings_backup_$currentDate.tcbu"
             else -> ""
         }
 
@@ -305,7 +309,7 @@ class SettingsViewModel(
                     restoreDatabase(context, databaseBytes)
                     restoreItemSyncState(itemSyncStateBytes)
                     restoreSettings(settingsBytes)
-                    message = "Database and Settings"
+                    message = "Database and Settings restored."
                 } else {
                     setLoadingState(false)
                     if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
@@ -334,7 +338,7 @@ class SettingsViewModel(
                         return@launch
                     }
                     restoreItemSyncState(itemSyncStateBytes)
-                    message = "Database"
+                    message = "Database restored."
                 } else {
                     setLoadingState(false)
                     showSnackbar("Backup file does not contain database data.")
@@ -345,7 +349,7 @@ class SettingsViewModel(
             else if (restoreState.settingsChecked) {
                 if (fileContentState.settingsPresent) {
                     restoreSettings(settingsBytes)
-                    message = "Settings"
+                    message = "Settings restored."
                 } else {
                     setLoadingState(false)
                     showSnackbar("Backup file does not contain settings data.")
@@ -354,7 +358,7 @@ class SettingsViewModel(
             }
 
             setLoadingState(false)
-            showSnackbar("${if (message == "") "Nothing" else message} restored.")
+            showSnackbar("${if (message == "") "Nothing" else message}")
         }
     }
 
@@ -398,11 +402,13 @@ class SettingsViewModel(
     }
 
     suspend fun restoreDatabase(context: Context, databaseBytes: ByteArray) {
+        val currentDb = Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database").build()
+
         val dbPath = getDatabaseFilePath(context)
         val dbFile = File(dbPath)
         val walFile = File("$dbPath-wal")
         val shmFile = File("$dbPath-shm")
-        val backupFile = File(dbPath + ".bak")
+        val backupFile = File("$dbPath.bak")
         val tempDir = File(context.cacheDir, "temp_db_restore_dir")
         tempDir.mkdirs()
         val tempDbFile = File(tempDir, "tobacco_database")
@@ -410,6 +416,8 @@ class SettingsViewModel(
         val tempShmFile = File(tempDir, "tobacco_database-shm")
 
         try {
+          //  currentDb.close()
+
             copyFile(dbFile, backupFile)
             if (walFile.exists()) { copyFile(walFile, File("$dbPath-wal.bak")) }
             if(shmFile.exists()) { copyFile(shmFile, File("$dbPath-shm.bak")) }
@@ -430,10 +438,10 @@ class SettingsViewModel(
             if (walBytes.isNotEmpty()) { copyFile(tempWalFile, walFile) }
             if (shmBytes.isNotEmpty()) { copyFile(tempShmFile, shmFile) }
 
-            tempDir.deleteRecursively()
             backupFile.delete()
             File("$dbPath-wal.bak").delete()
             File("$dbPath-shm.bak").delete()
+            tempDir.deleteRecursively()
 
         } catch (e: Exception) {
             dbFile.delete()
@@ -444,16 +452,18 @@ class SettingsViewModel(
             if (File("$dbPath-wal.bak").exists()) { copyFile(File("$dbPath-wal.bak"), walFile) }
             if (File("$dbPath-shm.bak").exists()) { copyFile(File("$dbPath-shm.bak"), shmFile) }
 
-            tempDir.deleteRecursively()
             backupFile.delete()
             File("$dbPath-wal.bak").delete()
             File("$dbPath-shm.bak").delete()
+            tempDir.deleteRecursively()
             throw e
         } finally {
             val newDb = Room.databaseBuilder(
                 context, TobaccoDatabase::class.java, "tobacco_database"
-            ).fallbackToDestructiveMigration().build()
-            newDb.close()
+            ).build()
+            itemsRepository.updateDatabase(newDb)
+
+            EventBus.emit(DatabaseRestoreEvent)
         }
     }
 
@@ -535,6 +545,8 @@ data class SnackbarState(
     val message: String = ""
 )
 
+data object DatabaseRestoreEvent
+
 
 /** Extension functions */
 // Create backup //
@@ -555,7 +567,40 @@ fun byteArrayToInt(bytes: ByteArray): Int {
             (bytes[3].toInt() and 0xFF)
 }
 
+@Throws(IOException::class)
+fun copyFile(src: File, dst: File) {
+    FileInputStream(src).use { `in` ->
+        FileOutputStream(dst).use { out ->
+            // Transfer bytes from in to out
+            val buf = ByteArray(1024)
+            var len: Int
+            var totalBytesRead = 0
+            var totalBytesWritten = 0
+            while (`in`.read(buf).also { len = it } > 0) {
+                out.write(buf, 0, len)
+                totalBytesRead += len
+                totalBytesWritten += len
+            }
+        }
+    }
+}
+
+fun getDatabaseFilePath(context: Context): String {
+    val db = Room.databaseBuilder(
+        context, TobaccoDatabase::class.java,
+        "tobacco_database"
+    ).build()
+    val dbPath: String? = db.openHelper.writableDatabase.path
+    db.close()
+
+//    val dbPath: String? = TobaccoDatabase.getDatabase(context).openHelper.writableDatabase.path
+    return dbPath ?: ""
+}
+
 suspend fun backupDatabase(context: Context, backupFile: File) {
+//    val currentDb = Room.databaseBuilder(
+//        context, TobaccoDatabase::class.java,
+//        "tobacco_database").build()
     val dbPath = getDatabaseFilePath(context)
     val dbFile = File(dbPath)
     val walFile = File("$dbPath-wal")
@@ -569,11 +614,12 @@ suspend fun backupDatabase(context: Context, backupFile: File) {
     val tempShmFile = File(tempDir, "tobacco_database-shm")
 
     try {
+    //    currentDb.query(SimpleSQLiteQuery("VACUUM"))
 
         copyFile(dbFile, tempDbFile)
 
         if (walFile.exists()) { copyFile(walFile, tempWalFile) }
-        if(shmFile.exists()) { copyFile(shmFile, tempShmFile) }
+        if (shmFile.exists()) { copyFile(shmFile, tempShmFile) }
 
         FileOutputStream(backupFile).use { outputStream ->
             if (tempDbFile.exists() && tempDbFile.length() > 0) {
@@ -598,35 +644,6 @@ suspend fun backupDatabase(context: Context, backupFile: File) {
     } catch (e: Exception) {
         throw e
     }
-}
-
-@Throws(IOException::class)
-fun copyFile(src: File, dst: File) {
-    Log.d("DatabaseUtils", "copy file: src=${src.absolutePath}, dst=${dst.absolutePath}")
-    FileInputStream(src).use { `in` ->
-        FileOutputStream(dst).use { out ->
-            // Transfer bytes from in to out
-            val buf = ByteArray(1024)
-            var len: Int
-            var totalBytesRead = 0
-            var totalBytesWritten = 0
-            while (`in`.read(buf).also { len = it } > 0) {
-                out.write(buf, 0, len)
-                totalBytesRead += len
-                totalBytesWritten += len
-            }
-        }
-    }
-}
-
-fun getDatabaseFilePath(context: Context): String {
-    val db = Room.databaseBuilder(
-        context, TobaccoDatabase::class.java,
-        "tobacco_database"
-    ).build()
-    val dbPath: String? = db.openHelper.writableDatabase.path
-    db.close()
-    return dbPath ?: ""
 }
 
 suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
