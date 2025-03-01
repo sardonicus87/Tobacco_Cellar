@@ -162,6 +162,10 @@ private fun HelpBody(
                 title = "Adding Tins",
                 content = { AddingTins() }
             )
+            HelpSection(
+                title = "Settings",
+                content = { Settings() }
+            )
         }
 //        Column(
 //            horizontalAlignment = Alignment.CenterHorizontally,
@@ -729,6 +733,77 @@ private fun AddingTins(
                 modifier = Modifier
             )
         }
+    }
+}
+
+@Composable
+private fun Settings(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+    ) {
+        Text(
+            text = "Most settings are self-explanatory, but a few might need further clarification.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Tin Conversion Rates allows you to set the value of what constitutes one " +
+                    "\"tin\". You can set the value for ounces and grams separately. This " +
+                    "conversion rate is used when calculating the \"No. of Tins\" field when " +
+                    "adding individual tins and using the sync option. It is also used on the " +
+                    "Statistics screen.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Clean and Optimize Database cleans up the tables of any potentially orphaned " +
+                    "data (such as components that are no longer attached to any blends) and " +
+                    "also runs the SQL \"vacuum\" command. This option will have its greatest " +
+                    "effect if you have updated or deleted a lot of entries, otherwise it won't " +
+                    "have much of an effect beyond cleaning up orphaned data.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Backup and Restore both give you two options, \"Database\" and \"Settings\". " +
+                    "Selecting database will make a copy of the entire database, and settings " +
+                    "will save the app settings (like display settings). One backup file is made " +
+                    "regardless of whether you select one or both (both backups will be in one).",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "These backups are saved as \".tcbu\" files, and are given a suggested name " +
+                    "(that you don't have to use) depending on the selected options.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "When restoring, the same options are presented. You can restore the database, " +
+                    "settings, or both from a backup file that contains both, but a database " +
+                    "backup file will only restore the database, and a settings file will restore " +
+                    "only the settings.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Delete Database will erase all entries in the database, and this cannot be " +
+                    "undone.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
     }
 }
 
