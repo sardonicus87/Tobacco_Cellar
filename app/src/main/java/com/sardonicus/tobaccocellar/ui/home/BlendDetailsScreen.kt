@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -32,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -41,10 +39,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +52,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.items.formatLongDate
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -108,27 +109,7 @@ fun BlendDetailsScreen(
                 .padding(innerPadding)
         ) {
             if (blendDetails.isLoading) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1.5f)
-                    )
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(48.dp)
-                            .weight(0.5f),
-                    )
-                    Spacer(
-                        modifier = Modifier
-                            .weight(2f)
-                    )
-                }
+                FullScreenLoading()
             }
             else if (blendDetails.details != null) {
                 BlendDetailsBody(
@@ -173,10 +154,10 @@ fun BlendDetailsBody(
     viewModel: BlendDetailsViewModel,
     modifier: Modifier = Modifier
 ) {
-    fun buildString(title: String, value: String, color: Color = Color.Unspecified): AnnotatedString {
+    fun buildString(title: String, value: String): AnnotatedString {
         val string = buildAnnotatedString {
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = color)) { append(title) }
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Normal)) { append(value) }
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Medium, fontSize = 14.sp)) { append(title) }
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp)) { append(value) }
         }
         return string
     }
@@ -206,13 +187,35 @@ fun BlendDetailsBody(
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                 )
+//                Text(
+//                    text = "by ${blendDetails.items.brand}",
+//                    modifier = Modifier
+//                        .padding(bottom = 12.dp),
+//                    fontSize = 16.sp,
+//                    lineHeight = 16.sp,
+//                    fontWeight = FontWeight.Normal,
+//                    textAlign = TextAlign.Center,
+//                    fontStyle = FontStyle.Italic,
+//                )
                 Text(
-                    text = "by ${blendDetails.items.brand}",
+                    text = buildAnnotatedString {
+                        withStyle(
+                            style = SpanStyle(
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 16.sp,
+                            )
+                        ) { append("by ") }
+                        withStyle(
+                            style = SpanStyle(
+                                fontWeight = FontWeight.Normal,
+                                fontStyle = FontStyle.Italic,
+                                fontSize = 16.sp,
+                            )
+                        ) { append(blendDetails.items.brand) }
+                    },
                     modifier = Modifier
                         .padding(bottom = 12.dp),
-                    fontSize = 16.sp,
                     lineHeight = 16.sp,
-                    fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -232,11 +235,6 @@ fun BlendDetailsBody(
                 .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
                 .padding(vertical = 8.dp, horizontal = 12.dp)
         ) {
-            val productionStatus =
-                if (blendDetails.items.inProduction) "in production" else "not in production"
-            val productionStatusColor =
-                if (blendDetails.items.inProduction) LocalContentColor.current else MaterialTheme.colorScheme.error
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -245,9 +243,11 @@ fun BlendDetailsBody(
             ) {
                 Text(
                     text = "Details",
-                    modifier = Modifier,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.tertiary
                 )
                 Spacer(
                     modifier = Modifier
@@ -282,7 +282,6 @@ fun BlendDetailsBody(
                         text = buildString(
                             "Type: ",
                             type,
-                            MaterialTheme.colorScheme.tertiary
                         ),
                         modifier = Modifier,
                     )
@@ -291,7 +290,6 @@ fun BlendDetailsBody(
                             text = buildString(
                                 "Subgenre: ",
                                 blendDetails.items.subGenre,
-                                MaterialTheme.colorScheme.tertiary
                             ),
                             modifier = Modifier,
                         )
@@ -301,7 +299,6 @@ fun BlendDetailsBody(
                             text = buildString(
                                 "Cut: ",
                                 blendDetails.items.cut,
-                                MaterialTheme.colorScheme.tertiary
                             ),
                             modifier = Modifier,
                         )
@@ -312,23 +309,27 @@ fun BlendDetailsBody(
                             text = buildString(
                                 "Components: ",
                                 blendDetails.components.joinToString(", ") { it.componentName },
-                                MaterialTheme.colorScheme.tertiary
                             ),
                             modifier = Modifier,
                         )
                     }
+                    val productionStatus =
+                        if (blendDetails.items.inProduction) "in production" else "not in production"
+                    val productionStatusColor =
+                        if (blendDetails.items.inProduction) LocalContentColor.current else MaterialTheme.colorScheme.error
                     Text(
                         text = buildAnnotatedString {
                             withStyle(
                                 style = SpanStyle(
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.tertiary
+                                    fontSize = 14.sp
                                 )
                             ) { append("Production Status: ") }
                             withStyle(
                                 style = SpanStyle(
                                     fontWeight = FontWeight.Normal,
-                                    color = productionStatusColor
+                                    color = productionStatusColor,
+                                    fontSize = 14.sp
                                 )
                             ) { append(productionStatus) }
                         },
@@ -339,7 +340,7 @@ fun BlendDetailsBody(
         }
 
 
-        // Notes?
+        // Notes
         if (blendDetails.items.notes.isNotBlank()) {
             Column(
                 horizontalAlignment = Alignment.Start,
@@ -360,9 +361,10 @@ fun BlendDetailsBody(
                 Text(
                     text = "Notes",
                     modifier = Modifier
-                        .padding(bottom = 8.dp),
+                        .padding(bottom = 6.dp),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.tertiary
                 )
                 SelectionContainer {
                     NotesText(
@@ -395,9 +397,10 @@ fun BlendDetailsBody(
                 Text(
                     text = "Tins",
                     modifier = Modifier
-                        .padding(bottom = 8.dp),
+                        .padding(bottom = 6.dp),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.tertiary
                 )
                 SelectionContainer {
                     Column(
@@ -414,88 +417,101 @@ fun BlendDetailsBody(
                                 Column {
                                     Text(
                                         text = it.tinLabel,
-                                        modifier = Modifier
-                                            .padding(bottom = 2.dp),
+                                        modifier = Modifier,
                                         fontWeight = FontWeight.SemiBold,
+                                        fontSize = 15.sp,
                                     )
-                                    Column(
-                                        horizontalAlignment = Alignment.Start,
-                                        verticalArrangement = Arrangement.spacedBy(
-                                            0.dp,
-                                            Alignment.Top
-                                        ),
-                                        modifier = Modifier
-                                            .padding(start = 12.dp)
-                                    ) {
-                                        if (it.container.isNotEmpty()) {
-                                            Text(
-                                                text = buildString(
-                                                    "Container: ",
-                                                    it.container,
-                                                    MaterialTheme.colorScheme.tertiary
-                                                ),
-                                                modifier = Modifier,
-                                            )
+                                    if (it.container.isNotEmpty() || it.unit.isNotEmpty() || it.manufactureDate != null || it.cellarDate != null || it.openDate != null) {
+                                        Column(
+                                            horizontalAlignment = Alignment.Start,
+                                            verticalArrangement = Arrangement.spacedBy(
+                                                0.dp,
+                                                Alignment.Top
+                                            ),
+                                            modifier = Modifier
+                                                .padding(start = 12.dp)
+                                        ) {
+                                            if (it.container.isNotEmpty()) {
+                                                Text(
+                                                    text = buildString(
+                                                        "Container: ",
+                                                        it.container,
+                                                    ),
+                                                    modifier = Modifier,
+                                                )
+                                            }
+                                            if (it.unit.isNotEmpty()) {
+                                                Text(
+                                                    text = buildString(
+                                                        "Quantity: ",
+                                                        "${it.tinQuantity} ${it.unit}",
+                                                    ),
+                                                    modifier = Modifier,
+                                                )
+                                            }
+                                            if (it.manufactureDate != null) {
+                                                Text(
+                                                    text = buildString(
+                                                        "Manufacture Date: ",
+                                                        formatLongDate(it.manufactureDate),
+                                                    ),
+                                                    modifier = Modifier,
+                                                )
+                                                Text(
+                                                    text = "(${viewModel.calculateAge(it.manufactureDate)} old)",
+                                                    modifier = Modifier
+                                                        .padding(start = 16.dp),
+                                                    fontSize = 12.sp,
+                                                    lineHeight = 12.sp,
+                                                )
+                                            }
+                                            if (it.cellarDate != null) {
+                                                Text(
+                                                    text = buildString(
+                                                        "Cellar Date: ",
+                                                        formatLongDate(it.cellarDate),
+                                                    ),
+                                                    modifier = Modifier,
+                                                )
+                                                Text(
+                                                    text = "(${viewModel.calculateAge(it.cellarDate)} in cellar)",
+                                                    modifier = Modifier
+                                                        .padding(start = 16.dp),
+                                                    fontSize = 12.sp,
+                                                    lineHeight = 12.sp,
+                                                )
+                                            }
+                                            if (it.openDate != null) {
+                                                Text(
+                                                    text = buildString(
+                                                        "Opened Date: ",
+                                                        formatLongDate(it.openDate),
+                                                    ),
+                                                    modifier = Modifier,
+                                                )
+                                                Text(
+                                                    text = "(${viewModel.calculateAge(it.openDate)} open)",
+                                                    modifier = Modifier
+                                                        .padding(start = 16.dp),
+                                                    fontSize = 12.sp,
+                                                    lineHeight = 12.sp,
+                                                )
+                                            }
                                         }
-                                        if (it.unit.isNotEmpty()) {
+                                    } else {
+                                        Column(
+                                            horizontalAlignment = Alignment.Start,
+                                            verticalArrangement = Arrangement.spacedBy(
+                                                0.dp,
+                                                Alignment.Top
+                                            ),
+                                            modifier = Modifier
+                                                .padding(start = 12.dp)
+                                        ) {
                                             Text(
-                                                text = buildString(
-                                                    "Quantity: ",
-                                                    "${it.tinQuantity} ${it.unit}",
-                                                    MaterialTheme.colorScheme.tertiary
-                                                ),
+                                                text = "No details available.",
                                                 modifier = Modifier,
-                                            )
-                                        }
-                                        if (it.manufactureDate != null) {
-                                            Text(
-                                                text = buildString(
-                                                    "Manufacture Date: ",
-                                                    formatLongDate(it.manufactureDate),
-                                                    MaterialTheme.colorScheme.tertiary
-                                                ),
-                                                modifier = Modifier,
-                                            )
-                                            Text(
-                                                text = "(${viewModel.calculateAge(it.manufactureDate)} old)",
-                                                modifier = Modifier
-                                                    .padding(start = 16.dp),
-                                                fontSize = 12.sp,
-                                                lineHeight = 12.sp,
-                                            )
-                                        }
-                                        if (it.cellarDate != null) {
-                                            Text(
-                                                text = buildString(
-                                                    "Cellar Date: ",
-                                                    formatLongDate(it.cellarDate),
-                                                    MaterialTheme.colorScheme.tertiary
-                                                ),
-                                                modifier = Modifier,
-                                            )
-                                            Text(
-                                                text = "(${viewModel.calculateAge(it.cellarDate)} in cellar)",
-                                                modifier = Modifier
-                                                    .padding(start = 16.dp),
-                                                fontSize = 12.sp,
-                                                lineHeight = 12.sp,
-                                            )
-                                        }
-                                        if (it.openDate != null) {
-                                            Text(
-                                                text = buildString(
-                                                    "Opened Date: ",
-                                                    formatLongDate(it.openDate),
-                                                    MaterialTheme.colorScheme.tertiary
-                                                ),
-                                                modifier = Modifier,
-                                            )
-                                            Text(
-                                                text = "(${viewModel.calculateAge(it.openDate)} open)",
-                                                modifier = Modifier
-                                                    .padding(start = 16.dp),
-                                                fontSize = 12.sp,
-                                                lineHeight = 12.sp,
+                                                fontSize = 14.sp,
                                             )
                                         }
                                     }
@@ -510,6 +526,11 @@ fun BlendDetailsBody(
                 )
             }
         }
+
+        Spacer(
+            modifier = Modifier
+                .height(16.dp)
+        )
     }
 }
 
@@ -517,7 +538,8 @@ fun BlendDetailsBody(
 @Composable
 fun NotesText(
     notes: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 14.sp,
 ) {
     val lines = notes.split("\n")
     val blankLine = 10.sp
@@ -536,6 +558,7 @@ fun NotesText(
                 Text(
                     text = it,
                     modifier = Modifier,
+                    fontSize = fontSize,
                 )
             }
         }

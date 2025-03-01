@@ -266,11 +266,11 @@ private fun SettingsBody(
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
                         1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
                         RoundedCornerShape(8.dp)
                     )
                     .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .5f),
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
                         RoundedCornerShape(8.dp)
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
@@ -280,17 +280,17 @@ private fun SettingsBody(
                 showTinRates = { showTinRates = it },
                 deleteAllConfirm = { deleteAllConfirm = it },
                 showBackup = { backup = it },
-                showRestsore = { restore = it },
+                showRestore = { restore = it },
                 optimizeDatabase = optimizeDatabase,
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
                         1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
                         RoundedCornerShape(8.dp)
                     )
                     .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .5f),
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
                         RoundedCornerShape(8.dp)
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
@@ -302,11 +302,11 @@ private fun SettingsBody(
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
                         1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
                         RoundedCornerShape(8.dp)
                     )
                     .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .5f),
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
                         RoundedCornerShape(8.dp)
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
@@ -427,7 +427,7 @@ fun DatabaseSettings(
     showTinRates: (Boolean) -> Unit,
     deleteAllConfirm: (Boolean) -> Unit,
     showBackup: (Boolean) -> Unit,
-    showRestsore: (Boolean) -> Unit,
+    showRestore: (Boolean) -> Unit,
     optimizeDatabase: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -445,7 +445,7 @@ fun DatabaseSettings(
             fontSize = 18.sp
         )
         Text(
-            text = "Change Tin Conversion Rates",
+            text = "Tin Conversion Rates",
             modifier = Modifier
                 .padding(start = 4.dp)
                 .clickable { showTinRates(true) }
@@ -465,7 +465,7 @@ fun DatabaseSettings(
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Backup Database/Settings",
+            text = "Backup",
             modifier = Modifier
                 .padding(start = 4.dp)
                 .clickable { showBackup(true) }
@@ -476,10 +476,10 @@ fun DatabaseSettings(
         )
 
         Text(
-            text = "Restore Database/Settings",
+            text = "Restore",
             modifier = Modifier
                 .padding(start = 4.dp)
-                .clickable { showRestsore(true) }
+                .clickable { showRestore(true) }
                 .padding(vertical = 2.dp, horizontal = 4.dp),
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
