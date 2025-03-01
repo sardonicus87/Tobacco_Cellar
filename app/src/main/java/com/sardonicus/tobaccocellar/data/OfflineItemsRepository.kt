@@ -7,7 +7,9 @@ import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
-class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
+class OfflineItemsRepository(
+    private var itemsDao: ItemsDao,
+) : ItemsRepository {
 
     /** Database operations **/
     // Items //
@@ -34,6 +36,25 @@ class OfflineItemsRepository(private val itemsDao: ItemsDao) : ItemsRepository {
     override suspend fun optimizeDatabase() {
         itemsDao.deleteOrphanedComponents()
         itemsDao.vacuumDatabase(SimpleSQLiteQuery("VACUUM"))
+    }
+
+    override suspend fun updateDatabase(newDatabase: TobaccoDatabase) {
+        itemsDao = newDatabase.itemsDao()
+        val dummyItem = Items(
+            brand = "Invalidation", blend = "Trigger",
+            type = "",
+            quantity = 1,
+            favorite = false,
+            disliked = false,
+            notes = "",
+            subGenre = "",
+            cut = "",
+            inProduction = true
+        )
+        val id = itemsDao.insert(dummyItem)
+        val dummyDelete = dummyItem.copy(id = id.toInt())
+
+        itemsDao.delete(dummyDelete)
     }
 
 
