@@ -14,15 +14,23 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,6 +52,9 @@ class HomeViewModel(
     private val _sorting = mutableStateOf(Sorting())
     val sorting: State<Sorting> = _sorting
 
+    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
+    private val refresh = _refresh.asSharedFlow()
+
     init {
         viewModelScope.launch {
             combine(
@@ -55,15 +66,28 @@ class HomeViewModel(
                 _sorting.value = it
             }
         }
+        viewModelScope.launch {
+            EventBus.events.collect {
+                if (it is DatabaseRestoreEvent) {
+                    _refresh.emit(Unit)
+                }
+            }
+        }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
+        refresh.onStart { emit(Unit) }.flatMapLatest {
+            itemsRepository.getEverythingStream()
+        }
 
     /** States and Flows **/
     val homeUiState: StateFlow<HomeUiState> =
         combine(
             preferencesRepo.isTableView,
             preferencesRepo.quantityOption,
-            itemsRepository.getEverythingStream(),
+        //    itemsRepository.getEverythingStream(),
+            everythingFlow,
             filterViewModel.blendSearchValue,
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,

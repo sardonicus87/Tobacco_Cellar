@@ -5,15 +5,23 @@ import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlin.collections.filter
 
 class StatsViewModel(
@@ -21,9 +29,29 @@ class StatsViewModel(
     private val filterViewModel: FilterViewModel
 ): ViewModel() {
 
+    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
+    private val refresh = _refresh.asSharedFlow()
+
+    init {
+        viewModelScope.launch {
+            EventBus.events.collect {
+                if (it is DatabaseRestoreEvent) {
+                    _refresh.emit(Unit)
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
+        refresh.onStart { emit(Unit) }.flatMapLatest {
+            itemsRepository.getEverythingStream()
+        }
+
     /** Raw stats */
     val rawStats: StateFlow<RawStats> =
-        itemsRepository.getEverythingStream()
+       // itemsRepository.getEverythingStream()
+        everythingFlow
             .map {
                 RawStats(
                     itemsCount = it.size,
@@ -48,6 +76,8 @@ class StatsViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredStats: StateFlow<FilteredStats> =
         combine(
+        //    itemsRepository.getEverythingStream(),
+            everythingFlow,
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
             filterViewModel.selectedUnassigned,
@@ -60,7 +90,6 @@ class StatsViewModel(
             filterViewModel.selectedExcludeBrands,
             filterViewModel.selectedExcludeLikes,
             filterViewModel.selectedExcludeDislikes,
-            itemsRepository.getEverythingStream(),
             filterViewModel.selectedComponent,
             filterViewModel.compMatchAll,
             filterViewModel.selectedSubgenre,
@@ -68,19 +97,19 @@ class StatsViewModel(
             filterViewModel.selectedProduction,
             filterViewModel.selectedOutOfProduction
         ) { values ->
-            val brands = values[0] as List<String>
-            val types = values[1] as List<String>
-            val unassigned = values[2] as Boolean
-            val favorites = values[3] as Boolean
-            val dislikeds = values[4] as Boolean
-            val neutral = values[5] as Boolean
-            val nonNeutral = values[6] as Boolean
-            val inStock = values[7] as Boolean
-            val outOfStock = values[8] as Boolean
-            val excludedBrands = values[9] as List<String>
-            val excludedLikes = values[10] as Boolean
-            val excludedDislikes = values[11] as Boolean
-            val allItems = values[12] as List<ItemsComponentsAndTins>
+            val allItems = values[0] as List<ItemsComponentsAndTins>
+            val brands = values[1] as List<String>
+            val types = values[2] as List<String>
+            val unassigned = values[3] as Boolean
+            val favorites = values[4] as Boolean
+            val dislikeds = values[5] as Boolean
+            val neutral = values[6] as Boolean
+            val nonNeutral = values[7] as Boolean
+            val inStock = values[8] as Boolean
+            val outOfStock = values[9] as Boolean
+            val excludedBrands = values[10] as List<String>
+            val excludedLikes = values[11] as Boolean
+            val excludedDislikes = values[12] as Boolean
             val components = values[13] as List<String>
             val matchAll = values[14] as Boolean
             val subgenres = values[15] as List<String>
@@ -213,21 +242,6 @@ class StatsViewModel(
 
 }
 
-
-
-data class SetOne(
-    val count: Int,
-    val brands: Int,
-    val favorite: Int,
-    val dislike: Int
-)
-
-data class SetTwo(
-    val byBrand: List<BrandCount>,
-    val byType: List<TypeCount>,
-    val quantity: Int,
-    val zero: Int
-)
 
 data class BrandCount(
     val brand: String,
