@@ -397,7 +397,7 @@ fun DisplaySettings(
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .padding(bottom = 4.dp),
-            fontSize = 18.sp
+            fontSize = 16.sp
         )
         Text(
             text = "Theme",
@@ -442,7 +442,7 @@ fun DatabaseSettings(
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .padding(bottom = 4.dp),
-            fontSize = 18.sp
+            fontSize = 16.sp
         )
         Text(
             text = "Tin Conversion Rates",
@@ -563,7 +563,7 @@ fun AboutSection(
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .padding(bottom = 4.dp),
-            fontSize = 18.sp
+            fontSize = 16.sp
         )
         Column(
             modifier = Modifier
