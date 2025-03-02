@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -652,59 +651,88 @@ class FilterViewModel (
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                itemsRepository.getAllBrandsStream().collectLatest { brands ->
-                    _availableBrands.value = brands
+                itemsRepository.getEverythingStream().collectLatest {
+                    _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
+                    _availableSubgenres.value = it.map {
+                        if (it.items.subGenre.isBlank()) {
+                            "(Unassigned)"
+                        } else {
+                            it.items.subGenre
+                        }
+                    }.distinct().sorted()
+                    _availableCuts.value = it.map {
+                        if (it.items.cut.isBlank()) {
+                            "(Unassigned)"
+                        } else {
+                            it.items.cut
+                        }
+                    }.distinct().sorted()
+                    _availableComponents.value = it.flatMap {
+                        it.components }.map {
+                        if (it.componentName.isBlank()) {
+                            "(None Assigned)"
+                        } else {
+                            it.componentName
+                        }
+                    }.distinct().sorted()
                 }
             }
         }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllSubgenresStream()
-                    .map {
-                        it.map {
-                            if (it.isBlank()) {
-                                "(Unassigned)"
-                            } else {
-                                it
-                            }
-                        }
-                    }
-                    .collectLatest { subgenres ->
-                        _availableSubgenres.value = subgenres
-                    }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllCutsStream()
-                    .map {
-                        it.map {
-                            if (it.isBlank()) {
-                                "(Unassigned)"
-                            } else {
-                                it
-                            }
-                        }
-                    }
-                    .collectLatest { cuts ->
-                        _availableCuts.value = cuts
-                    }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllComponentsStream()
-                    .collectLatest { components ->
-                        _availableComponents.value = components.map {
-                            if (it.componentName.isBlank()) {
-                                "(None Assigned)"
-                            } else {
-                                it.componentName
-                            }
-                        }
-                    }
-            }
-        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllBrandsStream().collectLatest { brands ->
+//                    _availableBrands.value = brands
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllSubgenresStream()
+//                    .map {
+//                        it.map {
+//                            if (it.isBlank()) {
+//                                "(Unassigned)"
+//                            } else {
+//                                it
+//                            }
+//                        }
+//                    }
+//                    .collectLatest { subgenres ->
+//                        _availableSubgenres.value = subgenres
+//                    }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllCutsStream()
+//                    .map {
+//                        it.map {
+//                            if (it.isBlank()) {
+//                                "(Unassigned)"
+//                            } else {
+//                                it
+//                            }
+//                        }
+//                    }
+//                    .collectLatest { cuts ->
+//                        _availableCuts.value = cuts
+//                    }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllComponentsStream()
+//                    .collectLatest { components ->
+//                        _availableComponents.value = components.map {
+//                            if (it.componentName.isBlank()) {
+//                                "(None Assigned)"
+//                            } else {
+//                                it.componentName
+//                            }
+//                        }
+//                    }
+//            }
+//        }
     }
 
 }

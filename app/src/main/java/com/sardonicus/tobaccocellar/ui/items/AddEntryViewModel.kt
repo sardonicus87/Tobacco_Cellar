@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -229,49 +230,73 @@ class AddEntryViewModel(
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                itemsRepository.getAllBrandsStream().collect {
-                    _brands.value = it
-                }.also {
-                    _brands.value = ItemUiState().autoBrands
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllSubGenresStream().collect {
+                itemsRepository.getEverythingStream().collectLatest {
+                    _brands.value = it.map { it.items.brand }.distinct().sorted()
                     _subGenres.value = it
-                }.also {
-                    _subGenres.value = ItemUiState().autoGenres
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllCutsStream().collect {
+                        .map {
+                            it.items.subGenre
+                        }.distinct().sorted()
                     _cuts.value = it
-                }.also {
-                    _cuts.value = ItemUiState().autoCuts
+                        .map {
+                            it.items.cut
+                        }.distinct().sorted()
+                    _components.value = it.flatMap { it.components }
+                        .map {
+                            it.componentName
+                        }.distinct().sorted()
+                    _tinContainers.value = it.flatMap { it.tins }
+                        .map {
+                            it.container
+                        }.distinct().sorted()
                 }
             }
         }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllCompNamesStream().collect {
-                    _components.value = it
-                }.also {
-                    _components.value = ComponentList().autoComps
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllTinContainersStream().collect {
-                    _tinContainers.value = it
-                }.also {
-                    _tinContainers.value = ItemUiState().autoContainers
-                }
-            }
-        }
+
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllBrandsStream().collect {
+//                    _brands.value = it
+//                }.also {
+//                    _brands.value = ItemUiState().autoBrands
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllSubGenresStream().collect {
+//                    _subGenres.value = it
+//                }.also {
+//                    _subGenres.value = ItemUiState().autoGenres
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllCutsStream().collect {
+//                    _cuts.value = it
+//                }.also {
+//                    _cuts.value = ItemUiState().autoCuts
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllCompNamesStream().collect {
+//                    _components.value = it
+//                }.also {
+//                    _components.value = ComponentList().autoComps
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllTinContainersStream().collect {
+//                    _tinContainers.value = it
+//                }.also {
+//                    _tinContainers.value = ItemUiState().autoContainers
+//                }
+//            }
+//        }
     }
 
 

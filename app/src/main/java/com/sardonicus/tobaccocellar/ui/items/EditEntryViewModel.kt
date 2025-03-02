@@ -13,6 +13,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -110,39 +111,62 @@ class EditEntryViewModel(
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                itemsRepository.getAllBrandsStream().collect {
-                    _brands.value = it
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllSubGenresStream().collect {
+                itemsRepository.getEverythingStream().collectLatest {
+                    _brands.value = it.map { it.items.brand }.distinct().sorted()
                     _subGenres.value = it
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllCutsStream().collect {
+                        .map {
+                            it.items.subGenre
+                        }.distinct().sorted()
                     _cuts.value = it
+                        .map {
+                            it.items.cut
+                        }.distinct().sorted()
+                    _components.value = it.flatMap { it.components }
+                        .map {
+                            it.componentName
+                        }.distinct().sorted()
+                    _tinContainers.value = it.flatMap { it.tins }
+                        .map {
+                            it.container
+                        }.distinct().sorted()
                 }
             }
         }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllCompNamesStream().collect {
-                    _components.value = it
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getAllTinContainersStream().collect {
-                    _tinContainers.value = it
-                }
-            }
-        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllBrandsStream().collect {
+//                    _brands.value = it
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllSubGenresStream().collect {
+//                    _subGenres.value = it
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllCutsStream().collect {
+//                    _cuts.value = it
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllCompNamesStream().collect {
+//                    _components.value = it
+//                }
+//            }
+//        }
+//        viewModelScope.launch {
+//            withContext(Dispatchers.IO) {
+//                itemsRepository.getAllTinContainersStream().collect {
+//                    _tinContainers.value = it
+//                }
+//            }
+//        }
     }
 
 
@@ -174,10 +198,6 @@ class EditEntryViewModel(
         _labelInvalid.value = !check
     }
 
-//    fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
-//        val check = tinDetailsList.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
-//        return !check
-//    }
 
 
     /** tin conversion and sync state **/
