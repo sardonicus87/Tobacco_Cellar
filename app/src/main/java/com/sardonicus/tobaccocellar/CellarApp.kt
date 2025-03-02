@@ -47,10 +47,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -101,7 +99,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -130,6 +127,8 @@ import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.IndicatorSizes
+import com.sardonicus.tobaccocellar.ui.composables.PagerIndicator
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
@@ -137,7 +136,6 @@ import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -646,7 +644,6 @@ fun FilterBottomSheet(
     modifier: Modifier = Modifier,
 ) {
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
-    val pagerState = rememberPagerState(pageCount = { 2 })
     var innerScrolling by remember { mutableStateOf(false) }
 
     Column (
@@ -696,12 +693,14 @@ fun FilterBottomSheet(
                         modifier = Modifier
                             .padding(0.dp)
                             .size(24.dp),
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
                 }
             }
         }
+
         // indicator row //
+        val pagerState = rememberPagerState(pageCount = { 2 })
         Row (
             modifier = Modifier
                 .fillMaxWidth()
@@ -712,7 +711,8 @@ fun FilterBottomSheet(
             PagerIndicator(
                 pagerState = pagerState,
                 modifier = Modifier
-                    .padding(0.dp)
+                    .padding(0.dp),
+                indicatorSize = IndicatorSizes(7.dp, 6.dp)
             )
         }
 
@@ -720,7 +720,8 @@ fun FilterBottomSheet(
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth(),
-            userScrollEnabled = !innerScrolling
+            userScrollEnabled = !innerScrolling,
+            beyondViewportPageCount = 1
         ) {
             when (it) {
                 0 -> {
@@ -759,6 +760,7 @@ fun FilterBottomSheet(
                         GenreFilterSection(
                             filterViewModel = filterViewModel,
                             modifier = Modifier
+                                .padding(top = 6.dp)
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
                                     width = Dp.Hairline,
@@ -838,41 +840,6 @@ fun FilterBottomSheet(
     }
 }
 
-@Composable
-fun PagerIndicator(
-    pagerState: PagerState,
-    modifier: Modifier = Modifier
-) {
-    val animationScope = rememberCoroutineScope()
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(pagerState.pageCount) {
-            val color = if (pagerState.currentPage == it) {
-                MaterialTheme.colorScheme.primary } else {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
-                }
-            val size = if (pagerState.currentPage == it) 8.dp else 7.dp
-
-            Box(
-                modifier = Modifier
-                    .padding(2.dp)
-                    .clip(CircleShape)
-                    .background(color)
-                    .size(size)
-                    //    .border(Dp.Hairline, MaterialTheme.colorScheme.onBackground, CircleShape)
-                    .clickable {
-                        animationScope.launch {
-                            pagerState.animateScrollToPage(it)
-                        }
-                    }
-            )
-        }
-    }
-}
 
 @Composable
 fun OtherFiltersSection(

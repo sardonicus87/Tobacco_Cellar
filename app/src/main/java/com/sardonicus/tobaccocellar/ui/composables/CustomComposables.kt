@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -386,6 +390,46 @@ fun AutoSizeText(
                 lineHeight = lineHeight * fontMultiplier,
             )
         )
+    }
+}
+
+
+/** pager indicator **/
+data class IndicatorSizes(val current: Dp, val other: Dp)
+
+@Composable
+fun PagerIndicator(
+    pagerState: PagerState,
+    modifier: Modifier = Modifier,
+    indicatorSize: IndicatorSizes = IndicatorSizes(current = 8.dp, other = 7.dp),
+) {
+    val animationScope = rememberCoroutineScope()
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(pagerState.pageCount) {
+            val color = if (pagerState.currentPage == it) {
+                MaterialTheme.colorScheme.primary } else {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
+            }
+            val size = if (pagerState.currentPage == it) indicatorSize.current else indicatorSize.other
+
+            Box(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .size(size)
+                    .clickable {
+                        animationScope.launch {
+                            pagerState.animateScrollToPage(it)
+                        }
+                    }
+            )
+        }
     }
 }
 
