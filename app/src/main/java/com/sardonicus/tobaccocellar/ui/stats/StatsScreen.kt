@@ -62,6 +62,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlin.math.cos
@@ -116,12 +117,18 @@ fun StatsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            StatsBody(
-                rawStats = rawStats,
-                filteredStats = filteredStats,
-                modifier = modifier
-                    .fillMaxSize(),
-            )
+            if (rawStats.rawLoading || filteredStats.filteredLoading) {
+                FullScreenLoading(
+                    modifier = modifier
+                )
+            } else {
+                StatsBody(
+                    rawStats = rawStats,
+                    filteredStats = filteredStats,
+                    modifier = modifier
+                        .fillMaxSize(),
+                )
+            }
         }
     }
 }

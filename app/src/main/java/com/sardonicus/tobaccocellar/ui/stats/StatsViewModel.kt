@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
@@ -48,9 +47,9 @@ class StatsViewModel(
             itemsRepository.getEverythingStream()
         }
 
+
     /** Raw stats */
     val rawStats: StateFlow<RawStats> =
-       // itemsRepository.getEverythingStream()
         everythingFlow
             .map {
                 RawStats(
@@ -62,13 +61,15 @@ class StatsViewModel(
                     totalByType = it.groupingBy {
                         if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
-                    totalZeroQuantity = it.count { it.items.quantity == 0 }
+                    totalZeroQuantity = it.count { it.items.quantity == 0 },
+
+                    rawLoading = false
                 )
             }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(),
-                initialValue = RawStats()
+                initialValue = RawStats(rawLoading = true)
             )
 
 
@@ -229,6 +230,8 @@ class StatsViewModel(
                             .entries
                             .sortedByDescending { it.value }
                             .associate { it.key to it.value },
+
+                        filteredLoading = false
                     )
                 )
             }
@@ -237,7 +240,7 @@ class StatsViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = FilteredStats()
+                initialValue = FilteredStats(filteredLoading = true)
             )
 
 }
@@ -254,6 +257,8 @@ data class TypeCount(
 )
 
 data class RawStats(
+    val rawLoading: Boolean = false,
+
     val itemsCount: Int = 0,
     val brandsCount: Int = 0,
     val favoriteCount: Int = 0,
@@ -265,6 +270,8 @@ data class RawStats(
 )
 
 data class FilteredStats(
+    val filteredLoading: Boolean = false,
+
     val itemsCount: Int = 0,
     val brandsCount: Int = 0,
     val favoriteCount: Int = 0,
