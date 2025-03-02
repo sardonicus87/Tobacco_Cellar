@@ -73,7 +73,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -2583,25 +2582,22 @@ fun AutoCompleteText(
     componentField: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var suggestions = suggestions
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
     val focusRequester = remember { FocusRequester() }
     val focusState = remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        // Delay expanded state evaluation
-        expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
+    LaunchedEffect(suggestions) {
+    //    expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
         if (suggestions.isEmpty()) {
             expanded = false
-        }
-    }
-    DisposableEffect(Unit) {
-        onDispose {
-            expanded = false
+        } else {
+            expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
         }
     }
 
     ExposedDropdownMenuBox(
-        expanded = expanded, // && focusState.value && suggestions.isNotEmpty(),
+        expanded = expanded && focusState.value && suggestions.isNotEmpty(),
         onExpandedChange = { expanded = !expanded },
         modifier = modifier
             .padding(0.dp)
@@ -2611,7 +2607,6 @@ fun AutoCompleteText(
             onValueChange = {
                 textFieldValueState = it
                 onValueChange?.invoke(it.text)
-            //    expanded = it.text.isNotEmpty() && suggestions.isNotEmpty()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -2680,7 +2675,7 @@ fun AutoCompleteText(
                             text = updatedText,
                             selection = TextRange(updatedText.length)
                         )
-
+                        suggestions = emptyList()
                         expanded = false
                     },
                     enabled = true,
