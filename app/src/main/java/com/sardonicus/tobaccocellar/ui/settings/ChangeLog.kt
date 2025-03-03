@@ -11,6 +11,30 @@ val changeLogEntries = listOf(
     ),
 
     ChangeLogEntryData(
+        versionNumber = "2.4.0",
+        buildDate = "3 Mar, 2025",
+        changes = listOf(
+            "Added a \"Clean & Optimize\" option in the settings screen to clean up orphaned " +
+                    "data in the database and run SQL VACUUM.",
+            "Added options in the settings screen to backup/restore the database and/or settings.",
+            "Updated Help/FAQ for new settings, as well as creating a new Help/FAQ section " +
+                    "specifically for information about settings options.",
+            "Added stats and charts for cuts and subgenres."
+        ),
+        improvements = listOf(
+            "Efficiency improvements for Stats data (raw stats), and various other lists " +
+                    "generated from database data (filter selections, autocomplete fields).",
+            "Minor UI improvements. Blend details and settings screens text size, colors, " +
+                    "spacing. Filer sheet, both pages now same height, other minor spacing tweaks.",
+            "Efficiency improvements for filter sheet.",
+            "Added a loading state for the stats screen while data is collected (might be fast).",
+            "Further attempt to refine autocomplete suggestion fields popup behavior and " +
+                    "efficiency."
+        ),
+        bugFixes = listOf(),
+    ),
+
+    ChangeLogEntryData(
         versionNumber = "2.3.0",
         buildDate = "18 Feb, 2025",
         changes = listOf(
