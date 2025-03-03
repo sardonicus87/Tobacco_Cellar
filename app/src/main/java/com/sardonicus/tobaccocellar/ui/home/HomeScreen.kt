@@ -39,7 +39,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -853,8 +852,13 @@ fun ListViewMode(
         }
 
         LaunchedEffect(itemsList) {
-            delay(25)
+            delay(10)
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
+            }
             if (shouldReturn && !searchPerformed && !shouldScrollUp) {
+            //    delay(25)
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
@@ -866,10 +870,6 @@ fun ListViewMode(
                     }
                     filterViewModel.resetScroll()
                 }
-            }
-            if (shouldScrollUp) {
-                columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
             }
         }
 
