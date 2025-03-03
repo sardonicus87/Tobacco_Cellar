@@ -49,6 +49,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -99,6 +100,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -644,7 +646,6 @@ fun FilterBottomSheet(
     modifier: Modifier = Modifier,
 ) {
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
-    var innerScrolling by remember { mutableStateOf(false) }
 
     Column (
         modifier = modifier
@@ -652,14 +653,14 @@ fun FilterBottomSheet(
             .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
             .imePadding()
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header //
         Row (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 4.dp),
+                .padding(top = 2.dp, bottom = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -674,33 +675,34 @@ fun FilterBottomSheet(
                 fontSize = 18.sp,
                 maxLines = 1,
                 modifier = Modifier
-                    .weight(1f),
+                    .weight(1f)
+                    .padding(top = 4.dp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Column (
                 modifier = Modifier
-                    .weight(1f),
-                horizontalAlignment = Alignment.End
+                    .weight(1f)
+                    .padding(end = 6.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Top
             ) {
-                IconButton(
-                    onClick = { filterViewModel.closeBottomSheet() },
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close",
                     modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(24.dp),
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                    )
-                }
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .clickable{ filterViewModel.closeBottomSheet() }
+                        .padding(4.dp),
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                )
             }
         }
 
         // indicator row //
         val pagerState = rememberPagerState(pageCount = { 2 })
+        var innerScrolling by remember { mutableStateOf(false) }
+
         Row (
             modifier = Modifier
                 .fillMaxWidth()
@@ -721,7 +723,8 @@ fun FilterBottomSheet(
             modifier = Modifier
                 .fillMaxWidth(),
             userScrollEnabled = !innerScrolling,
-            beyondViewportPageCount = 1
+            beyondViewportPageCount = 1,
+            verticalAlignment = Alignment.Top
         ) {
             when (it) {
                 0 -> {
