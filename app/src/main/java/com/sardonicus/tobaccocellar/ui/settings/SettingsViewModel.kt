@@ -331,7 +331,7 @@ class SettingsViewModel(
                         restoreDatabase(context, databaseBytes)
                     } catch (e: Exception) {
                         setLoadingState(false)
-                        showSnackbar("Error restoring database: ${e.message}")
+                        showSnackbar("Error restoring database.")
                         return@launch
                     }
                     restoreItemSyncState(itemSyncStateBytes)

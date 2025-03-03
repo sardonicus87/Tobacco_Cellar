@@ -678,61 +678,6 @@ class FilterViewModel (
                 }
             }
         }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllBrandsStream().collectLatest { brands ->
-//                    _availableBrands.value = brands
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllSubgenresStream()
-//                    .map {
-//                        it.map {
-//                            if (it.isBlank()) {
-//                                "(Unassigned)"
-//                            } else {
-//                                it
-//                            }
-//                        }
-//                    }
-//                    .collectLatest { subgenres ->
-//                        _availableSubgenres.value = subgenres
-//                    }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllCutsStream()
-//                    .map {
-//                        it.map {
-//                            if (it.isBlank()) {
-//                                "(Unassigned)"
-//                            } else {
-//                                it
-//                            }
-//                        }
-//                    }
-//                    .collectLatest { cuts ->
-//                        _availableCuts.value = cuts
-//                    }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllComponentsStream()
-//                    .collectLatest { components ->
-//                        _availableComponents.value = components.map {
-//                            if (it.componentName.isBlank()) {
-//                                "(None Assigned)"
-//                            } else {
-//                                it.componentName
-//                            }
-//                        }
-//                    }
-//            }
-//        }
     }
 
 }
