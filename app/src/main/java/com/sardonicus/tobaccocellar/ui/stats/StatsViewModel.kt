@@ -62,6 +62,10 @@ class StatsViewModel(
                         if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
+                    totalBySubgenre = it.groupingBy {
+                        if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
+                    totalByCut = it.groupingBy {
+                        if(it.items.cut.isBlank()) "Unassigned" else it.items.cut }.eachCount(),
 
                     rawLoading = false
                 )
@@ -167,6 +171,10 @@ class StatsViewModel(
                         unassignedCount = unassignedCount,
                         totalQuantity = filteredItems.sumOf { it.items.quantity },
                         totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
+                        totalBySubgenre = filteredItems.groupingBy {
+                            if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
+                        totalByCut = filteredItems.groupingBy {
+                            if(it.items.cut.isBlank()) "Unassigned" else it.items.cut }.eachCount(),
 
 
                         brandsByEntries = filteredItems
@@ -230,6 +238,34 @@ class StatsViewModel(
                             .entries
                             .sortedByDescending { it.value }
                             .associate { it.key to it.value },
+                        subgenresByEntries = filteredItems
+                            .groupingBy { if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .let {
+                                if (it.size > 10) {
+                                    val topNine = it.take(9).associate { it.key to it.value }
+                                    val otherCount = it.drop(9).sumOf { it.value }
+                                    topNine + ("(Other)" to otherCount)
+                                } else {
+                                    it.associate { it.key to it.value }
+                                }
+                            },
+                        cutsByEntries = filteredItems
+                            .groupingBy { if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .let {
+                                if (it.size > 10) {
+                                    val topNine = it.take(9).associate { it.key to it.value }
+                                    val otherCount = it.drop(9).sumOf { it.value }
+                                    topNine + ("(Other)" to otherCount)
+                                } else {
+                                    it.associate { it.key to it.value }
+                                }
+                            },
 
                         filteredLoading = false
                     )
@@ -266,7 +302,9 @@ data class RawStats(
     val totalByBrand: Map<String, Int> = emptyMap(),
     val totalByType: Map<String, Int> = emptyMap(),
     val totalQuantity: Int = 0,
-    val totalZeroQuantity: Int = 0
+    val totalZeroQuantity: Int = 0,
+    val totalBySubgenre: Map<String, Int> = emptyMap(),
+    val totalByCut: Map<String, Int> = emptyMap(),
 )
 
 data class FilteredStats(
@@ -280,6 +318,8 @@ data class FilteredStats(
     val unassignedCount: Int = 0,
     val totalQuantity: Int = 0,
     val totalZeroQuantity: Int = 0,
+    val totalBySubgenre: Map<String, Int> = emptyMap(),
+    val totalByCut: Map<String, Int> = emptyMap(),
 
     val brands: List<String> = emptyList(),
     val types: List<String> = emptyList(),
@@ -296,4 +336,6 @@ data class FilteredStats(
     val typesByEntries: Map<String, Int> = emptyMap(),
     val typesByQuantity: Map<String, Int> = emptyMap(),
     val ratingsByEntries: Map<String, Int> = emptyMap(),
+    val subgenresByEntries: Map<String, Int> = emptyMap(),
+    val cutsByEntries: Map<String, Int> = emptyMap(),
 )

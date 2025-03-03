@@ -153,6 +153,8 @@ private fun StatsBody(
             modifier = Modifier
                 .height(1.dp)
         )
+
+        // Quick Stats header //
         Box {
             Row(
                 modifier = Modifier
@@ -199,6 +201,8 @@ private fun StatsBody(
             modifier = Modifier
                 .height(10.dp)
         )
+
+        // Quick Stats section //
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -271,12 +275,14 @@ private fun StatsBody(
                 )
             }
         }
+
+
         Spacer(
             modifier = Modifier
                 .height(10.dp)
         )
 
-        // Charts
+        // Charts header //
         Box {
             Row(
                 modifier = Modifier
@@ -318,9 +324,9 @@ private fun StatsBody(
                     }
             )
         }
+
         ChartsSection(
             filteredStats = filteredStats,
-        //    viewModel = viewModel
         )
 
     }
@@ -343,6 +349,16 @@ fun RawStats(
             else -> 6
         }
     }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
+
+    val totalBySubgenre = rawStats.totalBySubgenre.toList().sortedWith(
+        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
+            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
+    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
+
+    val totalByCut = rawStats.totalByCut.toList().sortedWith(
+        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
+            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
+    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
     Column(
         modifier = modifier
@@ -368,16 +384,45 @@ fun RawStats(
             softWrap = true,
         )
 
-        Text(
-            text = totalByType,
-            modifier = Modifier
-                .fillMaxWidth(fraction = 0.75f)
-                .semantics { contentDescription = totalByType.toString() }
-                .padding(0.dp),
-            fontSize = 15.sp,
-            textAlign = TextAlign.Start,
-            softWrap = true,
-        )
+        if (rawStats.totalByType.any { it.key != "Unassigned" }) {
+            Text(
+                text = totalByType,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .semantics { contentDescription = totalByType.toString() }
+                    .padding(bottom = 12.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true,
+            )
+        }
+
+        if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+            Text(
+                text = totalBySubgenre,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .semantics { contentDescription = totalBySubgenre.toString() }
+                    .padding(bottom = 12.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true,
+            )
+        }
+
+        if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
+            Text(
+                text = totalByCut,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .semantics { contentDescription = totalByCut.toString() }
+                    .padding(0.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true,
+            )
+        }
+
         Spacer(
             modifier = Modifier
                 .height(8.dp)
@@ -401,6 +446,16 @@ fun FilteredStats(
             else -> 6
         }
     }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
+
+    val totalBySubgenreFiltered = filteredStats.totalBySubgenre.toList().sortedWith(
+        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
+            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
+    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
+
+    val totalByCutFiltered = filteredStats.totalByCut.toList().sortedWith(
+        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
+            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
+    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
     Column(
         modifier = modifier
@@ -426,16 +481,44 @@ fun FilteredStats(
             softWrap = true,
         )
 
-        Text(
-            text = totalByTypeFiltered,
-            modifier = Modifier
-                .fillMaxWidth(fraction = 0.75f)
-                .semantics { contentDescription = totalByTypeFiltered.toString() }
-                .padding(0.dp),
-            fontSize = 15.sp,
-            textAlign = TextAlign.Start,
-            softWrap = true
-        )
+        if (filteredStats.totalByType.any { it.key != "Unassigned" }) {
+            Text(
+                text = totalByTypeFiltered,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .semantics { contentDescription = totalByTypeFiltered.toString() }
+                    .padding(bottom = 12.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true
+            )
+        }
+
+        if (filteredStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+            Text(
+                text = totalBySubgenreFiltered,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .semantics { contentDescription = totalBySubgenreFiltered.toString() }
+                    .padding(bottom = 12.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true,
+            )
+        }
+
+        if (filteredStats.totalByCut.any { it.key != "Unassigned" }) {
+            Text(
+                text = totalByCutFiltered,
+                modifier = Modifier
+                    .fillMaxWidth(fraction = 0.75f)
+                    .semantics { contentDescription = totalByCutFiltered.toString() }
+                    .padding(0.dp),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Start,
+                softWrap = true,
+            )
+        }
 
 
         Spacer(
@@ -523,7 +606,18 @@ private fun ChartsSection(
                 label = "Ratings by Entries",
                 chartData = filteredStats.ratingsByEntries
             )
-
+            ChartsFormat(
+                label = "Subgenres by Entries",
+                chartData = filteredStats.subgenresByEntries
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+            )
+            ChartsFormat(
+                label = "Cuts by Entries",
+                chartData = filteredStats.cutsByEntries
+            )
             Spacer(
                 modifier = Modifier
                     .height(16.dp)
