@@ -810,30 +810,6 @@ fun ListViewMode(
         val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
         // Return Positions //
-        LaunchedEffect(searchCleared) {
-            if (searchCleared) {
-                delay(50)
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
-
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-            }
-        }
-
-//        LaunchedEffect(shouldScrollUp){
-//            if (shouldScrollUp) {
-//                columnState.scrollToItem(0)
-//                filterViewModel.resetScroll()
-//            }
-//        }
-
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
                 delay(50)
@@ -852,13 +828,25 @@ fun ListViewMode(
         }
 
         LaunchedEffect(itemsList) {
-            delay(10)
+            delay(20)
             if (shouldScrollUp) {
                 columnState.scrollToItem(0)
                 filterViewModel.resetScroll()
             }
             if (shouldReturn && !searchPerformed && !shouldScrollUp) {
-            //    delay(25)
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                    filterViewModel.resetScroll()
+                }
+            }
+            if (searchCleared) {
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
@@ -1451,13 +1439,6 @@ fun TableLayout(
         val getPosition by filterViewModel.getPosition.collectAsState()
 
         // Return Positions //
-//        LaunchedEffect(shouldScrollUp){
-//            if (shouldScrollUp) {
-//                columnState.scrollToItem(0)
-//                filterViewModel.resetScroll()
-//            }
-//        }
-
         LaunchedEffect(savedItemIndex) {
             if (savedItemIndex != -1) {
                 delay(50)
@@ -1475,25 +1456,12 @@ fun TableLayout(
             }
         }
 
-        LaunchedEffect(searchCleared) {
-            if (searchCleared) {
-                delay(50)
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
-
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-            }
-        }
-
         LaunchedEffect(sortedItems) {
-            delay(25)
+            delay(20)
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
+            }
             if (shouldReturn && !searchPerformed && !shouldScrollUp) {
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
@@ -1507,9 +1475,19 @@ fun TableLayout(
                     filterViewModel.resetScroll()
                 }
             }
-            if (shouldScrollUp) {
-                columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
+            if (searchCleared) {
+                delay(20)
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                    filterViewModel.resetScroll()
+                }
             }
         }
 
