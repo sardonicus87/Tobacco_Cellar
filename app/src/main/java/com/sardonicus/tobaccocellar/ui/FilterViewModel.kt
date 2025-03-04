@@ -2,19 +2,27 @@ package com.sardonicus.tobaccocellar.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
+import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -223,6 +231,80 @@ class FilterViewModel (
 
 
     /** Filtering states **/
+    // get available fields for filter //
+    private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
+    val availableBrands: StateFlow<List<String>> = _availableBrands
+
+    private val _availableSubgenres = MutableStateFlow<List<String>>(emptyList())
+    val availableSubgenres: StateFlow<List<String>> = _availableSubgenres
+
+    private val _availableCuts = MutableStateFlow<List<String>>(emptyList())
+    val availableCuts: StateFlow<List<String>> = _availableCuts
+
+    private val _availableComponents = MutableStateFlow<List<String>>(emptyList())
+    val availableComponents: StateFlow<List<String>> = _availableComponents
+
+    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
+    private val refresh = _refresh.asSharedFlow()
+
+    init {
+        viewModelScope.launch {
+            EventBus.events.collect {
+                if (it is DatabaseRestoreEvent) {
+                    _refresh.emit(Unit)
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
+        refresh.onStart { emit(Unit) }.flatMapLatest {
+            itemsRepository.getEverythingStream()
+        }
+
+    init {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                everythingFlow.collectLatest {
+                    _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
+                    _availableSubgenres.value = it.map {
+                        if (it.items.subGenre.isBlank()) {
+                            "(Unassigned)"
+                        } else {
+                            it.items.subGenre
+                        }
+                    }.distinct().sortedWith(
+                        compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
+                            .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
+                    )
+                    _availableCuts.value = it.map {
+                        if (it.items.cut.isBlank()) {
+                            "(Unassigned)"
+                        } else {
+                            it.items.cut
+                        }
+                    }.distinct().sortedWith(
+                        compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
+                            .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
+                    )
+                    _availableComponents.value = it.flatMap {
+                        it.components }.map {
+                        if (it.componentName.isBlank()) {
+                            "(None Assigned)"
+                        } else {
+                            it.componentName
+                        }
+                    }.distinct().sortedWith(
+                        compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
+                            .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
+                    )
+                }
+            }
+        }
+    }
+
+
     // inclusionary filter states //
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
     val selectedBrands: StateFlow<List<String>> = _selectedBrands
@@ -278,6 +360,46 @@ class FilterViewModel (
 
     private val _selectedExcludeDislikes = MutableStateFlow(false)
     val selectedExcludeDislikes: StateFlow<Boolean> = _selectedExcludeDislikes
+
+    // remove selected filters if the last item with that filter is removed or changed //
+    init {
+        viewModelScope.launch {
+            _availableBrands.collectLatest {
+                val invalidBrands = _selectedBrands.value.filter { it !in availableBrands.value }
+                if (invalidBrands.isNotEmpty()) {
+                    sheetSelectedBrands.value = sheetSelectedBrands.value.filter { it in availableBrands.value }
+                    _selectedBrands.value = _selectedBrands.value.filter { it in availableBrands.value }
+                }
+            }
+        }
+        viewModelScope.launch {
+            _availableSubgenres.collectLatest {
+                val invalidSubgenres = _selectedSubgenre.value.filter { it !in availableSubgenres.value }
+                if (invalidSubgenres.isNotEmpty()) {
+                    sheetSelectedSubgenres.value = sheetSelectedSubgenres.value.filter { it in availableSubgenres.value }
+                    _selectedSubgenre.value = _selectedSubgenre.value.filter { it in availableSubgenres.value }
+                }
+            }
+        }
+        viewModelScope.launch {
+            _availableCuts.collectLatest {
+                val invalidCuts = sheetSelectedCuts.value.filter { it !in availableCuts.value }
+                if (invalidCuts.isNotEmpty()) {
+                    sheetSelectedCuts.value = _selectedCut.value.filter { it in availableCuts.value }
+                    _selectedCut.value = _selectedCut.value.filter { it in availableCuts.value }
+                }
+            }
+        }
+        viewModelScope.launch {
+            _availableComponents.collectLatest {
+                val invalidComponents = _selectedComponent.value.filter { it !in availableComponents.value }
+                if (invalidComponents.isNotEmpty()) {
+                    sheetSelectedComponents.value = sheetSelectedComponents.value.filter { it in availableComponents.value }
+                    _selectedComponent.value = _selectedComponent.value.filter { it in availableComponents.value }
+                }
+            }
+        }
+    }
 
     fun overflowCheck(selected: List<String>, available: List<String>, shown: Int): Boolean {
         val overflowedItems = available.drop(shown)
@@ -408,10 +530,7 @@ class FilterViewModel (
 
     fun updateSelectedTypes(type: String, isSelected: Boolean) {
         if (isSelected) {
-        //    sheetSelectedUnassigned.value = false
             sheetSelectedTypes.value += type
-
-        //    _selectedUnassigned.value = false
             _selectedTypes.value += type
         } else {
             sheetSelectedTypes.value -= type
@@ -426,11 +545,6 @@ class FilterViewModel (
         _selectedUnassigned.value = isSelected
 
         _shouldScrollUp.value = true
-
-//        if (isSelected) {
-//            sheetSelectedTypes.value = emptyList()
-//            _selectedTypes.value = emptyList()
-//        }
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
@@ -634,51 +748,6 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
-
-    // get available fields for filter //
-    private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
-    val availableBrands: StateFlow<List<String>> = _availableBrands
-
-    private val _availableSubgenres = MutableStateFlow<List<String>>(emptyList())
-    val availableSubgenres: StateFlow<List<String>> = _availableSubgenres
-
-    private val _availableCuts = MutableStateFlow<List<String>>(emptyList())
-    val availableCuts: StateFlow<List<String>> = _availableCuts
-
-    private val _availableComponents = MutableStateFlow<List<String>>(emptyList())
-    val availableComponents: StateFlow<List<String>> = _availableComponents
-
-    init {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                itemsRepository.getEverythingStream().collectLatest {
-                    _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
-                    _availableSubgenres.value = it.map {
-                        if (it.items.subGenre.isBlank()) {
-                            "(Unassigned)"
-                        } else {
-                            it.items.subGenre
-                        }
-                    }.distinct().sorted()
-                    _availableCuts.value = it.map {
-                        if (it.items.cut.isBlank()) {
-                            "(Unassigned)"
-                        } else {
-                            it.items.cut
-                        }
-                    }.distinct().sorted()
-                    _availableComponents.value = it.flatMap {
-                        it.components }.map {
-                        if (it.componentName.isBlank()) {
-                            "(None Assigned)"
-                        } else {
-                            it.componentName
-                        }
-                    }.distinct().sorted()
-                }
-            }
-        }
-    }
 
 }
 
