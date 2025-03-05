@@ -43,8 +43,8 @@ class CsvHelper {
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "No. of Tins", "Favorite",
-                "Disliked", "Production Status", "Notes", "Components"
+                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Components", "No. of Tins", "Favorite",
+                "Disliked", "Production Status", "Notes"
             )
             .build()
 
@@ -59,12 +59,12 @@ class CsvHelper {
                 itemWithComponents.item.type,
                 itemWithComponents.item.subGenre,
                 itemWithComponents.item.cut,
+                componentsString,
                 itemWithComponents.item.quantity,
                 itemWithComponents.item.favorite,
                 itemWithComponents.item.disliked,
                 itemWithComponents.item.inProduction,
                 itemWithComponents.item.notes,
-                componentsString
             )
         }
 
