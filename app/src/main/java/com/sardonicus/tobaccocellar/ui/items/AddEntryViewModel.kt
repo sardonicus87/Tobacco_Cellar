@@ -251,52 +251,6 @@ class AddEntryViewModel(
                 }
             }
         }
-
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllBrandsStream().collect {
-//                    _brands.value = it
-//                }.also {
-//                    _brands.value = ItemUiState().autoBrands
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllSubGenresStream().collect {
-//                    _subGenres.value = it
-//                }.also {
-//                    _subGenres.value = ItemUiState().autoGenres
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllCutsStream().collect {
-//                    _cuts.value = it
-//                }.also {
-//                    _cuts.value = ItemUiState().autoCuts
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllCompNamesStream().collect {
-//                    _components.value = it
-//                }.also {
-//                    _components.value = ComponentList().autoComps
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllTinContainersStream().collect {
-//                    _tinContainers.value = it
-//                }.also {
-//                    _tinContainers.value = ItemUiState().autoContainers
-//                }
-//            }
-//        }
     }
 
 

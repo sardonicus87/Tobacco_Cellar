@@ -132,41 +132,6 @@ class EditEntryViewModel(
                 }
             }
         }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllBrandsStream().collect {
-//                    _brands.value = it
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllSubGenresStream().collect {
-//                    _subGenres.value = it
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllCutsStream().collect {
-//                    _cuts.value = it
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllCompNamesStream().collect {
-//                    _components.value = it
-//                }
-//            }
-//        }
-//        viewModelScope.launch {
-//            withContext(Dispatchers.IO) {
-//                itemsRepository.getAllTinContainersStream().collect {
-//                    _tinContainers.value = it
-//                }
-//            }
-//        }
     }
 
 
