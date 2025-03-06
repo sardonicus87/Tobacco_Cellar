@@ -258,7 +258,9 @@ class AddEntryViewModel(
             brand.isNotBlank() && blend.isNotBlank() &&
                 (tinDetailsList.isEmpty() ||
                     (tinDetailsList.all { it.tinLabel.isNotBlank() } &&
-                    tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size)
+                        tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
+                        tinDetailsList.all { (it.tinQuantity > 0.0 && it.unit.isNotBlank()) || it.tinQuantity == 0.0 }
+                    )
                 )
         }
     }
