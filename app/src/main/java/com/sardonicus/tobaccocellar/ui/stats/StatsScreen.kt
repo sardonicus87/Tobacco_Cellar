@@ -606,6 +606,11 @@ private fun ChartsSection(
                 label = "Ratings by Entries",
                 chartData = filteredStats.ratingsByEntries
             )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
+            )
             ChartsFormat(
                 label = "Subgenres by Entries",
                 chartData = filteredStats.subgenresByEntries
@@ -615,8 +620,26 @@ private fun ChartsSection(
                     .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
             )
             ChartsFormat(
+                label = "Subgenres by Tins",
+                chartData = filteredStats.subgenresByQuantity
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
+            )
+            ChartsFormat(
                 label = "Cuts by Entries",
                 chartData = filteredStats.cutsByEntries
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                thickness = 1.dp,
+            )
+            ChartsFormat(
+                label = "Cuts by Tins",
+                chartData = filteredStats.cutsByQuantity
             )
             Spacer(
                 modifier = Modifier
@@ -729,7 +752,7 @@ private fun PieChart(
         LocalCustomColors.current.pieEight,
         LocalCustomColors.current.pieNine,
         LocalCustomColors.current.pieTen),
-    onSliceLabelPosition: Float = 0.5f,
+    onSliceLabelPosition: Float = .5f,
     outsideSliceLabelPosition: Float = 0.5f,
     outsideLabelThreshold: Float = 20f,
     rotationOffset: Float = 270f,
@@ -748,8 +771,6 @@ private fun PieChart(
         val centerX = size.width / 2
         val centerY = size.height / 2
         val insideLabel = min(centerX, centerY) * onSliceLabelPosition
-      //  val outsideLabel = min(centerX, centerY) * (1f + (outsideSliceLabelPosition * 0.20f))
-      //  val insideLabel = ((min(centerX, centerY) * 1f)) - ((min(centerX, centerY) * onSliceLabelPosition))
         val outsideLabel = (min(centerX, centerY) * (1f)) + ((20.dp.toPx() * outsideSliceLabelPosition))
 
         drawSlices(
@@ -809,7 +830,7 @@ private fun DrawScope.drawLabels(
 
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
-        val midpointAngle = currentStartAngle + sweepAngle / 2
+        val midpointAngle = currentStartAngle + (sweepAngle / 2)
         val isOther = label == "(Other)"
         if (sweepAngle < outsideLabelThreshold && !isOther) {
             outsideLabelCount++
@@ -819,7 +840,7 @@ private fun DrawScope.drawLabels(
             outsideRadius
         } else {
             if (sliceCount > 5 && isOther) {
-                insideRadius * .5f
+                insideRadius * .65f
             } else {
                 insideRadius
             }
@@ -942,6 +963,7 @@ private fun DrawScope.drawLabels(
 
         /** additional adjustment based on quadrant */
         val normalizedMidpointAngle = (midpointAngle) % 360f
+
         val xOffsetFactor = when (normalizedMidpointAngle) {
             in 0f..90f -> (normalizedMidpointAngle - 0f) / (180f) // 0 to 0.5
             in 90f..180f -> (normalizedMidpointAngle - 0f) / (180f) // 0.5 to 1
@@ -956,8 +978,9 @@ private fun DrawScope.drawLabels(
             in 270f..360f -> (450f - normalizedMidpointAngle) / (180f) // 1 to 0.5
             else -> 0f
         }
+
         val topOffsetSwitch = when (normalizedMidpointAngle) {
-            in 255f..270f -> 1
+            in 225f..270f -> 1  // originally 255-270
             else -> 0
         }
 
@@ -971,7 +994,12 @@ private fun DrawScope.drawLabels(
         }
         val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             // list placement
-            listY.toFloat()
+            if (normalizedMidpointAngle > 180f && totalOutsideLabels > 2) {
+                (listY.toFloat() + radius) - (labelHeight * 0.75).toFloat()
+            }
+            else {
+                listY.toFloat()
+            }
         } else {
             // normal on slice labels
             labelY - (combinedHeight * yOffsetFactor)
@@ -985,14 +1013,14 @@ private fun DrawScope.drawLabels(
             adjustedLabelX + (labelWidth - percentageWidth) / 2
         }
         val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            if (sweepAngle < 10f && normalizedMidpointAngle > 254f) {
+            if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
                 // very thin slices at the top of the chart
                 val additionalOffset = if (outsideLabelCount % 2 == 0) {
                     (-1 * (percentageHeight * 0.25f))
                     } else {
                     (percentageHeight * 0.75f)
                 }
-                (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset * topOffsetSwitch)
+                (percentageY - (percentageHeight * yOffsetFactor)) + additionalOffset
             } else {
                 // outside slice placement
                 percentageY - (percentageHeight * yOffsetFactor)
@@ -1023,7 +1051,4 @@ private fun DrawScope.drawLabels(
         currentStartAngle += sweepAngle
     }
 }
-
-
-/** Bar graph stuff */
 
