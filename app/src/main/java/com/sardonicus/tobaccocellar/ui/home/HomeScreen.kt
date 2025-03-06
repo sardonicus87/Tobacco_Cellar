@@ -145,6 +145,8 @@ fun HomeScreen(
     val focusManager = LocalFocusManager.current
     val currentPosition by filterViewModel.currentPosition.collectAsState()
     val blendSearchFocused by filterViewModel.blendSearchFocused.collectAsState()
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     if (showSnackbar.value) {
         LaunchedEffect(Unit) {
@@ -153,6 +155,18 @@ fun HomeScreen(
                 duration = SnackbarDuration.Short
             )
             viewmodel.snackbarShown()
+        }
+    }
+
+    BackHandler(enabled = searchPerformed) {
+        filterViewModel.updateSearchText("")
+        filterViewModel.onBlendSearch("")
+        filterViewModel.updateSearchIconOpacity(0.5f)
+
+        if (searchPerformed) {
+            coroutineScope.launch {
+                EventBus.emit(SearchClearedEvent)
+            }
         }
     }
 
