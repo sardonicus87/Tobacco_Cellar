@@ -148,7 +148,6 @@ fun CellarApp(
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
-//    val navigationHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
@@ -210,6 +209,7 @@ fun CellarTopAppBar(
         type = "text/csv"
         putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
     }
+
     val exportAsTinsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -291,8 +291,6 @@ fun CellarTopAppBar(
                                         }
                                     },
                                     onClick = {
-                                    //    expanded = false
-                                    //    exportCsvLauncher.launch(exportCsvIntent)
                                         menuState = MenuState.EXPORT_CSV
                                     },
                                     modifier = Modifier
@@ -383,7 +381,6 @@ fun CellarTopAppBar(
             titleContentColor = onPrimaryLight,
         ),
         scrollBehavior = scrollBehavior,
-    //    windowInsets = WindowInsets.systemBars,
     )
 }
 
@@ -568,8 +565,6 @@ fun CellarBottomAppBar(
                         .padding(vertical = 4.dp)
                         .weight(1f),
                     contentAlignment = Alignment.Center,
-                    //  verticalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.Bottom),
-                    //  horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     IconButton(
                         onClick = {
@@ -660,7 +655,7 @@ fun FilterBottomSheet(
         Row (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 2.dp, bottom = 6.dp),
+                .padding(top = 6.dp, bottom = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -692,14 +687,14 @@ fun FilterBottomSheet(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
-                        .clickable{ filterViewModel.closeBottomSheet() }
+                        .clickable { filterViewModel.closeBottomSheet() }
                         .padding(4.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                 )
             }
         }
 
-        // indicator row //
+        // Pager //
         val pagerState = rememberPagerState(pageCount = { 2 })
         var innerScrolling by remember { mutableStateOf(false) }
 
@@ -767,7 +762,9 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
                                     width = Dp.Hairline,
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(
+                                        alpha = 0.7f
+                                    ),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .background(
@@ -1068,13 +1065,6 @@ fun ProductionFilterSection(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            Text(
-//                text = "Production Status",
-//                fontSize = 15.sp,
-//                fontWeight = FontWeight.Medium,
-//                modifier = Modifier
-//                    .padding(bottom = 4.dp, start = 6.dp, end = 6.dp)
-//            )
             Column(
                 modifier = Modifier,
                 verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -1690,17 +1680,20 @@ fun GenreFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
+
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
+        val availableGenres by filterViewModel.availableSubgenres.collectAsState()
+        val selectedGenres by filterViewModel.sheetSelectedSubgenres.collectAsState()
+        val nothingAssigned = !availableGenres.any { it != "(Unassigned)" }
+
         var showOverflowPopup by remember { mutableStateOf(false) }
         var overflowCount by remember { mutableIntStateOf(0) }
         var shownItems by remember { mutableIntStateOf(0) }
-
-        val availableGenres by filterViewModel.availableSubgenres.collectAsState()
-        val selectedGenres by filterViewModel.sheetSelectedSubgenres.collectAsState()
 
         Text(
             text = "Subgenres:",
@@ -1708,190 +1701,225 @@ fun GenreFilterSection(
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .padding(bottom = 4.dp)
-                .align(Alignment.Start)
+                .align(Alignment.Start),
+            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
         )
 
-        ContextualFlowRow(
-            itemCount = availableGenres.size,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(Alignment.Top),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            maxLines = 1,
-            overflow = ContextualFlowRowOverflow.expandIndicator {
-                shownItems = shownItemCount
-                overflowCount = availableGenres.size - shownItems
-
-                val overflowedSelected = filterViewModel.overflowCheck(selectedGenres, availableGenres, shownItemCount)
-
-                Chip(
-                    text = "+$overflowCount",
-                    onChipClicked = { showOverflowPopup = true },
-                    onChipRemoved = { },
-                    trailingIcon = false,
+        if (nothingAssigned) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "No subgenres assigned to any blends.",
                     modifier = Modifier,
-                    colors = AssistChipDefaults.assistChipColors(
-                        labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                            MaterialTheme.colorScheme.background,
-                    ),
-                    border = AssistChipDefaults.assistChipBorder(
-                        enabled = true,
-                        borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                            MaterialTheme.colorScheme.outline
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                )
+            }
+        } else {
+            ContextualFlowRow(
+                itemCount = availableGenres.size,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(Alignment.Top),
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                maxLines = 1,
+                overflow = ContextualFlowRowOverflow.expandIndicator {
+                    shownItems = shownItemCount
+                    overflowCount = availableGenres.size - shownItems
+
+                    val overflowedSelected = filterViewModel.overflowCheck(
+                        selectedGenres,
+                        availableGenres,
+                        shownItemCount
+                    )
+
+                    Chip(
+                        text = "+$overflowCount",
+                        onChipClicked = { showOverflowPopup = true },
+                        onChipRemoved = { },
+                        trailingIcon = false,
+                        modifier = Modifier,
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.background,
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(
+                            enabled = true,
+                            borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.outline
+                        ),
+                    )
+                },
+            ) {
+                val genre = availableGenres[it]
+
+                FilterChip(
+                    selected = selectedGenres.contains(genre),
+                    onClick = {
+                        filterViewModel.updateSelectedSubgenre(
+                            genre,
+                            !selectedGenres.contains(genre)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = genre,
+                            fontSize = 14.sp,
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    shape = MaterialTheme.shapes.small,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.background,
                     ),
                 )
-            },
-        ) {
-            val genre = availableGenres[it]
-
-            FilterChip(
-                selected = selectedGenres.contains(genre),
-                onClick = { filterViewModel.updateSelectedSubgenre(genre, !selectedGenres.contains(genre)) },
-                label = {
-                    Text(
-                        text = genre,
-                        fontSize = 14.sp,
-                    )
-                },
-                modifier = Modifier
-                    .padding(0.dp),
-                shape = MaterialTheme.shapes.small,
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
-        }
-        if (showOverflowPopup) {
-            AlertDialog(
-                onDismissRequest = { showOverflowPopup = false },
-                title = {
-                    Text(
-                        text = "Subgenres",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth(.9f),
-                properties = DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-                    usePlatformDefaultWidth = false
-                ),
-                shape = MaterialTheme.shapes.medium,
-                text = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 0.dp, max = 280.dp)
-                            .padding(0.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
-                    ) {
-                        val glowColor = MaterialTheme.colorScheme.background
-
-                        Box(
+            }
+            if (showOverflowPopup) {
+                AlertDialog(
+                    onDismissRequest = { showOverflowPopup = false },
+                    title = {
+                        Text(
+                            text = "Subgenres",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 0.dp, max = 280.dp),
-                            contentAlignment = Alignment.Center
+                                .padding(0.dp),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(.9f),
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true,
+                        usePlatformDefaultWidth = false
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 0.dp, max = 280.dp)
+                                .padding(0.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(
+                                2.dp,
+                                Alignment.CenterVertically
+                            )
                         ) {
-                            Column(
+                            val glowColor = MaterialTheme.colorScheme.background
+
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState()),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Top
+                                    .heightIn(min = 0.dp, max = 280.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Spacer(modifier = Modifier.height(5.dp))
-                                FlowRow(
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(
-                                        4.dp,
-                                        Alignment.Start
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
                                 ) {
-                                    availableGenres.forEach {
-                                        FilterChip(
-                                            selected = selectedGenres.contains(it),
-                                            onClick = {
-                                                filterViewModel.updateSelectedSubgenre(
-                                                    it, !selectedGenres.contains(it)
-                                                )
-                                            },
-                                            label = {
-                                                Text(
-                                                    text = it,
-                                                    fontSize = 14.sp,
-                                                )
-                                            },
-                                            modifier = Modifier
-                                                .padding(0.dp),
-                                            shape = MaterialTheme.shapes.small,
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                containerColor = MaterialTheme.colorScheme.background,
-                                            ),
+                                    Spacer(modifier = Modifier.height(5.dp))
+                                    FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            4.dp,
+                                            Alignment.Start
+                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(
+                                            0.dp,
+                                            Alignment.Top
                                         )
-                                    }
-                                }
-                            }
-                            Box( // glow effect
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .then(
-                                        Modifier.drawBehind {
-                                            val glowHeight = 10.dp
-                                            val glowOffsetY =
-                                                size.height - (glowHeight.toPx())
-                                            drawRect(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        glowColor,
-                                                        Color.Transparent,
-                                                    ),
-                                                    startY = 0f,
-                                                    endY = glowHeight.toPx(),
+                                    ) {
+                                        availableGenres.forEach {
+                                            FilterChip(
+                                                selected = selectedGenres.contains(it),
+                                                onClick = {
+                                                    filterViewModel.updateSelectedSubgenre(
+                                                        it, !selectedGenres.contains(it)
+                                                    )
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = it,
+                                                        fontSize = 14.sp,
+                                                    )
+                                                },
+                                                modifier = Modifier
+                                                    .padding(0.dp),
+                                                shape = MaterialTheme.shapes.small,
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.background,
                                                 ),
-                                                topLeft = Offset(0f, 0f),
-                                                size = Size(size.width, glowHeight.toPx())
-                                            )
-
-                                            drawRect(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Transparent,
-                                                        glowColor,
-                                                    ),
-                                                    startY = glowOffsetY,
-                                                    endY = size.height,
-                                                ),
-                                                topLeft = Offset(0f, glowOffsetY),
-                                                size = Size(size.width, glowHeight.toPx())
                                             )
                                         }
-                                    )
-                            )
+                                    }
+                                }
+                                Box( // glow effect
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .then(
+                                            Modifier.drawBehind {
+                                                val glowHeight = 10.dp
+                                                val glowOffsetY =
+                                                    size.height - (glowHeight.toPx())
+                                                drawRect(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            glowColor,
+                                                            Color.Transparent,
+                                                        ),
+                                                        startY = 0f,
+                                                        endY = glowHeight.toPx(),
+                                                    ),
+                                                    topLeft = Offset(0f, 0f),
+                                                    size = Size(size.width, glowHeight.toPx())
+                                                )
+
+                                                drawRect(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Transparent,
+                                                            glowColor,
+                                                        ),
+                                                        startY = glowOffsetY,
+                                                        endY = size.height,
+                                                    ),
+                                                    topLeft = Offset(0f, glowOffsetY),
+                                                    size = Size(size.width, glowHeight.toPx())
+                                                )
+                                            }
+                                        )
+                                )
+                            }
                         }
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = { showOverflowPopup = false }) {
-                        Text("Close")
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.background,
-                titleContentColor = MaterialTheme.colorScheme.onBackground,
-                textContentColor = MaterialTheme.colorScheme.onBackground,
-            )
+                    },
+                    confirmButton = {
+                        Button(onClick = { showOverflowPopup = false }) {
+                            Text("Close")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    textContentColor = MaterialTheme.colorScheme.onBackground,
+                )
+            }
         }
     }
 }
@@ -1913,6 +1941,7 @@ fun CutFilterSection(
 
         val availableCuts by filterViewModel.availableCuts.collectAsState()
         val selectedCuts by filterViewModel.sheetSelectedCuts.collectAsState()
+        val nothingAssigned = !availableCuts.any { it != "(Unassigned)" }
 
         Text(
             text = "Cuts:",
@@ -1920,191 +1949,224 @@ fun CutFilterSection(
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .padding(bottom = 4.dp)
-                .align(Alignment.Start)
+                .align(Alignment.Start),
+            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
         )
 
-        ContextualFlowRow(
-            itemCount = availableCuts.size,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(Alignment.Top),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            maxLines = 1,
-            overflow = ContextualFlowRowOverflow.expandIndicator {
-                shownItems = shownItemCount
-                overflowCount = availableCuts.size - shownItems
+        if (nothingAssigned) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "No cuts assigned to any blends.",
+                    modifier = Modifier
+                        .padding(0.dp),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                )
+            }
+        } else {
+            ContextualFlowRow(
+                itemCount = availableCuts.size,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(Alignment.Top),
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                maxLines = 1,
+                overflow = ContextualFlowRowOverflow.expandIndicator {
+                    shownItems = shownItemCount
+                    overflowCount = availableCuts.size - shownItems
 
-                val overflowedSelected = filterViewModel.overflowCheck(selectedCuts, availableCuts, shownItemCount)
+                    val overflowedSelected =
+                        filterViewModel.overflowCheck(selectedCuts, availableCuts, shownItemCount)
 
-                Chip(
-                    text = "+$overflowCount",
-                    onChipClicked = { showOverflowPopup = true },
-                    onChipRemoved = { },
-                    trailingIcon = false,
-                    modifier = Modifier,
-                    colors = AssistChipDefaults.assistChipColors(
-                        labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                            MaterialTheme.colorScheme.background,
-                    ),
-                    border = AssistChipDefaults.assistChipBorder(
-                        enabled = true,
-                        borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                            MaterialTheme.colorScheme.outline
+                    Chip(
+                        text = "+$overflowCount",
+                        onChipClicked = { showOverflowPopup = true },
+                        onChipRemoved = { },
+                        trailingIcon = false,
+                        modifier = Modifier,
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.background,
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(
+                            enabled = true,
+                            borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.outline
+                        ),
+                    )
+                },
+            ) {
+                val cut = availableCuts[it]
+
+                FilterChip(
+                    selected = selectedCuts.contains(cut),
+                    onClick = {
+                        filterViewModel.updateSelectedCut(
+                            cut,
+                            !selectedCuts.contains(cut)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = cut,
+                            fontSize = 14.sp,
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    shape = MaterialTheme.shapes.small,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.background,
                     ),
                 )
-            },
-        ) {
-            val cut = availableCuts[it]
-
-            FilterChip(
-                selected = selectedCuts.contains(cut),
-                onClick = { filterViewModel.updateSelectedCut(cut, !selectedCuts.contains(cut)) },
-                label = {
-                    Text(
-                        text = cut,
-                        fontSize = 14.sp,
-                    )
-                },
-                modifier = Modifier
-                    .padding(0.dp),
-                shape = MaterialTheme.shapes.small,
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
-        }
-        if (showOverflowPopup) {
-            AlertDialog(
-                onDismissRequest = { showOverflowPopup = false },
-                title = {
-                    Text(
-                        text = "Cuts",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth(.9f),
-                properties = DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-                    usePlatformDefaultWidth = false
-                ),
-                shape = MaterialTheme.shapes.medium,
-                text = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 0.dp, max = 280.dp)
-                            .padding(0.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
-                    ) {
-                        val glowColor = MaterialTheme.colorScheme.background
-
-                        Box(
+            }
+            if (showOverflowPopup) {
+                AlertDialog(
+                    onDismissRequest = { showOverflowPopup = false },
+                    title = {
+                        Text(
+                            text = "Cuts",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 0.dp, max = 280.dp),
-                            contentAlignment = Alignment.Center
+                                .padding(0.dp),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(.9f),
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true,
+                        usePlatformDefaultWidth = false
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 0.dp, max = 280.dp)
+                                .padding(0.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(
+                                2.dp,
+                                Alignment.CenterVertically
+                            )
                         ) {
-                            Column(
+                            val glowColor = MaterialTheme.colorScheme.background
+
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState()),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Top
+                                    .heightIn(min = 0.dp, max = 280.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Spacer(modifier = Modifier.height(5.dp))
-                                FlowRow(
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(
-                                        4.dp,
-                                        Alignment.Start
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
                                 ) {
-                                    availableCuts.forEach {
-                                        FilterChip(
-                                            selected = selectedCuts.contains(it),
-                                            onClick = {
-                                                filterViewModel.updateSelectedCut(
-                                                    it,
-                                                    !selectedCuts.contains(it)
-                                                )
-                                            },
-                                            label = {
-                                                Text(
-                                                    text = it,
-                                                    fontSize = 14.sp,
-                                                )
-                                            },
-                                            modifier = Modifier
-                                                .padding(0.dp),
-                                            shape = MaterialTheme.shapes.small,
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                containerColor = MaterialTheme.colorScheme.background,
-                                            ),
+                                    Spacer(modifier = Modifier.height(5.dp))
+                                    FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            4.dp,
+                                            Alignment.Start
+                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(
+                                            0.dp,
+                                            Alignment.Top
                                         )
-                                    }
-                                }
-                            }
-                            Box( // glow effect
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .then(
-                                        Modifier.drawBehind {
-                                            val glowHeight = 10.dp
-                                            val glowOffsetY =
-                                                size.height - (glowHeight.toPx())
-                                            drawRect(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        glowColor,
-                                                        Color.Transparent,
-                                                    ),
-                                                    startY = 0f,
-                                                    endY = glowHeight.toPx(),
+                                    ) {
+                                        availableCuts.forEach {
+                                            FilterChip(
+                                                selected = selectedCuts.contains(it),
+                                                onClick = {
+                                                    filterViewModel.updateSelectedCut(
+                                                        it,
+                                                        !selectedCuts.contains(it)
+                                                    )
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = it,
+                                                        fontSize = 14.sp,
+                                                    )
+                                                },
+                                                modifier = Modifier
+                                                    .padding(0.dp),
+                                                shape = MaterialTheme.shapes.small,
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.background,
                                                 ),
-                                                topLeft = Offset(0f, 0f),
-                                                size = Size(size.width, glowHeight.toPx())
-                                            )
-
-                                            drawRect(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Transparent,
-                                                        glowColor,
-                                                    ),
-                                                    startY = glowOffsetY,
-                                                    endY = size.height,
-                                                ),
-                                                topLeft = Offset(0f, glowOffsetY),
-                                                size = Size(size.width, glowHeight.toPx())
                                             )
                                         }
-                                    )
-                            )
+                                    }
+                                }
+                                Box( // glow effect
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .then(
+                                            Modifier.drawBehind {
+                                                val glowHeight = 10.dp
+                                                val glowOffsetY =
+                                                    size.height - (glowHeight.toPx())
+                                                drawRect(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            glowColor,
+                                                            Color.Transparent,
+                                                        ),
+                                                        startY = 0f,
+                                                        endY = glowHeight.toPx(),
+                                                    ),
+                                                    topLeft = Offset(0f, 0f),
+                                                    size = Size(size.width, glowHeight.toPx())
+                                                )
+
+                                                drawRect(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Transparent,
+                                                            glowColor,
+                                                        ),
+                                                        startY = glowOffsetY,
+                                                        endY = size.height,
+                                                    ),
+                                                    topLeft = Offset(0f, glowOffsetY),
+                                                    size = Size(size.width, glowHeight.toPx())
+                                                )
+                                            }
+                                        )
+                                )
+                            }
                         }
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = { showOverflowPopup = false }) {
-                        Text("Close")
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.background,
-                titleContentColor = MaterialTheme.colorScheme.onBackground,
-                textContentColor = MaterialTheme.colorScheme.onBackground,
-            )
+                    },
+                    confirmButton = {
+                        Button(onClick = { showOverflowPopup = false }) {
+                            Text("Close")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    textContentColor = MaterialTheme.colorScheme.onBackground,
+                )
+            }
         }
     }
 }
@@ -2127,6 +2189,7 @@ fun ComponentFilterSection(
         val availableComps by filterViewModel.availableComponents.collectAsState()
         val selectedComps by filterViewModel.sheetSelectedComponents.collectAsState()
         val matchAll by filterViewModel.sheetSelectedComponentMatchAll.collectAsState()
+        val nothingAssigned = !availableComps.any { it != "(None Assigned)" }
 
         Row(
             modifier = Modifier
@@ -2139,7 +2202,8 @@ fun ComponentFilterSection(
                 text = "Components:",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier
+                modifier = Modifier,
+                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
             )
             // Match options
             Row(
@@ -2152,12 +2216,14 @@ fun ComponentFilterSection(
                     text = "Match: ",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
                 )
                 Box(
                     modifier = Modifier
                         .padding(0.dp)
                         .clickable(
+                            enabled = !nothingAssigned,
                             onClick = { filterViewModel.updateCompMatchAll(false) }
                         ),
                     contentAlignment = Alignment.Center
@@ -2172,7 +2238,9 @@ fun ComponentFilterSection(
                         text = "Any",
                         fontSize = 14.sp,
                         fontWeight = if (!matchAll) FontWeight.Medium else FontWeight.Normal,
-                        color = if (!matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .7f),
+                        color = if (!matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            alpha = .7f
+                        ),
                         modifier = Modifier
                     )
                 }
@@ -2180,12 +2248,14 @@ fun ComponentFilterSection(
                     text = " / ",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    modifier = Modifier
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
                 )
-                Box (
+                Box(
                     modifier = Modifier
                         .padding(0.dp)
                         .clickable(
+                            enabled = !nothingAssigned,
                             onClick = { filterViewModel.updateCompMatchAll(true) }
                         ),
                     contentAlignment = Alignment.Center
@@ -2200,257 +2270,295 @@ fun ComponentFilterSection(
                         text = "All",
                         fontSize = 14.sp,
                         fontWeight = if (matchAll) FontWeight.Medium else FontWeight.Normal,
-                        color = if (matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .7f),
+                        color = if (matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            alpha = .7f
+                        ),
                         modifier = Modifier
                     )
                 }
             }
         }
 
-        ContextualFlowRow(
-            itemCount = availableComps.size,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(Alignment.Top),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            maxLines = 1,
-            overflow = ContextualFlowRowOverflow.expandIndicator {
-                shownItems = shownItemCount
-                overflowCount = availableComps.size - shownItems
-
-                val overflowedSelected = filterViewModel.overflowCheck(selectedComps, availableComps, shownItemCount)
-
-                Chip(
-                    text = "+$overflowCount",
-                    onChipClicked = { showOverflowPopup = true },
-                    onChipRemoved = { },
-                    trailingIcon = false,
-                    modifier = Modifier,
-                    colors = AssistChipDefaults.assistChipColors(
-                        labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                            MaterialTheme.colorScheme.background,
-                    ),
-                    border = AssistChipDefaults.assistChipBorder(
-                        enabled = true,
-                        borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                            MaterialTheme.colorScheme.outline
-                    ),
+        if (nothingAssigned) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "No components assigned to any blends.",
+                    modifier = Modifier
+                        .padding(0.dp),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
-            },
-        ) {
-            val comp = availableComps[it]
+            }
+        } else {
+            ContextualFlowRow(
+                itemCount = availableComps.size,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(Alignment.Top),
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                maxLines = 1,
+                overflow = ContextualFlowRowOverflow.expandIndicator {
+                    shownItems = shownItemCount
+                    overflowCount = availableComps.size - shownItems
 
-            FilterChip(
-                selected = selectedComps.contains(comp),
-                onClick = { filterViewModel.updateSelectedComponent(comp, !selectedComps.contains(comp)) },
-                label = {
-                    Text(
-                        text = comp,
-                        fontSize = 14.sp,
+                    val overflowedSelected =
+                        filterViewModel.overflowCheck(selectedComps, availableComps, shownItemCount)
+
+                    Chip(
+                        text = "+$overflowCount",
+                        onChipClicked = { showOverflowPopup = true },
+                        onChipRemoved = { },
+                        trailingIcon = false,
+                        modifier = Modifier,
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.background,
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(
+                            enabled = true,
+                            borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.outline
+                        ),
                     )
                 },
-                modifier = Modifier
-                    .padding(0.dp),
-                shape = MaterialTheme.shapes.small,
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-                enabled = !matchAll || (matchAll && !comp.contains("(None Assigned)"))
-            )
-        }
-        if (showOverflowPopup) {
-            AlertDialog(
-                onDismissRequest = { showOverflowPopup = false },
-                title = {
-                    Text(
-                        text = "Components",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth(.9f),
-                properties = DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-                    usePlatformDefaultWidth = false
-                ),
-                shape = MaterialTheme.shapes.medium,
-                text = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp)
-                            .heightIn(min = 0.dp, max = 280.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
-                    ) {
-                        val glowColor = MaterialTheme.colorScheme.background
+            ) {
+                val comp = availableComps[it]
 
-                        Box(
+                FilterChip(
+                    selected = selectedComps.contains(comp),
+                    onClick = {
+                        filterViewModel.updateSelectedComponent(
+                            comp,
+                            !selectedComps.contains(comp)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = comp,
+                            fontSize = 14.sp,
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    shape = MaterialTheme.shapes.small,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ),
+                    enabled = !matchAll || (matchAll && !comp.contains("(None Assigned)"))
+                )
+            }
+            if (showOverflowPopup) {
+                AlertDialog(
+                    onDismissRequest = { showOverflowPopup = false },
+                    title = {
+                        Text(
+                            text = "Components",
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(0.dp),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(.9f),
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true,
+                        usePlatformDefaultWidth = false
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
                                 .heightIn(min = 0.dp, max = 280.dp),
-                            contentAlignment = Alignment.Center
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
                         ) {
-                            Column(
+                            val glowColor = MaterialTheme.colorScheme.background
+
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .verticalScroll(rememberScrollState()),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Top
+                                    .heightIn(min = 0.dp, max = 280.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Spacer(modifier = Modifier.height(5.dp))
-                                // match options
-                                Row(
+                                Column(
                                     modifier = Modifier
-                                        .padding(bottom = 4.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
                                 ) {
-                                    Text(
-                                        text = "Match: ",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium,
+                                    Spacer(modifier = Modifier.height(5.dp))
+                                    // match options
+                                    Row(
                                         modifier = Modifier
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(0.dp)
-                                            .clickable(onClick = { filterViewModel.updateCompMatchAll(false) }),
-                                        contentAlignment = Alignment.Center
+                                            .padding(bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "Any",
+                                            text = "Match: ",
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color.Transparent,
-                                        )
-                                        Text(
-                                            text = "Any",
-                                            fontSize = 14.sp,
-                                            fontWeight = if (!matchAll) FontWeight.Medium else FontWeight.Normal,
-                                            color = if (!matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .7f),
                                             modifier = Modifier
                                         )
-                                    }
-                                    Text(
-                                        text = " / ",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        modifier = Modifier
-                                    )
-                                    Box (
-                                        modifier = Modifier
-                                            .padding(0.dp)
-                                            .clickable(onClick = { filterViewModel.updateCompMatchAll(true) }),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "All",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.Transparent,
-                                        )
-                                        Text(
-                                            text = "All",
-                                            fontSize = 14.sp,
-                                            fontWeight = if (matchAll) FontWeight.Medium else FontWeight.Normal,
-                                            color = if (matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .7f),
+                                        Box(
                                             modifier = Modifier
-                                        )
-                                    }
-                                }
-                                // Chips
-                                FlowRow(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(
-                                        4.dp,
-                                        Alignment.Start
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
-                                ) {
-                                    availableComps.forEach {
-                                        FilterChip(
-                                            selected = selectedComps.contains(it),
-                                            onClick = {
-                                                filterViewModel.updateSelectedComponent(
-                                                    it, !selectedComps.contains(it)
-                                                )
-                                            },
-                                            label = {
-                                                Text(
-                                                    text = it,
-                                                    fontSize = 14.sp,
-                                                )
-                                            },
-                                            modifier = Modifier
-                                                .padding(0.dp),
-                                            shape = MaterialTheme.shapes.small,
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                containerColor = MaterialTheme.colorScheme.background,
-                                            ),
-                                            enabled = !matchAll || (matchAll && !it.contains("(None Assigned)"))
-                                        )
-                                    }
-                                }
-                            }
-                            Box( // glow effect
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .then(
-                                        Modifier.drawBehind {
-                                            val glowHeight = 10.dp
-                                            val glowOffsetY =
-                                                size.height - (glowHeight.toPx())
-                                            drawRect(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        glowColor,
-                                                        Color.Transparent,
-                                                    ),
-                                                    startY = 0f,
-                                                    endY = glowHeight.toPx(),
-                                                ),
-                                                topLeft = Offset(0f, 0f),
-                                                size = Size(size.width, glowHeight.toPx())
+                                                .padding(0.dp)
+                                                .clickable(onClick = {
+                                                    filterViewModel.updateCompMatchAll(
+                                                        false
+                                                    )
+                                                }),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Any",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Transparent,
                                             )
-
-                                            drawRect(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Transparent,
-                                                        glowColor,
-                                                    ),
-                                                    startY = glowOffsetY,
-                                                    endY = size.height,
+                                            Text(
+                                                text = "Any",
+                                                fontSize = 14.sp,
+                                                fontWeight = if (!matchAll) FontWeight.Medium else FontWeight.Normal,
+                                                color = if (!matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    alpha = .7f
                                                 ),
-                                                topLeft = Offset(0f, glowOffsetY),
-                                                size = Size(size.width, glowHeight.toPx())
+                                                modifier = Modifier
                                             )
                                         }
-                                    )
-                            )
+                                        Text(
+                                            text = " / ",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            modifier = Modifier
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .clickable(onClick = {
+                                                    filterViewModel.updateCompMatchAll(
+                                                        true
+                                                    )
+                                                }),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "All",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Transparent,
+                                            )
+                                            Text(
+                                                text = "All",
+                                                fontSize = 14.sp,
+                                                fontWeight = if (matchAll) FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    alpha = .7f
+                                                ),
+                                                modifier = Modifier
+                                            )
+                                        }
+                                    }
+                                    // Chips
+                                    FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            4.dp,
+                                            Alignment.Start
+                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(
+                                            0.dp,
+                                            Alignment.Top
+                                        )
+                                    ) {
+                                        availableComps.forEach {
+                                            FilterChip(
+                                                selected = selectedComps.contains(it),
+                                                onClick = {
+                                                    filterViewModel.updateSelectedComponent(
+                                                        it, !selectedComps.contains(it)
+                                                    )
+                                                },
+                                                label = { Text(text = it, fontSize = 14.sp,) },
+                                                modifier = Modifier
+                                                    .padding(0.dp),
+                                                shape = MaterialTheme.shapes.small,
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.background,
+                                                ),
+                                                enabled = !matchAll || (matchAll && !it.contains("(None Assigned)"))
+                                            )
+                                        }
+                                    }
+                                }
+                                Box( // glow effect
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .then(
+                                            Modifier.drawBehind {
+                                                val glowHeight = 10.dp
+                                                val glowOffsetY =
+                                                    size.height - (glowHeight.toPx())
+                                                drawRect(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            glowColor,
+                                                            Color.Transparent,
+                                                        ),
+                                                        startY = 0f,
+                                                        endY = glowHeight.toPx(),
+                                                    ),
+                                                    topLeft = Offset(0f, 0f),
+                                                    size = Size(size.width, glowHeight.toPx())
+                                                )
+
+                                                drawRect(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Transparent,
+                                                            glowColor,
+                                                        ),
+                                                        startY = glowOffsetY,
+                                                        endY = size.height,
+                                                    ),
+                                                    topLeft = Offset(0f, glowOffsetY),
+                                                    size = Size(size.width, glowHeight.toPx())
+                                                )
+                                            }
+                                        )
+                                )
+                            }
                         }
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = { showOverflowPopup = false }) {
-                        Text("Close")
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.background,
-                titleContentColor = MaterialTheme.colorScheme.onBackground,
-                textContentColor = MaterialTheme.colorScheme.onBackground,
-            )
+                    },
+                    confirmButton = {
+                        Button(onClick = { showOverflowPopup = false }) {
+                            Text("Close")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    textContentColor = MaterialTheme.colorScheme.onBackground,
+                )
+            }
         }
     }
 }
