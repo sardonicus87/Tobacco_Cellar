@@ -23,8 +23,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import kotlin.String
-import kotlin.collections.List
 import kotlin.math.roundToInt
 
 class AddEntryViewModel(
