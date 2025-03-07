@@ -470,8 +470,7 @@ fun QuickStatsSection(
                     text = totalByCut,
                     modifier = Modifier
                         .weight(1f)
-                        .semantics { contentDescription = totalByCut.toString() }
-                        .padding(bottom = 8.dp),
+                        .semantics { contentDescription = totalByCut.toString() },
                     fontSize = 15.sp,
                     textAlign = TextAlign.Start,
                     softWrap = true,
@@ -493,6 +492,10 @@ fun QuickStatsSection(
                 )
             }
         }
+        Spacer(
+            modifier = Modifier
+                .height(8.dp)
+        )
     }
 
 }
