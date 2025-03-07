@@ -2,7 +2,6 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -81,6 +81,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
@@ -161,7 +162,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-           Box {
+            Box {
                 SettingsBody(
                     viewmodel = viewmodel,
                     onDeleteAllClick = {
@@ -179,14 +180,15 @@ fun SettingsScreen(
                         viewmodel.setTinConversionRates(ozRate, gramsRate)
                     },
                     modifier = modifier
-                        .fillMaxWidth(),
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                 )
-               if (loading) {
-                   FullScreenLoading(
-                       skrimColor = Color.Black,
-                       skrimAlpha = 0.5f
-                   )
-               }
+                if (loading) {
+                    FullScreenLoading(
+                        skrimColor = Color.Black,
+                        skrimAlpha = 0.5f
+                    )
+                }
             }
         }
     }
@@ -237,145 +239,146 @@ private fun SettingsBody(
         }
     }
 
-    if (showChangelog) {
-        ChangeLogDialog(
-            changeLogEntries = changeLogEntries,
-            showChangelog = { showChangelog = it },
-            modifier = Modifier
-        )
-    }
+    Box {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(0.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top
+        ) {
+            if (!showChangelog) {
+                Spacer(
+                    modifier = Modifier
+                        .height(16.dp)
+                )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(0.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        if (!showChangelog) {
-            Spacer(
-                modifier = Modifier
-                    .height(16.dp)
-            )
+                DisplaySettings(
+                    showThemeDialog = { showThemeDialog = it },
+                    showQuantityDialog = { showQuantityDialog = it },
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                )
 
-            DisplaySettings(
-                showThemeDialog = { showThemeDialog = it },
-                showQuantityDialog = { showQuantityDialog = it },
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            )
+                DatabaseSettings(
+                    showTinRates = { showTinRates = it },
+                    deleteAllConfirm = { deleteAllConfirm = it },
+                    showBackup = { backup = it },
+                    showRestore = { restore = it },
+                    optimizeDatabase = optimizeDatabase,
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                )
 
-            DatabaseSettings(
-                showTinRates = { showTinRates = it },
-                deleteAllConfirm = { deleteAllConfirm = it },
-                showBackup = { backup = it },
-                showRestore = { restore = it },
-                optimizeDatabase = optimizeDatabase,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            )
+                AboutSection(
+                    showChangelog = { showChangelog = it },
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                )
 
-            AboutSection(
+                // Popup settings dialogs
+                if (showThemeDialog) {
+                    ThemeDialog(
+                        onThemeSelected = { newTheme ->
+                            saveTheme(newTheme)
+                        },
+                        preferencesRepo = preferencesRepo,
+                        onClose = { showThemeDialog = false }
+                    )
+                }
+                if (showQuantityDialog) {
+                    QuantityDialog(
+                        onDismiss = { showQuantityDialog = false },
+                        preferencesRepo = preferencesRepo,
+                        modifier = Modifier,
+                        onQuantityOption = { saveQuantity(it) }
+                    )
+                }
+                if (showTinRates) {
+                    TinRatesDialog(
+                        onDismiss = { showTinRates = false },
+                        ozRate = tinOzConversionRate,
+                        gramsRate = tinGramsConversionRate,
+                        onSet = { ozRate, gramsRate ->
+                            onSetTinConversionRates(ozRate, gramsRate)
+                            showTinRates = false
+                        },
+                        modifier = Modifier
+                    )
+                }
+                if (deleteAllConfirm) {
+                    DeleteAllDialog(
+                        onDeleteConfirm = {
+                            deleteAllConfirm = false
+                            onDeleteAllClick()
+                        },
+                        onDeleteCancel = { deleteAllConfirm = false },
+                        modifier = Modifier
+                            .padding(0.dp)
+                    )
+                }
+                if (backup) {
+                    BackupDialog(
+                        onDismiss = { backup = false },
+                        onSave = {
+                            backup = false
+                            launcher.launch(it)
+                        },
+                        viewmodel = viewmodel,
+                        modifier = Modifier
+                    )
+                }
+                if (restore) {
+                    RestoreDialog(
+                        onDismiss = { restore = false },
+                        onRestore = {
+                            restore = false
+                            openLauncher.launch(arrayOf("application/octet-stream"))
+                        },
+                        viewmodel = viewmodel,
+                        modifier = Modifier
+                    )
+                }
+
+            }
+        }
+
+        if (showChangelog) {
+            ChangelogDialog(
+                changelogEntries = changelogEntries,
                 showChangelog = { showChangelog = it },
                 modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
             )
-
-            // Popup settings dialogs
-            if (showThemeDialog) {
-                ThemeDialog(
-                    onThemeSelected = { newTheme ->
-                        saveTheme(newTheme)
-                    },
-                    preferencesRepo = preferencesRepo,
-                    onClose = { showThemeDialog = false }
-                )
-            }
-            if (showQuantityDialog) {
-                QuantityDialog(
-                    onDismiss = { showQuantityDialog = false },
-                    preferencesRepo = preferencesRepo,
-                    modifier = Modifier,
-                    onQuantityOption = { saveQuantity(it) }
-                )
-            }
-            if (showTinRates) {
-                TinRatesDialog(
-                    onDismiss = { showTinRates = false },
-                    ozRate = tinOzConversionRate,
-                    gramsRate = tinGramsConversionRate,
-                    onSet = { ozRate, gramsRate ->
-                        onSetTinConversionRates(ozRate, gramsRate)
-                        showTinRates = false
-                    },
-                    modifier = Modifier
-                )
-            }
-            if (deleteAllConfirm) {
-                DeleteAllDialog(
-                    onDeleteConfirm = {
-                        deleteAllConfirm = false
-                        onDeleteAllClick()
-                    },
-                    onDeleteCancel = { deleteAllConfirm = false },
-                    modifier = Modifier
-                        .padding(0.dp)
-                )
-            }
-            if (backup) {
-                BackupDialog(
-                    onDismiss = { backup = false },
-                    onSave = {
-                        backup = false
-                        launcher.launch(it)
-                    },
-                    viewmodel = viewmodel,
-                    modifier = Modifier
-                )
-            }
-            if (restore) {
-                RestoreDialog(
-                    onDismiss = { restore = false },
-                    onRestore = {
-                        restore = false
-                        openLauncher.launch(arrayOf("application/octet-stream"))
-                    },
-                    viewmodel = viewmodel,
-                    modifier = Modifier
-                )
-            }
-
         }
     }
 }
@@ -509,7 +512,7 @@ fun AboutSection(
     val appVersion = BuildConfig.VERSION_NAME
     val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
     val emailIntent = Intent(Intent.ACTION_SENDTO).apply{
-        data = Uri.parse("mailto:sardonicus.notadev@gmail.com")
+        data = "mailto:sardonicus.notadev@gmail.com".toUri()
         putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
     }
 
@@ -593,7 +596,7 @@ fun AboutSection(
                                 .firstOrNull()
                                 ?.let { annotation ->
                                     val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                        data = Uri.parse(annotation.item)
+                                        data = annotation.item.toUri()
                                     }
                                     context.startActivity(
                                         Intent.createChooser(
@@ -621,7 +624,7 @@ fun AboutSection(
                 softWrap = true,
             )
             Text(
-                text = "Change Log ",
+                text = "Changelog ",
                 modifier = Modifier
                     .clickable { showChangelog(true) }
                     .padding(vertical = 1.dp),
@@ -634,8 +637,8 @@ fun AboutSection(
 }
 
 @Composable
-fun ChangeLogDialog(
-    changeLogEntries: List<ChangeLogEntryData>,
+fun ChangelogDialog(
+    changelogEntries: List<ChangelogEntryData>,
     showChangelog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -680,7 +683,7 @@ fun ChangeLogDialog(
                 }
             }
             Text(
-                text = "Change Log",
+                text = "Changelog",
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,
                 fontSize = 20.sp,
@@ -699,6 +702,8 @@ fun ChangeLogDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp),
+            state = rememberLazyListState(),
+            userScrollEnabled = true,
         ) {
             item {
                 Spacer(
@@ -706,7 +711,7 @@ fun ChangeLogDialog(
                         .height(12.dp)
                 )
             }
-            items(items = changeLogEntries, key = { it.versionNumber }
+            items(items = changelogEntries, key = { it.versionNumber }
             ) {
                 if (it.versionNumber.isNotBlank()) {
                     ChangeLogEntryLayout(
