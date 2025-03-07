@@ -1,8 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
 
-val changeLogEntries = listOf(
-    ChangeLogEntryData(
+val changelogEntries = listOf(
+    ChangelogEntryData(
         versionNumber = "",
         buildDate = "",
         changes = listOf(),
@@ -10,9 +10,9 @@ val changeLogEntries = listOf(
         bugFixes = listOf(),
     ),
 
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.5.0",
-        buildDate = "",
+        buildDate = "7 Mar, 2025",
         changes = listOf(),
         improvements = listOf(
             "Clicking the system back button after having done a blend search will now clear the " +
@@ -26,8 +26,8 @@ val changeLogEntries = listOf(
             "Adjusted list position for charts on the stats screen depending on where the thin " +
                     "slices occur, as well as improve outside thin slice percentage placement at " +
                     "top of charts.",
-            "Added a conditional check to exclude quantities of 0 from charts \"by Tins\".",
-            "Added two more charts, subgenres and cuts by No. of Tins.",
+            "Added a conditional check to exclude quantities of 0 from charts \"...by Tins\".",
+            "Added two more charts for \"Subgenres...\" and \"Cuts by No. of Tins\".",
             "Refined the \"Quick Stats\" implementation such that each block is laid out in-line " +
                     "between the Raw and Filtered stats.",
             "Added a total quantity to the blend details screen tins section (if there are any " +
@@ -42,11 +42,12 @@ val changeLogEntries = listOf(
                     "based on data in the database, where if the last item of a given filter " +
                     "was edited or deleted, that filter value would still be applied " +
                     "despite no longer being a valid option and unable to be de-selected as it " +
-                    "was removed from the selectable options."
+                    "was removed from the selectable options.",
+            "Fixed a bug where the changelog became unscrollable after the last update."
         ),
     ),
 
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.4.0",
         buildDate = "3 Mar, 2025",
         changes = listOf(
@@ -70,7 +71,7 @@ val changeLogEntries = listOf(
         bugFixes = listOf(),
     ),
 
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.3.0",
         buildDate = "18 Feb, 2025",
         changes = listOf(
@@ -101,7 +102,7 @@ val changeLogEntries = listOf(
         ),
     ),
 
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.2.0",
         buildDate = "11 Feb, 2025",
         changes = listOf(
@@ -123,7 +124,7 @@ val changeLogEntries = listOf(
                     "there were none, tbe first tin entry should have started in expanded state."
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.1.0",
         buildDate = "8 Feb, 2025",
         changes = listOf(
@@ -143,7 +144,7 @@ val changeLogEntries = listOf(
             "Fixed error in Entry Details where type label was the blend type instead of \"Type: \"."
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.0.1",
         buildDate = "4 Feb, 2025",
         changes = listOf(),
@@ -152,7 +153,7 @@ val changeLogEntries = listOf(
             "Fixed app startup crash introduced in version 2.0.0."
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "2.0.0",
         buildDate = "4 Feb, 2025",
         changes = listOf(
@@ -199,7 +200,7 @@ val changeLogEntries = listOf(
             "Fixed the \"flash\" when transitioning to CSV import results.",
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "1.4.0",
         buildDate = "2 Jan, 2025",
         changes = listOf(
@@ -222,7 +223,7 @@ val changeLogEntries = listOf(
                     "Android 15 device.",
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "1.3.1",
         buildDate = "25 Dec, 2024",
         changes = listOf(
@@ -242,7 +243,7 @@ val changeLogEntries = listOf(
             "\"Tin Converter\" not working on Edit Entry screen."
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "1.3.0",
         buildDate = "23 Dec, 2024",
         changes = listOf(
@@ -258,14 +259,14 @@ val changeLogEntries = listOf(
             "search results now returns to the previous position."
         )
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "1.2.0",
         buildDate = "11 Dec, 2024",
         changes = listOf(
             "CSV import screen UI overhaul.",
             "Added CSV import help documentation.",
             "Expanded CSV import options (existing records: skip, update, overwrite).",
-            "Added Change Log to settings screen."
+            "Added Changelog to settings screen."
         ),
         improvements = listOf(
             "List and Table views auto scroll to top on filter and sort changes, scroll to " +
@@ -279,7 +280,7 @@ val changeLogEntries = listOf(
                     "combination of Brand and Blend."
         ),
     ),
-    ChangeLogEntryData(
+    ChangelogEntryData(
         versionNumber = "1.0.0",
         buildDate = "20 Nov, 2024",
         changes = listOf(
@@ -289,7 +290,7 @@ val changeLogEntries = listOf(
 )
 
 
-data class ChangeLogEntryData(
+data class ChangelogEntryData(
     val versionNumber: String,
     val buildDate: String,
     val changes: List<String> = emptyList(),
