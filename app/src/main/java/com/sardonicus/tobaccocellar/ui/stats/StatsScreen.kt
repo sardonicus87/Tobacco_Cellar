@@ -154,7 +154,7 @@ private fun StatsBody(
                 .height(1.dp)
         )
 
-        // Quick Stats header //
+        // Quick Stats //
         Box {
             Row(
                 modifier = Modifier
@@ -197,92 +197,27 @@ private fun StatsBody(
                     }
             )
         }
+
         Spacer(
             modifier = Modifier
                 .height(10.dp)
         )
 
-        // Quick Stats section //
-        Row(
+        QuickStatsSection(
+            rawStats = rawStats,
+            filteredStats = filteredStats,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(start = 24.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceAround,
-        ) {
-            // Raw Stats
-            Column(
-                modifier = Modifier
-                    .weight(1f),
-                horizontalAlignment = Alignment.Start,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .background(color = MaterialTheme.colorScheme.background)
-                        .padding(0.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Raw Stats",
-                        modifier = Modifier
-                            .padding(vertical = 2.dp),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                RawStats(
-                    rawStats = rawStats,
-                    modifier = Modifier
-                )
-            }
-
-            Spacer(
-                modifier = Modifier
-                    .width(8.dp)
-            )
-
-            // Filtered Stats
-            Column(
-                modifier = Modifier
-                    .weight(1f),
-                horizontalAlignment = Alignment.Start,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .background(color = MaterialTheme.colorScheme.background)
-                        .padding(0.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Filtered Stats",
-                        modifier = Modifier
-                            .padding(vertical = 2.dp),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-
-                FilteredStats(
-                    filteredStats = filteredStats,
-                    modifier = Modifier
-                )
-            }
-        }
-
+        )
 
         Spacer(
             modifier = Modifier
                 .height(10.dp)
         )
 
-        // Charts header //
+        // Charts //
         Box {
             Row(
                 modifier = Modifier
@@ -334,8 +269,9 @@ private fun StatsBody(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RawStats(
+fun QuickStatsSection(
     rawStats: RawStats,
+    filteredStats: FilteredStats,
     modifier: Modifier = Modifier
 ) {
     val totalByType = rawStats.totalByType.toList().sortedBy {
@@ -360,81 +296,6 @@ fun RawStats(
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
     ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start,
-    ) {
-        Spacer(
-            modifier = Modifier
-                .height(2.dp)
-        )
-        Text(
-            text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
-                    "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                    "${rawStats.totalQuantity} total tins\n" +
-                    "${rawStats.totalZeroQuantity} out of stock",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 0.dp, end = 0.dp, bottom = 12.dp),
-            fontSize = 15.sp,
-            textAlign = TextAlign.Start,
-            softWrap = true,
-        )
-
-        if (rawStats.totalByType.any { it.key != "Unassigned" }) {
-            Text(
-                text = totalByType,
-                modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .semantics { contentDescription = totalByType.toString() }
-                    .padding(bottom = 12.dp),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true,
-            )
-        }
-
-        if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
-            Text(
-                text = totalBySubgenre,
-                modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .semantics { contentDescription = totalBySubgenre.toString() }
-                    .padding(bottom = 12.dp),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true,
-            )
-        }
-
-        if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
-            Text(
-                text = totalByCut,
-                modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .semantics { contentDescription = totalByCut.toString() }
-                    .padding(0.dp),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true,
-            )
-        }
-
-        Spacer(
-            modifier = Modifier
-                .height(8.dp)
-        )
-    }
-}
-
-@Composable
-fun FilteredStats(
-    filteredStats: FilteredStats,
-    modifier: Modifier = Modifier
-) {
     val totalByTypeFiltered = filteredStats.totalByType.toList().sortedBy {
         when (it.first) {
             "Burley" -> 0
@@ -459,75 +320,182 @@ fun FilteredStats(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
-        verticalArrangement = Arrangement.Top,
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top,
     ) {
-        Spacer(
+        Row(
             modifier = Modifier
-                .height(2.dp)
-        )
-        Text(
-            text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
-                    "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
-                    "${filteredStats.totalQuantity} total tins\n" +
-                    "${filteredStats.totalZeroQuantity} out of stock",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 0.dp, end = 0.dp, bottom = 12.dp),
-            fontSize = 15.sp,
-            textAlign = TextAlign.Start,
-            softWrap = true,
-        )
-
-        if (filteredStats.totalByType.any { it.key != "Unassigned" }) {
+                .padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                text = totalByTypeFiltered,
+                text = "Raw Stats",
                 modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .semantics { contentDescription = totalByTypeFiltered.toString() }
+                    .weight(1f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(
+                modifier = Modifier
+                    .width(8.dp)
+            )
+            Text(
+                text = "Filtered Stats",
+                modifier = Modifier
+                    .weight(1f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+        // First Section
+        Row(
+            modifier = Modifier
+                .padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Text(
+                text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
+                        "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
+                        "${rawStats.totalQuantity} total tins\n" +
+                        "${rawStats.totalZeroQuantity} out of stock",
+                modifier = Modifier
+                    .weight(1f)
                     .padding(bottom = 12.dp),
                 fontSize = 15.sp,
                 textAlign = TextAlign.Start,
-                softWrap = true
+                softWrap = true,
             )
-        }
-
-        if (filteredStats.totalBySubgenre.any { it.key != "Unassigned" }) {
-            Text(
-                text = totalBySubgenreFiltered,
+            Spacer(
                 modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .semantics { contentDescription = totalBySubgenreFiltered.toString() }
-                    .padding(bottom = 12.dp),
+                    .width(8.dp)
+            )
+            Text(
+                text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
+                        "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
+                        "${filteredStats.totalQuantity} total tins\n" +
+                        "${filteredStats.totalZeroQuantity} out of stock",
+                modifier = Modifier
+                    .weight(1f),
                 fontSize = 15.sp,
                 textAlign = TextAlign.Start,
                 softWrap = true,
             )
         }
 
-        if (filteredStats.totalByCut.any { it.key != "Unassigned" }) {
-            Text(
-                text = totalByCutFiltered,
+        // Second Section
+        Row(
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top,
+        ) {
+            if (rawStats.totalByType.any { it.key != "Unassigned" }) {
+                Text(
+                    text = totalByType,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { contentDescription = totalByType.toString() }
+                        .padding(bottom = 12.dp),
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true,
+                )
+            }
+            Spacer(
                 modifier = Modifier
-                    .fillMaxWidth(fraction = 0.75f)
-                    .semantics { contentDescription = totalByCutFiltered.toString() }
-                    .padding(0.dp),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true,
+                    .width(8.dp)
             )
+            if (filteredStats.totalByType.any { it.key != "Unassigned" }) {
+                Text(
+                    text = totalByTypeFiltered,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { contentDescription = totalByTypeFiltered.toString() },
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true
+                )
+            }
         }
 
+        // Third section
+        Row(
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top,
+        ) {
+            if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+                Text(
+                    text = totalBySubgenre,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = 12.dp)
+                        .semantics { contentDescription = totalBySubgenre.toString() },
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true,
+                )
+            }
+            Spacer(
+                modifier = Modifier
+                    .width(8.dp)
+            )
+            if (filteredStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+                Text(
+                    text = totalBySubgenreFiltered,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { contentDescription = totalBySubgenreFiltered.toString() },
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true,
+                )
+            }
+        }
 
-        Spacer(
-            modifier = Modifier
-                .height(8.dp)
-        )
+        // Fourth section
+        Row(
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top,
+        ) {
+            if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
+                Text(
+                    text = totalByCut,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { contentDescription = totalByCut.toString() }
+                        .padding(bottom = 8.dp),
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true,
+                )
+            }
+            Spacer(
+                modifier = Modifier
+                    .width(8.dp)
+            )
+            if (filteredStats.totalByCut.any { it.key != "Unassigned" }) {
+                Text(
+                    text = totalByCutFiltered,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { contentDescription = totalByCutFiltered.toString() },
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true,
+                )
+            }
+        }
     }
-}
 
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
