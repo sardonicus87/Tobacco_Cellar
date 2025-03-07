@@ -11,6 +11,42 @@ val changeLogEntries = listOf(
     ),
 
     ChangeLogEntryData(
+        versionNumber = "2.5.0",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Clicking the system back button after having done a blend search will now clear the " +
+                    "search.",
+            "Added further save/update validation to prevent saving if any added tins have a " +
+                    "quantity entered without selecting a unit.",
+            "Moved \"(Unassigned)\" type filtering in the new filter sections to be the last option.",
+            "Conditionally enable subgenre, cut and component filter sections if there are any " +
+                    "blends that use these fields (visual improvement over having just a single " +
+                    "chip which says \"(Unassigned)\").",
+            "Adjusted list position for charts on the stats screen depending on where the thin " +
+                    "slices occur, as well as improve outside thin slice percentage placement at " +
+                    "top of charts.",
+            "Added a conditional check to exclude quantities of 0 from charts \"by Tins\".",
+            "Added two more charts, subgenres and cuts by No. of Tins.",
+            "Refined the \"Quick Stats\" implementation such that each block is laid out in-line " +
+                    "between the Raw and Filtered stats.",
+            "Added a total quantity to the blend details screen tins section (if there are any " +
+                    "tins with quantities). The displayed total is based on your chosen \"Cellar " +
+                    "Quantity Display\" option, though if you have chosen No. of Tins, it will " +
+                    "display metric units if your locale is anywhere other than the United States."
+        ),
+        bugFixes = listOf(
+            "Fixed a bug where the list wasn't returning to the previous position when clearing " +
+                    "blend search.",
+            "Fixed a minor issue in filtering by certain fields that generate selection options " +
+                    "based on data in the database, where if the last item of a given filter " +
+                    "was edited or deleted, that filter value would still be applied " +
+                    "despite no longer being a valid option and unable to be de-selected as it " +
+                    "was removed from the selectable options."
+        ),
+    ),
+
+    ChangeLogEntryData(
         versionNumber = "2.4.0",
         buildDate = "3 Mar, 2025",
         changes = listOf(
@@ -27,7 +63,7 @@ val changeLogEntries = listOf(
             "Minor UI improvements. Blend details and settings screens text size, colors, " +
                     "spacing. Filer sheet, both pages now same height, other minor spacing tweaks.",
             "Efficiency improvements for filter sheet.",
-            "Added a loading state for the stats screen while data is collected (might be fast).",
+            "Added a loading state for the stats screen while data is collected (in case it was needed).",
             "Further attempt to refine autocomplete suggestion fields popup behavior and " +
                     "efficiency."
         ),
