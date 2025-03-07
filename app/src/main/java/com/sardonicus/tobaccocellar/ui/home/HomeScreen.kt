@@ -1022,11 +1022,9 @@ private fun CellarListItem(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.End
             ) {
-                val outOfStock = if (
-                    formattedQuantity == "0 oz" ||
-                    formattedQuantity == "x0" ||
-                    formattedQuantity == "0 g"
-                ) true else false
+                val outOfStock = formattedQuantity == "0 oz" ||
+                formattedQuantity == "x0" ||
+                formattedQuantity == "0 g"
 
                 Text(
                     text = formattedQuantity,
@@ -1412,11 +1410,9 @@ fun TableLayout(
                                 } // notes
                                 5 -> { // quantity
                                     val formattedQty = formattedQuantity[item.items.id] ?: "--"
-                                    val outOfStock = if (
-                                        formattedQuantity[item.items.id] == "0 oz" ||
-                                        formattedQuantity[item.items.id] == "x0" ||
-                                        formattedQuantity[item.items.id] == "0 g"
-                                    ) true else false
+                                    val outOfStock = formattedQuantity[item.items.id] == "0 oz" ||
+                                    formattedQuantity[item.items.id] == "x0" ||
+                                    formattedQuantity[item.items.id] == "0 g"
 
                                     TableCell(
                                     //    value = "x$cellValue",
@@ -1490,7 +1486,6 @@ fun TableLayout(
                 }
             }
             if (searchCleared) {
-                delay(20)
                 val index = currentPosition[0]
                 val offset = currentPosition[1]
 
