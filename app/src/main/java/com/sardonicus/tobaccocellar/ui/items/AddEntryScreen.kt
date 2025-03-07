@@ -1935,8 +1935,6 @@ fun IndividualTin(
 
                     var dateFieldWidth by remember { mutableStateOf(0) }
 
-                    Log.d("field width", "$dateFieldWidth")
-
                     // Manufacture //
                     OutlinedTextField(
                         value = if (tinDetails.manufactureDateShort.isEmpty()) {
