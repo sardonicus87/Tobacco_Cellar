@@ -114,6 +114,7 @@ fun BlendDetailsScreen(
             else if (blendDetails.details != null) {
                 BlendDetailsBody(
                     blendDetails = blendDetails.details!!,
+                    tinsQuantity = blendDetails.tinsTotal!!,
                     viewModel = viewModel,
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
@@ -151,6 +152,7 @@ fun BlendDetailsScreen(
 @Composable
 fun BlendDetailsBody(
     blendDetails: ItemsComponentsAndTins,
+    tinsQuantity: String,
     viewModel: BlendDetailsViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -187,16 +189,6 @@ fun BlendDetailsBody(
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                 )
-//                Text(
-//                    text = "by ${blendDetails.items.brand}",
-//                    modifier = Modifier
-//                        .padding(bottom = 12.dp),
-//                    fontSize = 16.sp,
-//                    lineHeight = 16.sp,
-//                    fontWeight = FontWeight.Normal,
-//                    textAlign = TextAlign.Center,
-//                    fontStyle = FontStyle.Italic,
-//                )
                 Text(
                     text = buildAnnotatedString {
                         withStyle(
@@ -335,6 +327,13 @@ fun BlendDetailsBody(
                         },
                         modifier = Modifier,
                     )
+                    Text(
+                        text = buildString(
+                            "No. of Tins: ",
+                            blendDetails.items.quantity.toString(),
+                        ),
+                        modifier = Modifier,
+                    )
                 }
             }
         }
@@ -394,14 +393,34 @@ fun BlendDetailsBody(
                     )
                     .padding(vertical = 8.dp, horizontal = 12.dp)
             ) {
-                Text(
-                    text = "Tins",
+                Row(
                     modifier = Modifier
-                        .padding(bottom = 6.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = "Tins",
+                        modifier = Modifier
+                            .padding(bottom = 6.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                    )
+                    if (blendDetails.tins.any{ it.tinQuantity > 0}) {
+                        Text(
+                            text = "($tinsQuantity)",
+                            modifier = Modifier,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
                 SelectionContainer {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
