@@ -86,7 +86,6 @@ class HomeViewModel(
         combine(
             preferencesRepo.isTableView,
             preferencesRepo.quantityOption,
-        //    itemsRepository.getEverythingStream(),
             everythingFlow,
             filterViewModel.blendSearchValue,
             filterViewModel.selectedBrands,
