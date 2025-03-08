@@ -140,9 +140,6 @@ fun ImportResultsBody(
         }
         indexCondition = totalIndex
 
-//        while (visibleItemIndex < if
-//                (successfulUpdates > 0 && successfulTins > 0) 7 else if
-//                ((successfulUpdates > 0 && successfulTins == 0) || (successfulUpdates == 0 && successfulTins > 0)) 6 else 5) { // (total items to fade in, index starts 0)
         while (visibleItemIndex < totalIndex) {
             delay(850)
             visibleItemIndex++
@@ -530,37 +527,6 @@ fun ImportResultsBody(
                     )
                 }
             }
-
-//            if (visibleItemIndex <= if (successfulUpdates > 0) 5 else 4) {
-//                TextButton(
-//                    onClick = {  },
-//                    modifier = Modifier
-//                        .fillMaxWidth(),
-//                    shape = MaterialTheme.shapes.small,
-//                ) {
-//                    Text(
-//                        text = "",
-//                        fontSize = 25.sp,
-//                        color = Color.Transparent
-//                    )
-//                }
-//            }
-//            AnimatedVisibility(
-//                visible = visibleItemIndex > if (successfulUpdates > 0) 5 else 4,
-//                enter = fadeIn(animationSpec = tween(durationMillis = 350))
-//            ) {
-//                TextButton(
-//                    onClick = { navigateToHome() },
-//                    modifier = Modifier
-//                        .fillMaxWidth(),
-//                    shape = MaterialTheme.shapes.small,
-//                ) {
-//                    Text(
-//                        text = "Back to Cellar",
-//                        fontSize = 25.sp,
-//                    )
-//                }
-//            }
         }
         Spacer(
             modifier = Modifier
