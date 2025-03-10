@@ -80,7 +80,6 @@ class StatsViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredStats: StateFlow<FilteredStats> =
         combine(
-        //    itemsRepository.getEverythingStream(),
             everythingFlow,
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
