@@ -211,6 +211,8 @@ class FilterViewModel (
         viewModelScope.launch {
             EventBus.events.collect {
                 if (it is ItemSavedEvent) {
+                    resetFilter()
+                    _shouldScrollUp.value = false
                     _shouldReturn.value = false
                     _savedItemId.value = it.savedItemId.toInt()
                 }
