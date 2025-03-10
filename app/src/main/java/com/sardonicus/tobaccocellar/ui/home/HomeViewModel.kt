@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
@@ -87,62 +88,222 @@ class HomeViewModel(
             preferencesRepo.isTableView,
             preferencesRepo.quantityOption,
             everythingFlow,
-            filterViewModel.blendSearchValue,
-            filterViewModel.selectedBrands,
-            filterViewModel.selectedTypes,
-            filterViewModel.selectedUnassigned,
-            filterViewModel.selectedFavorites,
-            filterViewModel.selectedDislikeds,
-            filterViewModel.selectedNeutral,
-            filterViewModel.selectedNonNeutral,
-            filterViewModel.selectedInStock,
-            filterViewModel.selectedOutOfStock,
-            filterViewModel.selectedExcludeBrands,
-            filterViewModel.selectedExcludeLikes,
-            filterViewModel.selectedExcludeDislikes,
-            filterViewModel.selectedComponent,
-            filterViewModel.compMatchAll,
-            filterViewModel.selectedSubgenre,
-            filterViewModel.selectedCut,
-            filterViewModel.selectedProduction,
-            filterViewModel.selectedOutOfProduction
-        ) { values ->
-            val isTableView = values[0] as Boolean
-            val quantityOption = values[1] as QuantityOption
-            val allItems = values[2] as List<ItemsComponentsAndTins>
-            val blendSearchValue = values[3] as String
-            val brands = values[4] as List<String>
-            val types = values[5] as List<String>
-            val unassigned = values[6] as Boolean
-            val favorites = values[7] as Boolean
-            val dislikeds = values[8] as Boolean
-            val neutral = values[9] as Boolean
-            val nonNeutral = values[10] as Boolean
-            val inStock = values[11] as Boolean
-            val outOfStock = values[12] as Boolean
-            val excludedBrands = values[13] as List<String>
-            val excludedLikes = values[14] as Boolean
-            val excludedDislikes = values[15] as Boolean
-            val components = values[16] as List<String>
-            val matchAll = values[17] as Boolean
-            val subgenres = values[18] as List<String>
-            val cuts = values[19] as List<String>
-            val production = values[20] as Boolean
-            val outOfProduction = values[21] as Boolean
+        ) { isTableView, quantityOption, allItems ->
+
+            val formattedQuantities = allItems.associate {
+                val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
+                val totalQuantity = calculateTotalQuantity(it, quantityOption)
+                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, tins)
+                it.items.id to formattedQuantity
+            }
+
+            HomeUiState(
+                items = allItems,
+                isTableView = isTableView,
+                quantityDisplay = quantityOption,
+                formattedQuantities = formattedQuantities,
+                isLoading = false
+            )
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = HomeUiState(isLoading = true)
+            )
+
+//    val homeUiState: StateFlow<HomeUiState> =
+//        combine(
+//            preferencesRepo.isTableView,
+//            preferencesRepo.quantityOption,
+//            everythingFlow,
+//            filterViewModel.blendSearchValue,
+//            filterViewModel.selectedBrands,
+//            filterViewModel.selectedTypes,
+//            filterViewModel.selectedUnassigned,
+//            filterViewModel.selectedFavorites,
+//            filterViewModel.selectedDislikeds,
+//            filterViewModel.selectedNeutral,
+//            filterViewModel.selectedNonNeutral,
+//            filterViewModel.selectedInStock,
+//            filterViewModel.selectedOutOfStock,
+//            filterViewModel.selectedExcludeBrands,
+//            filterViewModel.selectedExcludeLikes,
+//            filterViewModel.selectedExcludeDislikes,
+//            filterViewModel.selectedComponent,
+//            filterViewModel.compMatchAll,
+//            filterViewModel.selectedSubgenre,
+//            filterViewModel.selectedCut,
+//            filterViewModel.selectedProduction,
+//            filterViewModel.selectedOutOfProduction
+//        ) { values ->
+//            val isTableView = values[0] as Boolean
+//            val quantityOption = values[1] as QuantityOption
+//            val allItems = values[2] as List<ItemsComponentsAndTins>
+//            val blendSearchValue = values[3] as String
+//            val brands = values[4] as List<String>
+//            val types = values[5] as List<String>
+//            val unassigned = values[6] as Boolean
+//            val favorites = values[7] as Boolean
+//            val dislikeds = values[8] as Boolean
+//            val neutral = values[9] as Boolean
+//            val nonNeutral = values[10] as Boolean
+//            val inStock = values[11] as Boolean
+//            val outOfStock = values[12] as Boolean
+//            val excludedBrands = values[13] as List<String>
+//            val excludedLikes = values[14] as Boolean
+//            val excludedDislikes = values[15] as Boolean
+//            val components = values[16] as List<String>
+//            val matchAll = values[17] as Boolean
+//            val subgenres = values[18] as List<String>
+//            val cuts = values[19] as List<String>
+//            val production = values[20] as Boolean
+//            val outOfProduction = values[21] as Boolean
+//
+//            val filteredItems =
+//                if (blendSearchValue.isBlank()) {
+//                    allItems.filter { items ->
+////                        val itemComponentNames = items.components.map { it.componentName }
+////                        val hasComponent = components.isEmpty() || itemComponentNames.any { components.contains(it) }
+//
+////                        val itemComponentNames = items.components.map { it.componentName }
+////                        val hasComponent = when {
+////                            components.contains("(None Assigned)") -> itemComponentNames.isEmpty()
+////                            components.isEmpty() -> true
+////                            else -> itemComponentNames.any { components.contains(it) }
+////                        }
+//
+//                        val componentMatching = when (matchAll) {
+//                            true -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
+//                            false -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
+//                        }
+//
+//                        /** ( [filter not selected side] || [filter selected side] ) */
+//                        (brands.isEmpty() || brands.contains(items.items.brand)) &&
+//                                ((types.isEmpty() && !unassigned) || (types.contains(items.items.type) || (unassigned && items.items.type.isBlank()))) &&
+//                                (!favorites || items.items.favorite) &&
+//                                (!dislikeds || items.items.disliked) &&
+//                                (!neutral || (!items.items.favorite && !items.items.disliked)) &&
+//                                (!nonNeutral || (items.items.favorite || items.items.disliked)) &&
+//                                (!inStock || items.items.quantity > 0) &&
+//                                (!outOfStock || items.items.quantity == 0) &&
+//                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
+//                                (!excludedLikes || !items.items.favorite) &&
+//                                (!excludedDislikes || !items.items.disliked) &&
+//                                componentMatching &&
+//                                ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
+//                                ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
+//                                (!production || items.items.inProduction) &&
+//                                (!outOfProduction || !items.items.inProduction)
+//                    }
+//                } else {
+//                    allItems.filter { items ->
+//                        items.items.blend.contains(blendSearchValue, ignoreCase = true)
+//                    }
+//                }
+//
+//            val formattedQuantities = filteredItems.associate {
+//                val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
+//                val totalQuantity = calculateTotalQuantity(it, quantityOption)
+//                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, tins)
+//                it.items.id to formattedQuantity
+//            }
+//
+//
+//            HomeUiState(
+//                items = filteredItems,
+//                isTableView = isTableView,
+//                quantityDisplay = quantityOption,
+//                formattedQuantities = formattedQuantities,
+//                isLoading = false
+//            )
+//        }
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+//                initialValue = HomeUiState(isLoading = true)
+//            )
+
+    private val _filteredItems = MutableStateFlow<List<ItemsComponentsAndTins>>(listOf())
+    val filteredItems: StateFlow<List<ItemsComponentsAndTins>> = _filteredItems.asStateFlow()
+
+    private fun filterParameters(): FilterParameters {
+        return FilterParameters(
+            filterViewModel.blendSearchValue.value,
+            filterViewModel.selectedBrands.value,
+            filterViewModel.selectedTypes.value,
+            filterViewModel.selectedUnassigned.value,
+            filterViewModel.selectedFavorites.value,
+            filterViewModel.selectedDislikeds.value,
+            filterViewModel.selectedNeutral.value,
+            filterViewModel.selectedNonNeutral.value,
+            filterViewModel.selectedInStock.value,
+            filterViewModel.selectedOutOfStock.value,
+            filterViewModel.selectedExcludeBrands.value,
+            filterViewModel.selectedExcludeLikes.value,
+            filterViewModel.selectedExcludeDislikes.value,
+            filterViewModel.selectedComponent.value,
+            filterViewModel.compMatchAll.value,
+            filterViewModel.selectedSubgenre.value,
+            filterViewModel.selectedCut.value,
+            filterViewModel.selectedProduction.value,
+            filterViewModel.selectedOutOfProduction.value
+        )
+    }
+
+    init {
+        viewModelScope.launch {
+            combine(
+                everythingFlow,
+                filterViewModel.blendSearchValue,
+                filterViewModel.selectedBrands,
+                filterViewModel.selectedTypes,
+                filterViewModel.selectedUnassigned,
+                filterViewModel.selectedFavorites,
+                filterViewModel.selectedDislikeds,
+                filterViewModel.selectedNeutral,
+                filterViewModel.selectedNonNeutral,
+                filterViewModel.selectedInStock,
+                filterViewModel.selectedOutOfStock,
+                filterViewModel.selectedExcludeBrands,
+                filterViewModel.selectedExcludeLikes,
+                filterViewModel.selectedExcludeDislikes,
+                filterViewModel.selectedComponent,
+                filterViewModel.compMatchAll,
+                filterViewModel.selectedSubgenre,
+                filterViewModel.selectedCut,
+                filterViewModel.selectedProduction,
+                filterViewModel.selectedOutOfProduction
+            ) {
+                filterItems(everythingFlow.first(), filterParameters())
+            }.collect { }
+        }
+    }
+
+    private fun filterItems(allItems: List<ItemsComponentsAndTins>, filterParams: FilterParameters) {
+        viewModelScope.launch{
+            val blendSearchValue = filterParams.blendSearchValue as String
+            val brands = filterParams.selectedBrands as List<String>
+            val types = filterParams.selectedTypes as List<String>
+            val unassigned = filterParams.selectedUnassigned as Boolean
+            val favorites = filterParams.selectedFavorites as Boolean
+            val dislikeds = filterParams.selectedDislikeds as Boolean
+            val neutral = filterParams.selectedNeutral as Boolean
+            val nonNeutral = filterParams.selectedNonNeutral as Boolean
+            val inStock = filterParams.selectedInStock as Boolean
+            val outOfStock = filterParams.selectedOutOfStock as Boolean
+            val excludedBrands = filterParams.selectedExcludeBrands as List<String>
+            val excludedLikes = filterParams.selectedExcludeLikes as Boolean
+            val excludedDislikes = filterParams.selectedExcludeDislikes as Boolean
+            val components = filterParams.selectedComponent as List<String>
+            val matchAll = filterParams.compMatchAll as Boolean
+            val subgenres = filterParams.selectedSubgenre as List<String>
+            val cuts = filterParams.selectedCut as List<String>
+            val production = filterParams.selectedProduction as Boolean
+            val outOfProduction = filterParams.selectedOutOfProduction as Boolean
 
             val filteredItems =
-                if (blendSearchValue.isBlank()) {
+                if (filterParams.blendSearchValue.isBlank()) {
                     allItems.filter { items ->
-//                        val itemComponentNames = items.components.map { it.componentName }
-//                        val hasComponent = components.isEmpty() || itemComponentNames.any { components.contains(it) }
-
-//                        val itemComponentNames = items.components.map { it.componentName }
-//                        val hasComponent = when {
-//                            components.contains("(None Assigned)") -> itemComponentNames.isEmpty()
-//                            components.isEmpty() -> true
-//                            else -> itemComponentNames.any { components.contains(it) }
-//                        }
-
                         val componentMatching = when (matchAll) {
                             true -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
                             false -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
@@ -172,27 +333,9 @@ class HomeViewModel(
                     }
                 }
 
-            val formattedQuantities = filteredItems.associate {
-                val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
-                val totalQuantity = calculateTotalQuantity(it, quantityOption)
-                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, tins)
-                it.items.id to formattedQuantity
-            }
-
-
-            HomeUiState(
-                items = filteredItems,
-                isTableView = isTableView,
-                quantityDisplay = quantityOption,
-                formattedQuantities = formattedQuantities,
-                isLoading = false
-            )
+            _filteredItems.value = filteredItems
         }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = HomeUiState(isLoading = true)
-            )
+    }
 
 
     /** List View item menu overlay and expand details **/
@@ -395,4 +538,27 @@ data class Sorting(
     val sortAscending: Boolean = true,
     val sortIcon: Int =
         if (sortAscending) R.drawable.arrow_up else R.drawable.arrow_down
+)
+
+@Stable
+data class FilterParameters(
+    val blendSearchValue: String,
+    val selectedBrands: List<String>,
+    val selectedTypes: List<String>,
+    val selectedUnassigned: Boolean,
+    val selectedFavorites: Boolean,
+    val selectedDislikeds: Boolean,
+    val selectedNeutral: Boolean,
+    val selectedNonNeutral: Boolean,
+    val selectedInStock: Boolean,
+    val selectedOutOfStock: Boolean,
+    val selectedExcludeBrands: List<String>,
+    val selectedExcludeLikes: Boolean,
+    val selectedExcludeDislikes: Boolean,
+    val selectedComponent: List<String>,
+    val compMatchAll: Boolean,
+    val selectedSubgenre: List<String>,
+    val selectedCut: List<String>,
+    val selectedProduction: Boolean,
+    val selectedOutOfProduction: Boolean,
 )
