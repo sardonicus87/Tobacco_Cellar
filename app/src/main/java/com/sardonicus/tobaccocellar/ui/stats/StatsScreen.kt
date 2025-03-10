@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -32,6 +33,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -274,6 +277,8 @@ fun QuickStatsSection(
     filteredStats: FilteredStats,
     modifier: Modifier = Modifier
 ) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
     val totalByType = rawStats.totalByType.toList().sortedBy {
         when (it.first) {
             "Burley" -> 0
@@ -285,12 +290,10 @@ fun QuickStatsSection(
             else -> 6
         }
     }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
-
     val totalBySubgenre = rawStats.totalBySubgenre.toList().sortedWith(
         compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
     ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-
     val totalByCut = rawStats.totalByCut.toList().sortedWith(
         compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
@@ -307,12 +310,10 @@ fun QuickStatsSection(
             else -> 6
         }
     }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
-
     val totalBySubgenreFiltered = filteredStats.totalBySubgenre.toList().sortedWith(
         compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
     ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-
     val totalByCutFiltered = filteredStats.totalByCut.toList().sortedWith(
         compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
@@ -353,7 +354,7 @@ fun QuickStatsSection(
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
-        // First Section
+        // First Section basic counts
         Row(
             modifier = Modifier
                 .padding(vertical = 2.dp),
@@ -389,7 +390,7 @@ fun QuickStatsSection(
             )
         }
 
-        // Second Section
+        // Second Section counts per type
         Row(
             modifier = Modifier,
             horizontalArrangement = Arrangement.Start,
@@ -423,72 +424,111 @@ fun QuickStatsSection(
                 )
             }
         }
+        if ((rawStats.totalBySubgenre.any { it.key != "Unassigned" }) || (rawStats.totalByCut.any { it.key != "Unassigned" })) {
+            Column {
+                if (expanded) {
+                    // Third section counts by subgenre
+                    Row(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+                            Text(
+                                text = totalBySubgenre,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(bottom = 12.dp)
+                                    .semantics { contentDescription = totalBySubgenre.toString() },
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Start,
+                                softWrap = true,
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(8.dp)
+                        )
+                        if (filteredStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+                            Text(
+                                text = totalBySubgenreFiltered,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .semantics {
+                                        contentDescription = totalBySubgenreFiltered.toString()
+                                    },
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Start,
+                                softWrap = true,
+                            )
+                        }
+                    }
 
-        // Third section
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
-        ) {
-            if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
-                Text(
-                    text = totalBySubgenre,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(bottom = 12.dp)
-                        .semantics { contentDescription = totalBySubgenre.toString() },
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Start,
-                    softWrap = true,
-                )
+                    // Fourth section counts by cuts
+                    Row(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
+                            Text(
+                                text = totalByCut,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(bottom = 12.dp)
+                                    .semantics { contentDescription = totalByCut.toString() },
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Start,
+                                softWrap = true,
+                            )
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(8.dp)
+                        )
+                        if (filteredStats.totalByCut.any { it.key != "Unassigned" }) {
+                            Text(
+                                text = totalByCutFiltered,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .semantics {
+                                        contentDescription = totalByCutFiltered.toString()
+                                    },
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Start,
+                                softWrap = true,
+                            )
+                        }
+                    }
+                }
             }
-            Spacer(
-                modifier = Modifier
-                    .width(8.dp)
-            )
-            if (filteredStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+            if (expanded) {
                 Text(
-                    text = totalBySubgenreFiltered,
+                    text = "Contract",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = LocalContentColor.current.copy(alpha = 0.5f),
                     modifier = Modifier
-                        .weight(1f)
-                        .semantics { contentDescription = totalBySubgenreFiltered.toString() },
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Start,
-                    softWrap = true,
+                        .clickable {
+                            expanded = false
+                        }
+                        .offset(x = (-20).dp)
+                        .padding(vertical = 1.dp)
+                        .fillMaxWidth()
                 )
-            }
-        }
-
-        // Fourth section
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
-        ) {
-            if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
+            } else {
                 Text(
-                    text = totalByCut,
+                    text = "Expand",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = LocalContentColor.current.copy(alpha = 0.5f),
                     modifier = Modifier
-                        .weight(1f)
-                        .semantics { contentDescription = totalByCut.toString() },
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Start,
-                    softWrap = true,
-                )
-            }
-            Spacer(
-                modifier = Modifier
-                    .width(8.dp)
-            )
-            if (filteredStats.totalByCut.any { it.key != "Unassigned" }) {
-                Text(
-                    text = totalByCutFiltered,
-                    modifier = Modifier
-                        .weight(1f)
-                        .semantics { contentDescription = totalByCutFiltered.toString() },
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Start,
-                    softWrap = true,
+                        .clickable {
+                            expanded = true
+                        }
+                        .offset(x = (-20).dp)
+                        .padding(vertical = 1.dp)
+                        .fillMaxWidth()
                 )
             }
         }
@@ -550,68 +590,76 @@ private fun ChartsSection(
                 label = "Brands by Tins",
                 chartData = filteredStats.brandsByQuantity
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Types by Entries",
-                chartData = filteredStats.typesByEntries
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Types by Tins",
-                chartData = filteredStats.typesByQuantity
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Ratings by Entries",
-                chartData = filteredStats.ratingsByEntries
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Subgenres by Entries",
-                chartData = filteredStats.subgenresByEntries
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-            )
-            ChartsFormat(
-                label = "Subgenres by Tins",
-                chartData = filteredStats.subgenresByQuantity
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Cuts by Entries",
-                chartData = filteredStats.cutsByEntries
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Cuts by Tins",
-                chartData = filteredStats.cutsByQuantity
-            )
+            if (filteredStats.typesByEntries.count() > 1) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Types by Entries",
+                    chartData = filteredStats.typesByEntries
+                )
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Types by Tins",
+                    chartData = filteredStats.typesByQuantity
+                )
+            }
+            if (filteredStats.ratingsByEntries.count() > 1) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Ratings by Entries",
+                    chartData = filteredStats.ratingsByEntries
+                )
+            }
+            if (filteredStats.subgenresByEntries.count() > 1) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Subgenres by Entries",
+                    chartData = filteredStats.subgenresByEntries
+                )
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                )
+                ChartsFormat(
+                    label = "Subgenres by Tins",
+                    chartData = filteredStats.subgenresByQuantity
+                )
+            }
+            if (filteredStats.cutsByEntries.count() > 1) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Cuts by Entries",
+                    chartData = filteredStats.cutsByEntries
+                )
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Cuts by Tins",
+                    chartData = filteredStats.cutsByQuantity
+                )
+            }
             Spacer(
                 modifier = Modifier
                     .height(16.dp)
@@ -955,6 +1003,12 @@ private fun DrawScope.drawLabels(
             else -> 0
         }
 
+        val alternatingOffsetMax = 20.dp.toPx()
+        val alternatingOffsetFactor = when (normalizedMidpointAngle) {
+            in 180f..270f -> (270f - normalizedMidpointAngle) / (90f) // 1 to 0
+            else -> 0f
+        }
+
         /** final adjustment */
         val adjustedLabelX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             // list placement
@@ -966,7 +1020,7 @@ private fun DrawScope.drawLabels(
         val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             // list placement
             if (normalizedMidpointAngle > 180f && totalOutsideLabels > 2) {
-                (listY.toFloat() + radius) - (labelHeight * 0.75).toFloat()
+                listY.toFloat() + ((centerY * 2) - listHeight.toFloat()) + (labelHeight * .25f)
             }
             else {
                 listY.toFloat()
@@ -987,11 +1041,11 @@ private fun DrawScope.drawLabels(
             if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
                 // very thin slices at the top of the chart
                 val additionalOffset = if (outsideLabelCount % 2 == 0) {
-                    (-1 * (percentageHeight * 0.25f))
+                    (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor))) // (-1 * (percentageHeight * 0.25f))
                     } else {
-                    (percentageHeight * 0.75f)
+                    (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
                 }
-                (percentageY - (percentageHeight * yOffsetFactor)) + additionalOffset
+                (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
             } else {
                 // outside slice placement
                 percentageY - (percentageHeight * yOffsetFactor)
