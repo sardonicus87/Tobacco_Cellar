@@ -600,10 +600,6 @@ fun AboutSection(
     val context = LocalContext.current
     val appVersion = BuildConfig.VERSION_NAME
     val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
-    val emailIntent = Intent(Intent.ACTION_SENDTO).apply{
-        data = "mailto:sardonicus.notadev@gmail.com".toUri()
-        putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
-    }
 
     val contactString = buildAnnotatedString {
         withStyle(style = SpanStyle(
@@ -680,12 +676,17 @@ fun AboutSection(
                         indication = null,
                         onClick = {
                             val annotations =
-                                contactString.getStringAnnotations("Email", 0, contactString.length)
+                                contactString.getStringAnnotations(
+                                    "Email",
+                                    0,
+                                    contactString.length
+                                )
                             annotations
                                 .firstOrNull()
                                 ?.let { annotation ->
                                     val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
                                         data = annotation.item.toUri()
+                                        putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
                                     }
                                     context.startActivity(
                                         Intent.createChooser(
