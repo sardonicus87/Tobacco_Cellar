@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.items
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1653,10 +1652,8 @@ fun IndividualTin(
                     Icon(
                         imageVector = if (tinDetails.detailsExpanded) {
                             Icons.Default.KeyboardArrowUp
-                          //  ImageVector.vectorResource(id = R.drawable.arrow_down)
                         } else {
                             Icons.Default.KeyboardArrowDown
-                          //  ImageVector.vectorResource(id = R.drawable.arrow_up)
                         },
                         contentDescription = "Expand/contract details",
                         modifier = Modifier
