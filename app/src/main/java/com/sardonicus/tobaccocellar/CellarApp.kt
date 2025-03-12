@@ -101,11 +101,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
@@ -129,6 +125,9 @@ import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IndicatorSizes
 import com.sardonicus.tobaccocellar.ui.composables.PagerIndicator
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
@@ -410,7 +409,10 @@ fun CellarBottomAppBar(
         contentPadding = PaddingValues(0.dp),
         windowInsets = WindowInsets.displayCutout
     ) {
-        Box {
+        GlowBox(
+            color = GlowColor(Color.White.copy(alpha = 0.07f)),
+            size = GlowSize(top = 2.dp)
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -608,27 +610,6 @@ fun CellarBottomAppBar(
                     )
                 }
             }
-            Box( // top-edge highlight effect
-                modifier = Modifier
-                    .matchParentSize()
-                    .then(
-                        Modifier.drawBehind {
-                            val glowHeight = 2.dp
-                            drawRect(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White.copy(alpha = 0.07f),
-                                        Color.Transparent,
-                                    ),
-                                    startY = 0f,
-                                    endY = glowHeight.toPx(),
-                                ),
-                                topLeft = Offset(0f, 0f),
-                                size = Size(size.width, glowHeight.toPx())
-                            )
-                        }
-                    )
-            )
         }
     }
 }
@@ -1333,12 +1314,12 @@ fun BrandFilterSection(
 
         // Selectable brands row //
         val lazyListState = rememberLazyListState()
-        Box(
+        GlowBox(
+            color = GlowColor(MaterialTheme.colorScheme.background),
+            size = GlowSize(horizontal = 15.dp),
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            val glowColor1 = MaterialTheme.colorScheme.background
-
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1394,44 +1375,6 @@ fun BrandFilterSection(
             LaunchedEffect(filteredBrands) {
                 lazyListState.scrollToItem(0)
             }
-
-            Box( // glow effect
-                modifier = Modifier
-                    .matchParentSize()
-                    .then(
-                        Modifier.drawBehind {
-                            val glowWidth = 15.dp
-                            val glowOffsetX = size.width - (glowWidth.toPx())
-
-                            drawRect(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        glowColor1,
-                                        Color.Transparent,
-                                    ),
-                                    startX = 0f,
-                                    endX = glowWidth.toPx(),
-                                ),
-                                topLeft = Offset(0f, 0f),
-                                size = Size(glowWidth.toPx(), size.height)
-                            )
-
-                            drawRect(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        glowColor1,
-                                    ),
-                                    startX = glowOffsetX,
-                                    endX = size.width,
-                                ),
-                                topLeft = Offset(glowOffsetX, 0f),
-                                size = Size(glowWidth.toPx(), size.height)
-                            )
-                        }
-
-                    )
-            )
         }
 
         // Selected brands chip box //
@@ -1553,9 +1496,9 @@ fun BrandFilterSection(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
                             ) {
-                                val glowColor = MaterialTheme.colorScheme.background
-
-                                Box(
+                                GlowBox(
+                                    color = GlowColor(MaterialTheme.colorScheme.background),
+                                    size = GlowSize(vertical = 10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .heightIn(min = 0.dp, max = 280.dp),
@@ -1592,42 +1535,6 @@ fun BrandFilterSection(
                                             )
                                         }
                                     }
-                                    Box(
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .then(
-                                                Modifier.drawBehind {
-                                                    val glowHeight = 10.dp
-                                                    val glowOffsetY =
-                                                        size.height - (glowHeight.toPx())
-                                                    drawRect(
-                                                        brush = Brush.verticalGradient(
-                                                            colors = listOf(
-                                                                glowColor,
-                                                                Color.Transparent,
-                                                            ),
-                                                            startY = 0f,
-                                                            endY = glowHeight.toPx(),
-                                                        ),
-                                                        topLeft = Offset(0f, 0f),
-                                                        size = Size(size.width, glowHeight.toPx())
-                                                    )
-
-                                                    drawRect(
-                                                        brush = Brush.verticalGradient(
-                                                            colors = listOf(
-                                                                Color.Transparent,
-                                                                glowColor,
-                                                            ),
-                                                            startY = glowOffsetY,
-                                                            endY = size.height,
-                                                        ),
-                                                        topLeft = Offset(0f, glowOffsetY),
-                                                        size = Size(size.width, glowHeight.toPx())
-                                                    )
-                                                }
-                                            )
-                                    )
                                 }
                                 Row(
                                     modifier = Modifier
@@ -1680,8 +1587,6 @@ fun GenreFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
-
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1819,9 +1724,9 @@ fun GenreFilterSection(
                                 Alignment.CenterVertically
                             )
                         ) {
-                            val glowColor = MaterialTheme.colorScheme.background
-
-                            Box(
+                            GlowBox(
+                                color = GlowColor(MaterialTheme.colorScheme.background),
+                                size = GlowSize(vertical = 10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 0.dp, max = 280.dp),
@@ -1871,42 +1776,6 @@ fun GenreFilterSection(
                                         }
                                     }
                                 }
-                                Box( // glow effect
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .then(
-                                            Modifier.drawBehind {
-                                                val glowHeight = 10.dp
-                                                val glowOffsetY =
-                                                    size.height - (glowHeight.toPx())
-                                                drawRect(
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            glowColor,
-                                                            Color.Transparent,
-                                                        ),
-                                                        startY = 0f,
-                                                        endY = glowHeight.toPx(),
-                                                    ),
-                                                    topLeft = Offset(0f, 0f),
-                                                    size = Size(size.width, glowHeight.toPx())
-                                                )
-
-                                                drawRect(
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            Color.Transparent,
-                                                            glowColor,
-                                                        ),
-                                                        startY = glowOffsetY,
-                                                        endY = size.height,
-                                                    ),
-                                                    topLeft = Offset(0f, glowOffsetY),
-                                                    size = Size(size.width, glowHeight.toPx())
-                                                )
-                                            }
-                                        )
-                                )
                             }
                         }
                     },
@@ -2065,9 +1934,9 @@ fun CutFilterSection(
                                 Alignment.CenterVertically
                             )
                         ) {
-                            val glowColor = MaterialTheme.colorScheme.background
-
-                            Box(
+                            GlowBox(
+                                color = GlowColor(MaterialTheme.colorScheme.background),
+                                size = GlowSize(vertical = 10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 0.dp, max = 280.dp),
@@ -2118,42 +1987,6 @@ fun CutFilterSection(
                                         }
                                     }
                                 }
-                                Box( // glow effect
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .then(
-                                            Modifier.drawBehind {
-                                                val glowHeight = 10.dp
-                                                val glowOffsetY =
-                                                    size.height - (glowHeight.toPx())
-                                                drawRect(
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            glowColor,
-                                                            Color.Transparent,
-                                                        ),
-                                                        startY = 0f,
-                                                        endY = glowHeight.toPx(),
-                                                    ),
-                                                    topLeft = Offset(0f, 0f),
-                                                    size = Size(size.width, glowHeight.toPx())
-                                                )
-
-                                                drawRect(
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            Color.Transparent,
-                                                            glowColor,
-                                                        ),
-                                                        startY = glowOffsetY,
-                                                        endY = size.height,
-                                                    ),
-                                                    topLeft = Offset(0f, glowOffsetY),
-                                                    size = Size(size.width, glowHeight.toPx())
-                                                )
-                                            }
-                                        )
-                                )
                             }
                         }
                     },
@@ -2389,9 +2222,9 @@ fun ComponentFilterSection(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
                         ) {
-                            val glowColor = MaterialTheme.colorScheme.background
-
-                            Box(
+                            GlowBox(
+                                color = GlowColor(MaterialTheme.colorScheme.background),
+                                size = GlowSize(vertical = 10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 0.dp, max = 280.dp),
@@ -2510,42 +2343,6 @@ fun ComponentFilterSection(
                                         }
                                     }
                                 }
-                                Box( // glow effect
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .then(
-                                            Modifier.drawBehind {
-                                                val glowHeight = 10.dp
-                                                val glowOffsetY =
-                                                    size.height - (glowHeight.toPx())
-                                                drawRect(
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            glowColor,
-                                                            Color.Transparent,
-                                                        ),
-                                                        startY = 0f,
-                                                        endY = glowHeight.toPx(),
-                                                    ),
-                                                    topLeft = Offset(0f, 0f),
-                                                    size = Size(size.width, glowHeight.toPx())
-                                                )
-
-                                                drawRect(
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            Color.Transparent,
-                                                            glowColor,
-                                                        ),
-                                                        startY = glowOffsetY,
-                                                        endY = size.height,
-                                                    ),
-                                                    topLeft = Offset(0f, glowOffsetY),
-                                                    size = Size(size.width, glowHeight.toPx())
-                                                )
-                                            }
-                                        )
-                                )
                             }
                         }
                     },
