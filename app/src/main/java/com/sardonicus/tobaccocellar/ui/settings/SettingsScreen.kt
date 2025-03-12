@@ -200,8 +200,8 @@ fun SettingsScreen(
                 )
                 if (loading) {
                     FullScreenLoading(
-                        skrimColor = Color.Black,
-                        skrimAlpha = 0.5f
+                        scrimColor = Color.Black,
+                        scrimAlpha = 0.5f
                     )
                 }
             }
