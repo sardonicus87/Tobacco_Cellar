@@ -84,13 +84,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -122,6 +118,9 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
@@ -194,12 +193,10 @@ fun AddEntryScreen(
                 tinDetailsList = viewModel.tinDetailsList,
                 syncedTins = viewModel.calculateSyncTins(),
                 existState = viewModel.existState,
-                tinConversion = viewModel.tinConversion.value,
                 resetExistState = viewModel::resetExistState,
                 onItemValueChange = viewModel::updateUiState,
                 onTinValueChange = viewModel::updateTinDetails,
                 onComponentChange = viewModel::updateComponentList,
-                onTinConverterChange = viewModel::updateTinConversion,
                 addTin = viewModel::addTin,
                 removeTin = viewModel::removeTin,
                 isTinLabelValid = viewModel::isTinLabelValid,
@@ -233,13 +230,11 @@ fun AddEntryBody(
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     syncedTins: Int,
-    tinConversion: TinConversion,
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
     onComponentChange: (String) -> Unit,
-    onTinConverterChange: (TinConversion) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     onSaveClick: () -> Unit,
@@ -266,12 +261,10 @@ fun AddEntryBody(
             tinDetails = tinDetails,
             tinDetailsList = tinDetailsList,
             syncedTins = syncedTins,
-            tinConversion = tinConversion,
             onValueChange = onItemValueChange,
             onTinValueChange = onTinValueChange,
             isTinLabelValid = isTinLabelValid,
             onComponentChange = onComponentChange,
-            onTinConverterChange = onTinConverterChange,
             addTin = addTin,
             removeTin = removeTin,
             isEditEntry = isEditEntry,
@@ -422,13 +415,11 @@ fun ItemInputForm(
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     syncedTins: Int,
-    tinConversion: TinConversion,
     isEditEntry: Boolean,
     onValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
     onComponentChange: (String) -> Unit,
-    onTinConverterChange: (TinConversion) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -466,9 +457,7 @@ fun ItemInputForm(
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
                         selected = selectedTabIndex == index,
-                        onClick = {
-                            selectedTabIndex = index
-                        },
+                        onClick = { selectedTabIndex = index },
                         modifier = Modifier
                             .background(
                                 if (selectedTabIndex == index) MaterialTheme.colorScheme.background
@@ -487,9 +476,10 @@ fun ItemInputForm(
                 }
             }
         }
-        Box {
-            val glowColor = MaterialTheme.colorScheme.background
-
+        GlowBox(
+            color = GlowColor(MaterialTheme.colorScheme.background),
+            size = GlowSize(vertical = 6.dp)
+        ) {
             Column(
                 modifier = Modifier
                     .padding(0.dp)
@@ -503,12 +493,10 @@ fun ItemInputForm(
                             itemDetails = itemDetails,
                             itemUiState = itemUiState,
                             syncedTins = syncedTins,
-                            tinConversion = tinConversion,
                             isEditEntry = isEditEntry,
                             onValueChange = onValueChange,
                             componentList = componentUiState,
                             onComponentChange = onComponentChange,
-                            onTinValueChange = onTinConverterChange,
                             modifier = Modifier,
                         )
                     1 ->
@@ -532,43 +520,6 @@ fun ItemInputForm(
                     else -> throw IllegalArgumentException("Invalid tab position")
                 }
             }
-            Box( // fade effect
-                modifier = Modifier
-                    .matchParentSize()
-                    .align(Alignment.TopStart)
-                    .then(
-                        Modifier.drawBehind {
-                            val glowHeight = 6.dp
-                            val glowOffsetY =
-                                size.height - (glowHeight.toPx())
-                            drawRect(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        glowColor,
-                                        Color.Transparent,
-                                    ),
-                                    startY = 0f,
-                                    endY = glowHeight.toPx(),
-                                ),
-                                topLeft = Offset(0f, 0f),
-                                size = Size(size.width, glowHeight.toPx())
-                            )
-
-                            drawRect(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        glowColor,
-                                    ),
-                                    startY = glowOffsetY,
-                                    endY = size.height,
-                                ),
-                                topLeft = Offset(0f, glowOffsetY),
-                                size = Size(size.width, glowHeight.toPx())
-                            )
-                        }
-                    )
-            )
         }
     }
 }
@@ -579,12 +530,10 @@ fun DetailsEntry(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
     syncedTins: Int,
-    tinConversion: TinConversion,
     isEditEntry: Boolean,
     componentList: ComponentList,
     onComponentChange: (String) -> Unit,
     onValueChange: (ItemDetails) -> Unit,
-    onTinValueChange: (TinConversion) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -1032,18 +981,7 @@ fun DetailsEntry(
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                     )
-                },
-//                supportingText = {
-//                    Text(
-//                        text = "(Separate with comma + space)",
-//                        modifier = Modifier
-//                            .alpha(0.66f),
-//                        //    fontSize = 13.sp,
-//                        softWrap = false,
-//                        maxLines = 1,
-//                        overflow = TextOverflow.Clip,
-//                    )
-//                }
+                }
             )
         }
 
@@ -1189,51 +1127,10 @@ fun DetailsEntry(
                                         }
                                     }
                                 }
-                                .padding(
-                                    start = 2.dp,
-                                    end = 8.dp,
-                                    top = 4.dp,
-                                    bottom = 4.dp
-                                )
+                                .padding(start = 2.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
                                 .offset(x = (-1).dp, y = (-2).dp)
                         )
                     }
-
-                    // Tin Converter //
-//                    Column(
-//                        modifier = Modifier
-//                            .clickable(enabled = !itemDetails.isSynced) {
-//                                onTinValueChange(
-//                                    tinConversion.copy(
-//                                        amount = "",
-//                                        unit = ""
-//                                    )
-//                                )
-//                                showTinConverter = true
-//                            }
-//                            .background(
-//                                color = if (itemDetails.isSynced) MaterialTheme.colorScheme.outlineVariant.copy(
-//                                    alpha = 0.5f
-//                                ) else
-//                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f),
-//                                shape = RoundedCornerShape(8.dp)
-//                            )
-//                            .padding(vertical = 4.dp, horizontal = 6.dp),
-//                        horizontalAlignment = Alignment.CenterHorizontally,
-//                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically)
-//                    ) {
-//                        Text(
-//                            text = "Convert\nTins",
-//                            fontSize = 13.sp,
-//                            lineHeight = 13.sp,
-//                            fontWeight = FontWeight.SemiBold,
-//                            color =  if (itemDetails.isSynced) Color.Gray.copy(alpha = 0.7f) else
-//                                MaterialTheme.colorScheme.onSecondaryContainer,
-//                            modifier = Modifier,
-//                            textAlign = TextAlign.Center,
-//                            letterSpacing = 0.sp
-//                        )
-//                    }
 
                     // Sync Tins //
                     CheckboxWithLabel(
@@ -1352,56 +1249,6 @@ fun DetailsEntry(
             )
         }
     }
-
-//    if (showTinConverter) {
-//        TinConverterDialog(
-//            onDismiss = { showTinConverter = false },
-//            onConfirm = {
-//                if (it < 99) {
-//                    onValueChange(
-//                        itemDetails.copy(
-//                            quantityString = it.toString(),
-//                            quantity = it
-//                        )
-//                    )
-//                } else {
-//                    onValueChange(
-//                        itemDetails.copy(
-//                            quantityString = "99",
-//                            quantity = 99
-//                        )
-//                    )
-//                }
-//                showTinConverter = false
-//            },
-//            onAddConversion = {
-//                val existingAmount = itemDetails.quantityString.toInt()
-//                val newAmount = existingAmount + it
-//
-//                if (newAmount < 99) {
-//                    onValueChange(
-//                        itemDetails.copy(
-//                            quantityString = newAmount.toString(),
-//                            quantity = newAmount
-//                        )
-//                    )
-//                } else {
-//                    onValueChange(
-//                        itemDetails.copy(
-//                            quantityString = "99",
-//                            quantity = 99
-//                        )
-//                    )
-//                }
-//                showTinConverter = false
-//            },
-//            tinConversion = tinConversion,
-//            onTinValueChange = onTinValueChange,
-//            isEditEntry = isEditEntry,
-//            itemDetails = itemDetails,
-//            modifier = Modifier
-//        )
-//    }
 }
 
 
@@ -1626,7 +1473,6 @@ fun IndividualTin(
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
-
 
         // Header Row //
         BoxWithConstraints(
@@ -1969,7 +1815,11 @@ fun IndividualTin(
                             }
                         },
                         label = {
-                            Text("Manuf.")
+                            Text(
+                                text = "Manuf.",
+                                modifier = Modifier,
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
@@ -2148,14 +1998,13 @@ fun IndividualTin(
                                     }
                                 }
                             },
-                            modifier = Modifier,
-                            label = datePickerLabel,
                             currentMillis = when (datePickerLabel) {
                                 "Manufacture" -> { tinDetails.manufactureDate }
                                 "Cellared" -> { tinDetails.cellarDate }
                                 "Opened" -> { tinDetails.openDate }
                                 else -> { null }
-                            }
+                            },
+                            label = datePickerLabel
                         )
                     }
                 }
@@ -2183,8 +2032,8 @@ fun IndividualTin(
 fun CustomDatePickerDialog(
     onDismiss: () -> Unit,
     onDateSelected: (Long?) -> Unit,
-    currentMillis: Long? = null,
     modifier: Modifier = Modifier,
+    currentMillis: Long? = null,
     label: String = "Select",
 ) {
     val datePickerState = rememberDatePickerState(
@@ -2241,7 +2090,7 @@ fun CustomDatePickerDialog(
                 .verticalScroll(rememberScrollState()),
             title = {
                 Text(
-                    text = "${label} Date",
+                    text = "$label Date",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     modifier = Modifier
@@ -2268,265 +2117,6 @@ fun CustomDatePickerDialog(
     }
 }
 
-
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun TinConverterDialog(
-//    onDismiss: () -> Unit,
-//    onConfirm: (Int) -> Unit,
-//    onAddConversion: (Int) -> Unit,
-//    tinConversion: TinConversion,
-//    onTinValueChange: (TinConversion) -> Unit,
-//    isEditEntry: Boolean,
-//    itemDetails: ItemDetails,
-//    modifier: Modifier = Modifier
-//) {
-//    var amount by remember { mutableStateOf(tinConversion.amount) }
-//    var unit by remember { mutableStateOf(tinConversion.unit) }
-//    var expanded by remember { mutableStateOf(false) }
-//    val unitList = listOf("oz", "lb", "grams")
-//
-//    BasicAlertDialog(
-//        onDismissRequest = onDismiss,
-//        modifier = modifier
-//            .fillMaxWidth()
-//    ) {
-//        Card(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .background(MaterialTheme.colorScheme.background)
-//                    .padding(16.dp),
-//                verticalArrangement = Arrangement.Top,
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                Text(
-//                    text = "Tin Converter",
-//                    modifier = Modifier
-//                        .padding(bottom = 16.dp),
-//                    fontSize = 18.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxWidth(),
-//                    verticalArrangement = Arrangement.spacedBy(4.dp),
-//                    horizontalAlignment = Alignment.Start
-//                ) {
-//                    // converter inputs //
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth(),
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                    ) {
-//                        Spacer(
-//                            modifier = Modifier
-//                                .weight(.5f)
-//                        )
-//                        val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
-//                        TextField(
-//                            value = amount,
-//                            onValueChange = {
-//                                if (it.matches(pattern)) {
-//                                    amount = it
-//                                    onTinValueChange(
-//                                        tinConversion.copy(
-//                                            amount = it
-//                                        )
-//                                    )
-//                                }
-//                            },
-//                            modifier = Modifier
-//                                .weight(1.8f),
-//                            placeholder = {
-//                                Text(
-//                                    text = "Amount",
-//                                    color = LocalContentColor.current.copy(alpha = 0.5f),
-//                                    modifier = Modifier,
-//                                    style = LocalTextStyle.current.copy(textAlign = TextAlign.End)
-//                                )
-//                            },
-//                            visualTransformation = VisualTransformation.None,
-//                            enabled = true,
-//                            singleLine = true,
-//                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-//                            keyboardOptions = KeyboardOptions(
-//                                keyboardType = KeyboardType.Number,
-//                                imeAction = ImeAction.Done
-//                            ),
-//                            colors = TextFieldDefaults.colors(
-//                                focusedIndicatorColor = Color.Transparent,
-//                                unfocusedIndicatorColor = Color.Transparent,
-//                                disabledIndicatorColor = Color.Transparent,
-//                                focusedContainerColor = LocalCustomColors.current.textField,
-//                                unfocusedContainerColor = LocalCustomColors.current.textField,
-//                                disabledContainerColor = LocalCustomColors.current.textField,
-//                            ),
-//                            shape = MaterialTheme.shapes.extraSmall
-//                        )
-//                        ExposedDropdownMenuBox(
-//                            expanded = expanded,
-//                            onExpandedChange = { expanded = !expanded },
-//                            modifier = Modifier
-//                                .weight(2.2f)
-//                        ) {
-//                            TextField(
-//                                value = unit,
-//                                onValueChange = { },
-//                                readOnly = true,
-//                                modifier = Modifier
-//                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
-//                                trailingIcon = {
-//                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-//                                },
-//                                singleLine = true,
-//                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
-//                                colors = TextFieldDefaults.colors(
-//                                    focusedIndicatorColor = Color.Transparent,
-//                                    unfocusedIndicatorColor = Color.Transparent,
-//                                    disabledIndicatorColor = Color.Transparent,
-//                                    focusedContainerColor = LocalCustomColors.current.textField,
-//                                    unfocusedContainerColor = LocalCustomColors.current.textField,
-//                                    disabledContainerColor = LocalCustomColors.current.textField,
-//                                ),
-//                                shape = MaterialTheme.shapes.extraSmall,
-//                                placeholder = {
-//                                    Text(
-//                                        text = "Unit",
-//                                        color = LocalContentColor.current.copy(alpha = 0.5f)
-//                                    )
-//                                }
-//                            )
-//                            ExposedDropdownMenu(
-//                                expanded = expanded,
-//                                onDismissRequest = { expanded = false },
-//                                modifier = Modifier,
-//                                matchTextFieldWidth = true,
-//                                containerColor = LocalCustomColors.current.textField,
-//                            ) {
-//                                unitList.forEach { option: String ->
-//                                    DropdownMenuItem(
-//                                        text = { Text(text = option) },
-//                                        onClick = {
-//                                            expanded = false
-//                                            unit = option
-//                                            onTinValueChange(
-//                                                tinConversion.copy(unit = option)
-//                                            )
-//                                        }
-//                                    )
-//                                }
-//                            }
-//                        }
-//                        Spacer(
-//                            modifier = Modifier
-//                                .weight(.5f)
-//                        )
-//                    }
-//                    // buttons //
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(0.dp),
-//                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        val convertedQuantity = if (tinConversion.isConversionValid) {
-//                            convertQuantity(
-//                                tinConversion.amount.toDouble(),
-//                                tinConversion.unit,
-//                                tinConversion.ozRate,
-//                                tinConversion.gramsRate
-//                            )
-//                        } else { 0 }
-//
-//                        // convert/change button //
-//                        Column(
-//                            modifier = Modifier,
-//                            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
-//                            horizontalAlignment = Alignment.CenterHorizontally
-//                        ) {
-//                            Text(
-//                                text = "(${convertedQuantity} tins)",
-//                                modifier = Modifier,
-//                                fontSize = 12.sp,
-//                                color =
-//                                    if (tinConversion.isConversionValid)
-//                                        LocalContentColor.current.copy(alpha = 0.5f)
-//                                    else Color.Transparent
-//                            )
-//                            Button(
-//                                onClick = {
-//                                    onConfirm(convertedQuantity)
-//                                },
-//                                modifier = Modifier,
-//                                enabled = tinConversion.isConversionValid,
-//                            ) {
-//                                Text(
-//                                    text = if (isEditEntry) "Change" else "Convert",
-//                                    modifier = Modifier
-//                                )
-//                            }
-//                        }
-//
-//                        // add to button for edit entry //
-//                        if (isEditEntry) {
-//                            Column(
-//                                modifier = Modifier,
-//                                verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
-//                                horizontalAlignment = Alignment.CenterHorizontally
-//                            ) {
-//                                val newAmount =
-//                                    if (tinConversion.isConversionValid) {
-//                                        itemDetails.quantityString.toInt() + convertedQuantity
-//                                    } else { 0 }
-//
-//                                Text(
-//                                    text = "(${newAmount} tins)",
-//                                    modifier = Modifier,
-//                                    fontSize = 12.sp,
-//                                    color =
-//                                        if (tinConversion.isConversionValid)
-//                                            LocalContentColor.current.copy(alpha = 0.5f)
-//                                        else Color.Transparent
-//                                )
-//                                Button(
-//                                    onClick = {
-//                                        onAddConversion(convertedQuantity)
-//                                    },
-//                                    modifier = Modifier,
-//                                    enabled = tinConversion.isConversionValid,
-//                                ) {
-//                                    Text(
-//                                        text = "Add To",
-//                                        modifier = Modifier
-//                                    )
-//                                }
-//                            }
-//                        }
-//                    }
-//                    Spacer(
-//                        modifier = Modifier
-//                            .height(4.dp)
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//fun convertQuantity(amount: Double, unit: String, ozRate: Double, gramsRate: Double): Int {
-//    val convertedAmount = when (unit) {
-//        "oz" -> amount / ozRate
-//        "lb" -> (amount * 16) / ozRate
-//        "grams" -> amount / gramsRate
-//        else -> amount
-//    }
-//    return kotlin.math.round(convertedAmount).toInt()
-//}
 
 @Composable
 fun CustomCheckBox(
