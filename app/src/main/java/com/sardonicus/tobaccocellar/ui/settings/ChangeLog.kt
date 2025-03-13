@@ -11,12 +11,45 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "2.6.0",
+        buildDate = "13 Mar, 2025",
+        changes = listOf(
+            "Added a \"jump to top/bottom\" button for list and table views on Cellar screen " +
+                    "(appears center-right while scrolling when lists are 100+ items long).",
+            "Conditionally remove charts when irrelevant based on filter options or lack of use " +
+                    "of optional fields.",
+            "Added an expand/contract ability for \"Quick Stats\" (conditionally if there is " +
+                    "anything to expand)."
+        ),
+        improvements = listOf(
+            "Filtering response speed and efficiency improved, faster/smoother list response.",
+            "Settings screen, added animation to the changelog entry/exit, as well as improved " +
+                    "flow and efficiency of code for settings screen UI. Changelog can also now " +
+                    "be swiped away (to the right) to dismiss.",
+            "CSV Import \"Help\" show/hide transition improved.",
+            "Additional adjustments to pie chart label positions in stats screen (list position " +
+                    "and top of chart thin slice percentage offsets).",
+            "Code reduction and efficiency (various edge glow, fade and shadow effects)."
+        ),
+        bugFixes = listOf(
+            "Fixed: list position on blend search was being lost when editing an entry."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "2.5.0",
         buildDate = "7 Mar, 2025",
-        changes = listOf(),
-        improvements = listOf(
+        changes = listOf(
+            "Added two more charts for Subgenres and Cuts \"... by No. of Tins\".",
             "Clicking the system back button after having done a blend search will now clear the " +
                     "search.",
+            "Added a conditional check to exclude quantities of 0 from charts \"... by Tins\".",
+            "Added a total quantity to the blend details screen tins section (if there are any " +
+                    "tins with quantities). The displayed total is based on your chosen \"Cellar " +
+                    "Quantity Display\" option, though if you have chosen No. of Tins, it will " +
+                    "display metric units if your locale is anywhere other than the United States."
+        ),
+        improvements = listOf(
             "Added further save/update validation to prevent saving if any added tins have a " +
                     "quantity entered without selecting a unit.",
             "Moved \"(Unassigned)\" type filtering in the new filter sections to be the last option.",
@@ -26,14 +59,8 @@ val changelogEntries = listOf(
             "Adjusted list position for charts on the stats screen depending on where the thin " +
                     "slices occur, as well as improve outside thin slice percentage placement at " +
                     "top of charts.",
-            "Added a conditional check to exclude quantities of 0 from charts \"...by Tins\".",
-            "Added two more charts for \"Subgenres...\" and \"Cuts by No. of Tins\".",
             "Refined the \"Quick Stats\" implementation such that each block is laid out in-line " +
-                    "between the Raw and Filtered stats.",
-            "Added a total quantity to the blend details screen tins section (if there are any " +
-                    "tins with quantities). The displayed total is based on your chosen \"Cellar " +
-                    "Quantity Display\" option, though if you have chosen No. of Tins, it will " +
-                    "display metric units if your locale is anywhere other than the United States."
+                    "between the Raw and Filtered stats."
         ),
         bugFixes = listOf(
             "Fixed a bug where the list wasn't returning to the previous position when clearing " +
@@ -62,7 +89,7 @@ val changelogEntries = listOf(
             "Efficiency improvements for Stats data (raw stats), and various other lists " +
                     "generated from database data (filter selections, autocomplete fields).",
             "Minor UI improvements. Blend details and settings screens text size, colors, " +
-                    "spacing. Filer sheet, both pages now same height, other minor spacing tweaks.",
+                    "spacing. Filter sheet, both pages now same height, other minor spacing tweaks.",
             "Efficiency improvements for filter sheet.",
             "Added a loading state for the stats screen while data is collected (in case it was needed).",
             "Further attempt to refine autocomplete suggestion fields popup behavior and " +
