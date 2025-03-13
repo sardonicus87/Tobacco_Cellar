@@ -1068,7 +1068,7 @@ fun DetailsEntry(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.arrow_up),
+                            painter = painterResource(id = R.drawable.triangle_arrow_up),
                             contentDescription = "Increase Quantity",
                             modifier = Modifier
                                 .align(Alignment.Top)
@@ -1102,7 +1102,7 @@ fun DetailsEntry(
                                 .offset(x = 1.dp, y = 2.dp)
                         )
                         Icon(
-                            painter = painterResource(id = R.drawable.arrow_down),
+                            painter = painterResource(id = R.drawable.triangle_arrow_down),
                             contentDescription = "Decrease Quantity",
                             modifier = Modifier
                                 .align(Alignment.Bottom)

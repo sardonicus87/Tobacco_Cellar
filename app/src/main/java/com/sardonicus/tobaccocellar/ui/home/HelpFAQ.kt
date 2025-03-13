@@ -836,7 +836,7 @@ private fun HelpSection(
             color = MaterialTheme.colorScheme.onBackground
         )
         Icon(
-            painter = painterResource(id = if (visible) R.drawable.arrow_down else R.drawable.arrow_up),
+            painter = painterResource(id = if (visible) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up),
             tint = if (visible)MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
             contentDescription = "Expanded icon",
             modifier = Modifier
