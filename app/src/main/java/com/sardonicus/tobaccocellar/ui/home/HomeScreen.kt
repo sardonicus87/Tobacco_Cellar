@@ -1,6 +1,10 @@
 package com.sardonicus.tobaccocellar.ui.home
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,9 +31,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -40,6 +46,8 @@ import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -57,7 +65,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -66,11 +77,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
@@ -104,15 +111,25 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
     override val titleRes = R.string.home_title
+}
+
+val LocalLazyListState = compositionLocalOf<LazyListState> { error("No LazyListState provided") }
+
+enum class ScrollDirection {
+    UP, DOWN
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -160,6 +177,12 @@ fun HomeScreen(
         }
     }
 
+    BackHandler(enabled = blendSearchFocused) {
+        if (blendSearchFocused) {
+            focusManager.clearFocus()
+            filterViewModel.updateSearchFocused(false)
+        }
+    }
     BackHandler(enabled = searchPerformed) {
         filterViewModel.updateSearchText("")
         filterViewModel.onBlendSearch("")
@@ -221,7 +244,7 @@ fun HomeScreen(
                     )
                 }
             )
-        },
+        }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -239,7 +262,10 @@ fun HomeScreen(
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
             )
-            Box {
+            GlowBox(
+                color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                size = GlowSize(top = 3.dp)
+            ) {
                 HomeBody(
                     isLoading = homeUiState.isLoading,
                     isTableView = isTableView,
@@ -260,27 +286,6 @@ fun HomeScreen(
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(0.dp),
-                )
-                Box( // header shadow
-                    modifier = Modifier
-                        .matchParentSize()
-                        .then(
-                            Modifier.drawBehind {
-                                val glowHeight = 3.dp
-                                drawRect(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Black.copy(alpha = 0.3f),
-                                            Color.Transparent,
-                                        ),
-                                        startY = 0f,
-                                        endY = glowHeight.toPx(),
-                                    ),
-                                    topLeft = Offset(0f, 0f),
-                                    size = Size(size.width, glowHeight.toPx())
-                                )
-                            }
-                        )
                 )
             }
         }
@@ -555,11 +560,12 @@ private fun HomeBody(
         )
     }
 
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(0.dp)
     ) {
         if (isLoading) {
@@ -734,6 +740,91 @@ fun NoteDialog(
 }
 
 
+@Composable
+fun JumpToButton(
+    jumpTo: () -> Unit,
+    scrollDirection: ScrollDirection,
+    modifier: Modifier = Modifier,
+) {
+    FloatingActionButton(
+        onClick = jumpTo,
+        shape = CircleShape,
+        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(0.dp),
+        containerColor = Color.Black.copy(alpha = 0.4f),
+        contentColor = Color.White.copy(alpha = 0.4f),
+        modifier = modifier
+    ) {
+        if (scrollDirection == ScrollDirection.DOWN) {
+            Icon(
+                painter = painterResource(id = R.drawable.double_down),
+                contentDescription = "Scroll to bottom",
+                modifier = Modifier
+                    .size(36.dp),
+            )
+        } else {
+            Icon(
+                painter = painterResource(id = R.drawable.double_up),
+                contentDescription = "Scroll to top",
+                modifier = Modifier
+                    .size(36.dp),
+            )
+        }
+    }
+}
+
+@Composable
+fun rememberJumpToState(
+    lazyListState: LazyListState,
+    listSize: Int
+): Pair<Boolean, ScrollDirection> {
+    var previousIndex by remember { mutableIntStateOf(0) }
+    var scrollJob by remember { mutableStateOf<Job?>(null) }
+    var scrolling by remember { mutableStateOf(false) }
+    var scrollDirection by remember { mutableStateOf(ScrollDirection.DOWN) }
+    val firstItemIndex by remember { derivedStateOf { lazyListState.firstVisibleItemIndex } }
+
+    val atTop by remember { derivedStateOf { lazyListState.firstVisibleItemIndex == 0 } }
+    val atBottom by remember { derivedStateOf { lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index == listSize - 1 } }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(firstItemIndex, lazyListState.isScrollInProgress) {
+        scrollJob?.cancel()
+
+        scrollJob = coroutineScope.launch {
+            val currentIndex = firstItemIndex
+            if (currentIndex > previousIndex) {
+                scrollDirection = ScrollDirection.DOWN
+            } else if (currentIndex < previousIndex) {
+                scrollDirection = ScrollDirection.UP
+            }
+            previousIndex = currentIndex
+
+            val overScroll = (atTop && scrollDirection == ScrollDirection.UP) ||
+                    (atBottom && scrollDirection == ScrollDirection.DOWN)
+
+            if (lazyListState.isScrollInProgress && !overScroll) {
+                if (!scrolling) {
+                    delay(25)
+                    scrolling = true
+                }
+            } else {
+                if (scrolling) {
+                    if (atTop || atBottom) {
+                        delay(50)
+                        scrolling = false
+                    } else {
+                        delay(1500)
+                        scrolling = false
+                    }
+                }
+            }
+        }
+    }
+    return Pair(scrolling, scrollDirection)
+}
+
+
 /** List View Mode **/
 @OptIn(ExperimentalFoundationApi::class)
 @Stable
@@ -756,6 +847,8 @@ fun ListViewMode(
     val coroutineScope = rememberCoroutineScope()
     val columnState = rememberLazyListState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+
+    val (isVisible, scrollDirection) = rememberJumpToState(columnState, itemsList.size)
 
     Box(
         modifier = Modifier
@@ -821,6 +914,30 @@ fun ListViewMode(
             }
         }
 
+        // jump to button
+        AnimatedVisibility(
+            visible = isVisible && (itemsList.size > 99),
+            enter = fadeIn(animationSpec = tween(150)),
+            exit = fadeOut(animationSpec = tween(150)),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(16.dp)
+        ) {
+            JumpToButton(
+                jumpTo = {
+                    coroutineScope.launch {
+                        if (scrollDirection == ScrollDirection.DOWN) {
+                            columnState.scrollToItem(itemsList.lastIndex)
+                        } else {
+                            columnState.scrollToItem(0)
+                        }
+                    }
+                },
+                scrollDirection = scrollDirection,
+                modifier = Modifier
+            )
+        }
+
 
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
@@ -829,24 +946,7 @@ fun ListViewMode(
         val getPosition by filterViewModel.getPosition.collectAsState()
         val searchCleared by filterViewModel.searchCleared.collectAsState()
 
-        // Return Positions //
-//        LaunchedEffect(savedItemIndex) {
-//            if (savedItemIndex != -1) {
-//                delay(50)
-//                withFrameNanos {
-//                    coroutineScope.launch {
-//                        if (savedItemIndex > 0 && savedItemIndex < (itemsList.size - 1)) {
-//                            val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-//                            columnState.scrollToItem(savedItemIndex, offset)
-//                        } else {
-//                            columnState.scrollToItem(savedItemIndex)
-//                        }
-//                    }
-//                }
-//                filterViewModel.resetScroll()
-//            }
-//        }
-
+        // Scroll to Positions //
         LaunchedEffect(itemsList) {
             delay(15)
             if (savedItemIndex != -1) {
@@ -894,7 +994,7 @@ fun ListViewMode(
             }
         }
 
-        // Update scroll position //
+        // Save scroll position //
         LaunchedEffect(getPosition) {
             if (getPosition > 0 && !searchPerformed) {
                 val layoutInfo = columnState.layoutInfo
@@ -1187,338 +1287,352 @@ fun TableLayout(
         if (!sorting.sortAscending) it.reversed() else it
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
     ) {
-        // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(intrinsicSize = IntrinsicSize.Min)
-        ) {
-            for (columnIndex in columnMinWidths.indices) {
-                Box(
-                    modifier = Modifier
-                        .width(columnMinWidths[columnIndex])
-                        .fillMaxHeight()
-                        .align(Alignment.CenterVertically)
-                        .padding(0.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
-                ) {
-                    val alignment = when (columnIndex) {
-                        0 -> Alignment.CenterStart // brand
-                        1 -> Alignment.CenterStart // blend
-                        2 -> Alignment.Center // type
-                        3 -> Alignment.Center // fav/dis
-                        4 -> Alignment.Center // notes
-                        5 -> Alignment.Center // quantity
-                        else -> Alignment.CenterStart
-                    }
-                    val headerText = when (columnIndex) {
-                        0 -> "Brand"
-                        1 -> "Blend"
-                        2 -> "Type"
-                        3 -> ""
-                        4 -> "Note"
-                        5 -> "Qty"
-                        else -> ""
-                    }
-                    val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
-                        updateSorting(newSortColumn)
-                    }
-                    when (columnIndex) {
-                        0, 1 -> {
-                            HeaderCell(
-                                text = headerText,
-                                onClick = { onSortChange(columnIndex) },
-                                primarySort = sorting.columnIndex == columnIndex,
-                                sorting = sorting,
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .matchParentSize()
-                                    .align(alignment),
-                                contentAlignment = alignment
-                            )
-                        }
-                        else -> {
-                            HeaderCell(
-                                text = headerText,
-                                primarySort = sorting.columnIndex == columnIndex,
-                                sorting = sorting,
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .align(alignment),
-                                icon1 = if (columnIndex == 3)
-                                    painterResource(id = R.drawable.heart_filled_24) else null,
-                                icon2 = if (columnIndex == 3)
-                                    painterResource(id = R.drawable.question_mark_24) else null,
-                                contentAlignment = alignment
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Items
         val columnState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
-        val haptics = LocalHapticFeedback.current
-        val focusManager = LocalFocusManager.current
+        val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth(),
-            state = columnState
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
         ) {
-            items(items = sortedItems, key = { it.items.id }) { item ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(intrinsicSize = IntrinsicSize.Min)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                ) {
-                    for (columnIndex in columnMinWidths.indices) {
-                        Box(
-                            modifier = Modifier
-                                .width(columnMinWidths[columnIndex])
-                                .fillMaxHeight()
-                                .align(Alignment.CenterVertically)
-                                .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
-                        ) {
-                            val cellValue = columnMapping[columnIndex](item.items)
-                            val alignment = when (columnIndex) {
-                                0 -> Alignment.CenterStart // brand
-                                1 -> Alignment.CenterStart // blend
-                                2 -> Alignment.Center // type
-                                3 -> Alignment.Center // fav/dis
-                                4 -> Alignment.Center // notes
-                                5 -> Alignment.Center // quantity
-                                else -> Alignment.CenterStart
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(intrinsicSize = IntrinsicSize.Min)
+            ) {
+                for (columnIndex in columnMinWidths.indices) {
+                    Box(
+                        modifier = Modifier
+                            .width(columnMinWidths[columnIndex])
+                            .fillMaxHeight()
+                            .align(Alignment.CenterVertically)
+                            .padding(0.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
+                    ) {
+                        val alignment = when (columnIndex) {
+                            0 -> Alignment.CenterStart // brand
+                            1 -> Alignment.CenterStart // blend
+                            2 -> Alignment.Center // type
+                            3 -> Alignment.Center // fav/dis
+                            4 -> Alignment.Center // notes
+                            5 -> Alignment.Center // quantity
+                            else -> Alignment.CenterStart
+                        }
+                        val headerText = when (columnIndex) {
+                            0 -> "Brand"
+                            1 -> "Blend"
+                            2 -> "Type"
+                            3 -> ""
+                            4 -> "Note"
+                            5 -> "Qty"
+                            else -> ""
+                        }
+                        val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
+                            updateSorting(newSortColumn)
+                        }
+                        when (columnIndex) {
+                            0, 1 -> {
+                                HeaderCell(
+                                    text = headerText,
+                                    onClick = { onSortChange(columnIndex) },
+                                    primarySort = sorting.columnIndex == columnIndex,
+                                    sorting = sorting,
+                                    modifier = Modifier
+                                        .padding(0.dp)
+                                        .matchParentSize()
+                                        .align(alignment),
+                                    contentAlignment = alignment
+                                )
                             }
-                            when (columnIndex) {
-                                0 -> { // brand
-                                    TableCell(
-                                        value = cellValue,
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .align(alignment),
-                                        contentAlignment = alignment,
-                                        onClick = {
-                                            if (blendSearchFocused) {
-                                                focusManager.clearFocus()
-                                            } else {
-                                                filterViewModel.getPositionTrigger()
-                                                onDetailsClick(item.items)
-                                            }
-                                        },
-                                        onLongClick = {
-                                            if (blendSearchFocused) {
-                                                focusManager.clearFocus()
-                                            } else {
-                                                filterViewModel.getPositionTrigger()
-                                                onEditClick(item.items)
-                                            }
-                                        }
-                                    )
-                                } // brand
-                                1 -> { // blend
-                                    TableCell(
-                                        value = cellValue,
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .align(alignment),
-                                        contentAlignment = alignment,
-                                        onClick = {
-                                            if (blendSearchFocused) {
-                                                focusManager.clearFocus()
-                                            } else {
-                                                focusManager.clearFocus()
-                                                filterViewModel.getPositionTrigger()
-                                                onDetailsClick(item.items)
-                                            }
-                                        },
-                                        onLongClick = {
-                                            if (blendSearchFocused) {
-                                                focusManager.clearFocus()
-                                            } else {
-                                                focusManager.clearFocus()
-                                                filterViewModel.getPositionTrigger()
-                                                onEditClick(item.items)
-                                            }
-                                        }
-                                    )
-                                } // blend
-                                3 -> { // fav/disliked
-                                    val favDisValue = cellValue as Int
-                                    val icon = when (favDisValue) {
-                                        1 -> painterResource(id = R.drawable.heart_filled_24)
-                                        2 -> painterResource(id = R.drawable.heartbroken_filled_24)
-                                        else -> null
-                                    }
-                                    if (icon != null) {
-                                        val tintColor = when (favDisValue) {
-                                            1 -> LocalCustomColors.current.favHeart
-                                            2 -> LocalCustomColors.current.disHeart
-                                            else -> Color.Unspecified
-                                        }
-                                        Image(
-                                            painter = icon,
-                                            contentDescription = null,
+                            else -> {
+                                HeaderCell(
+                                    text = headerText,
+                                    primarySort = sorting.columnIndex == columnIndex,
+                                    sorting = sorting,
+                                    modifier = Modifier
+                                        .padding(0.dp)
+                                        .align(alignment),
+                                    icon1 = if (columnIndex == 3)
+                                        painterResource(id = R.drawable.heart_filled_24) else null,
+                                    icon2 = if (columnIndex == 3)
+                                        painterResource(id = R.drawable.question_mark_24) else null,
+                                    contentAlignment = alignment
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Items
+            val haptics = LocalHapticFeedback.current
+            val focusManager = LocalFocusManager.current
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                state = columnState
+            ) {
+                items(items = sortedItems, key = { it.items.id }) { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(intrinsicSize = IntrinsicSize.Min)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        for (columnIndex in columnMinWidths.indices) {
+                            Box(
+                                modifier = Modifier
+                                    .width(columnMinWidths[columnIndex])
+                                    .fillMaxHeight()
+                                    .align(Alignment.CenterVertically)
+                                    .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
+                            ) {
+                                val cellValue = columnMapping[columnIndex](item.items)
+                                val alignment = when (columnIndex) {
+                                    0 -> Alignment.CenterStart // brand
+                                    1 -> Alignment.CenterStart // blend
+                                    2 -> Alignment.Center // type
+                                    3 -> Alignment.Center // fav/dis
+                                    4 -> Alignment.Center // notes
+                                    5 -> Alignment.Center // quantity
+                                    else -> Alignment.CenterStart
+                                }
+                                when (columnIndex) {
+                                    0 -> { // brand
+                                        TableCell(
+                                            value = cellValue,
                                             modifier = Modifier
-                                                .size(20.dp)
+                                                .matchParentSize()
                                                 .align(alignment),
-                                            colorFilter = ColorFilter.tint(tintColor)
+                                            contentAlignment = alignment,
+                                            onClick = {
+                                                if (blendSearchFocused) {
+                                                    focusManager.clearFocus()
+                                                } else {
+                                                    filterViewModel.getPositionTrigger()
+                                                    onDetailsClick(item.items)
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (blendSearchFocused) {
+                                                    focusManager.clearFocus()
+                                                } else {
+                                                    filterViewModel.getPositionTrigger()
+                                                    onEditClick(item.items)
+                                                }
+                                            }
                                         )
-                                    } else {
+                                    } // brand
+                                    1 -> { // blend
                                         TableCell(
-                                            value = "",
-                                            contentAlignment = alignment
-                                        )
-                                    }
-                                } // fav/disliked
-                                4 -> { // notes
-                                    if (cellValue != "") {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.notes_24),
-                                            contentDescription = null,
+                                            value = cellValue,
                                             modifier = Modifier
-                                                .size(20.dp)
-                                                .align(alignment)
-                                                .clickable { onNoteClick(item.items) },
-                                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary),
+                                                .matchParentSize()
+                                                .align(alignment),
+                                            contentAlignment = alignment,
+                                            onClick = {
+                                                if (blendSearchFocused) {
+                                                    focusManager.clearFocus()
+                                                } else {
+                                                    focusManager.clearFocus()
+                                                    filterViewModel.getPositionTrigger()
+                                                    onDetailsClick(item.items)
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (blendSearchFocused) {
+                                                    focusManager.clearFocus()
+                                                } else {
+                                                    focusManager.clearFocus()
+                                                    filterViewModel.getPositionTrigger()
+                                                    onEditClick(item.items)
+                                                }
+                                            }
                                         )
-                                    } else {
+                                    } // blend
+                                    3 -> { // fav/disliked
+                                        val favDisValue = cellValue as Int
+                                        val icon = when (favDisValue) {
+                                            1 -> painterResource(id = R.drawable.heart_filled_24)
+                                            2 -> painterResource(id = R.drawable.heartbroken_filled_24)
+                                            else -> null
+                                        }
+                                        if (icon != null) {
+                                            val tintColor = when (favDisValue) {
+                                                1 -> LocalCustomColors.current.favHeart
+                                                2 -> LocalCustomColors.current.disHeart
+                                                else -> Color.Unspecified
+                                            }
+                                            Image(
+                                                painter = icon,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .align(alignment),
+                                                colorFilter = ColorFilter.tint(tintColor)
+                                            )
+                                        } else {
+                                            TableCell(
+                                                value = "",
+                                                contentAlignment = alignment
+                                            )
+                                        }
+                                    } // fav/disliked
+                                    4 -> { // notes
+                                        if (cellValue != "") {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.notes_24),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .align(alignment)
+                                                    .clickable { onNoteClick(item.items) },
+                                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary),
+                                            )
+                                        } else {
+                                            TableCell(
+                                                value = "",
+                                                contentAlignment = alignment,
+                                            )
+                                        }
+                                    } // notes
+                                    5 -> { // quantity
+                                        val formattedQty = formattedQuantity[item.items.id] ?: "--"
+                                        val outOfStock = formattedQuantity[item.items.id] == "0 oz" ||
+                                        formattedQuantity[item.items.id] == "x0" ||
+                                        formattedQuantity[item.items.id] == "0 g"
+
                                         TableCell(
-                                            value = "",
+                                        //    value = "x$cellValue",
+                                            value = formattedQty,
+                                            modifier = Modifier
+                                                .align(alignment),
+                                            contentAlignment = alignment,
+                                            color = if (outOfStock) MaterialTheme.colorScheme.error
+                                                    else MaterialTheme.colorScheme.onSecondaryContainer,
+                                        )
+                                    } // quantity
+                                    else -> { // [2] type
+                                        TableCell(
+                                            value = cellValue,
+                                            modifier = Modifier
+                                                .align(alignment),
                                             contentAlignment = alignment,
                                         )
-                                    }
-                                } // notes
-                                5 -> { // quantity
-                                    val formattedQty = formattedQuantity[item.items.id] ?: "--"
-                                    val outOfStock = formattedQuantity[item.items.id] == "0 oz" ||
-                                    formattedQuantity[item.items.id] == "x0" ||
-                                    formattedQuantity[item.items.id] == "0 g"
-
-                                    TableCell(
-                                    //    value = "x$cellValue",
-                                        value = formattedQty,
-                                        modifier = Modifier
-                                            .align(alignment),
-                                        contentAlignment = alignment,
-                                        color = if (outOfStock) MaterialTheme.colorScheme.error
-                                                else MaterialTheme.colorScheme.onSecondaryContainer,
-                                    )
-                                } // quantity
-                                else -> { // [2] type
-                                    TableCell(
-                                        value = cellValue,
-                                        modifier = Modifier
-                                            .align(alignment),
-                                        contentAlignment = alignment,
-                                    )
-                                } // [2] type
+                                    } // [2] type
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
 
-        val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-        val savedItemId by filterViewModel.savedItemId.collectAsState()
-        val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
-        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-        val searchCleared by filterViewModel.searchCleared.collectAsState()
-        val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-        val getPosition by filterViewModel.getPosition.collectAsState()
+            val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
+            val savedItemId by filterViewModel.savedItemId.collectAsState()
+            val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
+            val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+            val searchCleared by filterViewModel.searchCleared.collectAsState()
+            val shouldReturn by filterViewModel.shouldReturn.collectAsState()
+            val getPosition by filterViewModel.getPosition.collectAsState()
 
-        // Return Positions //
-//        LaunchedEffect(savedItemIndex) {
-//            if (savedItemIndex != -1) {
-//                delay(50)
-//                withFrameNanos {
-//                    coroutineScope.launch {
-//                        if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
-//                            val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-//                            columnState.scrollToItem(savedItemIndex, offset)
-//                        } else {
-//                            columnState.scrollToItem(savedItemIndex)
-//                        }
-//                    }
-//                }
-//                filterViewModel.resetScroll()
-//            }
-//        }
-
-        LaunchedEffect(sortedItems) {
-            delay(15)
-            if (savedItemIndex != -1) {
-                delay(50)
-                withFrameNanos {
-                    coroutineScope.launch {
-                        if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
-                            val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-                            columnState.scrollToItem(savedItemIndex, offset)
-                        } else {
-                            columnState.scrollToItem(savedItemIndex)
+            // Scroll to Positions //
+            LaunchedEffect(sortedItems) {
+                delay(15)
+                if (savedItemIndex != -1) {
+                    delay(50)
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
+                                val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                                columnState.scrollToItem(savedItemIndex, offset)
+                            } else {
+                                columnState.scrollToItem(savedItemIndex)
+                            }
                         }
                     }
+                    filterViewModel.resetScroll()
                 }
-                filterViewModel.resetScroll()
+                if (shouldScrollUp) {
+                    columnState.scrollToItem(0)
+                    filterViewModel.resetScroll()
+                }
+                if (shouldReturn && !searchPerformed && !shouldScrollUp) {
+                    val index = currentPosition[0]
+                    val offset = currentPosition[1]
+
+                    if (index != null && offset != null) {
+                        withFrameNanos {
+                            coroutineScope.launch {
+                                columnState.scrollToItem(index, offset)
+                            }
+                        }
+                        filterViewModel.resetScroll()
+                    }
+                }
+                if (searchCleared) {
+                    val index = currentPosition[0]
+                    val offset = currentPosition[1]
+
+                    if (index != null && offset != null) {
+                        withFrameNanos {
+                            coroutineScope.launch {
+                                columnState.scrollToItem(index, offset)
+                            }
+                        }
+                        filterViewModel.resetScroll()
+                    }
+                }
             }
-            if (shouldScrollUp) {
+
+            LaunchedEffect(sorting) {
+                filterViewModel.resetScroll()
                 columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
             }
-            if (shouldReturn && !searchPerformed && !shouldScrollUp) {
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
 
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-            }
-            if (searchCleared) {
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
+            // Save positions //
+            LaunchedEffect(getPosition) {
+                if (getPosition > 0 && !searchPerformed) {
+                    val layoutInfo = columnState.layoutInfo
+                    val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
+                    if (firstVisibleItem != null) {
+                        updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
                     }
-                    filterViewModel.resetScroll()
                 }
             }
         }
 
-        LaunchedEffect(sorting) {
-            filterViewModel.resetScroll()
-            columnState.scrollToItem(0)
-        }
-
-        // Update positions //
-        LaunchedEffect(getPosition) {
-            if (getPosition > 0 && !searchPerformed) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                if (firstVisibleItem != null) {
-                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                }
-            }
+        // jump to button
+        AnimatedVisibility(
+            visible = isVisible && (sortedItems.size > 99),
+            enter = fadeIn(animationSpec = tween(150)),
+            exit = fadeOut(animationSpec = tween(150)),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(16.dp)
+        ) {
+            JumpToButton(
+                jumpTo = {
+                    coroutineScope.launch {
+                        if (scrollDirection == ScrollDirection.DOWN) {
+                            columnState.scrollToItem(sortedItems.lastIndex)
+                        } else {
+                            columnState.scrollToItem(0)
+                        }
+                    }
+                },
+                scrollDirection = scrollDirection,
+                modifier = Modifier
+            )
         }
     }
 }
