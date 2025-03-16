@@ -11,6 +11,36 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "2.6.1",
+        buildDate = "16 Mar, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Clicking a sub-menu option in the overflow menu (top bar) now also resets the menu " +
+                    "to its original state.",
+            "Re-organized some of the previous changelog entries. Some entries had listed under " +
+                    "\"Improvements\" some things that are more fitting to be listed under the " +
+                    "\"Changes\" sections (use-behavior, non."
+        ),
+        bugFixes = listOf(
+            "Minor error on new \"jump to top/bottom\" button where on a cold start, trying to " +
+                    "scroll up when already at the top of the list showed the button.",
+            "Minor error on blend search system back navigation, if the blend search is re-focused " +
+                    "after a search, the first back press should only clear the search field " +
+                    "focus, then a second press to clear the blend search.",
+            "Further fixing of list/table position being lost when using quick blend search. " +
+                    "Potentially this is finally solved.",
+            "Fixed the possibility of launching multiple Blend Details screens due to spastic " +
+                    "tapping. Put up some guardrails even though this never resulted in a crash " +
+                    "or not responding event.",
+            "Potentially fixed some odd, rare navigation-related crash, possibly related to the " +
+                    "Blend Details screen. I don't know what the crash is as the report doesn't " +
+                    "show my app code and nobody has emailed me about an issue, so I don't even " +
+                    "know what it is, and it may be related to an Android Compose navigation " +
+                    "internal instability (in other words, out-of-my-hands to fix)."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "2.6.0",
         buildDate = "13 Mar, 2025",
         changes = listOf(
@@ -44,7 +74,7 @@ val changelogEntries = listOf(
             "Clicking the system back button after having done a blend search will now clear the " +
                     "search.",
             "Added a conditional check to exclude quantities of 0 from charts \"... by Tins\".",
-            "Added a total quantity to the blend details screen tins section (if there are any " +
+            "Added a total quantity to the Blend Details screen tins section (if there are any " +
                     "tins with quantities). The displayed total is based on your chosen \"Cellar " +
                     "Quantity Display\" option, though if you have chosen No. of Tins, it will " +
                     "display metric units if your locale is anywhere other than the United States."
@@ -88,7 +118,7 @@ val changelogEntries = listOf(
         improvements = listOf(
             "Efficiency improvements for Stats data (raw stats), and various other lists " +
                     "generated from database data (filter selections, autocomplete fields).",
-            "Minor UI improvements. Blend details and settings screens text size, colors, " +
+            "Minor UI improvements. Blend Details and settings screens text size, colors, " +
                     "spacing. Filter sheet, both pages now same height, other minor spacing tweaks.",
             "Efficiency improvements for filter sheet.",
             "Added a loading state for the stats screen while data is collected (in case it was needed).",
@@ -102,16 +132,16 @@ val changelogEntries = listOf(
         versionNumber = "2.3.0",
         buildDate = "18 Feb, 2025",
         changes = listOf(
-            "Added a second page to the filter sheet with additional filtering options for new fields."
+            "Added a second page to the filter sheet with additional filtering options for new fields.",
+            "Made text on Blend Details selectable (highlight and copy text).",
+            "Removed the mutual exclusion of \"Unassigned\" vs other types in type filtering."
         ),
         improvements = listOf(
             "Updated Help/FAQ with more details about the new quantity display option and new " +
                     "filtering options.",
-            "Removed the mutual exclusion of \"Unassigned\" vs other types in type filtering.",
             "Fixed a small typo on the \"Stats\" screen.",
             "Quantity display options for oz/lbs and grams now rounds to two decimal places " +
                     "instead of one.",
-            "Made text on blend details selectable (highlight and copy text).",
             "Attempt to make autocomplete suggestions more efficient (suggestion box hanging when " +
                     "a suggestion is selected on some devices).",
         ),
@@ -121,7 +151,7 @@ val changelogEntries = listOf(
             "Fixed a bug where clearing or removing filters sometimes didn't return the list to " +
                     "the top.",
             "Fixed a minor bug where highlighting of Filter icon in bottom bar was not working.",
-            "Fixed a bug on blend details screen where individual tin spacing was ignored if " +
+            "Fixed a bug on Blend Details screen where individual tin spacing was ignored if " +
                     "tin didn't have opened date field.",
             "Fixed a bug where the quantity was still red (out of stock) when selecting a " +
                     "quantity option other than No. of Tins and this field was 0 despite tins " +
@@ -135,11 +165,11 @@ val changelogEntries = listOf(
         changes = listOf(
             "Removed \"Tin Converter\" from add/edit entry screens and moved the \"Cut\" and \"" +
                     "Components\" fields to the first tab.",
-            "Added an option in the settings to change the quantity displayed on the Cellar screen."
+            "Added an option in the settings to change the quantity displayed on the Cellar screen.",
+            "Added \"tin sync\" to batch edit options.",
         ),
         improvements = listOf(
             "Expanded Help/FAQ with a new section on editing entries.",
-            "Added \"tin sync\" to batch edit options.",
             "Added loading indicator to batch edit screen as well as buttons to \"Select All\" " +
                     "and \"Clear Selections\".",
             "Settings screen UI improvements."
@@ -158,7 +188,7 @@ val changelogEntries = listOf(
             "Added a batch edit option for mass editing some fields."
         ),
         improvements = listOf(
-            "Hide empty fields in entry details screen."
+            "Hide empty fields in Blend Details screen."
         ),
         bugFixes = listOf(
             "Fixed CSV Import date mapping wasn't working at all. Date's might still not import, " +
@@ -168,7 +198,7 @@ val changelogEntries = listOf(
             "Fixed incorrect counting of number of updates in CSV import when tins or components " +
                     "were added.",
             "Fixed \"Add\" button highlight in bottom bar sometimes getting stuck.",
-            "Fixed error in Entry Details where type label was the blend type instead of \"Type: \"."
+            "Fixed error in Blend Details where type label was the blend type instead of \"Type: \"."
         ),
     ),
     ChangelogEntryData(
@@ -197,9 +227,13 @@ val changelogEntries = listOf(
             "Added additional CSV export option that exports the data as individual tins (" +
                     "duplicates entries per each tin with entry and individual tin data as " +
                     "individual records).",
-            "Added entry details screen for viewing all of the values of a specific entry. Access " +
+            "Added Blend Details screen for viewing all of the values of a specific entry. Access " +
                     "by tapping an item rather than long-pressing, navigation will trigger if " +
-                    "the menu overlay is not open on any item or blend search is not focused."
+                    "the menu overlay is not open on any item or blend search is not focused.",
+            "In table view, now tapping or long-pressing the \"Brand\" cell will also trigger " +
+                    "navigation to Blend Details or edit entry (respectively). This behavior may " +
+                    "change in the future. Additionally, tapping anywhere in the cell will now " +
+                    "trigger the navigation, not just clicking on the text.",
         ),
         improvements = listOf(
             "Stats chart label list for thin slices aligned to top of chart (rather than center) " +
@@ -209,10 +243,6 @@ val changelogEntries = listOf(
                     "Saving an item returns to the new item at the top with a slight offset " +
                     "Most any other navigation away should return to the same position the list " +
                     "was in when left (including performing a quick blend search).",
-            "In table view, now tapping or long-pressing the \"Brand\" cell will also trigger " +
-                    "navigation to entry details or edit entry (respectively). This behavior may " +
-                    "change in the future. Additionally, tapping anywhere in the cell will now " +
-                    "trigger the navigation, not just clicking on the text.",
             "CSV Import Wizard mapping dropdown menus now extend their width in landscape " +
                     "orientation.",
             "Made the Help/FAQ section more concise.",
