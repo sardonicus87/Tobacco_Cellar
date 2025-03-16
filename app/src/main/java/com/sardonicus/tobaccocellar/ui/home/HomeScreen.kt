@@ -952,7 +952,7 @@ fun ListViewMode(
 
         // Scroll to Positions //
         LaunchedEffect(currentItemsList) {
-            while (columnState.layoutInfo.visibleItemsInfo.size < 2) {
+            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) {
                 delay(5)
             }
             if (savedItemIndex != -1) {
@@ -1538,7 +1538,7 @@ fun TableLayout(
 
             // Scroll to Positions //
             LaunchedEffect(currentItemsList) {
-                while (columnState.layoutInfo.visibleItemsInfo.size < 2) {
+                while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) {
                     delay(5)
                 }
                 if (savedItemIndex != -1) {

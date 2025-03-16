@@ -339,6 +339,7 @@ fun CellarTopAppBar(
                                     text = { Text(text = "Normal Export") },
                                     onClick = {
                                         expanded = false
+                                        menuState = MenuState.MAIN
                                         exportCsvLauncher.launch(exportCsvIntent)
                                     },
                                     modifier = Modifier
@@ -354,6 +355,7 @@ fun CellarTopAppBar(
                                     text = { Text(text = "Export as Tins") },
                                     onClick = {
                                         expanded = false
+                                        menuState = MenuState.MAIN
                                         exportAsTinsLauncher.launch(exportAsTinsIntent)
                                     },
                                     modifier = Modifier
@@ -404,10 +406,10 @@ fun CellarBottomAppBar(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp),
+        contentPadding = PaddingValues(0.dp),
         containerColor = LocalCustomColors.current.appBarContainer,
         contentColor = LocalCustomColors.current.navIcon,
-        contentPadding = PaddingValues(0.dp),
-        windowInsets = WindowInsets.displayCutout
+        windowInsets = WindowInsets.displayCutout,
     ) {
         GlowBox(
             color = GlowColor(Color.White.copy(alpha = 0.07f)),
