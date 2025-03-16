@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import kotlinx.coroutines.Dispatchers
@@ -49,11 +48,6 @@ fun EditEntryScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
-
-//    LaunchedEffect(key1 = viewModel.itemUiState) {
-//        viewModel.updateUiState(viewModel.itemUiState.itemDetails)
-//    }
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -62,6 +56,7 @@ fun EditEntryScreen(
             onClick()
         }
     }
+
 
     Scaffold(
         modifier = modifier

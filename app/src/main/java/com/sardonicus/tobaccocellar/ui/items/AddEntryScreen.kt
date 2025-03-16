@@ -114,7 +114,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
@@ -153,7 +152,6 @@ fun AddEntryScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(

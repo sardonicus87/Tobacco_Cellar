@@ -58,12 +58,8 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .background(Color.Transparent)
-                          //  .consumeWindowInsets(WindowInsets.statusBarsIgnoringVisibility)
-                           // .consumeWindowInsets(WindowInsets.navigationBars)
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
-                           // .windowInsetsPadding(WindowInsets.statusBars) ,
-                       // color = MaterialTheme.colorScheme.background,
                     ) {
                         CellarApp()
                     }
