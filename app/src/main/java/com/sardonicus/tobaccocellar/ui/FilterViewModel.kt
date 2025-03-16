@@ -30,8 +30,6 @@ import kotlinx.coroutines.withContext
 class FilterViewModel (
     private val itemsRepository: ItemsRepository
 ): ViewModel() {
-
-
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
     val bottomSheetState: StateFlow<BottomSheetState> = _bottomSheetState.asStateFlow()
@@ -220,9 +218,9 @@ class FilterViewModel (
                     _shouldReturn.value = true
                 }
                 if (it is SearchClearedEvent) {
-                    _shouldReturn.value = false
-                    _searchCleared.value = true
                     _searchPerformed.value = false
+                    _searchCleared.value = true
+                    _shouldReturn.value = true
                 }
                 if (it is SearchPerformedEvent) {
                     _searchPerformed.value = true
@@ -749,7 +747,6 @@ class FilterViewModel (
 
         _shouldScrollUp.value = true
     }
-
 
 }
 
