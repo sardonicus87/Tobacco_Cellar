@@ -65,13 +65,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -126,8 +126,6 @@ object HomeDestination : NavigationDestination {
     override val titleRes = R.string.home_title
 }
 
-val LocalLazyListState = compositionLocalOf<LazyListState> { error("No LazyListState provided") }
-
 enum class ScrollDirection {
     UP, DOWN
 }
@@ -147,11 +145,7 @@ fun HomeScreen(
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val filterViewModel = LocalCellarApplication.current.filterViewModel
-//    val scrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
-//        TopAppBarDefaults.enterAlwaysScrollBehavior() else TopAppBarDefaults.pinnedScrollBehavior()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-//    val bottomScrollBehavior = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE)
-//        BottomAppBarDefaults.exitAlwaysScrollBehavior() else null
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val blendSearchText by filterViewModel.blendSearchText.collectAsState()
     val sorting by viewmodel.sorting
@@ -161,7 +155,6 @@ fun HomeScreen(
     val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
     val focusManager = LocalFocusManager.current
-    val currentPosition by filterViewModel.currentPosition.collectAsState()
     val blendSearchFocused by filterViewModel.blendSearchFocused.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -184,14 +177,32 @@ fun HomeScreen(
         }
     }
     BackHandler(enabled = searchPerformed) {
-        filterViewModel.updateSearchText("")
-        filterViewModel.onBlendSearch("")
-        filterViewModel.updateSearchIconOpacity(0.5f)
+        if (!blendSearchFocused) {
+            filterViewModel.updateSearchText("")
+            filterViewModel.onBlendSearch("")
+            filterViewModel.updateSearchIconOpacity(0.5f)
 
-        if (searchPerformed) {
-            coroutineScope.launch {
-                EventBus.emit(SearchClearedEvent)
+            if (searchPerformed) {
+                coroutineScope.launch {
+                    EventBus.emit(SearchClearedEvent)
+                }
             }
+        }
+    }
+
+    var lastClickedItemId by remember { mutableIntStateOf(-1) }
+    var isNavigating by remember { mutableStateOf(false) }
+
+    LaunchedEffect(lastClickedItemId) {
+        if (lastClickedItemId != -1 && !isNavigating) {
+            isNavigating = true
+            navigateToBlendDetails(lastClickedItemId)
+        }
+    }
+    LaunchedEffect(isNavigating) {
+        if (isNavigating) {
+            delay(200)
+            isNavigating = false
         }
     }
 
@@ -230,6 +241,7 @@ fun HomeScreen(
                 currentDestination = HomeDestination,
                 filterViewModel = filterViewModel,
             )
+
         },
         snackbarHost = {
             SnackbarHost(
@@ -271,10 +283,8 @@ fun HomeScreen(
                     isTableView = isTableView,
                     items = filteredItems,
                     formattedQuantity = homeUiState.formattedQuantities,
-                    updateScrollPosition = filterViewModel::updateScrollPosition,
-                    currentPosition = currentPosition,
                     filterViewModel = filterViewModel,
-                    onDetailsClick = navigateToBlendDetails,
+                    onDetailsClick = { if (lastClickedItemId != it) lastClickedItemId = it },
                     onEditClick = navigateToEditEntry,
                     activeMenuId = activeMenuId,
                     onShowMenu = viewmodel::onShowMenu,
@@ -291,6 +301,7 @@ fun HomeScreen(
         }
     }
 }
+
 
 @Composable
 private fun HomeHeader(
@@ -375,7 +386,7 @@ private fun HomeHeader(
                         if (!searchPerformed) {
                             filterViewModel.getPositionTrigger()
                         }
-                        delay(10)
+                        delay(15)
                         EventBus.emit(SearchPerformedEvent)
                         filterViewModel.onBlendSearch(blendSearchText)
                     }
@@ -535,8 +546,6 @@ private fun HomeBody(
     isTableView: Boolean,
     items: List<ItemsComponentsAndTins>,
     formattedQuantity: Map<Int, String>,
-    updateScrollPosition: (Int, Int) -> Unit,
-    currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
@@ -599,8 +608,6 @@ private fun HomeBody(
                     TableViewMode(
                         itemsList = items,
                         formattedQuantity = formattedQuantity,
-                        updateScrollPosition = updateScrollPosition,
-                        currentPosition = currentPosition,
                         filterViewModel = filterViewModel,
                         blendSearchFocused = blendSearchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
@@ -617,8 +624,6 @@ private fun HomeBody(
                     ListViewMode(
                         itemsList = items,
                         formattedQuantity = formattedQuantity,
-                        updateScrollPosition = updateScrollPosition,
-                        currentPosition = currentPosition,
                         filterViewModel = filterViewModel,
                         blendSearchFocused = blendSearchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
@@ -780,7 +785,7 @@ fun rememberJumpToState(
     var previousIndex by remember { mutableIntStateOf(0) }
     var scrollJob by remember { mutableStateOf<Job?>(null) }
     var scrolling by remember { mutableStateOf(false) }
-    var scrollDirection by remember { mutableStateOf(ScrollDirection.DOWN) }
+    var scrollDirection by remember { mutableStateOf(ScrollDirection.UP) }
     val firstItemIndex by remember { derivedStateOf { lazyListState.firstVisibleItemIndex } }
 
     val atTop by remember { derivedStateOf { lazyListState.firstVisibleItemIndex == 0 } }
@@ -832,8 +837,6 @@ fun rememberJumpToState(
 fun ListViewMode(
     itemsList: List<ItemsComponentsAndTins>,
     formattedQuantity: Map<Int, String>,
-    updateScrollPosition: (Int, Int) -> Unit,
-    currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
     blendSearchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
@@ -939,21 +942,25 @@ fun ListViewMode(
         }
 
 
+        val currentItemsList by rememberUpdatedState(itemsList)
+        val currentPosition by filterViewModel.currentPosition.collectAsState()
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
         val savedItemIndex = itemsList.indexOfFirst { it.items.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val getPosition by filterViewModel.getPosition.collectAsState()
-        val searchCleared by filterViewModel.searchCleared.collectAsState()
 
         // Scroll to Positions //
-        LaunchedEffect(itemsList) {
-            delay(15)
+        LaunchedEffect(currentItemsList) {
+            while (columnState.layoutInfo.visibleItemsInfo.size < 2) {
+                delay(5)
+            }
             if (savedItemIndex != -1) {
                 withFrameNanos {
                     coroutineScope.launch {
                         if (savedItemIndex > 0 && savedItemIndex < (itemsList.size - 1)) {
-                            val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                            val offset =
+                                (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                             columnState.scrollToItem(savedItemIndex, offset)
                         } else {
                             columnState.scrollToItem(savedItemIndex)
@@ -979,19 +986,7 @@ fun ListViewMode(
                     filterViewModel.resetScroll()
                 }
             }
-            if (searchCleared) {
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
 
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-            }
         }
 
         // Save scroll position //
@@ -1001,7 +996,7 @@ fun ListViewMode(
                 val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 
                 if (firstVisibleItem != null) {
-                    updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                    filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
                 }
             }
         }
@@ -1217,8 +1212,6 @@ fun TableViewMode(
     onNoteClick: (Items) -> Unit,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
-    updateScrollPosition: (Int, Int) -> Unit,
-    currentPosition: Map<Int, Int>,
     modifier: Modifier = Modifier
 ) {
     val columnMinWidths = listOf(
@@ -1233,8 +1226,6 @@ fun TableViewMode(
     TableLayout(
         items = itemsList,
         formattedQuantity = formattedQuantity,
-        updateScrollPosition = updateScrollPosition,
-        currentPosition = currentPosition,
         filterViewModel = filterViewModel,
         blendSearchFocused = blendSearchFocused,
         columnMinWidths = columnMinWidths,
@@ -1253,8 +1244,6 @@ fun TableViewMode(
 fun TableLayout(
     items: List<ItemsComponentsAndTins>,
     formattedQuantity: Map<Int, String>,
-    updateScrollPosition: (Int, Int) -> Unit,
-    currentPosition: Map<Int, Int>,
     filterViewModel: FilterViewModel,
     blendSearchFocused: Boolean,
     columnMinWidths: List<Dp>,
@@ -1393,7 +1382,10 @@ fun TableLayout(
                                     .width(columnMinWidths[columnIndex])
                                     .fillMaxHeight()
                                     .align(Alignment.CenterVertically)
-                                    .border(Dp.Hairline, color = LocalCustomColors.current.tableBorder)
+                                    .border(
+                                        Dp.Hairline,
+                                        color = LocalCustomColors.current.tableBorder
+                                    )
                             ) {
                                 val cellValue = columnMapping[columnIndex](item.items)
                                 val alignment = when (columnIndex) {
@@ -1442,7 +1434,6 @@ fun TableLayout(
                                                 if (blendSearchFocused) {
                                                     focusManager.clearFocus()
                                                 } else {
-                                                    focusManager.clearFocus()
                                                     filterViewModel.getPositionTrigger()
                                                     onDetailsClick(item.items)
                                                 }
@@ -1536,23 +1527,26 @@ fun TableLayout(
             }
 
 
+            val currentItemsList by rememberUpdatedState(sortedItems)
+            val currentPosition by filterViewModel.currentPosition.collectAsState()
             val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
             val savedItemId by filterViewModel.savedItemId.collectAsState()
             val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
             val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-            val searchCleared by filterViewModel.searchCleared.collectAsState()
             val shouldReturn by filterViewModel.shouldReturn.collectAsState()
             val getPosition by filterViewModel.getPosition.collectAsState()
 
             // Scroll to Positions //
-            LaunchedEffect(sortedItems) {
-                delay(15)
+            LaunchedEffect(currentItemsList) {
+                while (columnState.layoutInfo.visibleItemsInfo.size < 2) {
+                    delay(5)
+                }
                 if (savedItemIndex != -1) {
-                    delay(50)
                     withFrameNanos {
                         coroutineScope.launch {
                             if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
-                                val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                                val offset =
+                                    (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                                 columnState.scrollToItem(savedItemIndex, offset)
                             } else {
                                 columnState.scrollToItem(savedItemIndex)
@@ -1578,19 +1572,7 @@ fun TableLayout(
                         filterViewModel.resetScroll()
                     }
                 }
-                if (searchCleared) {
-                    val index = currentPosition[0]
-                    val offset = currentPosition[1]
 
-                    if (index != null && offset != null) {
-                        withFrameNanos {
-                            coroutineScope.launch {
-                                columnState.scrollToItem(index, offset)
-                            }
-                        }
-                        filterViewModel.resetScroll()
-                    }
-                }
             }
 
             LaunchedEffect(sorting) {
@@ -1605,7 +1587,7 @@ fun TableLayout(
                     val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
 
                     if (firstVisibleItem != null) {
-                        updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+                        filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
                     }
                 }
             }
