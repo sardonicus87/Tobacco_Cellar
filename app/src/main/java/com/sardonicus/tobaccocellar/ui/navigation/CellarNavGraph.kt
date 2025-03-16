@@ -31,7 +31,6 @@ import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 
-
 @Composable
 fun CellarNavHost(
     modifier: Modifier = Modifier,
@@ -46,9 +45,13 @@ fun CellarNavHost(
         composable(
             route = HomeDestination.route,
             enterTransition = {
-                if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
-                EnterTransition.None } else { null }
-                              },
+                if (initialState.destination.route == BlendDetailsDestination.route) {
+                    EnterTransition.None } else { null }
+            },
+            popEnterTransition = {
+                if (initialState.destination.route == BlendDetailsDestination.route) {
+                    EnterTransition.None } else { null }
+            }
         ) {
             HomeScreen(
                 navigateToStats = { navController.navigate(StatsDestination.route) {
@@ -113,11 +116,9 @@ fun CellarNavHost(
         }
         composable(
             route = BlendDetailsDestination.routeWithArgs,
+            arguments = listOf(navArgument(BlendDetailsDestination.itemsIdArg) { type = NavType.IntType }),
             enterTransition = { slideInHorizontally(initialOffsetX = { it }) },
-            exitTransition = { slideOutHorizontally(targetOffsetX = { it }) },
-            arguments = listOf(navArgument(BlendDetailsDestination.itemsIdArg) {
-                type = NavType.IntType
-            })
+            exitTransition = { slideOutHorizontally(targetOffsetX = { it }) }
         ) {
             BlendDetailsScreen(
                 navigateBack = { navController.navigate(HomeDestination.route) {
