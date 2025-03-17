@@ -45,11 +45,11 @@ fun CellarNavHost(
         composable(
             route = HomeDestination.route,
             enterTransition = {
-                if (initialState.destination.route == BlendDetailsDestination.route) {
+                if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
                     EnterTransition.None } else { null }
             },
             popEnterTransition = {
-                if (initialState.destination.route == BlendDetailsDestination.route) {
+                if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
                     EnterTransition.None } else { null }
             }
         ) {
@@ -123,7 +123,7 @@ fun CellarNavHost(
             BlendDetailsScreen(
                 navigateBack = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
-                    popUpTo(HomeDestination.route) { inclusive = true }
+                    popUpTo(HomeDestination.route) { inclusive = false }
                 }  },
                 onNavigateUp = { navController.navigateUp() },
             )
