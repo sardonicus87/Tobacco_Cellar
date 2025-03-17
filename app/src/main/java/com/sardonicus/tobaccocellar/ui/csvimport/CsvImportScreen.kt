@@ -687,8 +687,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Type, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Type]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Type] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Type,
@@ -707,8 +706,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.SubGenre, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.SubGenre]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.SubGenre] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.SubGenre,
@@ -727,8 +725,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Cut, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Cut]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Cut] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Cut,
@@ -749,8 +746,7 @@ fun CsvImportBody(
                                                     selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Components]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Components] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Components,
@@ -770,8 +766,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Quantity, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Quantity]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Quantity] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Quantity,
@@ -791,8 +786,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Favorite, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Favorite]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Favorite] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Favorite,
@@ -811,8 +805,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Disliked, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Disliked]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Disliked] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Disliked,
@@ -832,8 +825,7 @@ fun CsvImportBody(
                                                     selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Production]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Production] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Production,
@@ -852,8 +844,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Notes, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Notes]
-                                                ?: false,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Notes] == true,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Notes,
@@ -912,18 +903,16 @@ fun CsvImportBody(
                                                 .height(8.dp)
                                         )
                                         var dateFormatSelected by rememberSaveable {
-                                            mutableStateOf(
-                                                false
-                                            )
+                                            mutableStateOf(false)
                                         }
 
                                         DateFormatField(
                                             label = "CSV Date\nFormat:",
                                             selectedFormat = mappingOptions.dateFormat,
                                             onFormatSelected = { selectedFormat ->
-                                                viewModel.updateDateFormat(selectedFormat)
+                                                updateDateFormat(selectedFormat)
                                                 dateFormatSelected =
-                                                    if (selectedFormat.isNotBlank()) true else false
+                                                    selectedFormat.isNotBlank()
                                             },
                                             enabled = mappingOptions.collateTins,
                                             modifier = Modifier
