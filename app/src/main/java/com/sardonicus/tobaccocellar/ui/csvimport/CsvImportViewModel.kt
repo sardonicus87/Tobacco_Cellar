@@ -654,6 +654,11 @@ class CsvImportViewModel(
                                 else existingItem.inProduction,
                             )
 
+                            val existingComponents = withContext(Dispatchers.IO) {
+                                itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
+                                    it.componentName
+                                }
+                            }
                             var compsAdded = false
                             if (overwriteFields.contains(CsvField.Components) &&
                                 columnIndices[CsvField.Components] != null &&
@@ -664,17 +669,24 @@ class CsvImportViewModel(
                                 }
                                 insertComponents(componentsList)
                                 insertComponentsCrossRef(componentsList, existingItem.id)
+
+                                val insertedComponents = withContext(Dispatchers.IO) {
+                                    itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
+                                        it.componentName
+                                    }
+                                }
+                                if (insertedComponents != existingComponents) {
+                                    compsAdded = true
+                                }
                             }
 
                             val existingTins = withContext(Dispatchers.IO) {
                                 itemsRepository.getTinsForItemStream(existingItem.id).first()
                             }
 
-                            var tinsAddedToItem = false
                             if (collateTins) {
                                 if (existingTins.isEmpty()) {
                                     if (tinDataList.isNotEmpty()) {
-                                        tinsAddedToItem = true
                                         insertTins(existingItem.id, tinDataList)
                                         tinDataList.forEach { _ -> addedTins++ }
                                         preferencesRepo.setItemSyncState(existingItem.id, true)
@@ -687,8 +699,6 @@ class CsvImportViewModel(
                             }
                             if (existingItem != updatedItem) updatedCount++
                             if (existingItem == updatedItem && compsAdded) updatedCount++
-                            if (existingItem == updatedItem && tinsAddedToItem) updatedCount++
-                            tinsAddedToItem = false
                             compsAdded = false
                             null
                         }
