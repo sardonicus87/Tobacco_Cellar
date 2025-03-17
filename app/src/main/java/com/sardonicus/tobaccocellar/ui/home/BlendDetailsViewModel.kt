@@ -100,7 +100,6 @@ class BlendDetailsViewModel(
         }
     }
 
-
     private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption): String {
         val sum =
             when (quantityOption) {

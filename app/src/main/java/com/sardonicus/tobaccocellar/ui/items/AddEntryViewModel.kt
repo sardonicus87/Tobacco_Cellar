@@ -408,12 +408,6 @@ fun ComponentList.toComponents(existingComps: List<String>): List<Components> {
         }
 }
 
-//fun ComponentList.toComponents(): List<Components> {
-//    return componentString.split(", ").filter { it.isNotBlank() }.map {
-//        Components(componentName = it)
-//    }
-//}
-
 
 /** convert Items (Database Table) to ItemUiState **/
 fun Items.toItemUiState(isEntryValid: Boolean = false): ItemUiState = ItemUiState(
