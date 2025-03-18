@@ -34,7 +34,6 @@ class BlendDetailsViewModel(
             itemsRepository.getItemDetailsStream(itemsId),
             preferencesRepo.quantityOption
         ) { item, quantityOption ->
-
             val quantityRemap = when (quantityOption) {
                 QuantityOption.TINS -> {
                     val isMetric = isMetricLocale()
