@@ -23,6 +23,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -138,6 +139,16 @@ fun BlendDetailsScreen(
                         modifier = Modifier
                             .padding(0.dp),
                     )
+                    TextButton(
+                        onClick = { navigateBack() },
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                    ) {
+                        Text(
+                            text = "Go back",
+                            fontSize = 16.sp
+                        )
+                    }
                     Spacer(
                         modifier = Modifier
                             .weight(1.25f)
