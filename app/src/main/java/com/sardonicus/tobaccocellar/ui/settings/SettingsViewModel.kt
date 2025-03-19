@@ -590,14 +590,10 @@ fun getDatabaseFilePath(context: Context): String {
     val dbPath: String? = db.openHelper.writableDatabase.path
     db.close()
 
-//    val dbPath: String? = TobaccoDatabase.getDatabase(context).openHelper.writableDatabase.path
     return dbPath ?: ""
 }
 
-suspend fun backupDatabase(context: Context, backupFile: File) {
-//    val currentDb = Room.databaseBuilder(
-//        context, TobaccoDatabase::class.java,
-//        "tobacco_database").build()
+fun backupDatabase(context: Context, backupFile: File) {
     val dbPath = getDatabaseFilePath(context)
     val dbFile = File(dbPath)
     val walFile = File("$dbPath-wal")
@@ -611,7 +607,6 @@ suspend fun backupDatabase(context: Context, backupFile: File) {
     val tempShmFile = File(tempDir, "tobacco_database-shm")
 
     try {
-    //    currentDb.query(SimpleSQLiteQuery("VACUUM"))
 
         copyFile(dbFile, tempDbFile)
 
