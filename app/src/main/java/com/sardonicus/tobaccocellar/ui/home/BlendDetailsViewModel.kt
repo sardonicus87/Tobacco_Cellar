@@ -2,6 +2,9 @@ package com.sardonicus.tobaccocellar.ui.home
 
 import android.content.res.Configuration
 import android.content.res.Resources
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,10 +13,9 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
@@ -27,13 +29,18 @@ class BlendDetailsViewModel(
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
+    var blendDetails by mutableStateOf(BlendDetails())
+        private set
+
     private val itemsId: Int = checkNotNull(savedStateHandle[BlendDetailsDestination.itemsIdArg])
 
-    val blendDetails: StateFlow<BlendDetails> =
-        combine(
-            itemsRepository.getItemDetailsStream(itemsId),
-            preferencesRepo.quantityOption
-        ) { item, quantityOption ->
+    init {
+        viewModelScope.launch {
+            val details = itemsRepository.getItemDetailsStream(itemsId)
+                .filterNotNull()
+                .first()
+                .toBlendDetails()
+            val quantityOption = preferencesRepo.quantityOption.first()
             val quantityRemap = when (quantityOption) {
                 QuantityOption.TINS -> {
                     val isMetric = isMetricLocale()
@@ -42,19 +49,11 @@ class BlendDetailsViewModel(
                 else -> quantityOption
             }
 
-            val tinsTotal = calculateTotal(item!!.tins, quantityRemap)
-
-                BlendDetails(
-                    details = item,
-                    tinsTotal = tinsTotal,
-                    isLoading = false
-                )
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = BlendDetails(isLoading = true)
+            blendDetails = details.copy(
+                tinsTotal = calculateTotal(details.tins, quantityRemap)
             )
+        }
+    }
 
     fun calculateAge(date: Long?): String {
         if (date == null) {
@@ -93,7 +92,7 @@ class BlendDetailsViewModel(
         }
 
         return if (parts.isEmpty()) {
-            "less than a day."
+            "less than a day"
         } else {
             parts.joinToString(", ")
         }
@@ -102,28 +101,28 @@ class BlendDetailsViewModel(
     private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption): String {
         val sum =
             when (quantityOption) {
-            QuantityOption.OUNCES -> {
-                tins.sumOf{
-                    when (it.unit) {
-                        "oz" -> it.tinQuantity.toDouble()
-                        "lbs" -> it.tinQuantity.toDouble() * 16
-                        "grams" -> it.tinQuantity.toDouble() / 28.3495
-                        else -> 0.0
+                QuantityOption.OUNCES -> {
+                    tins.sumOf{
+                        when (it.unit) {
+                            "oz" -> it.tinQuantity.toDouble()
+                            "lbs" -> it.tinQuantity.toDouble() * 16
+                            "grams" -> it.tinQuantity.toDouble() / 28.3495
+                            else -> 0.0
+                        }
                     }
                 }
-            }
-            QuantityOption.GRAMS -> {
-                tins.sumOf{
-                    when (it.unit) {
-                        "oz" -> it.tinQuantity.toDouble() * 28.3495
-                        "lbs" -> it.tinQuantity.toDouble() * 453.592
-                        "grams" -> it.tinQuantity.toDouble()
-                        else -> 0.0
+                QuantityOption.GRAMS -> {
+                    tins.sumOf{
+                        when (it.unit) {
+                            "oz" -> it.tinQuantity.toDouble() * 28.3495
+                            "lbs" -> it.tinQuantity.toDouble() * 453.592
+                            "grams" -> it.tinQuantity.toDouble()
+                            else -> 0.0
+                        }
                     }
                 }
+                else -> null
             }
-            else -> null
-        }
 
         val formattedSum =
             when (quantityOption) {
@@ -190,7 +189,6 @@ class BlendDetailsViewModel(
             }
 
         return formattedSum?.toString() ?: ""
-
     }
 
     private fun isMetricLocale(): Boolean {
@@ -203,10 +201,51 @@ class BlendDetailsViewModel(
         }
     }
 
+    fun formatDecimal(number: Double): String {
+        val rounded = round(number * 100) / 100
+        val formatted = String.format("%.2f", rounded)
+        return when {
+            formatted.endsWith("00") -> {
+                formatted.substringBefore(".")
+            }
+            formatted.endsWith("0") -> {
+                formatted.substring(0, formatted.length - 1)
+            }
+            else -> formatted
+        }
+    }
+
 }
 
 data class BlendDetails(
-    val details: ItemsComponentsAndTins? = null,
-    val tinsTotal: String? = null,
-    val isLoading: Boolean = false
+    val id: Int = 0,
+    val brand: String = "",
+    val blend: String = "",
+    val type: String = "",
+    val quantity: Int = 0,
+    val disliked: Boolean = false,
+    val favorite: Boolean = false,
+    val notes: String = "",
+    val subGenre: String = "",
+    val cut: String = "",
+    val inProduction: Boolean = true,
+    val componentList: String = "",
+    val tins: List<Tins> = emptyList(),
+    val tinsTotal: String = "",
+)
+
+fun ItemsComponentsAndTins.toBlendDetails(): BlendDetails = BlendDetails(
+    id = items.id,
+    brand = items.brand,
+    blend = items.blend,
+    type = items.type,
+    quantity = items.quantity,
+    disliked = items.disliked,
+    favorite = items.favorite,
+    notes = items.notes,
+    subGenre = items.subGenre,
+    cut = items.cut,
+    inProduction = items.inProduction,
+    componentList = components.joinToString(", ") { it.componentName },
+    tins = tins,
 )

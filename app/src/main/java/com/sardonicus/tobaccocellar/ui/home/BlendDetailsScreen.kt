@@ -23,11 +23,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,9 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
-import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.items.formatLongDate
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -76,7 +71,6 @@ fun BlendDetailsScreen(
     viewModel: BlendDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val blendDetails by viewModel.blendDetails.collectAsState()
     val focusManager = LocalFocusManager.current
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
@@ -109,52 +103,12 @@ fun BlendDetailsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (blendDetails.isLoading) {
-                FullScreenLoading()
-            }
-            else if (blendDetails.details != null) {
-                BlendDetailsBody(
-                    blendDetails = blendDetails.details!!,
-                    tinsQuantity = blendDetails.tinsTotal!!,
-                    viewModel = viewModel,
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                )
-            }
-            else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1f)
-                    )
-                    Text(
-                        text = "Error loading details.",
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier
-                            .padding(0.dp),
-                    )
-                    TextButton(
-                        onClick = { navigateBack() },
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                    ) {
-                        Text(
-                            text = "Go back",
-                            fontSize = 16.sp
-                        )
-                    }
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1.25f)
-                    )
-                }
-            }
+            BlendDetailsBody(
+                blendDetails = viewModel.blendDetails,
+                viewModel = viewModel,
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+            )
         }
     }
 }
@@ -162,8 +116,7 @@ fun BlendDetailsScreen(
 
 @Composable
 fun BlendDetailsBody(
-    blendDetails: ItemsComponentsAndTins,
-    tinsQuantity: String,
+    blendDetails: BlendDetails,
     viewModel: BlendDetailsViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -192,7 +145,7 @@ fun BlendDetailsBody(
                     .padding(top = 20.dp)
             ) {
                 Text(
-                    text = blendDetails.items.blend,
+                    text = blendDetails.blend,
                     modifier = Modifier
                         .padding(bottom = 2.dp),
                     fontSize = 30.sp,
@@ -214,7 +167,7 @@ fun BlendDetailsBody(
                                 fontStyle = FontStyle.Italic,
                                 fontSize = 16.sp,
                             )
-                        ) { append(blendDetails.items.brand) }
+                        ) { append(blendDetails.brand) }
                     },
                     modifier = Modifier
                         .padding(bottom = 12.dp),
@@ -256,11 +209,11 @@ fun BlendDetailsBody(
                     modifier = Modifier
                         .weight(1f)
                 )
-                if (blendDetails.items.favorite || blendDetails.items.disliked) {
+                if (blendDetails.favorite || blendDetails.disliked) {
                     val icon =
-                        if (blendDetails.items.favorite) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24
+                        if (blendDetails.favorite) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24
                     val tint =
-                        if (blendDetails.items.favorite) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
+                        if (blendDetails.favorite) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
                     Icon(
                         painter = painterResource(id = icon),
                         contentDescription = null,
@@ -279,47 +232,33 @@ fun BlendDetailsBody(
                         .fillMaxWidth()
                         .padding(start = 12.dp)
                 ) {
-                    val type =
-                        if (blendDetails.items.type.isBlank()) "Unassigned" else blendDetails.items.type
+                    val type = if (blendDetails.type.isBlank()) "Unassigned" else blendDetails.type
                     Text(
-                        text = buildString(
-                            "Type: ",
-                            type,
-                        ),
+                        text = buildString("Type: ", type),
                         modifier = Modifier,
                     )
-                    if (blendDetails.items.subGenre.isNotBlank()) {
+                    if (blendDetails.subGenre.isNotBlank()) {
                         Text(
-                            text = buildString(
-                                "Subgenre: ",
-                                blendDetails.items.subGenre,
-                            ),
+                            text = buildString("Subgenre: ", blendDetails.subGenre),
                             modifier = Modifier,
                         )
                     }
-                    if (blendDetails.items.cut.isNotBlank()) {
+                    if (blendDetails.cut.isNotBlank()) {
                         Text(
-                            text = buildString(
-                                "Cut: ",
-                                blendDetails.items.cut,
-                            ),
+                            text = buildString("Cut: ", blendDetails.cut),
                             modifier = Modifier,
                         )
                     }
-                    if (blendDetails.components.joinToString("") { it.componentName }
-                            .isNotBlank()) {
+                    if (blendDetails.componentList.isNotBlank()) {
                         Text(
-                            text = buildString(
-                                "Components: ",
-                                blendDetails.components.joinToString(", ") { it.componentName },
-                            ),
+                            text = buildString("Components: ", blendDetails.componentList),
                             modifier = Modifier,
                         )
                     }
                     val productionStatus =
-                        if (blendDetails.items.inProduction) "in production" else "not in production"
+                        if (blendDetails.inProduction) "in production" else "not in production"
                     val productionStatusColor =
-                        if (blendDetails.items.inProduction) LocalContentColor.current else MaterialTheme.colorScheme.error
+                        if (blendDetails.inProduction) LocalContentColor.current else MaterialTheme.colorScheme.error
                     Text(
                         text = buildAnnotatedString {
                             withStyle(
@@ -341,7 +280,7 @@ fun BlendDetailsBody(
                     Text(
                         text = buildString(
                             "No. of Tins: ",
-                            blendDetails.items.quantity.toString(),
+                            blendDetails.quantity.toString(),
                         ),
                         modifier = Modifier,
                     )
@@ -351,7 +290,7 @@ fun BlendDetailsBody(
 
 
         // Notes
-        if (blendDetails.items.notes.isNotBlank()) {
+        if (blendDetails.notes.isNotBlank()) {
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Top,
@@ -378,7 +317,7 @@ fun BlendDetailsBody(
                 )
                 SelectionContainer {
                     NotesText(
-                        notes = blendDetails.items.notes,
+                        notes = blendDetails.notes,
                         modifier = Modifier
                             .padding(start = 12.dp, bottom = 8.dp)
                     )
@@ -424,7 +363,7 @@ fun BlendDetailsBody(
                     )
                     if (blendDetails.tins.any{ it.tinQuantity > 0}) {
                         Text(
-                            text = "($tinsQuantity)",
+                            text = "(${blendDetails.tinsTotal})",
                             modifier = Modifier,
                             fontWeight = FontWeight.Normal,
                             fontSize = 14.sp,
@@ -471,10 +410,11 @@ fun BlendDetailsBody(
                                                 )
                                             }
                                             if (it.unit.isNotEmpty()) {
+                                                val quantity = viewModel.formatDecimal(it.tinQuantity)
                                                 Text(
                                                     text = buildString(
                                                         "Quantity: ",
-                                                        "${it.tinQuantity} ${it.unit}",
+                                                        "$quantity ${it.unit}"
                                                     ),
                                                     modifier = Modifier,
                                                 )
