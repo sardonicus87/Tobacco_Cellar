@@ -2050,7 +2050,7 @@ fun ComponentFilterSection(
                 Text(
                     text = "Match: ",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Normal,
                     modifier = Modifier,
                     color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
                 )
