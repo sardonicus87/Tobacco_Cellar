@@ -45,6 +45,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -72,6 +74,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -97,6 +100,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -147,7 +151,7 @@ fun HomeScreen(
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val homeUiState by viewmodel.homeUiState.collectAsState()
-    val blendSearchText by filterViewModel.blendSearchText.collectAsState()
+    val searchText by filterViewModel.searchTextDisplay.collectAsState()
     val sorting by viewmodel.sorting
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -155,7 +159,7 @@ fun HomeScreen(
     val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
     val focusManager = LocalFocusManager.current
-    val blendSearchFocused by filterViewModel.blendSearchFocused.collectAsState()
+    val searchFocused by filterViewModel.searchFocused.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val filteredItems by viewmodel.filteredItems.collectAsState()
@@ -170,16 +174,16 @@ fun HomeScreen(
         }
     }
 
-    BackHandler(enabled = blendSearchFocused) {
-        if (blendSearchFocused) {
+    BackHandler(enabled = searchFocused) {
+        if (searchFocused) {
             focusManager.clearFocus()
             filterViewModel.updateSearchFocused(false)
         }
     }
     BackHandler(enabled = searchPerformed) {
-        if (!blendSearchFocused) {
+        if (!searchFocused) {
             filterViewModel.updateSearchText("")
-            filterViewModel.onBlendSearch("")
+            filterViewModel.onSearch("")
             filterViewModel.updateSearchIconOpacity(0.5f)
 
             if (searchPerformed) {
@@ -270,7 +274,7 @@ fun HomeScreen(
                 homeUiState = homeUiState,
                 filteredItems = filteredItems,
                 filterViewModel = filterViewModel,
-                blendSearchText = blendSearchText,
+                searchText = searchText,
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
             )
@@ -290,7 +294,7 @@ fun HomeScreen(
                     onShowMenu = viewmodel::onShowMenu,
                     onDismissMenu = viewmodel::onDismissMenu,
                     isMenuShown = isMenuShown,
-                    blendSearchFocused = blendSearchFocused,
+                    searchFocused = searchFocused,
                     sorting = sorting,
                     updateSorting = viewmodel::updateSorting,
                     modifier = modifier
@@ -303,24 +307,23 @@ fun HomeScreen(
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
     filteredItems: List<ItemsComponentsAndTins>,
     filterViewModel: FilterViewModel,
-    blendSearchText: String,
+    searchText: String,
     selectView: (Boolean) -> Unit,
     isTableView: Boolean,
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(LocalCustomColors.current.homeHeaderBg)
-            .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
+            .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+            .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -362,14 +365,18 @@ private fun HomeHeader(
         Box(
             modifier = Modifier
                 .padding(horizontal = 0.dp)
-                .weight(1f, false)
+                .weight(1f, false),
         ) {
+            val coroutineScope = rememberCoroutineScope()
+            val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+            val currentSetting by LocalCellarApplication.current.preferencesRepo.searchSetting.collectAsState(initial = SearchSetting.BLEND)
+
             CustomBlendSearch(
-                value = blendSearchText,
+                value = searchText,
                 onValueChange = {
                     filterViewModel.updateSearchText(it)
                     if (it.isEmpty()) {
-                        filterViewModel.onBlendSearch(it)
+                        filterViewModel.onSearch(it)
                         filterViewModel.updateSearchIconOpacity(0.5f)
                     }
                     if (it.isNotEmpty()) {
@@ -377,6 +384,7 @@ private fun HomeHeader(
                     }
                 },
                 modifier = Modifier
+                    .fillMaxWidth()
                     .onFocusChanged {
                         if (it.isFocused) filterViewModel.updateSearchFocused(true)
                         else filterViewModel.updateSearchFocused(false)
@@ -388,11 +396,63 @@ private fun HomeHeader(
                         }
                         delay(15)
                         EventBus.emit(SearchPerformedEvent)
-                        filterViewModel.onBlendSearch(blendSearchText)
+                        filterViewModel.onSearch(searchText)
+                    }
+                },
+                leadingIcon = {
+                    val iconAlpha = filterViewModel.searchIconOpacity.collectAsState().value
+                    var expanded by rememberSaveable { mutableStateOf(false) }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .clickable(
+                                enabled = true,
+                                onClick = { expanded = !expanded }
+                            )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.search),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(end = 2.dp)
+                                .size(20.dp),
+                            tint = LocalContentColor.current.copy(alpha = iconAlpha)
+                        )
+                        Icon(
+                            painter = painterResource(id = R.drawable.triangle_arrow_down),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 6.dp, y = 1.dp)
+                                .padding(0.dp)
+                                .size(15.dp),
+                            tint = LocalContentColor.current.copy(alpha = iconAlpha)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier,
+                        containerColor = LocalCustomColors.current.textField,
+                        offset = DpOffset((-2).dp, 2.dp)
+                    ) {
+                        listOf(SearchSetting.BLEND, SearchSetting.NOTES).forEach {
+                            DropdownMenuItem(
+                                text = { Text(text = it.value) },
+                                onClick = {
+                                    filterViewModel.saveSearchSetting(it.value)
+                                    expanded = false
+                                },
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                enabled = true,
+                            )
+                        }
                     }
                 },
                 trailingIcon = {
-                    if (blendSearchText.isNotEmpty()) {
+                    if (searchText.isNotEmpty()) {
                         Icon(
                             painter = painterResource(id = R.drawable.clear_24),
                             contentDescription = null,
@@ -401,7 +461,7 @@ private fun HomeHeader(
                                 .clickable(
                                     onClick = {
                                         filterViewModel.updateSearchText("")
-                                        filterViewModel.onBlendSearch("")
+                                        filterViewModel.onSearch("")
                                         filterViewModel.updateSearchIconOpacity(0.5f)
 
                                         if (searchPerformed) {
@@ -414,12 +474,13 @@ private fun HomeHeader(
                                 .padding(0.dp),
                         )
                     }
-                }
+                },
+                placeholder = "${currentSetting.value} Search",
             )
         }
         Spacer(
             modifier = Modifier
-                .width(12.dp)
+                .width(8.dp)
         )
         Text(
             text = "Entries: ${filteredItems.size}",
@@ -442,25 +503,13 @@ private fun CustomBlendSearch(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "Blend Search",
-    leadingIcon: @Composable () -> Unit = {
-        val filterViewModel = LocalCellarApplication.current.filterViewModel
-        val iconAlpha = filterViewModel.searchIconOpacity.collectAsState().value
-        Icon(
-            painter = painterResource(id = R.drawable.search),
-            contentDescription = null,
-            modifier = Modifier
-                .padding(0.dp)
-                .size(20.dp),
-            tint = LocalContentColor.current.copy(alpha = iconAlpha)
-        )
-    },
+    leadingIcon: @Composable () -> Unit = {},
     trailingIcon: @Composable () -> Unit = {},
     onImeAction: () -> Unit = {}
 ) {
     var showCursor by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-    val coroutineScope = rememberCoroutineScope()
 
     BasicTextField(
         value = value,
@@ -493,8 +542,11 @@ private fun CustomBlendSearch(
             }
         ),
         singleLine = true,
-        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
-            else { SolidColor(Color.Transparent) },
+        cursorBrush = if (showCursor) {
+            SolidColor(MaterialTheme.colorScheme.primary)
+        } else {
+            SolidColor(Color.Transparent)
+        },
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier
@@ -521,19 +573,6 @@ private fun CustomBlendSearch(
                     innerTextField()
                 }
                 trailingIcon()
-//                if (value.isNotEmpty()) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.clear_24),
-//                        contentDescription = null,
-//                        modifier = Modifier
-//                            .size(20.dp)
-//                            .clickable(onClick = {
-//                                onValueChange("")
-//                                }
-//                            )
-//                            .padding(0.dp),
-//                    )
-//                }
             }
         }
     )
@@ -553,7 +592,7 @@ private fun HomeBody(
     onShowMenu: (Int) -> Unit,
     onDismissMenu: () -> Unit,
     isMenuShown: Boolean,
-    blendSearchFocused: Boolean,
+    searchFocused: Boolean,
     sorting: Sorting,
     updateSorting: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -609,7 +648,7 @@ private fun HomeBody(
                         itemsList = items,
                         formattedQuantity = formattedQuantity,
                         filterViewModel = filterViewModel,
-                        blendSearchFocused = blendSearchFocused,
+                        searchFocused = searchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
                         onEditClick = { onEditClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
@@ -625,7 +664,7 @@ private fun HomeBody(
                         itemsList = items,
                         formattedQuantity = formattedQuantity,
                         filterViewModel = filterViewModel,
-                        blendSearchFocused = blendSearchFocused,
+                        searchFocused = searchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
                         onEditClick = { onEditClick(it.id) },
                         activeMenuId = activeMenuId,
@@ -838,7 +877,7 @@ fun ListViewMode(
     itemsList: List<ItemsComponentsAndTins>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
-    blendSearchFocused: Boolean,
+    searchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
     onEditClick: (Items) -> Unit,
     activeMenuId: Int?,
@@ -881,7 +920,7 @@ fun ListViewMode(
                         .padding(0.dp)
                         .combinedClickable(
                             onClick = {
-                                if (blendSearchFocused) {
+                                if (searchFocused) {
                                     focusManager.clearFocus()
                                 } else {
                                     if (isMenuShown && activeMenuId == item.items.id) {
@@ -1206,7 +1245,7 @@ fun TableViewMode(
     itemsList: List<ItemsComponentsAndTins>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
-    blendSearchFocused: Boolean,
+    searchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
     onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
@@ -1227,7 +1266,7 @@ fun TableViewMode(
         items = itemsList,
         formattedQuantity = formattedQuantity,
         filterViewModel = filterViewModel,
-        blendSearchFocused = blendSearchFocused,
+        blendSearchFocused = searchFocused,
         columnMinWidths = columnMinWidths,
         onDetailsClick = onDetailsClick,
         onEditClick = onEditClick,
@@ -1283,6 +1322,7 @@ fun TableLayout(
         val columnState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
         val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
+        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
         Column(
             modifier = modifier
@@ -1409,7 +1449,9 @@ fun TableLayout(
                                                 if (blendSearchFocused) {
                                                     focusManager.clearFocus()
                                                 } else {
-                                                    filterViewModel.getPositionTrigger()
+                                                    if (!searchPerformed) {
+                                                        filterViewModel.getPositionTrigger()
+                                                    }
                                                     onDetailsClick(item.items)
                                                 }
                                             },
@@ -1417,7 +1459,10 @@ fun TableLayout(
                                                 if (blendSearchFocused) {
                                                     focusManager.clearFocus()
                                                 } else {
-                                                    filterViewModel.getPositionTrigger()
+                                                    if (!searchPerformed) {
+                                                        filterViewModel.getPositionTrigger()
+                                                    }
+                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     onEditClick(item.items)
                                                 }
                                             }
@@ -1434,7 +1479,9 @@ fun TableLayout(
                                                 if (blendSearchFocused) {
                                                     focusManager.clearFocus()
                                                 } else {
-                                                    filterViewModel.getPositionTrigger()
+                                                    if (!searchPerformed) {
+                                                        filterViewModel.getPositionTrigger()
+                                                    }
                                                     onDetailsClick(item.items)
                                                 }
                                             },
@@ -1442,8 +1489,10 @@ fun TableLayout(
                                                 if (blendSearchFocused) {
                                                     focusManager.clearFocus()
                                                 } else {
-                                                    focusManager.clearFocus()
-                                                    filterViewModel.getPositionTrigger()
+                                                    if (!searchPerformed) {
+                                                        filterViewModel.getPositionTrigger()
+                                                    }
+                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     onEditClick(item.items)
                                                 }
                                             }
@@ -1532,7 +1581,6 @@ fun TableLayout(
             val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
             val savedItemId by filterViewModel.savedItemId.collectAsState()
             val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
-            val searchPerformed by filterViewModel.searchPerformed.collectAsState()
             val shouldReturn by filterViewModel.shouldReturn.collectAsState()
             val getPosition by filterViewModel.getPosition.collectAsState()
 
