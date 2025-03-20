@@ -116,7 +116,7 @@ class HomeViewModel(
 
     private fun filterParameters(): FilterParameters {
         return FilterParameters(
-            filterViewModel.blendSearchValue.value,
+            filterViewModel.searchValue.value,
             filterViewModel.selectedBrands.value,
             filterViewModel.selectedTypes.value,
             filterViewModel.selectedUnassigned.value,
@@ -142,7 +142,7 @@ class HomeViewModel(
         viewModelScope.launch {
             combine(
                 everythingFlow,
-                filterViewModel.blendSearchValue,
+                filterViewModel.searchValue,
                 filterViewModel.selectedBrands,
                 filterViewModel.selectedTypes,
                 filterViewModel.selectedUnassigned,
@@ -160,37 +160,38 @@ class HomeViewModel(
                 filterViewModel.selectedSubgenre,
                 filterViewModel.selectedCut,
                 filterViewModel.selectedProduction,
-                filterViewModel.selectedOutOfProduction
+                filterViewModel.selectedOutOfProduction,
+                preferencesRepo.searchSetting
             ) {
-                filterItems(everythingFlow.first(), filterParameters())
+                filterItems(everythingFlow.first(), filterParameters(), preferencesRepo.searchSetting.first())
             }.collect { }
         }
     }
 
-    private fun filterItems(allItems: List<ItemsComponentsAndTins>, filterParams: FilterParameters) {
+    private fun filterItems(allItems: List<ItemsComponentsAndTins>, filterParams: FilterParameters, searchSetting: SearchSetting) {
         viewModelScope.launch{
-            val blendSearchValue = filterParams.blendSearchValue as String
-            val brands = filterParams.selectedBrands as List<String>
-            val types = filterParams.selectedTypes as List<String>
-            val unassigned = filterParams.selectedUnassigned as Boolean
-            val favorites = filterParams.selectedFavorites as Boolean
-            val dislikeds = filterParams.selectedDislikeds as Boolean
-            val neutral = filterParams.selectedNeutral as Boolean
-            val nonNeutral = filterParams.selectedNonNeutral as Boolean
-            val inStock = filterParams.selectedInStock as Boolean
-            val outOfStock = filterParams.selectedOutOfStock as Boolean
-            val excludedBrands = filterParams.selectedExcludeBrands as List<String>
-            val excludedLikes = filterParams.selectedExcludeLikes as Boolean
-            val excludedDislikes = filterParams.selectedExcludeDislikes as Boolean
-            val components = filterParams.selectedComponent as List<String>
-            val matchAll = filterParams.compMatchAll as Boolean
-            val subgenres = filterParams.selectedSubgenre as List<String>
-            val cuts = filterParams.selectedCut as List<String>
-            val production = filterParams.selectedProduction as Boolean
-            val outOfProduction = filterParams.selectedOutOfProduction as Boolean
+            val searchValue = filterParams.searchValue
+            val brands = filterParams.selectedBrands
+            val types = filterParams.selectedTypes
+            val unassigned = filterParams.selectedUnassigned
+            val favorites = filterParams.selectedFavorites
+            val dislikeds = filterParams.selectedDislikeds
+            val neutral = filterParams.selectedNeutral
+            val nonNeutral = filterParams.selectedNonNeutral
+            val inStock = filterParams.selectedInStock
+            val outOfStock = filterParams.selectedOutOfStock
+            val excludedBrands = filterParams.selectedExcludeBrands
+            val excludedLikes = filterParams.selectedExcludeLikes
+            val excludedDislikes = filterParams.selectedExcludeDislikes
+            val components = filterParams.selectedComponent
+            val matchAll = filterParams.compMatchAll
+            val subgenres = filterParams.selectedSubgenre
+            val cuts = filterParams.selectedCut
+            val production = filterParams.selectedProduction
+            val outOfProduction = filterParams.selectedOutOfProduction
 
             val filteredItems =
-                if (filterParams.blendSearchValue.isBlank()) {
+                if (searchValue.isBlank()) {
                     allItems.filter { items ->
                         val componentMatching = when (matchAll) {
                             true -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
@@ -216,8 +217,17 @@ class HomeViewModel(
                                 (!outOfProduction || !items.items.inProduction)
                     }
                 } else {
-                    allItems.filter { items ->
-                        items.items.blend.contains(blendSearchValue, ignoreCase = true)
+                    when (searchSetting) {
+                         SearchSetting.BLEND -> {
+                            allItems.filter {
+                                it.items.blend.contains(searchValue, ignoreCase = true)
+                            }
+                        }
+                        SearchSetting.NOTES -> {
+                            allItems.filter {
+                                it.items.notes.contains(searchValue, ignoreCase = true)
+                            }
+                        }
                     }
                 }
 
@@ -244,7 +254,7 @@ class HomeViewModel(
     }
 
 
-    /** Toggle Cellar View **/
+    /** Toggle view **/
     fun selectView(isTableView: Boolean) {
         viewModelScope.launch {
             preferencesRepo.saveViewPreference(isTableView)
@@ -430,7 +440,7 @@ data class Sorting(
 
 @Stable
 data class FilterParameters(
-    val blendSearchValue: String,
+    val searchValue: String,
     val selectedBrands: List<String>,
     val selectedTypes: List<String>,
     val selectedUnassigned: Boolean,
@@ -450,3 +460,8 @@ data class FilterParameters(
     val selectedProduction: Boolean,
     val selectedOutOfProduction: Boolean,
 )
+
+sealed class SearchSetting(val value: String) {
+    data object BLEND: SearchSetting("Blend")
+    data object NOTES: SearchSetting("Notes")
+}

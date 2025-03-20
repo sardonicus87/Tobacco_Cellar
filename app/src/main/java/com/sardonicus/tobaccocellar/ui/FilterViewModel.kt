@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
@@ -28,7 +29,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class FilterViewModel (
-    private val itemsRepository: ItemsRepository
+    private val itemsRepository: ItemsRepository,
+    private val preferencesRepo: PreferencesRepo
 ): ViewModel() {
     /** BottomSheet State **/
     private val _bottomSheetState = MutableStateFlow(BottomSheetState.CLOSED)
@@ -51,25 +53,31 @@ class FilterViewModel (
         _searchIconOpacity.value = opacity
     }
 
-    private val _blendSearchValue = MutableStateFlow("")
-    val blendSearchValue: StateFlow<String> = _blendSearchValue
-
-    fun onBlendSearch(text: String) {
-        _blendSearchValue.value = text
+    fun saveSearchSetting(setting: String) {
+        viewModelScope.launch {
+            preferencesRepo.setSearchSetting(setting)
+        }
     }
 
-    private val _blendSearchText = MutableStateFlow("")
-    val blendSearchText: StateFlow<String> = _blendSearchText
+    private val _searchTextDisplay = MutableStateFlow("")
+    val searchTextDisplay: StateFlow<String> = _searchTextDisplay
 
     fun updateSearchText(text: String) {
-        _blendSearchText.value = text
+        _searchTextDisplay.value = text
     }
 
-    private val _blendSearchFocused = MutableStateFlow(false)
-    val blendSearchFocused: StateFlow<Boolean> = _blendSearchFocused.asStateFlow()
+    private val _searchValue = MutableStateFlow("")
+    val searchValue: StateFlow<String> = _searchValue
+
+    fun onSearch(text: String) {
+        _searchValue.value = text
+    }
+
+    private val _searchFocused = MutableStateFlow(false)
+    val searchFocused: StateFlow<Boolean> = _searchFocused.asStateFlow()
 
     fun updateSearchFocused(focused: Boolean) {
-        _blendSearchFocused.value = focused
+        _searchFocused.value = focused
     }
 
 

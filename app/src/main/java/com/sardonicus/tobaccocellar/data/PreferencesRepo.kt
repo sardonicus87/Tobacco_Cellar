@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,7 @@ class PreferencesRepo(
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
+        val SEARCH_SETTING = stringPreferencesKey("search_setting")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -195,6 +197,29 @@ class PreferencesRepo(
             getItemSyncState(itemId).first().toString()
         } catch (e: IOException) {
             ""
+        }
+    }
+
+    /** Home header search setting **/
+    val searchSetting: Flow<SearchSetting> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading search preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            when (it[SEARCH_SETTING]) {
+                SearchSetting.BLEND.value -> SearchSetting.BLEND
+                SearchSetting.NOTES.value -> SearchSetting.NOTES
+                else -> SearchSetting.BLEND
+            }
+        }
+
+    suspend fun setSearchSetting(setting: String) {
+        dataStore.edit {
+            it[SEARCH_SETTING] = setting
         }
     }
 
