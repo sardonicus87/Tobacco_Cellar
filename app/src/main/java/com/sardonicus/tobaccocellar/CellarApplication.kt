@@ -21,7 +21,7 @@ class CellarApplication : Application() {
     lateinit var preferencesRepo: PreferencesRepo
     lateinit var csvHelper: CsvHelper
     val filterViewModel: FilterViewModel by lazy {
-        FilterViewModel(container.itemsRepository)
+        FilterViewModel(container.itemsRepository, preferencesRepo)
     }
 
     override fun onCreate() {

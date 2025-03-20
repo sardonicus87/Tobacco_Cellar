@@ -19,7 +19,10 @@ object AppViewModelProvider {
 
     val Factory = viewModelFactory {
         initializer {
-            FilterViewModel(cellarApplication().container.itemsRepository)
+            FilterViewModel(
+                cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo
+            )
         }
 
         initializer {
