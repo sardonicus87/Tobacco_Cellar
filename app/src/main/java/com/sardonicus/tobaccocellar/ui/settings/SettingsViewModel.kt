@@ -215,52 +215,60 @@ class SettingsViewModel(
         viewModelScope.launch {
             setLoadingState(true)
 
-            val backupFile = context.contentResolver.openFileDescriptor(uri, "w")?.use {
+            val tempBackupFile = context.contentResolver.openFileDescriptor(uri, "w")?.use {
                 File(context.cacheDir, "temp_db_backup.tcbu")
             } ?: throw IOException("Could not open file descriptor for backup")
 
+            try {
+                if (backupState.value.databaseChecked) {
+                    backupDatabase(context, tempBackupFile)
+                }
 
-            if (backupState.value.databaseChecked) {
-                backupDatabase(context, backupFile)
+                val databaseBytes = if (backupState.value.databaseChecked) {
+                    tempBackupFile.readBytes()
+                } else { ByteArray(0) }
+
+
+                val itemIds = withContext(Dispatchers.IO){ itemsRepository.getAllItemIds() }
+
+                val itemSyncStateStringBuilder = StringBuilder()
+                for (itemId in itemIds) {
+                    val isSynced = preferencesRepo.getItemSyncStateString(itemId)
+                    itemSyncStateStringBuilder.append("$itemId:$isSynced\n")
+                }
+                val itemSyncStateBytes = itemSyncStateStringBuilder.toString().toByteArray(Charset.forName("UTF-8"))
+
+//                val dbVersion = TobaccoDatabase.getDatabaseVersion(context).toString().toByteArray()
+                val databaseLengthBytes = databaseBytes.size.toByteArray()
+
+                val combinedDatabaseBytes = ByteArray(databaseLengthBytes.size + databaseBytes.size + itemSyncStateBytes.size)
+                databaseLengthBytes.copyInto(combinedDatabaseBytes)
+                databaseBytes.copyInto(combinedDatabaseBytes, databaseLengthBytes.size)
+                itemSyncStateBytes.copyInto(combinedDatabaseBytes, databaseBytes.size)
+
+                val settingsBytes = if (backupState.value.settingsChecked) createSettingsBytes() else ByteArray(0)
+
+                val magicNumber = byteArrayOf(0x54, 0x43, 0x42, 0x55) // "TCBU"
+                val version = byteArrayOf(0x01) // Version 1
+                val settingsLength = settingsBytes.size.toByteArray()
+
+                val header = magicNumber + version + settingsLength
+
+                val combinedBytes = ByteArray(header.size + combinedDatabaseBytes.size + settingsBytes.size)
+
+                header.copyInto(combinedBytes)
+                combinedDatabaseBytes.copyInto(combinedBytes, header.size)
+                settingsBytes.copyInto(combinedBytes, header.size + combinedDatabaseBytes.size)
+
+                writeBytesToFile(uri, combinedBytes, context)
+                showSnackbar("Backup complete.")
+            } catch (e: Exception) {
+                showSnackbar("Backup failed.")
+                throw e
+            } finally {
+                deleteTempFile(tempBackupFile)
+                setLoadingState(false)
             }
-
-            val databaseBytes = if (backupState.value.databaseChecked) {
-                backupFile.readBytes() } else { ByteArray(0) }
-
-
-            val itemIds = withContext(Dispatchers.IO){ itemsRepository.getAllItemIds() }
-            val itemSyncStateStringBuilder = StringBuilder()
-            for (itemId in itemIds) {
-                val isSynced = preferencesRepo.getItemSyncStateString(itemId)
-                itemSyncStateStringBuilder.append("$itemId:$isSynced\n")
-            }
-            val itemSyncStateBytes = itemSyncStateStringBuilder.toString().toByteArray(Charset.forName("UTF-8"))
-
-            val databaseLengthBytes = databaseBytes.size.toByteArray()
-
-            val combinedDatabaseBytes = ByteArray(databaseLengthBytes.size + databaseBytes.size + itemSyncStateBytes.size)
-            databaseLengthBytes.copyInto(combinedDatabaseBytes)
-            databaseBytes.copyInto(combinedDatabaseBytes, databaseLengthBytes.size)
-            itemSyncStateBytes.copyInto(combinedDatabaseBytes, databaseBytes.size)
-
-            val settingsBytes = if (backupState.value.settingsChecked) createSettingsBytes() else ByteArray(0)
-
-            val magicNumber = byteArrayOf(0x54, 0x43, 0x42, 0x55) // "TCBU"
-            val version = byteArrayOf(0x01) // Version 1
-            val settingsLength = settingsBytes.size.toByteArray()
-
-            val header = magicNumber + version + settingsLength
-
-            val combinedBytes = ByteArray(header.size + combinedDatabaseBytes.size + settingsBytes.size)
-
-            header.copyInto(combinedBytes)
-            combinedDatabaseBytes.copyInto(combinedBytes, header.size)
-            settingsBytes.copyInto(combinedBytes, header.size + combinedDatabaseBytes.size)
-
-            writeBytesToFile(uri, combinedBytes, context)
-            deleteTempFile(backupFile)
-            setLoadingState(false)
-            showSnackbar("Backup complete.")
         }
     }
 
@@ -278,84 +286,62 @@ class SettingsViewModel(
     fun restoreBackup(context: Context, uri: Uri) {
         viewModelScope.launch {
             setLoadingState(true)
+            var message = ""
 
             val bytes = readBytesFromFile(uri, context)
-            if (bytes == null)
-            {
-                setLoadingState(false)
-                showSnackbar("Invalid file.")
-                return@launch
-            }
+            if (bytes == null) {
+                message = "Invalid file."
+            } else {
+                val fileContentState = validateBackupFile(bytes)
+                val restoreState = _restoreState.value
+                val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
 
-            val fileContentState = validateBackupFile(bytes)
-
-            val restoreState = _restoreState.value
-            var message: String? = ""
-
-            val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
-
-            if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
-                setLoadingState(false)
-                showSnackbar("Invalid file.")
-                return@launch
-            }
-
-            if (restoreState.databaseChecked && restoreState.settingsChecked) {
-
-                if (fileContentState.databasePresent && fileContentState.settingsPresent) {
-                    restoreDatabase(context, databaseBytes)
-                    restoreItemSyncState(itemSyncStateBytes)
-                    restoreSettings(settingsBytes)
-                    message = "Database and Settings restored."
+                if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
+                    message = "Invalid file."
                 } else {
-                    setLoadingState(false)
-                    if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
-                        message = "Invalid file."
+                    if (restoreState.databaseChecked && restoreState.settingsChecked) {
+                        if (fileContentState.databasePresent && fileContentState.settingsPresent) {
+                            try {
+                                restoreDatabase(context, databaseBytes)
+                            } catch (e: Exception) {
+                                message = "Error restoring database."
+                            }
+                            if (message.isBlank()) {
+                                restoreItemSyncState(itemSyncStateBytes)
+                            }
+                            restoreSettings(settingsBytes)
+                            message = "Database and Settings restored."
+                        } else {
+                            if (!fileContentState.databasePresent) {
+                                message = "Restore failed: file missing database data."
+                            } else { message = "Restore failed: file missing settings data." }
+                        }
                     }
-                    else if (!fileContentState.databasePresent) {
-                        message = "Restore failed: file missing database data."
+                    else if (restoreState.databaseChecked) {
+                        if (fileContentState.databasePresent) {
+                            try {
+                                restoreDatabase(context, databaseBytes)
+                            } catch (e: Exception) {
+                                message = "Error restoring database."
+                            }
+                            if (message.isBlank()) {
+                                restoreItemSyncState(itemSyncStateBytes)
+                                message = "Database restored."
+                            }
+                        } else { message = "Backup file does not contain database data." }
                     }
-                    else if (!fileContentState.settingsPresent) {
-                        message = "Restore failed: file missing settings data."
+                    else if (restoreState.settingsChecked) {
+                        if (fileContentState.settingsPresent) {
+                            restoreSettings(settingsBytes)
+                            message = "Settings restored."
+                        } else {
+                            message = "Backup file does not contain settings data."
+                        }
                     }
-                    if (message != null) {
-                        showSnackbar(if (message.isNotBlank()) message else "Invalid file.")
-                    }
-                    return@launch
                 }
             }
-
-            else if (restoreState.databaseChecked) {
-                if (fileContentState.databasePresent) {
-                    try {
-                        restoreDatabase(context, databaseBytes)
-                    } catch (e: Exception) {
-                        setLoadingState(false)
-                        showSnackbar("Error restoring database.")
-                        return@launch
-                    }
-                    restoreItemSyncState(itemSyncStateBytes)
-                    message = "Database restored."
-                } else {
-                    setLoadingState(false)
-                    showSnackbar("Backup file does not contain database data.")
-                    return@launch
-                }
-            }
-
-            else if (restoreState.settingsChecked) {
-                if (fileContentState.settingsPresent) {
-                    restoreSettings(settingsBytes)
-                    message = "Settings restored."
-                } else {
-                    setLoadingState(false)
-                    showSnackbar("Backup file does not contain settings data.")
-                    return@launch
-                }
-            }
-
             setLoadingState(false)
-            showSnackbar("${if (message == "") "Nothing" else message}")
+            showSnackbar(message)
         }
     }
 
@@ -399,13 +385,11 @@ class SettingsViewModel(
     }
 
     suspend fun restoreDatabase(context: Context, databaseBytes: ByteArray) {
-        val currentDb = Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database").build()
-
         val dbPath = getDatabaseFilePath(context)
         val dbFile = File(dbPath)
         val walFile = File("$dbPath-wal")
         val shmFile = File("$dbPath-shm")
-        val backupFile = File("$dbPath.bak")
+        val backupDbFile = File("$dbPath.bak")
         val tempDir = File(context.cacheDir, "temp_db_restore_dir")
         tempDir.mkdirs()
         val tempDbFile = File(tempDir, "tobacco_database")
@@ -413,14 +397,9 @@ class SettingsViewModel(
         val tempShmFile = File(tempDir, "tobacco_database-shm")
 
         try {
-          //  currentDb.close()
-
-            copyFile(dbFile, backupFile)
+            copyFile(dbFile, backupDbFile)
             if (walFile.exists()) { copyFile(walFile, File("$dbPath-wal.bak")) }
-            if(shmFile.exists()) { copyFile(shmFile, File("$dbPath-shm.bak")) }
-            dbFile.delete()
-            walFile.delete()
-            shmFile.delete()
+            if (shmFile.exists()) { copyFile(shmFile, File("$dbPath-shm.bak")) }
 
             val dbLength = if (databaseBytes.isNotEmpty()) { databaseBytes.size / 3 } else { 0 }
             val dbBytes = databaseBytes.copyOfRange(0, dbLength)
@@ -435,36 +414,23 @@ class SettingsViewModel(
             if (walBytes.isNotEmpty()) { copyFile(tempWalFile, walFile) }
             if (shmBytes.isNotEmpty()) { copyFile(tempShmFile, shmFile) }
 
-            backupFile.delete()
-            File("$dbPath-wal.bak").delete()
-            File("$dbPath-shm.bak").delete()
-            tempDir.deleteRecursively()
-
         } catch (e: Exception) {
-            dbFile.delete()
-            walFile.delete()
-            shmFile.delete()
 
-            copyFile(backupFile, dbFile)
+            copyFile(backupDbFile, dbFile)
             if (File("$dbPath-wal.bak").exists()) { copyFile(File("$dbPath-wal.bak"), walFile) }
             if (File("$dbPath-shm.bak").exists()) { copyFile(File("$dbPath-shm.bak"), shmFile) }
 
-            backupFile.delete()
+            backupDbFile.delete()
             File("$dbPath-wal.bak").delete()
             File("$dbPath-shm.bak").delete()
-            tempDir.deleteRecursively()
             throw e
         } finally {
-            val newDb = Room.databaseBuilder(
-                context, TobaccoDatabase::class.java, "tobacco_database"
-            ).build()
-            itemsRepository.updateDatabase(newDb)
-
+            tempDir.deleteRecursively()
             EventBus.emit(DatabaseRestoreEvent)
         }
     }
 
-    private suspend fun restoreItemSyncState(itemSyncStateBytes: ByteArray) {
+    private fun restoreItemSyncState(itemSyncStateBytes: ByteArray) {
         viewModelScope.launch {
             val itemSyncStateString = String(itemSyncStateBytes, Charset.forName("UTF-8"))
             val lines = itemSyncStateString.lines()
@@ -487,7 +453,6 @@ class SettingsViewModel(
             parseSettingsText(settingsText, preferencesRepo)
         }
     }
-
 
 }
 
@@ -630,11 +595,13 @@ fun backupDatabase(context: Context, backupFile: File) {
                 }
             }
         }
-
-        tempDir.deleteRecursively()
-
     } catch (e: Exception) {
+        copyFile(tempDbFile, dbFile)
+        if (tempWalFile.exists()) { copyFile(tempWalFile, walFile) }
+        if (tempShmFile.exists()) { copyFile(tempShmFile, shmFile) }
         throw e
+    } finally {
+        tempDir.deleteRecursively()
     }
 }
 
