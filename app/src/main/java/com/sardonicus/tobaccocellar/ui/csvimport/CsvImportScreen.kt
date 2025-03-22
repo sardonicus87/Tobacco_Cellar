@@ -687,7 +687,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Type, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Type] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Type] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Type,
@@ -706,7 +706,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.SubGenre, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.SubGenre] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.SubGenre] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.SubGenre,
@@ -725,7 +725,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Cut, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Cut] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Cut] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Cut,
@@ -746,7 +746,7 @@ fun CsvImportBody(
                                                     selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Components] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Components] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Components,
@@ -766,7 +766,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Quantity, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Quantity] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Quantity] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Quantity,
@@ -786,7 +786,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Favorite, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Favorite] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Favorite] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Favorite,
@@ -805,7 +805,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Disliked, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Disliked] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Disliked] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Disliked,
@@ -825,7 +825,7 @@ fun CsvImportBody(
                                                     selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Production] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Production] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Production,
@@ -844,7 +844,7 @@ fun CsvImportBody(
                                                     CsvImportViewModel.CsvField.Notes, selectedColumn
                                                 )
                                             },
-                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Notes] == true,
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Notes] ?: false,
                                             onOverwrite = {
                                                 viewModel.updateOverwriteSelection(
                                                     CsvImportViewModel.CsvField.Notes,
@@ -910,9 +910,9 @@ fun CsvImportBody(
                                             label = "CSV Date\nFormat:",
                                             selectedFormat = mappingOptions.dateFormat,
                                             onFormatSelected = { selectedFormat ->
-                                                updateDateFormat(selectedFormat)
+                                                viewModel.updateDateFormat(selectedFormat)
                                                 dateFormatSelected =
-                                                    selectedFormat.isNotBlank()
+                                                    if (selectedFormat.isNotBlank()) true else false
                                             },
                                             enabled = mappingOptions.collateTins,
                                             modifier = Modifier
