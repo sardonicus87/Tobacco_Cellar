@@ -233,6 +233,10 @@ class FilterViewModel (
                 if (it is SearchPerformedEvent) {
                     _searchPerformed.value = true
                 }
+                if (it is DatabaseRestoreEvent) {
+                    resetFilter()
+                    _shouldScrollUp.value = true
+                }
             }
         }
     }
