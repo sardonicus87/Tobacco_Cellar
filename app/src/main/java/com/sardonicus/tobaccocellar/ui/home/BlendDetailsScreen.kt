@@ -428,7 +428,7 @@ fun BlendDetailsBody(
                                                     modifier = Modifier,
                                                 )
                                                 Text(
-                                                    text = "(${viewModel.calculateAge(it.manufactureDate)} old)",
+                                                    text = "(${viewModel.calculateAge(it.manufactureDate, "manufacture")})",
                                                     modifier = Modifier
                                                         .padding(start = 16.dp),
                                                     fontSize = 12.sp,
@@ -444,7 +444,7 @@ fun BlendDetailsBody(
                                                     modifier = Modifier,
                                                 )
                                                 Text(
-                                                    text = "(${viewModel.calculateAge(it.cellarDate)} in cellar)",
+                                                    text = "(${viewModel.calculateAge(it.cellarDate, "cellar")})",
                                                     modifier = Modifier
                                                         .padding(start = 16.dp),
                                                     fontSize = 12.sp,
@@ -460,7 +460,7 @@ fun BlendDetailsBody(
                                                     modifier = Modifier,
                                                 )
                                                 Text(
-                                                    text = "(${viewModel.calculateAge(it.openDate)} open)",
+                                                    text = "(${viewModel.calculateAge(it.openDate, "open")})",
                                                     modifier = Modifier
                                                         .padding(start = 16.dp),
                                                     fontSize = 12.sp,

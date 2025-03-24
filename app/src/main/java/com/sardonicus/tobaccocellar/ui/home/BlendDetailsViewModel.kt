@@ -55,14 +55,14 @@ class BlendDetailsViewModel(
         }
     }
 
-    fun calculateAge(date: Long?): String {
+    fun calculateAge(date: Long?, field: String): String {
         if (date == null) {
             return ""
         }
 
         val now = LocalDate.now()
         val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
-        val period = Period.between(then, now)
+        val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
 
         val years = period.years
         val months = period.months
@@ -91,10 +91,35 @@ class BlendDetailsViewModel(
             }
         }
 
+        val end = when (field) {
+            "manufacture" -> {
+                if (then < now) {
+                    "old"
+                } else {
+                    "until made/available?"
+                }
+            }
+            "cellar" -> {
+                if (then < now) {
+                    "in cellar"
+                } else {
+                    "until adding/available?"
+                }
+            }
+            "open" -> {
+                if (then < now) {
+                    "open"
+                } else {
+                    "until opening?"
+                }
+            }
+            else -> { "" }
+        }
+
         return if (parts.isEmpty()) {
             "less than a day"
         } else {
-            parts.joinToString(", ")
+            parts.joinToString(", ") + " $end"
         }
     }
 
