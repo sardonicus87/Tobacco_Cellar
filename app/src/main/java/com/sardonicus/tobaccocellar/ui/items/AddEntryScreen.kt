@@ -60,6 +60,7 @@ import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
@@ -67,6 +68,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
@@ -211,6 +213,7 @@ fun AddEntryScreen(
                 },
                 onDeleteClick = { },
                 isEditEntry = false,
+                validateDates = { _, _, _ -> Triple(true, true, true) },
                 navigateToEditEntry = navigateToEditEntry,
                 modifier = modifier
                     .padding(0.dp)
@@ -238,6 +241,7 @@ fun AddEntryBody(
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
+    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier,
     navigateToEditEntry: (Int) -> Unit = {},
     resetExistState: () -> Unit = {},
@@ -248,7 +252,6 @@ fun AddEntryBody(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp),
-        //    .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -266,6 +269,7 @@ fun AddEntryBody(
             addTin = addTin,
             removeTin = removeTin,
             isEditEntry = isEditEntry,
+            validateDates = validateDates,
             modifier = Modifier
                 .fillMaxWidth()
         )
@@ -414,6 +418,7 @@ fun ItemInputForm(
     tinDetailsList: List<TinDetails>,
     syncedTins: Int,
     isEditEntry: Boolean,
+    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     onValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
@@ -513,6 +518,7 @@ fun ItemInputForm(
                             removeTin = removeTin,
                             itemUiState = itemUiState,
                             onValueChange = onValueChange,
+                            validateDates = validateDates,
                             modifier = Modifier
                         )
                     else -> throw IllegalArgumentException("Invalid tab position")
@@ -535,7 +541,6 @@ fun DetailsEntry(
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-//    var showTinConverter by rememberSaveable { mutableStateOf(false) }
 
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
         this.clickable(
@@ -1330,6 +1335,7 @@ fun TinsEntry(
     onValueChange: (ItemDetails) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
+    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
@@ -1397,6 +1403,7 @@ fun TinsEntry(
                     removeTin = { removeTin(index) },
                     itemUiState = itemUiState,
                     onValueChange = onValueChange,
+                    validateDates = validateDates,
                     modifier = Modifier
                         .padding(bottom = 4.dp)
                         .background(
@@ -1428,6 +1435,7 @@ fun TinsEntry(
 
 
 /** custom composables */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IndividualTin(
     tinDetails: TinDetails,
@@ -1439,6 +1447,7 @@ fun IndividualTin(
     removeTin: () -> Unit,
     itemUiState: ItemUiState,
     onValueChange: (ItemDetails) -> Unit,
+    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(tinDetails) {
@@ -1462,11 +1471,7 @@ fun IndividualTin(
 
     Column (
         modifier = modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                RoundedCornerShape(8.dp)
-            )
+            .border(1.dp, MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
@@ -1538,6 +1543,8 @@ fun IndividualTin(
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Medium,
                                 softWrap = false,
+                                color = if (showError) MaterialTheme.colorScheme.error else
+                                    LocalContentColor.current
                             )
                         },
                         keyboardOptions = KeyboardOptions(
@@ -1694,6 +1701,7 @@ fun IndividualTin(
                             .width(80.dp)
                     )
 
+                    var quantityIsFocused by rememberSaveable { mutableStateOf(false) }
                     val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
                     TextField(
                         value = tinDetails.tinQuantityString,
@@ -1708,7 +1716,12 @@ fun IndividualTin(
                             }
                         },
                         modifier = Modifier
-                            .weight(1f),
+                            .weight(1f)
+                            .onFocusChanged(
+                                onFocusChanged = {
+                                    quantityIsFocused = it.isFocused
+                                }
+                            ),
                         enabled = true,
                         singleLine = true,
                         textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
@@ -1742,8 +1755,19 @@ fun IndividualTin(
                                 fontSize = 14.sp,
                             )
                         },
+                        isError = tinDetails.tinQuantityString.isNotBlank() && !quantityIsFocused && tinDetails.unit.isBlank(),
                         modifier = Modifier
                             .weight(2f),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
+                            errorPlaceholderColor = MaterialTheme.colorScheme.error,
+                            errorContainerColor = LocalCustomColors.current.textField,
+                        )
                     )
                 }
 
@@ -1774,7 +1798,9 @@ fun IndividualTin(
                     val openedFocusRequester = remember { FocusRequester() }
                     val interactionSource = remember { MutableInteractionSource() }
 
-                    var dateFieldWidth by remember { mutableStateOf(0) }
+                    var dateFieldWidth by remember { mutableIntStateOf(0) }
+
+                    val (manufactureCellar, manufactureOpen, cellarOpen) = validateDates(tinDetails.manufactureDate, tinDetails.cellarDate, tinDetails.openDate)
 
                     // Manufacture //
                     OutlinedTextField(
@@ -1825,13 +1851,25 @@ fun IndividualTin(
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                            disabledContainerColor = MaterialTheme.colorScheme.background,
                             focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+
                             disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            disabledContainerColor = MaterialTheme.colorScheme.background,
+
+                            errorContainerColor = MaterialTheme.colorScheme.background,
+                            errorBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            errorLabelColor = LocalContentColor.current,
+                            errorTrailingIconColor = LocalContentColor.current,
+                            errorTextColor = MaterialTheme.colorScheme.error,
                         ),
-                        shape = MaterialTheme.shapes.extraSmall
+                        shape = MaterialTheme.shapes.extraSmall,
+                        isError = tinDetails.manufactureDate != null && (
+                                  (tinDetails.cellarDate != null && !manufactureCellar) ||
+                                  (tinDetails.openDate != null && !manufactureOpen)
+                                )
                     )
 
                     // Cellar //
@@ -1877,13 +1915,25 @@ fun IndividualTin(
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                            disabledContainerColor = MaterialTheme.colorScheme.background,
                             focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+
                             disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            disabledContainerColor = MaterialTheme.colorScheme.background,
+
+                            errorContainerColor = MaterialTheme.colorScheme.background,
+                            errorBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            errorLabelColor = LocalContentColor.current,
+                            errorTrailingIconColor = LocalContentColor.current,
+                            errorTextColor = MaterialTheme.colorScheme.error,
                         ),
-                        shape = MaterialTheme.shapes.extraSmall
+                        shape = MaterialTheme.shapes.extraSmall,
+                        isError = tinDetails.cellarDate != null && (
+                                (tinDetails.manufactureDate != null && !manufactureCellar) ||
+                                (tinDetails.openDate != null && !cellarOpen)
+                                )
                     )
 
                     // Opened //
@@ -1915,7 +1965,6 @@ fun IndividualTin(
                             IconButton(onClick = {
                                 openedFocusRequester.requestFocus()
                                 showPicker("Opened")
-                            //    focusRequester.requestFocus()
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.DateRange,
@@ -1931,14 +1980,92 @@ fun IndividualTin(
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                            disabledContainerColor = MaterialTheme.colorScheme.background,
                             focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+
                             disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            disabledContainerColor = MaterialTheme.colorScheme.background,
+
+                            errorContainerColor = MaterialTheme.colorScheme.background,
+                            errorBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            errorLabelColor = LocalContentColor.current,
+                            errorTrailingIconColor = LocalContentColor.current,
+                            errorTextColor = MaterialTheme.colorScheme.error,
                         ),
-                        shape = MaterialTheme.shapes.extraSmall
+                        shape = MaterialTheme.shapes.extraSmall,
+                        isError = tinDetails.openDate != null && (
+                                (tinDetails.manufactureDate != null && !manufactureOpen) ||
+                                (tinDetails.cellarDate != null && !cellarOpen)
+                                )
                     )
+
+                    val selectableDates = remember(
+                        tinDetails.manufactureDate,
+                        tinDetails.cellarDate,
+                        tinDetails.openDate,
+                        datePickerLabel
+                    ) {
+                        object : SelectableDates {
+                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                return when (datePickerLabel) {
+                                    "Manufacture" -> {
+                                        if (tinDetails.cellarDate != null) {
+                                            utcTimeMillis <= tinDetails.cellarDate
+                                        } else if (tinDetails.openDate != null) {
+                                            utcTimeMillis <= tinDetails.openDate
+                                        } else {
+                                            true
+                                        }
+                                    }
+                                    "Cellared" -> {
+                                        val minDate =
+                                            tinDetails.manufactureDate?.let {
+                                                LocalDateTime.ofInstant(
+                                                    Instant.ofEpochMilli(it), ZoneOffset.UTC)
+                                                    .toLocalDate()
+                                                    .atStartOfDay(ZoneOffset.UTC)
+                                                    .toInstant()
+                                                    .toEpochMilli()
+                                            } ?: Long.MIN_VALUE
+
+                                        val maxDate =
+                                            tinDetails.openDate?.let {
+                                                LocalDateTime.ofInstant(
+                                                    Instant.ofEpochMilli(it), ZoneOffset.UTC)
+                                                    .plusDays(1)
+                                                    .toLocalDate()
+                                                    .atStartOfDay(ZoneOffset.UTC)
+                                                    .toInstant()
+                                                    .toEpochMilli() - 1
+                                        } ?: Long.MAX_VALUE
+
+                                        utcTimeMillis in minDate..maxDate
+                                    }
+                                    "Opened" -> {
+                                        val minDate = tinDetails.cellarDate?.let {
+                                            LocalDateTime.ofInstant(
+                                                Instant.ofEpochMilli(it), ZoneOffset.UTC)
+                                                .toLocalDate()
+                                                .atStartOfDay(ZoneOffset.UTC)
+                                                .toInstant()
+                                                .toEpochMilli()
+                                        } ?: tinDetails.manufactureDate?.let {
+                                            LocalDateTime.ofInstant(
+                                                Instant.ofEpochMilli(it), ZoneOffset.UTC)
+                                                .toLocalDate()
+                                                .atStartOfDay(ZoneOffset.UTC)
+                                                .toInstant()
+                                                .toEpochMilli()
+                                        } ?: Long.MIN_VALUE
+                                        utcTimeMillis >= minDate
+                                    }
+                                    else -> true
+                                }
+                            }
+                        }
+                    }
 
                     if (showDatePicker) {
                         CustomDatePickerDialog(
@@ -1966,6 +2093,7 @@ fun IndividualTin(
                                     longFormat.format(localDate)
                                 } else { "" }
 
+
                                 when (datePickerLabel) {
                                     "Manufacture" -> {
                                         onTinValueChange(
@@ -1990,7 +2118,7 @@ fun IndividualTin(
                                             tinDetails.copy(
                                                 openDate = it,
                                                 openDateShort = dateStringShort,
-                                                openDateLong = dateStringLong
+                                                openDateLong = dateStringLong,
                                             )
                                         )
                                     }
@@ -2002,7 +2130,8 @@ fun IndividualTin(
                                 "Opened" -> { tinDetails.openDate }
                                 else -> { null }
                             },
-                            label = datePickerLabel
+                            label = datePickerLabel,
+                            selectableDates = selectableDates
                         )
                     }
                 }
@@ -2032,11 +2161,13 @@ fun CustomDatePickerDialog(
     onDateSelected: (Long?) -> Unit,
     modifier: Modifier = Modifier,
     currentMillis: Long? = null,
+    selectableDates: SelectableDates, // = DatePickerDefaults.AllDates,
     label: String = "Select",
 ) {
     val datePickerState = rememberDatePickerState(
-        initialDisplayMode = DisplayMode.Input,
-        initialSelectedDateMillis = currentMillis
+        initialDisplayMode = DisplayMode.Picker,
+        initialSelectedDateMillis = currentMillis,
+        selectableDates = selectableDates
     )
     val datePickerFormatter = remember { DatePickerDefaults.dateFormatter() }
 
@@ -2110,6 +2241,7 @@ fun CustomDatePickerDialog(
                 containerColor = MaterialTheme.colorScheme.background,
                 titleContentColor = MaterialTheme.colorScheme.onBackground,
                 headlineContentColor = MaterialTheme.colorScheme.onBackground,
+                disabledDayContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
             )
         )
     }
@@ -2306,7 +2438,15 @@ fun CustomDropDown(
     onValueChange: (String) -> Unit,
     options: List<String>,
     modifier: Modifier = Modifier,
+    colors: TextFieldColors = TextFieldDefaults.colors(
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        disabledIndicatorColor = Color.Transparent,
+        focusedContainerColor = LocalCustomColors.current.textField,
+        unfocusedContainerColor = LocalCustomColors.current.textField,
+        disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f)),
     placeholder: @Composable (() -> Unit)? = null,
+    isError: Boolean = false,
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -2328,16 +2468,10 @@ fun CustomDropDown(
             },
             singleLine = true,
             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = LocalCustomColors.current.textField,
-                unfocusedContainerColor = LocalCustomColors.current.textField,
-                disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
-            ),
+            colors = colors,
             shape = MaterialTheme.shapes.extraSmall,
             placeholder = placeholder,
+            isError = isError,
             enabled = enabled
         )
         ExposedDropdownMenu(

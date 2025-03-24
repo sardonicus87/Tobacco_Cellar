@@ -43,22 +43,25 @@ class AddEntryViewModel(
 
     /** update item state **/
     fun updateUiState(itemDetails: ItemDetails) {
+        val tinDetailsList = tinDetailsList
         val syncedTins = calculateSyncTins()
         val updatedDetails = if (itemDetails.isSynced) {
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins,
                 syncedQuantity = syncedTins,
+                tinDetailsList = tinDetailsList
             ) } else {
             itemDetails.copy(
                 syncedQuantity = syncedTins,
+                tinDetailsList = tinDetailsList
             )
         }
 
         itemUiState =
             ItemUiState(
                 itemDetails = updatedDetails,
-                isEntryValid = validateInput(itemDetails),
+                isEntryValid = validateInput(updatedDetails),
                 autoBrands = brands.value,
                 autoGenres = subGenres.value,
                 autoCuts = cuts.value,
@@ -122,7 +125,7 @@ class AddEntryViewModel(
             }
     }
 
-    val _labelInvalid = MutableStateFlow<Boolean>(false)
+    private val _labelInvalid = MutableStateFlow<Boolean>(false)
     val labelInvalid: StateFlow<Boolean> = _labelInvalid
 
     fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
@@ -131,21 +134,9 @@ class AddEntryViewModel(
         _labelInvalid.value = !check
     }
 
-
     /** tin conversion and sync state **/
     var tinConversion = mutableStateOf(TinConversion())
         private set
-
-    fun updateTinConversion(tinConversion: TinConversion) {
-        this.tinConversion.value = tinConversion
-            .copy(isConversionValid = validateConversion(tinConversion))
-    }
-
-    private fun validateConversion(tinConversion: TinConversion = this.tinConversion.value): Boolean {
-        return with(tinConversion) {
-            amount.isNotBlank() && unit.isNotBlank()
-        }
-    }
 
     init {
         viewModelScope.launch {
@@ -325,6 +316,8 @@ data class ItemDetails(
     val inProduction: Boolean = true,
     val isSynced: Boolean = false,
     val syncedQuantity: Int = 0,
+
+    val tinDetailsList: List<TinDetails> = listOf(TinDetails()),
 )
 
 data class TinDetails(
@@ -432,13 +425,20 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
     inProduction = inProduction,
 )
 
+fun List<Components>.toComponentList(): ComponentList {
+    val componentString = this.joinToString(", ") { it.componentName }
+    return ComponentList(
+        componentString = componentString
+    )
+}
+
 fun Tins.toTinDetails(): TinDetails = TinDetails(
     tinId = tinId,
     itemsId = itemsId,
     tinLabel = tinLabel,
     container = container,
     tinQuantity = tinQuantity,
-    tinQuantityString = tinQuantity.toString(),
+    tinQuantityString = if (unit.isNotBlank()) tinQuantity.toString() else "",
     unit = unit,
     manufactureDate = manufactureDate,
     cellarDate = cellarDate,
@@ -451,6 +451,8 @@ fun Tins.toTinDetails(): TinDetails = TinDetails(
     openDateLong = formatLongDate(openDate),
 )
 
+
+/** Date functions **/
 fun formatShortDate(millis: Long?): String {
     return if (millis != null) {
         val instant = Instant.ofEpochMilli(millis)
@@ -467,15 +469,6 @@ fun formatLongDate(millis: Long?): String {
         formatter.format(localDate)
     } else { "" }
 }
-
-fun List<Components>.toComponentList(): ComponentList {
-    val componentString = this.joinToString(", ") { it.componentName }
-    return ComponentList(
-        componentString = componentString
-    )
-}
-
-
 
 
 
