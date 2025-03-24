@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlin.math.roundToInt
 
 class EditEntryViewModel(
@@ -36,7 +39,7 @@ class EditEntryViewModel(
     var tinDetailsList by mutableStateOf<List<TinDetails>>(emptyList())
         private set
 
-    var _originalComponents = mutableStateOf("")
+    private var _originalComponents = mutableStateOf("")
     val originalComponents = _originalComponents
 
     private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
@@ -47,10 +50,59 @@ class EditEntryViewModel(
                 (tinDetailsList.isEmpty() ||
                     (tinDetailsList.all { it.tinLabel.isNotBlank() } &&
                         tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
-                        tinDetailsList.all { (it.tinQuantity > 0.0 && it.unit.isNotBlank()) || it.tinQuantity == 0.0 }
+                        tinDetailsList.all { (it.tinQuantity > 0.0 && it.unit.isNotBlank()) || it.tinQuantity == 0.0 } &&
+                        tinDetailsList.all {
+                            var valid = true
+                            val (manufactureValid, cellarValid, openValid) =
+                                validateDates(it.manufactureDate, it.cellarDate, it.openDate)
+                            valid = manufactureValid && cellarValid && openValid
+                            valid
+                        }
                     )
                 )
         }
+    }
+
+    fun validateDates(
+        manufactureDate: Long?,
+        cellarDate: Long?,
+        openDate: Long?,
+    ): Triple<Boolean, Boolean, Boolean> {
+        var manufactureCellarValid = true
+        var manufactureOpenValid = true
+        var cellarOpenValid = true
+
+        if (manufactureDate != null && cellarDate != null) {
+            val manufacture = LocalDateTime.ofInstant(Instant.ofEpochMilli(manufactureDate), ZoneOffset.UTC)
+                .toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli()
+            if (manufacture > cellarDate) {
+                manufactureCellarValid = false
+            }
+        }
+        if (manufactureDate != null && openDate != null) {
+            val manufacture = LocalDateTime.ofInstant(Instant.ofEpochMilli(manufactureDate), ZoneOffset.UTC)
+                .toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli()
+            if (manufacture > openDate) {
+                manufactureOpenValid = false
+            }
+        }
+        if (cellarDate != null && openDate != null) {
+            val cellar = LocalDateTime.ofInstant(Instant.ofEpochMilli(cellarDate), ZoneOffset.UTC)
+                .toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli()
+            if (cellar > openDate) {
+                cellarOpenValid = false
+            }
+        }
+        return Triple(manufactureCellarValid, manufactureOpenValid, cellarOpenValid)
     }
 
     private fun copyOriginalDetails(itemDetails: ItemDetails) {
@@ -60,7 +112,7 @@ class EditEntryViewModel(
 
     init {
         viewModelScope.launch {
-            itemUiState = itemsRepository.getItemStream(itemsId)
+            val itemDetails = itemsRepository.getItemStream(itemsId)
                 .filterNotNull()
                 .first()
                 .toItemUiState(true)
@@ -69,27 +121,28 @@ class EditEntryViewModel(
                     val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
                     it.copy(itemDetails = it.itemDetails.copy(isSynced = savedSynced))
                 }
-        }
 
-        viewModelScope.launch {
-            componentList = itemsRepository.getComponentsForItemStream(itemsId)
+            val components = itemsRepository.getComponentsForItemStream(itemsId)
                 .filterNotNull()
                 .first()
                 .toComponentList()
                 .also {
                     _originalComponents = mutableStateOf(it.componentString)
                 }
-        }
 
-        viewModelScope.launch {
             val existingTins = itemsRepository.getTinsForItemStream(itemsId)
                 .filterNotNull()
                 .first()
                 .map { it.toTinDetails() }
 
-            tinDetailsList = existingTins.mapIndexed { index, tinDetails ->
+            val tins = existingTins.mapIndexed { index, tinDetails ->
                 tinDetails.copy(tempTinId = index + 1)
             }
+            tinDetailsList = tins
+            componentList = components
+
+            val updatedDetails = itemDetails.itemDetails.copy(tinDetailsList = tins)
+            itemUiState = itemDetails.copy(itemDetails = updatedDetails, isEntryValid = validateInput(updatedDetails))
         }
     }
 
@@ -156,7 +209,7 @@ class EditEntryViewModel(
             }
     }
 
-    val _labelInvalid = MutableStateFlow<Boolean>(false)
+    private val _labelInvalid = MutableStateFlow<Boolean>(false)
     val labelInvalid: StateFlow<Boolean> = _labelInvalid
 
     fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
@@ -170,17 +223,6 @@ class EditEntryViewModel(
     /** tin conversion and sync state **/
     var tinConversion = mutableStateOf(TinConversion())
         private set
-
-    fun updateTinConversion(tinConversion: TinConversion) {
-        this.tinConversion.value = tinConversion
-            .copy(isConversionValid = validateConversion(tinConversion))
-    }
-
-    private fun validateConversion(tinConversion: TinConversion = this.tinConversion.value): Boolean {
-        return with(tinConversion) {
-            amount.isNotBlank() && unit.isNotBlank()
-        }
-    }
 
     init {
         viewModelScope.launch {
@@ -253,21 +295,24 @@ class EditEntryViewModel(
 
     fun updateUiState(itemDetails: ItemDetails) {
         val syncedTins = calculateSyncTins()
+        val tinDetailsList = tinDetailsList
         val updatedDetails = if (itemDetails.isSynced) {
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins,
                 syncedQuantity = syncedTins,
+                tinDetailsList = tinDetailsList
             ) } else {
             itemDetails.copy(
                 syncedQuantity = syncedTins,
+                tinDetailsList = tinDetailsList
             )
         }
 
         itemUiState =
             ItemUiState(
                 itemDetails = updatedDetails,
-                isEntryValid = validateInput(itemDetails),
+                isEntryValid = validateInput(updatedDetails),
                 autoBrands = brands.value,
                 autoGenres = subGenres.value,
                 autoCuts = cuts.value,

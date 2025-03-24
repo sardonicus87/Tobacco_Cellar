@@ -111,6 +111,7 @@ fun EditEntryScreen(
                     }
                 },
                 isEditEntry = true,
+                validateDates = viewModel::validateDates,
                 modifier = Modifier
                     .padding(0.dp)
                     .fillMaxSize()
