@@ -6,7 +6,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
@@ -389,6 +388,7 @@ class SettingsViewModel(
         val dbFile = File(dbPath)
         val walFile = File("$dbPath-wal")
         val shmFile = File("$dbPath-shm")
+
         val backupDbFile = File("$dbPath.bak")
         val tempDir = File(context.cacheDir, "temp_db_restore_dir")
         tempDir.mkdirs()
@@ -415,17 +415,17 @@ class SettingsViewModel(
             if (shmBytes.isNotEmpty()) { copyFile(tempShmFile, shmFile) }
 
         } catch (e: Exception) {
-
             copyFile(backupDbFile, dbFile)
             if (File("$dbPath-wal.bak").exists()) { copyFile(File("$dbPath-wal.bak"), walFile) }
             if (File("$dbPath-shm.bak").exists()) { copyFile(File("$dbPath-shm.bak"), shmFile) }
+            throw e
 
+        } finally {
             backupDbFile.delete()
             File("$dbPath-wal.bak").delete()
             File("$dbPath-shm.bak").delete()
-            throw e
-        } finally {
             tempDir.deleteRecursively()
+
             EventBus.emit(DatabaseRestoreEvent)
         }
     }
@@ -548,17 +548,12 @@ fun copyFile(src: File, dst: File) {
 }
 
 fun getDatabaseFilePath(context: Context): String {
-    val db = Room.databaseBuilder(
-        context, TobaccoDatabase::class.java,
-        "tobacco_database"
-    ).build()
-    val dbPath: String? = db.openHelper.writableDatabase.path
-    db.close()
-
+    val dbPath: String? = TobaccoDatabase.getDatabase(context)?.openHelper?.writableDatabase?.path
     return dbPath ?: ""
 }
 
 fun backupDatabase(context: Context, backupFile: File) {
+    val db = TobaccoDatabase.getDatabase(context)
     val dbPath = getDatabaseFilePath(context)
     val dbFile = File(dbPath)
     val walFile = File("$dbPath-wal")
@@ -572,6 +567,7 @@ fun backupDatabase(context: Context, backupFile: File) {
     val tempShmFile = File(tempDir, "tobacco_database-shm")
 
     try {
+     //   db.close()
 
         copyFile(dbFile, tempDbFile)
 
@@ -602,6 +598,7 @@ fun backupDatabase(context: Context, backupFile: File) {
         throw e
     } finally {
         tempDir.deleteRecursively()
+    //    TobaccoDatabase.getDatabase(context)
     }
 }
 
