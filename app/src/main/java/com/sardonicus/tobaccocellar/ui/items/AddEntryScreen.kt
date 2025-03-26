@@ -191,6 +191,7 @@ fun AddEntryScreen(
                 componentUiState = viewModel.componentList,
                 tinDetails = viewModel.tinDetailsState,
                 tinDetailsList = viewModel.tinDetailsList,
+                tabErrorState = viewModel.tabErrorState,
                 syncedTins = viewModel.calculateSyncTins(),
                 existState = viewModel.existState,
                 resetExistState = viewModel::resetExistState,
@@ -230,6 +231,7 @@ fun AddEntryBody(
     componentUiState: ComponentList,
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
+    tabErrorState: TabErrorState,
     syncedTins: Int,
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
@@ -261,6 +263,7 @@ fun AddEntryBody(
             componentUiState = componentUiState,
             tinDetails = tinDetails,
             tinDetailsList = tinDetailsList,
+            tabErrorState = tabErrorState,
             syncedTins = syncedTins,
             onValueChange = onItemValueChange,
             onTinValueChange = onTinValueChange,
@@ -416,6 +419,7 @@ fun ItemInputForm(
     componentUiState: ComponentList,
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
+    tabErrorState: TabErrorState,
     syncedTins: Int,
     isEditEntry: Boolean,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
@@ -457,6 +461,12 @@ fun ItemInputForm(
             },
         ) {
             titles.forEachIndexed { index, title ->
+                val textColor = when (index) {
+                    0 -> if (tabErrorState.detailsError && (selectedTabIndex != index)) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
+                    2 -> if (tabErrorState.tinsError && selectedTabIndex != index) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
+                    else -> MaterialTheme.colorScheme.outline
+                }
+
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
                         selected = selectedTabIndex == index,
@@ -473,7 +483,7 @@ fun ItemInputForm(
                             )
                         },
                         selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                        unselectedContentColor = MaterialTheme.colorScheme.outline,
+                        unselectedContentColor = textColor, // MaterialTheme.colorScheme.outline,
                         interactionSource = remember { MutableInteractionSource() }
                     )
                 }
@@ -1363,11 +1373,13 @@ fun TinsEntry(
         modifier = modifier
             .fillMaxWidth()
             .noRippleClickable(onClick = {
-                    focusManager.clearFocus()
-                })
+                focusManager.clearFocus()
+            })
             .padding(vertical = 6.dp, horizontal = 8.dp)
-            .background(color = if (tinDetailsList.isEmpty()) Color.Transparent else
-                LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
+            .background(
+                color = if (tinDetailsList.isEmpty()) Color.Transparent else
+                    LocalCustomColors.current.textField, RoundedCornerShape(4.dp)
+            )
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
     ) {
@@ -1460,12 +1472,6 @@ fun IndividualTin(
                 labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)
             )
         )
-    }
-
-    LaunchedEffect(tempTinId) {
-        if (tempTinId == 1 && tinDetailsList.size == 1) {
-            onTinValueChange(tinDetails.copy(detailsExpanded = true))
-        }
     }
 
 

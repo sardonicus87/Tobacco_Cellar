@@ -39,6 +39,8 @@ class AddEntryViewModel(
         private set
     var tinDetailsList by mutableStateOf<List<TinDetails>>(emptyList())
         private set
+    var tabErrorState by mutableStateOf(TabErrorState())
+        private set
 
 
     /** update item state **/
@@ -245,15 +247,25 @@ class AddEntryViewModel(
 
     /** save to database **/
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
-        return with(uiState) {
-            brand.isNotBlank() && blend.isNotBlank() &&
-                (tinDetailsList.isEmpty() ||
-                    (tinDetailsList.all { it.tinLabel.isNotBlank() } &&
-                        tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
-                        tinDetailsList.all { (it.tinQuantity > 0.0 && it.unit.isNotBlank()) || it.tinQuantity == 0.0 }
-                    )
-                )
+        var validDetails = true
+        var validTins = true
+
+        validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
+        validTins = uiState.tinDetailsList.all {
+            it.tinLabel.isNotBlank() &&
+                    tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
+                    tinDetailsList.all {
+                        (it.tinQuantityString.isNotBlank() && it.unit.isNotBlank()) ||
+                                it.tinQuantityString.isBlank() }
         }
+
+        tabErrorState = tabErrorState.copy(
+            detailsError = !validDetails,
+            tinsError = !validTins
+        )
+
+        return validDetails && validTins
+
     }
 
     suspend fun saveItem() {
@@ -338,7 +350,7 @@ data class TinDetails(
     var manufactureDateLong: String = "",
     var cellarDateLong: String = "",
     var openDateLong: String = "",
-    var detailsExpanded: Boolean = false,
+    var detailsExpanded: Boolean = true,
     var labelIsNotValid: Boolean = false
 )
 
@@ -353,6 +365,11 @@ data class TinConversion(
     val ozRate: Double = 1.75,
     val gramsRate: Double = 50.0,
     val isConversionValid: Boolean = false,
+)
+
+data class TabErrorState(
+    var detailsError: Boolean = false,
+    var tinsError: Boolean = false,
 )
 
 data class ItemSavedEvent(

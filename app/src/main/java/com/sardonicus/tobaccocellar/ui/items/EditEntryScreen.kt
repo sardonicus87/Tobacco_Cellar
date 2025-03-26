@@ -85,6 +85,7 @@ fun EditEntryScreen(
                 componentUiState = viewModel.componentList,
                 tinDetails = viewModel.tinDetailsState,
                 tinDetailsList = viewModel.tinDetailsList,
+                tabErrorState = viewModel.tabErrorState,
                 syncedTins = viewModel.calculateSyncTins(),
                 existState = ExistState(),
                 onItemValueChange = viewModel::updateUiState,

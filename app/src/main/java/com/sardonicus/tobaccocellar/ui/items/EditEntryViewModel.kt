@@ -38,6 +38,8 @@ class EditEntryViewModel(
         private set
     var tinDetailsList by mutableStateOf<List<TinDetails>>(emptyList())
         private set
+    var tabErrorState by mutableStateOf(TabErrorState())
+        private set
 
     private var _originalComponents = mutableStateOf("")
     val originalComponents = _originalComponents
@@ -45,22 +47,31 @@ class EditEntryViewModel(
     private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
-        return with(uiState) {
-            brand.isNotBlank() && blend.isNotBlank() &&
-                (tinDetailsList.isEmpty() ||
-                    (tinDetailsList.all { it.tinLabel.isNotBlank() } &&
-                        tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
-                        tinDetailsList.all { (it.tinQuantity > 0.0 && it.unit.isNotBlank()) || it.tinQuantity == 0.0 } &&
-                        tinDetailsList.all {
-                            var valid = true
-                            val (manufactureValid, cellarValid, openValid) =
-                                validateDates(it.manufactureDate, it.cellarDate, it.openDate)
-                            valid = manufactureValid && cellarValid && openValid
-                            valid
-                        }
-                    )
-                )
+        var validDetails = true
+        var validTins = true
+
+        validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
+        validTins = uiState.tinDetailsList.all {
+            it.tinLabel.isNotBlank() &&
+            tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
+            tinDetailsList.all {
+                (it.tinQuantityString.isNotBlank() && it.unit.isNotBlank()) ||
+                    it.tinQuantityString.isBlank() } &&
+                    tinDetailsList.all {
+                        var valid = true
+                        val (manufactureValid, cellarValid, openValid) =
+                            validateDates(it.manufactureDate, it.cellarDate, it.openDate)
+                        valid = manufactureValid && cellarValid && openValid
+                        valid
+                    }
         }
+
+        tabErrorState = tabErrorState.copy(
+            detailsError = !validDetails,
+            tinsError = !validTins
+        )
+
+        return validDetails && validTins
     }
 
     fun validateDates(
