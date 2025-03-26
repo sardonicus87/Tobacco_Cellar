@@ -283,7 +283,7 @@ fun FullScreenLoading(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(scrimColor.copy(alpha = scrimAlpha))
     ) {
