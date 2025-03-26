@@ -25,6 +25,9 @@ import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -213,23 +216,25 @@ class SettingsViewModel(
     fun createBackupBinary(uri: Uri, context: Context) {
         viewModelScope.launch {
             setLoadingState(true)
+            var message = ""
 
-            val tempBackupFile = context.contentResolver.openFileDescriptor(uri, "w")?.use {
-                File(context.cacheDir, "temp_db_backup.tcbu")
+            val tempDbZip = context.contentResolver.openFileDescriptor(uri, "w")?.use {
+                File(context.cacheDir, "temp_db_backup.zip")
             } ?: throw IOException("Could not open file descriptor for backup")
 
             try {
                 if (backupState.value.databaseChecked) {
-                    backupDatabase(context, tempBackupFile)
+                    backupDatabase(context, tempDbZip)
                 }
 
-                val databaseBytes = if (backupState.value.databaseChecked) {
-                    tempBackupFile.readBytes()
-                } else { ByteArray(0) }
+                // val dbVersion = TobaccoDatabase.getDatabaseVersion(context).toString().toByteArray()
 
+                val databaseBytes = if (backupState.value.databaseChecked) {
+                    tempDbZip.readBytes()
+                } else { ByteArray(0) }
+                val databaseLengthBytes = databaseBytes.size.toByteArray()
 
                 val itemIds = withContext(Dispatchers.IO){ itemsRepository.getAllItemIds() }
-
                 val itemSyncStateStringBuilder = StringBuilder()
                 for (itemId in itemIds) {
                     val isSynced = preferencesRepo.getItemSyncStateString(itemId)
@@ -237,10 +242,10 @@ class SettingsViewModel(
                 }
                 val itemSyncStateBytes = itemSyncStateStringBuilder.toString().toByteArray(Charset.forName("UTF-8"))
 
-//                val dbVersion = TobaccoDatabase.getDatabaseVersion(context).toString().toByteArray()
-                val databaseLengthBytes = databaseBytes.size.toByteArray()
+                val combinedDatabaseBytes = ByteArray(
+                    databaseLengthBytes.size + databaseBytes.size + itemSyncStateBytes.size
+                )
 
-                val combinedDatabaseBytes = ByteArray(databaseLengthBytes.size + databaseBytes.size + itemSyncStateBytes.size)
                 databaseLengthBytes.copyInto(combinedDatabaseBytes)
                 databaseBytes.copyInto(combinedDatabaseBytes, databaseLengthBytes.size)
                 itemSyncStateBytes.copyInto(combinedDatabaseBytes, databaseBytes.size)
@@ -248,7 +253,7 @@ class SettingsViewModel(
                 val settingsBytes = if (backupState.value.settingsChecked) createSettingsBytes() else ByteArray(0)
 
                 val magicNumber = byteArrayOf(0x54, 0x43, 0x42, 0x55) // "TCBU"
-                val version = byteArrayOf(0x01) // Version 1
+                val version = byteArrayOf(0x02) // Version 2 zipping db files
                 val settingsLength = settingsBytes.size.toByteArray()
 
                 val header = magicNumber + version + settingsLength
@@ -260,13 +265,14 @@ class SettingsViewModel(
                 settingsBytes.copyInto(combinedBytes, header.size + combinedDatabaseBytes.size)
 
                 writeBytesToFile(uri, combinedBytes, context)
-                showSnackbar("Backup complete.")
+                message = "Backup complete."
             } catch (e: Exception) {
-                showSnackbar("Backup failed.")
+                message = "Backup failed."
                 throw e
             } finally {
-                deleteTempFile(tempBackupFile)
+                deleteTempFile(tempDbZip)
                 setLoadingState(false)
+                showSnackbar(message)
             }
         }
     }
@@ -348,7 +354,7 @@ class SettingsViewModel(
         val magicNumber = bytes.copyOfRange(0, 4)
         val version = bytes[4]
 
-        if (!magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55)) || version != 0x01.toByte()) {
+        if (!magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55)) || version != 0x02.toByte()) {
             return FileContentState(false, false)
         }
 
@@ -390,29 +396,24 @@ class SettingsViewModel(
         val shmFile = File("$dbPath-shm")
 
         val backupDbFile = File("$dbPath.bak")
+        val backupWalFile = File("$dbPath-wal.bak")
+        val backupShmFile = File("$dbPath-shm.bak")
+
         val tempDir = File(context.cacheDir, "temp_db_restore_dir")
         tempDir.mkdirs()
-        val tempDbFile = File(tempDir, "tobacco_database")
-        val tempWalFile = File(tempDir, "tobacco_database-wal")
-        val tempShmFile = File(tempDir, "tobacco_database-shm")
+        val tempZipFile = File(tempDir, "temp_db_restore.zip")
 
         try {
             copyFile(dbFile, backupDbFile)
-            if (walFile.exists()) { copyFile(walFile, File("$dbPath-wal.bak")) }
-            if (shmFile.exists()) { copyFile(shmFile, File("$dbPath-shm.bak")) }
+            if (walFile.exists()) { copyFile(walFile, backupWalFile) }
+            if (shmFile.exists()) { copyFile(shmFile, backupShmFile) }
 
-            val dbLength = if (databaseBytes.isNotEmpty()) { databaseBytes.size / 3 } else { 0 }
-            val dbBytes = databaseBytes.copyOfRange(0, dbLength)
-            val walBytes = databaseBytes.copyOfRange(dbLength, dbLength * 2)
-            val shmBytes = databaseBytes.copyOfRange(dbLength * 2, databaseBytes.size)
+            tempZipFile.writeBytes(databaseBytes)
+            unzipFile(tempZipFile, tempDir)
 
-            tempDbFile.writeBytes(dbBytes)
-            if (walBytes.isNotEmpty()) { tempWalFile.writeBytes(walBytes) }
-            if (shmBytes.isNotEmpty()) { tempShmFile.writeBytes(shmBytes) }
-
-            copyFile(tempDbFile, dbFile)
-            if (walBytes.isNotEmpty()) { copyFile(tempWalFile, walFile) }
-            if (shmBytes.isNotEmpty()) { copyFile(tempShmFile, shmFile) }
+            copyFile(File(tempDir, "tobacco_database"), dbFile)
+            if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
+            if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
 
         } catch (e: Exception) {
             copyFile(backupDbFile, dbFile)
@@ -422,8 +423,8 @@ class SettingsViewModel(
 
         } finally {
             backupDbFile.delete()
-            File("$dbPath-wal.bak").delete()
-            File("$dbPath-shm.bak").delete()
+            backupWalFile.delete()
+            backupShmFile.delete()
             tempDir.deleteRecursively()
 
             EventBus.emit(DatabaseRestoreEvent)
@@ -547,58 +548,57 @@ fun copyFile(src: File, dst: File) {
     }
 }
 
+fun zipFiles(files: List<File>, zipFile: File) {
+    ZipOutputStream(FileOutputStream(zipFile)).use { outStream ->
+        files.forEach { file ->
+            FileInputStream(file).use { inStream ->
+                val zipEntry = ZipEntry(file.name)
+                outStream.putNextEntry(zipEntry)
+                inStream.copyTo(outStream)
+                outStream.closeEntry()
+            }
+        }
+    }
+}
+
+fun unzipFile(zipFile: File, destinationDir: File) {
+    if (!destinationDir.exists()) {
+        destinationDir.mkdirs()
+    }
+    ZipInputStream(FileInputStream(zipFile)).use { zipStream ->
+        var zipEntry = zipStream.nextEntry
+        while (zipEntry != null) {
+            val newFile = File(destinationDir, zipEntry.name)
+            FileOutputStream(newFile).use { outStream ->
+                zipStream.copyTo(outStream)
+            }
+            zipStream.closeEntry()
+            zipEntry = zipStream.nextEntry
+        }
+    }
+}
+
 fun getDatabaseFilePath(context: Context): String {
-    val dbPath: String? = TobaccoDatabase.getDatabase(context)?.openHelper?.writableDatabase?.path
+    val dbPath: String? = TobaccoDatabase.getDatabase(context).openHelper.writableDatabase.path
     return dbPath ?: ""
 }
 
 fun backupDatabase(context: Context, backupFile: File) {
-    val db = TobaccoDatabase.getDatabase(context)
-    val dbPath = getDatabaseFilePath(context)
-    val dbFile = File(dbPath)
-    val walFile = File("$dbPath-wal")
-    val shmFile = File("$dbPath-shm")
-
-    val tempDir = File(context.cacheDir, "temp_db_backup_dir")
-    tempDir.mkdirs()
-
-    val tempDbFile = File(tempDir, "tobacco_database")
-    val tempWalFile = File(tempDir, "tobacco_database-wal")
-    val tempShmFile = File(tempDir, "tobacco_database-shm")
-
     try {
-     //   db.close()
+        val db = TobaccoDatabase.getDatabase(context)
+        val dbPath = getDatabaseFilePath(context)
+        val dbFile = File(dbPath)
+        val walFile = File("$dbPath-wal")
+        val shmFile = File("$dbPath-shm")
 
-        copyFile(dbFile, tempDbFile)
+        db.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
 
-        if (walFile.exists()) { copyFile(walFile, tempWalFile) }
-        if (shmFile.exists()) { copyFile(shmFile, tempShmFile) }
+        val dbFiles = listOf(dbFile, walFile, shmFile)
 
-        FileOutputStream(backupFile).use { outputStream ->
-            if (tempDbFile.exists() && tempDbFile.length() > 0) {
-                FileInputStream(tempDbFile).use { inputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            if (tempWalFile.exists() && tempWalFile.length() > 0) {
-                FileInputStream(tempWalFile).use { inputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            if (tempShmFile.exists() && tempShmFile.length() > 0) {
-                FileInputStream(tempShmFile).use { inputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-        }
+        zipFiles(dbFiles, backupFile)
+
     } catch (e: Exception) {
-        copyFile(tempDbFile, dbFile)
-        if (tempWalFile.exists()) { copyFile(tempWalFile, walFile) }
-        if (tempShmFile.exists()) { copyFile(tempShmFile, shmFile) }
         throw e
-    } finally {
-        tempDir.deleteRecursively()
-    //    TobaccoDatabase.getDatabase(context)
     }
 }
 
