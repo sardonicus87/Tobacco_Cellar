@@ -65,6 +65,8 @@ class StatsViewModel(
                         if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
                     totalByCut = it.groupingBy {
                         if(it.items.cut.isBlank()) "Unassigned" else it.items.cut }.eachCount(),
+                    totalByContainer = it.flatMap { it.tins }.groupingBy {
+                        if(it.container.isBlank()) "Unassigned" else it.container }.eachCount(),
 
                     rawLoading = false
                 )
@@ -173,6 +175,8 @@ class StatsViewModel(
                             if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
                         totalByCut = filteredItems.groupingBy {
                             if(it.items.cut.isBlank()) "Unassigned" else it.items.cut }.eachCount(),
+                        totalByContainer = filteredItems.flatMap { it.tins }.groupingBy {
+                            if(it.container.isBlank()) "Unassigned" else it.container }.eachCount(),
 
 
                         brandsByEntries = filteredItems
@@ -335,6 +339,7 @@ data class RawStats(
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
+    val totalByContainer: Map<String, Int> = emptyMap(),
 )
 
 data class FilteredStats(
@@ -350,6 +355,7 @@ data class FilteredStats(
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
+    val totalByContainer: Map<String, Int> = emptyMap(),
 
     val brands: List<String> = emptyList(),
     val types: List<String> = emptyList(),

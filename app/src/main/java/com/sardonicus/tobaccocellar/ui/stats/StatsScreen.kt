@@ -121,9 +121,7 @@ fun StatsScreen(
                 .padding(innerPadding)
         ) {
             if (rawStats.rawLoading || filteredStats.filteredLoading) {
-                FullScreenLoading(
-                    modifier = modifier
-                )
+                FullScreenLoading()
             } else {
                 StatsBody(
                     rawStats = rawStats,
@@ -298,6 +296,10 @@ fun QuickStatsSection(
         compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
     ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
+    val totalByContainer = rawStats.totalByContainer.toList().sortedWith(
+        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
+            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
+    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
 
     val totalByTypeFiltered = filteredStats.totalByType.toList().sortedBy {
         when (it.first) {
@@ -315,6 +317,10 @@ fun QuickStatsSection(
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
     ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
     val totalByCutFiltered = filteredStats.totalByCut.toList().sortedWith(
+        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
+            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
+    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
+    val totalByContainerFiltered = filteredStats.totalByContainer.toList().sortedWith(
         compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
             .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
     ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
@@ -424,7 +430,11 @@ fun QuickStatsSection(
                 )
             }
         }
-        if ((rawStats.totalBySubgenre.any { it.key != "Unassigned" }) || (rawStats.totalByCut.any { it.key != "Unassigned" })) {
+        if (
+            (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) ||
+            (rawStats.totalByCut.any { it.key != "Unassigned" }) ||
+            (rawStats.totalByContainer.any { it.key != "Unassigned" })
+        ) {
             Column {
                 if (expanded) {
                     // Third section counts by subgenre
@@ -494,6 +504,41 @@ fun QuickStatsSection(
                                     .semantics {
                                         contentDescription = totalByCutFiltered.toString()
                                     },
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Start,
+                                softWrap = true,
+                            )
+                        }
+                    }
+
+                    // Fifth section container counts
+                    Row(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        if (rawStats.totalByContainer.any { it.key != "Unassigned" }) {
+                            Text(
+                                text = totalByContainer,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(bottom = 12.dp)
+                                    .semantics { contentDescription = totalByContainer.toString() },
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Start,
+                                softWrap = true,
+                            )
+                        }
+                        if (filteredStats.totalByContainer.any { it.key != "Unassigned" }) {
+                            Spacer(
+                                modifier = Modifier
+                                    .width(8.dp)
+                            )
+                            Text(
+                                text = totalByContainerFiltered,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .semantics { contentDescription = totalByContainerFiltered.toString() },
                                 fontSize = 15.sp,
                                 textAlign = TextAlign.Start,
                                 softWrap = true,
