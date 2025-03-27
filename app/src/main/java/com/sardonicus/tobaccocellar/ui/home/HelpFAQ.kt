@@ -110,8 +110,8 @@ private fun HelpBody(
             .padding(0.dp)
     ) {
         Text(
-            text = "Tobacco Cellar is intended to be a basic inventory tracker and \'tobacco " +
-                    "passport\", combined with the ease of searching and filtering and " +
+            text = "Tobacco Cellar was originally intended to be a basic inventory tracker and \"" +
+                    "tobacco passport\", combined with the ease of searching and filtering and " +
                     "statistical analysis, with varying degrees of verbosity.",
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 12.dp),
@@ -253,10 +253,12 @@ private fun CellarView(
             softWrap = true,
         )
         Text(
-            text = "Also found in the header is a \"Quick Search\" for blends. This search only " +
-                    "returns results based on the \"Blend\" field, and works independently of " +
-                    "filtering. To return to the full list/table, click the clear button or erase " +
-                    "the search text. Any previously chosen filters will be re-applied.",
+            text = "Also found in the header is a \"Quick Search\". This search only returns " +
+                    "results based on the chosen field, and works independently of filtering." +
+                    "To change search fields, tap the search icon on the left for a menu. " +
+                    "To return to the full list/table, click the clear button, erase the search " +
+                    "text, to tap the system back button. Any previously chosen filters will be " +
+                    "re-applied.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -401,7 +403,7 @@ private fun StatsPage(
     ) {
         Text(
             text = "The \"Stats\" screen gives you a \"Quick Stats\" section with two columns " +
-                    "for comparing stats between the unfiltered stats on the left and stats ." +
+                    "for comparing stats between the unfiltered stats on the left and stats " +
                     "based on your chosen filters on the right.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
@@ -435,7 +437,7 @@ private fun Filtering(
         Text(
             text = "The \"Filter Sheet\" opens on top of the Cellar and Stats screens. Any " +
                     "filters persist through navigation around the app and affect both the " +
-                    "Cellar and Stats screens. Filters have no effect on the quick Blend Search.",
+                    "Cellar and Stats screens. Filters have no effect on the quick search.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -485,9 +487,8 @@ private fun Filtering(
         Text(
             text = "Selected brands are shown in the box below and can be removed by tapping " +
                     "the close icon on each brand. Brands that exceed this space are placed in an " +
-                    "overflow. To see the full list of brand selections, tap the overflow button. " +
-                    "A popup will show the ful list of selected brands. The \"Clear All\" button " +
-                    "here only removes the selected brands.",
+                    "overflow. To see the full list of selected brands, tap the overflow button. " +
+                    "The \"Clear All\" button here only removes the selected brands.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -586,7 +587,7 @@ private fun AddingItems(
         )
         Text(
             text = "Most fields that are left blank will remain blank when clicking save, however " +
-                    "leaving the \"No. of Tins\" field blank will presume the quantity to be 1." +
+                    "leaving the \"No. of Tins\" field blank will presume the quantity to be 1. " +
                     "Next to this field, there are \"increase/decrease\" buttons for quickly " +
                     "updating the number of tins.",
             modifier = Modifier
@@ -596,7 +597,8 @@ private fun AddingItems(
         Text(
             text = "The \"Sync?\" check box allows you to synchronize the No. of Tins field with " +
                     "the total quantities of individual tins/containers. The total tins are " +
-                    "calculated based on the aforementioned conversion rate.",
+                    "calculated based on the Tin Conversion Rates set in the settings screen (" +
+                    "default is 1.75 oz or 50g per tin).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -721,6 +723,28 @@ private fun AddingTins(
                     "the field is not wide enough to show the full date. Otherwise, it will show " +
                     "the chosen date based on your locale settings. Regardless of how it is " +
                     "displayed here, the full selected day, month and year are saved.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Date selection for any given field is limited by the other fields. If no " +
+                    "dates have been entered, then any date past or future can be selected. The " +
+                    "first date field to be entered will then start limiting others. The " +
+                    "Manufacture date must be on/before Cellar date (or opened date if Cellar " +
+                    "date is blank), Cellar must be in a range on/after the Manufacture and " +
+                    "on/before the Cellar date. Opened date must be on/after Cellar date (or " +
+                    "Manufacture date if Cellar date is blank).",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The default view is the calendar picker mode when adding dates. If you would " +
+                    "like to clear a previously entered date, you must switch to input mode by " +
+                    "tapping the edit icon on the right and erasing the entered date. This is a " +
+                    "limitation to the date picker as Google hasn't added a deselect method to " +
+                    "the calendar picker mode.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
