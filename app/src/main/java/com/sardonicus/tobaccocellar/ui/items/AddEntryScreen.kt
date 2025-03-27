@@ -1527,6 +1527,8 @@ fun IndividualTin(
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    var labelIsFocused by rememberSaveable { mutableStateOf(false) }
+
                     CustomTextField(
                         value = tinDetails.tinLabel,
                         onValueChange = {
@@ -1535,7 +1537,12 @@ fun IndividualTin(
                             )
                         },
                         modifier = Modifier
-                            .widthIn(max = textFieldMax),
+                            .widthIn(max = textFieldMax)
+                            .onFocusChanged(
+                                onFocusChanged = {
+                                    labelIsFocused = it.isFocused
+                                }
+                            ),
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
                             color = if (showError) MaterialTheme.colorScheme.error else LocalContentColor.current,
@@ -1549,7 +1556,7 @@ fun IndividualTin(
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Medium,
                                 softWrap = false,
-                                color = if (showError) MaterialTheme.colorScheme.error else
+                                color = if (showError || !labelIsFocused) MaterialTheme.colorScheme.error else
                                     LocalContentColor.current
                             )
                         },
@@ -1708,6 +1715,7 @@ fun IndividualTin(
                     )
 
                     var quantityIsFocused by rememberSaveable { mutableStateOf(false) }
+                    var unitIsFocused by rememberSaveable { mutableStateOf(false) }
                     val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
                     TextField(
                         value = tinDetails.tinQuantityString,
@@ -1761,9 +1769,16 @@ fun IndividualTin(
                                 fontSize = 14.sp,
                             )
                         },
-                        isError = tinDetails.tinQuantityString.isNotBlank() && !quantityIsFocused && tinDetails.unit.isBlank(),
+                        isError = tinDetails.tinQuantityString.isNotBlank() &&
+                                !quantityIsFocused && !unitIsFocused &&
+                                tinDetails.unit.isBlank(),
                         modifier = Modifier
-                            .weight(2f),
+                            .weight(2f)
+                            .onFocusChanged(
+                                onFocusChanged = {
+                                    unitIsFocused = it.isFocused
+                                }
+                            ),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
