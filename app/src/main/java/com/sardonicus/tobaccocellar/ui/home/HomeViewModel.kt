@@ -70,6 +70,7 @@ class HomeViewModel(
         viewModelScope.launch {
             EventBus.events.collect {
                 if (it is DatabaseRestoreEvent) {
+                    HomeUiState(isLoading = true)
                     _refresh.emit(Unit)
                 }
             }
@@ -226,6 +227,11 @@ class HomeViewModel(
                         SearchSetting.NOTES -> {
                             allItems.filter {
                                 it.items.notes.contains(searchValue, ignoreCase = true)
+                            }
+                        }
+                        SearchSetting.CONTAINER -> {
+                            allItems.filter {
+                                it.tins.any { it.container.contains(searchValue, ignoreCase = true) }
                             }
                         }
                     }
@@ -464,4 +470,5 @@ data class FilterParameters(
 sealed class SearchSetting(val value: String) {
     data object BLEND: SearchSetting("Blend")
     data object NOTES: SearchSetting("Notes")
+    data object CONTAINER: SearchSetting("Container")
 }
