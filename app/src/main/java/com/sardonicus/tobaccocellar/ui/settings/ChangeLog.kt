@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
-
 val changelogEntries = listOf(
     ChangelogEntryData(
         versionNumber = "",
@@ -8,6 +7,72 @@ val changelogEntries = listOf(
         changes = listOf(),
         improvements = listOf(),
         bugFixes = listOf(),
+    ),
+
+    ChangelogEntryData(
+        versionNumber = "2.7.0",
+        buildDate = "27 Mar, 2025",
+        changes = listOf(
+            "Backup/Restore database function, did not work exactly correct, which could result " +
+                    "in corruption on RESTORE. The backup and restore operations now work " +
+                    "correctly. The backups are also much smaller (lossless compression). You " +
+                    "will need to create a new backup if you wish to use the backup function, " +
+                    "from this version on, backups created in previous versions will not work! " +
+                    "If you have previously RESTORED from a database backup (and only restored), I" +
+                    "highly suggest you export as a CSV (Normal Export if you haven't saved any " +
+                    "tins, Export as Tins if you have), import the CSV you just exported (use " +
+                    "\"collate as tins\" option if you exported as tins). This will ensure the " +
+                    "database is clean and integrity is intact. Now you can create a new backup " +
+                    "file with confidence that there will be no data loss or corruption.",
+            "Cellar Screen quick Blend Search now can be switched to a \"Notes\" or \"Container\" " +
+                    "search tapping the search icon on the left to open a dropdown menu. The " +
+                    "The default option is \"Blend\". Your selection will be saved and " +
+                    "indicated by the placeholder text in the search field.",
+            "Add/Edit screens, tin entry date pickers now restrict selectable dates to be in " +
+                    "range of the other date fields. If all fields are blank, any date could " +
+                    "be entered, but if any field is filled: manufacture date must be on/before " +
+                    "cellar date (or opened date), cellar date must be on/after manufactured " +
+                    "date and on/before opened date, and opened date must be on/after cellared " +
+                    "date (or manufactured). Error colors added when dates do not fit this " +
+                    "schema and validation updated to prevent saving with invalid dates.",
+            "Add/Edit screen date picker has also been changed such that the default view when " +
+                    "launched is the calendar picker mode rather than the input mode in order " +
+                    "to make the date picking easier with the new restrictions on selection. In " +
+                    "order to clear a date if you want it cleared, switch the input mode by " +
+                    "tapping the edit icon in the top right and erase the entered date (there's " +
+                    "no deselect option in the calendar mode because Google hasn't added that to " +
+                    "the date picker API).",
+            "Add/Edit screens, added error state highlights to the unit field in tins entry if a " +
+                    "quantity is entered (though quantity is optional, unit is required with it).",
+            "Add/Edit screens now also display an indicator on the tabs if that tab contains the " +
+                    "source of the validation error that prevents saving/updating.",
+            "Stats screen, added Quick Stats for containers.",
+            "Updated the Help/FAQ, fixing some typos and outdated information.",
+            "Code shrinking to reduce app size and improve performance. Please email me if any " +
+                    "bugs or issues result from this."
+        ),
+        improvements = listOf(
+            "CSV Import results count, when using the Overwrite option, now the existing entry " +
+                    "components are checked and compared to the inserted components for counting " +
+                    "whether or not an entry was updated (more accurate count).",
+            "Cellar screen, added haptic feedback when long-pressing an entry in table view to " +
+                    "navigate to edit entry.",
+            "Blend Details, code changes to improve stability and performance.",
+            "On Add/Edit entry screens, the individual tins are now expanded by default."
+        ),
+        bugFixes = listOf(
+            "Minor bug for the navigation from Blend Details screen back to cellar screen showing " +
+                    "the wrong transition.",
+            "Bug fixed, ensure list position is not saved when viewing entry details " +
+                    "or navigating to edit entry after a blend search while in table view mode.",
+            "Bug fixed, when leaving optional quantity field blank on a tin entry, editing the " +
+                    "entry resulted in the field initializing a 0.0 amount rather than blank.",
+            "Bug fixed for Blend Details screen when a tin date was set to a future date, the " +
+                    "display showed \"less than one day\", it now shows \"(date) until...\" " +
+                    "with a proper calculation for the future date.",
+            "Blend Details screen typo: when the length of time since X date for tins with dates " +
+                    "was \"less than one day...\", there was an erroneous \".\" included.",
+        ),
     ),
 
     ChangelogEntryData(
@@ -19,7 +84,7 @@ val changelogEntries = listOf(
                     "to its original state.",
             "Re-organized some of the previous changelog entries. Some entries had listed under " +
                     "\"Improvements\" some things that are more fitting to be listed under the " +
-                    "\"Changes\" sections (use-behavior, non."
+                    "\"Changes\" sections (use-behavior, new functionality, non-minor changes)."
         ),
         bugFixes = listOf(
             "Minor error on new \"jump to top/bottom\" button where on a cold start, trying to " +
@@ -96,7 +161,7 @@ val changelogEntries = listOf(
             "Fixed a bug where the list wasn't returning to the previous position when clearing " +
                     "blend search.",
             "Fixed a minor issue in filtering by certain fields that generate selection options " +
-                    "based on data in the database, where if the last item of a given filter " +
+                    "based on data in the database, where if the last entry of a given filter " +
                     "was edited or deleted, that filter value would still be applied " +
                     "despite no longer being a valid option and unable to be de-selected as it " +
                     "was removed from the selectable options.",
