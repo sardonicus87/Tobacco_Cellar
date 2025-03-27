@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.items
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -23,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,43 +83,52 @@ fun EditEntryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            AddEntryBody(
-                itemUiState = viewModel.itemUiState,
-                componentUiState = viewModel.componentList,
-                tinDetails = viewModel.tinDetailsState,
-                tinDetailsList = viewModel.tinDetailsList,
-                tabErrorState = viewModel.tabErrorState,
-                syncedTins = viewModel.calculateSyncTins(),
-                existState = ExistState(),
-                onItemValueChange = viewModel::updateUiState,
-                onTinValueChange = viewModel::updateTinDetails,
-                onComponentChange = viewModel::updateComponentList,
-                addTin = viewModel::addTin,
-                removeTin = viewModel::removeTin,
-                isTinLabelValid = viewModel::isTinLabelValid,
-                onSaveClick = {
-                    coroutineScope.launch {
-                        withContext(Dispatchers.Main) {
-                            viewModel.checkItemExistsOnUpdate()
-                            if (!viewModel.existState.exists) {
-                                viewModel.updateItem()
-                                navigateBack()
+            Box {
+                AddEntryBody(
+                    itemUiState = viewModel.itemUiState,
+                    componentUiState = viewModel.componentList,
+                    tinDetails = viewModel.tinDetailsState,
+                    tinDetailsList = viewModel.tinDetailsList,
+                    tabErrorState = viewModel.tabErrorState,
+                    syncedTins = viewModel.calculateSyncTins(),
+                    existState = ExistState(),
+                    onItemValueChange = viewModel::updateUiState,
+                    onTinValueChange = viewModel::updateTinDetails,
+                    onComponentChange = viewModel::updateComponentList,
+                    addTin = viewModel::addTin,
+                    removeTin = viewModel::removeTin,
+                    isTinLabelValid = viewModel::isTinLabelValid,
+                    onSaveClick = {
+                        coroutineScope.launch {
+                            withContext(Dispatchers.Main) {
+                                viewModel.checkItemExistsOnUpdate()
+                                if (!viewModel.existState.exists) {
+                                    viewModel.updateItem()
+                                    navigateBack()
+                                }
                             }
                         }
-                    }
-                },
-                onDeleteClick = {
-                    coroutineScope.launch {
-                        viewModel.deleteItem()
-                        navigateBack()
-                    }
-                },
-                isEditEntry = true,
-                validateDates = viewModel::validateDates,
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxSize()
-            )
+                    },
+                    onDeleteClick = {
+                        coroutineScope.launch {
+                            viewModel.deleteItem()
+                            navigateBack()
+                        }
+                    },
+                    isEditEntry = true,
+                    validateDates = viewModel::validateDates,
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxSize()
+                )
+                if (viewModel.loading) {
+                    FullScreenLoading(
+                        scrimColor = Color.Black,
+                        scrimAlpha = 0.33f,
+                    )
+                }
+            }
+
             if (viewModel.existState.existCheck) {
                 ItemExistsEditDialog(
                     onItemExistsConfirm = {

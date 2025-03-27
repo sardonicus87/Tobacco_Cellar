@@ -40,6 +40,7 @@ class EditEntryViewModel(
         private set
     var tabErrorState by mutableStateOf(TabErrorState())
         private set
+    var loading by mutableStateOf(true)
 
     private var _originalComponents = mutableStateOf("")
     val originalComponents = _originalComponents
@@ -123,6 +124,7 @@ class EditEntryViewModel(
 
     init {
         viewModelScope.launch {
+            loading = true
             val itemDetails = itemsRepository.getItemStream(itemsId)
                 .filterNotNull()
                 .first()
@@ -154,6 +156,7 @@ class EditEntryViewModel(
 
             val updatedDetails = itemDetails.itemDetails.copy(tinDetailsList = tins)
             itemUiState = itemDetails.copy(itemDetails = updatedDetails, isEntryValid = validateInput(updatedDetails))
+            loading = false
         }
     }
 
