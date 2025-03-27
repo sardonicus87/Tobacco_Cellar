@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,7 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
@@ -223,12 +224,38 @@ fun HomeScreen(
         }
     }
 
-    val alertShownFlow by preferencesRepo.alertShown.collectAsState(initial = true)
+    val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
     var showImportantAlert by remember { mutableStateOf(false) }
-    if (!alertShownFlow) {
-        showImportantAlert = true
+    var currentAlert: OneTimeAlert? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(lastAlertShown) {
+        if (lastAlertShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
+            currentAlert = OneTimeAlerts.alerts.find { it.id == OneTimeAlerts.CURRENT_ALERT_VERSION }
+            if (currentAlert != null) {
+                showImportantAlert = true
+            }
+        } else {
+            showImportantAlert = false
+            currentAlert = null
+        }
     }
-    if (showImportantAlert) {
+
+    if (showImportantAlert && currentAlert != null) {
+        val alert = currentAlert!!
+        var enabled by rememberSaveable { mutableStateOf(false) }
+        val scrollState = rememberScrollState()
+        val atBottom by remember {
+            derivedStateOf {
+                scrollState.value == scrollState.maxValue
+            }
+        }
+
+        LaunchedEffect(atBottom) {
+            if (atBottom) {
+                enabled = true
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showImportantAlert = false },
             properties = DialogProperties(
@@ -238,7 +265,7 @@ fun HomeScreen(
             containerColor = LocalCustomColors.current.darkNeutral,
             title = {
                 Text(
-                    text = "One-Time Alert",
+                    text = "Important Alert!",
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
@@ -247,49 +274,45 @@ fun HomeScreen(
                 )
             },
             text = {
-                Column {
-                    Text(
-                        text = "I have employed code and resource shrinking, which makes the app " +
-                                "size much smaller and should improve performance. However, some " +
-                                "things may not work as intended. I have attempted to thoroughly " +
-                                "test the app, but may have missed some things.",
+                GlowBox(
+                    color = GlowColor(LocalCustomColors.current.darkNeutral),
+                    size = GlowSize(vertical = 6.dp),
+                    modifier = Modifier
+                        .heightIn(max = 250.dp)
+                ) {
+                    Column(
                         modifier = Modifier
-                            .padding(bottom = 12.dp)
-                    )
-                    Text(
-                        text = "PLEASE contact me if you encounter any issues:",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .padding(bottom = 6.dp)
-                    )
-                    SelectionContainer {
+                            .verticalScroll(scrollState)
+                    ) {
                         Text(
-                            text = "sardonicus.notadev@gmail.com",
-                            fontWeight = FontWeight.Black,
+                            text = "You must scroll to the bottom to be able to acknowledge and " +
+                                    "dismiss this dialog.",
                             modifier = Modifier
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            fontSize = 15.sp
                         )
+                        Text(
+                            text = "This is a one-time alert.\n"
+                        )
+                        alert.message()
                     }
-                    Text(
-                        text = "(Email address can be found on the app settings screen)",
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                    )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            preferencesRepo.saveAlertShown()
+                            preferencesRepo.saveAlertShown(alert.id)
                             showImportantAlert = false
+                            currentAlert = null
                         }
-                    }
+                    },
+                    enabled = enabled
                 ) {
-                    Text(text = "OK!")
+                    Text(text = "Confirm")
                 }
             }
         )

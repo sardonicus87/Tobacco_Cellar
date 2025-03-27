@@ -30,7 +30,7 @@ class PreferencesRepo(
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
-        val ALERT_SHOWN = booleanPreferencesKey("alert_shown_v1")
+        val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -226,7 +226,7 @@ class PreferencesRepo(
     }
 
     /** Alert shown **/
-    val alertShown: Flow<Boolean> = dataStore.data
+    val lastAlertFlow: Flow<Int> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading alert preferences.", it)
@@ -235,12 +235,12 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[ALERT_SHOWN] ?: false
+            it[LAST_ALERT_SHOWN] ?: 0
         }
 
-    suspend fun saveAlertShown() {
+    suspend fun saveAlertShown(alertId: Int) {
         dataStore.edit {
-            it[ALERT_SHOWN] = true
+            it[LAST_ALERT_SHOWN] = alertId
         }
     }
 
