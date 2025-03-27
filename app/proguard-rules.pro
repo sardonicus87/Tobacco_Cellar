@@ -19,3 +19,12 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.sardonicus.tobaccocellar.data.** { *; }
+-keep class com.sardonicus.tobaccocellar.ui.settings.SettingsViewModelKt { *; }
+-keep class com.sardonicus.tobaccocellar.data.TobaccoDatabaseKt { *; }
+-keep class com.sardonicus.tobaccocellar.data.PreferencesRepo { *; }
+
+#-keep class com.sardonicus.tobaccocellar.ui.settings.BackupState { *; }
+#-keep public class com.sardonicus.tobaccocellar.ui.settings.** { public *; }
+#-keep public class com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel { public *; }
