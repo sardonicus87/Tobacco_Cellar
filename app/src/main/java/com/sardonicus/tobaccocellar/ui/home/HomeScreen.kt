@@ -40,9 +40,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -148,22 +151,32 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val homeUiState by viewmodel.homeUiState.collectAsState()
-    val searchText by filterViewModel.searchTextDisplay.collectAsState()
-    val sorting by viewmodel.sorting
-    val showSnackbar = viewmodel.showSnackbar.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
+    val preferencesRepo = LocalCellarApplication.current.preferencesRepo
+    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
+        this.clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }) {
+            onClick()
+        }
+    }
+
+    val searchFocused by filterViewModel.searchFocused.collectAsState()
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+    val searchText by filterViewModel.searchTextDisplay.collectAsState()
+
+    val filteredItems by viewmodel.filteredItems.collectAsState()
+    val homeUiState by viewmodel.homeUiState.collectAsState()
     val isTableView = homeUiState.isTableView
     val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
-    val focusManager = LocalFocusManager.current
-    val searchFocused by filterViewModel.searchFocused.collectAsState()
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-    val filteredItems by viewmodel.filteredItems.collectAsState()
+    val sorting by viewmodel.sorting
 
+    val showSnackbar = viewmodel.showSnackbar.collectAsState()
     if (showSnackbar.value) {
         LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
@@ -210,14 +223,77 @@ fun HomeScreen(
         }
     }
 
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
+    val alertShownFlow by preferencesRepo.alertShown.collectAsState(initial = true)
+    var showImportantAlert by remember { mutableStateOf(false) }
+    if (!alertShownFlow) {
+        showImportantAlert = true
     }
-
+    if (showImportantAlert) {
+        AlertDialog(
+            onDismissRequest = { showImportantAlert = false },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
+            containerColor = LocalCustomColors.current.darkNeutral,
+            title = {
+                Text(
+                    text = "One-Time Alert",
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "I have employed code and resource shrinking, which makes the app " +
+                                "size much smaller and should improve performance. However, some " +
+                                "things may not work as intended. I have attempted to thoroughly " +
+                                "test the app, but may have missed some things.",
+                        modifier = Modifier
+                            .padding(bottom = 12.dp)
+                    )
+                    Text(
+                        text = "PLEASE contact me if you encounter any issues:",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(bottom = 6.dp)
+                    )
+                    SelectionContainer {
+                        Text(
+                            text = "sardonicus.notadev@gmail.com",
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    Text(
+                        text = "(Email address can be found on the app settings screen)",
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            preferencesRepo.saveAlertShown()
+                            showImportantAlert = false
+                        }
+                    }
+                ) {
+                    Text(text = "OK!")
+                }
+            }
+        )
+    }
 
     Scaffold(
         modifier = modifier
@@ -437,7 +513,7 @@ private fun HomeHeader(
                         containerColor = LocalCustomColors.current.textField,
                         offset = DpOffset((-2).dp, 2.dp)
                     ) {
-                        listOf(SearchSetting.BLEND, SearchSetting.NOTES).forEach {
+                        listOf(SearchSetting.BLEND, SearchSetting.NOTES, SearchSetting.CONTAINER).forEach {
                             DropdownMenuItem(
                                 text = { Text(text = it.value) },
                                 onClick = {
