@@ -242,22 +242,17 @@ fun HomeScreen(
 
     if (showImportantAlert && currentAlert != null) {
         val alert = currentAlert!!
-        var enabled by rememberSaveable { mutableStateOf(false) }
         val scrollState = rememberScrollState()
+        var enabled by rememberSaveable { mutableStateOf(false) }
         val atBottom by remember {
             derivedStateOf {
                 scrollState.value == scrollState.maxValue
             }
         }
-
-        LaunchedEffect(atBottom) {
-            if (atBottom) {
-                enabled = true
-            }
-        }
+        var countdown by remember { mutableIntStateOf(5) }
 
         AlertDialog(
-            onDismissRequest = { showImportantAlert = false },
+            onDismissRequest = { /* Not dismissible */ },
             properties = DialogProperties(
                 dismissOnBackPress = false,
                 dismissOnClickOutside = false
@@ -302,6 +297,29 @@ fun HomeScreen(
                 }
             },
             confirmButton = {
+                val isScrollable by remember { derivedStateOf { scrollState.maxValue > 0 } }
+                LaunchedEffect(isScrollable) {
+                    if (!isScrollable) {
+                        while (countdown > 0) {
+                            delay(1000)
+                            countdown--
+                        }
+                        enabled = true
+                    }
+                }
+                LaunchedEffect(isScrollable, atBottom) {
+                    if (isScrollable && atBottom) {
+                        enabled = true
+                    }
+                }
+
+                val buttonText = remember(isScrollable, enabled, countdown) {
+                    if (isScrollable) {
+                        "Confirm"
+                    } else {
+                        if (enabled) "Confirm" else "( $countdown )"
+                    }
+                }
                 Button(
                     onClick = {
                         coroutineScope.launch {
@@ -312,7 +330,15 @@ fun HomeScreen(
                     },
                     enabled = enabled
                 ) {
-                    Text(text = "Confirm")
+                    Box (contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Confirm",
+                            color = Color.Transparent
+                        )
+                        Text(
+                            text = buttonText
+                        )
+                    }
                 }
             }
         )
