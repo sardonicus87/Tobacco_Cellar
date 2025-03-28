@@ -100,7 +100,7 @@ class FilterViewModel (
     val sheetSelectedSubgenres = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedCuts = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedComponents = MutableStateFlow<List<String>>(emptyList())
-    val sheetSelectedComponentMatchAll = MutableStateFlow(false)
+    val sheetSelectedComponentMatching = MutableStateFlow<String>("Any")
     val sheetSelectedProduction = MutableStateFlow(false)
     val sheetSelectedOutOfProduction = MutableStateFlow(false)
 
@@ -354,8 +354,8 @@ class FilterViewModel (
     private val _selectedComponent = MutableStateFlow<List<String>>(emptyList())
     val selectedComponent: StateFlow<List<String>> = _selectedComponent
 
-    private val _compMatchAll = MutableStateFlow(false)
-    val compMatchAll: StateFlow<Boolean> = _compMatchAll
+    private val _compMatching = MutableStateFlow<String>("Any")
+    val compMatching: StateFlow<String> = _compMatching
 
     private val _selectedProduction = MutableStateFlow(false)
     val selectedProduction: StateFlow<Boolean> = _selectedProduction
@@ -456,11 +456,11 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
-    fun updateCompMatchAll(isSelected: Boolean) {
-        sheetSelectedComponentMatchAll.value = isSelected
-        _compMatchAll.value = isSelected
+    fun updateCompMatching(option: String) {
+        sheetSelectedComponentMatching.value = option
+        _compMatching.value = option
 
-        if (isSelected) {
+        if (option == "All" || option == "Only") {
             if (sheetSelectedComponents.value.contains("(None Assigned)")) {
                 sheetSelectedComponents.value -= "(None Assigned)"
                 _selectedComponent.value -= "(None Assigned)"

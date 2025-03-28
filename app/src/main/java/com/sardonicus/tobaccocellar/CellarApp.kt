@@ -2023,7 +2023,7 @@ fun ComponentFilterSection(
 
         val availableComps by filterViewModel.availableComponents.collectAsState()
         val selectedComps by filterViewModel.sheetSelectedComponents.collectAsState()
-        val matchAll by filterViewModel.sheetSelectedComponentMatchAll.collectAsState()
+        val matchOption by filterViewModel.sheetSelectedComponentMatching.collectAsState()
         val nothingAssigned = !availableComps.any { it != "(None Assigned)" }
 
         Row(
@@ -2059,7 +2059,7 @@ fun ComponentFilterSection(
                         .padding(0.dp)
                         .clickable(
                             enabled = !nothingAssigned,
-                            onClick = { filterViewModel.updateCompMatchAll(false) }
+                            onClick = { filterViewModel.updateCompMatching("Any") }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -2072,8 +2072,8 @@ fun ComponentFilterSection(
                     Text(
                         text = "Any",
                         fontSize = 14.sp,
-                        fontWeight = if (!matchAll) FontWeight.Medium else FontWeight.Normal,
-                        color = if (!matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                        fontWeight = if (matchOption == "Any") FontWeight.Medium else FontWeight.Normal,
+                        color = if (matchOption == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                             alpha = .7f
                         ),
                         modifier = Modifier
@@ -2091,7 +2091,7 @@ fun ComponentFilterSection(
                         .padding(0.dp)
                         .clickable(
                             enabled = !nothingAssigned,
-                            onClick = { filterViewModel.updateCompMatchAll(true) }
+                            onClick = { filterViewModel.updateCompMatching("All") }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -2104,8 +2104,40 @@ fun ComponentFilterSection(
                     Text(
                         text = "All",
                         fontSize = 14.sp,
-                        fontWeight = if (matchAll) FontWeight.Medium else FontWeight.Normal,
-                        color = if (matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                        fontWeight = if (matchOption == "All") FontWeight.Medium else FontWeight.Normal,
+                        color = if (matchOption == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            alpha = .7f
+                        ),
+                        modifier = Modifier
+                    )
+                }
+                Text(
+                    text = " / ",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .clickable(
+                            enabled = !nothingAssigned,
+                            onClick = { filterViewModel.updateCompMatching("Only") }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Only",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Transparent,
+                    )
+                    Text(
+                        text = "Only",
+                        fontSize = 14.sp,
+                        fontWeight = if (matchOption == "Only") FontWeight.Medium else FontWeight.Normal,
+                        color = if (matchOption == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                             alpha = .7f
                         ),
                         modifier = Modifier
@@ -2190,7 +2222,7 @@ fun ComponentFilterSection(
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.background,
                     ),
-                    enabled = !matchAll || (matchAll && !comp.contains("(None Assigned)"))
+                    enabled = matchOption == "Any" || (!comp.contains("(None Assigned)"))
                 )
             }
             if (showOverflowPopup) {
@@ -2257,9 +2289,7 @@ fun ComponentFilterSection(
                                             modifier = Modifier
                                                 .padding(0.dp)
                                                 .clickable(onClick = {
-                                                    filterViewModel.updateCompMatchAll(
-                                                        false
-                                                    )
+                                                    filterViewModel.updateCompMatching("Any")
                                                 }),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -2272,8 +2302,8 @@ fun ComponentFilterSection(
                                             Text(
                                                 text = "Any",
                                                 fontSize = 14.sp,
-                                                fontWeight = if (!matchAll) FontWeight.Medium else FontWeight.Normal,
-                                                color = if (!matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                fontWeight = if (matchOption == "Any") FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchOption == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                                     alpha = .7f
                                                 ),
                                                 modifier = Modifier
@@ -2289,9 +2319,7 @@ fun ComponentFilterSection(
                                             modifier = Modifier
                                                 .padding(0.dp)
                                                 .clickable(onClick = {
-                                                    filterViewModel.updateCompMatchAll(
-                                                        true
-                                                    )
+                                                    filterViewModel.updateCompMatching("All")
                                                 }),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -2304,8 +2332,38 @@ fun ComponentFilterSection(
                                             Text(
                                                 text = "All",
                                                 fontSize = 14.sp,
-                                                fontWeight = if (matchAll) FontWeight.Medium else FontWeight.Normal,
-                                                color = if (matchAll) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                fontWeight = if (matchOption == "All") FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchOption == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    alpha = .7f
+                                                ),
+                                                modifier = Modifier
+                                            )
+                                        }
+                                        Text(
+                                            text = " / ",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            modifier = Modifier
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .clickable(
+                                                    onClick = { filterViewModel.updateCompMatching("Only") }
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Only",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Transparent,
+                                            )
+                                            Text(
+                                                text = "Only",
+                                                fontSize = 14.sp,
+                                                fontWeight = if (matchOption == "Only") FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchOption == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                                     alpha = .7f
                                                 ),
                                                 modifier = Modifier
@@ -2340,7 +2398,7 @@ fun ComponentFilterSection(
                                                 colors = FilterChipDefaults.filterChipColors(
                                                     containerColor = MaterialTheme.colorScheme.background,
                                                 ),
-                                                enabled = !matchAll || (matchAll && !it.contains("(None Assigned)"))
+                                                enabled = matchOption == "Any" || (!it.contains("(None Assigned)"))
                                             )
                                         }
                                     }

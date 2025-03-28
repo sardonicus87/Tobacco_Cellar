@@ -96,7 +96,7 @@ class StatsViewModel(
             filterViewModel.selectedExcludeLikes,
             filterViewModel.selectedExcludeDislikes,
             filterViewModel.selectedComponent,
-            filterViewModel.compMatchAll,
+            filterViewModel.compMatching,
             filterViewModel.selectedSubgenre,
             filterViewModel.selectedCut,
             filterViewModel.selectedProduction,
@@ -116,16 +116,17 @@ class StatsViewModel(
             val excludedLikes = values[11] as Boolean
             val excludedDislikes = values[12] as Boolean
             val components = values[13] as List<String>
-            val matchAll = values[14] as Boolean
+            val matching = values[14] as String
             val subgenres = values[15] as List<String>
             val cuts = values[16] as List<String>
             val production = values[17] as Boolean
             val outOfProduction = values[18] as Boolean
 
             val filteredItems = allItems.filter { items ->
-                val componentMatching = when (matchAll) {
-                    true -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
-                    false -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
+                val componentMatching = when (matching) {
+                    "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
+                    "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
+                    else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
                 }
 
                 (brands.isEmpty() || brands.contains(items.items.brand)) &&

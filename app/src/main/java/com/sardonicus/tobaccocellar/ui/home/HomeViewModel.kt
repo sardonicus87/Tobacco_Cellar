@@ -131,7 +131,7 @@ class HomeViewModel(
             filterViewModel.selectedExcludeLikes.value,
             filterViewModel.selectedExcludeDislikes.value,
             filterViewModel.selectedComponent.value,
-            filterViewModel.compMatchAll.value,
+            filterViewModel.compMatching.value,
             filterViewModel.selectedSubgenre.value,
             filterViewModel.selectedCut.value,
             filterViewModel.selectedProduction.value,
@@ -157,7 +157,7 @@ class HomeViewModel(
                 filterViewModel.selectedExcludeLikes,
                 filterViewModel.selectedExcludeDislikes,
                 filterViewModel.selectedComponent,
-                filterViewModel.compMatchAll,
+                filterViewModel.compMatching,
                 filterViewModel.selectedSubgenre,
                 filterViewModel.selectedCut,
                 filterViewModel.selectedProduction,
@@ -185,7 +185,7 @@ class HomeViewModel(
             val excludedLikes = filterParams.selectedExcludeLikes
             val excludedDislikes = filterParams.selectedExcludeDislikes
             val components = filterParams.selectedComponent
-            val matchAll = filterParams.compMatchAll
+            val matching = filterParams.compMatching
             val subgenres = filterParams.selectedSubgenre
             val cuts = filterParams.selectedCut
             val production = filterParams.selectedProduction
@@ -194,9 +194,10 @@ class HomeViewModel(
             val filteredItems =
                 if (searchValue.isBlank()) {
                     allItems.filter { items ->
-                        val componentMatching = when (matchAll) {
-                            true -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
-                            false -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
+                        val componentMatching = when (matching) {
+                            "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
+                            "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
+                            else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
                         }
 
                         /** ( [filter not selected side] || [filter selected side] ) */
@@ -460,7 +461,7 @@ data class FilterParameters(
     val selectedExcludeLikes: Boolean,
     val selectedExcludeDislikes: Boolean,
     val selectedComponent: List<String>,
-    val compMatchAll: Boolean,
+    val compMatching: String,
     val selectedSubgenre: List<String>,
     val selectedCut: List<String>,
     val selectedProduction: Boolean,
