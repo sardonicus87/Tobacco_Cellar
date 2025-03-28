@@ -79,6 +79,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -139,11 +140,13 @@ fun CsvImportScreen(
                 csvImportState = csvImportState,
                 viewModel = viewModel,
                 csvUiState = csvUiState,
+                updateMappingFields = { viewModel::updateFieldMapping },
                 mappingOptions = mappingOptions,
                 importOption = importOption,
-                onHeaderChange = { isChecked -> viewModel.updateHeaderOptions(isChecked) },
-                updateCollateTinsOption = { isChecked -> viewModel.updateCollateTinsOption(isChecked) },
-                updateDateFormat = { dateFormat -> viewModel.updateDateFormat(dateFormat) },
+                onHeaderChange = { viewModel.updateHeaderOption(it) },
+                updateCollateTinsOption = { viewModel.updateCollateTinsOption(it) },
+                updateSyncTinsOption = { viewModel.updateSyncTinsOption(it) },
+                updateDateFormat = { viewModel.updateDateFormat(it) },
                 navigateToImportResults = navigateToImportResults,
                 navigateToHome = navigateToHome,
                 modifier = modifier
@@ -158,8 +161,10 @@ fun CsvImportScreen(
 fun CsvImportBody(
     navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
     navigateToHome: () -> Unit,
+    updateMappingFields: (MappingOptions) -> Unit,
     onHeaderChange: (isChecked: Boolean) -> Unit,
     updateCollateTinsOption: (isChecked: Boolean) -> Unit,
+    updateSyncTinsOption: (Boolean) -> Unit,
     updateDateFormat: (dateFormat: String) -> Unit,
     csvImportState: CsvImportState,
     csvUiState: CsvUiState,
@@ -482,9 +487,10 @@ fun CsvImportBody(
                                             ) {
                                                 LabeledCheckbox(
                                                     text = "Has header?",
+                                                    width = 96.dp,
                                                     checked = mappingOptions.hasHeader,
-                                                    onCheckedChange = { isChecked ->
-                                                        onHeaderChange(isChecked)
+                                                    onCheckedChange = {
+                                                        onHeaderChange(it)
                                                     },
                                                     modifier = Modifier,
                                                 )
@@ -515,22 +521,34 @@ fun CsvImportBody(
                                                 .fillMaxWidth()
                                                 .padding(bottom = 8.dp),
                                             horizontalArrangement = Arrangement.Start,
-                                            verticalAlignment = Alignment.CenterVertically,
+                                            verticalAlignment = Alignment.Top,
                                         ) {
                                             Column(
                                                 modifier = Modifier
-                                                    .padding(0.dp),
+                                                    .padding(0.dp)
+                                                    .weight(1f),
                                                 horizontalAlignment = Alignment.Start,
-                                                verticalArrangement = Arrangement.Center,
+                                                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
                                             ) {
                                                 LabeledCheckbox(
                                                     text = "Collate tins?",
                                                     maxLines = 1,
+                                                    width = 96.dp,
                                                     checked = mappingOptions.collateTins,
-                                                    onCheckedChange = { isChecked ->
-                                                        updateCollateTinsOption(isChecked)
+                                                    onCheckedChange = {
+                                                        updateCollateTinsOption(it)
                                                     },
                                                     modifier = Modifier,
+                                                )
+                                                LabeledCheckbox(
+                                                    text = "Sync tins?",
+                                                    maxLines = 1,
+                                                    width = 96.dp,
+                                                    checked = mappingOptions.syncTins,
+                                                    enabled = mappingOptions.collateTins,
+                                                    onCheckedChange = {
+                                                        updateSyncTinsOption(it)
+                                                    },
                                                 )
                                             }
                                             // Warning //
@@ -538,7 +556,7 @@ fun CsvImportBody(
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .padding(0.dp),
-                                                horizontalAlignment = Alignment.Start,
+                                                horizontalAlignment = Alignment.End,
                                                 verticalArrangement = Arrangement.Center,
                                             ) {
                                                 AutoSizeText(
@@ -550,9 +568,9 @@ fun CsvImportBody(
                                                     modifier = Modifier,
                                                     fontSize = 15.sp,
                                                     minFontSize = 8.sp,
-                                                    height = 24.dp,
-                                                    maxLines = 1,
-                                                    textAlign = TextAlign.Start,
+                                                    height = 48.dp,
+                                                    maxLines = 2,
+                                                    textAlign = TextAlign.End,
                                                     color = MaterialTheme.colorScheme.error
                                                 )
                                             }
@@ -561,7 +579,7 @@ fun CsvImportBody(
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(0.dp),
+                                                .padding(top = 8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(
                                                 8.dp,
                                                 Alignment.Start
@@ -660,7 +678,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.brandColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Brand, selectedColumn
                                                 )
                                             },
@@ -672,7 +690,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.blendColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Blend, selectedColumn
                                                 )
                                             },
@@ -683,7 +701,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.typeColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Type, selectedColumn
                                                 )
                                             },
@@ -702,7 +720,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.subGenreColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.SubGenre, selectedColumn
                                                 )
                                             },
@@ -721,7 +739,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.cutColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Cut, selectedColumn
                                                 )
                                             },
@@ -741,7 +759,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.componentsColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Components,
                                                     selectedColumn
                                                 )
@@ -762,7 +780,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.quantityColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Quantity, selectedColumn
                                                 )
                                             },
@@ -775,14 +793,14 @@ fun CsvImportBody(
                                             },
                                             importOption = importOption,
                                             showCheckbox = true,
-                                            enabled = !mappingOptions.collateTins
+                                            enabled = !mappingOptions.syncTins
                                         )
                                         MappingField(
                                             label = "Favorite:",
                                             selectedColumn = mappingOptions.favoriteColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Favorite, selectedColumn
                                                 )
                                             },
@@ -801,7 +819,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.dislikedColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Disliked, selectedColumn
                                                 )
                                             },
@@ -820,7 +838,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.productionColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Production,
                                                     selectedColumn
                                                 )
@@ -840,7 +858,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.notesColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Notes, selectedColumn
                                                 )
                                             },
@@ -878,7 +896,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.containerColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.Container,
                                                     selectedColumn
                                                 )
@@ -890,7 +908,7 @@ fun CsvImportBody(
                                             selectedColumn = mappingOptions.tinQuantityColumn,
                                             csvColumns = csvUiState.columns,
                                             onColumnSelected = { selectedColumn ->
-                                                viewModel.updateMappingOptions(
+                                                viewModel.updateFieldMapping(
                                                     CsvImportViewModel.CsvField.TinQuantity,
                                                     selectedColumn
                                                 )
@@ -928,7 +946,7 @@ fun CsvImportBody(
                                                     selectedColumn = mappingOptions.manufactureDateColumn,
                                                     csvColumns = csvUiState.columns,
                                                     onColumnSelected = { selectedColumn ->
-                                                        viewModel.updateMappingOptions(
+                                                        viewModel.updateFieldMapping(
                                                             CsvImportViewModel.CsvField.ManufactureDate,
                                                             selectedColumn
                                                         )
@@ -940,7 +958,7 @@ fun CsvImportBody(
                                                     selectedColumn = mappingOptions.cellarDateColumn,
                                                     csvColumns = csvUiState.columns,
                                                     onColumnSelected = { selectedColumn ->
-                                                        viewModel.updateMappingOptions(
+                                                        viewModel.updateFieldMapping(
                                                             CsvImportViewModel.CsvField.CellarDate,
                                                             selectedColumn
                                                         )
@@ -952,7 +970,7 @@ fun CsvImportBody(
                                                     selectedColumn = mappingOptions.openDateColumn,
                                                     csvColumns = csvUiState.columns,
                                                     onColumnSelected = { selectedColumn ->
-                                                        viewModel.updateMappingOptions(
+                                                        viewModel.updateFieldMapping(
                                                             CsvImportViewModel.CsvField.OpenDate,
                                                             selectedColumn
                                                         )
@@ -1510,6 +1528,7 @@ fun LabeledCheckbox(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
+    width: Dp = Dp.Unspecified,
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
     maxLines: Int = Int.MAX_VALUE,
@@ -1525,8 +1544,9 @@ fun LabeledCheckbox(
     ) {
         Text(
             text = text,
-            modifier = Modifier,
-            color = fontColor,
+            modifier = Modifier
+                .width(width),
+            color = if(!enabled) fontColor.copy(alpha = .5f) else fontColor,
             maxLines = maxLines,
         )
         TriStateCheckbox(

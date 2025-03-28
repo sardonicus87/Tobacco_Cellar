@@ -79,7 +79,12 @@ class CsvImportViewModel(
     /** handling mapping options and UI state **/
     var mappingOptions by mutableStateOf(MappingOptions())
 
-    fun updateHeaderOptions(hasHeader: Boolean) {
+    fun updateSyncTinsOption(syncTins: Boolean) {
+        mappingOptions = mappingOptions.copy(syncTins = syncTins)
+        updateFieldMapping(CsvField.Quantity, "")
+    }
+
+    fun updateHeaderOption(hasHeader: Boolean) {
         mappingOptions = mappingOptions.copy(hasHeader = hasHeader)
     }
 
@@ -96,7 +101,7 @@ class CsvImportViewModel(
         Components, Container, TinQuantity, ManufactureDate, CellarDate, OpenDate,
     }
 
-    fun updateMappingOptions(field: CsvField, selectedColumn: String) {
+    fun updateFieldMapping(field: CsvField, selectedColumn: String) {
         mappingOptions = when (field) {
             CsvField.Brand -> mappingOptions.copy(brandColumn = selectedColumn.ifBlank { "" })
             CsvField.Blend -> mappingOptions.copy(blendColumn = selectedColumn.ifBlank { "" })
@@ -114,7 +119,6 @@ class CsvImportViewModel(
             CsvField.ManufactureDate -> mappingOptions.copy(manufactureDateColumn = selectedColumn.ifBlank { "" })
             CsvField.CellarDate -> mappingOptions.copy(cellarDateColumn = selectedColumn.ifBlank { "" })
             CsvField.OpenDate -> mappingOptions.copy(openDateColumn = selectedColumn.ifBlank { "" })
-
         }
         csvUiState = csvUiState.copy(isFormValid = validateForm())
     }
@@ -374,6 +378,7 @@ class CsvImportViewModel(
 
         val hasHeader = mappingOptions.hasHeader
         val collateTins = mappingOptions.collateTins
+        val syncTins = mappingOptions.syncTins
         val importOption = importOption.value
         var updatedCount = 0
         var updatedConversions = 0
@@ -570,7 +575,9 @@ class CsvImportViewModel(
                                         tinsAddedToItem = true
                                         insertTins(existingItem.id, tinDataList)
                                         tinDataList.forEach { _ -> addedTins++ }
-                                        preferencesRepo.setItemSyncState(existingItem.id, true)
+                                        if (syncTins) {
+                                            preferencesRepo.setItemSyncState(existingItem.id, true)
+                                        }
                                     }
                                 }
                             }
@@ -689,7 +696,9 @@ class CsvImportViewModel(
                                     if (tinDataList.isNotEmpty()) {
                                         insertTins(existingItem.id, tinDataList)
                                         tinDataList.forEach { _ -> addedTins++ }
-                                        preferencesRepo.setItemSyncState(existingItem.id, true)
+                                        if (syncTins) {
+                                            preferencesRepo.setItemSyncState(existingItem.id, true)
+                                        }
                                     }
                                 }
                             }
@@ -787,7 +796,9 @@ class CsvImportViewModel(
                         if (collateTins) {
                             insertTins(itemId, tinDataList)
                             tinDataList.forEach { _ -> addedTins++ }
-                            preferencesRepo.setItemSyncState(insertedIds[index].toInt(), true)
+                            if (syncTins) {
+                                preferencesRepo.setItemSyncState(insertedIds[index].toInt(), true)
+                            }
                         }
                     }
                 }
@@ -880,6 +891,7 @@ data class CsvUiState(
 data class MappingOptions(
     val hasHeader: Boolean = false,
     val collateTins: Boolean = false,
+    val syncTins: Boolean = false,
     val brandColumn: String = "",
     val blendColumn: String = "",
     val typeColumn: String = "",
