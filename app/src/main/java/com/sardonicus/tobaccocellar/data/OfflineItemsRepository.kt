@@ -31,7 +31,10 @@ class OfflineItemsRepository(
 
     override suspend fun deleteItem(item: Items) = itemsDao.delete(item)
 
-    override suspend fun deleteAllItems() = itemsDao.deleteAllItems()
+    override suspend fun deleteAllItems() {
+        itemsDao.deleteOrphanedComponents()
+        itemsDao.deleteAllItems()
+    }
 
     override suspend fun optimizeDatabase() {
         itemsDao.deleteOrphanedComponents()
