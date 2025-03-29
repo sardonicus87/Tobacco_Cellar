@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -262,7 +261,7 @@ private fun StatsBody(
         }
 
         ChartsSection(
-            filteredStats = filteredStats,
+            filteredStats = filteredStats
         )
 
     }
@@ -549,7 +548,7 @@ fun QuickStatsSection(
             }
             if (expanded) {
                 Text(
-                    text = "Contract",
+                    text = "Collapse",
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     color = LocalContentColor.current.copy(alpha = 0.5f),
@@ -557,7 +556,6 @@ fun QuickStatsSection(
                         .clickable {
                             expanded = false
                         }
-                        .offset(x = (-20).dp)
                         .padding(vertical = 1.dp)
                         .fillMaxWidth()
                 )
@@ -571,7 +569,6 @@ fun QuickStatsSection(
                         .clickable {
                             expanded = true
                         }
-                        .offset(x = (-20).dp)
                         .padding(vertical = 1.dp)
                         .fillMaxWidth()
                 )
