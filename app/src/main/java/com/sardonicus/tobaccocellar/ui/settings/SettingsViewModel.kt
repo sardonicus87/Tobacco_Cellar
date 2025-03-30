@@ -301,37 +301,42 @@ class SettingsViewModel(
                 val restoreState = _restoreState.value
                 val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
 
-                if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
-                    message = "Invalid file."
+                if (!fileContentState.magicNumberValid) {
+                    message = "Restore failed: file is invalid."
+                }
+                else if (!fileContentState.versionValid) {
+                    message = "Restore failed: file is for an older version."
+                }
+                else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
+                    message = "Restore failed: file does not contain database or settings data."
                 } else {
                     if (restoreState.databaseChecked && restoreState.settingsChecked) {
                         if (fileContentState.databasePresent && fileContentState.settingsPresent) {
                             try {
                                 restoreDatabase(context, databaseBytes)
-                            } catch (e: Exception) {
-                                message = "Error restoring database."
-                            }
-                            if (message.isBlank()) {
                                 restoreItemSyncState(itemSyncStateBytes)
+                                restoreSettings(settingsBytes)
+                                message = "Database and Settings restored."
+                            } catch (e: Exception) {
+                                restoreSettings(settingsBytes)
+                                message = "Error restoring database, settings successfully restored."
                             }
-                            restoreSettings(settingsBytes)
-                            message = "Database and Settings restored."
                         } else {
-                            if (!fileContentState.databasePresent) {
-                                message = "Restore failed: file missing database data."
-                            } else { message = "Restore failed: file missing settings data." }
+                            message = if (!fileContentState.databasePresent) {
+                                "Restore failed: file missing database data."
+                            } else {
+                                "Restore failed: file missing settings data."
+                            }
                         }
                     }
                     else if (restoreState.databaseChecked) {
                         if (fileContentState.databasePresent) {
                             try {
                                 restoreDatabase(context, databaseBytes)
-                            } catch (e: Exception) {
-                                message = "Error restoring database."
-                            }
-                            if (message.isBlank()) {
                                 restoreItemSyncState(itemSyncStateBytes)
                                 message = "Database restored."
+                            } catch (e: Exception) {
+                                message = "Error restoring database."
                             }
                         } else { message = "Backup file does not contain database data." }
                     }
@@ -355,7 +360,10 @@ class SettingsViewModel(
         val version = bytes[4]
 
         if (!magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55)) || version != 0x02.toByte()) {
-            return FileContentState(false, false)
+            return FileContentState(
+                magicNumberValid = magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55)),
+                versionValid = version == 0x02.toByte(),
+            )
         }
 
         val settingsLengthBytes = bytes.copyOfRange(5, 9)
@@ -363,7 +371,7 @@ class SettingsViewModel(
         val settingsBytes = bytes.copyOfRange(bytes.size - settingsLength, bytes.size)
         val databaseAndSyncStateBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
 
-        return FileContentState(databaseAndSyncStateBytes.isNotEmpty(), settingsBytes.isNotEmpty())
+        return FileContentState(databaseAndSyncStateBytes.isNotEmpty(), settingsBytes.isNotEmpty(), true, true)
     }
 
     private fun parseBackup(bytes: ByteArray): Triple<ByteArray, ByteArray, ByteArray> {
@@ -501,6 +509,8 @@ data class RestoreState(
 data class FileContentState(
     val databasePresent: Boolean = false,
     val settingsPresent: Boolean = false,
+    val versionValid: Boolean = false,
+    val magicNumberValid: Boolean = false,
 )
 
 data class SnackbarState(
