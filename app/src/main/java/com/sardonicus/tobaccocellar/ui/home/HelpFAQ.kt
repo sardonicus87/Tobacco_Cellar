@@ -537,7 +537,9 @@ private fun Filtering(
                     "matching. Selecting \"Any\" will return blends that contain any of the " +
                     "selected components. Selecting \"All\" will return only those blends that " +
                     "contain all of the selected components (though they may contain other " +
-                    "components in addition to the selected ones).",
+                    "components in addition to the selected ones). Finally, selecting \"Only\" " +
+                    "will return those blends that contain only the selected components (and no " +
+                    "others, the strictest matching possible).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -906,35 +908,6 @@ private fun FullscreenImage(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-//    BasicAlertDialog(
-//        onDismissRequest = onDismiss,
-//        modifier = modifier
-//            .fillMaxSize(),
-//        properties = DialogProperties(
-//            dismissOnBackPress = true,
-//            dismissOnClickOutside = true,
-//            usePlatformDefaultWidth = false
-//        )
-//    ) {
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(Color.Black.copy(alpha = 0.5f))
-//                .clickable(onClick = onDismiss),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            Image(
-//                painter = imagePainter,
-//                contentDescription = null,
-//                modifier = Modifier
-//                    .align(Alignment.Center),
-//                //    .fillMaxWidth(),
-//                alignment = Alignment.Center,
-//                contentScale = ContentScale.Fit,
-//            )
-//        }
-//    }
-
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
