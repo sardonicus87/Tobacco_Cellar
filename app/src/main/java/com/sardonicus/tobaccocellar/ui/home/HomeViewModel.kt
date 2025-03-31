@@ -53,6 +53,9 @@ class HomeViewModel(
     private val _sorting = mutableStateOf(Sorting())
     val sorting: State<Sorting> = _sorting
 
+    private val _resetLoading = MutableStateFlow(false)
+    val resetLoading = _resetLoading.asStateFlow()
+
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
     private val refresh = _refresh.asSharedFlow()
 
@@ -70,7 +73,7 @@ class HomeViewModel(
         viewModelScope.launch {
             EventBus.events.collect {
                 if (it is DatabaseRestoreEvent) {
-                    HomeUiState(isLoading = true)
+                    _resetLoading.value = true
                     _refresh.emit(Unit)
                 }
             }
@@ -96,6 +99,10 @@ class HomeViewModel(
                 val totalQuantity = calculateTotalQuantity(it, quantityOption)
                 val formattedQuantity = formatQuantity(totalQuantity, quantityOption, tins)
                 it.items.id to formattedQuantity
+            }
+
+            if (formattedQuantities.isNotEmpty()) {
+                _resetLoading.value = false
             }
 
             HomeUiState(
