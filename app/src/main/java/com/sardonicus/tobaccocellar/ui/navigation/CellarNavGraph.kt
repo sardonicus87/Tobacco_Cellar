@@ -83,7 +83,7 @@ fun CellarNavHost(
         }
         composable(route = SettingsDestination.route) {
             SettingsScreen(
-                navigateBack = { navController.navigateUp() },
+                navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
