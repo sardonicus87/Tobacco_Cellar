@@ -57,7 +57,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-/** Fade effect boxes. Parent must be a box and must add ".matchParentSize()" and ".align(Alignment.TopStart)" to modifier */
+/** Fade effect boxes. If you want a set height and scrolling effect, add scroll modifier to
+ * content and set the height restrictions on the GlowBox itself. Use spacers in the content to
+ * inset/pad from the edges (glow extends inward from the edge) if you want a fade effect on scroll.*/
 @Composable
 fun GlowBox(
     color: GlowColor,
