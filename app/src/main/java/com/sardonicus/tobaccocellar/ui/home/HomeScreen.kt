@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -172,6 +171,7 @@ fun HomeScreen(
 
     val filteredItems by viewmodel.filteredItems.collectAsState()
     val homeUiState by viewmodel.homeUiState.collectAsState()
+    val resetLoading by viewmodel.resetLoading.collectAsState()
     val isTableView = homeUiState.isTableView
     val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
@@ -227,16 +227,42 @@ fun HomeScreen(
     val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
     var showImportantAlert by remember { mutableStateOf(false) }
     var currentAlert: OneTimeAlert? by remember { mutableStateOf(null) }
+    var unseenPastAlerts by remember { mutableStateOf(listOf<OneTimeAlert>()) }
+    var pastAlertIndex by remember { mutableIntStateOf(0) }
+    var remainingUnseen by remember { mutableIntStateOf(0) }
+    var currentPastAlertId by remember { mutableIntStateOf(-1) }
 
     LaunchedEffect(lastAlertShown) {
         if (lastAlertShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
             currentAlert = OneTimeAlerts.alerts.find { it.id == OneTimeAlerts.CURRENT_ALERT_VERSION }
-            if (currentAlert != null) {
+            val unseenPastAlertCount = OneTimeAlerts.CURRENT_ALERT_VERSION - lastAlertShown - 1
+            unseenPastAlerts = if (unseenPastAlertCount > 0) {
+                val startId = lastAlertShown + 1
+                val endId = OneTimeAlerts.CURRENT_ALERT_VERSION - 1
+                OneTimeAlerts.alerts.filter { it.id in startId..endId }.sortedBy { it.id }
+            } else {
+                emptyList()
+            }
+
+            remainingUnseen = unseenPastAlerts.size
+
+            if (unseenPastAlerts.isNotEmpty()) {
+                pastAlertIndex = 0
+                currentPastAlertId = unseenPastAlerts[0].id
                 showImportantAlert = true
+            } else if (currentAlert != null) {
+                currentPastAlertId = -1
+                showImportantAlert = true
+            } else {
+                remainingUnseen = 0
+                currentPastAlertId = -1
+                showImportantAlert = false
             }
         } else {
             showImportantAlert = false
             currentAlert = null
+            remainingUnseen = 0
+            currentPastAlertId = -1
         }
     }
 
@@ -250,6 +276,7 @@ fun HomeScreen(
             }
         }
         var countdown by remember { mutableIntStateOf(5) }
+        var canScroll by remember { mutableStateOf(false) }
 
         AlertDialog(
             onDismissRequest = { /* Not dismissible */ },
@@ -269,30 +296,68 @@ fun HomeScreen(
                 )
             },
             text = {
-                GlowBox(
-                    color = GlowColor(LocalCustomColors.current.darkNeutral),
-                    size = GlowSize(vertical = 6.dp),
-                    modifier = Modifier
-                        .heightIn(max = 250.dp)
-                ) {
-                    Column(
+                Column {
+                    Text(
+                        text = "This is a one-time alert.",
                         modifier = Modifier
-                            .verticalScroll(scrollState)
+                            .padding(bottom = 16.dp)
+                            .fillMaxWidth(),
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp
+                    )
+                    GlowBox(
+                        color = GlowColor(LocalCustomColors.current.darkNeutral),
+                        size = GlowSize(vertical = 6.dp),
+                        modifier = Modifier
+                            .height(150.dp)
                     ) {
-                        Text(
-                            text = "You must scroll to the bottom to be able to acknowledge and " +
-                                    "dismiss this dialog.",
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center,
-                            fontSize = 15.sp
-                        )
-                        Text(
-                            text = "This is a one-time alert.\n"
-                        )
-                        alert.message()
+                                .verticalScroll(scrollState),
+                        ) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            if (unseenPastAlerts.isNotEmpty() && pastAlertIndex < unseenPastAlerts.size) {
+                                Column(
+                                    modifier = Modifier
+                                ) {
+                                    Text(
+                                        text = "Missed Alert:",
+                                        modifier = Modifier,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 15.sp
+                                    )
+                                    Text(
+                                        text = "${unseenPastAlerts[pastAlertIndex].date}\n(v ${unseenPastAlerts[pastAlertIndex].appVersion})",
+                                        modifier = Modifier
+                                            .padding(bottom = 16.dp),
+                                        fontSize = 14.sp
+                                    )
+                                    if (canScroll) {
+                                        Text(
+                                            text = "You must scroll to the bottom to be able to acknowledge and " +
+                                                    "dismiss this dialog.",
+                                            modifier = Modifier
+                                                .padding(bottom = 16.dp)
+                                        )
+                                    }
+                                    unseenPastAlerts[pastAlertIndex].message()
+                                }
+                            } else {
+                                Column {
+                                    if (canScroll) {
+                                        Text(
+                                            text = "You must scroll to the bottom to be able to acknowledge and " +
+                                                    "dismiss this dialog.",
+                                            modifier = Modifier
+                                                .padding(bottom = 16.dp)
+                                        )
+                                    }
+                                    alert.message()
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                     }
                 }
             },
@@ -305,27 +370,44 @@ fun HomeScreen(
                             countdown--
                         }
                         enabled = true
+                    } else {
+                        canScroll = true
                     }
                 }
-                LaunchedEffect(isScrollable, atBottom) {
+                LaunchedEffect(isScrollable, atBottom, currentPastAlertId) {
                     if (isScrollable && atBottom) {
                         enabled = true
                     }
                 }
-
-                val buttonText = remember(isScrollable, enabled, countdown) {
-                    if (isScrollable) {
-                        "Confirm"
+                val buttonText = remember(isScrollable, enabled, countdown, remainingUnseen) {
+                    if (remainingUnseen > 0) {
+                        if (isScrollable) {
+                            "Next"
+                        } else {
+                            if (enabled) "Next" else "( $countdown )"
+                        }
                     } else {
-                        if (enabled) "Confirm" else "( $countdown )"
+                        if (isScrollable) {
+                            "Confirm"
+                        } else {
+                            if (enabled) "Confirm" else "( $countdown )"
+                        }
                     }
                 }
+
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            preferencesRepo.saveAlertShown(alert.id)
-                            showImportantAlert = false
-                            currentAlert = null
+                            if (remainingUnseen > 0) {
+                                enabled = false
+                                canScroll = false
+                                countdown = 5
+                                preferencesRepo.saveAlertShown(currentPastAlertId)
+                            } else {
+                                preferencesRepo.saveAlertShown(alert.id)
+                                showImportantAlert = false
+                                currentAlert = null
+                            }
                         }
                     },
                     enabled = enabled
@@ -409,6 +491,7 @@ fun HomeScreen(
             ) {
                 HomeBody(
                     isLoading = homeUiState.isLoading,
+                    resetLoading = resetLoading,
                     isTableView = isTableView,
                     items = filteredItems,
                     formattedQuantity = homeUiState.formattedQuantities,
@@ -707,6 +790,7 @@ private fun CustomBlendSearch(
 @Composable
 private fun HomeBody(
     isLoading: Boolean,
+    resetLoading: Boolean,
     isTableView: Boolean,
     items: List<ItemsComponentsAndTins>,
     formattedQuantity: Map<Int, String>,
@@ -741,7 +825,7 @@ private fun HomeBody(
             .fillMaxSize()
             .padding(0.dp)
     ) {
-        if (isLoading) {
+        if (isLoading || resetLoading) {
             FullScreenLoading()
         } else {
             if (items.isEmpty()) {
