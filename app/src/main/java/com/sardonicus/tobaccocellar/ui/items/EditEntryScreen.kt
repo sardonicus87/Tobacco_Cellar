@@ -123,8 +123,7 @@ fun EditEntryScreen(
                 )
                 if (viewModel.loading) {
                     FullScreenLoading(
-                        scrimColor = Color.Black,
-                        scrimAlpha = 0.33f,
+                        scrimColor = Color.Black.copy(alpha = 0.33f),
                     )
                 }
             }

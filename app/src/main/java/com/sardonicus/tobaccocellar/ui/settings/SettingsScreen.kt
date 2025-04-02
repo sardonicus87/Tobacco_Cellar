@@ -200,8 +200,7 @@ fun SettingsScreen(
                 )
                 if (loading) {
                     FullScreenLoading(
-                        scrimColor = Color.Black,
-                        scrimAlpha = 0.5f
+                        scrimColor = Color.Black.copy(alpha = 0.5f),
                     )
                 }
             }
@@ -628,7 +627,7 @@ fun AboutSection(
         ) { append("App Version: ") }
         withStyle(style = SpanStyle(
             color = MaterialTheme.colorScheme.tertiary,
-            fontWeight = FontWeight.Normal)
+            fontWeight = FontWeight.Medium)
         ) { append(appVersion) }
         withStyle(style = SpanStyle(
             color = MaterialTheme.colorScheme.onBackground,
@@ -636,7 +635,7 @@ fun AboutSection(
         ) { append("\nDatabase Version: ") }
         withStyle(style = SpanStyle(
             color = MaterialTheme.colorScheme.tertiary,
-            fontWeight = FontWeight.Normal)
+            fontWeight = FontWeight.Medium)
         ) { append(dbVersion) }
     }
 

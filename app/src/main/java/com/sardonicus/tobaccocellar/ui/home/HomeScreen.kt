@@ -826,7 +826,9 @@ private fun HomeBody(
             .padding(0.dp)
     ) {
         if (isLoading || resetLoading) {
-            FullScreenLoading()
+            FullScreenLoading(
+                scrimColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            )
         } else {
             if (items.isEmpty()) {
                 Column(
