@@ -280,14 +280,13 @@ sealed class GlowSize {
 fun FullScreenLoading(
     modifier: Modifier = Modifier,
     scrimColor: Color = Color.Transparent,
-    scrimAlpha: Float = 0.5f
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxSize()
-            .background(scrimColor.copy(alpha = scrimAlpha))
+            .background(scrimColor)
     ) {
         Spacer(
             modifier = Modifier
