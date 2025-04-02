@@ -229,6 +229,8 @@ data class CustomColorScheme(
     val pieEight: Color = Color.Unspecified,
     val pieNine: Color = Color.Unspecified,
     val pieTen: Color = Color.Unspecified,
+
+    val isLightTheme: Boolean = false
 )
 
 val LocalCustomColors = staticCompositionLocalOf { CustomColorScheme() }
@@ -258,6 +260,8 @@ private val customLight = CustomColorScheme(
     pieEight = pieEightLight,
     pieNine = pieNineLight,
     pieTen = pieTenLight,
+
+    isLightTheme = true
 )
 
 private val customDark = CustomColorScheme(
@@ -285,6 +289,8 @@ private val customDark = CustomColorScheme(
     pieEight = pieEightDark,
     pieNine = pieNineDark,
     pieTen = pieTenDark,
+
+    isLightTheme = false
 )
 
 
