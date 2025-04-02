@@ -793,7 +793,8 @@ private fun Settings(
                     "data (such as components that are no longer attached to any blends) and " +
                     "also runs the SQL \"vacuum\" command. This option will have its greatest " +
                     "effect if you have updated or deleted a lot of entries, otherwise it won't " +
-                    "have much of an effect beyond cleaning up orphaned data.",
+                    "have much of an effect beyond cleaning up orphaned data. You don't need to " +
+                    "use this very often, if ever (except to clean up orphaned components).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -803,6 +804,14 @@ private fun Settings(
                     "Selecting database will make a copy of the entire database, and settings " +
                     "will save the app settings (like display settings). One backup file is made " +
                     "regardless of whether you select one or both (both backups will be in one).",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "This is an entirely optional process for creating a manual backup. The app " +
+                    "does participate in the automatic Google services backup if you have that " +
+                    "enabled in your phone's settings, and will save the database and settings.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
