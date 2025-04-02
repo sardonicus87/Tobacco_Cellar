@@ -23,7 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -140,7 +140,7 @@ private fun StatsBody(
     filteredStats: FilteredStats,
     modifier: Modifier = Modifier,
 ) {
-    val separatorColor = MaterialTheme.colorScheme.secondary
+    val separatorColor = colorScheme.secondary
 
     Column(
         modifier = modifier
@@ -171,7 +171,7 @@ private fun StatsBody(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Start,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = colorScheme.onBackground
                 )
             }
             Box(
@@ -233,7 +233,7 @@ private fun StatsBody(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Start,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = colorScheme.onBackground
                 )
             }
             Box(
@@ -343,7 +343,7 @@ fun QuickStatsSection(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.onBackground
+                color = colorScheme.onBackground
             )
             Spacer(
                 modifier = Modifier
@@ -356,7 +356,7 @@ fun QuickStatsSection(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = colorScheme.onBackground,
             )
         }
         // First Section basic counts
@@ -764,7 +764,7 @@ private fun ChartsFormat(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary,
+                color = colorScheme.primary,
             )
             Text(
                 text = ")",
@@ -825,6 +825,8 @@ private fun PieChart(
     val sortedData = if (sortData) { data.toList().sortedByDescending { it.second }.toMap() } else { data }
     val textMeasurer = rememberTextMeasurer()
 
+    val isLightTheme = LocalCustomColors.current.isLightTheme
+
     Canvas(
         modifier = modifier
             .aspectRatio(1f)
@@ -840,7 +842,7 @@ private fun PieChart(
 
         drawLabels(
             sortedData, total, rotationOffset, showLabels, showPercentages, showValues, textMeasurer, textColor, colors, labelBackground,
-            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold,
+            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold, isLightTheme
         )
     }
 }
@@ -883,6 +885,7 @@ private fun DrawScope.drawLabels(
     insideRadius: Float,
     outsideRadius: Float,
     outsideLabelThreshold: Float,
+    isLightTheme: Boolean,
 ) {
     var currentStartAngle = startAngle
     var outsideLabelCount = 0
@@ -938,7 +941,11 @@ private fun DrawScope.drawLabels(
         val labelBg = if (showLabels) {
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
-                    Color.Black.copy(alpha = 0.65f)
+                    if (isLightTheme) {
+                        Color.Black.copy(alpha = 0.80f)
+                    } else {
+                        Color(0xFF0F1511).copy(alpha = 0.75f)
+                    }
                 } else {
                     backgroundColor
                 }
@@ -951,7 +958,11 @@ private fun DrawScope.drawLabels(
         val percentBg = if (showLabels && showPercentages) {
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
-                    Color.Black.copy(alpha = 0.65f)
+                    if (isLightTheme) {
+                        Color.Black.copy(alpha = 0.80f)
+                    } else {
+                        Color(0xFF0F1511).copy(alpha = 0.75f)
+                    }
                 }  else {
                     backgroundColor
                 }
