@@ -41,25 +41,6 @@ class OfflineItemsRepository(
         itemsDao.vacuumDatabase(SimpleSQLiteQuery("VACUUM"))
     }
 
-    override suspend fun updateDatabase(newDatabase: TobaccoDatabase) {
-        itemsDao = newDatabase.itemsDao()
-        val dummyItem = Items(
-            brand = "Invalidation", blend = "Trigger",
-            type = "",
-            quantity = 1,
-            favorite = false,
-            disliked = false,
-            notes = "",
-            subGenre = "",
-            cut = "",
-            inProduction = true
-        )
-        val id = itemsDao.insert(dummyItem)
-        val dummyDelete = dummyItem.copy(id = id.toInt())
-
-        itemsDao.delete(dummyDelete)
-    }
-
 
     // Components //
     override suspend fun insertComponent(component: Components): Long {

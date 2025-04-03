@@ -22,8 +22,6 @@ interface ItemsRepository {
 
     suspend fun optimizeDatabase()
 
-    suspend fun updateDatabase(newDatabase: TobaccoDatabase)
-
     // Components //
     suspend fun insertComponent(component: Components): Long
 
