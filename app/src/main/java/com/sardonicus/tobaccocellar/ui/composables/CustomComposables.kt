@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +11,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,16 +24,27 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.IconToggleButtonColors
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -37,6 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -44,22 +62,31 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
+import com.sardonicus.tobaccocellar.ui.items.CustomDropdownMenuItem
+import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 
 /** Fade effect boxes. If you want a set height and scrolling effect, add scroll modifier to
- * content and set the height restrictions on the GlowBox itself. Use spacers in the content to
- * inset/pad from the edges (glow extends inward from the edge) if you want a fade effect on scroll.*/
+ * the content itself. Use spacers in the content to inset/pad from the edges (glow extends
+ *  inward from the edge) if you want a fade effect on scroll.*/
 @Composable
 fun GlowBox(
     color: GlowColor,
@@ -72,7 +99,9 @@ fun GlowBox(
         modifier = modifier,
         contentAlignment = contentAlignment
     ) {
-        content.invoke()
+        Column {
+            content.invoke()
+        }
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -371,6 +400,139 @@ fun CustomTextField(
 }
 
 
+/** TextField with AutoComplete suggestions */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AutoCompleteText(
+    modifier: Modifier = Modifier,
+    value: String,
+    placeholder: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    onValueChange: ((String) -> Unit)?,
+    onOptionSelected: (String, String) -> Unit,
+    suggestions: List<String> = emptyList(),
+    label: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    singleLine: Boolean = false,
+    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+    minLines: Int = 1,
+    supportingText: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
+    colors: TextFieldColors = TextFieldDefaults.colors(),
+    textStyle: TextStyle = LocalTextStyle.current,
+    componentField: Boolean = false,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var suggestions = suggestions
+    var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
+    val focusRequester = remember { FocusRequester() }
+    val focusState = remember { mutableStateOf(false) }
+
+    LaunchedEffect(suggestions) {
+        //    expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
+        if (suggestions.isEmpty()) {
+            expanded = false
+        } else {
+            expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && focusState.value && suggestions.isNotEmpty(),
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+            .padding(0.dp)
+    ) {
+        TextField(
+            value = textFieldValueState.copy(text = value),
+            onValueChange = {
+                textFieldValueState = it
+                onValueChange?.invoke(it.text)
+            },
+            modifier = Modifier.Companion
+                .fillMaxWidth()
+                .padding(0.dp)
+                .onFocusChanged { focusState.value = it.isFocused }
+                .focusRequester(focusRequester)
+                .menuAnchor(MenuAnchorType.Companion.PrimaryEditable, true),
+            enabled = enabled,
+            trailingIcon = trailingIcon,
+            singleLine = true,
+            placeholder = placeholder,
+            keyboardOptions = keyboardOptions,
+            textStyle = textStyle,
+            colors = colors.copy(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                focusedContainerColor = LocalCustomColors.current.textField,
+                unfocusedContainerColor = LocalCustomColors.current.textField,
+                disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
+            ),
+            shape = MaterialTheme.shapes.extraSmall,
+            label = label,
+            maxLines = maxLines,
+            minLines = minLines,
+            supportingText = supportingText,
+
+            )
+        DropdownMenu(
+            expanded = expanded && focusState.value && suggestions.isNotEmpty(),
+            onDismissRequest = { focusState.value },
+            modifier = Modifier
+                .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+                .heightIn(max = 82.dp),
+            properties = PopupProperties(focusable = false),
+            offset = DpOffset(32.dp, (-12).dp),
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            suggestions.take(3).forEach { label ->
+                CustomDropdownMenuItem(
+                    text = {
+                        Text(
+                            text = label,
+                            modifier = Modifier
+                                .padding(0.dp)
+                                .focusable(false),
+                            fontSize = 16.sp,
+                            lineHeight = 16.sp,
+                            maxLines = 1
+                        )
+                    },
+                    onClick = {
+                        val currentText = textFieldValueState.text
+                        onOptionSelected(label, currentText)
+
+                        val updatedText = if (currentText.contains(", ")) {
+                            currentText.substringBeforeLast(", ", "") + ", " + label + ", "
+                        } else {
+                            if (componentField) {
+                                label + ", "
+                            } else {
+                                label
+                            }
+                        }
+
+                        textFieldValueState = TextFieldValue(
+                            text = updatedText,
+                            selection = TextRange(updatedText.length)
+                        )
+                        suggestions = emptyList()
+                        expanded = false
+                    },
+                    enabled = true,
+                    modifier = Modifier
+                        .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
+                        .offset(0.dp, 0.dp)
+                        .fillMaxWidth(),
+                    colors = MenuDefaults.itemColors(),
+                )
+            }
+        }
+    }
+}
+
+
 /** Auto-resizing Text() composable **/
 @Composable
 fun AutoSizeText(
@@ -476,6 +638,35 @@ fun PagerIndicator(
                     }
             )
         }
+    }
+}
+
+
+@Composable
+fun CustomCheckBox(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    checkedIcon: Int,
+    uncheckedIcon: Int,
+    modifier: Modifier = Modifier.Companion,
+    colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(),
+    enabled: Boolean = true,
+) {
+    IconToggleButton(
+        checked = checked,
+        onCheckedChange = { onCheckedChange?.invoke(it) },
+        modifier = modifier
+            .size(34.dp),
+        colors = colors,
+        enabled = enabled
+    ) {
+        Icon(
+            imageVector = if (checked) {
+                ImageVector.Companion.vectorResource(id = checkedIcon)
+            } else ImageVector.Companion.vectorResource(id = uncheckedIcon),
+            contentDescription = null,
+            modifier = Modifier.Companion
+        )
     }
 }
 

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,7 +38,6 @@ import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -48,8 +46,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.IconToggleButtonColors
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
@@ -97,27 +93,25 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
+import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
@@ -605,7 +599,8 @@ fun DetailsEntry(
                             brand == it
                         }
 
-                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                        suggestions.value =
+                            (startsWith + otherWordsStartsWith + contains) - selected
                     } else {
                         suggestions.value = emptyList()
                     }
@@ -786,7 +781,8 @@ fun DetailsEntry(
                             genre == it
                         }
 
-                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                        suggestions.value =
+                            (startsWith + otherWordsStartsWith + contains) - selected
                     } else {
                         suggestions.value = emptyList()
                     }
@@ -859,7 +855,8 @@ fun DetailsEntry(
                             cut == it
                         }
 
-                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                        suggestions.value =
+                            (startsWith + otherWordsStartsWith + contains) - selected
                     } else {
                         suggestions.value = emptyList()
                     }
@@ -946,7 +943,8 @@ fun DetailsEntry(
                             string.split(", ").filter { string.isNotBlank() }.contains(comp)
                         }
 
-                        suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                        suggestions.value =
+                            (startsWith + otherWordsStartsWith + contains) - selected
                     } else {
                         suggestions.value = emptyList()
                     }
@@ -955,8 +953,10 @@ fun DetailsEntry(
                 onOptionSelected = { suggestion, currentText ->
                     val updatedText =
                         if (currentText.contains(", ")) {
-                            currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", " }
-                        else { "$suggestion, " }
+                            currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", "
+                        } else {
+                            "$suggestion, "
+                        }
                     onComponentChange(updatedText)
                     suggestions.value = emptyList()
                 },
@@ -1652,11 +1652,12 @@ fun IndividualTin(
                                 val startsWith = itemUiState.autoContainers.filter { container ->
                                     container.startsWith(it, ignoreCase = true)
                                 }
-                                val otherWordsStartsWith = itemUiState.autoContainers.filter { container ->
-                                    container.split(" ").drop(1).any { word ->
-                                        word.startsWith(it, ignoreCase = true)
-                                    } && !container.startsWith(it, ignoreCase = true)
-                                }
+                                val otherWordsStartsWith =
+                                    itemUiState.autoContainers.filter { container ->
+                                        container.split(" ").drop(1).any { word ->
+                                            word.startsWith(it, ignoreCase = true)
+                                        } && !container.startsWith(it, ignoreCase = true)
+                                    }
                                 val contains = itemUiState.autoContainers.filter { container ->
                                     container.contains(it, ignoreCase = true)
                                             && !container.startsWith(it, ignoreCase = true) &&
@@ -1666,7 +1667,8 @@ fun IndividualTin(
                                     container == it
                                 }
 
-                                suggestions.value = (startsWith + otherWordsStartsWith + contains) - selected
+                                suggestions.value =
+                                    (startsWith + otherWordsStartsWith + contains) - selected
                             } else {
                                 suggestions.value = emptyList()
                             }
@@ -2265,164 +2267,6 @@ fun CustomDatePickerDialog(
                 disabledDayContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
             )
         )
-    }
-}
-
-
-@Composable
-fun CustomCheckBox(
-    checked: Boolean,
-    onCheckedChange: ((Boolean) -> Unit)?,
-    checkedIcon: Int,
-    uncheckedIcon: Int,
-    modifier: Modifier = Modifier,
-    colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(),
-    enabled: Boolean = true,
-) {
-    IconToggleButton(
-        checked = checked,
-        onCheckedChange = { onCheckedChange?.invoke(it) },
-        modifier = modifier
-            .size(34.dp),
-        colors = colors,
-        enabled = enabled
-    ) {
-        Icon(
-            imageVector = if (checked) {
-                ImageVector.vectorResource(id = checkedIcon)
-            } else ImageVector.vectorResource(id = uncheckedIcon),
-            contentDescription = null,
-            modifier = Modifier
-        )
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AutoCompleteText(
-    modifier: Modifier = Modifier,
-    value: String,
-    placeholder: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null,
-    onValueChange: ((String) -> Unit)?,
-    onOptionSelected: (String, String) -> Unit,
-    suggestions: List<String> = emptyList(),
-    label: @Composable (() -> Unit)? = null,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
-    minLines: Int = 1,
-    supportingText: @Composable (() -> Unit)? = null,
-    enabled: Boolean = true,
-    componentField: Boolean = false,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var suggestions = suggestions
-    var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
-    val focusRequester = remember { FocusRequester() }
-    val focusState = remember { mutableStateOf(false) }
-
-    LaunchedEffect(suggestions) {
-    //    expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
-        if (suggestions.isEmpty()) {
-            expanded = false
-        } else {
-            expanded = value.isNotEmpty() && suggestions.isNotEmpty() && focusState.value
-        }
-    }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded && focusState.value && suggestions.isNotEmpty(),
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
-            .padding(0.dp)
-    ) {
-        TextField(
-            value = textFieldValueState.copy(text = value),
-            onValueChange = {
-                textFieldValueState = it
-                onValueChange?.invoke(it.text)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp)
-                .onFocusChanged { focusState.value = it.isFocused }
-                .focusRequester(focusRequester)
-                .menuAnchor(MenuAnchorType.PrimaryEditable, true),
-            enabled = enabled,
-            trailingIcon = trailingIcon,
-            singleLine = true,
-            placeholder = placeholder,
-            keyboardOptions = keyboardOptions,
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedContainerColor = LocalCustomColors.current.textField,
-                unfocusedContainerColor = LocalCustomColors.current.textField,
-                disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
-            ),
-            shape = MaterialTheme.shapes.extraSmall,
-            label = label,
-            maxLines = maxLines,
-            minLines = minLines,
-            supportingText = supportingText,
-
-        )
-        DropdownMenu(
-            expanded = expanded && focusState.value && suggestions.isNotEmpty(),
-            onDismissRequest = { focusState.value },
-            modifier = Modifier
-                .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
-                .heightIn(max = 82.dp),
-            properties = PopupProperties(focusable = false),
-            offset = DpOffset(32.dp, (-12).dp),
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            suggestions.take(3).forEach { label ->
-                CustomDropdownMenuItem(
-                    text = {
-                        Text(
-                            text = label,
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .focusable(false),
-                            fontSize = 16.sp,
-                            lineHeight = 16.sp,
-                            maxLines = 1
-                        )
-                    },
-                    onClick = {
-                        val currentText = textFieldValueState.text
-                        onOptionSelected(label, currentText)
-
-                        val updatedText = if (currentText.contains(", ")) {
-                            currentText.substringBeforeLast(", ", "") + ", " + label + ", "
-                        } else {
-                            if (componentField) {
-                                label + ", "
-                            } else {
-                                label
-                            }
-                        }
-
-                        textFieldValueState = TextFieldValue(
-                            text = updatedText,
-                            selection = TextRange(updatedText.length)
-                        )
-                        suggestions = emptyList()
-                        expanded = false
-                    },
-                    enabled = true,
-                    modifier = Modifier
-                        .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
-                        .offset(0.dp, 0.dp)
-                        .fillMaxWidth(),
-                    colors = MenuDefaults.itemColors(),
-                )
-            }
-        }
     }
 }
 
