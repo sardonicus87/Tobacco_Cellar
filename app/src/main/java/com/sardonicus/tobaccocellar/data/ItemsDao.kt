@@ -30,6 +30,10 @@ interface ItemsDao {
     @Update
     suspend fun update(item: Items)
 
+    // Update item from ItemsComponentsAndTins //
+    @Update
+    suspend fun updateICT(item: Items, components: List<Components>, tins: List<Tins>)
+
     // Delete item //
     @Delete
     suspend fun delete(item: Items)

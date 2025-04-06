@@ -23,9 +23,9 @@ class OfflineItemsRepository(
 
     override suspend fun updateItem(item: Items) = itemsDao.update(item)
 
-    override suspend fun updateMultipleItems(items: List<Items>) {
+    override suspend fun updateMultipleItems(items: List<ItemsComponentsAndTins>) {
         for (item in items) {
-            itemsDao.update(item)
+            itemsDao.updateICT(item.items, item.components, item.tins)
         }
     }
 
