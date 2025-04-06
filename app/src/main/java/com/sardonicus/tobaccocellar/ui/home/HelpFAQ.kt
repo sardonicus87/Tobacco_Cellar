@@ -654,7 +654,22 @@ private fun EditingItems(
             text = "Batch editing is limited to a select few fields. The screen contains two " +
                     "tabs, one to select items to edit and another to make the edits. Select the " +
                     "checkbox only for the fields you wish to edit. Selecting a field and leaving " +
-                    "it blank will result in erasing that field for the selected entries.",
+                    "it blank will result in erasing that field for the selected entries, with " +
+                    "exception of the components field.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+
+        Text(
+            text = "Batch editing components works the same as the Add/Edit components in regards " +
+                    "to entering components into the field (namely, separate components with a " +
+                    "comma and a space). However here, leaving components blank does not erase " +
+                    "components from entries when you hit save. Any entered components will be " +
+                    "added (or removed) from the existing components of the selected entries if " +
+                    "they aren't already present (or are present in the case of remove). Switch " +
+                    "between add and remove by tapping the +/- icon at the end of the components " +
+                    "field.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
