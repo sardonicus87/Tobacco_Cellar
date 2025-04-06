@@ -6,15 +6,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sardonicus.tobaccocellar.data.Items
+import com.sardonicus.tobaccocellar.data.Components
+import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
+import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -26,15 +28,13 @@ class BulkEditViewModel (
 
     /** UI stuff */
     val bulkEditUiState: StateFlow<BulkEditUiState> =
-        combine(
-            itemsRepository.getAllItemsStream(),
-            itemsRepository.getAllSubGenresStream(),
-            itemsRepository.getAllCutsStream(),
-        ) { items, subGenres, cuts ->
+        itemsRepository.getEverythingStream()
+            .map {
                 BulkEditUiState(
-                    items = items,
-                    autoGenres = subGenres,
-                    autoCuts = cuts,
+                    items = it,
+                    autoGenres = it.map { it.items.subGenre }.distinct().sorted(),
+                    autoCuts = it.map { it.items.cut }.distinct().sorted(),
+                    autoComps = it.flatMap { it.components }.map { it.componentName }.distinct().sorted(),
                     loading = false
                 )
             }
@@ -64,6 +64,7 @@ class BulkEditViewModel (
             typeSelected = editing.typeSelected,
             genreSelected = editing.genreSelected,
             cutSelected = editing.cutSelected,
+            compsSelected = editing.compsSelected,
             ratingSelected = editing.ratingSelected,
             productionSelected = editing.productionSelected,
             syncTinsSelected = editing.syncTinsSelected,
@@ -73,12 +74,15 @@ class BulkEditViewModel (
             favorite = editing.favorite,
             subGenre = editing.subGenre,
             cut = editing.cut,
+            compsString = editing.compsString,
+            components = editing.components,
+            compsAdd = editing.compsAdd,
             inProduction = editing.inProduction,
             syncTins = editing.syncTins,
         )
     }
 
-    fun updateSelection(item: Items) {
+    fun updateSelection(item: ItemsComponentsAndTins) {
         editingState = editingState.copy(
             selectedItems = editingState.selectedItems.toMutableList().apply {
                 if (editingState.selectedItems.contains(item)) {
@@ -94,7 +98,7 @@ class BulkEditViewModel (
 
     fun fieldSelected(): Boolean {
         anyFieldSelected = editingState.typeSelected || editingState.genreSelected ||
-                editingState.cutSelected || editingState.ratingSelected ||
+                editingState.cutSelected || editingState.compsSelected || editingState.ratingSelected ||
                 editingState.productionSelected || editingState.syncTinsSelected
         return anyFieldSelected
     }
@@ -131,7 +135,7 @@ class BulkEditViewModel (
         }
     }
 
-    private suspend fun calculateSyncTins(tins: List<Tins>): Int {
+    private fun calculateSyncTins(tins: List<Tins>): Int {
         val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
             (it.tinQuantity * 16) / ozRate
         }
@@ -158,26 +162,72 @@ class BulkEditViewModel (
             setLoadingState(true)
 
             val itemsToUpdate = editingState.selectedItems.map {
+                val itemsId = it.items.id
+                val existingComps = it.components.map { it.componentName }
+                val editComps = editingState.toComps(existingComps)
+
+                val updatedComps = if (editingState.compsSelected) {
+                    when (editingState.compsAdd) {
+                        true -> {
+                            (it.components + editComps.filterNot {
+                                it.componentName in existingComps
+                            }).distinctBy { it.componentName }
+                        }
+
+                        false -> {
+                            it.components.filterNot {
+                                it.componentName in editComps.map { it.componentName }
+                            }
+                        }
+                    }
+                } else {
+                    it.components
+                }
+
+                val compsToAdd = updatedComps.filter {
+                    it.componentName !in existingComps
+                }
+                val compsToRemove = existingComps.filter {
+                    it !in updatedComps.map { it.componentName }
+                }
+
+                compsToAdd.forEach {
+                    var componentId = itemsRepository.getComponentIdByName(it.componentName)
+                    if (componentId == null) {
+                        componentId = itemsRepository.insertComponent(it).toInt()
+                    }
+                    itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemsId, componentId))
+                }
+                compsToRemove.forEach {
+                    val componentId = itemsRepository.getComponentIdByName(it)
+                    if (componentId != null) {
+                        itemsRepository.deleteComponentsCrossRef(itemsId, componentId)
+                    }
+                }
+
                 it.copy(
-                    type = if (editingState.typeSelected) editingState.type else it.type,
-                    subGenre = if (editingState.genreSelected) editingState.subGenre else it.subGenre,
-                    cut = if (editingState.cutSelected) editingState.cut else it.cut,
-                    disliked = if (editingState.ratingSelected) editingState.disliked else it.disliked,
-                    favorite = if (editingState.ratingSelected) editingState.favorite else it.favorite,
-                    inProduction = if (editingState.productionSelected) editingState.inProduction else it.inProduction,
+                    items = it.items.copy(
+                        type = if (editingState.typeSelected) editingState.type else it.items.type,
+                        subGenre = if (editingState.genreSelected) editingState.subGenre else it.items.subGenre,
+                        cut = if (editingState.cutSelected) editingState.cut else it.items.cut,
+                        disliked = if (editingState.ratingSelected) editingState.disliked else it.items.disliked,
+                        favorite = if (editingState.ratingSelected) editingState.favorite else it.items.favorite,
+                        inProduction = if (editingState.productionSelected) editingState.inProduction else it.items.inProduction,
+                    ),
+                    components = updatedComps,
                 )
             }
             itemsRepository.updateMultipleItems(itemsToUpdate)
 
             if (editingState.syncTinsSelected) {
                 editingState.selectedItems.forEach {
-                    preferencesRepo.setItemSyncState(it.id, editingState.syncTins)
+                    preferencesRepo.setItemSyncState(it.items.id, editingState.syncTins)
 
-                    val tins = itemsRepository.getTinsForItemStream(it.id).first()
+                    val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
                     val syncedQuantity = calculateSyncTins(tins)
                     if (editingState.syncTins == true) {
                         itemsRepository.updateItem(
-                            it.copy(
+                            it.items.copy(
                                 quantity = syncedQuantity,
                             )
                         )
@@ -196,18 +246,20 @@ class BulkEditViewModel (
 
 data class BulkEditUiState(
     val loading: Boolean = false,
-    val items: List<Items> = listOf(),
+    val items: List<ItemsComponentsAndTins> = listOf(),
     val autoGenres: List<String> = listOf(),
     val autoCuts: List<String> = listOf(),
+    val autoComps: List<String> = listOf(),
 )
 
 data class EditingState(
-    val selectedItems: List<Items> = listOf(),
+    val selectedItems: List<ItemsComponentsAndTins> = listOf(),
     val id: Int = 0,
 
     val typeSelected: Boolean = false,
     val genreSelected: Boolean = false,
     val cutSelected: Boolean = false,
+    val compsSelected: Boolean = false,
     val ratingSelected: Boolean = false,
     val productionSelected: Boolean = false,
     val syncTinsSelected: Boolean = false,
@@ -217,6 +269,23 @@ data class EditingState(
     var favorite: Boolean = false,
     var subGenre: String = "",
     var cut: String = "",
+    var compsString: String = "",
+    var components: List<Components> = listOf(),
+    var compsAdd: Boolean = true,
     var inProduction: Boolean = true,
     var syncTins: Boolean = false,
 )
+
+fun EditingState.toComps(existingComps: List<String>): List<Components> {
+    return compsString
+        .replace(Regex("\\s+"), " ")
+        .split(",")
+        .filter { it.isNotBlank() }.map { enteredComp ->
+            val normalizedComp = enteredComp.trim().lowercase()
+            val existingComp = existingComps.find { existingComp ->
+                existingComp.lowercase() == normalizedComp
+            }
+
+            Components(componentName = existingComp ?: enteredComp.trim())
+        }
+}

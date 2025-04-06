@@ -31,7 +31,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalRippleConfiguration
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -84,9 +84,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
+import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
+import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -176,6 +182,7 @@ fun BulkEditScreen(
                 batchEdit = viewModel::batchEditSave,
                 autoGenres = bulkEditUiState.autoGenres,
                 autoCuts = bulkEditUiState.autoCuts,
+                autoComps = bulkEditUiState.autoComps,
                 modifier = modifier
                     .padding(0.dp)
                     .fillMaxSize(),
@@ -191,10 +198,10 @@ fun BulkEditBody(
     saveIndicator: Boolean,
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
-    items: List<Items>,
-    selectedItems: List<Items>,
+    items: List<ItemsComponentsAndTins>,
+    selectedItems: List<ItemsComponentsAndTins>,
     editingState: EditingState,
-    updateSelection: (Items) -> Unit,
+    updateSelection: (ItemsComponentsAndTins) -> Unit,
     clearSelections: () -> Unit,
     selectAll: () -> Unit,
     onValueChange: (EditingState) -> Unit,
@@ -202,6 +209,7 @@ fun BulkEditBody(
     batchEdit: () -> Unit,
     autoGenres: List<String>,
     autoCuts: List<String>,
+    autoComps: List<String>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -294,6 +302,7 @@ fun BulkEditBody(
                                     batchEdit = batchEdit,
                                     autoGenres = autoGenres,
                                     autoCuts = autoCuts,
+                                    autoComps = autoComps,
                                     modifier = Modifier
                                 )
 
@@ -302,29 +311,9 @@ fun BulkEditBody(
                     }
                 }
                 if (saveIndicator) {
-                    Column(
-                        modifier = modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = .38f)),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1.5f)
-                        )
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .size(48.dp)
-                                .weight(0.5f),
-                        )
-                        Spacer(
-                            modifier = Modifier
-                                .weight(2f)
-                        )
-                    }
-
+                    FullScreenLoading(
+                        scrimColor = Color.Black.copy(alpha = .38f)
+                    )
                 }
             }
         }
@@ -334,9 +323,9 @@ fun BulkEditBody(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BulkSelections(
-    items: List<Items>,
-    selectedItems: List<Items>,
-    updateSelection: (Items) -> Unit,
+    items: List<ItemsComponentsAndTins>,
+    selectedItems: List<ItemsComponentsAndTins>,
+    updateSelection: (ItemsComponentsAndTins) -> Unit,
     clearSelections: () -> Unit,
     selectAll: () -> Unit,
     modifier: Modifier = Modifier,
@@ -381,10 +370,10 @@ fun BulkSelections(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(items, key = { it.id }) {
+            items(items, key = { it.items.id }) {
                 val selected = selectedItems.contains(it)
                 BulkSelectionsItem(
-                    item = it,
+                    item = it.items,
                     selected = selected,
                     onItemClick = { updateSelection(it) },
                 )
@@ -412,508 +401,697 @@ fun BulkEditing(
     batchEdit: () -> Unit,
     autoGenres: List<String>,
     autoCuts: List<String>,
+    autoComps: List<String>,
     modifier: Modifier = Modifier,
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
     val selectedItems = editingState.selectedItems
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(.7f)
-            .padding(horizontal = 12.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
+    GlowBox(
+        color = GlowColor(MaterialTheme.colorScheme.background),
+        size = GlowSize(vertical = 8.dp)
     ) {
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
-        )
-        // Field selections //
         Column(
-            modifier = Modifier,
+            modifier = modifier
+                .fillMaxWidth()
+                .fillMaxHeight(.75f)
+                .padding(horizontal = 12.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
         ) {
-            // Type //
-            Row(
+            Spacer(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(12.dp)
+            )
+            // Field selections //
+            Column(
+                modifier = Modifier,
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
             ) {
-                Box(
-                    modifier = Modifier
-                        .width(42.dp)
-                ) {
-                    Checkbox(
-                        checked = editingState.typeSelected,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(typeSelected = it))
-                        }
-                    )
-                }
-                Text(
-                    text = "Type:",
-                    modifier = Modifier
-                        .width(70.dp)
-                        .padding(end = 4.dp),
-                    color = if (!editingState.typeSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
-                )
-                CustomDropDown(
-                    selectedValue = editingState.type,
-                    onValueChange = { onValueChange(editingState.copy(type = it)) },
-                    options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    enabled = editingState.typeSelected
-                )
-            }
-
-            // Subgenre //
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(42.dp)
-                ) {
-                    Checkbox(
-                        checked = editingState.genreSelected,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(genreSelected = it))
-                        }
-                    )
-                }
-                AutoSizeText(
-                    text = "Sub-\ngenre:",
-                    fontSize = 16.sp,
-                    minFontSize = 8.sp,
-                    modifier = Modifier
-                        .padding(end = 4.dp),
-                    width = 70.dp,
-                    height = 38.dp,
-                    contentAlignment = Alignment.CenterStart,
-                    color = if (!editingState.genreSelected) LocalContentColor.current.copy(
-                        alpha = 0.50f
-                    ) else LocalContentColor.current
-                )
-
-                val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
-                AutoCompleteText(
-                    value = editingState.subGenre,
-                    onValueChange = {
-                        onValueChange(editingState.copy(subGenre = it))
-
-                        if (it.length >= 2) {
-                            val startsWith = autoGenres.filter { genre ->
-                                genre.startsWith(it, ignoreCase = true)
-                            }
-                            val otherWordsStartsWith = autoGenres.filter { genre ->
-                                genre.split(" ").drop(1).any { word ->
-                                    word.startsWith(it, ignoreCase = true)
-                                } && !genre.startsWith(it, ignoreCase = true)
-                            }
-                            val contains = autoGenres.filter { genre ->
-                                genre.contains(it, ignoreCase = true)
-                                        && !genre.startsWith(it, ignoreCase = true) &&
-                                        !otherWordsStartsWith.contains(genre)
-                            }
-                            val selected = autoGenres.filter { genre ->
-                                genre == it
-                            }
-
-                            suggestions.value =
-                                (startsWith + otherWordsStartsWith + contains) - selected
-                        } else {
-                            suggestions.value = emptyList()
-                        }
-                    },
-                    onOptionSelected = { suggestion, currentText ->
-                        onValueChange(editingState.copy(subGenre = suggestion))
-                        suggestions.value = emptyList()
-                    },
-                    suggestions = suggestions.value,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    trailingIcon = {
-                        if (editingState.subGenre.length > 4) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                contentDescription = "Clear",
-                                modifier = Modifier
-                                    .clickable {
-                                        onValueChange(editingState.copy(subGenre = ""))
-                                    }
-                                    .alpha(0.66f)
-                                    .size(20.dp)
-                                    .focusable(false)
-                            )
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    ),
-                    enabled = editingState.genreSelected
-                )
-            }
-
-            // Cut //
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(42.dp)
-                ) {
-                    Checkbox(
-                        checked = editingState.cutSelected,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(cutSelected = it))
-                        }
-                    )
-                }
-                Text(
-                    text = "Cut:",
-                    modifier = Modifier
-                        .width(70.dp)
-                        .padding(end = 4.dp),
-                    color = if (!editingState.cutSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
-                )
-
-                val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
-                AutoCompleteText(
-                    value = editingState.cut,
-                    onValueChange = {
-                        onValueChange(editingState.copy(cut = it))
-
-                        if (it.length >= 2) {
-                            val startsWith = autoCuts.filter { cut ->
-                                cut.startsWith(it, ignoreCase = true)
-                            }
-                            val otherWordsStartsWith = autoCuts.filter { cut ->
-                                cut.split(" ").drop(1).any { word ->
-                                    word.startsWith(it, ignoreCase = true)
-                                } && !cut.startsWith(it, ignoreCase = true)
-                            }
-                            val contains = autoCuts.filter { cut ->
-                                cut.contains(it, ignoreCase = true)
-                                        && !cut.startsWith(it, ignoreCase = true) &&
-                                        !otherWordsStartsWith.contains(cut)
-                            }
-                            val selected = autoCuts.filter { cut ->
-                                cut == it
-                            }
-
-                            suggestions.value =
-                                (startsWith + otherWordsStartsWith + contains) - selected
-                        } else {
-                            suggestions.value = emptyList()
-                        }
-                    },
-                    onOptionSelected = { suggestion, currentText ->
-                        onValueChange(editingState.copy(cut = suggestion))
-                        suggestions.value = emptyList()
-                    },
-                    suggestions = suggestions.value,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    trailingIcon = {
-                        if (editingState.cut.length > 4) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                contentDescription = "Clear",
-                                modifier = Modifier
-                                    .clickable {
-                                        onValueChange(editingState.copy(cut = ""))
-                                    }
-                                    .alpha(0.66f)
-                                    .size(20.dp)
-                                    .focusable(false)
-                            )
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next,
-                    ),
-                    enabled = editingState.cutSelected
-                )
-            }
-
-            // Rating //
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(42.dp)
-                ) {
-                    Checkbox(
-                        checked = editingState.ratingSelected,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(ratingSelected = it))
-                        }
-                    )
-                }
-                Text(
-                    text = "Rating:",
-                    modifier = Modifier
-                        .width(70.dp)
-                        .padding(end = 4.dp),
-                    color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
-                        alpha = 0.50f
-                    ) else LocalContentColor.current
-                )
+                // Type //
                 Row(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(0.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Favorite
                     Row(
                         modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Favorite?",
+                        Box(
                             modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp),
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.typeSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(typeSelected = it))
+                                }
+                            )
+                        }
+                        Text(
+                            text = "Type:",
+                            modifier = Modifier,
+                            color = if (!editingState.typeSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
+                        )
+                    }
+                    CustomDropDown(
+                        selectedValue = editingState.type,
+                        onValueChange = { onValueChange(editingState.copy(type = it)) },
+                        options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
+                        modifier = Modifier
+                            //    .fillMaxWidth()
+                            .weight(.7f),
+                        enabled = editingState.typeSelected
+                    )
+                }
+
+                // Subgenre //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.genreSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(genreSelected = it))
+                                }
+                            )
+                        }
+                        AutoSizeText(
+                            text = "Sub-genre:",
+                            fontSize = 16.sp,
+                            minFontSize = 8.sp,
+                            modifier = Modifier,
+                            height = 38.dp,
+                            contentAlignment = Alignment.CenterStart,
+                            color = if (!editingState.genreSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                    }
+
+                    val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+                    AutoCompleteText(
+                        value = editingState.subGenre,
+                        onValueChange = {
+                            onValueChange(editingState.copy(subGenre = it))
+
+                            if (it.length >= 2) {
+                                val startsWith = autoGenres.filter { genre ->
+                                    genre.startsWith(it, ignoreCase = true)
+                                }
+                                val otherWordsStartsWith = autoGenres.filter { genre ->
+                                    genre.split(" ").drop(1).any { word ->
+                                        word.startsWith(it, ignoreCase = true)
+                                    } && !genre.startsWith(it, ignoreCase = true)
+                                }
+                                val contains = autoGenres.filter { genre ->
+                                    genre.contains(it, ignoreCase = true)
+                                            && !genre.startsWith(it, ignoreCase = true) &&
+                                            !otherWordsStartsWith.contains(genre)
+                                }
+                                val selected = autoGenres.filter { genre ->
+                                    genre == it
+                                }
+
+                                suggestions.value =
+                                    (startsWith + otherWordsStartsWith + contains) - selected
+                            } else {
+                                suggestions.value = emptyList()
+                            }
+                        },
+                        onOptionSelected = { suggestion, currentText ->
+                            onValueChange(editingState.copy(subGenre = suggestion))
+                            suggestions.value = emptyList()
+                        },
+                        suggestions = suggestions.value,
+                        modifier = Modifier
+                            .weight(.7f),
+                        trailingIcon = {
+                            if (editingState.subGenre.length > 4) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier
+                                        .clickable {
+                                            onValueChange(editingState.copy(subGenre = ""))
+                                        }
+                                        .alpha(0.66f)
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done,
+                        ),
+                        enabled = editingState.genreSelected
+                    )
+                }
+
+                // Cut //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.cutSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(cutSelected = it))
+                                }
+                            )
+                        }
+                        Text(
+                            text = "Cut:",
+                            modifier = Modifier,
+                            color = if (!editingState.cutSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
+                        )
+                    }
+
+                    val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+                    AutoCompleteText(
+                        value = editingState.cut,
+                        onValueChange = {
+                            onValueChange(editingState.copy(cut = it))
+
+                            if (it.length >= 2) {
+                                val startsWith = autoCuts.filter { cut ->
+                                    cut.startsWith(it, ignoreCase = true)
+                                }
+                                val otherWordsStartsWith = autoCuts.filter { cut ->
+                                    cut.split(" ").drop(1).any { word ->
+                                        word.startsWith(it, ignoreCase = true)
+                                    } && !cut.startsWith(it, ignoreCase = true)
+                                }
+                                val contains = autoCuts.filter { cut ->
+                                    cut.contains(it, ignoreCase = true)
+                                            && !cut.startsWith(it, ignoreCase = true) &&
+                                            !otherWordsStartsWith.contains(cut)
+                                }
+                                val selected = autoCuts.filter { cut ->
+                                    cut == it
+                                }
+
+                                suggestions.value =
+                                    (startsWith + otherWordsStartsWith + contains) - selected
+                            } else {
+                                suggestions.value = emptyList()
+                            }
+                        },
+                        onOptionSelected = { suggestion, currentText ->
+                            onValueChange(editingState.copy(cut = suggestion))
+                            suggestions.value = emptyList()
+                        },
+                        suggestions = suggestions.value,
+                        modifier = Modifier
+                            .weight(.7f),
+                        trailingIcon = {
+                            if (editingState.cut.length > 4) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier
+                                        .clickable {
+                                            onValueChange(editingState.copy(cut = ""))
+                                        }
+                                        .alpha(0.66f)
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next,
+                        ),
+                        enabled = editingState.cutSelected
+                    )
+                }
+
+                // Components
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Row(
+                        modifier = Modifier
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.compsSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(compsSelected = it))
+                                }
+                            )
+                        }
+                        AutoSizeText(
+                            text = "Components:",
+                            fontSize = 16.sp,
+                            minFontSize = 8.sp,
+                            modifier = Modifier
+                                .padding(end = 4.dp),
+                            maxLines = 1,
+                            height = 38.dp,
+                            contentAlignment = Alignment.CenterStart,
+                            color = if (!editingState.compsSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                    }
+
+                    val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+                    val color = if (editingState.compsAdd) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error
+                    val alpha = if (editingState.compsSelected) 0.66f else .33f
+
+                    AutoCompleteText(
+                        value = editingState.compsString,
+                        onValueChange = {
+                            onValueChange(editingState.copy(compsString = it))
+
+                            val substring = if (it.contains(", ")) {
+                                it.substringAfterLast(", ", "")
+                            } else {
+                                it
+                            }
+
+                            if (substring.length >= 2) {
+                                val startsWith = autoComps.filter { comp ->
+                                    comp.startsWith(substring, ignoreCase = true)
+                                }
+
+                                val otherWordsStartsWith = autoComps.filter { comp ->
+                                    comp.split(" ").drop(1).any { word ->
+                                        word.startsWith(substring, ignoreCase = true)
+                                    } && !comp.startsWith(substring, ignoreCase = true)
+                                }
+
+                                val contains = autoComps.filter { comp ->
+                                    comp.contains(substring, ignoreCase = true)
+                                            && !comp.startsWith(substring, ignoreCase = true) &&
+                                            !otherWordsStartsWith.contains(comp)
+                                }
+
+                                val selected = autoComps.filter { comp ->
+                                    it.split(", ").filter { it.isNotBlank() }.contains(comp)
+                                }
+
+                                suggestions.value =
+                                    (startsWith + otherWordsStartsWith + contains) - selected
+                            } else {
+                                suggestions.value = emptyList()
+                            }
+                        },
+                        componentField = true,
+                        onOptionSelected = { suggestion, currentText ->
+                            val updatedText =
+                                if (currentText.contains(", ")) {
+                                    currentText.substringBeforeLast(
+                                        ", ",
+                                        ""
+                                    ) + ", " + suggestion + ", "
+                                } else {
+                                    "$suggestion, "
+                                }
+                            onValueChange(editingState.copy(compsString = updatedText))
+                            suggestions.value = emptyList()
+                        },
+                        suggestions = suggestions.value,
+                        modifier = Modifier
+                            .weight(.7f),
+                        trailingIcon = {
+                            if (editingState.compsSelected) {
+                                val addIcon =
+                                    if (editingState.compsAdd) R.drawable.add else R.drawable.remove_circle
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = addIcon),
+                                    contentDescription = "Add or remove",
+                                    tint = color,
+                                    modifier = Modifier
+                                        .clickable {
+                                            onValueChange(editingState.copy(compsAdd = !editingState.compsAdd))
+                                        }
+                                    //    .alpha(0.66f)
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done,
+                        ),
+                        textStyle = LocalTextStyle.current.copy(
+                            color = color.copy(
+                                alpha = alpha
+                            )
+                        ),
+                        enabled = editingState.compsSelected,
+                        maxLines = 1,
+                        placeholder = {
+                            if (editingState.compsSelected) {
+                                Text(
+                                    text = "(Separate with comma + space)",
+                                    modifier = Modifier
+                                        .alpha(alpha),
+                                    fontSize = 13.sp,
+                                    softWrap = false,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Clip,
+                                )
+                            }
+                        }
+                    )
+                }
+
+                // Rating //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.ratingSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(ratingSelected = it))
+                                }
+                            )
+                        }
+                        Text(
+                            text = "Rating:",
+                            modifier = Modifier,
                             color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
                                 alpha = 0.50f
                             ) else LocalContentColor.current
                         )
-                        CustomCheckBox(
-                            checked = editingState.favorite,
-                            onCheckedChange = {
-                                if (editingState.favorite) {
-                                    onValueChange(editingState.copy(favorite = it))
-                                } else {
-                                    onValueChange(
-                                        editingState.copy(
-                                            favorite = it,
-                                            disliked = false
-                                        )
-                                    )
-                                }
-                            },
-                            checkedIcon = R.drawable.heart_filled_24,
-                            uncheckedIcon = R.drawable.heart_outline_24,
+                    }
+                    Row(
+                        modifier = modifier
+                            .weight(.7f),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Favorite
+                        Row(
                             modifier = Modifier
                                 .padding(0.dp),
-                            colors = IconButtonDefaults.iconToggleButtonColors(
-                                checkedContentColor = LocalCustomColors.current.favHeart,
-                            ),
-                            enabled = editingState.ratingSelected
-                        )
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Favorite?",
+                                modifier = Modifier
+                                    .offset(x = 0.dp, y = 1.dp),
+                                color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
+                                    alpha = 0.50f
+                                ) else LocalContentColor.current
+                            )
+                            CustomCheckBox(
+                                checked = editingState.favorite,
+                                onCheckedChange = {
+                                    if (editingState.favorite) {
+                                        onValueChange(editingState.copy(favorite = it))
+                                    } else {
+                                        onValueChange(
+                                            editingState.copy(
+                                                favorite = it,
+                                                disliked = false
+                                            )
+                                        )
+                                    }
+                                },
+                                checkedIcon = R.drawable.heart_filled_24,
+                                uncheckedIcon = R.drawable.heart_outline_24,
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                colors = IconButtonDefaults.iconToggleButtonColors(
+                                    checkedContentColor = LocalCustomColors.current.favHeart,
+                                ),
+                                enabled = editingState.ratingSelected
+                            )
+                        }
+                        // Disliked
+                        Row(
+                            modifier = Modifier
+                                .padding(0.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Disliked?",
+                                modifier = Modifier
+                                    .offset(x = 0.dp, y = 1.dp),
+                                color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
+                                    alpha = 0.50f
+                                ) else LocalContentColor.current
+                            )
+                            CustomCheckBox(
+                                checked = editingState.disliked,
+                                onCheckedChange = {
+                                    if (editingState.disliked) {
+                                        onValueChange(editingState.copy(disliked = it))
+                                    } else {
+                                        onValueChange(
+                                            editingState.copy(
+                                                disliked = it,
+                                                favorite = false
+                                            )
+                                        )
+                                    }
+                                },
+                                checkedIcon = R.drawable.heartbroken_filled_24,
+                                uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                colors = IconButtonDefaults.iconToggleButtonColors(
+                                    checkedContentColor = LocalCustomColors.current.disHeart,
+                                ),
+                                enabled = editingState.ratingSelected
+                            )
+                        }
                     }
-                    // Disliked
+                }
+
+                // Production Status //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
                         modifier = Modifier
-                            .padding(0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.productionSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(productionSelected = it))
+                                }
+                            )
+                        }
+                        AutoSizeText(
+                            text = "Production Status:",
+                            fontSize = 16.sp,
+                            minFontSize = 8.sp,
+                            modifier = Modifier,
+                            height = 36.dp,
+                            contentAlignment = Alignment.CenterStart,
+                            color = if (!editingState.productionSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .weight(.7f),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            4.dp,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Disliked?",
+                            text = "In Production?",
                             modifier = Modifier
                                 .offset(x = 0.dp, y = 1.dp),
-                            color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
+                            color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                 alpha = 0.50f
                             ) else LocalContentColor.current
                         )
                         CustomCheckBox(
-                            checked = editingState.disliked,
+                            checked = editingState.inProduction,
                             onCheckedChange = {
-                                if (editingState.disliked) {
-                                    onValueChange(editingState.copy(disliked = it))
-                                } else {
-                                    onValueChange(
-                                        editingState.copy(
-                                            disliked = it,
-                                            favorite = false
-                                        )
-                                    )
-                                }
+                                onValueChange(editingState.copy(inProduction = it))
                             },
-                            checkedIcon = R.drawable.heartbroken_filled_24,
-                            uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                            checkedIcon = R.drawable.check_box_24,
+                            uncheckedIcon = R.drawable.check_box_outline_24,
                             modifier = Modifier
                                 .padding(0.dp),
-                            colors = IconButtonDefaults.iconToggleButtonColors(
-                                checkedContentColor = LocalCustomColors.current.disHeart,
-                            ),
-                            enabled = editingState.ratingSelected
+                            enabled = editingState.productionSelected
+                        )
+                    }
+                }
+
+                // Sync Tins //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.syncTinsSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(syncTinsSelected = it))
+                                }
+                            )
+                        }
+                        AutoSizeText(
+                            text = "Sync entry/\ntin quantity",
+                            fontSize = 16.sp,
+                            minFontSize = 8.sp,
+                            modifier = Modifier,
+                            height = 36.dp,
+                            contentAlignment = Alignment.CenterStart,
+                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .weight(.7f),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            4.dp,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Sync Tins?",
+                            modifier = Modifier
+                                .offset(x = 0.dp, y = 1.dp),
+                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                        CustomCheckBox(
+                            checked = editingState.syncTins,
+                            onCheckedChange = {
+                                onValueChange(editingState.copy(syncTins = it))
+                            },
+                            checkedIcon = R.drawable.check_box_24,
+                            uncheckedIcon = R.drawable.check_box_outline_24,
+                            modifier = Modifier
+                                .padding(0.dp),
+                            enabled = editingState.syncTinsSelected
                         )
                     }
                 }
             }
 
-            // Production Status //
-            Row(
+            Spacer(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(12.dp)
+            )
+
+            // Batch edit confirm //
+            Button(
+                onClick = { confirmEdit = true },
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .align(Alignment.CenterHorizontally),
+                enabled = selectedItems.isNotEmpty() && batchEditValidation(),
+                shape = MaterialTheme.shapes.small
             ) {
-                Box(
+                Text(
+                    text = "Save",
                     modifier = Modifier
-                        .width(42.dp)
-                ) {
-                    Checkbox(
-                        checked = editingState.productionSelected,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(productionSelected = it))
-                        }
-                    )
-                }
-                AutoSizeText(
-                    text = "Production Status:",
-                    fontSize = 16.sp,
-                    minFontSize = 8.sp,
-                    modifier = Modifier
-                        .padding(end = 4.dp),
-                    width = 70.dp,
-                    height = 36.dp,
-                    contentAlignment = Alignment.CenterStart,
-                    color = if (!editingState.productionSelected) LocalContentColor.current.copy(
-                        alpha = 0.50f
-                    ) else LocalContentColor.current
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "In Production?",
-                        modifier = Modifier
-                            .offset(x = 0.dp, y = 1.dp),
-                        color = if (!editingState.productionSelected) LocalContentColor.current.copy(
-                            alpha = 0.50f
-                        ) else LocalContentColor.current
-                    )
-                    CustomCheckBox(
-                        checked = editingState.inProduction,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(inProduction = it))
-                        },
-                        checkedIcon = R.drawable.check_box_24,
-                        uncheckedIcon = R.drawable.check_box_outline_24,
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = editingState.productionSelected
-                    )
-                }
             }
 
-            // Sync Tins //
-            Row(
+            Spacer(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(42.dp)
-                ) {
-                    Checkbox(
-                        checked = editingState.syncTinsSelected,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(syncTinsSelected = it))
-                        }
-                    )
-                }
-                AutoSizeText(
-                    text = "Sync entry/\ntin quantity",
-                    fontSize = 16.sp,
-                    minFontSize = 8.sp,
-                    modifier = Modifier
-                        .padding(end = 4.dp),
-                    width = 70.dp,
-                    height = 36.dp,
-                    contentAlignment = Alignment.CenterStart,
-                    color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-                        alpha = 0.50f
-                    ) else LocalContentColor.current
+                    .height(8.dp)
+            )
+
+            if (confirmEdit) {
+                ConfirmEditDialog(
+                    onEditConfirm = {
+                        confirmEdit = false
+                        batchEdit()
+                    },
+                    onEditCancel = { confirmEdit = false }
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Sync Tins?",
-                        modifier = Modifier
-                            .offset(x = 0.dp, y = 1.dp),
-                        color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-                            alpha = 0.50f
-                        ) else LocalContentColor.current
-                    )
-                    CustomCheckBox(
-                        checked = editingState.syncTins,
-                        onCheckedChange = {
-                            onValueChange(editingState.copy(syncTins = it))
-                        },
-                        checkedIcon = R.drawable.check_box_24,
-                        uncheckedIcon = R.drawable.check_box_outline_24,
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = editingState.syncTinsSelected
-                    )
-                }
             }
         }
-
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
-        )
-
-        // Batch edit confirm //
-        Button(
-            onClick = { confirmEdit = true },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally),
-            enabled = selectedItems.isNotEmpty() && batchEditValidation(),
-        ) {
-            Text(
-                text = "Save",
-                modifier = Modifier
-            )
-        }
-        if (confirmEdit) {
-            ConfirmEditDialog(
-                onEditConfirm = {
-                    confirmEdit = false
-                    batchEdit()
-                },
-                onEditCancel = { confirmEdit = false }
-            )
-        }
-
     }
 }
 
@@ -954,7 +1132,7 @@ fun BulkSelectionsItem(
     val background = if (selected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f) else LocalCustomColors.current.darkNeutral
     val textColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onBackground
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val weight = if (selected) FontWeight.Bold else FontWeight.Normal
+    val weight = if (selected) FontWeight.SemiBold else FontWeight.Normal
 
     Column(
         modifier = modifier
@@ -976,7 +1154,7 @@ fun BulkSelectionsItem(
             fontSize = 15.sp,
             overflow = TextOverflow.Ellipsis,
             color = textColor,
-            fontWeight = weight
+            fontWeight = weight,
         )
         Text(
             text = item.brand,
@@ -988,6 +1166,5 @@ fun BulkSelectionsItem(
             color = textColor,
             fontWeight = weight
         )
-
     }
 }
