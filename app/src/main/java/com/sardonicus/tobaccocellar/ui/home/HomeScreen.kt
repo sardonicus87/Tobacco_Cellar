@@ -521,10 +521,10 @@ private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
     filteredItems: List<ItemsComponentsAndTins>,
+    isTableView: Boolean,
     filterViewModel: FilterViewModel,
     searchText: String,
     selectView: (Boolean) -> Unit,
-    isTableView: Boolean,
 ) {
     Row(
         modifier = modifier
@@ -535,6 +535,7 @@ private fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
+        // Select view
         Row(
             modifier = Modifier
                 .padding(0.dp)
@@ -570,6 +571,8 @@ private fun HomeHeader(
             modifier = Modifier
                 .width(8.dp)
         )
+
+        // Search field
         Box(
             modifier = Modifier
                 .padding(horizontal = 0.dp)
@@ -690,6 +693,8 @@ private fun HomeHeader(
             modifier = Modifier
                 .width(8.dp)
         )
+
+        // total items
         Text(
             text = "Entries: ${filteredItems.size}",
             modifier = Modifier
@@ -1095,10 +1100,9 @@ fun ListViewMode(
     onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val columnState = rememberLazyListState()
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-
     val (isVisible, scrollDirection) = rememberJumpToState(columnState, itemsList.size)
 
     Box(
@@ -1439,13 +1443,13 @@ private fun CellarListItem(
             }
         }
     }
+
     Spacer(
         modifier = Modifier
             .height(1.dp)
             .background(LocalCustomColors.current.backgroundVariant)
     )
 }
-
 
 
 /** Table View Mode **/
@@ -1760,7 +1764,6 @@ fun TableLayout(
                                         formattedQuantity[item.items.id] == "0 g"
 
                                         TableCell(
-                                        //    value = "x$cellValue",
                                             value = formattedQty,
                                             modifier = Modifier
                                                 .align(alignment),

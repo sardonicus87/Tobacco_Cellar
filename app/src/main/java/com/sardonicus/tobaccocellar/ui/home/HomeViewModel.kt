@@ -371,10 +371,10 @@ class HomeViewModel(
         val formatted = String.format("%.2f", rounded)
         return when {
             formatted.endsWith("00") -> {
-                    formatted.substringBefore(".")
+                formatted.substringBefore(".")
             }
             formatted.endsWith("0") -> {
-                    formatted.substring(0, formatted.length - 1)
+                formatted.substring(0, formatted.length - 1)
             }
             else -> formatted
         }
