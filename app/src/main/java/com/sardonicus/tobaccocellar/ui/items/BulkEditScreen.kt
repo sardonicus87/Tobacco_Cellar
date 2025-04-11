@@ -59,7 +59,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,7 +110,6 @@ fun BulkEditScreen(
     viewModel: BulkEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val bulkEditUiState by viewModel.bulkEditUiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
