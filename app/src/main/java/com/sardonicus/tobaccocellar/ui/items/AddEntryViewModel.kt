@@ -463,9 +463,9 @@ fun Tins.toTinDetails(): TinDetails = TinDetails(
     manufactureDateShort = formatShortDate(manufactureDate),
     cellarDateShort = formatShortDate(cellarDate),
     openDateShort = formatShortDate(openDate),
-    manufactureDateLong = formatLongDate(manufactureDate),
-    cellarDateLong = formatLongDate(cellarDate),
-    openDateLong = formatLongDate(openDate),
+    manufactureDateLong = formatMediumDate(manufactureDate),
+    cellarDateLong = formatMediumDate(cellarDate),
+    openDateLong = formatMediumDate(openDate),
 )
 
 
@@ -478,7 +478,7 @@ fun formatShortDate(millis: Long?): String {
     } else { "" }
 }
 
-fun formatLongDate(millis: Long?): String {
+fun formatMediumDate(millis: Long?): String {
     return if (millis != null) {
         val instant = Instant.ofEpochMilli(millis)
         val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -487,6 +487,14 @@ fun formatLongDate(millis: Long?): String {
     } else { "" }
 }
 
+fun formatLongDate(millis: Long?): String {
+    return if (millis != null) {
+        val instant = Instant.ofEpochMilli(millis)
+        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        formatter.format(localDate)
+    } else { "" }
+}
 
 
 
