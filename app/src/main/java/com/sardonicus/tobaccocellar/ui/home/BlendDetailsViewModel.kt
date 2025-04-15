@@ -55,73 +55,6 @@ class BlendDetailsViewModel(
         }
     }
 
-    fun calculateAge(date: Long?, field: String): String {
-        if (date == null) {
-            return ""
-        }
-
-        val now = LocalDate.now()
-        val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
-        val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
-
-        val years = period.years
-        val months = period.months
-        val days = period.days
-
-        val parts = mutableListOf<String>()
-        if (years > 0) {
-            if (years > 1) {
-                parts.add("$years years")
-            } else {
-                parts.add("$years year")
-            }
-        }
-        if (months > 0) {
-            if (months > 1) {
-                parts.add("$months months")
-            } else {
-                parts.add("$months month")
-            }
-        }
-        if (days > 0) {
-            if (days > 1) {
-                parts.add("$days days")
-            } else {
-                parts.add("$days day")
-            }
-        }
-
-        val end = when (field) {
-            "manufacture" -> {
-                if (then < now) {
-                    "old"
-                } else {
-                    "until made/available?"
-                }
-            }
-            "cellar" -> {
-                if (then < now) {
-                    "in cellar"
-                } else {
-                    "until adding/available?"
-                }
-            }
-            "open" -> {
-                if (then < now) {
-                    "open"
-                } else {
-                    "until opening?"
-                }
-            }
-            else -> { "" }
-        }
-
-        return if (parts.isEmpty()) {
-            "less than a day"
-        } else {
-            parts.joinToString(", ") + " $end"
-        }
-    }
 
     private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption): String {
         val sum =
@@ -274,3 +207,71 @@ fun ItemsComponentsAndTins.toBlendDetails(): BlendDetails = BlendDetails(
     componentList = components.joinToString(", ") { it.componentName },
     tins = tins,
 )
+
+fun calculateAge(date: Long?, field: String): String {
+    if (date == null) {
+        return ""
+    }
+
+    val now = LocalDate.now()
+    val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
+    val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
+
+    val years = period.years
+    val months = period.months
+    val days = period.days
+
+    val parts = mutableListOf<String>()
+    if (years > 0) {
+        if (years > 1) {
+            parts.add("$years years")
+        } else {
+            parts.add("$years year")
+        }
+    }
+    if (months > 0) {
+        if (months > 1) {
+            parts.add("$months months")
+        } else {
+            parts.add("$months month")
+        }
+    }
+    if (days > 0) {
+        if (days > 1) {
+            parts.add("$days days")
+        } else {
+            parts.add("$days day")
+        }
+    }
+
+    val end = when (field) {
+        "manufacture" -> {
+            if (then < now) {
+                " old"
+            } else {
+                " until made/available?"
+            }
+        }
+        "cellar" -> {
+            if (then < now) {
+                " in cellar"
+            } else {
+                " until adding/available?"
+            }
+        }
+        "open" -> {
+            if (then < now) {
+                " open"
+            } else {
+                " until opening?"
+            }
+        }
+        else -> { "" }
+    }
+
+    return if (parts.isEmpty()) {
+        "less than a day"
+    } else {
+        parts.joinToString(", ") + end
+    }
+}
