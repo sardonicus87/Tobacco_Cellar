@@ -49,7 +49,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
-import com.sardonicus.tobaccocellar.ui.items.formatLongDate
+import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -423,12 +423,12 @@ fun BlendDetailsBody(
                                                 Text(
                                                     text = buildString(
                                                         "Manufacture Date: ",
-                                                        formatLongDate(it.manufactureDate),
+                                                        formatMediumDate(it.manufactureDate),
                                                     ),
                                                     modifier = Modifier,
                                                 )
                                                 Text(
-                                                    text = "(${viewModel.calculateAge(it.manufactureDate, "manufacture")})",
+                                                    text = "(${calculateAge(it.manufactureDate, "manufacture")})",
                                                     modifier = Modifier
                                                         .padding(start = 16.dp),
                                                     fontSize = 12.sp,
@@ -439,12 +439,12 @@ fun BlendDetailsBody(
                                                 Text(
                                                     text = buildString(
                                                         "Cellar Date: ",
-                                                        formatLongDate(it.cellarDate),
+                                                        formatMediumDate(it.cellarDate),
                                                     ),
                                                     modifier = Modifier,
                                                 )
                                                 Text(
-                                                    text = "(${viewModel.calculateAge(it.cellarDate, "cellar")})",
+                                                    text = "(${calculateAge(it.cellarDate, "cellar")})",
                                                     modifier = Modifier
                                                         .padding(start = 16.dp),
                                                     fontSize = 12.sp,
@@ -455,12 +455,12 @@ fun BlendDetailsBody(
                                                 Text(
                                                     text = buildString(
                                                         "Opened Date: ",
-                                                        formatLongDate(it.openDate),
+                                                        formatMediumDate(it.openDate),
                                                     ),
                                                     modifier = Modifier,
                                                 )
                                                 Text(
-                                                    text = "(${viewModel.calculateAge(it.openDate, "open")})",
+                                                    text = "(${calculateAge(it.openDate, "open")})",
                                                     modifier = Modifier
                                                         .padding(start = 16.dp),
                                                     fontSize = 12.sp,
