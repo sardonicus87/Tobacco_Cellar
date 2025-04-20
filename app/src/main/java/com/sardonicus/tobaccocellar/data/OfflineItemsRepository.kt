@@ -1,7 +1,7 @@
 package com.sardonicus.tobaccocellar.data
 
 import androidx.sqlite.db.SimpleSQLiteQuery
-import com.sardonicus.tobaccocellar.ui.items.formatLongDate
+import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
@@ -33,11 +33,13 @@ class OfflineItemsRepository(
 
     override suspend fun deleteAllItems() {
         itemsDao.deleteOrphanedComponents()
+        itemsDao.deleteOrphanedFlavoring()
         itemsDao.deleteAllItems()
     }
 
     override suspend fun optimizeDatabase() {
         itemsDao.deleteOrphanedComponents()
+        itemsDao.deleteOrphanedFlavoring()
         itemsDao.vacuumDatabase(SimpleSQLiteQuery("VACUUM"))
     }
 
@@ -68,6 +70,32 @@ class OfflineItemsRepository(
     }
 
 
+    // Flavoring //
+    override suspend fun insertFlavoring(flavoring: Flavoring): Long {
+        return itemsDao.insertFlavoring(flavoring)
+    }
+
+    override suspend fun insertFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef) {
+        itemsDao.insertFlavoringCrossRef(crossRef)
+    }
+
+    override suspend fun deleteFlavoringCrossRef(itemId: Int, flavoringId: Int) {
+        itemsDao.deleteFlavoringCrossRef(itemId, flavoringId)
+    }
+
+    override suspend fun deleteFlavoringCrossRefByItemId(itemId: Int) {
+        itemsDao.deleteFlavoringCrossRefByItemId(itemId)
+    }
+
+    override suspend fun insertMultipleFlavoring(flavoring: List<Flavoring>): List<Long> {
+        return itemsDao.insertMultipleFlavoring(flavoring).toList()
+    }
+
+    override suspend fun insertMultipleFlavoringCrossRef(crossRefs: List<ItemsFlavoringCrossRef>) {
+        itemsDao.insertMultipleFlavoringCrossRef(crossRefs)
+    }
+
+
     // Tins //
     override suspend fun insertTin(tin: Tins): Long {
         return itemsDao.insertTin(tin)
@@ -95,6 +123,7 @@ class OfflineItemsRepository(
 
         for (item in items) {
             val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
+            val flavoring = itemsDao.getFlavoringForItemStream(item.id).first().joinToString(", ") { it.flavoringName }
             val tins = itemsDao.getTinsForItemStream(item.id).first()
 
             if (tins.isNotEmpty()) {
@@ -110,11 +139,13 @@ class OfflineItemsRepository(
                         inProduction = item.inProduction,
                         notes = item.notes,
                         components = components,
+                        flavoring = flavoring,
                         container = tin.container,
                         quantity = "${tin.tinQuantity} ${tin.unit}",
-                        manufactureDate = formatLongDate(tin.manufactureDate),
-                        cellarDate = formatLongDate(tin.cellarDate),
-                        openDate = formatLongDate(tin.openDate)
+                        manufactureDate = formatMediumDate(tin.manufactureDate),
+                        cellarDate = formatMediumDate(tin.cellarDate),
+                        openDate = formatMediumDate(tin.openDate),
+                        finished = tin.finished
                     )
                     tinExportData.add(tinExport)
                 }
@@ -130,11 +161,13 @@ class OfflineItemsRepository(
                     inProduction = item.inProduction,
                     notes = item.notes,
                     components = components,
+                    flavoring = flavoring,
                     container = "",
                     quantity = "",
                     manufactureDate = "",
                     cellarDate = "",
-                    openDate = ""
+                    openDate = "",
+                    finished = false
                 )
                 tinExportData.add(tinExport)
             }
@@ -154,11 +187,14 @@ class OfflineItemsRepository(
         val items = itemsDao.getAllItemsExport()
         return items.map {
             val components = itemsDao.getComponentsForItemStream(it.id).first()
-            ItemsWithComponents(it, components)
+            val flavoring = itemsDao.getFlavoringForItemStream(it.id).first()
+            ItemsWithComponents(it, components, flavoring)
         }
     }
 
     override fun getAllComponentsStream(): Flow<List<Components>> = itemsDao.getAllComponents()
+
+    override fun getAllFlavoringStream(): Flow<List<Flavoring>> = itemsDao.getAllFlavoring()
 
     override fun getAllTinsStream(): Flow<List<Tins>> = itemsDao.getAllTins()
 
@@ -174,12 +210,16 @@ class OfflineItemsRepository(
 
     override fun getComponentsForItemStream(id: Int): Flow<List<Components>> = itemsDao.getComponentsForItemStream(id)
 
+    override fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>> = itemsDao.getFlavoringForItemStream(id)
+
     override fun getTinsForItemStream(id: Int): Flow<List<Tins>> = itemsDao.getTinsForItemStream(id)
 
     override suspend fun getItemIdByIndex(brand: String, blend: String) =
         itemsDao.getItemIdByIndex(brand, blend)
 
     override suspend fun getComponentIdByName(name: String): Int? = itemsDao.getComponentIdByName(name)
+
+    override suspend fun getFlavoringIdByName(name: String): Int? = itemsDao.getFlavoringIdByName(name)
 
 
     /** Checks **/
@@ -248,4 +288,6 @@ class OfflineItemsRepository(
     override fun getItemByIndex(brand: String, blend: String): Items? = itemsDao.getItemByIndex(brand, blend)
 
     override fun getComponentsByName(components: List<String>): Flow<List<Components>> = itemsDao.getComponentsByName(components)
+
+    override fun getFlavoringByName(flavoring: List<String>): Flow<List<Flavoring>> = itemsDao.getFlavoringByName(flavoring)
 }

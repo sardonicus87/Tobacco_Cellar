@@ -35,6 +35,19 @@ interface ItemsRepository {
 
     suspend fun insertMultipleComponentsCrossRef(crossRefs: List<ItemsComponentsCrossRef>)
 
+    // Flavoring //
+    suspend fun insertFlavoring(flavoring: Flavoring): Long
+
+    suspend fun insertFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
+
+    suspend fun deleteFlavoringCrossRef(itemId: Int, flavoringId: Int)
+
+    suspend fun deleteFlavoringCrossRefByItemId(itemId: Int)
+
+    suspend fun insertMultipleFlavoring(flavoring: List<Flavoring>): List<Long>
+
+    suspend fun insertMultipleFlavoringCrossRef(crossRefs: List<ItemsFlavoringCrossRef>)
+
     // Tins //
     suspend fun insertTin(tin: Tins): Long
 
@@ -60,6 +73,8 @@ interface ItemsRepository {
 
     fun getAllComponentsStream(): Flow<List<Components>>
 
+    fun getAllFlavoringStream(): Flow<List<Flavoring>>
+
     fun getAllTinsStream(): Flow<List<Tins>>
 
     fun getAllItemsComponentsCrossRefStream(): Flow<List<ItemsComponentsCrossRef>>
@@ -74,11 +89,15 @@ interface ItemsRepository {
 
     fun getComponentsForItemStream(id: Int): Flow<List<Components>>
 
+    fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>>
+
     fun getTinsForItemStream(id: Int): Flow<List<Tins>>
 
     suspend fun getItemIdByIndex(brand: String, blend: String): Int
 
     suspend fun getComponentIdByName(name: String): Int?
+
+    suspend fun getFlavoringIdByName(name: String): Int?
 
 
     /** Checks **/
@@ -145,5 +164,7 @@ interface ItemsRepository {
     fun getItemByIndex(brand: String, blend: String): Items?
 
     fun getComponentsByName(components: List<String>): Flow<List<Components>>
+
+    fun getFlavoringByName(flavoring: List<String>): Flow<List<Flavoring>>
 
 }

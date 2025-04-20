@@ -69,6 +69,31 @@ interface ItemsDao {
     @Query("DELETE FROM components WHERE componentId NOT IN (SELECT componentId FROM items_components_cross_ref)")
     suspend fun deleteOrphanedComponents()
 
+
+    // Flavoring //
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFlavoring(flavoring: Flavoring): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
+
+    @Query("DELETE FROM items_flavoring_cross_ref WHERE itemId = :itemId AND flavoringId = :flavoringId")
+    suspend fun deleteFlavoringCrossRef(itemId: Int, flavoringId: Int)
+
+    @Query("DELETE FROM items_flavoring_cross_ref WHERE itemId = :itemId")
+    suspend fun deleteFlavoringCrossRefByItemId(itemId: Int)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMultipleFlavoring(flavoring: List<Flavoring>): LongArray
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMultipleFlavoringCrossRef(crossRefs: List<ItemsFlavoringCrossRef>)
+
+    @Transaction
+    @Query("DELETE FROM flavoring WHERE flavoringId NOT IN (SELECT flavoringId FROM items_flavoring_cross_ref)")
+    suspend fun deleteOrphanedFlavoring()
+
+
     // Tins //
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTin(tin: Tins): Long
@@ -103,6 +128,10 @@ interface ItemsDao {
     // Get all components flow //
     @Query("SELECT * FROM components ORDER BY componentName ASC")
     fun getAllComponents(): Flow<List<Components>>
+
+    // Get all flavoring flow //
+    @Query("SELECT * FROM flavoring ORDER BY flavoringName ASC")
+    fun getAllFlavoring(): Flow<List<Flavoring>>
 
     // Get all tins flow //
     @Query("SELECT * FROM tins ORDER BY tinId ASC")
@@ -141,6 +170,19 @@ interface ItemsDao {
     )
     fun getComponentsForItemStream(itemId: Int): Flow<List<Components>>
 
+    // Get flavoring by item id //
+    @Transaction
+    @Query(
+        """
+        SELECT T2.* 
+        FROM items_flavoring_cross_ref AS T1 
+        INNER JOIN flavoring AS T2
+        ON T1.flavoringId = T2.flavoringId
+        WHERE T1.itemId = :itemId
+        """
+    )
+    fun getFlavoringForItemStream(itemId: Int): Flow<List<Flavoring>>
+
     // Get tins by item id //
     @Query("SELECT * FROM tins WHERE itemsId = :itemsId")
     fun getTinsForItemStream(itemsId: Int): Flow<List<Tins>>
@@ -150,6 +192,9 @@ interface ItemsDao {
 
     @Query("SELECT componentId FROM components WHERE componentName = :name")
     suspend fun getComponentIdByName(name: String): Int?
+
+    @Query("SELECT flavoringId FROM flavoring WHERE flavoringName = :name")
+    suspend fun getFlavoringIdByName(name: String): Int?
 
 
     /** Checks **/
@@ -265,5 +310,8 @@ interface ItemsDao {
 
     @Query("SELECT * FROM components WHERE componentName IN (:components)")
     fun getComponentsByName(components: List<String>): Flow<List<Components>>
+
+    @Query("SELECT * FROM flavoring WHERE flavoringName IN (:flavoring)")
+    fun getFlavoringByName(flavoring: List<String>): Flow<List<Flavoring>>
 
 }
