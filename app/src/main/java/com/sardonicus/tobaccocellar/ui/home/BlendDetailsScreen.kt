@@ -5,14 +5,19 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -67,6 +72,7 @@ fun BlendDetailsScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
+    navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: BlendDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -106,6 +112,7 @@ fun BlendDetailsScreen(
             BlendDetailsBody(
                 blendDetails = viewModel.blendDetails,
                 viewModel = viewModel,
+                navigateToEditEntry = { navigateToEditEntry(it) },
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
             )
@@ -118,6 +125,7 @@ fun BlendDetailsScreen(
 fun BlendDetailsBody(
     blendDetails: BlendDetails,
     viewModel: BlendDetailsViewModel,
+    navigateToEditEntry: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     fun buildString(title: String, value: String): AnnotatedString {
@@ -135,45 +143,84 @@ fun BlendDetailsBody(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Blend Name
-        SelectionContainer {
-            Column (
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top,
+        // Header
+        Row (
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .padding(top = 20.dp)
+        ) {
+            val padding: Dp = with(LocalDensity.current) { 16.sp.toDp() }
+
+            Spacer(modifier = Modifier.width(24.dp))
+            // Blend name
+            Box (
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp)
+                    .weight(1f)
             ) {
-                Text(
-                    text = blendDetails.blend,
-                    modifier = Modifier
-                        .padding(bottom = 2.dp),
-                    fontSize = 30.sp,
-                    lineHeight = 32.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            style = SpanStyle(
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 16.sp,
-                            )
-                        ) { append("by ") }
-                        withStyle(
-                            style = SpanStyle(
-                                fontWeight = FontWeight.Normal,
-                                fontStyle = FontStyle.Italic,
-                                fontSize = 16.sp,
-                            )
-                        ) { append(blendDetails.brand) }
-                    },
-                    modifier = Modifier
-                        .padding(bottom = 12.dp),
-                    lineHeight = 16.sp,
-                    textAlign = TextAlign.Center,
-                )
+                SelectionContainer{
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = blendDetails.blend,
+                            modifier = Modifier
+                                .padding(bottom = 2.dp),
+                            fontSize = 30.sp,
+                            lineHeight = 32.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 16.sp,
+                                    )
+                                ) { append("by ") }
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Normal,
+                                        fontStyle = FontStyle.Italic,
+                                        fontSize = 16.sp,
+                                    )
+                                ) { append(blendDetails.brand) }
+                            },
+                            modifier = Modifier
+                                .padding(bottom = 12.dp),
+                            lineHeight = 16.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+            // Favorite/Disliked
+            Box (
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(24.dp)
+                    .padding(top = padding - 12.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                if (blendDetails.favorite || blendDetails.disliked) {
+                    val icon =
+                        if (blendDetails.favorite) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24
+                    val tint =
+                        if (blendDetails.favorite) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
+                    Icon(
+                        painter = painterResource(id = icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(24.dp),
+                        tint = tint
+                    )
+                }
             }
         }
 
@@ -209,20 +256,15 @@ fun BlendDetailsBody(
                     modifier = Modifier
                         .weight(1f)
                 )
-                if (blendDetails.favorite || blendDetails.disliked) {
-                    val icon =
-                        if (blendDetails.favorite) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24
-                    val tint =
-                        if (blendDetails.favorite) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
-                    Icon(
-                        painter = painterResource(id = icon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(start = 2.dp)
-                            .size(20.dp),
-                        tint = tint
-                    )
-                }
+                Icon(
+                    painter = painterResource(R.drawable.edit_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .offset(y = 2.dp)
+                        .clickable(onClick = { navigateToEditEntry(blendDetails.id) }),
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                )
             }
             SelectionContainer {
                 Column(
