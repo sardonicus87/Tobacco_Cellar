@@ -74,9 +74,50 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+                CREATE TABLE IF NOT EXISTS 'flavoring' (
+                    'flavoringId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    'flavoringName' TEXT NOT NULL DEFAULT ''
+                )
+            """
+        )
+        db.execSQL(
+            """
+                CREATE UNIQUE INDEX IF NOT EXISTS
+                'index_flavoring_flavoringName'
+                ON 'flavoring' ('flavoringName')
+            """
+        )
+        db.execSQL(
+            """
+                CREATE TABLE IF NOT EXISTS 'items_flavoring_cross_ref' (
+                    'itemId' INTEGER NOT NULL,
+                    'flavoringId' INTEGER NOT NULL,
+                    PRIMARY KEY ('itemId', 'flavoringId'),
+                    FOREIGN KEY('itemId') REFERENCES 'items' ('id')
+                    ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY('flavoringId') REFERENCES 'flavoring' ('flavoringId')
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+            """
+        )
+        db.execSQL(
+            """
+                CREATE INDEX IF NOT EXISTS
+                'index_items_flavoring_cross_ref_flavoringId'
+                ON 'items_flavoring_cross_ref' ('flavoringId')
+            """
+        )
+        db.execSQL("ALTER TABLE 'tins' ADD COLUMN 'finished' INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Database(
-    entities = [Items::class, Tins::class, Components::class, ItemsComponentsCrossRef::class],
-    version = 2,
+    entities = [Items::class, Tins::class, Components::class, ItemsComponentsCrossRef::class, Flavoring::class, ItemsFlavoringCrossRef::class],
+    version = 3,
     exportSchema = true
 )
 abstract class TobaccoDatabase : RoomDatabase() {
@@ -91,6 +132,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database")
                     .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_2_3)
                     .build()
                     .also { Instance = it }
             }
