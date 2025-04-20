@@ -7,8 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Components
+import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
+import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
@@ -35,6 +37,7 @@ class BulkEditViewModel (
                     autoGenres = it.map { it.items.subGenre }.distinct().sorted(),
                     autoCuts = it.map { it.items.cut }.distinct().sorted(),
                     autoComps = it.flatMap { it.components }.map { it.componentName }.distinct().sorted(),
+                    autoFlavor = it.flatMap { it.flavoring }.map { it.flavoringName }.distinct().sorted(),
                     loading = false
                 )
             }
@@ -65,6 +68,7 @@ class BulkEditViewModel (
             genreSelected = editing.genreSelected,
             cutSelected = editing.cutSelected,
             compsSelected = editing.compsSelected,
+            flavorSelected = editing.flavorSelected,
             ratingSelected = editing.ratingSelected,
             productionSelected = editing.productionSelected,
             syncTinsSelected = editing.syncTinsSelected,
@@ -77,6 +81,9 @@ class BulkEditViewModel (
             compsString = editing.compsString,
             components = editing.components,
             compsAdd = editing.compsAdd,
+            flavorString = editing.flavorString,
+            flavoring = editing.flavoring,
+            flavorAdd = editing.flavorAdd,
             inProduction = editing.inProduction,
             syncTins = editing.syncTins,
         )
@@ -98,7 +105,8 @@ class BulkEditViewModel (
 
     fun fieldSelected(): Boolean {
         anyFieldSelected = editingState.typeSelected || editingState.genreSelected ||
-                editingState.cutSelected || editingState.compsSelected || editingState.ratingSelected ||
+                editingState.cutSelected || editingState.compsSelected ||
+                editingState.flavorSelected || editingState.ratingSelected ||
                 editingState.productionSelected || editingState.syncTinsSelected
         return anyFieldSelected
     }
@@ -163,9 +171,9 @@ class BulkEditViewModel (
 
             val itemsToUpdate = editingState.selectedItems.map {
                 val itemsId = it.items.id
+
                 val existingComps = it.components.map { it.componentName }
                 val editComps = editingState.toComps(existingComps)
-
                 val updatedComps = if (editingState.compsSelected) {
                     when (editingState.compsAdd) {
                         true -> {
@@ -183,12 +191,37 @@ class BulkEditViewModel (
                 } else {
                     it.components
                 }
-
                 val compsToAdd = updatedComps.filter {
                     it.componentName !in existingComps
                 }
                 val compsToRemove = existingComps.filter {
                     it !in updatedComps.map { it.componentName }
+                }
+
+                val existingFlavor = it.flavoring.map { it.flavoringName }
+                val editFlavor = editingState.toFlavor(existingFlavor)
+                val updatedFlavor = if (editingState.flavorSelected) {
+                    when (editingState.flavorAdd) {
+                        true -> {
+                            (it.flavoring + editFlavor.filterNot {
+                                it.flavoringName in existingFlavor
+                            }).distinctBy { it.flavoringName }
+                        }
+
+                        false -> {
+                            it.flavoring.filterNot {
+                                it.flavoringName in editFlavor.map { it.flavoringName }
+                            }
+                        }
+                    }
+                } else {
+                    it.flavoring
+                }
+                val flavorToAdd = updatedFlavor.filter {
+                    it.flavoringName !in existingFlavor
+                }
+                val flavorToRemove = existingFlavor.filter {
+                    it !in updatedFlavor.map { it.flavoringName }
                 }
 
                 compsToAdd.forEach {
@@ -205,6 +238,20 @@ class BulkEditViewModel (
                     }
                 }
 
+                flavorToAdd.forEach{
+                    var flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                    if (flavorId == null) {
+                        flavorId = itemsRepository.insertFlavoring(it).toInt()
+                    }
+                    itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemsId, flavorId))
+                }
+                flavorToRemove.forEach {
+                    val flavorId = itemsRepository.getFlavoringIdByName(it)
+                    if (flavorId != null) {
+                        itemsRepository.deleteFlavoringCrossRef(itemsId, flavorId)
+                    }
+                }
+
                 it.copy(
                     items = it.items.copy(
                         type = if (editingState.typeSelected) editingState.type else it.items.type,
@@ -215,6 +262,7 @@ class BulkEditViewModel (
                         inProduction = if (editingState.productionSelected) editingState.inProduction else it.items.inProduction,
                     ),
                     components = updatedComps,
+                    flavoring = updatedFlavor
                 )
             }
             itemsRepository.updateMultipleItems(itemsToUpdate)
@@ -250,6 +298,7 @@ data class BulkEditUiState(
     val autoGenres: List<String> = listOf(),
     val autoCuts: List<String> = listOf(),
     val autoComps: List<String> = listOf(),
+    val autoFlavor: List<String> = listOf(),
 )
 
 data class EditingState(
@@ -260,6 +309,7 @@ data class EditingState(
     val genreSelected: Boolean = false,
     val cutSelected: Boolean = false,
     val compsSelected: Boolean = false,
+    val flavorSelected: Boolean = false,
     val ratingSelected: Boolean = false,
     val productionSelected: Boolean = false,
     val syncTinsSelected: Boolean = false,
@@ -272,6 +322,9 @@ data class EditingState(
     var compsString: String = "",
     var components: List<Components> = listOf(),
     var compsAdd: Boolean = true,
+    var flavorString: String = "",
+    var flavoring: List<Flavoring> = listOf(),
+    var flavorAdd: Boolean = true,
     var inProduction: Boolean = true,
     var syncTins: Boolean = false,
 )
@@ -287,5 +340,18 @@ fun EditingState.toComps(existingComps: List<String>): List<Components> {
             }
 
             Components(componentName = existingComp ?: enteredComp.trim())
+        }
+}
+
+fun EditingState.toFlavor(existingFlavor: List<String>): List<Flavoring> {
+    return flavorString
+        .replace(Regex("\\s+"), " ")
+        .split(",")
+        .filter { it.isNotBlank() }.map { enteredFlavor ->
+            val normalizedFlavor = enteredFlavor.trim().lowercase()
+            val existingFlavor = existingFlavor.find { existingFlavor ->
+                existingFlavor.lowercase() == normalizedFlavor
+            }
+            Flavoring(flavoringName = existingFlavor ?: enteredFlavor.trim())
         }
 }

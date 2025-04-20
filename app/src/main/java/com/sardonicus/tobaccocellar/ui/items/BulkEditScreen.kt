@@ -181,6 +181,7 @@ fun BulkEditScreen(
                 autoGenres = bulkEditUiState.autoGenres,
                 autoCuts = bulkEditUiState.autoCuts,
                 autoComps = bulkEditUiState.autoComps,
+                autoFlavor = bulkEditUiState.autoFlavor,
                 modifier = modifier
                     .padding(0.dp)
                     .fillMaxSize(),
@@ -208,6 +209,7 @@ fun BulkEditBody(
     autoGenres: List<String>,
     autoCuts: List<String>,
     autoComps: List<String>,
+    autoFlavor: List<String>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -301,6 +303,7 @@ fun BulkEditBody(
                                     autoGenres = autoGenres,
                                     autoCuts = autoCuts,
                                     autoComps = autoComps,
+                                    autoFlavor = autoFlavor,
                                     modifier = Modifier
                                 )
 
@@ -400,6 +403,7 @@ fun BulkEditing(
     autoGenres: List<String>,
     autoCuts: List<String>,
     autoComps: List<String>,
+    autoFlavor: List<String>,
     modifier: Modifier = Modifier,
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
@@ -658,7 +662,7 @@ fun BulkEditing(
                     )
                 }
 
-                // Components
+                // Components //
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -789,6 +793,149 @@ fun BulkEditing(
                         maxLines = 1,
                         placeholder = {
                             if (editingState.compsSelected) {
+                                Text(
+                                    text = "(Separate with comma + space)",
+                                    modifier = Modifier
+                                        .alpha(alpha),
+                                    fontSize = 13.sp,
+                                    softWrap = false,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Clip,
+                                )
+                            }
+                        }
+                    )
+                }
+
+                // Flavor //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(.3f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                        ) {
+                            Checkbox(
+                                checked = editingState.flavorSelected,
+                                onCheckedChange = {
+                                    onValueChange(editingState.copy(flavorSelected = it))
+                                }
+                            )
+                        }
+                        AutoSizeText(
+                            text = "Flavoring:",
+                            fontSize = 16.sp,
+                            minFontSize = 8.sp,
+                            modifier = Modifier
+                                .padding(end = 4.dp),
+                            maxLines = 1,
+                            height = 38.dp,
+                            contentAlignment = Alignment.CenterStart,
+                            color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                    }
+
+                    val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+                    val color = if (editingState.flavorAdd) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error
+                    val alpha = if (editingState.flavorSelected) 0.66f else .33f
+
+                    AutoCompleteText(
+                        value = editingState.flavorString,
+                        onValueChange = {
+                            onValueChange(editingState.copy(flavorString = it))
+
+                            val substring = if (it.contains(", ")) {
+                                it.substringAfterLast(", ", "")
+                            } else {
+                                it
+                            }
+
+                            if (substring.length >= 2) {
+                                val startsWith = autoFlavor.filter { flavor ->
+                                    flavor.startsWith(substring, ignoreCase = true)
+                                }
+
+                                val otherWordsStartsWith = autoFlavor.filter { flavor ->
+                                    flavor.split(" ").drop(1).any { word ->
+                                        word.startsWith(substring, ignoreCase = true)
+                                    } && !flavor.startsWith(substring, ignoreCase = true)
+                                }
+
+                                val contains = autoFlavor.filter { flavor ->
+                                    flavor.contains(substring, ignoreCase = true)
+                                            && !flavor.startsWith(substring, ignoreCase = true) &&
+                                            !otherWordsStartsWith.contains(flavor)
+                                }
+
+                                val selected = autoFlavor.filter { flavor ->
+                                    it.split(", ").filter { it.isNotBlank() }.contains(flavor)
+                                }
+
+                                suggestions.value =
+                                    (startsWith + otherWordsStartsWith + contains) - selected
+                            } else {
+                                suggestions.value = emptyList()
+                            }
+                        },
+                        componentField = true,
+                        onOptionSelected = { suggestion, currentText ->
+                            val updatedText =
+                                if (currentText.contains(", ")) {
+                                    currentText.substringBeforeLast(
+                                        ", ",
+                                        ""
+                                    ) + ", " + suggestion + ", "
+                                } else {
+                                    "$suggestion, "
+                                }
+                            onValueChange(editingState.copy(flavorString = updatedText))
+                            suggestions.value = emptyList()
+                        },
+                        suggestions = suggestions.value,
+                        modifier = Modifier
+                            .weight(.7f),
+                        trailingIcon = {
+                            if (editingState.flavorSelected) {
+                                val addIcon =
+                                    if (editingState.flavorAdd) R.drawable.add else R.drawable.remove_circle
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = addIcon),
+                                    contentDescription = "Add or remove",
+                                    tint = color,
+                                    modifier = Modifier
+                                        .clickable {
+                                            onValueChange(editingState.copy(flavorAdd = !editingState.flavorAdd))
+                                        }
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done,
+                        ),
+                        textStyle = LocalTextStyle.current.copy(
+                            color = color.copy(
+                                alpha = alpha
+                            )
+                        ),
+                        enabled = editingState.flavorSelected,
+                        maxLines = 1,
+                        placeholder = {
+                            if (editingState.flavorSelected) {
                                 Text(
                                     text = "(Separate with comma + space)",
                                     modifier = Modifier
