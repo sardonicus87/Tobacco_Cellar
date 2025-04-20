@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -106,7 +107,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
-import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
@@ -183,6 +183,7 @@ fun AddEntryScreen(
             AddEntryBody(
                 itemUiState = viewModel.itemUiState,
                 componentUiState = viewModel.componentList,
+                flavoringUiState = viewModel.flavoringList,
                 tinDetails = viewModel.tinDetailsState,
                 tinDetailsList = viewModel.tinDetailsList,
                 tabErrorState = viewModel.tabErrorState,
@@ -192,6 +193,7 @@ fun AddEntryScreen(
                 onItemValueChange = viewModel::updateUiState,
                 onTinValueChange = viewModel::updateTinDetails,
                 onComponentChange = viewModel::updateComponentList,
+                onFlavoringChange = viewModel::updateFlavoringList,
                 addTin = viewModel::addTin,
                 removeTin = viewModel::removeTin,
                 isTinLabelValid = viewModel::isTinLabelValid,
@@ -223,6 +225,7 @@ fun AddEntryScreen(
 fun AddEntryBody(
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
+    flavoringUiState: FlavoringList,
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tabErrorState: TabErrorState,
@@ -232,6 +235,7 @@ fun AddEntryBody(
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
     onComponentChange: (String) -> Unit,
+    onFlavoringChange: (String) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     onSaveClick: () -> Unit,
@@ -255,6 +259,7 @@ fun AddEntryBody(
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
             componentUiState = componentUiState,
+            flavoringUiState = flavoringUiState,
             tinDetails = tinDetails,
             tinDetailsList = tinDetailsList,
             tabErrorState = tabErrorState,
@@ -263,6 +268,7 @@ fun AddEntryBody(
             onTinValueChange = onTinValueChange,
             isTinLabelValid = isTinLabelValid,
             onComponentChange = onComponentChange,
+            onFlavoringChange = onFlavoringChange,
             addTin = addTin,
             removeTin = removeTin,
             isEditEntry = isEditEntry,
@@ -411,6 +417,7 @@ fun ItemInputForm(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
+    flavoringUiState: FlavoringList,
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tabErrorState: TabErrorState,
@@ -421,6 +428,7 @@ fun ItemInputForm(
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
     onComponentChange: (String) -> Unit,
+    onFlavoringChange: (String) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -504,6 +512,8 @@ fun ItemInputForm(
                             onValueChange = onValueChange,
                             componentList = componentUiState,
                             onComponentChange = onComponentChange,
+                            flavoringList = flavoringUiState,
+                            onFlavoringChange = onFlavoringChange,
                             modifier = Modifier,
                         )
                     1 ->
@@ -541,6 +551,8 @@ fun DetailsEntry(
     isEditEntry: Boolean,
     componentList: ComponentList,
     onComponentChange: (String) -> Unit,
+    flavoringList: FlavoringList,
+    onFlavoringChange: (String) -> Unit,
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -998,6 +1010,113 @@ fun DetailsEntry(
             )
         }
 
+        // Flavoring //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AutoSizeText(
+                text = "Flavoring:",
+                fontSize = 16.sp,
+                minFontSize = 8.sp,
+                width = 80.dp,
+                modifier = Modifier,
+                maxLines = 1,
+                softWrap = false,
+                contentAlignment = Alignment.CenterStart
+            )
+
+            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            AutoCompleteText(
+                value = flavoringList.flavoringString,
+                onValueChange = { string ->
+                    onFlavoringChange(string)
+
+                    val substring = if (string.contains(", ")) {
+                        string.substringAfterLast(", ", "")
+                    } else {
+                        string
+                    }
+
+                    if (substring.length >= 2) {
+                        val startsWith = flavoringList.autoFlavors.filter { flavor ->
+                            flavor.startsWith(substring, ignoreCase = true)
+                        }
+
+                        val otherWordsStartsWith = flavoringList.autoFlavors.filter { flavor ->
+                            flavor.split(" ").drop(1).any { word ->
+                                word.startsWith(substring, ignoreCase = true)
+                            } && !flavor.startsWith(substring, ignoreCase = true)
+                        }
+
+                        val contains = flavoringList.autoFlavors.filter { flavor ->
+                            flavor.contains(substring, ignoreCase = true)
+                                    && !flavor.startsWith(substring, ignoreCase = true) &&
+                                    !otherWordsStartsWith.contains(flavor)
+                        }
+
+                        val selected = flavoringList.autoFlavors.filter { flavor ->
+                            string.split(", ").filter { string.isNotBlank() }.contains(flavor)
+                        }
+
+                        suggestions.value =
+                            (startsWith + otherWordsStartsWith + contains) - selected
+                    } else {
+                        suggestions.value = emptyList()
+                    }
+                },
+                componentField = true,
+                onOptionSelected = { suggestion, currentText ->
+                    val updatedText =
+                        if (currentText.contains(", ")) {
+                            currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", "
+                        } else {
+                            "$suggestion, "
+                        }
+                    onFlavoringChange(updatedText)
+                    suggestions.value = emptyList()
+                },
+                suggestions = suggestions.value,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    if (flavoringList.flavoringString.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable {
+                                    onFlavoringChange("")
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                maxLines = 1,
+                placeholder = {
+                    Text(
+                        text = "(Separate with comma + space)",
+                        modifier = Modifier
+                            .alpha(0.66f),
+                        fontSize = 13.sp,
+                        softWrap = false,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
+                    )
+                }
+            )
+        }
+
         // No. of Tins //
         Row(
             modifier = Modifier
@@ -1145,17 +1264,29 @@ fun DetailsEntry(
                         )
                     }
 
-                    // Sync Tins //
-                    CheckboxWithLabel(
-                        text = "Sync?",
-                        checked = itemDetails.isSynced,
-                        onCheckedChange = {
-                            onValueChange(itemDetails.copy(isSynced = it))
-                        },
-                        modifier = Modifier,
-                        fontSize = 14.sp,
-                        height = 22.dp
-                    )
+                    // Sync Tins? //
+                    Row(
+                        modifier = Modifier
+                            .padding(start = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
+                    ) {
+                        Text(
+                            text = "Sync?",
+                            modifier = Modifier
+                                .offset(x = 0.dp, y = 1.dp),
+                            fontSize = 14.sp,
+                        )
+                        CustomCheckBox(
+                            checked = itemDetails.isSynced,
+                            onCheckedChange = {
+                                onValueChange(itemDetails.copy(isSynced = it))
+                            },
+                            checkedIcon = R.drawable.check_box_24,
+                            uncheckedIcon = R.drawable.check_box_outline_24,
+                            modifier = Modifier
+                        )
+                    }
                 }
             }
         }
@@ -1477,7 +1608,11 @@ fun IndividualTin(
 
     Column (
         modifier = modifier
-            .border(1.dp, MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                RoundedCornerShape(8.dp)
+            )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
@@ -1794,10 +1929,7 @@ fun IndividualTin(
                     )
                 }
 
-                Spacer(
-                    modifier = Modifier
-                        .height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Date entry //
                 Row(
@@ -2020,8 +2152,7 @@ fun IndividualTin(
                         shape = MaterialTheme.shapes.extraSmall,
                         isError = tinDetails.openDate != null && (
                                 (tinDetails.manufactureDate != null && !manufactureOpen) ||
-                                (tinDetails.cellarDate != null && !cellarOpen)
-                                )
+                                        (tinDetails.cellarDate != null && !cellarOpen))
                     )
 
                     val selectableDates = remember(
@@ -2090,6 +2221,89 @@ fun IndividualTin(
                         }
                     }
 
+                    val initialDisplayMonth = when (datePickerLabel) {
+                        "Manufacture" -> {
+                            if (tinDetails.manufactureDate == null && (tinDetails.cellarDate != null || tinDetails.openDate != null)) {
+                                val maxDate =
+                                    tinDetails.cellarDate?.let {
+                                        LocalDateTime.ofInstant(
+                                            Instant.ofEpochMilli(it), ZoneOffset.UTC
+                                        )
+                                            .toLocalDate()
+                                            .atStartOfDay(ZoneOffset.UTC)
+                                            .toInstant()
+                                            .toEpochMilli()
+                                    } ?: tinDetails.openDate?.let {
+                                        LocalDateTime.ofInstant(
+                                            Instant.ofEpochMilli(it), ZoneOffset.UTC
+                                        )
+                                            .toLocalDate()
+                                            .atStartOfDay(ZoneOffset.UTC)
+                                            .toInstant()
+                                            .toEpochMilli()
+                                    }
+                                maxDate
+                            } else {
+                                tinDetails.manufactureDate
+                            }
+                        }
+
+                        "Cellared" -> {
+                            if (tinDetails.cellarDate == null && (tinDetails.manufactureDate != null || tinDetails.openDate != null)) {
+                                val minDate =
+                                    tinDetails.manufactureDate?.let {
+                                        LocalDateTime.ofInstant(
+                                            Instant.ofEpochMilli(it), ZoneOffset.UTC
+                                        )
+                                            .toLocalDate()
+                                            .atStartOfDay(ZoneOffset.UTC)
+                                            .toInstant()
+                                            .toEpochMilli()
+                                    } ?: Long.MIN_VALUE
+                                val maxDate =
+                                    tinDetails.openDate?.let {
+                                        LocalDateTime.ofInstant(
+                                            Instant.ofEpochMilli(it), ZoneOffset.UTC
+                                        )
+                                            .plusDays(1)
+                                            .toLocalDate()
+                                            .atStartOfDay(ZoneOffset.UTC)
+                                            .toInstant()
+                                            .toEpochMilli() - 1
+                                    } ?: Long.MAX_VALUE
+                                if (tinDetails.manufactureDate != null) minDate else maxDate
+                            } else {
+                                tinDetails.cellarDate
+                            }
+                        }
+
+                        "Opened" -> {
+                            if (tinDetails.openDate == null && (tinDetails.manufactureDate != null || tinDetails.cellarDate != null)) {
+                                val minDate = tinDetails.cellarDate?.let {
+                                    LocalDateTime.ofInstant(
+                                        Instant.ofEpochMilli(it), ZoneOffset.UTC
+                                    )
+                                        .toLocalDate()
+                                        .atStartOfDay(ZoneOffset.UTC)
+                                        .toInstant()
+                                        .toEpochMilli()
+                                } ?: tinDetails.manufactureDate?.let {
+                                    LocalDateTime.ofInstant(
+                                        Instant.ofEpochMilli(it), ZoneOffset.UTC
+                                    )
+                                        .toLocalDate()
+                                        .atStartOfDay(ZoneOffset.UTC)
+                                        .toInstant()
+                                        .toEpochMilli()
+                                } ?: Long.MIN_VALUE
+                                minDate
+                            } else {
+                                tinDetails.openDate
+                            }
+                        }
+                        else -> null
+                    }
+
                     if (showDatePicker) {
                         CustomDatePickerDialog(
                             onDismiss = { showDatePicker = false },
@@ -2153,8 +2367,42 @@ fun IndividualTin(
                                 "Opened" -> { tinDetails.openDate }
                                 else -> { null }
                             },
+                            initialDisplayMonth = initialDisplayMonth,
                             label = datePickerLabel,
                             selectableDates = selectableDates
+                        )
+                    }
+                }
+
+                // Finished //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier
+                            .weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Finished?",
+                            modifier = Modifier
+                                .offset(x = 0.dp, y = 1.dp),
+                            fontSize = 14.sp,
+                        )
+                        CustomCheckBox(
+                            checked = tinDetails.finished,
+                            onCheckedChange = {
+                                onTinValueChange(tinDetails.copy(finished = it))
+                            },
+                            checkedIcon = R.drawable.check_box_24,
+                            uncheckedIcon = R.drawable.check_box_outline_24,
+                            modifier = Modifier
                         )
                     }
                 }
@@ -2185,11 +2433,13 @@ fun CustomDatePickerDialog(
     modifier: Modifier = Modifier,
     currentMillis: Long? = null,
     selectableDates: SelectableDates, // = DatePickerDefaults.AllDates,
+    initialDisplayMonth: Long? = null,
     label: String = "Select",
 ) {
     val datePickerState = rememberDatePickerState(
         initialDisplayMode = DisplayMode.Picker,
         initialSelectedDateMillis = currentMillis,
+        initialDisplayedMonthMillis = initialDisplayMonth,
         selectableDates = selectableDates
     )
     val datePickerFormatter = remember { DatePickerDefaults.dateFormatter() }
