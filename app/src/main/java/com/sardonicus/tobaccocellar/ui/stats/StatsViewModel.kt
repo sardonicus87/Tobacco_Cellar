@@ -60,6 +60,7 @@ class StatsViewModel(
                     totalByType = it.groupingBy {
                         if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
+                    totalOpened = it.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
                     totalBySubgenre = it.groupingBy {
                         if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
@@ -171,6 +172,7 @@ class StatsViewModel(
                             .eachCount(),
                         unassignedCount = unassignedCount,
                         totalQuantity = filteredItems.sumOf { it.items.quantity },
+                        totalOpened = filteredItems.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                         totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
                         totalBySubgenre = filteredItems.groupingBy {
                             if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
@@ -337,6 +339,7 @@ data class RawStats(
     val totalByBrand: Map<String, Int> = emptyMap(),
     val totalByType: Map<String, Int> = emptyMap(),
     val totalQuantity: Int = 0,
+    val totalOpened: Int = 0,
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
@@ -353,6 +356,7 @@ data class FilteredStats(
     val totalByType: Map<String, Int> = emptyMap(),
     val unassignedCount: Int = 0,
     val totalQuantity: Int = 0,
+    val totalOpened: Int = 0,
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),

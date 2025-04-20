@@ -80,6 +80,7 @@ object StatsDestination : NavigationDestination {
 @Composable
 fun StatsScreen(
     navigateToHome: () -> Unit,
+    navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
@@ -106,6 +107,7 @@ fun StatsScreen(
                 modifier = Modifier
                     .padding(0.dp),
                 navigateToHome = navigateToHome,
+                navigateToDates = navigateToDates,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = StatsDestination,
                 filterViewModel = filterViewModel,
@@ -369,7 +371,8 @@ fun QuickStatsSection(
             Text(
                 text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                         "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                        "${rawStats.totalQuantity} total tins\n" +
+                        "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
+                        "${rawStats.totalOpened} opened\n" +
                         "${rawStats.totalZeroQuantity} out of stock",
                 modifier = Modifier
                     .weight(1f)
@@ -385,7 +388,8 @@ fun QuickStatsSection(
             Text(
                 text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
                         "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
-                        "${filteredStats.totalQuantity} total tins\n" +
+                        "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
+                        "${filteredStats.totalOpened} opened\n" +
                         "${filteredStats.totalZeroQuantity} out of stock",
                 modifier = Modifier
                     .weight(1f),
