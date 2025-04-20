@@ -753,7 +753,6 @@ fun CsvImportBody(
                                             importOption = importOption,
                                             showCheckbox = true
                                         )
-                                        // Components //
                                         MappingField(
                                             label = "Components:",
                                             selectedColumn = mappingOptions.componentsColumn,
@@ -774,7 +773,26 @@ fun CsvImportBody(
                                             importOption = importOption,
                                             showCheckbox = true
                                         )
-
+                                        MappingField(
+                                            label = "Flavoring:",
+                                            selectedColumn = mappingOptions.flavoringColumn,
+                                            csvColumns = csvUiState.columns,
+                                            onColumnSelected = { selectedColumn ->
+                                                viewModel.updateFieldMapping(
+                                                    CsvImportViewModel.CsvField.Flavoring,
+                                                    selectedColumn
+                                                )
+                                            },
+                                            overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Flavoring] ?: false,
+                                            onOverwrite = {
+                                                viewModel.updateOverwriteSelection(
+                                                    CsvImportViewModel.CsvField.Flavoring,
+                                                    it
+                                                )
+                                            },
+                                            importOption = importOption,
+                                            showCheckbox = true
+                                        )
                                         MappingField(
                                             label = "No. of Tins:",
                                             selectedColumn = mappingOptions.quantityColumn,
