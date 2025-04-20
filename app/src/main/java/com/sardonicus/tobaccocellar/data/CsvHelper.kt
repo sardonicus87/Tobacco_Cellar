@@ -43,7 +43,7 @@ class CsvHelper {
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Components", "No. of Tins", "Favorite",
+                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Components", "Flavoring", "No. of Tins", "Favorite",
                 "Disliked", "Production Status", "Notes"
             )
             .build()
@@ -52,6 +52,7 @@ class CsvHelper {
 
         for (itemWithComponents in data) {
             val componentsString = itemWithComponents.components.joinToString(", ") { it.componentName }
+            val flavoringString = itemWithComponents.flavoring.joinToString(", ") { it.flavoringName }
 
             csvPrinter.printRecord(
                 itemWithComponents.item.brand,
@@ -60,6 +61,7 @@ class CsvHelper {
                 itemWithComponents.item.subGenre,
                 itemWithComponents.item.cut,
                 componentsString,
+                flavoringString,
                 itemWithComponents.item.quantity,
                 itemWithComponents.item.favorite,
                 itemWithComponents.item.disliked,
@@ -79,8 +81,8 @@ class CsvHelper {
             .setEscape('"')
             .setHeader(
                 "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Favorite", "Disliked",
-                "Production Status", "Notes", "Components", "Container", "Quantity",
-                "Manufacture Date", "Cellar Date", "Open Date"
+                "Production Status", "Notes", "Components", "Flavoring", "Container", "Quantity",
+                "Manufacture Date", "Cellar Date", "Open Date", "Finished"
             )
             .build()
 
@@ -98,11 +100,13 @@ class CsvHelper {
                 tinData.inProduction,
                 tinData.notes,
                 tinData.components,
+                tinData.flavoring,
                 tinData.container,
                 tinData.quantity,
                 tinData.manufactureDate,
                 tinData.cellarDate,
-                tinData.openDate
+                tinData.openDate,
+                tinData.finished
             )
         }
 
