@@ -2,11 +2,16 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
+import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -407,21 +412,45 @@ class SettingsViewModel(
         val backupWalFile = File("$dbPath-wal.bak")
         val backupShmFile = File("$dbPath-shm.bak")
 
-        val tempDir = File(context.cacheDir, "temp_db_restore_dir")
-        tempDir.mkdirs()
+        val tempDir = File(context.filesDir, "temp_db_restore_dir")
+        if (!tempDir.exists()) { tempDir.mkdirs() }
+        var tempMigrationDir: File? = null
+
         val tempZipFile = File(tempDir, "temp_db_restore.zip")
+
+        val existingDbVersion = TobaccoDatabase.getDatabaseVersion(context)
+        val backupDbVersion = getBackupDbVersion(context, databaseBytes)
 
         try {
             copyFile(dbFile, backupDbFile)
             if (walFile.exists()) { copyFile(walFile, backupWalFile) }
             if (shmFile.exists()) { copyFile(shmFile, backupShmFile) }
 
-            tempZipFile.writeBytes(databaseBytes)
-            unzipFile(tempZipFile, tempDir)
+            if (backupDbVersion == existingDbVersion) {
+                tempZipFile.writeBytes(databaseBytes)
+                unzipFile(tempZipFile, tempDir)
 
-            copyFile(File(tempDir, "tobacco_database"), dbFile)
-            if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
-            if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
+                copyFile(File(tempDir, "tobacco_database"), dbFile)
+                if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
+                if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
+
+            } else if (backupDbVersion < existingDbVersion) {
+                tempMigrationDir = File(context.cacheDir, "temp_migration_dir")
+                tempMigrationDir.mkdirs()
+                val migrations = getMigrations()
+
+                tempZipFile.writeBytes(databaseBytes)
+                unzipFile(tempZipFile, tempMigrationDir)
+
+                val unzippedDb = File(tempMigrationDir, "tobacco_database")
+                val migratedDb = buildAndMigrateDb(context, unzippedDb, migrations)
+
+                copyMigratedDb(migratedDb, dbFile, walFile, shmFile)
+                migratedDb.close()
+
+            } else {
+                throw Exception("Backup database version is invalid.")
+            }
 
         } catch (e: Exception) {
             copyFile(backupDbFile, dbFile)
@@ -434,8 +463,48 @@ class SettingsViewModel(
             backupWalFile.delete()
             backupShmFile.delete()
             tempDir.deleteRecursively()
+            tempMigrationDir?.deleteRecursively()
 
             EventBus.emit(DatabaseRestoreEvent)
+        }
+    }
+
+    fun getMigrations(): List<Migration> {
+        val migrations = mutableListOf<Migration>()
+        migrations.add(MIGRATION_1_2)
+        migrations.add(MIGRATION_2_3)
+        return migrations
+    }
+
+    private fun buildAndMigrateDb(context: Context, unzippedDb: File, migrations: List<Migration>): RoomDatabase {
+        return try {
+            Room.databaseBuilder(
+                context.applicationContext,
+                TobaccoDatabase::class.java,
+                unzippedDb.absolutePath
+            )
+                .createFromFile(unzippedDb)
+                .addMigrations(*migrations.toTypedArray())
+                .build()
+                .apply {
+                    openHelper.writableDatabase
+                }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    private fun copyMigratedDb(migratedDb: RoomDatabase, dbFile: File, walFile: File, shmFile: File) {
+        val migratedPath = migratedDb.openHelper.readableDatabase.path
+        val migratedWalFile = File("$migratedPath-wal")
+        val migratedShmFile = File("$migratedPath-shm")
+
+        try {
+            copyFile(File(migratedPath!!), dbFile)
+            if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
+            if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
+        } catch (e: Exception) {
+            throw e
         }
     }
 
@@ -462,6 +531,31 @@ class SettingsViewModel(
             parseSettingsText(settingsText, preferencesRepo)
         }
     }
+
+    fun getBackupDbVersion(context: Context, databaseBytes: ByteArray): Int {
+        val tempDir = File(context.cacheDir, "temp_db_restore_dir")
+        tempDir.mkdirs()
+        val tempZipFile = File(tempDir, "temp_db_restore.zip")
+        val dbFile = File(tempDir, "tobacco_database")
+
+        return try {
+            tempZipFile.writeBytes(databaseBytes)
+            unzipFile(tempZipFile, tempDir)
+
+            val db = SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+            val cursor = db.rawQuery("PRAGMA user_version", null)
+            cursor.moveToFirst()
+            val version = cursor.getInt(0)
+            cursor.close()
+            db.close()
+
+            version
+
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
 
 }
 
@@ -632,7 +726,6 @@ fun writeBytesToFile(uri: Uri, bytes: ByteArray, context: Context) {
             outputStream.write(bytes)
         }
     } catch (e: Exception) {
-        Log.e("SettingsViewModel", "Error writing bytes to file: ${e.message}")
         e.printStackTrace()
     }
 }
@@ -644,7 +737,6 @@ fun readBytesFromFile(uri: Uri, context: Context): ByteArray? {
             inputStream.readBytes()
         }
     } catch (e: IOException) {
-        Log.e("SettingsViewModel", "Exception caught read bytes: ${e.message}")
         e.printStackTrace()
         null
     }
