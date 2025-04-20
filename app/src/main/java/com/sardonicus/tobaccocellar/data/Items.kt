@@ -50,6 +50,7 @@ data class Tins(
     val manufactureDate: Long?,
     val cellarDate: Long?,
     val openDate: Long?,
+    val finished: Boolean,
 )
 
 @Entity(
@@ -86,6 +87,41 @@ data class ItemsComponentsCrossRef(
     val componentId: Int,
 )
 
+@Entity(
+    tableName = "flavoring",
+    indices = [Index(value = (["flavoringName"]), unique = true)]
+)
+data class Flavoring(
+    @PrimaryKey(autoGenerate = true)
+    val flavoringId: Int = 0,
+    val flavoringName: String,
+)
+
+@Entity(
+    tableName = "items_flavoring_cross_ref",
+    primaryKeys = ["itemId", "flavoringId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = Items::class,
+            parentColumns = ["id"],
+            childColumns = ["itemId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Flavoring::class,
+            parentColumns = ["flavoringId"],
+            childColumns = ["flavoringId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = (["flavoringId"]))]
+)
+data class ItemsFlavoringCrossRef(
+    val itemId: Int,
+    val flavoringId: Int,
+)
+
+
 data class ItemsComponentsAndTins(
     @Embedded val items: Items,
     @Relation(
@@ -99,6 +135,15 @@ data class ItemsComponentsAndTins(
     ) val components: List<Components> = emptyList(),
     @Relation(
         parentColumn = "id",
+        entityColumn = "flavoringId",
+        associateBy = Junction(
+            value = ItemsFlavoringCrossRef::class,
+            parentColumn = "itemId",
+            entityColumn = "flavoringId"
+        )
+    ) val flavoring: List<Flavoring> = emptyList(),
+    @Relation(
+        parentColumn = "id",
         entityColumn = "itemsId"
     ) val tins: List<Tins>,
 )
@@ -107,7 +152,9 @@ data class ItemsComponentsAndTins(
 data class ItemsWithComponents(
     val item: Items,
     val components: List<Components> = emptyList(),
+    val flavoring: List<Flavoring> = emptyList(),
 )
+
 
 data class TinExportData(
     val brand: String,
@@ -120,9 +167,11 @@ data class TinExportData(
     val inProduction: Boolean,
     val notes: String,
     val components: String,
+    val flavoring: String,
     val container: String,
     val quantity: String,
     val manufactureDate: String,
     val cellarDate: String,
     val openDate: String,
+    val finished: Boolean,
 )
