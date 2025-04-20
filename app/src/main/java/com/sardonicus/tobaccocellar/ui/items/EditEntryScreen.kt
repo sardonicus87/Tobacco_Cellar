@@ -87,6 +87,7 @@ fun EditEntryScreen(
                 AddEntryBody(
                     itemUiState = viewModel.itemUiState,
                     componentUiState = viewModel.componentList,
+                    flavoringUiState = viewModel.flavoringList,
                     tinDetails = viewModel.tinDetailsState,
                     tinDetailsList = viewModel.tinDetailsList,
                     tabErrorState = viewModel.tabErrorState,
@@ -95,6 +96,7 @@ fun EditEntryScreen(
                     onItemValueChange = viewModel::updateUiState,
                     onTinValueChange = viewModel::updateTinDetails,
                     onComponentChange = viewModel::updateComponentList,
+                    onFlavoringChange = viewModel::updateFlavoringList,
                     addTin = viewModel::addTin,
                     removeTin = viewModel::removeTin,
                     isTinLabelValid = viewModel::isTinLabelValid,

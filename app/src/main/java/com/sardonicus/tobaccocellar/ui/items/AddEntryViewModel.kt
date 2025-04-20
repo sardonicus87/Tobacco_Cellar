@@ -6,8 +6,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Components
+import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
+import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
@@ -34,6 +36,8 @@ class AddEntryViewModel(
     var itemUiState by mutableStateOf(ItemUiState())
         private set
     var componentList by mutableStateOf(ComponentList())
+        private set
+    var flavoringList by mutableStateOf(FlavoringList())
         private set
     var tinDetailsState by mutableStateOf(TinDetails())
         private set
@@ -79,6 +83,14 @@ class AddEntryViewModel(
             )
     }
 
+    fun updateFlavoringList(flavoringString: String) {
+        flavoringList =
+            FlavoringList(
+                flavoringString = flavoringString,
+                autoFlavors = flavoring.value,
+            )
+    }
+
     fun updateTinDetails(tinDetails: TinDetails) {
         tinDetailsList = tinDetailsList.map {
             if (it.tempTinId == tinDetails.tempTinId) {
@@ -101,6 +113,7 @@ class AddEntryViewModel(
                 manufactureDate = tinDetails.manufactureDate,
                 cellarDate = tinDetails.cellarDate,
                 openDate = tinDetails.openDate,
+                finished = tinDetails.finished,
                 manufactureDateShort = tinDetails.manufactureDateShort,
                 cellarDateShort = tinDetails.cellarDateShort,
                 openDateShort = tinDetails.openDateShort,
@@ -215,6 +228,9 @@ class AddEntryViewModel(
     private val _components = MutableStateFlow<List<String>>(emptyList())
     private val components: StateFlow<List<String>> = _components
 
+    private val _flavoring = MutableStateFlow<List<String>>(emptyList())
+    private val flavoring: StateFlow<List<String>> = _flavoring
+
     private val _tinContainers = MutableStateFlow<List<String>>(emptyList())
     private val tinContainers: StateFlow<List<String>> = _tinContainers
 
@@ -234,6 +250,10 @@ class AddEntryViewModel(
                     _components.value = it.flatMap { it.components }
                         .map {
                             it.componentName
+                        }.distinct().sorted()
+                    _flavoring.value = it.flatMap { it.flavoring }
+                        .map {
+                            it.flavoringName
                         }.distinct().sorted()
                     _tinContainers.value = it.flatMap { it.tins }
                         .map {
@@ -271,6 +291,7 @@ class AddEntryViewModel(
     suspend fun saveItem() {
         if (validateInput()) {
             val components = componentList.toComponents(components.value)
+            val flavoring = flavoringList.toFlavoring(flavoring.value)
 
             val savedItemId = itemsRepository.insertItem(itemUiState.itemDetails.toItem())
 
@@ -282,6 +303,13 @@ class AddEntryViewModel(
                     componentId = itemsRepository.insertComponent(it).toInt()
                 }
                 itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = savedItemId.toInt(), componentId = componentId))
+            }
+            flavoring.forEach {
+                var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                if (flavoringId == null) {
+                    flavoringId = itemsRepository.insertFlavoring(it).toInt()
+                }
+                itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = savedItemId.toInt(), flavoringId = flavoringId))
             }
 
             tinDetailsList.forEach {
@@ -344,6 +372,7 @@ data class TinDetails(
     val manufactureDate: Long? = null,
     val cellarDate: Long? = null,
     val openDate: Long? = null,
+    val finished: Boolean = false,
     var manufactureDateShort: String = "",
     var cellarDateShort: String = "",
     var openDateShort: String = "",
@@ -357,6 +386,11 @@ data class TinDetails(
 data class ComponentList(
     val componentString: String = "",
     val autoComps: List<String> = listOf(),
+)
+
+data class FlavoringList(
+    val flavoringString: String = "",
+    val autoFlavors: List<String> = listOf(),
 )
 
 data class TinConversion(
@@ -402,6 +436,7 @@ fun TinDetails.toTin(itemsId: Int): Tins = Tins(
     manufactureDate = manufactureDate,
     cellarDate = cellarDate,
     openDate = openDate,
+    finished = finished
 )
 
 fun ComponentList.toComponents(existingComps: List<String>): List<Components> {
@@ -415,6 +450,19 @@ fun ComponentList.toComponents(existingComps: List<String>): List<Components> {
             }
 
             Components(componentName = existingComp ?: enteredComp.trim())
+        }
+}
+
+fun FlavoringList.toFlavoring(existingFlavors: List<String>): List<Flavoring> {
+    return flavoringString
+        .replace(Regex("\\s+"), " ")
+        .split(",")
+        .filter { it.isNotBlank() }.map { enteredFlavor ->
+            val normalizedFlavor = enteredFlavor.trim().lowercase()
+            val existingFlavor = existingFlavors.find { existingFlavor ->
+                existingFlavor.lowercase() == normalizedFlavor
+            }
+            Flavoring(flavoringName = existingFlavor ?: enteredFlavor.trim())
         }
 }
 
@@ -449,6 +497,13 @@ fun List<Components>.toComponentList(): ComponentList {
     )
 }
 
+fun List<Flavoring>.toFlavoringList(): FlavoringList {
+    val flavoringString = this.joinToString(", ") { it.flavoringName }
+    return FlavoringList(
+        flavoringString = flavoringString
+    )
+}
+
 fun Tins.toTinDetails(): TinDetails = TinDetails(
     tinId = tinId,
     itemsId = itemsId,
@@ -460,6 +515,7 @@ fun Tins.toTinDetails(): TinDetails = TinDetails(
     manufactureDate = manufactureDate,
     cellarDate = cellarDate,
     openDate = openDate,
+    finished = finished,
     manufactureDateShort = formatShortDate(manufactureDate),
     cellarDateShort = formatShortDate(cellarDate),
     openDateShort = formatShortDate(openDate),
