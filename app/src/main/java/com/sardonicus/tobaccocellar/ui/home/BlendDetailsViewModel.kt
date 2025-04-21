@@ -188,6 +188,7 @@ data class BlendDetails(
     val cut: String = "",
     val inProduction: Boolean = true,
     val componentList: String = "",
+    val flavoring: String = "",
     val tins: List<Tins> = emptyList(),
     val tinsTotal: String = "",
 )
@@ -205,6 +206,7 @@ fun ItemsComponentsAndTins.toBlendDetails(): BlendDetails = BlendDetails(
     cut = items.cut,
     inProduction = items.inProduction,
     componentList = components.joinToString(", ") { it.componentName },
+    flavoring = flavoring.joinToString(", ") { it.flavoringName },
     tins = tins,
 )
 
