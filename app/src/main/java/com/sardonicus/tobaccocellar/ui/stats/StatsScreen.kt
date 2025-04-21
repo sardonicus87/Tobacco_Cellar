@@ -538,7 +538,9 @@ fun QuickStatsSection(
                                 text = totalByContainerFiltered,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .semantics { contentDescription = totalByContainerFiltered.toString() },
+                                    .semantics {
+                                        contentDescription = totalByContainerFiltered.toString()
+                                    },
                                 fontSize = 15.sp,
                                 textAlign = TextAlign.Start,
                                 softWrap = true,
@@ -827,6 +829,7 @@ private fun PieChart(
     val textMeasurer = rememberTextMeasurer()
 
     val isLightTheme = LocalCustomColors.current.isLightTheme
+    val background = colorScheme.background
 
     Canvas(
         modifier = modifier
@@ -843,7 +846,7 @@ private fun PieChart(
 
         drawLabels(
             sortedData, total, rotationOffset, showLabels, showPercentages, showValues, textMeasurer, textColor, colors, labelBackground,
-            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold, isLightTheme
+            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold, isLightTheme, background
         )
     }
 }
@@ -887,6 +890,7 @@ private fun DrawScope.drawLabels(
     outsideRadius: Float,
     outsideLabelThreshold: Float,
     isLightTheme: Boolean,
+    pageBackground: Color,
 ) {
     var currentStartAngle = startAngle
     var outsideLabelCount = 0
@@ -913,6 +917,8 @@ private fun DrawScope.drawLabels(
 
 
         /** label coloring */
+        val targetColor = listOf(colors[3], colors[4], colors[5], colors[6])
+
         val labelColor = if (showLabels) {
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
@@ -942,10 +948,10 @@ private fun DrawScope.drawLabels(
         val labelBg = if (showLabels) {
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
-                    if (isLightTheme) {
-                        Color.Black.copy(alpha = 0.80f)
+                    if (isLightTheme && labelColor in targetColor) {
+                        Color.Gray
                     } else {
-                        Color(0xFF0F1511).copy(alpha = 0.75f)
+                        pageBackground.copy(alpha = 0.75f)
                     }
                 } else {
                     backgroundColor
@@ -959,10 +965,10 @@ private fun DrawScope.drawLabels(
         val percentBg = if (showLabels && showPercentages) {
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
-                    if (isLightTheme) {
-                        Color.Black.copy(alpha = 0.80f)
+                    if (isLightTheme && percentColor in targetColor) {
+                        Color.Gray
                     } else {
-                        Color(0xFF0F1511).copy(alpha = 0.75f)
+                        pageBackground.copy(alpha = 0.75f)
                     }
                 }  else {
                     backgroundColor
