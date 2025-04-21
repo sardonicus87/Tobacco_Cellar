@@ -141,6 +141,7 @@ enum class ScrollDirection {
 @Composable
 fun HomeScreen(
     navigateToStats: () -> Unit,
+    navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
     navigateToBlendDetails: (Int) -> Unit,
     navigateToEditEntry: (Int) -> Unit,
@@ -447,6 +448,7 @@ fun HomeScreen(
         bottomBar = {
             CellarBottomAppBar(
                 modifier = Modifier,
+                navigateToDates = navigateToDates,
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
@@ -648,7 +650,7 @@ private fun HomeHeader(
                         containerColor = LocalCustomColors.current.textField,
                         offset = DpOffset((-2).dp, 2.dp)
                     ) {
-                        listOf(SearchSetting.BLEND, SearchSetting.NOTES, SearchSetting.CONTAINER).forEach {
+                        listOf(SearchSetting.BLEND, SearchSetting.NOTES, SearchSetting.FLAVOR, SearchSetting.CONTAINER).forEach {
                             DropdownMenuItem(
                                 text = { Text(text = it.value) },
                                 onClick = {
