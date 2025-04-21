@@ -2386,13 +2386,21 @@ fun IndividualTin(
                     Row(
                         modifier = Modifier
                             .weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val disabled = tinDetails.openDate != null && tinDetails.openDate > System.currentTimeMillis()
+                        LaunchedEffect(disabled) {
+                            if (disabled) {
+                                onTinValueChange(tinDetails.copy(finished = false))
+                            }
+                        }
+
                         Text(
                             text = "Finished?",
                             modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp),
+                                .offset(x = 0.dp, y = 1.dp)
+                                .alpha(if (disabled) 0.5f else 1f),
                             fontSize = 14.sp,
                         )
                         CustomCheckBox(
@@ -2402,7 +2410,9 @@ fun IndividualTin(
                             },
                             checkedIcon = R.drawable.check_box_24,
                             uncheckedIcon = R.drawable.check_box_outline_24,
+                            enabled = !disabled,
                             modifier = Modifier
+                                .size(22.dp)
                         )
                     }
                 }
