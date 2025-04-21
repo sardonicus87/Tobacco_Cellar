@@ -14,6 +14,7 @@
     <string name="help_faq_title">Help/FAQ</string>
     <string name="blend_details_title">Blend Details</string>
     <string name="bulk_edit_title">Batch Edit</string>
+    <string name="dates_title">Dates</string>
 
     // Button Text //
     <string name="filter_items">Filter</string>
