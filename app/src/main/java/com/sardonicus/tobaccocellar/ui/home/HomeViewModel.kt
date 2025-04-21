@@ -242,6 +242,11 @@ class HomeViewModel(
                                 it.tins.any { it.container.contains(searchValue, ignoreCase = true) }
                             }
                         }
+                        SearchSetting.FLAVOR -> {
+                            allItems.filter {
+                                it.flavoring.any { it.flavoringName.contains(searchValue, ignoreCase = true) }
+                            }
+                        }
                     }
                 }
 
@@ -479,4 +484,5 @@ sealed class SearchSetting(val value: String) {
     data object BLEND: SearchSetting("Blend")
     data object NOTES: SearchSetting("Notes")
     data object CONTAINER: SearchSetting("Container")
+    data object FLAVOR: SearchSetting("Flavoring")
 }
