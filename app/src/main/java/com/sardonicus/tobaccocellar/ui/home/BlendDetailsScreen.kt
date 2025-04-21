@@ -297,6 +297,12 @@ fun BlendDetailsBody(
                             modifier = Modifier,
                         )
                     }
+                    if (blendDetails.flavoring.isNotBlank()) {
+                        Text(
+                            text = buildString("Flavors: ", blendDetails.flavoring),
+                            modifier = Modifier,
+                        )
+                    }
                     val productionStatus =
                         if (blendDetails.inProduction) "in production" else "not in production"
                     val productionStatusColor =
@@ -435,10 +441,7 @@ fun BlendDetailsBody(
                                     if (it.container.isNotEmpty() || it.unit.isNotEmpty() || it.manufactureDate != null || it.cellarDate != null || it.openDate != null) {
                                         Column(
                                             horizontalAlignment = Alignment.Start,
-                                            verticalArrangement = Arrangement.spacedBy(
-                                                0.dp,
-                                                Alignment.Top
-                                            ),
+                                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                                             modifier = Modifier
                                                 .padding(start = 12.dp)
                                         ) {
@@ -501,13 +504,23 @@ fun BlendDetailsBody(
                                                     ),
                                                     modifier = Modifier,
                                                 )
-                                                Text(
-                                                    text = "(${calculateAge(it.openDate, "open")})",
-                                                    modifier = Modifier
-                                                        .padding(start = 16.dp),
-                                                    fontSize = 12.sp,
-                                                    lineHeight = 12.sp,
-                                                )
+                                                if (!it.finished) {
+                                                    Text(
+                                                        text = "(${calculateAge(it.openDate, "open")})",
+                                                        modifier = Modifier
+                                                            .padding(start = 16.dp),
+                                                        fontSize = 12.sp,
+                                                        lineHeight = 12.sp,
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = "(finished)",
+                                                        modifier = Modifier
+                                                            .padding(start = 16.dp),
+                                                        fontSize = 12.sp,
+                                                        lineHeight = 12.sp,
+                                                    )
+                                                }
                                             }
                                         }
                                     } else {
