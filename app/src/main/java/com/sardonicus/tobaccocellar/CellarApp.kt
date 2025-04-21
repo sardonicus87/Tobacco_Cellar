@@ -130,6 +130,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IndicatorSizes
 import com.sardonicus.tobaccocellar.ui.composables.PagerIndicator
+import com.sardonicus.tobaccocellar.ui.dates.DatesDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
@@ -398,6 +399,7 @@ fun CellarBottomAppBar(
     navigateToHome: () -> Unit = {},
     navigateToStats: () -> Unit = {},
     navigateToAddEntry: () -> Unit = {},
+    navigateToDates: () -> Unit = {},
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     val sheetOpen by filterViewModel.bottomSheetState.collectAsState()
@@ -516,6 +518,53 @@ fun CellarBottomAppBar(
                         } else {
                             LocalContentColor.current
                         },
+                    )
+                }
+
+                // Dates //
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 4.dp)
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    IconButton(
+                        onClick = navigateToDates,
+                        modifier = Modifier
+                            .padding(0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.calendar_month),
+                            contentDescription = stringResource(R.string.dates_title),
+                            modifier = Modifier
+                                .size(26.dp)
+                                .offset(y = (-8).dp),
+                            tint =
+                                if (currentDestination == DatesDestination && !clickToAdd) {
+                                    onPrimaryLight
+                                } else {
+                                    LocalContentColor.current
+                                },
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.dates_title),
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .offset(y = 13.dp),
+                        fontSize = 11.sp,
+                        fontWeight =
+                            if (currentDestination == DatesDestination && !clickToAdd) {
+                                FontWeight.SemiBold
+                            } else {
+                                FontWeight.Normal
+                            },
+                        color =
+                            if (currentDestination == DatesDestination && !clickToAdd) {
+                                onPrimaryLight
+                            } else {
+                                LocalContentColor.current
+                            },
                     )
                 }
 
