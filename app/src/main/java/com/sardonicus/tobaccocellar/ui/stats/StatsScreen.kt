@@ -151,10 +151,7 @@ private fun StatsBody(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        Spacer(
-            modifier = Modifier
-                .height(1.dp)
-        )
+        Spacer(modifier = Modifier.height(1.dp))
 
         // Quick Stats //
         Box {
