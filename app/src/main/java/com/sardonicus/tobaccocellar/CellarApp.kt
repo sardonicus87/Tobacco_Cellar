@@ -403,6 +403,7 @@ fun CellarBottomAppBar(
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     val sheetOpen by filterViewModel.bottomSheetState.collectAsState()
+    val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
 
     BottomAppBar(
         modifier = modifier
@@ -575,6 +576,15 @@ fun CellarBottomAppBar(
                         .weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val color = if (filteringApplied) LocalContentColor.current.copy(alpha = .5f) else Color.Transparent
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .offset(x = 14.dp, y = (-17).dp)
+                            .clip(CircleShape)
+                            .border(1.dp, color, CircleShape)
+                            .background(if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent)
+                    )
                     IconButton(
                         onClick = { filterViewModel.openBottomSheet() },
                         modifier = Modifier
@@ -593,6 +603,7 @@ fun CellarBottomAppBar(
                             },
                         )
                     }
+
                     Text(
                         text = stringResource(R.string.filter_items),
                         modifier = Modifier
