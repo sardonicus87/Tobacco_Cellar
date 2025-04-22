@@ -301,7 +301,7 @@ fun HomeScreen(
                     Text(
                         text = "This is a one-time alert.",
                         modifier = Modifier
-                            .padding(bottom = 16.dp)
+                            .padding(bottom = 12.dp)
                             .fillMaxWidth(),
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
@@ -311,7 +311,7 @@ fun HomeScreen(
                         color = GlowColor(LocalCustomColors.current.darkNeutral),
                         size = GlowSize(vertical = 6.dp),
                         modifier = Modifier
-                            .height(150.dp)
+                            .height(175.dp)
                     ) {
                         Column(
                             modifier = Modifier
