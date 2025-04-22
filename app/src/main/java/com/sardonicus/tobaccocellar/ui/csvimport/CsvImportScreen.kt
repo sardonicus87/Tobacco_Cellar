@@ -905,9 +905,8 @@ fun CsvImportBody(
                                             modifier = Modifier,
                                             textAlign = TextAlign.Center,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = if (mappingOptions.collateTins) LocalContentColor.current else LocalContentColor.current.copy(
-                                                alpha = 0.5f
-                                            )
+                                            color = if (mappingOptions.collateTins) LocalContentColor.current
+                                                else LocalContentColor.current.copy(alpha = 0.5f)
                                         )
                                         MappingField(
                                             label = "Container:",
@@ -938,9 +937,7 @@ fun CsvImportBody(
                                             modifier = Modifier
                                                 .height(8.dp)
                                         )
-                                        var dateFormatSelected by rememberSaveable {
-                                            mutableStateOf(false)
-                                        }
+                                        var dateFormatSelected by rememberSaveable { mutableStateOf(false) }
 
                                         DateFormatField(
                                             label = "CSV Date\nFormat:",
@@ -994,6 +991,18 @@ fun CsvImportBody(
                                                         )
                                                     },
                                                     enabled = mappingOptions.collateTins && dateFormatSelected,
+                                                )
+                                                MappingField(
+                                                    label = "Finished:",
+                                                    selectedColumn = mappingOptions.finishedColumn,
+                                                    csvColumns = csvUiState.columns,
+                                                    onColumnSelected = { selectedColumn ->
+                                                        viewModel.updateFieldMapping(
+                                                            CsvImportViewModel.CsvField.Finished,
+                                                            selectedColumn
+                                                        )
+                                                    },
+                                                    enabled = mappingOptions.collateTins && dateFormatSelected
                                                 )
                                             }
                                             if (mappingOptions.collateTins && !dateFormatSelected) {

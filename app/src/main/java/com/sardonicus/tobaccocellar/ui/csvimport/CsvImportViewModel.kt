@@ -100,7 +100,7 @@ class CsvImportViewModel(
 
     enum class CsvField {
         Brand, Blend, Type, Quantity, Favorite, Disliked, Notes, SubGenre, Cut, Production,
-        Components, Flavoring, Container, TinQuantity, ManufactureDate, CellarDate, OpenDate,
+        Components, Flavoring, Container, TinQuantity, ManufactureDate, CellarDate, OpenDate, Finished
     }
 
     fun updateFieldMapping(field: CsvField, selectedColumn: String) {
@@ -122,6 +122,7 @@ class CsvImportViewModel(
             CsvField.ManufactureDate -> mappingOptions.copy(manufactureDateColumn = selectedColumn.ifBlank { "" })
             CsvField.CellarDate -> mappingOptions.copy(cellarDateColumn = selectedColumn.ifBlank { "" })
             CsvField.OpenDate -> mappingOptions.copy(openDateColumn = selectedColumn.ifBlank { "" })
+            CsvField.Finished -> mappingOptions.copy(finishedColumn = selectedColumn.ifBlank { "" })
         }
         csvUiState = csvUiState.copy(isFormValid = validateForm())
     }
@@ -220,6 +221,10 @@ class CsvImportViewModel(
         }
         val crossReferences = flavoringIds.map {
             ItemsFlavoringCrossRef(itemId, it)
+        }
+
+        withContext(Dispatchers.IO) {
+            itemsRepository.insertMultipleFlavoringCrossRef(crossReferences)
         }
     }
 
@@ -380,7 +385,7 @@ class CsvImportViewModel(
                 manufactureDate = tinData.manufactureDate,
                 cellarDate = tinData.cellarDate,
                 openDate = tinData.openDate,
-                finished = false,
+                finished = tinData.finished,
             )
         }
         withContext(Dispatchers.IO) {
@@ -495,6 +500,11 @@ class CsvImportViewModel(
                             val dateFormat = mappingOptions.dateFormat
                             parseDateString(dateString, dateFormat)
                         } else null
+                    val finished =
+                        if(columnIndices[CsvField.Finished] != null &&
+                            columnIndices[CsvField.Finished]!! in record.indices) {
+                            record[columnIndices[CsvField.Finished]!!].toBoolean()
+                        } else false
 
 
                     TinData(
@@ -505,6 +515,7 @@ class CsvImportViewModel(
                         manufactureDate = manufactureDate,
                         cellarDate = cellarDate,
                         openDate = openDate,
+                        finished = finished
                     )
                 }
             } else emptyList()
@@ -960,6 +971,7 @@ class CsvImportViewModel(
             CsvField.ManufactureDate to header.indexOf(mappingOptions.manufactureDateColumn),
             CsvField.CellarDate to header.indexOf(mappingOptions.cellarDateColumn),
             CsvField.OpenDate to header.indexOf(mappingOptions.openDateColumn),
+            CsvField.Finished to header.indexOf(mappingOptions.finishedColumn),
         )
     }
 
@@ -1009,6 +1021,7 @@ data class MappingOptions(
     val manufactureDateColumn: String = "",
     val cellarDateColumn: String = "",
     val openDateColumn: String = "",
+    val finishedColumn: String = "",
 )
 
 data class TinData(
