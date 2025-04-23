@@ -402,7 +402,8 @@ fun CellarBottomAppBar(
     navigateToDates: () -> Unit = {},
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    val sheetOpen by filterViewModel.bottomSheetState.collectAsState()
+    val sheetState by filterViewModel.bottomSheetState.collectAsState()
+    val sheetOpen = sheetState == BottomSheetState.OPENED
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
 
     BottomAppBar(
@@ -576,13 +577,18 @@ fun CellarBottomAppBar(
                         .weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val color = if (filteringApplied) LocalContentColor.current.copy(alpha = .5f) else Color.Transparent
+                    val borderColor =
+                        if (filteringApplied) {
+                            if (sheetOpen) onPrimaryLight
+                            else LocalContentColor.current
+                        } else { Color.Transparent }
+
                     Box(
                         modifier = Modifier
                             .size(7.dp)
-                            .offset(x = 14.dp, y = (-17).dp)
+                            .offset(x = 13.dp, y = (-17).dp)
                             .clip(CircleShape)
-                            .border(1.dp, color, CircleShape)
+                            .border(1.dp, borderColor, CircleShape)
                             .background(if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent)
                     )
                     IconButton(
@@ -596,7 +602,7 @@ fun CellarBottomAppBar(
                             modifier = Modifier
                                 .size(26.dp)
                                 .offset(y = (-8).dp),
-                            tint = if (sheetOpen == BottomSheetState.OPENED) {
+                            tint = if (sheetOpen) {
                                 onPrimaryLight
                             } else {
                                 LocalContentColor.current
@@ -610,12 +616,12 @@ fun CellarBottomAppBar(
                             .offset(y = 13.dp),
                         fontSize = 11.sp,
                         fontWeight =
-                        if (sheetOpen == BottomSheetState.OPENED) {
+                        if (sheetOpen) {
                             FontWeight.SemiBold
                         } else {
                             FontWeight.Normal
                         },
-                        color = if (sheetOpen == BottomSheetState.OPENED) {
+                        color = if (sheetOpen) {
                             onPrimaryLight
                         } else {
                             LocalContentColor.current
