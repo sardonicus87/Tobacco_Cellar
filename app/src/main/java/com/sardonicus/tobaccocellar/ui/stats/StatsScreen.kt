@@ -369,6 +369,7 @@ fun QuickStatsSection(
                 text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                         "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
                         "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
+                        "${rawStats.estimatedWeight} (estimated)\n" +
                         "${rawStats.totalOpened} opened\n" +
                         "${rawStats.totalZeroQuantity} out of stock",
                 modifier = Modifier
@@ -386,6 +387,7 @@ fun QuickStatsSection(
                 text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
                         "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
                         "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
+                        "${filteredStats.estimatedWeight} (estimated)\n" +
                         "${filteredStats.totalOpened} opened\n" +
                         "${filteredStats.totalZeroQuantity} out of stock",
                 modifier = Modifier

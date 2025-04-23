@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.home.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
+import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
@@ -21,10 +25,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.math.round
 
 class StatsViewModel(
     private val itemsRepository: ItemsRepository,
-    private val filterViewModel: FilterViewModel
+    private val filterViewModel: FilterViewModel,
+    private val preferencesRepo: PreferencesRepo
 ): ViewModel() {
 
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
@@ -60,6 +66,7 @@ class StatsViewModel(
                     totalByType = it.groupingBy {
                         if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
+                    estimatedWeight = calculateTotal(it, preferencesRepo.quantityOption.first()),
                     totalOpened = it.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
                     totalBySubgenre = it.groupingBy {
@@ -172,6 +179,7 @@ class StatsViewModel(
                             .eachCount(),
                         unassignedCount = unassignedCount,
                         totalQuantity = filteredItems.sumOf { it.items.quantity },
+                        estimatedWeight = calculateTotal(filteredItems, preferencesRepo.quantityOption.first()),
                         totalOpened = filteredItems.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                         totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
                         totalBySubgenre = filteredItems.groupingBy {
@@ -316,6 +324,96 @@ class StatsViewModel(
                 initialValue = FilteredStats(filteredLoading = true)
             )
 
+    private suspend fun calculateTotal(items: List<ItemsComponentsAndTins>, quantityOption: QuantityOption): String {
+        val ozRate = preferencesRepo.tinOzConversionRate.first()
+        val gramsRate = preferencesRepo.tinGramsConversionRate.first()
+
+        val quantityRemap = when (quantityOption) {
+            QuantityOption.TINS -> {
+                val isMetric = isMetricLocale()
+                if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
+            }
+            else -> quantityOption
+        }
+
+        val sum =
+            when (quantityRemap) {
+                QuantityOption.OUNCES -> {
+                    items.sumOf { it.items.quantity } * ozRate
+                }
+                QuantityOption.GRAMS -> {
+                    items.sumOf { it.items.quantity } * gramsRate
+                }
+                else -> null
+            }
+
+        val formattedSum =
+            when (quantityRemap) {
+                QuantityOption.OUNCES -> {
+                    if (sum != null) {
+                        if (sum >= 16.00) {
+                            val pounds = sum / 16
+                            val rounded = round(pounds * 100) / 100
+                            val decimal = String.format("%.2f", rounded)
+                            when {
+                                decimal.endsWith("00") -> {
+                                    decimal.substringBefore(".")
+                                }
+
+                                decimal.endsWith("0") -> {
+                                    decimal.substring(0, decimal.length - 1)
+                                }
+
+                                else -> decimal
+                            } + " lbs"
+                        } else {
+                            val rounded = round(sum * 100) / 100
+                            val decimal = String.format("%.2f", rounded)
+                            when {
+                                decimal.endsWith("00") -> {
+                                    decimal.substringBefore(".")
+                                }
+
+                                decimal.endsWith("0") -> {
+                                    decimal.substring(0, decimal.length - 1)
+                                }
+
+                                else -> decimal
+                            } + " oz"
+                        }
+                    } else {
+                        null
+                    }
+                }
+
+                QuantityOption.GRAMS -> {
+                    if (sum != null) {
+                        val rounded = round(sum * 100) / 100
+                        val decimal = String.format("%.2f", rounded)
+                        when {
+                            decimal.endsWith("00") -> {
+                                decimal.substringBefore(".")
+                            }
+
+                            decimal.endsWith("0") -> {
+                                decimal.substring(0, decimal.length - 1)
+                            }
+
+                            else -> decimal
+                        } + " g"
+                    } else {
+                        null
+                    }
+                }
+
+                else -> {
+                    null
+                }
+            }
+
+        return formattedSum?.toString() ?: ""
+    }
+
 }
 
 
@@ -339,6 +437,7 @@ data class RawStats(
     val totalByBrand: Map<String, Int> = emptyMap(),
     val totalByType: Map<String, Int> = emptyMap(),
     val totalQuantity: Int = 0,
+    val estimatedWeight: String = "",
     val totalOpened: Int = 0,
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
@@ -356,6 +455,7 @@ data class FilteredStats(
     val totalByType: Map<String, Int> = emptyMap(),
     val unassignedCount: Int = 0,
     val totalQuantity: Int = 0,
+    val estimatedWeight: String = "",
     val totalOpened: Int = 0,
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
