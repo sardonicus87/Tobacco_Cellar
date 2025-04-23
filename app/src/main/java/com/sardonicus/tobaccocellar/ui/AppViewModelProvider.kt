@@ -29,7 +29,8 @@ object AppViewModelProvider {
         initializer {
             StatsViewModel(
                 cellarApplication().container.itemsRepository,
-                cellarApplication().filterViewModel
+                cellarApplication().filterViewModel,
+                cellarApplication().preferencesRepo
             )
         }
 
