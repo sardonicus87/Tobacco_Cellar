@@ -370,7 +370,7 @@ fun QuickStatsSection(
                         "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
                         "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
                         "${rawStats.estimatedWeight} (estimated)\n" +
-                        "${rawStats.totalOpened} opened\n" +
+                       // "${rawStats.totalOpened} opened\n" +
                         "${rawStats.totalZeroQuantity} out of stock",
                 modifier = Modifier
                     .weight(1f)
@@ -388,7 +388,7 @@ fun QuickStatsSection(
                         "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
                         "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
                         "${filteredStats.estimatedWeight} (estimated)\n" +
-                        "${filteredStats.totalOpened} opened\n" +
+                    //    "${filteredStats.totalOpened} opened\n" +
                         "${filteredStats.totalZeroQuantity} out of stock",
                 modifier = Modifier
                     .weight(1f),
@@ -524,7 +524,6 @@ fun QuickStatsSection(
                                 text = totalByContainer,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(bottom = 12.dp)
                                     .semantics { contentDescription = totalByContainer.toString() },
                                 fontSize = 15.sp,
                                 textAlign = TextAlign.Start,
@@ -548,6 +547,34 @@ fun QuickStatsSection(
                                 softWrap = true,
                             )
                         }
+                    }
+
+                    Row(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Text(
+                            text = "${rawStats.totalOpened} opened",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(bottom = 12.dp),
+                            fontSize = 15.sp,
+                            textAlign = TextAlign.Start,
+                            softWrap = true,
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .width(8.dp)
+                        )
+                        Text(
+                            text = "${filteredStats.totalOpened} opened",
+                            modifier = Modifier
+                                .weight(1f),
+                            fontSize = 15.sp,
+                            textAlign = TextAlign.Start,
+                            softWrap = true,
+                        )
                     }
                 }
             }
