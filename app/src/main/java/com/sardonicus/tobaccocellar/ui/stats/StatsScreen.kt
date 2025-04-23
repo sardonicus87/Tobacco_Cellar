@@ -949,7 +949,7 @@ private fun DrawScope.drawLabels(
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
                     if (isLightTheme && labelColor in targetColor) {
-                        Color.Gray
+                        Color.DarkGray.copy(alpha = 0.65f)
                     } else {
                         pageBackground.copy(alpha = 0.75f)
                     }
@@ -966,7 +966,7 @@ private fun DrawScope.drawLabels(
             if (totalOutsideLabels > 1) {
                 if (outsideLabelCount >= 1 && !isOther) {
                     if (isLightTheme && percentColor in targetColor) {
-                        Color.Gray
+                        Color.DarkGray.copy(alpha = 0.65f)
                     } else {
                         pageBackground.copy(alpha = 0.75f)
                     }
