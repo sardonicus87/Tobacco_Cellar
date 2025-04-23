@@ -149,16 +149,6 @@ class BlendDetailsViewModel(
         return formattedSum?.toString() ?: ""
     }
 
-    private fun isMetricLocale(): Boolean {
-        val config: Configuration = Resources.getSystem().configuration
-        val locale: Locale = config.locales.get(0) ?: Locale.getDefault()
-
-        return when (locale.country.uppercase()) {
-            "US", "LR", "MM" -> false
-            else -> true
-        }
-    }
-
     fun formatDecimal(number: Double): String {
         val rounded = round(number * 100) / 100
         val formatted = String.format("%.2f", rounded)
@@ -275,5 +265,15 @@ fun calculateAge(date: Long?, field: String): String {
         "less than a day"
     } else {
         parts.joinToString(", ") + end
+    }
+}
+
+fun isMetricLocale(): Boolean {
+    val config: Configuration = Resources.getSystem().configuration
+    val locale: Locale = config.locales.get(0) ?: Locale.getDefault()
+
+    return when (locale.country.uppercase()) {
+        "US", "LR", "MM" -> false
+        else -> true
     }
 }
