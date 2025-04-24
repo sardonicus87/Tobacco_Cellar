@@ -197,7 +197,7 @@ class PreferencesRepo(
         return try {
             getItemSyncState(itemId).first().toString()
         } catch (e: IOException) {
-            ""
+            throw e
         }
     }
 
