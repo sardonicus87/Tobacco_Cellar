@@ -16,17 +16,21 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -70,11 +74,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -86,7 +92,6 @@ import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
-import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -495,16 +500,32 @@ fun BulkEditing(
                                 }
                             )
                         }
-                        AutoSizeText(
-                            text = "Sub-genre:",
-                            fontSize = 16.sp,
-                            minFontSize = 8.sp,
-                            modifier = Modifier,
-                            height = 38.dp,
-                            contentAlignment = Alignment.CenterStart,
-                            color = if (!editingState.genreSelected) LocalContentColor.current.copy(
-                                alpha = 0.50f
-                            ) else LocalContentColor.current
+//                        AutoSizeText(
+//                            text = "Sub-genre:",
+//                            fontSize = 16.sp,
+//                            minFontSize = 8.sp,
+//                            modifier = Modifier,
+//                            height = 38.dp,
+//                            contentAlignment = Alignment.CenterStart,
+//                            color = if (!editingState.genreSelected) LocalContentColor.current.copy(
+//                                alpha = 0.50f
+//                            ) else LocalContentColor.current
+//                        )
+                        BasicText(
+                            text = "Sub-genre: ",
+                            style = TextStyle(
+                                color = if (!editingState.genreSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
+                            ),
+                            modifier = Modifier
+                                .heightIn(max = 38.dp)
+                                .wrapContentHeight()
+                                .align(Alignment.CenterVertically),
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 8.sp,
+                                maxFontSize = 16.sp,
+                                stepSize = .02.sp,
+                            ),
+                            maxLines = 1,
                         )
                     }
 
@@ -686,18 +707,34 @@ fun BulkEditing(
                                 }
                             )
                         }
-                        AutoSizeText(
-                            text = "Components:",
-                            fontSize = 16.sp,
-                            minFontSize = 8.sp,
+//                        AutoSizeText(
+//                            text = "Components:",
+//                            fontSize = 16.sp,
+//                            minFontSize = 8.sp,
+//                            modifier = Modifier
+//                                .padding(end = 4.dp),
+//                            maxLines = 1,
+//                            height = 38.dp,
+//                            contentAlignment = Alignment.CenterStart,
+//                            color = if (!editingState.compsSelected) LocalContentColor.current.copy(
+//                                alpha = 0.50f
+//                            ) else LocalContentColor.current
+//                        )
+                        BasicText(
+                            text = "Components: ",
+                            style = TextStyle(
+                                color = if (!editingState.compsSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
+                            ),
                             modifier = Modifier
-                                .padding(end = 4.dp),
+                                .heightIn(max = 38.dp)
+                                .wrapContentHeight()
+                                .align(Alignment.CenterVertically),
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 8.sp,
+                                maxFontSize = 16.sp,
+                                stepSize = .02.sp,
+                            ),
                             maxLines = 1,
-                            height = 38.dp,
-                            contentAlignment = Alignment.CenterStart,
-                            color = if (!editingState.compsSelected) LocalContentColor.current.copy(
-                                alpha = 0.50f
-                            ) else LocalContentColor.current
                         )
                     }
 
@@ -830,18 +867,34 @@ fun BulkEditing(
                                 }
                             )
                         }
-                        AutoSizeText(
-                            text = "Flavoring:",
-                            fontSize = 16.sp,
-                            minFontSize = 8.sp,
+//                        AutoSizeText(
+//                            text = "Flavoring:",
+//                            fontSize = 16.sp,
+//                            minFontSize = 8.sp,
+//                            modifier = Modifier
+//                                .padding(end = 4.dp),
+//                            maxLines = 1,
+//                            height = 38.dp,
+//                            contentAlignment = Alignment.CenterStart,
+//                            color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
+//                                alpha = 0.50f
+//                            ) else LocalContentColor.current
+//                        )
+                        BasicText(
+                            text = "Flavoring: ",
+                            style = TextStyle(
+                                color = if (!editingState.flavorSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
+                            ),
                             modifier = Modifier
-                                .padding(end = 4.dp),
+                                .heightIn(max = 38.dp)
+                                .wrapContentHeight()
+                                .align(Alignment.CenterVertically),
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 8.sp,
+                                maxFontSize = 16.sp,
+                                stepSize = .02.sp,
+                            ),
                             maxLines = 1,
-                            height = 38.dp,
-                            contentAlignment = Alignment.CenterStart,
-                            color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
-                                alpha = 0.50f
-                            ) else LocalContentColor.current
                         )
                     }
 
@@ -1091,16 +1144,33 @@ fun BulkEditing(
                                 }
                             )
                         }
-                        AutoSizeText(
+//                        AutoSizeText(
+//                            text = "Production Status:",
+//                            fontSize = 16.sp,
+//                            minFontSize = 8.sp,
+//                            modifier = Modifier,
+//                            height = 36.dp,
+//                            contentAlignment = Alignment.CenterStart,
+//                            color = if (!editingState.productionSelected) LocalContentColor.current.copy(
+//                                alpha = 0.50f
+//                            ) else LocalContentColor.current
+//                        )
+                        BasicText(
                             text = "Production Status:",
-                            fontSize = 16.sp,
-                            minFontSize = 8.sp,
-                            modifier = Modifier,
-                            height = 36.dp,
-                            contentAlignment = Alignment.CenterStart,
-                            color = if (!editingState.productionSelected) LocalContentColor.current.copy(
-                                alpha = 0.50f
-                            ) else LocalContentColor.current
+                            style = TextStyle(
+                                color = if (!editingState.productionSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current,
+                                lineBreak = LineBreak.Paragraph
+                            ),
+                            modifier = Modifier
+                                .heightIn(max = 36.dp)
+                                .wrapContentHeight()
+                                .align(Alignment.CenterVertically),
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 8.sp,
+                                maxFontSize = 16.sp,
+                                stepSize = .02.sp,
+                            ),
+                            maxLines = 2,
                         )
                     }
                     Row(
@@ -1157,16 +1227,32 @@ fun BulkEditing(
                                 }
                             )
                         }
-                        AutoSizeText(
-                            text = "Sync entry/\ntin quantity",
-                            fontSize = 16.sp,
-                            minFontSize = 8.sp,
-                            modifier = Modifier,
-                            height = 36.dp,
-                            contentAlignment = Alignment.CenterStart,
-                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-                                alpha = 0.50f
-                            ) else LocalContentColor.current
+//                        AutoSizeText(
+//                            text = "Sync entry/\ntin quantity",
+//                            fontSize = 16.sp,
+//                            minFontSize = 8.sp,
+//                            modifier = Modifier,
+//                            height = 36.dp,
+//                            contentAlignment = Alignment.CenterStart,
+//                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
+//                                alpha = 0.50f
+//                            ) else LocalContentColor.current
+//                        )
+                        BasicText(
+                            text = "Sync entry/\ntin quantity:",
+                            style = TextStyle(
+                                color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
+                            ),
+                            modifier = Modifier
+                                .heightIn(max = 36.dp)
+                                .wrapContentHeight()
+                                .align(Alignment.CenterVertically),
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 8.sp,
+                                maxFontSize = 16.sp,
+                                stepSize = .02.sp,
+                            ),
+                            maxLines = 2,
                         )
                     }
                     Row(

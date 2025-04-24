@@ -18,14 +18,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -94,6 +98,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -110,7 +115,6 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
-import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -910,16 +914,32 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AutoSizeText(
-                text = "Components:",
-                fontSize = 16.sp,
-                minFontSize = 8.sp,
-                width = 80.dp,
-                modifier = Modifier,
+//            AutoSizeText(
+//                text = "Components:",
+//                fontSize = 16.sp,
+//                minFontSize = 8.sp,
+//                width = 80.dp,
+//                modifier = Modifier,
+//                maxLines = 1,
+//                softWrap = false,
+//                contentAlignment = Alignment.CenterStart
+//            )
+            BasicText(
+                text = "Components: ",
+                style = TextStyle(
+                    color = LocalContentColor.current
+                ),
+                modifier = Modifier
+                    .width(80.dp)
+                    .align(Alignment.CenterVertically),
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 8.sp,
+                    maxFontSize = 16.sp,
+                    stepSize = .02.sp,
+                ),
                 maxLines = 1,
-                softWrap = false,
-                contentAlignment = Alignment.CenterStart
             )
+
 
             val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
 
@@ -1017,15 +1037,30 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AutoSizeText(
-                text = "Flavoring:",
-                fontSize = 16.sp,
-                minFontSize = 8.sp,
-                width = 80.dp,
-                modifier = Modifier,
+//            AutoSizeText(
+//                text = "Flavoring:",
+//                fontSize = 16.sp,
+//                minFontSize = 8.sp,
+//                width = 80.dp,
+//                modifier = Modifier,
+//                maxLines = 1,
+//                softWrap = false,
+//                contentAlignment = Alignment.CenterStart
+//            )
+            BasicText(
+                text = "Flavoring: ",
+                style = TextStyle(
+                    color = LocalContentColor.current
+                ),
+                modifier = Modifier
+                    .width(80.dp)
+                    .align(Alignment.CenterVertically),
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 8.sp,
+                    maxFontSize = 16.sp,
+                    stepSize = .02.sp,
+                ),
                 maxLines = 1,
-                softWrap = false,
-                contentAlignment = Alignment.CenterStart
             )
 
             val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
@@ -1125,14 +1160,31 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AutoSizeText(
+//            AutoSizeText(
+//                text = "No. of\nTins:",
+//                fontSize = 16.sp,
+//                minFontSize = 8.sp,
+//                modifier = Modifier,
+//                width = 80.dp,
+//                height = 48.dp,
+//                contentAlignment = Alignment.CenterStart
+//            )
+            BasicText(
                 text = "No. of\nTins:",
-                fontSize = 16.sp,
-                minFontSize = 8.sp,
-                modifier = Modifier,
-                width = 80.dp,
-                height = 48.dp,
-                contentAlignment = Alignment.CenterStart
+                style = TextStyle(
+                    color = LocalContentColor.current
+                ),
+                modifier = Modifier
+                    .width(80.dp)
+                    .heightIn(max = 48.dp)
+                    .wrapContentHeight()
+                    .align(Alignment.CenterVertically),
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 8.sp,
+                    maxFontSize = 16.sp,
+                    stepSize = .02.sp,
+                ),
+                maxLines = 2,
             )
             Row(
                 modifier = Modifier

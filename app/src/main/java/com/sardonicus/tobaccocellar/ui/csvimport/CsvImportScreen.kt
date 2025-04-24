@@ -22,14 +22,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -76,7 +80,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -88,7 +94,6 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.CsvResult
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
-import com.sardonicus.tobaccocellar.ui.composables.AutoSizeText
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -257,9 +262,7 @@ fun CsvImportBody(
         verticalArrangement = Arrangement.Top,
     ) {
         when (importStatus) {
-            is ImportStatus.Loading -> {
-                FullScreenLoading()
-            }
+            is ImportStatus.Loading -> { FullScreenLoading() }
             is ImportStatus.Error -> {
                 ImportError(
                     onTryAgain = {
@@ -559,19 +562,24 @@ fun CsvImportBody(
                                                 horizontalAlignment = Alignment.End,
                                                 verticalArrangement = Arrangement.Center,
                                             ) {
-                                                AutoSizeText(
+                                                BasicText(
                                                     text = if (mappingOptions.collateTins && importOption == ImportOption.OVERWRITE) {
                                                         "Warning: Overwrite will erase existing tins."
                                                     } else {
                                                         ""
                                                     },
-                                                    modifier = Modifier,
-                                                    fontSize = 15.sp,
-                                                    minFontSize = 8.sp,
-                                                    height = 48.dp,
+                                                    style = TextStyle(
+                                                        color = MaterialTheme.colorScheme.error,
+                                                        textAlign = TextAlign.End
+                                                    ),
+                                                    modifier = Modifier
+                                                        .heightIn(max = 48.dp),
+                                                    autoSize = TextAutoSize.StepBased(
+                                                        minFontSize = 8.sp,
+                                                        maxFontSize = 15.sp,
+                                                        stepSize = .25.sp,
+                                                    ),
                                                     maxLines = 2,
-                                                    textAlign = TextAlign.End,
-                                                    color = MaterialTheme.colorScheme.error
                                                 )
                                             }
                                         }
@@ -771,7 +779,8 @@ fun CsvImportBody(
                                                 )
                                             },
                                             importOption = importOption,
-                                            showCheckbox = true
+                                            showCheckbox = true,
+                                            maxLines = 1
                                         )
                                         MappingField(
                                             label = "Flavoring:",
@@ -1767,6 +1776,7 @@ fun MappingField(
     onOverwrite: (Boolean) -> Unit = {},
     importOption: ImportOption = ImportOption.SKIP,
     placeholder: String = "",
+    maxLines: Int = 2
 ) {
     var expanded by remember { mutableStateOf(false) }
     var fontSize by remember { mutableStateOf(16.sp) }
@@ -1797,23 +1807,39 @@ fun MappingField(
                     .width(90.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Text(
+//                Text(
+//                    text = label,
+//                    modifier = Modifier,
+//                    textAlign = TextAlign.Start,
+//                    softWrap = false,
+//                    maxLines = 2,
+//                    overflow = TextOverflow.Visible,
+//                    style = LocalTextStyle.current.copy(
+//                        lineHeight = LocalTextStyle.current.lineHeight * fontMultiplier,
+//                        fontSize = LocalTextStyle.current.fontSize * fontMultiplier,
+//                    ),
+//                    onTextLayout = {
+//                        if (it.hasVisualOverflow) {
+//                            updateFontSize(fontMultiplier * 0.99f)
+//                        }
+//                    },
+//                    color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
+//                )
+                BasicText(
                     text = label,
-                    modifier = Modifier,
-                    textAlign = TextAlign.Start,
-                    softWrap = false,
-                    maxLines = 2,
-                    overflow = TextOverflow.Visible,
-                    style = LocalTextStyle.current.copy(
-                        lineHeight = LocalTextStyle.current.lineHeight * fontMultiplier,
-                        fontSize = LocalTextStyle.current.fontSize * fontMultiplier,
+                    style = TextStyle(
+                        color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Start,
+                        lineBreak = LineBreak.Paragraph
                     ),
-                    onTextLayout = {
-                        if (it.hasVisualOverflow) {
-                            updateFontSize(fontMultiplier * 0.99f)
-                        }
-                    },
-                    color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
+                    modifier = Modifier
+                        .wrapContentHeight(),
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 8.sp,
+                        maxFontSize = 16.sp,
+                        stepSize = .02.sp,
+                    ),
+                    maxLines = maxLines,
                 )
             }
             Box(
