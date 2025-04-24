@@ -648,7 +648,7 @@ fun CustomCheckBox(
     onCheckedChange: ((Boolean) -> Unit)?,
     checkedIcon: Int,
     uncheckedIcon: Int,
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
     colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(),
     enabled: Boolean = true,
 ) {
