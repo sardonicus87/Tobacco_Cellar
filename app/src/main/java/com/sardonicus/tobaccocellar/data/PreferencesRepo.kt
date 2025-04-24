@@ -236,7 +236,7 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[LAST_ALERT_SHOWN] ?: 0
+            it[LAST_ALERT_SHOWN] ?: 1
         }
 
     suspend fun saveAlertShown(alertId: Int) {
