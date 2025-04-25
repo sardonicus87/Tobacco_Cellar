@@ -150,7 +150,7 @@ fun BlendDetailsBody(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .padding(top = 20.dp)
+                .padding(top = 16.dp)
         ) {
             val padding: Dp = with(LocalDensity.current) { 16.sp.toDp() }
 
@@ -205,7 +205,7 @@ fun BlendDetailsBody(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(24.dp)
-                    .padding(top = padding - 12.dp),
+                    .padding(top = 0.dp),
                 contentAlignment = Alignment.TopStart
             ) {
                 if (blendDetails.favorite || blendDetails.disliked) {
