@@ -90,6 +90,8 @@ val tableBorderLight = Color(0xFF9A9F9C)
 val navIconLight = Color(0xFFB5F6D5) // 0xFFBEF5D9
 val appBarContainerLight = Color(0xFF218056)
 val indicatorCircleLight = Color(0xFFFF4040)
+val sheetBoxLight = Color(0xFFE6F0E6)
+val sheetBoxBorderLight = Color(0xFFB5BDB5)
 
 val listMenuScrimDark = Color(0xFF000000)
 val deleteButtonDark = Color(0xFF990000)
@@ -104,13 +106,15 @@ val tableBorderDark = Color(0xFF7E8380)
 val navIconDark = Color(0xFFB5F6D5)
 val appBarContainerDark = Color(0xFF206A4D)
 val indicatorCircleDark = Color(0xFFFF4040)
+val sheetBoxDark = Color(0xFF19241E) // original 0xFF17201B
+val sheetBoxBorderDark = Color(0xFF364B40)
 
 // pie charts light
 val pieOneLight = Color(0xFF03B1FF)
 val pieTwoLight = Color(0xFF00FDFE)
 val pieThreeLight = Color(0xFF01A802)
 val pieFourLight = Color(0xFF00FD01)
-val pieFiveLight = Color(0xFFF4FF81)
+val pieFiveLight = Color(0xFFF8FFA6)
 val pieSixLight = Color(0xFFFFEA00)
 val pieSevenLight = Color(0xFFFBC02D)
 val pieEightLight = Color(0xFFFF9100)
@@ -128,6 +132,10 @@ val pieSevenDark = Color(0xFFFBC02D) // original 0xFFFBC02D
 val pieEightDark = Color(0xFFFF9100) // original 0xFFFF9100
 val pieNineDark = Color(0xFFFF3D00) // original 0xFFFF3D00
 val pieTenDark = Color(0xFF7E57C2) // original 0xFF7E57C2
+
+
+
+
 
 // light medium //
 val primaryLightMediumContrast = Color(0xFF004D34)
