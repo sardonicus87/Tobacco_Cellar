@@ -78,7 +78,16 @@ fun CellarNavHost(
                 } },
             )
         }
-        composable(route = DatesDestination.route) {
+        composable(
+            route = DatesDestination.route,
+            enterTransition = {
+                if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
+                    EnterTransition.None } else { null }
+            },
+            popEnterTransition = {
+                if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
+                    EnterTransition.None } else { null }
+            }) {
             DatesScreen(
                 navigateToHome = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
@@ -89,6 +98,7 @@ fun CellarNavHost(
                     popUpTo(DatesDestination.route) { inclusive = true }
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
+                navigateToDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
@@ -144,21 +154,22 @@ fun CellarNavHost(
             route = BlendDetailsDestination.routeWithArgs,
             arguments = listOf(navArgument(BlendDetailsDestination.itemsIdArg) { type = NavType.IntType }),
             enterTransition = {
-                if (initialState.destination.route == HomeDestination.route) {
-                    slideInHorizontally(initialOffsetX = { it })
-                } else { null }
+                when (initialState.destination.route) {
+                    HomeDestination.route -> slideInHorizontally(initialOffsetX = { it })
+                    DatesDestination.route -> slideInHorizontally(initialOffsetX = { it })
+                    else -> null
+                }
             },
             exitTransition = {
-                if (targetState.destination.route == HomeDestination.route) {
-                    slideOutHorizontally(targetOffsetX = { it })
-                } else { null }
+                when (targetState.destination.route) {
+                    HomeDestination.route -> slideOutHorizontally(targetOffsetX = { it })
+                    DatesDestination.route -> slideOutHorizontally(targetOffsetX = { it })
+                    else -> null
+                }
             }
         ) {
             BlendDetailsScreen(
-                navigateBack = { navController.navigate(HomeDestination.route) {
-                    launchSingleTop = true
-                    popUpTo(HomeDestination.route) { inclusive = false }
-                }  },
+                navigateBack = { navController.popBackStack() },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
                 onNavigateUp = { navController.navigateUp() },
             )
