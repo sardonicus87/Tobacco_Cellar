@@ -548,7 +548,6 @@ fun QuickStatsSection(
                             )
                         }
                     }
-
                     Row(
                         modifier = Modifier,
                         horizontalArrangement = Arrangement.Start,
