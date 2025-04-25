@@ -811,13 +811,11 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
                                     width = Dp.Hairline,
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(
-                                        alpha = 0.7f
-                                    ),
+                                    color = LocalCustomColors.current.sheetBoxBorder,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .background(
-                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                                    LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 6.dp)
@@ -828,11 +826,11 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
                                     width = Dp.Hairline,
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                                    color = LocalCustomColors.current.sheetBoxBorder,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .background(
-                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                                    LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 6.dp)
@@ -844,11 +842,11 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
                                     width = Dp.Hairline,
-                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                                    color = LocalCustomColors.current.sheetBoxBorder,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .background(
-                                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                                    LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 6.dp)
@@ -938,11 +936,11 @@ fun OtherFiltersSection(
             modifier = Modifier
                 .border(
                     width = Dp.Hairline,
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                    color = LocalCustomColors.current.sheetBoxBorder,
                     shape = RoundedCornerShape(8.dp)
                 )
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                    LocalCustomColors.current.sheetBox,
                     RoundedCornerShape(8.dp)
                 )
                 .width(intrinsicSize = IntrinsicSize.Max)
@@ -1053,14 +1051,14 @@ fun OtherFiltersSection(
         }
         Column(
             modifier = Modifier
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
                 .border(
                     width = Dp.Hairline,
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                    color = LocalCustomColors.current.sheetBoxBorder,
                     shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                    RoundedCornerShape(8.dp)
                 )
                 .width(intrinsicSize = IntrinsicSize.Max)
                 .padding(vertical = 3.dp),
@@ -1102,11 +1100,11 @@ fun ProductionFilterSection(
             modifier = Modifier
                 .border(
                     width = Dp.Hairline,
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                    color = LocalCustomColors.current.sheetBoxBorder,
                     shape = RoundedCornerShape(8.dp)
                 )
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                    LocalCustomColors.current.sheetBox,
                     RoundedCornerShape(8.dp)
                 )
                 .width(intrinsicSize = IntrinsicSize.Max)
@@ -1341,9 +1339,10 @@ fun BrandFilterSection(
                     .width(IntrinsicSize.Max)
                     .height(48.dp)
                     .background(
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                        LocalCustomColors.current.textField,
                         RoundedCornerShape(8.dp)
                     )
+                    .border(Dp.Hairline, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                     .padding(horizontal = 8.dp)
                     .combinedClickable(
                         onClick = {
@@ -1467,14 +1466,13 @@ fun BrandFilterSection(
                             .fillMaxWidth()
                             .border(
                                 width = Dp.Hairline,
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                color = LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .background(
-                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                                LocalCustomColors.current.sheetBox,
                                 RoundedCornerShape(8.dp)
                             )
-                            //        .heightIn(min = 48.dp),
                             .height(96.dp),
                         horizontalArrangement = Arrangement.spacedBy(
                             space = 6.dp, alignment = Alignment.CenterHorizontally
