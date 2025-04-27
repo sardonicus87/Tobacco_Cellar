@@ -8,10 +8,10 @@
         android:icon="@mipmap/tc_launcher1"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/tc_launcher1_round"
-        android:supportsRtl="true"
+        android:supportsRtl="false"
         android:theme="@style/Theme.Start"
         android:enableOnBackInvokedCallback="true"
-        tools:targetApi="34">
+        tools:targetApi="36">
         <activity
             android:name=".MainActivity"
             android:exported="true"

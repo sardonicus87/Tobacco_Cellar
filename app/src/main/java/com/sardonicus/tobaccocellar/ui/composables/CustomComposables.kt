@@ -507,7 +507,7 @@ fun AutoCompleteText(
                             currentText.substringBeforeLast(", ", "") + ", " + label + ", "
                         } else {
                             if (componentField) {
-                                label + ", "
+                                "$label, "
                             } else {
                                 label
                             }
