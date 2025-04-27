@@ -7,13 +7,16 @@ import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -33,6 +36,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -102,9 +106,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -136,10 +143,12 @@ import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.theme.appBarContainerDark
+import com.sardonicus.tobaccocellar.ui.theme.appBarContainerLight
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CellarApp(
     navController: NavHostController = rememberNavController()
@@ -151,23 +160,50 @@ fun CellarApp(
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
-            onDismissRequest = {
-                filterViewModel.closeBottomSheet()
-            },
+            onDismissRequest = { filterViewModel.closeBottomSheet() },
             modifier = Modifier
                 .statusBarsPadding(),
-            sheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = true
-            ),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = MaterialTheme.colorScheme.onBackground,
             dragHandle = { },
             properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
         ) {
-            FilterBottomSheet(
-                filterViewModel = filterViewModel,
-                modifier = Modifier
-            )
+            Box {
+                FilterBottomSheet(
+                    filterViewModel = filterViewModel,
+                    modifier = Modifier
+                )
+                Box (
+                    modifier = Modifier
+                        .matchParentSize()
+                ) {
+                    val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
+                    val systemDark: Boolean = isSystemInDarkTheme()
+                    val appLight = LocalCustomColors.current.isLightTheme
+                    val color = if (systemDark) {
+                        when (appLight) {
+                            true -> Color.Black.copy(alpha = .2f)
+                            false -> Color.Transparent
+                        }
+                    } else {
+                        when (appLight) {
+                            true -> Color.Transparent
+                            false -> Color.White.copy(alpha = .8f)
+                        }
+                    }
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        drawRect(
+                            color = color,
+                            topLeft = Offset(0f, (size.height)),
+                            size = Size(size.width, navigation)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -223,6 +259,9 @@ fun CellarTopAppBar(
         type = "text/csv"
         putExtra(Intent.EXTRA_TITLE, "tobacco_cellar_as_tins.csv")
     }
+
+    val systemDark = isSystemInDarkTheme()
+    val color = if (systemDark) appBarContainerDark else appBarContainerLight
 
     TopAppBar(
         title = { Text(title) },
@@ -376,8 +415,8 @@ fun CellarTopAppBar(
         },
         expandedHeight = 56.dp,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = LocalCustomColors.current.appBarContainer,
-            scrolledContainerColor = LocalCustomColors.current.appBarContainer,
+            containerColor = color, // LocalCustomColors.current.appBarContainer,
+            scrolledContainerColor = color, // LocalCustomColors.current.appBarContainer,
             navigationIconContentColor = onPrimaryLight,
             actionIconContentColor = onPrimaryLight,
             titleContentColor = onPrimaryLight,
@@ -406,12 +445,15 @@ fun CellarBottomAppBar(
     val sheetOpen = sheetState == BottomSheetState.OPENED
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
 
+    val systemDark = isSystemInDarkTheme()
+    val color = if (systemDark) appBarContainerDark else appBarContainerLight
+
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp),
         contentPadding = PaddingValues(0.dp),
-        containerColor = LocalCustomColors.current.appBarContainer,
+        containerColor = color, // LocalCustomColors.current.appBarContainer,
         contentColor = LocalCustomColors.current.navIcon,
         windowInsets = WindowInsets.displayCutout,
     ) {
@@ -1342,7 +1384,11 @@ fun BrandFilterSection(
                         LocalCustomColors.current.textField,
                         RoundedCornerShape(8.dp)
                     )
-                    .border(Dp.Hairline, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .border(
+                        Dp.Hairline,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        RoundedCornerShape(8.dp)
+                    )
                     .padding(horizontal = 8.dp)
                     .combinedClickable(
                         onClick = {
