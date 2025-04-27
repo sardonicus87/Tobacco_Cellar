@@ -16,7 +16,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -143,8 +142,6 @@ import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.theme.appBarContainerDark
-import com.sardonicus.tobaccocellar.ui.theme.appBarContainerLight
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 
@@ -179,25 +176,13 @@ fun CellarApp(
                         .matchParentSize()
                 ) {
                     val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
-                    val systemDark: Boolean = isSystemInDarkTheme()
-                    val appLight = LocalCustomColors.current.isLightTheme
-                    val color = if (systemDark) {
-                        when (appLight) {
-                            true -> Color.Black.copy(alpha = .2f)
-                            false -> Color.Transparent
-                        }
-                    } else {
-                        when (appLight) {
-                            true -> Color.Transparent
-                            false -> Color.White.copy(alpha = .8f)
-                        }
-                    }
+
                     Canvas(
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
                         drawRect(
-                            color = color,
+                            color = Color.Black,
                             topLeft = Offset(0f, (size.height)),
                             size = Size(size.width, navigation)
                         )
@@ -260,8 +245,6 @@ fun CellarTopAppBar(
         putExtra(Intent.EXTRA_TITLE, "tobacco_cellar_as_tins.csv")
     }
 
-    val systemDark = isSystemInDarkTheme()
-    val color = if (systemDark) appBarContainerDark else appBarContainerLight
 
     TopAppBar(
         title = { Text(title) },
@@ -415,8 +398,8 @@ fun CellarTopAppBar(
         },
         expandedHeight = 56.dp,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = color, // LocalCustomColors.current.appBarContainer,
-            scrolledContainerColor = color, // LocalCustomColors.current.appBarContainer,
+            containerColor = LocalCustomColors.current.appBarContainer,
+            scrolledContainerColor = LocalCustomColors.current.appBarContainer,
             navigationIconContentColor = onPrimaryLight,
             actionIconContentColor = onPrimaryLight,
             titleContentColor = onPrimaryLight,
@@ -445,15 +428,12 @@ fun CellarBottomAppBar(
     val sheetOpen = sheetState == BottomSheetState.OPENED
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
 
-    val systemDark = isSystemInDarkTheme()
-    val color = if (systemDark) appBarContainerDark else appBarContainerLight
-
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp),
         contentPadding = PaddingValues(0.dp),
-        containerColor = color, // LocalCustomColors.current.appBarContainer,
+        containerColor = LocalCustomColors.current.appBarContainer,
         contentColor = LocalCustomColors.current.navIcon,
         windowInsets = WindowInsets.displayCutout,
     ) {

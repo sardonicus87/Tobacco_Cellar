@@ -6,6 +6,7 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
@@ -38,7 +39,14 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.BLACK,
+            ),
+            navigationBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.BLACK,
+            )
+        )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
 
@@ -60,17 +68,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val application = (application as CellarApplication)
+
             CompositionLocalProvider(LocalCellarApplication provides application) {
                 TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Transparent)
-                                .windowInsetsPadding(WindowInsets.systemBars)
-                                .windowInsetsPadding(WindowInsets.displayCutout)
-                        ) {
-                            CellarApp()
-                        }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Transparent)
+                            .windowInsetsPadding(WindowInsets.systemBars)
+                            .windowInsetsPadding(WindowInsets.displayCutout)
+                    ) {
+                        CellarApp()
+                    }
                     SystemBarsProtection()
                 }
             }
@@ -84,7 +93,8 @@ private fun SystemBarsProtection(
     navigationHeight: () -> Float = calculateNavigation()
 ) {
     val darkTheme: Boolean = isSystemInDarkTheme()
-    val color = if (darkTheme) Color.Black else Color.White
+    val color = if (darkTheme) Color.Black else Color.Black
+
     Canvas(
         modifier = Modifier
             .fillMaxSize()
