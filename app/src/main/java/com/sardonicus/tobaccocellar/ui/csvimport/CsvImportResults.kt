@@ -129,7 +129,7 @@ fun ImportResultsBody(
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     var visibleItemIndex by remember { mutableStateOf(0) }
-    val fadeMilis = 500
+    val fadeMillis = 500
     var indexCondition by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -211,7 +211,7 @@ fun ImportResultsBody(
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 1,
-                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                         Text(
                             text = "Total records found: ",
@@ -233,7 +233,7 @@ fun ImportResultsBody(
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 2,
-                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                         Text(
                             text = "Successful conversions: ",
@@ -255,7 +255,7 @@ fun ImportResultsBody(
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 3,
-                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                         Text(
                             text = "Total records imported: ",
@@ -279,7 +279,7 @@ fun ImportResultsBody(
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
-                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
                                 text = "Total records updated: ",
@@ -300,7 +300,7 @@ fun ImportResultsBody(
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 5,
-                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
                                 text = "Total tins inserted: ",
@@ -325,7 +325,7 @@ fun ImportResultsBody(
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
-                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
                                 text = label,
@@ -361,7 +361,7 @@ fun ImportResultsBody(
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 1,
-                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                             Text(
                                 text = "$totalRecords",
@@ -384,7 +384,7 @@ fun ImportResultsBody(
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 2,
-                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                         Text(
                             text = "$successfulConversions",
@@ -406,7 +406,7 @@ fun ImportResultsBody(
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 3,
-                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                        enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                         Text(
                             text = "$successfulInsertions",
@@ -430,7 +430,7 @@ fun ImportResultsBody(
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
-                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
                                 text = "$successfulUpdates",
@@ -452,7 +452,7 @@ fun ImportResultsBody(
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 5,
-                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
                                 text = "$successfulTins",
@@ -478,7 +478,7 @@ fun ImportResultsBody(
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
-                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMilis))
+                            enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
                                 text = "$count",

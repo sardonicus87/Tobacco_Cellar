@@ -162,6 +162,7 @@ fun CsvImportScreen(
     }
 }
 
+@Suppress("NullableBooleanElvis")
 @Composable
 fun CsvImportBody(
     navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
@@ -954,7 +955,7 @@ fun CsvImportBody(
                                             onFormatSelected = { selectedFormat ->
                                                 viewModel.updateDateFormat(selectedFormat)
                                                 dateFormatSelected =
-                                                    if (selectedFormat.isNotBlank()) true else false
+                                                    selectedFormat.isNotBlank()
                                             },
                                             enabled = mappingOptions.collateTins,
                                             modifier = Modifier

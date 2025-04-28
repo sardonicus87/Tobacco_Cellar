@@ -77,9 +77,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
@@ -235,7 +235,7 @@ private fun SettingsBody(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
-    val windowWidth = LocalConfiguration.current.screenWidthDp.dp.value * density.density
+    val windowWidth = LocalWindowInfo.current.containerSize.width.dp.value * density.density
     val animatedDragOffset by animateFloatAsState(
         targetValue = dragOffset,
         animationSpec = tween(durationMillis = 300),
@@ -731,8 +731,7 @@ fun ChangelogDialog(
     showChangelog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
+    val screenHeight = LocalWindowInfo.current.containerSize.height.dp
 
     Column(
         modifier = modifier
