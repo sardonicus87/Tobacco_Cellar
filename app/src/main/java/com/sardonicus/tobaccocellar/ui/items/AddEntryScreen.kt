@@ -468,9 +468,13 @@ fun ItemInputForm(
         ) {
             titles.forEachIndexed { index, title ->
                 val textColor = when (index) {
-                    0 -> if (tabErrorState.detailsError && (selectedTabIndex != index)) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
-                    2 -> if (tabErrorState.tinsError && selectedTabIndex != index) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
+                    0 -> if (tabErrorState.detailsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
+                    2 -> if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
                     else -> MaterialTheme.colorScheme.outline
+                }
+
+                LaunchedEffect(index){
+                    onValueChange(itemUiState.itemDetails)
                 }
 
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
@@ -1548,10 +1552,8 @@ fun TinsEntry(
         }
     }
 
-    Spacer(
-        modifier = Modifier
-            .height(7.dp)
-    )
+    Spacer(modifier = Modifier.height(7.dp))
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1566,10 +1568,7 @@ fun TinsEntry(
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
     ) {
-        Spacer(
-            modifier = Modifier
-                .height(6.dp)
-        )
+        Spacer(modifier = Modifier.height(6.dp))
 
         if (tinDetailsList.isEmpty()) {
             Button(
@@ -1582,10 +1581,7 @@ fun TinsEntry(
                     modifier = Modifier
                 )
             }
-            Spacer(
-                modifier = Modifier
-                    .height(6.dp)
-            )
+            Spacer(modifier = Modifier.height(6.dp))
         } else {
             tinDetailsList.forEachIndexed { index, tinDetails ->
                 IndividualTin(
@@ -2589,9 +2585,7 @@ fun CustomDropdownMenuItem(
     onClick: () -> Unit,
     enabled: Boolean = false,
     modifier: Modifier,
-    colors: MenuItemColors = MenuDefaults.itemColors(
-        textColor = LocalContentColor.current,
-    ),
+    colors: MenuItemColors = MenuDefaults.itemColors(textColor = LocalContentColor.current),
 ) {
     Box(
         modifier = modifier
