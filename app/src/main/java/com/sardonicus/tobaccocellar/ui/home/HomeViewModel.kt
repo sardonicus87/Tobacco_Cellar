@@ -139,10 +139,14 @@ class HomeViewModel(
             filterViewModel.selectedExcludeDislikes.value,
             filterViewModel.selectedComponent.value,
             filterViewModel.compMatching.value,
+            filterViewModel.selectedFlavoring.value,
+            filterViewModel.flavorMatching.value,
             filterViewModel.selectedSubgenre.value,
             filterViewModel.selectedCut.value,
             filterViewModel.selectedProduction.value,
-            filterViewModel.selectedOutOfProduction.value
+            filterViewModel.selectedOutOfProduction.value,
+            filterViewModel.selectedHasTins.value,
+            filterViewModel.selectedNoTins.value
         )
     }
 
@@ -165,10 +169,14 @@ class HomeViewModel(
                 filterViewModel.selectedExcludeDislikes,
                 filterViewModel.selectedComponent,
                 filterViewModel.compMatching,
+                filterViewModel.selectedFlavoring,
+                filterViewModel.flavorMatching,
                 filterViewModel.selectedSubgenre,
                 filterViewModel.selectedCut,
                 filterViewModel.selectedProduction,
                 filterViewModel.selectedOutOfProduction,
+                filterViewModel.selectedHasTins,
+                filterViewModel.selectedNoTins,
                 preferencesRepo.searchSetting
             ) {
                 filterItems(everythingFlow.first(), filterParameters(), preferencesRepo.searchSetting.first())
@@ -192,19 +200,28 @@ class HomeViewModel(
             val excludedLikes = filterParams.selectedExcludeLikes
             val excludedDislikes = filterParams.selectedExcludeDislikes
             val components = filterParams.selectedComponent
-            val matching = filterParams.compMatching
+            val compMatching = filterParams.compMatching
+            val flavoring = filterParams.selectedFlavoring
+            val flavorMatching = filterParams.flavorMatching
             val subgenres = filterParams.selectedSubgenre
             val cuts = filterParams.selectedCut
             val production = filterParams.selectedProduction
             val outOfProduction = filterParams.selectedOutOfProduction
+            val hasTins = filterParams.selectedHasTins
+            val noTins = filterParams.selectedNoTins
 
             val filteredItems =
                 if (searchValue.isBlank()) {
                     allItems.filter { items ->
-                        val componentMatching = when (matching) {
+                        val componentMatching = when (compMatching) {
                             "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
                             "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
                             else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
+                        }
+                        val flavorMatching = when (flavorMatching) {
+                            "All" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring)))
+                            "Only" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring) && items.flavoring.size == flavoring.size))
+                            else -> ((flavoring.isEmpty() && !flavoring.contains("(None Assigned)")) || ((flavoring.contains("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.any { flavoring.contains(it) })))
                         }
 
                         /** ( [filter not selected side] || [filter selected side] ) */
@@ -220,10 +237,13 @@ class HomeViewModel(
                                 (!excludedLikes || !items.items.favorite) &&
                                 (!excludedDislikes || !items.items.disliked) &&
                                 componentMatching &&
+                                flavorMatching &&
                                 ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
                                 ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
                                 (!production || items.items.inProduction) &&
-                                (!outOfProduction || !items.items.inProduction)
+                                (!outOfProduction || !items.items.inProduction) &&
+                                (!hasTins || items.tins.isNotEmpty()) &&
+                                (!noTins || items.tins.isEmpty())
                     }
                 } else {
                     when (searchSetting) {
@@ -240,11 +260,6 @@ class HomeViewModel(
                         SearchSetting.CONTAINER -> {
                             allItems.filter {
                                 it.tins.any { it.container.contains(searchValue, ignoreCase = true) }
-                            }
-                        }
-                        SearchSetting.FLAVOR -> {
-                            allItems.filter {
-                                it.flavoring.any { it.flavoringName.contains(searchValue, ignoreCase = true) }
                             }
                         }
                     }
@@ -474,15 +489,18 @@ data class FilterParameters(
     val selectedExcludeDislikes: Boolean,
     val selectedComponent: List<String>,
     val compMatching: String,
+    val selectedFlavoring: List<String>,
+    val flavorMatching: String,
     val selectedSubgenre: List<String>,
     val selectedCut: List<String>,
     val selectedProduction: Boolean,
     val selectedOutOfProduction: Boolean,
+    val selectedHasTins: Boolean,
+    val selectedNoTins: Boolean
 )
 
 sealed class SearchSetting(val value: String) {
     data object BLEND: SearchSetting("Blend")
     data object NOTES: SearchSetting("Notes")
     data object CONTAINER: SearchSetting("Container")
-    data object FLAVOR: SearchSetting("Flavoring")
 }
