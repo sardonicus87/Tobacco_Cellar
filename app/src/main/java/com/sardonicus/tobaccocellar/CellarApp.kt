@@ -457,7 +457,7 @@ fun CellarBottomAppBar(
                     contentAlignment = Alignment.Center,
                 ) {
                     IconButton(
-                        onClick = navigateToHome,
+                        onClick = { navigateToHome },
                         modifier = Modifier
                             .padding(0.dp)
                     ) {
@@ -505,7 +505,9 @@ fun CellarBottomAppBar(
                 ) {
                     IconButton(
                         onClick = {
-                            filterViewModel.getPositionTrigger()
+                            if (currentDestination == HomeDestination) {
+                                filterViewModel.getPositionTrigger()
+                            }
                             navigateToStats()
                         },
                         modifier = Modifier
@@ -553,7 +555,12 @@ fun CellarBottomAppBar(
                     contentAlignment = Alignment.Center,
                 ) {
                     IconButton(
-                        onClick = navigateToDates,
+                        onClick = {
+                            if (currentDestination == HomeDestination) {
+                                filterViewModel.getPositionTrigger()
+                            }
+                            navigateToDates
+                        },
                         modifier = Modifier
                             .padding(0.dp)
                     ) {
@@ -661,7 +668,9 @@ fun CellarBottomAppBar(
                     IconButton(
                         onClick = {
                             clickToAdd = true
-                            filterViewModel.getPositionTrigger()
+                            if (currentDestination == HomeDestination) {
+                                filterViewModel.getPositionTrigger()
+                            }
                             navigateToAddEntry()
                         },
                         modifier = Modifier
@@ -766,7 +775,7 @@ fun FilterBottomSheet(
         }
 
         // Pager //
-        val pagerState = rememberPagerState(pageCount = { 2 })
+        val pagerState = rememberPagerState(pageCount = { 3 })
         var innerScrolling by remember { mutableStateOf(false) }
 
         Row (
@@ -789,15 +798,16 @@ fun FilterBottomSheet(
             modifier = Modifier
                 .fillMaxWidth(),
             userScrollEnabled = !innerScrolling,
-            beyondViewportPageCount = 1,
-            verticalAlignment = Alignment.Top
+            beyondViewportPageCount = 2,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             when (it) {
+                // band, type, other filters //
                 0 -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
+                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         BrandFilterSection(
@@ -814,11 +824,12 @@ fun FilterBottomSheet(
                         OtherFiltersSection(
                             filterViewModel = filterViewModel,
                             modifier = Modifier
-                                .padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
+                                .padding(horizontal = 6.dp, vertical = 0.dp),
                         )
                     }
                 }
 
+                // subgenre, cuts, components, production filters //
                 1 -> {
                     Column(
                         modifier = Modifier
@@ -840,7 +851,7 @@ fun FilterBottomSheet(
                                     LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
                         )
                         CutFilterSection(
                             filterViewModel = filterViewModel,
@@ -855,7 +866,7 @@ fun FilterBottomSheet(
                                     LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
 
                         )
                         ComponentFilterSection(
@@ -871,12 +882,39 @@ fun FilterBottomSheet(
                                     LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
                         )
-                        ProductionFilterSection(
+                        FlavoringFilterSection(
                             filterViewModel = filterViewModel,
                             modifier = Modifier
-                                .padding(start = 6.dp, end = 6.dp, bottom = 6.dp)
+                                .padding(horizontal = 6.dp, vertical = 0.dp)
+                                .border(
+                                    width = Dp.Hairline,
+                                    color = LocalCustomColors.current.sheetBoxBorder,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(
+                                    LocalCustomColors.current.sheetBox,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(start = 8.dp, top = 5.dp, end = 8.dp)
+                        )
+                    }
+                }
+
+                // tin filtering section //
+                2 -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TinsFilterSection(
+                            filterViewModel = filterViewModel,
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .padding(horizontal = 6.dp)
                         )
                     }
                 }
@@ -886,7 +924,8 @@ fun FilterBottomSheet(
         TextButton(
             onClick = { filterViewModel.resetFilter() },
             modifier = Modifier
-                .offset(x = (-4).dp),
+                .offset(x = (-4).dp)
+                .padding(top = 6.dp),
             enabled = filtersApplied,
         ) {
             Icon(
@@ -1110,6 +1149,8 @@ fun ProductionFilterSection(
 ) {
     val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
     val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+    val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
 
     Row(
         modifier = modifier
@@ -1132,10 +1173,91 @@ fun ProductionFilterSection(
                 .width(intrinsicSize = IntrinsicSize.Max)
                 .padding(vertical = 3.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
-            Column(
+            CheckboxWithLabel(
+                text = "In Production",
+                checked = inProduction,
+                onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
                 modifier = Modifier,
+            )
+            CheckboxWithLabel(
+                text = "Out of Production",
+                checked = outOfProduction,
+                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
+                modifier = Modifier
+            )
+        }
+        Column(
+            modifier = Modifier
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max)
+                .padding(vertical = 3.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start
+        ) {
+            CheckboxWithLabel(
+                text = "Has tins",
+                checked = hasTins,
+                onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
+                modifier = Modifier,
+            )
+            CheckboxWithLabel(
+                text = "Has no tins",
+                checked = noTins,
+                onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
+                modifier = Modifier,
+            )
+        }
+    }
+}
+
+@Composable
+fun TinsFilterSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
+    ) {
+        val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
+        val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+        val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+        val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
+
+        // production and tins exist
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // production
+            Column(
+                modifier = Modifier
+                    .border(
+                        width = Dp.Hairline,
+                        color = LocalCustomColors.current.sheetBoxBorder,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.sheetBox,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .width(intrinsicSize = IntrinsicSize.Max)
+                    .padding(vertical = 3.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
             ) {
@@ -1152,7 +1274,39 @@ fun ProductionFilterSection(
                     modifier = Modifier
                 )
             }
+            // Tins
+            Column(
+                modifier = Modifier
+                    .border(
+                        width = Dp.Hairline,
+                        color = LocalCustomColors.current.sheetBoxBorder,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.sheetBox,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .width(intrinsicSize = IntrinsicSize.Max)
+                    .padding(vertical = 3.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                CheckboxWithLabel(
+                    text = "Has tins",
+                    checked = hasTins,
+                    onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
+                    modifier = Modifier,
+                )
+                CheckboxWithLabel(
+                    text = "Has no tins",
+                    checked = noTins,
+                    onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
+                    modifier = Modifier,
+                )
+            }
         }
+
+        // next filter section?
     }
 }
 
@@ -2481,7 +2635,425 @@ fun ComponentFilterSection(
                                                         it, !selectedComps.contains(it)
                                                     )
                                                 },
-                                                label = { Text(text = it, fontSize = 14.sp,) },
+                                                label = { Text(text = it, fontSize = 14.sp) },
+                                                modifier = Modifier
+                                                    .padding(0.dp),
+                                                shape = MaterialTheme.shapes.small,
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.background,
+                                                ),
+                                                enabled = matchOption == "Any" || (!it.contains("(None Assigned)"))
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(onClick = { showOverflowPopup = false }) {
+                            Text("Close")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    textContentColor = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun FlavoringFilterSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
+    ) {
+        var showOverflowPopup by remember { mutableStateOf(false) }
+        var overflowCount by remember { mutableIntStateOf(0) }
+        var shownItems by remember { mutableIntStateOf(0) }
+
+        val availableFlavors by filterViewModel.availableFlavors.collectAsState()
+        val selectedFlavors by filterViewModel.sheetSelectedFlavorings.collectAsState()
+        val matchOption by filterViewModel.sheetSelectedFlavoringMatching.collectAsState()
+        val nothingAssigned = !availableFlavors.any { it != "(None Assigned)" }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Flavorings:",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier,
+                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+            )
+            // Match options
+            Row(
+                modifier = Modifier
+                    .padding(0.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Match: ",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .clickable(
+                            enabled = !nothingAssigned,
+                            onClick = { filterViewModel.updateFlavorMatching("Any") }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Any",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Transparent,
+                    )
+                    Text(
+                        text = "Any",
+                        fontSize = 14.sp,
+                        fontWeight = if (matchOption == "Any") FontWeight.Medium else FontWeight.Normal,
+                        color = if (matchOption == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            alpha = .7f
+                        ),
+                        modifier = Modifier
+                    )
+                }
+                Text(
+                    text = " / ",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .clickable(
+                            enabled = !nothingAssigned,
+                            onClick = { filterViewModel.updateFlavorMatching("All") }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "All",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Transparent,
+                    )
+                    Text(
+                        text = "All",
+                        fontSize = 14.sp,
+                        fontWeight = if (matchOption == "All") FontWeight.Medium else FontWeight.Normal,
+                        color = if (matchOption == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            alpha = .7f
+                        ),
+                        modifier = Modifier
+                    )
+                }
+                Text(
+                    text = " / ",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .clickable(
+                            enabled = !nothingAssigned,
+                            onClick = { filterViewModel.updateFlavorMatching("Only") }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Only",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Transparent,
+                    )
+                    Text(
+                        text = "Only",
+                        fontSize = 14.sp,
+                        fontWeight = if (matchOption == "Only") FontWeight.Medium else FontWeight.Normal,
+                        color = if (matchOption == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            alpha = .7f
+                        ),
+                        modifier = Modifier
+                    )
+                }
+            }
+        }
+
+        if (nothingAssigned) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "No flavorings assigned to any blends.",
+                    modifier = Modifier
+                        .padding(0.dp),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                )
+            }
+        } else {
+            ContextualFlowRow(
+                itemCount = availableFlavors.size,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(Alignment.Top),
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                maxLines = 1,
+                overflow = ContextualFlowRowOverflow.expandIndicator {
+                    shownItems = shownItemCount
+                    overflowCount = availableFlavors.size - shownItems
+
+                    val overflowedSelected =
+                        filterViewModel.overflowCheck(selectedFlavors, availableFlavors, shownItemCount)
+
+                    Chip(
+                        text = "+$overflowCount",
+                        onChipClicked = { showOverflowPopup = true },
+                        onChipRemoved = { },
+                        trailingIcon = false,
+                        modifier = Modifier,
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.background,
+                        ),
+                        border = AssistChipDefaults.assistChipBorder(
+                            enabled = true,
+                            borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
+                                MaterialTheme.colorScheme.outline
+                        ),
+                    )
+                },
+            ) {
+                val flavor = availableFlavors[it]
+
+                FilterChip(
+                    selected = selectedFlavors.contains(flavor),
+                    onClick = {
+                        filterViewModel.updateSelectedFlavoring(
+                            flavor,
+                            !selectedFlavors.contains(flavor)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = flavor,
+                            fontSize = 14.sp,
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    shape = MaterialTheme.shapes.small,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ),
+                    enabled = matchOption == "Any" || (!flavor.contains("(None Assigned)"))
+                )
+            }
+            if (showOverflowPopup) {
+                AlertDialog(
+                    onDismissRequest = { showOverflowPopup = false },
+                    title = {
+                        Text(
+                            text = "Flavorings",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(.9f),
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true,
+                        usePlatformDefaultWidth = false
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .heightIn(min = 0.dp, max = 280.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
+                        ) {
+                            GlowBox(
+                                color = GlowColor(MaterialTheme.colorScheme.background),
+                                size = GlowSize(vertical = 10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 0.dp, max = 280.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
+                                ) {
+                                    Spacer(modifier = Modifier.height(5.dp))
+                                    // match options
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Match: ",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .clickable(onClick = {
+                                                    filterViewModel.updateFlavorMatching("Any")
+                                                }),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Any",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Transparent,
+                                            )
+                                            Text(
+                                                text = "Any",
+                                                fontSize = 14.sp,
+                                                fontWeight = if (matchOption == "Any") FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchOption == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    alpha = .7f
+                                                ),
+                                                modifier = Modifier
+                                            )
+                                        }
+                                        Text(
+                                            text = " / ",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            modifier = Modifier
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .clickable(onClick = {
+                                                    filterViewModel.updateFlavorMatching("All")
+                                                }),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "All",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Transparent,
+                                            )
+                                            Text(
+                                                text = "All",
+                                                fontSize = 14.sp,
+                                                fontWeight = if (matchOption == "All") FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchOption == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    alpha = .7f
+                                                ),
+                                                modifier = Modifier
+                                            )
+                                        }
+                                        Text(
+                                            text = " / ",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            modifier = Modifier
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(0.dp)
+                                                .clickable(
+                                                    onClick = {
+                                                        filterViewModel.updateFlavorMatching(
+                                                            "Only"
+                                                        )
+                                                    }
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Only",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Transparent,
+                                            )
+                                            Text(
+                                                text = "Only",
+                                                fontSize = 14.sp,
+                                                fontWeight = if (matchOption == "Only") FontWeight.Medium else FontWeight.Normal,
+                                                color = if (matchOption == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    alpha = .7f
+                                                ),
+                                                modifier = Modifier
+                                            )
+                                        }
+                                    }
+                                    // Chips
+                                    FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            4.dp,
+                                            Alignment.Start
+                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(
+                                            0.dp,
+                                            Alignment.Top
+                                        )
+                                    ) {
+                                        availableFlavors.forEach {
+                                            FilterChip(
+                                                selected = availableFlavors.contains(it),
+                                                onClick = {
+                                                    filterViewModel.updateSelectedFlavoring(
+                                                        it, !availableFlavors.contains(it)
+                                                    )
+                                                },
+                                                label = { Text(text = it, fontSize = 14.sp) },
                                                 modifier = Modifier
                                                     .padding(0.dp),
                                                 shape = MaterialTheme.shapes.small,
