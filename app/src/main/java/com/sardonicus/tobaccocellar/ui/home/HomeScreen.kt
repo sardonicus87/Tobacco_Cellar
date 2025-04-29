@@ -650,7 +650,7 @@ private fun HomeHeader(
                         containerColor = LocalCustomColors.current.textField,
                         offset = DpOffset((-2).dp, 2.dp)
                     ) {
-                        listOf(SearchSetting.BLEND, SearchSetting.NOTES, SearchSetting.FLAVOR, SearchSetting.CONTAINER).forEach {
+                        listOf(SearchSetting.BLEND, SearchSetting.NOTES, SearchSetting.CONTAINER).forEach {
                             DropdownMenuItem(
                                 text = { Text(text = it.value) },
                                 onClick = {
@@ -842,10 +842,7 @@ private fun HomeBody(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1f)
-                    )
+                    Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = stringResource(R.string.no_items),
                         textAlign = TextAlign.Center,
@@ -853,10 +850,7 @@ private fun HomeBody(
                         modifier = Modifier
                             .padding(0.dp),
                     )
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1.25f)
-                    )
+                    Spacer(modifier = Modifier.weight(1.25f))
                 }
             } else {
                 if (isTableView) {
