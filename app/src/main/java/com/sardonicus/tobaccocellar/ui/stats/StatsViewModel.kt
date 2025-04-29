@@ -105,10 +105,14 @@ class StatsViewModel(
             filterViewModel.selectedExcludeDislikes,
             filterViewModel.selectedComponent,
             filterViewModel.compMatching,
+            filterViewModel.selectedFlavoring,
+            filterViewModel.flavorMatching,
             filterViewModel.selectedSubgenre,
             filterViewModel.selectedCut,
             filterViewModel.selectedProduction,
-            filterViewModel.selectedOutOfProduction
+            filterViewModel.selectedOutOfProduction,
+            filterViewModel.selectedHasTins,
+            filterViewModel.selectedNoTins
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val brands = values[1] as List<String>
@@ -124,17 +128,26 @@ class StatsViewModel(
             val excludedLikes = values[11] as Boolean
             val excludedDislikes = values[12] as Boolean
             val components = values[13] as List<String>
-            val matching = values[14] as String
-            val subgenres = values[15] as List<String>
-            val cuts = values[16] as List<String>
-            val production = values[17] as Boolean
-            val outOfProduction = values[18] as Boolean
+            val compMatching = values[14] as String
+            val flavoring = values[15] as List<String>
+            val flavorMatching = values[16] as String
+            val subgenres = values[17] as List<String>
+            val cuts = values[18] as List<String>
+            val production = values[19] as Boolean
+            val outOfProduction = values[20] as Boolean
+            val hasTins = values[21] as Boolean
+            val noTins = values[22] as Boolean
 
             val filteredItems = allItems.filter { items ->
-                val componentMatching = when (matching) {
+                val componentMatching = when (compMatching) {
                     "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
                     "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
                     else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
+                }
+                val flavorMatching = when (flavorMatching) {
+                    "All" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring)))
+                    "Only" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring) && items.flavoring.size == flavoring.size))
+                    else -> ((flavoring.isEmpty() && !flavoring.contains("(None Assigned)")) || ((flavoring.contains("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.any { flavoring.contains(it) })))
                 }
 
                 (brands.isEmpty() || brands.contains(items.items.brand)) &&
@@ -149,10 +162,13 @@ class StatsViewModel(
                         (!excludedLikes || !items.items.favorite) &&
                         (!excludedDislikes || !items.items.disliked) &&
                         componentMatching &&
+                        flavorMatching &&
                         ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
                         ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
                         (!production || items.items.inProduction) &&
-                        (!outOfProduction || !items.items.inProduction)
+                        (!outOfProduction || !items.items.inProduction) &&
+                        (!hasTins || items.tins.isNotEmpty()) &&
+                        (!noTins || items.tins.isEmpty())
             }
 
             val unassignedCount = filteredItems.count { it.items.type.isBlank() }
