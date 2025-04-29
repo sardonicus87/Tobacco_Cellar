@@ -513,7 +513,7 @@ fun QuickStatsSection(
                         }
                     }
 
-                    // Fifth section container counts
+                    // Fifth section counts by container
                     Row(
                         modifier = Modifier,
                         horizontalArrangement = Arrangement.Start,

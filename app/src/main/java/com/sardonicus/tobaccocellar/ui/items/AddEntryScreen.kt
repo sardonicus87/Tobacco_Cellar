@@ -918,16 +918,6 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-//            AutoSizeText(
-//                text = "Components:",
-//                fontSize = 16.sp,
-//                minFontSize = 8.sp,
-//                width = 80.dp,
-//                modifier = Modifier,
-//                maxLines = 1,
-//                softWrap = false,
-//                contentAlignment = Alignment.CenterStart
-//            )
             BasicText(
                 text = "Components: ",
                 style = TextStyle(
@@ -1041,16 +1031,6 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-//            AutoSizeText(
-//                text = "Flavoring:",
-//                fontSize = 16.sp,
-//                minFontSize = 8.sp,
-//                width = 80.dp,
-//                modifier = Modifier,
-//                maxLines = 1,
-//                softWrap = false,
-//                contentAlignment = Alignment.CenterStart
-//            )
             BasicText(
                 text = "Flavoring: ",
                 style = TextStyle(
@@ -1164,15 +1144,6 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-//            AutoSizeText(
-//                text = "No. of\nTins:",
-//                fontSize = 16.sp,
-//                minFontSize = 8.sp,
-//                modifier = Modifier,
-//                width = 80.dp,
-//                height = 48.dp,
-//                contentAlignment = Alignment.CenterStart
-//            )
             BasicText(
                 text = "No. of\nTins:",
                 style = TextStyle(
@@ -1434,7 +1405,7 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "In Production?",
+                text = "In Production",
                 modifier = Modifier
                     .offset(x = 0.dp, y = 1.dp)
             )
@@ -1557,9 +1528,7 @@ fun TinsEntry(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable(onClick = {
-                focusManager.clearFocus()
-            })
+            .noRippleClickable(onClick = { focusManager.clearFocus() })
             .padding(vertical = 6.dp, horizontal = 8.dp)
             .background(
                 color = if (tinDetailsList.isEmpty()) Color.Transparent else
@@ -2445,7 +2414,7 @@ fun IndividualTin(
                         }
 
                         Text(
-                            text = "Finished?",
+                            text = "Finished",
                             modifier = Modifier
                                 .offset(x = 0.dp, y = 1.dp)
                                 .alpha(if (disabled) 0.5f else 1f),
@@ -2490,7 +2459,7 @@ fun CustomDatePickerDialog(
     onDateSelected: (Long?) -> Unit,
     modifier: Modifier = Modifier,
     currentMillis: Long? = null,
-    selectableDates: SelectableDates, // = DatePickerDefaults.AllDates,
+    selectableDates: SelectableDates,
     initialDisplayMonth: Long? = null,
     label: String = "Select",
 ) {
