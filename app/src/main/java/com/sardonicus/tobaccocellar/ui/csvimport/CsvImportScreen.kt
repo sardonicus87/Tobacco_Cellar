@@ -1780,15 +1780,6 @@ fun MappingField(
     maxLines: Int = 2
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var fontSize by remember { mutableStateOf(16.sp) }
-    val minFontSize = 11.sp
-    var fontMultiplier by remember { mutableFloatStateOf(1f) }
-    fun updateFontSize(multiplier: Float) {
-        val newSize = fontSize * multiplier
-        if (newSize > minFontSize) {
-            fontMultiplier = multiplier
-        }
-    }
 
     Column(
         modifier = modifier
@@ -1808,24 +1799,6 @@ fun MappingField(
                     .width(90.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-//                Text(
-//                    text = label,
-//                    modifier = Modifier,
-//                    textAlign = TextAlign.Start,
-//                    softWrap = false,
-//                    maxLines = 2,
-//                    overflow = TextOverflow.Visible,
-//                    style = LocalTextStyle.current.copy(
-//                        lineHeight = LocalTextStyle.current.lineHeight * fontMultiplier,
-//                        fontSize = LocalTextStyle.current.fontSize * fontMultiplier,
-//                    ),
-//                    onTextLayout = {
-//                        if (it.hasVisualOverflow) {
-//                            updateFontSize(fontMultiplier * 0.99f)
-//                        }
-//                    },
-//                    color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
-//                )
                 BasicText(
                     text = label,
                     style = TextStyle(
@@ -1835,11 +1808,7 @@ fun MappingField(
                     ),
                     modifier = Modifier
                         .wrapContentHeight(),
-                    autoSize = TextAutoSize.StepBased(
-                        minFontSize = 8.sp,
-                        maxFontSize = 16.sp,
-                        stepSize = .02.sp,
-                    ),
+                    autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 16.sp, stepSize = .02.sp),
                     maxLines = maxLines,
                 )
             }
@@ -1867,13 +1836,6 @@ fun MappingField(
                         },
                         placeholder = {
                             Text(text = placeholder)
-//                            AutoSizeText(
-//                                text = placeholder,
-//                                fontSize = LocalTextStyle.current.fontSize,
-//                                minFontSize = 8.sp,
-//                                maxLines = 1,
-//                                height = 24.dp,
-//                            )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
