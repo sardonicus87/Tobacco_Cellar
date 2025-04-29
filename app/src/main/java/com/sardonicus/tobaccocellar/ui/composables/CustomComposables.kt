@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
@@ -43,7 +41,6 @@ import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -66,17 +63,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -529,75 +519,6 @@ fun AutoCompleteText(
                 )
             }
         }
-    }
-}
-
-
-/** Auto-resizing Text() composable **/
-@Composable
-fun AutoSizeText(
-    text: String,
-    fontSize: TextUnit,
-    minFontSize: TextUnit,
-    modifier: Modifier = Modifier,
-    width: Dp = Dp.Unspecified,
-    height: Dp = Dp.Unspecified,
-    color: Color = Color.Unspecified,
-    fontStyle: FontStyle? = null,
-    fontWeight: FontWeight? = null,
-    fontFamily: FontFamily? = null,
-    letterSpacing: TextUnit = TextUnit.Unspecified,
-    textDecoration: TextDecoration? = null,
-    textAlign: TextAlign? = null,
-    lineHeight: TextUnit = LocalTextStyle.current.lineHeight,
-    overflow: TextOverflow = TextOverflow.Clip,
-    softWrap: Boolean = true,
-    maxLines: Int = Int.MAX_VALUE,
-    minLines: Int = 1,
-    style: TextStyle = LocalTextStyle.current,
-    contentAlignment: Alignment = Alignment.Center
-) {
-    val coroutineScope = rememberCoroutineScope()
-    var fontMultiplier by remember { mutableFloatStateOf(1f) }
-    fun updateFontSize(multiplier: Float) {
-        val newSize = fontSize * multiplier
-        if (newSize > minFontSize) {
-            fontMultiplier = multiplier
-        }
-    }
-
-    Box (
-        modifier = Modifier
-            .width(width)
-            .height(height),
-        contentAlignment = contentAlignment
-    ) {
-        Text(
-            text = text,
-            modifier = modifier,
-            color = color,
-            fontStyle = fontStyle,
-            fontWeight = fontWeight,
-            fontFamily = fontFamily,
-            letterSpacing = letterSpacing,
-            textDecoration = textDecoration,
-            textAlign = textAlign,
-            overflow = overflow,
-            softWrap = softWrap,
-            maxLines = maxLines,
-            minLines = minLines,
-            onTextLayout = {
-                if (it.hasVisualOverflow) {
-                    coroutineScope.launch {
-                        updateFontSize(fontMultiplier * 0.98f)
-                    }
-                }
-            },
-            style = style.copy(
-                fontSize = fontSize * fontMultiplier,
-                lineHeight = lineHeight * fontMultiplier,
-            )
-        )
     }
 }
 
