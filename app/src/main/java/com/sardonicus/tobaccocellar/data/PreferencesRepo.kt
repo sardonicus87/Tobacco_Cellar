@@ -216,7 +216,6 @@ class PreferencesRepo(
                 SearchSetting.BLEND.value -> SearchSetting.BLEND
                 SearchSetting.NOTES.value -> SearchSetting.NOTES
                 SearchSetting.CONTAINER.value -> SearchSetting.CONTAINER
-                SearchSetting.FLAVOR.value -> SearchSetting.FLAVOR
                 else -> SearchSetting.BLEND
             }
         }
