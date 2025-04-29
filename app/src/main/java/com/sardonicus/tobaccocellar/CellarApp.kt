@@ -457,7 +457,7 @@ fun CellarBottomAppBar(
                     contentAlignment = Alignment.Center,
                 ) {
                     IconButton(
-                        onClick = { navigateToHome },
+                        onClick = navigateToHome,
                         modifier = Modifier
                             .padding(0.dp)
                     ) {
@@ -505,9 +505,7 @@ fun CellarBottomAppBar(
                 ) {
                     IconButton(
                         onClick = {
-                            if (currentDestination == HomeDestination) {
-                                filterViewModel.getPositionTrigger()
-                            }
+                            filterViewModel.getPositionTrigger()
                             navigateToStats()
                         },
                         modifier = Modifier
@@ -556,11 +554,9 @@ fun CellarBottomAppBar(
                 ) {
                     IconButton(
                         onClick = {
-                            if (currentDestination == HomeDestination) {
                                 filterViewModel.getPositionTrigger()
-                            }
-                            navigateToDates
-                        },
+                                navigateToDates()
+                            },
                         modifier = Modifier
                             .padding(0.dp)
                     ) {
@@ -668,9 +664,7 @@ fun CellarBottomAppBar(
                     IconButton(
                         onClick = {
                             clickToAdd = true
-                            if (currentDestination == HomeDestination) {
-                                filterViewModel.getPositionTrigger()
-                            }
+                            filterViewModel.getPositionTrigger()
                             navigateToAddEntry()
                         },
                         modifier = Modifier
