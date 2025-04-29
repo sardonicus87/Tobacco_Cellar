@@ -63,13 +63,14 @@ fun CellarNavHost(
                 } },
                 navigateToDates = { navController.navigate(DatesDestination.route) {
                     launchSingleTop = true
-                    popUpTo(HomeDestination.route) { inclusive = false
-                    } }
-                },
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
                 navigateToBulkEdit = { navController.navigate(BulkEditDestination.route) },
-                navigateToBlendDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") },
+                navigateToBlendDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") {
+                    launchSingleTop = true
+                } },
                 navigateToCsvImport = { navController.navigate(CsvImportDestination.route) },
                 navigateToSettings = { navController.navigate(SettingsDestination.route) {
                     launchSingleTop = true
@@ -99,7 +100,9 @@ fun CellarNavHost(
                     popUpTo(DatesDestination.route) { inclusive = true }
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
-                navigateToDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") },
+                navigateToDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") {
+                    launchSingleTop = true
+                } },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
