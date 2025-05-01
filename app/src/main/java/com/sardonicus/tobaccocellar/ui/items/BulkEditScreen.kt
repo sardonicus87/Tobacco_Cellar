@@ -500,17 +500,6 @@ fun BulkEditing(
                                 }
                             )
                         }
-//                        AutoSizeText(
-//                            text = "Sub-genre:",
-//                            fontSize = 16.sp,
-//                            minFontSize = 8.sp,
-//                            modifier = Modifier,
-//                            height = 38.dp,
-//                            contentAlignment = Alignment.CenterStart,
-//                            color = if (!editingState.genreSelected) LocalContentColor.current.copy(
-//                                alpha = 0.50f
-//                            ) else LocalContentColor.current
-//                        )
                         BasicText(
                             text = "Sub-genre: ",
                             style = TextStyle(
@@ -583,7 +572,7 @@ fun BulkEditing(
                             }
                         },
                         keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences,
+                            capitalization = KeyboardCapitalization.Words,
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Done,
                         ),
@@ -690,7 +679,6 @@ fun BulkEditing(
                     horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Row(
                         modifier = Modifier
                             .weight(.3f),
@@ -707,19 +695,6 @@ fun BulkEditing(
                                 }
                             )
                         }
-//                        AutoSizeText(
-//                            text = "Components:",
-//                            fontSize = 16.sp,
-//                            minFontSize = 8.sp,
-//                            modifier = Modifier
-//                                .padding(end = 4.dp),
-//                            maxLines = 1,
-//                            height = 38.dp,
-//                            contentAlignment = Alignment.CenterStart,
-//                            color = if (!editingState.compsSelected) LocalContentColor.current.copy(
-//                                alpha = 0.50f
-//                            ) else LocalContentColor.current
-//                        )
                         BasicText(
                             text = "Components: ",
                             style = TextStyle(
@@ -867,19 +842,6 @@ fun BulkEditing(
                                 }
                             )
                         }
-//                        AutoSizeText(
-//                            text = "Flavoring:",
-//                            fontSize = 16.sp,
-//                            minFontSize = 8.sp,
-//                            modifier = Modifier
-//                                .padding(end = 4.dp),
-//                            maxLines = 1,
-//                            height = 38.dp,
-//                            contentAlignment = Alignment.CenterStart,
-//                            color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
-//                                alpha = 0.50f
-//                            ) else LocalContentColor.current
-//                        )
                         BasicText(
                             text = "Flavoring: ",
                             style = TextStyle(
@@ -1144,17 +1106,6 @@ fun BulkEditing(
                                 }
                             )
                         }
-//                        AutoSizeText(
-//                            text = "Production Status:",
-//                            fontSize = 16.sp,
-//                            minFontSize = 8.sp,
-//                            modifier = Modifier,
-//                            height = 36.dp,
-//                            contentAlignment = Alignment.CenterStart,
-//                            color = if (!editingState.productionSelected) LocalContentColor.current.copy(
-//                                alpha = 0.50f
-//                            ) else LocalContentColor.current
-//                        )
                         BasicText(
                             text = "Production Status:",
                             style = TextStyle(
