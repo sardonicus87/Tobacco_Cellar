@@ -1178,17 +1178,6 @@ fun BulkEditing(
                                 }
                             )
                         }
-//                        AutoSizeText(
-//                            text = "Sync entry/\ntin quantity",
-//                            fontSize = 16.sp,
-//                            minFontSize = 8.sp,
-//                            modifier = Modifier,
-//                            height = 36.dp,
-//                            contentAlignment = Alignment.CenterStart,
-//                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-//                                alpha = 0.50f
-//                            ) else LocalContentColor.current
-//                        )
                         BasicText(
                             text = "Sync entry/\ntin quantity:",
                             style = TextStyle(
