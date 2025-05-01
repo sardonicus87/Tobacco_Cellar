@@ -1137,84 +1137,6 @@ fun OtherFiltersSection(
 }
 
 @Composable
-fun ProductionFilterSection(
-    filterViewModel: FilterViewModel,
-    modifier: Modifier = Modifier,
-) {
-    val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
-    val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
-    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-    val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .padding(vertical = 3.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            CheckboxWithLabel(
-                text = "In Production",
-                checked = inProduction,
-                onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
-                modifier = Modifier,
-            )
-            CheckboxWithLabel(
-                text = "Out of Production",
-                checked = outOfProduction,
-                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
-                modifier = Modifier
-            )
-        }
-        Column(
-            modifier = Modifier
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .padding(vertical = 3.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            CheckboxWithLabel(
-                text = "Has tins",
-                checked = hasTins,
-                onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
-                modifier = Modifier,
-            )
-            CheckboxWithLabel(
-                text = "Has no tins",
-                checked = noTins,
-                onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
-                modifier = Modifier,
-            )
-        }
-    }
-}
-
-@Composable
 fun TinsFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
@@ -1301,6 +1223,21 @@ fun TinsFilterSection(
         }
 
         // next filter section?
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "More filters coming soon!",
+                fontSize = 17.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(vertical = 50.dp)
+            )
+        }
     }
 }
 
