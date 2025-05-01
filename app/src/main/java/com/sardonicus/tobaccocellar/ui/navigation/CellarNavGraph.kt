@@ -81,6 +81,21 @@ fun CellarNavHost(
             )
         }
 
+        composable(route = StatsDestination.route) {
+            StatsScreen(
+                navigateToHome = { navController.navigate(HomeDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(StatsDestination.route) { inclusive = true }
+                } },
+                navigateToDates = { navController.navigate(DatesDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(StatsDestination.route) { inclusive = true }
+                } },
+                navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
+                onNavigateUp = { navController.navigateUp() }
+            )
+        }
+
         composable(
             route = DatesDestination.route,
             enterTransition = {
@@ -109,21 +124,6 @@ fun CellarNavHost(
             )
         }
 
-        composable(route = StatsDestination.route) {
-            StatsScreen(
-                navigateToHome = { navController.navigate(HomeDestination.route) {
-                    launchSingleTop = true
-                    popUpTo(StatsDestination.route) { inclusive = true }
-                } },
-                navigateToDates = { navController.navigate(DatesDestination.route) {
-                    launchSingleTop = true
-                    popUpTo(StatsDestination.route) { inclusive = true }
-                } },
-                navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
-                onNavigateUp = { navController.navigateUp() }
-            )
-        }
-
         composable(route = SettingsDestination.route) {
             SettingsScreen(
                 navigateBack = { navController.popBackStack() },
@@ -133,30 +133,6 @@ fun CellarNavHost(
 
         composable(route = HelpDestination.route) {
             HelpScreen(
-                navigateBack = { navController.popBackStack() },
-                onNavigateUp = { navController.navigateUp() },
-            )
-        }
-
-        composable(route = AddEntryDestination.route) {
-            AddEntryScreen(
-                navigateBack = { navController.popBackStack() },
-                onNavigateUp = { navController.navigateUp() },
-                navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
-            )
-        }
-
-        composable(
-            route = EditEntryDestination.routeWithArgs,
-            arguments = listOf(navArgument(EditEntryDestination.itemsIdArg) {
-                type = NavType.IntType
-            })
-        ) {
-            EditEntryScreen(
-//                navigateBack = { navController.navigate(HomeDestination.route) {
-//                    launchSingleTop = true
-//                    popUpTo(HomeDestination.route) { inclusive = true }
-//                } },
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
@@ -183,6 +159,30 @@ fun CellarNavHost(
             BlendDetailsScreen(
                 navigateBack = { navController.popBackStack() },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
+                onNavigateUp = { navController.navigateUp() },
+            )
+        }
+
+        composable(route = AddEntryDestination.route) {
+            AddEntryScreen(
+                navigateBack = { navController.popBackStack() },
+                onNavigateUp = { navController.navigateUp() },
+                navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
+            )
+        }
+
+        composable(
+            route = EditEntryDestination.routeWithArgs,
+            arguments = listOf(navArgument(EditEntryDestination.itemsIdArg) {
+                type = NavType.IntType
+            })
+        ) {
+            EditEntryScreen(
+//                navigateBack = { navController.navigate(HomeDestination.route) {
+//                    launchSingleTop = true
+//                    popUpTo(HomeDestination.route) { inclusive = true }
+//                } },
+                navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
