@@ -6,14 +6,14 @@ plugins {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 14
-        versionName = "2.7.0"
+        targetSdk = 36
+        versionCode = 15
+        versionName = "3.0.0"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -84,8 +84,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.monitor)
     implementation(libs.androidx.ui.text.google.fonts)
-    implementation(libs.androidx.datastore.core.android)
-    implementation(libs.androidx.datastore.preferences.core.jvm)
+//    implementation(libs.androidx.datastore.core.android)
+//    implementation(libs.androidx.datastore.preferences.core.jvm)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 

@@ -10,6 +10,75 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.0.0",
+        buildDate = "1 May, 2025",
+        changes = listOf(
+            "New feature Dates tracking screen to see details about dates, such as blends that " +
+                    "are up-coming, in cellar for a certain length of time, date stats and more. " +
+                    "Please see the Help/FAQ for more details.",
+            "Filtering: added \"Only\" component matching option. \"Any\" and \"All\" remain the " +
+                    "same as they were while the new option \"Only\" is more strict, returning " +
+                    "only exact matches to the selected components. Also added a filter option to " +
+                    "return only those items that have tins and filtering options for tins.",
+            "Tins now have an additional option to mark as being finished, which has also been " +
+                    "added to Add/Edit screens and CSV import field.",
+            "Flavoring field now added to items and to CSV Import, Add/Edit/Bulk Edit screens, " +
+                    "and filtering sheet.",
+            "Stats screen, added an estimated weight statistic (based on \"No. of Tins\" field), " +
+                    "and number of open tins (based on tins with an open date and not marked as " +
+                    "finished) in quick stats.",
+            "Batch Edit, added the ability to batch add/remove components (does not otherwise " +
+                    "affect existing components other than adding/removing the listed component" +
+                    "(s) if they aren't/are present, depending on add or remove).",
+            "CSV Import: syncing tins now optional when collating tins, now you can still map a " +
+                    "column to \"No. of Tins\" when collating tins without syncing. Please only " +
+                    "map whole numbers to the No. of Tins field, no exact quantities (like " +
+                    "\"5.7 oz\"... you can try, but it will just return 1).",
+            "Updated the Help/FAQ section for new the new and changed functionalities."
+        ),
+        improvements = listOf(
+            "Filtering button now shows an indicator when filters are present.",
+            "Stats screen, altered pie chart labelling again for light theme (background color).",
+            "Add/Edit screen tins tab, slight adjustment to showing the error state for Unit field " +
+                    "(now does not display error state if unit field is focused). Updated label " +
+                    "placeholder text to show the error color when label is blank and unfocused.",
+            "Add/Edit screen tin dates, improved date picker dialog where if the date selection " +
+                    "is restricted by the existence of other dates and the current field is blank, " +
+                    "the initially displayed month will be at the start/end of the selectable " +
+                    "range, rather than always on the current month.",
+            "Changed input fields for brand, blend, subgenre and tin label to capitalize every " +
+                    "word rather than just the first word.",
+            "Blend Details screen, moved the favorite/dislike icon to the header and added an " +
+                    "icon to navigate to the edit entry screen. Also added the new flavoring " +
+                    "field and conditionally show the open time based on whether or not a tin is " +
+                    "finished.",
+            "Backup Restore: Improved error messaging (more specific reasons for failures), as " +
+                    "well as restore database being able to handle migrations from backups with " +
+                    "an older database schema to the current database schema (does not include " +
+                    "backups from the first iteration of backup/restore prior to app v. 2.7.0).",
+            "Adjusted some of the light-theme colors (Filter Sheet box-colorings and other " +
+                    "oddities that didn't translate well), other minor UI improvements (loading " +
+                    "indicator background and/or scrim colors on different screens, background " +
+                    "color of labels on Stats screen in light theme).",
+            "Improved the auto-adjusting text labels in various places (CSV Import, Batch edit, " +
+                    "Add/Edit entry). They now resize very efficiently and instantly (no longer " +
+                    "see them manually shrinking).",
+            "Batch Edit screen, on the edit tab, labels and text fields now have relative widths " +
+                    "(more sensible for landscape orientation). Other minor UI improvements."
+        ),
+        bugFixes = listOf(
+            "Home Screen after restoring a backup would show all the items, but briefly the " +
+                    "quantities would be out of sync and display \"--\" until recalculated. Now, " +
+                    "if the quantities haven't been formatted, the loading indicator is, " +
+                    "displayed, but formatting is much faster now.",
+            "Edge-to-edge enforcement issues: fixed the status and navigation bars on pre-Android " +
+                    "15 phones. The status and notification bars adjusted content color based on " +
+                    "the phone's dark mode, not the app, making them appear invisible when the " +
+                    "phone was in light mode. Now they should be consistently black and everything " +
+                    "should now be visible regardless of the phone's system light/dark mode."
+        ),
+    ),
+    ChangelogEntryData(
         versionNumber = "2.7.0",
         buildDate = "27 Mar, 2025",
         changes = listOf(
@@ -18,14 +87,14 @@ val changelogEntries = listOf(
                     "correctly. The backups are also much smaller (lossless compression). You " +
                     "will need to create a new backup if you wish to use the backup function, " +
                     "from this version on, backups created in previous versions will not work! " +
-                    "If you have previously RESTORED from a database backup (and only restored), I" +
+                    "If you have previously RESTORED from a database backup (and only restored), I " +
                     "highly suggest you export as a CSV (Normal Export if you haven't saved any " +
                     "tins, Export as Tins if you have), import the CSV you just exported (use " +
                     "\"collate as tins\" option if you exported as tins). This will ensure the " +
                     "database is clean and integrity is intact. Now you can create a new backup " +
                     "file with confidence that there will be no data loss or corruption.",
             "Cellar Screen quick Blend Search now can be switched to a \"Notes\" or \"Container\" " +
-                    "search tapping the search icon on the left to open a dropdown menu. The " +
+                    "search by tapping the search icon on the left to open a dropdown menu. The " +
                     "The default option is \"Blend\". Your selection will be saved and " +
                     "indicated by the placeholder text in the search field.",
             "Add/Edit screens, tin entry date pickers now restrict selectable dates to be in " +
@@ -38,7 +107,7 @@ val changelogEntries = listOf(
             "Add/Edit screen date picker has also been changed such that the default view when " +
                     "launched is the calendar picker mode rather than the input mode in order " +
                     "to make the date picking easier with the new restrictions on selection. In " +
-                    "order to clear a date if you want it cleared, switch the input mode by " +
+                    "order to clear a previously entered date, switch to the input mode by " +
                     "tapping the edit icon in the top right and erase the entered date (there's " +
                     "no deselect option in the calendar mode because Google hasn't added that to " +
                     "the date picker API).",
@@ -58,7 +127,8 @@ val changelogEntries = listOf(
             "Cellar screen, added haptic feedback when long-pressing an entry in table view to " +
                     "navigate to edit entry.",
             "Blend Details, code changes to improve stability and performance.",
-            "On Add/Edit entry screens, the individual tins are now expanded by default."
+            "On Add/Edit entry screens, the individual tins are now expanded by default.",
+            "Edit entry screen now has a loading indicator while it collects item data."
         ),
         bugFixes = listOf(
             "Minor bug for the navigation from Blend Details screen back to cellar screen showing " +
