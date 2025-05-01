@@ -147,6 +147,10 @@ private fun HelpBody(
                 content = { StatsPage() }
             )
             HelpSection(
+                title = "Dates Screen",
+                content = { DatesPage() }
+            )
+            HelpSection(
                 title = "Filtering",
                 content = { Filtering() }
             )
@@ -313,8 +317,8 @@ private fun CellarView(
         )
         Text(
             text = "In Table View, items can be sorted by tapping the \"Brand\" or \"Blend\" " +
-                    "columns. The default sorting is by the order the items were entered into the " +
-                    "database. The first tap will sort the column ascending, the second " +
+                    "column headers. The default sorting is by the order the items were entered " +
+                    "into the database. The first tap will sort the column ascending, the second " +
                     "descending, and the third returns to the default sort order.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
@@ -410,9 +414,78 @@ private fun StatsPage(
             softWrap = true,
         )
         Text(
+            text = "Quick Stats is collapsed by default, tapping where it says \"Expand\" will " +
+                    "show all quick stats. Tapping again will collapse this section. The Quick " +
+                    "Stats are broken up into subsections for convenience: general stats, counts " +
+                    "per type, subgenre, cut, tin containers. Any subsection is only visible if " +
+                    "the relevant data is used in any entries.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
             text = "The \"Charts\" section provides pie charts for visually comparing data " +
                     "by many different metrics. These charts are all populated based on the data " +
                     "that matches your chosen filters.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+    }
+}
+
+@Composable
+private fun DatesPage(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+    ) {
+        Text(
+            text = "The \"Dates\" screen contains various date-related information This part is " +
+                    "still under construction, but more date-tracking features will be coming soon.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The first section shows blends which are ready to be opened within the next " +
+                    "week and month, based on any open dates that were previously set in the " +
+                    "future. See the Adding Tins section for more details.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The \"Quick Stats\" are calculated based only on tins which have relevant " +
+                    "data added (tins without a date in that field aren't counted). Average age " +
+                    "is based on manufacturing date, time in cellar only on the cellar date, and " +
+                    "time opened based on tins with open dates that aren't marked as finished. " +
+                    "These calculations also do not factor future tins. Average wait time is " +
+                    "calculated based on all future dates.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The next section is a list of the 5 oldest tins per each date field, sorted " +
+                    "from oldest to youngest. The section after this shows the 5 tins furthest " +
+                    "into the future per each date field, sorted by soonest to latest. Any of " +
+                    "these sections can be collapsed by tapping the icon/header. Tapping any of " +
+                    "the tins in this list will take you to the Details screen for the entry with " +
+                    "that tin.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = " " +
+                    " " +
+                    " " +
+                    "",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -435,18 +508,25 @@ private fun Filtering(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = "The \"Filter Sheet\" opens on top of the Cellar and Stats screens. Any " +
-                    "filters persist through navigation around the app and affect both the " +
-                    "Cellar and Stats screens. Filters have no effect on the quick search.",
+            text = "The \"Filter Sheet\" opens on top of the Cellar, Stats and Date screens. Any " +
+                    "filters persist through navigation around the app and affect all three of " +
+                    "these main screens. Filters have no effect on the quick search. If any " +
+                    "filters are applied, this icon will have an indicator dot.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
-            text = "Multiple filters can be combined and the Cellar and Stats screens " +
-                    "will react instantly to changes. Once you have selected filters, " +
-                    "the sheet can be dismissed by tapping outside of it, tapping the close " +
-                    "icon, or swiping it away.",
+            text = "Multiple filters can be combined and these main screens will all react " +
+                    "instantly to changes. Once you have selected filters, the sheet can be " +
+                    "dismissed by tapping outside of it, tapping the close button, or swiping it " +
+                    "away.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The \"Clear All\" button at the bottom will clear all chosen filters.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -470,7 +550,7 @@ private fun Filtering(
             alignment = Alignment.Center
         )
         Text(
-            text = "The filter sheet has two pages, swipe left/right to swap between pages.",
+            text = "The filter sheet has three pages, swipe left/right to swap between pages.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -523,29 +603,30 @@ private fun Filtering(
             softWrap = true,
         )
         Text(
-            text = "The second page contains three sections that all work mostly the same for " +
-                    "Subgenres, cuts and components. The overflow chip will be highlighted if " +
-                    "any selected filters in this section aren't shown on the screen. Tapping " +
-                    "the overflow chip will show a full list of available selections for that " +
-                    "section.",
+            text = "The second page contains four sections that all work mostly the same for " +
+                    "Subgenres, Cuts, Components and Flavorings. The overflow chip will be " +
+                    "highlighted if any selected filters in this section aren't shown on the " +
+                    "screen. Tapping the overflow chip will show a full list of available " +
+                    "selections for that section.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
-            text = "One key difference is the additional option in Components filtering for " +
+            text = "One key difference is the additional option in Components and Flavoring for " +
                     "matching. Selecting \"Any\" will return blends that contain any of the " +
-                    "selected components. Selecting \"All\" will return only those blends that " +
-                    "contain all of the selected components (though they may contain other " +
-                    "components in addition to the selected ones). Finally, selecting \"Only\" " +
-                    "will return those blends that contain only the selected components (and no " +
-                    "others, the strictest matching possible).",
+                    "selections. Selecting \"All\" will return only those blends that contain " +
+                    "all of the field selections (though they may contain other non selected " +
+                    "options in addition to the selected ones). Finally, selecting \"Only\" will " +
+                    "return those blends that contain only the selections (and no others), an " +
+                    "exact match and the strictest filtering.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
-            text = "The \"Clear All\" button at the bottom will clear all chosen filters.",
+            text = "The third page has filtering for blend production status and whether or not " +
+                    "you have added individual tins to the blend. More filtering coming soon.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -606,8 +687,15 @@ private fun AddingItems(
             softWrap = true,
         )
         Text(
-            text = "When adding components, please separate each component with a comma and a " +
+            text = "When adding components or flavorings, please separate each with a comma and a " +
                     "space. For example: \"virginia, burley, perique\".",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "There are three tabs on the add entry screen that are self-explanatory. " +
+                    "Please see the \"Adding Tins\" section for more details on the tins tab.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -635,10 +723,10 @@ private fun EditingItems(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = "Items can be edited by long-pressing the entry in the cellar screen, by " +
-                    "using the bulk edit option in the top bar overflow menu, or through a CSV " +
-                    "import and selecting the \"Update\" or \"Overwrite\" option (see help file " +
-                    "on CSV Import for more information).",
+            text = "Items can be edited by long-pressing the entry in the cellar screen, using " +
+                    "the bulk edit option in the top bar menu, tapping edit on the details screen, " +
+                    "or through a CSV import and selecting the \"Update\" or \"Overwrite\" option " +
+                    "(see help file on the CSV Import screen for more information).",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -655,21 +743,20 @@ private fun EditingItems(
                     "tabs, one to select items to edit and another to make the edits. Select the " +
                     "checkbox only for the fields you wish to edit. Selecting a field and leaving " +
                     "it blank will result in erasing that field for the selected entries, with " +
-                    "exception of the components field.",
+                    "exception of the components and flavoring fields.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
 
         Text(
-            text = "Batch editing components works the same as the Add/Edit components in regards " +
-                    "to entering components into the field (namely, separate components with a " +
-                    "comma and a space). However here, leaving components blank does not erase " +
-                    "components from entries when you hit save. Any entered components will be " +
-                    "added (or removed) from the existing components of the selected entries if " +
-                    "they aren't already present (or are present in the case of remove). Switch " +
-                    "between add and remove by tapping the +/- icon at the end of the components " +
-                    "field.",
+            text = "Batch editing components/flavoring works the same as the Add/Edit screens in " +
+                    "regards to entering values into the field (separate each with a comma and a " +
+                    "space). However here, leaving these blank does not erase anything from " +
+                    "entries when you hit save. Any entered components/flavorings will be added " +
+                    "(or removed) from the existing values of the selected entries if they aren't " +
+                    "already present (or are present in the case of remove). Switch between add " +
+                    "and remove by tapping the +/- icon at the end of the field.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -728,30 +815,28 @@ private fun AddingTins(
             softWrap = true,
         )
         Text(
-            text = "Expand the details of any given tin using the icon in the top left, or the " +
-                    "\"expand\" text at the bottom (if collapsed). The same top left icon can " +
-                    "be used to collapse a tin. The tin list will be scrollable.",
+            text = "Expand/collapse the details of any given tin using the icon in the top left, " +
+                    "or \"expand\" text at the bottom (if collapsed). The tin list will be " +
+                    "scrollable if it exceeds the height of the given area.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
             text = "The date fields on this entry screen will show the chosen date as MM/YY if " +
-                    "the field is not wide enough to show the full date. Otherwise, it will show " +
-                    "the chosen date based on your locale settings. Regardless of how it is " +
-                    "displayed here, the full selected day, month and year are saved.",
+                    "the field is not wide enough, or it will show the date in medium length " +
+                    "format based on your locale settings if there is room. Regardless of how it " +
+                    "displays here, the full selected day, month and year are saved.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
             text = "Date selection for any given field is limited by the other fields. If no " +
-                    "dates have been entered, then any date past or future can be selected. The " +
-                    "first date field to be entered will then start limiting others. The " +
-                    "Manufacture date must be on/before Cellar date (or opened date if Cellar " +
-                    "date is blank), Cellar must be in a range on/after the Manufacture and " +
-                    "on/before the Cellar date. Opened date must be on/after Cellar date (or " +
-                    "Manufacture date if Cellar date is blank).",
+                    "dates have been entered, then any past or future date can be selected. The " +
+                    "first date field to be entered will then start limiting others. The limit " +
+                    "schema: Manufacture must be on/before Cellar/Opened, Cellar must be on/" +
+                    "between Manufacture and Opened, Opened must be on/after Cellar/Manufacture.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -762,6 +847,25 @@ private fun AddingTins(
                     "tapping the edit icon on the right and erasing the entered date. This is a " +
                     "limitation to the date picker as Google hasn't added a deselect method to " +
                     "the calendar picker mode.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "If an Open date is entered and that date is not in the future, the option to " +
+                    "select the \"Finished\" checkbox is enabled. This is relevant for removing a " +
+                    "given tin from certain date stats without having to erase the saved date.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "If you would like to keep track of aging, set the open date to a future date " +
+                    "of when you'd like to open the tin. The dates screen will have a section for " +
+                    "blends that will be ready to open in a given week/month, see the dates " +
+                    "section for more details. So for instance, if you would like to age a tin " +
+                    "for three years, set an open date for 3 years in the future. In three years, " +
+                    "the Dates screen will show the tin is ready to open.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
