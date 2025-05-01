@@ -80,6 +80,7 @@ fun CellarNavHost(
                 } },
             )
         }
+
         composable(
             route = DatesDestination.route,
             enterTransition = {
@@ -89,7 +90,8 @@ fun CellarNavHost(
             popEnterTransition = {
                 if (initialState.destination.route == BlendDetailsDestination.routeWithArgs) {
                     EnterTransition.None } else { null }
-            }) {
+            }
+        ) {
             DatesScreen(
                 navigateToHome = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
@@ -106,6 +108,7 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() },
             )
         }
+
         composable(route = StatsDestination.route) {
             StatsScreen(
                 navigateToHome = { navController.navigate(HomeDestination.route) {
@@ -120,18 +123,21 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() }
             )
         }
+
         composable(route = SettingsDestination.route) {
             SettingsScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
+
         composable(route = HelpDestination.route) {
             HelpScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
+
         composable(route = AddEntryDestination.route) {
             AddEntryScreen(
                 navigateBack = { navController.popBackStack() },
@@ -139,6 +145,7 @@ fun CellarNavHost(
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
             )
         }
+
         composable(
             route = EditEntryDestination.routeWithArgs,
             arguments = listOf(navArgument(EditEntryDestination.itemsIdArg) {
@@ -154,6 +161,7 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() },
             )
         }
+
         composable(
             route = BlendDetailsDestination.routeWithArgs,
             arguments = listOf(navArgument(BlendDetailsDestination.itemsIdArg) { type = NavType.IntType }),
@@ -178,6 +186,7 @@ fun CellarNavHost(
                 onNavigateUp = { navController.navigateUp() },
             )
         }
+
         composable(route = BulkEditDestination.route) {
             BulkEditScreen(
                 navigateBack = { navController.navigateUp() },
@@ -195,6 +204,7 @@ fun CellarNavHost(
                 },
             )
         }
+
         composable(
             route = CsvImportResultsDestination.routeWithArgs,
             enterTransition = { EnterTransition.None },
@@ -235,8 +245,14 @@ fun CellarNavHost(
                     launchSingleTop = true
                     popUpTo(HomeDestination.route) { inclusive = false }
                 } },
-                navigateBack = { navController.navigate(HomeDestination.route) },
-                onNavigateUp = { navController.navigate(HomeDestination.route) }
+                navigateBack = { navController.navigate(HomeDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } },
+                onNavigateUp = { navController.navigate(HomeDestination.route) {
+                    launchSingleTop = true
+                    popUpTo(HomeDestination.route) { inclusive = false }
+                } }
             )
         }
     }
