@@ -548,32 +548,36 @@ fun QuickStatsSection(
                             )
                         }
                     }
-                    Row(
-                        modifier = Modifier,
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Text(
-                            text = "${rawStats.totalOpened} opened",
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(bottom = 12.dp),
-                            fontSize = 15.sp,
-                            textAlign = TextAlign.Start,
-                            softWrap = true,
-                        )
-                        Spacer(
-                            modifier = Modifier
-                                .width(8.dp)
-                        )
-                        Text(
-                            text = "${filteredStats.totalOpened} opened",
-                            modifier = Modifier
-                                .weight(1f),
-                            fontSize = 15.sp,
-                            textAlign = TextAlign.Start,
-                            softWrap = true,
-                        )
+                    if (rawStats.totalOpened != null) {
+                        Row(
+                            modifier = Modifier,
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                                Text(
+                                    text = "${rawStats.totalOpened} opened",
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(bottom = 12.dp),
+                                    fontSize = 15.sp,
+                                    textAlign = TextAlign.Start,
+                                    softWrap = true,
+                                )
+                            Spacer(
+                                modifier = Modifier
+                                    .width(8.dp)
+                            )
+                            if (filteredStats.totalOpened != null) {
+                                Text(
+                                    text = "${filteredStats.totalOpened} opened",
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    fontSize = 15.sp,
+                                    textAlign = TextAlign.Start,
+                                    softWrap = true,
+                                )
+                            }
+                        }
                     }
                 }
             }

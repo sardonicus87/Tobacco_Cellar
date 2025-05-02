@@ -67,7 +67,8 @@ class StatsViewModel(
                         if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
                     estimatedWeight = calculateTotal(it, preferencesRepo.quantityOption.first()),
-                    totalOpened = it.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
+                    totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
+                        else it.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
                     totalBySubgenre = it.groupingBy {
                         if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
@@ -196,7 +197,8 @@ class StatsViewModel(
                         unassignedCount = unassignedCount,
                         totalQuantity = filteredItems.sumOf { it.items.quantity },
                         estimatedWeight = calculateTotal(filteredItems, preferencesRepo.quantityOption.first()),
-                        totalOpened = filteredItems.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
+                        totalOpened = if (filteredItems.map { it.tins }.isEmpty() || filteredItems.map { it.tins }.all { it.all { it.openDate == null } }) null
+                            else filteredItems.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                         totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
                         totalBySubgenre = filteredItems.groupingBy {
                             if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
@@ -454,7 +456,7 @@ data class RawStats(
     val totalByType: Map<String, Int> = emptyMap(),
     val totalQuantity: Int = 0,
     val estimatedWeight: String = "",
-    val totalOpened: Int = 0,
+    val totalOpened: Int? = null,
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
@@ -472,7 +474,7 @@ data class FilteredStats(
     val unassignedCount: Int = 0,
     val totalQuantity: Int = 0,
     val estimatedWeight: String = "",
-    val totalOpened: Int = 0,
+    val totalOpened: Int? = null,
     val totalZeroQuantity: Int = 0,
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
