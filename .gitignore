@@ -26,3 +26,4 @@ deploymentTargetSelector
 /.idea/deploymentTargetSelector
 *.json
 *.dm
+/app/release
