@@ -255,7 +255,6 @@ class EditEntryViewModel(
     }
 
 
-
     /** tin conversion and sync state **/
     var tinConversion = mutableStateOf(TinConversion())
         private set
