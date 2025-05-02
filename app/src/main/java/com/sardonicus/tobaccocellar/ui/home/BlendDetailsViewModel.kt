@@ -2,9 +2,6 @@ package com.sardonicus.tobaccocellar.ui.home
 
 import android.content.res.Configuration
 import android.content.res.Resources
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,9 +9,14 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -29,12 +31,26 @@ class BlendDetailsViewModel(
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
-    var blendDetails by mutableStateOf(BlendDetails())
-        private set
-
     private val itemsId: Int = checkNotNull(savedStateHandle[BlendDetailsDestination.itemsIdArg])
 
+//    var blendDetails by mutableStateOf(BlendDetails())
+//        private set
+
+    private val _blendDetails = MutableStateFlow(BlendDetails())
+    val blendDetails = _blendDetails.asStateFlow()
+
     init {
+        refreshData()
+        viewModelScope.launch {
+            EventBus.events.collect {
+                if (it is ItemUpdatedEvent) {
+                    refreshData()
+                }
+            }
+        }
+    }
+
+    private fun refreshData() {
         viewModelScope.launch {
             val details = itemsRepository.getItemDetailsStream(itemsId)
                 .filterNotNull()
@@ -49,12 +65,13 @@ class BlendDetailsViewModel(
                 else -> quantityOption
             }
 
-            blendDetails = details.copy(
-                tinsTotal = calculateTotal(details.tins, quantityRemap)
-            )
+            _blendDetails.update {
+                details.copy(
+                    tinsTotal = calculateTotal(details.tins, quantityRemap)
+                )
+            }
         }
     }
-
 
     private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption): String {
         val sum =
@@ -209,6 +226,7 @@ fun calculateAge(date: Long?, field: String): String {
     val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
     val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
 
+
     val years = period.years
     val months = period.months
     val days = period.days
@@ -255,14 +273,14 @@ fun calculateAge(date: Long?, field: String): String {
             if (then < now) {
                 " open"
             } else {
-                " until opening?"
+                " until opening."
             }
         }
         else -> { "" }
     }
 
     return if (parts.isEmpty()) {
-        "less than a day"
+        "today"
     } else {
         parts.joinToString(", ") + end
     }
