@@ -59,6 +59,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -130,6 +131,7 @@ fun DatesScreen(
                 items = datesUiState.items,
                 navigateToDetails = navigateToDetails,
                 datesUiState = datesUiState,
+                filterViewModel = filterViewModel,
                 modifier = Modifier
             )
         }
@@ -143,8 +145,12 @@ fun DatesBody(
     items: List<ItemsComponentsAndTins>,
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
+    filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
+    val filtering = filterViewModel.isFilterApplied.collectAsState()
+    val filtered: String = if (filtering.value) { " filtered" } else { "" }
+
     Column(
         modifier = modifier
             .fillMaxSize(),
@@ -154,13 +160,12 @@ fun DatesBody(
         if (loading) {
             FullScreenLoading()
         } else {
-            val tins = items.flatMap { it.tins }
-            val dates = listOf(tins.map { it.manufactureDate }, tins.map { it.cellarDate }, tins.map { it.openDate })
-            if (dates.any { it.isNotEmpty() }) {
+            if (datesUiState.datesExist) {
                 DateInfo(
                     items = items,
                     navigateToDetails = navigateToDetails,
                     datesUiState = datesUiState,
+                    filtered = filtered,
                     modifier = Modifier
                 )
             } else {
@@ -170,9 +175,6 @@ fun DatesBody(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    val filterViewModel = LocalCellarApplication.current.filterViewModel
-                    val filtering = filterViewModel.isFilterApplied.collectAsState()
-                    val filtered: String = if (filtering.value) { " filtered" } else { "" }
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = "No date information found within$filtered entries.",
@@ -194,6 +196,7 @@ fun DateInfo(
     items: List<ItemsComponentsAndTins>,
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
+    filtered: String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -383,7 +386,7 @@ fun DateInfo(
             verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
         ) {
             Spacer(modifier = Modifier.height(10.dp))
-            if (datesUiState.averageAgeManufacture.isNotBlank() || datesUiState.averageAgeCellar.isNotBlank() || datesUiState.averageAgeOpen.isNotBlank()) {
+            if (datesUiState.averageAgeManufacture.isNotBlank() || datesUiState.averageAgeCellar.isNotBlank() || datesUiState.averageAgeOpen.isNotBlank() || datesUiState.averageWaitTime.isNotBlank()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -423,7 +426,7 @@ fun DateInfo(
                 Spacer(modifier = Modifier.height(20.dp))
             } else {
                 Text(
-                    text = "No relevant date stats found.",
+                    text = "No relevant date stats found in$filtered entries.",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 20.dp),
