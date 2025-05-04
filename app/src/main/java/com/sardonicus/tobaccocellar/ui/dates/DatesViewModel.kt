@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAdjusters
@@ -145,11 +144,14 @@ class DatesViewModel(
             val averageDateOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (it.finished == false) it.openDate else null }
             val averageFutureOpen = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate }
 
+            val tins = filteredItems.flatMap { it.tins }
+            val tinDates = listOfNotNull(tins.map { it.manufactureDate }, tins.map { it.cellarDate }, tins.map { it.openDate })
 
             flow {
                 emit(
                     DatesUiState(
                         items = filteredItems,
+                        datesExist = tinDates.isNotEmpty(),
                         loading = false,
 
                         agedDueThisWeek = agingDue(filteredItems).first,
@@ -183,7 +185,7 @@ class DatesViewModel(
         period: DatePeriod,
         dateSelector: (Tins) -> Long?,
         ): List<DateInfoItem> {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atTime(LocalDateTime.now().hour, LocalDateTime.now().minute).toInstant(ZoneOffset.UTC).toEpochMilli()
+        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
 
         return items.flatMap { item ->
             item.tins.map { tin ->
@@ -230,7 +232,7 @@ class DatesViewModel(
         period: DatePeriod,
         field: (Tins) -> Long?
     ): Long? {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atTime(LocalDateTime.now().hour, LocalDateTime.now().minute).toInstant(ZoneOffset.UTC).toEpochMilli()
+        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atTime(12, 0).toInstant(ZoneOffset.UTC).toEpochMilli()
 
         val sumDate = when (period) {
             DatePeriod.PAST -> {
@@ -271,7 +273,6 @@ class DatesViewModel(
         return averageDate
     }
 
-
     fun agingDue(filteredItems: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
         val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
             .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -282,13 +283,14 @@ class DatesViewModel(
 
         val thisWeekTins = filteredItems.flatMap { item ->
             item.tins.map { tin ->
+                val openDate = if (!tin.finished) tin.openDate else null
                 DateInfoItem(
                     id = item.items.id,
                     brand = item.items.brand,
                     blend = item.items.blend,
                     tinLabel = tin.tinLabel,
-                    date = formatMediumDate(tin.openDate),
-                    time = calculateAge(tin.openDate, ""),
+                    date = formatMediumDate(openDate),
+                    time = calculateAge(openDate, ""),
                 )
             }.filter {
                 val openDate = if (it.date.isNotBlank()) Instant.ofEpochMilli(filteredItems.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.openDate!!).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() else null
@@ -299,13 +301,14 @@ class DatesViewModel(
 
         val thisMonthTins = filteredItems.flatMap { item ->
             item.tins.map { tin ->
+                val openDate = if (!tin.finished) tin.openDate else null
                 DateInfoItem(
                     id = item.items.id,
                     brand = item.items.brand,
                     blend = item.items.blend,
                     tinLabel = tin.tinLabel,
-                    date = formatMediumDate(tin.openDate),
-                    time = calculateAge(tin.openDate, ""),
+                    date = formatMediumDate(openDate),
+                    time = calculateAge(openDate, ""),
                 )
             }.filter {
                 val openDate = if (it.date.isNotBlank()) Instant.ofEpochMilli(filteredItems.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.openDate!!).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() else null
@@ -330,6 +333,7 @@ class DatesViewModel(
 
 data class DatesUiState(
     val items: List<ItemsComponentsAndTins> = listOf(),
+    val datesExist: Boolean = false,
     val loading: Boolean = false,
 
     val agedDueThisWeek: List<DateInfoItem> = emptyList(),
