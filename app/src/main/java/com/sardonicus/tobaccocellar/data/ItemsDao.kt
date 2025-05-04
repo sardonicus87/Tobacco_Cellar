@@ -150,7 +150,7 @@ interface ItemsDao {
     /** Get single item **/
     // Get item by id //
     @Query("SELECT * FROM items WHERE id = :id")
-    fun getItemStream(id: Int): Flow<Items>
+    fun getItemStream(id: Int): Flow<Items?>
 
     // Get item details by id //
     @Transaction
