@@ -12,8 +12,8 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 15
-        versionName = "3.0.0"
+        versionCode = 16
+        versionName = "3.0.1"
 
         vectorDrawables {
             useSupportLibrary = true

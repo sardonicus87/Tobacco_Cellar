@@ -10,6 +10,29 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.0.1",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Blend Details and Dates screens: whenever a time period is shown, if the date is " +
+                    "equal to today, it now says \"today\" instead of \"less than a day\".",
+            "Improved loading speed of Edit Entry screen."
+        ),
+        bugFixes = listOf(
+            "Fixed CSV import where Components and Flavoring weren't importing correctly.",
+            "Fixed Dates screen: quick date stats weren't showing if there was only an average " +
+                    "wait time stat (and no others).",
+            "Fixed Dates screen, all tins within range of Aging Tracker where being counted, when " +
+                    "it should only have been those in range that aren't marked \"finished\".",
+            "Fixed Blend Details screen, when editing an item from here, upon returning, the old " +
+                    "data was still being shown rather than updating.",
+            "Fixed Stats screen: tin stats in the Quick Stats would always show \"0 opened\" when " +
+                    "tins or dating feature wasn't used rather than just not being shown.",
+            "Fixed a crash when deleting an item from the Edit Entry screen.",
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.0.0",
         buildDate = "1 May, 2025",
         changes = listOf(
@@ -69,7 +92,7 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Home Screen after restoring a backup would show all the items, but briefly the " +
                     "quantities would be out of sync and display \"--\" until recalculated. Now, " +
-                    "if the quantities haven't been formatted, the loading indicator is, " +
+                    "if the quantities haven't been formatted, the loading indicator is " +
                     "displayed, but formatting is much faster now.",
             "Edge-to-edge enforcement issues: fixed the status and navigation bars on pre-Android " +
                     "15 phones. The status and notification bars adjusted content color based on " +
