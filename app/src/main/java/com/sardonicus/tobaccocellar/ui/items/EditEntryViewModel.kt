@@ -30,6 +30,8 @@ class EditEntryViewModel(
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
+    private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
+
     /** current item state **/
     var itemUiState by mutableStateOf(ItemUiState())
         private set
@@ -43,15 +45,13 @@ class EditEntryViewModel(
         private set
     var tabErrorState by mutableStateOf(TabErrorState())
         private set
-    var loading by mutableStateOf(true)
+    var loading by mutableStateOf(false)
 
     private var _originalComponents = mutableStateOf("")
     val originalComponents = _originalComponents
 
     private var _originalFlavoring = mutableStateOf("")
     val originalFlavoring = _originalFlavoring
-
-    private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         var validDetails = true
@@ -129,50 +129,78 @@ class EditEntryViewModel(
     }
 
     init {
+        loading = true
+        var detailsLoaded by mutableStateOf(false)
+        var componentsLoaded by mutableStateOf(false)
+        var flavoringLoaded by mutableStateOf(false)
+        var tinsLoaded by mutableStateOf(false)
+
         viewModelScope.launch {
-            loading = true
-            val itemDetails = itemsRepository.getItemStream(itemsId)
-                .filterNotNull()
-                .first()
-                .toItemUiState(true)
-                .also { copyOriginalDetails(it.itemDetails) }
-                .let {
-                    val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
-                    it.copy(itemDetails = it.itemDetails.copy(isSynced = savedSynced))
-                }
+            launch {
+                itemsRepository.getItemStream(itemsId)
+                    .filterNotNull()
+                    .collect {
+                        val itemDetails = it.toItemUiState(true)
+                            .also { copyOriginalDetails(it.itemDetails) }
+                        val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
+                        val updatedDetails = itemDetails.copy(itemDetails = itemDetails.itemDetails.copy(isSynced = savedSynced))
+                        itemUiState = updatedDetails
 
-            val components = itemsRepository.getComponentsForItemStream(itemsId)
-                .filterNotNull()
-                .first()
-                .toComponentList()
-                .also {
-                    _originalComponents = mutableStateOf(it.componentString)
-                }
-
-            val flavoring = itemsRepository.getFlavoringForItemStream(itemsId)
-                .filterNotNull()
-                .first()
-                .toFlavoringList()
-                .also {
-                    _originalFlavoring = mutableStateOf(it.flavoringString)
-                }
-
-            val existingTins = itemsRepository.getTinsForItemStream(itemsId)
-                .filterNotNull()
-                .first()
-                .map { it.toTinDetails() }
-
-            val tins = existingTins.mapIndexed { index, tinDetails ->
-                tinDetails.copy(tempTinId = index + 1)
+                        detailsLoaded = true
+                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
+                    }
             }
-            tinDetailsList = tins
-            componentList = components
-            flavoringList = flavoring
 
-            val updatedDetails = itemDetails.itemDetails.copy(tinDetailsList = tins)
-            itemUiState = itemDetails.copy(itemDetails = updatedDetails, isEntryValid = validateInput(updatedDetails))
-            loading = false
+            launch {
+                itemsRepository.getComponentsForItemStream(itemsId)
+                    .filterNotNull()
+                    .collect {
+                        val components = it.toComponentList()
+                            .also {
+                                _originalComponents = mutableStateOf(it.componentString)
+                            }
+                        componentList = components
+
+                        componentsLoaded = true
+                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
+                    }
+            }
+
+            launch {
+                itemsRepository.getFlavoringForItemStream(itemsId)
+                    .filterNotNull()
+                    .collect {
+                        val flavoring = it.toFlavoringList()
+                            .also {
+                                _originalFlavoring = mutableStateOf(it.flavoringString)
+                            }
+                        flavoringList = flavoring
+
+                        flavoringLoaded = true
+                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
+                    }
+            }
+
+            launch {
+                itemsRepository.getTinsForItemStream(itemsId)
+                    .filterNotNull()
+                    .collect {
+                        val tins = it.mapIndexed { index, it ->
+                            it.toTinDetails().copy(tempTinId = index + 1)
+                        }
+                        tinDetailsList = tins
+                        val updatedDetails = itemUiState.itemDetails.copy(tinDetailsList = tins)
+                        itemUiState = itemUiState.copy(itemDetails = updatedDetails, isEntryValid = validateInput(updatedDetails))
+
+                        tinsLoaded = true
+                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
+                    }
+            }
         }
+    }
+
+    private fun checkLoading(itemDetails: Boolean, components: Boolean, flavoring: Boolean, tins: Boolean) {
+        loading = !(itemDetails && components && flavoring && tins)
     }
 
 
