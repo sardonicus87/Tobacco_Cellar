@@ -780,8 +780,7 @@ fun CsvImportBody(
                                                 )
                                             },
                                             importOption = importOption,
-                                            showCheckbox = true,
-                                            maxLines = 1
+                                            showCheckbox = true
                                         )
                                         MappingField(
                                             label = "Flavoring:",
@@ -879,7 +878,8 @@ fun CsvImportBody(
                                                 )
                                             },
                                             importOption = importOption,
-                                            showCheckbox = true
+                                            showCheckbox = true,
+                                            maxLines = 2
                                         )
                                         MappingField(
                                             label = "Notes:",
@@ -976,7 +976,8 @@ fun CsvImportBody(
                                                             selectedColumn
                                                         )
                                                     },
-                                                    enabled = mappingOptions.collateTins && dateFormatSelected
+                                                    enabled = mappingOptions.collateTins && dateFormatSelected,
+                                                    maxLines = 2
                                                 )
                                                 MappingField(
                                                     label = "Cellar Date:",
@@ -1777,7 +1778,7 @@ fun MappingField(
     onOverwrite: (Boolean) -> Unit = {},
     importOption: ImportOption = ImportOption.SKIP,
     placeholder: String = "",
-    maxLines: Int = 2
+    maxLines: Int = 1
 ) {
     var expanded by remember { mutableStateOf(false) }
 
