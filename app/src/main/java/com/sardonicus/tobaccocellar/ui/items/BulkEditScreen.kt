@@ -1256,7 +1256,7 @@ fun BulkEditing(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         // Batch edit confirm //
         Button(
             onClick = { confirmEdit = true },
