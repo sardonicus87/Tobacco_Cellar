@@ -448,7 +448,6 @@ fun ComponentList.toComponents(existingComps: List<String>): List<Components> {
             val existingComp = existingComps.find { existingComp ->
                 existingComp.lowercase() == normalizedComp
             }
-
             Components(componentName = existingComp ?: enteredComp.trim())
         }
 }
