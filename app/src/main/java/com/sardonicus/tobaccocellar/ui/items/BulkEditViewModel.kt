@@ -234,7 +234,7 @@ class BulkEditViewModel (
                 compsToRemove.forEach {
                     val componentId = itemsRepository.getComponentIdByName(it)
                     if (componentId != null) {
-                        itemsRepository.deleteComponentsCrossRef(itemsId, componentId)
+                        itemsRepository.deleteComponentsCrossRef(ItemsComponentsCrossRef(itemsId, componentId))
                     }
                 }
 
@@ -248,7 +248,7 @@ class BulkEditViewModel (
                 flavorToRemove.forEach {
                     val flavorId = itemsRepository.getFlavoringIdByName(it)
                     if (flavorId != null) {
-                        itemsRepository.deleteFlavoringCrossRef(itemsId, flavorId)
+                        itemsRepository.deleteFlavoringCrossRef(ItemsFlavoringCrossRef(itemsId, flavorId))
                     }
                 }
 
