@@ -14,13 +14,10 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -147,88 +144,18 @@ class CsvImportViewModel(
 
     /** Confirm and import **/
     // components handling //
-    private fun componentSplitter(components: String): List<String> {
-        return components.split(",").map { it.trim() }
-    }
-
-    private suspend fun insertComponents(components: List<String>) {
-        val normalizedComponents = components.map { it.lowercase() }
+    private suspend fun componentSplitter(components: String): List<Components> {
+        val componentsList = components.split(",").map { it.trim() }
         val existingComps = withContext(Dispatchers.IO) { itemsRepository.getAllComponentsStream().first() }
-        val normalizedExistingComps = existingComps.map { it.componentName.lowercase() }
-        val newComponents = normalizedComponents.filter { csvComp ->
-            normalizedExistingComps.none {
-                it == csvComp
-            }
-        }
-
-        if (newComponents.isNotEmpty()) {
-            val componentsToAdd = newComponents.map { component ->
-                Components(
-                    componentName = components.find {
-                        it.lowercase() == component } ?: component
-                )
-            }
-
-            withContext(Dispatchers.IO) {
-                itemsRepository.insertMultipleComponents(componentsToAdd)
-            }
-        }
+        return componentsList.toComponents(existingComps.map { it.componentName })
     }
 
-    private suspend fun insertComponentsCrossRef(components: List<String>, itemId: Int) {
-        val componentIds = withContext(Dispatchers.IO) {
-            itemsRepository.getComponentsByName(components.map { it.lowercase() }).first().map { it.componentId }
-        }
-        val crossReferences = componentIds.map {
-            ItemsComponentsCrossRef(itemId, it)
-        }
-
-        withContext(Dispatchers.IO) {
-            itemsRepository.insertMultipleComponentsCrossRef(crossReferences)
-        }
-    }
 
     // Flavoring handling //
-    private fun flavorSplitter(flavoring: String): List<String> {
-        return flavoring.split(",").map { it.trim() }
-    }
-
-    private suspend fun insertFlavoring(flavoring: List<String>) {
-        val normalizedFlavoring = flavoring.map { it.lowercase() }
-        val existingFlavoring = withContext(Dispatchers.IO) { itemsRepository.getAllFlavoringStream().first() }
-        val normalizedExistingFlavoring = existingFlavoring.map { it.flavoringName.lowercase() }
-        val newFlavoring = normalizedFlavoring.filter { csvFlavor ->
-            normalizedExistingFlavoring.none {
-                it == csvFlavor
-            }
-        }
-
-        if (newFlavoring.isNotEmpty()) {
-            val flavoringToAdd = newFlavoring.map { flavor ->
-                Flavoring(
-                    flavoringName = flavoring.find {
-                        it.lowercase() == flavor
-                    } ?: flavor
-                )
-            }
-
-            withContext(Dispatchers.IO) {
-                itemsRepository.insertMultipleFlavoring(flavoringToAdd)
-            }
-        }
-    }
-
-    private suspend fun insertFlavoringCrossRef(flavoring: List<String>, itemId: Int) {
-        val flavoringIds = withContext(Dispatchers.IO) {
-            itemsRepository.getFlavoringByName(flavoring.map { it.lowercase() }).first().map { it.flavoringId }
-        }
-        val crossReferences = flavoringIds.map {
-            ItemsFlavoringCrossRef(itemId, it)
-        }
-
-        withContext(Dispatchers.IO) {
-            itemsRepository.insertMultipleFlavoringCrossRef(crossReferences)
-        }
+    private suspend fun flavorSplitter(flavoring: String): List<Flavoring> {
+        val flavoringList = flavoring.split(",").map { it.trim() }
+        val existingFlavors = withContext(Dispatchers.IO) { itemsRepository.getAllFlavoringStream().first() }
+        return flavoringList.toFlavoring(existingFlavors.map { it.flavoringName })
     }
 
 
@@ -418,23 +345,34 @@ class CsvImportViewModel(
     private val _navigateToResults = MutableSharedFlow<ImportResults>()
     val navigateToResults = _navigateToResults.asSharedFlow()
 
-    private var _tinFlag = mutableStateOf(false)
-    val tinFlag: State<Boolean> = _tinFlag
-
     private fun validateForm (csvUiState: MappingOptions = mappingOptions): Boolean {
         return with(csvUiState) {
             brandColumn.isNotBlank() && blendColumn.isNotBlank()
         }
     }
 
-    private suspend fun buildTinDataMap(
-        recordsToImport: List<List<String>>,
-        columnIndices: Map<CsvField, Int>,
-        collateTins: Boolean,
-        importOption: ImportOption,
-        tinLabelMap: MutableMap<Pair<String, String>, Int>,
-        tinDataMap: MutableMap<Pair<String, String>, MutableList<TinData>>
-    ) {
+
+    fun confirmImport() = viewModelScope.launch {
+        _importStatus.value = ImportStatus.Loading
+
+        val hasHeader = mappingOptions.hasHeader
+        val collateTins = mappingOptions.collateTins
+        val syncTins = mappingOptions.syncTins
+        val importOption = importOption.value
+        var updatedCount = 0
+        var updatedConversions = 0
+        var addedTins = 0
+        var updatedFlagSet = false
+        var tinsFlagSet = false
+
+        val recordsToImport =
+            if (hasHeader) csvImportState.value.allRecords.drop(1)
+            else csvImportState.value.allRecords
+        val columnIndices = getSelectedColumnIndices()
+
+        val tinLabelMap = mutableMapOf<Pair<String, String>, Int>()
+        val tinDataMap = mutableMapOf<Pair<String, String>, MutableList<TinData>>()
+
         recordsToImport.forEach { record ->
             val brand = record[columnIndices[CsvField.Brand]!!]
             val blend = record[columnIndices[CsvField.Blend]!!]
@@ -446,7 +384,7 @@ class CsvImportViewModel(
             tinLabelMap[brandBlendKey] = nextLabelNumber + numTins
 
             if (collateTins) {
-                _tinFlag.value = true
+                tinsFlagSet = true
                 if (importOption == ImportOption.OVERWRITE) {
                     if (brand.isNotBlank() && blend.isNotBlank()) {
                         val existingItem = withContext(Dispatchers.IO) {
@@ -459,77 +397,68 @@ class CsvImportViewModel(
                 }
             }
 
-            val tinDataList = List(numTins) { index ->
-                val container =
-                    if (columnIndices[CsvField.Container] != null &&
-                        columnIndices[CsvField.Container]!! in record.indices) {
-                        record[columnIndices[CsvField.Container]!!].trim()
-                    } else ""
-                val (quantity, unit) =
-                    if(columnIndices[CsvField.TinQuantity] != null &&
-                        columnIndices[CsvField.TinQuantity]!! in record.indices) {
-                        record[columnIndices[CsvField.TinQuantity]!!].trim().parseTinQuantity()
-                    } else { Pair(0.0, "") }
-                val manufactureDate =
-                    if(columnIndices[CsvField.ManufactureDate] != null &&
-                        columnIndices[CsvField.ManufactureDate]!! in record.indices) {
-                        val dateString = record[columnIndices[CsvField.ManufactureDate]!!].trim()
-                        val dateFormat = mappingOptions.dateFormat
-                        parseDateString(dateString, dateFormat)
-                    } else null
-                val cellarDate =
-                    if(columnIndices[CsvField.CellarDate] != null &&
-                        columnIndices[CsvField.CellarDate]!! in record.indices) {
-                        val dateString = record[columnIndices[CsvField.CellarDate]!!].trim()
-                        val dateFormat = mappingOptions.dateFormat
-                        parseDateString(dateString, dateFormat)
-                    } else null
-                val openDate =
-                    if(columnIndices[CsvField.OpenDate] != null &&
-                        columnIndices[CsvField.OpenDate]!! in record.indices) {
-                        val dateString = record[columnIndices[CsvField.OpenDate]!!].trim()
-                        val dateFormat = mappingOptions.dateFormat
-                        parseDateString(dateString, dateFormat)
-                    } else null
-                val finished =
-                    if(columnIndices[CsvField.Finished] != null &&
-                        columnIndices[CsvField.Finished]!! in record.indices) {
-                        record[columnIndices[CsvField.Finished]!!].toBoolean()
-                    } else false
+            val tinDataList = if (collateTins) {
+                List(numTins) { index ->
+                    val container =
+                        if (columnIndices[CsvField.Container] != null &&
+                            columnIndices[CsvField.Container]!! in record.indices
+                        ) {
+                            record[columnIndices[CsvField.Container]!!].trim()
+                        } else ""
+                    val (quantity, unit) =
+                        if (columnIndices[CsvField.TinQuantity] != null &&
+                            columnIndices[CsvField.TinQuantity]!! in record.indices
+                        ) {
+                            record[columnIndices[CsvField.TinQuantity]!!].trim().parseTinQuantity()
+                        } else {
+                            Pair(0.0, "")
+                        }
+                    val manufactureDate =
+                        if (columnIndices[CsvField.ManufactureDate] != null &&
+                            columnIndices[CsvField.ManufactureDate]!! in record.indices
+                        ) {
+                            val dateString = record[columnIndices[CsvField.ManufactureDate]!!].trim()
+                            val dateFormat = mappingOptions.dateFormat
+                            parseDateString(dateString, dateFormat)
+                        } else null
+                    val cellarDate =
+                        if (columnIndices[CsvField.CellarDate] != null &&
+                            columnIndices[CsvField.CellarDate]!! in record.indices
+                        ) {
+                            val dateString = record[columnIndices[CsvField.CellarDate]!!].trim()
+                            val dateFormat = mappingOptions.dateFormat
+                            parseDateString(dateString, dateFormat)
+                        } else null
+                    val openDate =
+                        if (columnIndices[CsvField.OpenDate] != null &&
+                            columnIndices[CsvField.OpenDate]!! in record.indices
+                        ) {
+                            val dateString = record[columnIndices[CsvField.OpenDate]!!].trim()
+                            val dateFormat = mappingOptions.dateFormat
+                            parseDateString(dateString, dateFormat)
+                        } else null
+                    val finished =
+                        if (columnIndices[CsvField.Finished] != null &&
+                            columnIndices[CsvField.Finished]!! in record.indices
+                        ) {
+                            record[columnIndices[CsvField.Finished]!!].toBoolean()
+                        } else false
 
 
-                TinData(
-                    label = tinLabels[index],
-                    container = container,
-                    quantity = quantity,
-                    unit = unit,
-                    manufactureDate = manufactureDate,
-                    cellarDate = cellarDate,
-                    openDate = openDate,
-                    finished = finished
-                )
-            }
+                    TinData(
+                        label = tinLabels[index],
+                        container = container,
+                        quantity = quantity,
+                        unit = unit,
+                        manufactureDate = manufactureDate,
+                        cellarDate = cellarDate,
+                        openDate = openDate,
+                        finished = finished
+                    )
+                }
+            } else emptyList()
             tinDataMap.getOrPut(brandBlendKey) { mutableListOf() }.addAll(tinDataList)
         }
-    }
-
-    private suspend fun buildItemsToImport(
-        recordsToImport: List<List<String>>,
-        columnIndices: Map<CsvField, Int>,
-        tinDataMap: Map<Pair<String, String>, List<TinData>>,
-        importOption: ImportOption,
-        collateTins: Boolean,
-        syncTins: Boolean,
-        overwriteSelections: StateFlow<Map<CsvField, Boolean>>,
-        preferencesRepo: PreferencesRepo,
-        itemsRepository: ItemsRepository,
-        viewModelScope: CoroutineScope,
-    ): ImportData = viewModelScope.async {
-        var updatedConversions = 0
-        var addedTins = 0
-        var updatedCount = 0
-        var updatedFlagSet = false
-        var newItemsCount = 0
 
         val itemsToImport = recordsToImport.mapNotNull { record ->
             val brand =
@@ -629,8 +558,13 @@ class CsvImportViewModel(
                             var compsAdded = false
                             if (existingComponents.isEmpty() && componentsList.isNotEmpty()) {
                                 compsAdded = true
-                                insertComponents(componentsList)
-                                insertComponentsCrossRef(componentsList, existingItem.id)
+                                componentsList.forEach {
+                                    var componentId = itemsRepository.getComponentIdByName(it.componentName)
+                                    if (componentId == null) {
+                                        componentId = itemsRepository.insertComponent(it).toInt()
+                                    }
+                                    itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = existingItem.id, componentId = componentId))
+                                }
                             }
 
                             val existingFlavoring = withContext(Dispatchers.IO) {
@@ -641,8 +575,13 @@ class CsvImportViewModel(
                             var flavorAdded = false
                             if (existingFlavoring.isEmpty() && flavoringList.isNotEmpty()) {
                                 flavorAdded = true
-                                insertFlavoring(flavoringList)
-                                insertFlavoringCrossRef(flavoringList, existingItem.id)
+                                flavoringList.forEach {
+                                    var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                                    if (flavoringId == null) {
+                                        flavoringId = itemsRepository.insertFlavoring(it).toInt()
+                                    }
+                                    itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = existingItem.id, flavoringId = flavoringId))
+                                }
                             }
 
                             val existingTins = withContext(Dispatchers.IO) {
@@ -755,8 +694,13 @@ class CsvImportViewModel(
                                 withContext(Dispatchers.IO) {
                                     itemsRepository.deleteComponentsCrossRefByItemId(existingItem.id)
                                 }
-                                insertComponents(componentsList)
-                                insertComponentsCrossRef(componentsList, existingItem.id)
+                                componentsList.forEach {
+                                    var componentId = itemsRepository.getComponentIdByName(it.componentName)
+                                    if (componentId == null) {
+                                        componentId = itemsRepository.insertComponent(it).toInt()
+                                    }
+                                    itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = existingItem.id, componentId = componentId))
+                                }
 
                                 val insertedComponents = withContext(Dispatchers.IO) {
                                     itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
@@ -781,8 +725,13 @@ class CsvImportViewModel(
                                 withContext(Dispatchers.IO) {
                                     itemsRepository.deleteFlavoringCrossRefByItemId(existingItem.id)
                                 }
-                                insertFlavoring(flavoringList)
-                                insertFlavoringCrossRef(flavoringList, existingItem.id)
+                                flavoringList.forEach {
+                                    var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                                    if (flavoringId == null) {
+                                        flavoringId = itemsRepository.insertFlavoring(it).toInt()
+                                    }
+                                    itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = existingItem.id, flavoringId = flavoringId))
+                                }
 
                                 val insertedFlavoring = withContext(Dispatchers.IO) {
                                     itemsRepository.getFlavoringForItemStream(existingItem.id)
@@ -823,7 +772,6 @@ class CsvImportViewModel(
                         else -> null
                     }
                 } else { // Default Import Option SKIP and add new records for above options
-                    newItemsCount++
                     Items(
                         brand = brand,
                         blend = blend,
@@ -882,40 +830,7 @@ class CsvImportViewModel(
                 }
             }
         }
-        return@async ImportData(
-            itemsToImport,
-            updatedCount,
-            updatedConversions,
-            addedTins,
-            updatedFlagSet,
-            newItemsCount,
-        )
-    }.await()
 
-    fun confirmImport() = viewModelScope.launch {
-        _importStatus.value = ImportStatus.Loading
-
-        val hasHeader = mappingOptions.hasHeader
-        val collateTins = mappingOptions.collateTins
-        val syncTins = mappingOptions.syncTins
-        val importOption = importOption.value
-        var addedTins = 0
-
-        val recordsToImport =
-            if (hasHeader) csvImportState.value.allRecords.drop(1)
-            else csvImportState.value.allRecords
-        val columnIndices = getSelectedColumnIndices()
-
-        val tinLabelMap = mutableMapOf<Pair<String, String>, Int>()
-        val tinDataMap = mutableMapOf<Pair<String, String>, MutableList<TinData>>()
-
-        buildTinDataMap(recordsToImport, columnIndices, collateTins, importOption, tinLabelMap, tinDataMap)
-
-        val importData = buildItemsToImport(recordsToImport, columnIndices, tinDataMap,
-            importOption, collateTins, syncTins, overwriteSelections,
-            preferencesRepo, itemsRepository, viewModelScope)
-
-        val itemsToImport = importData.itemsToImport
         var insertions = 0
 
         try {
@@ -924,24 +839,36 @@ class CsvImportViewModel(
             withContext(Dispatchers.IO) {
                 itemsToImport.forEachIndexed { index, items ->
                     val itemId = insertedIds[index].toInt()
+
                     val comps = if (
                         columnIndices[CsvField.Components] != null &&
                         columnIndices[CsvField.Components]!!
-                        in recordsToImport[index].indices)
-                        recordsToImport[index][columnIndices[CsvField.Components]!!] else ""
-
+                        in recordsToImport[index].indices
+                    ) recordsToImport[index][columnIndices[CsvField.Components]!!] else ""
                     val components = componentSplitter(comps)
-                    insertComponents(components)
-                    insertComponentsCrossRef(components, itemId)
+
+                    components.forEach {
+                        var componentId = itemsRepository.getComponentIdByName(it.componentName)
+                        if (componentId == null) {
+                            componentId = itemsRepository.insertComponent(it).toInt()
+                        }
+                        itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = itemId, componentId = componentId))
+                    }
 
                     val flavor = if (
                         columnIndices[CsvField.Flavoring] != null &&
                         columnIndices[CsvField.Flavoring]!!
-                        in recordsToImport[index].indices)
-                        recordsToImport[index][columnIndices[CsvField.Flavoring]!!] else ""
+                        in recordsToImport[index].indices
+                    ) recordsToImport[index][columnIndices[CsvField.Flavoring]!!] else ""
                     val flavoring = flavorSplitter(flavor)
-                    insertFlavoring(flavoring)
-                    insertFlavoringCrossRef(flavoring, itemId)
+
+                    flavoring.forEach {
+                        var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                        if (flavoringId == null) {
+                            flavoringId = itemsRepository.insertFlavoring(it).toInt()
+                        }
+                        itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = itemId, flavoringId = flavoringId))
+                    }
 
                     if (itemId != -1) { insertions++ }
                     val brandBlendKey = Pair(items.brand, items.blend)
@@ -959,12 +886,12 @@ class CsvImportViewModel(
         } catch (e: Exception) {
             _importStatus.value = ImportStatus.Error(e)
         } finally {
-            val successfulConversions = itemsToImport.size + importData.updatedConversions
+            val successfulConversions = itemsToImport.size + updatedConversions
             val successfulInsertions = insertions // insertedIds.count { it != -1L }
-            val successfulUpdates = importData.updatedCount
-            val successfulTins = importData.addedTins
-            val updateFlag = importData.updatedFlagSet
-            val tinFlag = tinFlag.value
+            val successfulUpdates = updatedCount
+            val successfulTins = addedTins
+            val updateFlag = updatedFlagSet
+            val tinFlag = tinsFlagSet
             val totalRecords =
                 if (hasHeader) {
                     csvImportState.value.recordCount - 1
@@ -1034,6 +961,8 @@ class CsvImportViewModel(
 }
 
 
+
+
 data class CsvImportState(
     val header: List<String> = emptyList(),
     val firstFullRecord: List<String> = emptyList(),
@@ -1100,15 +1029,6 @@ sealed class ImportStatus {
     data class Error(val exception: Throwable) : ImportStatus()
 }
 
-data class ImportData(
-    val itemsToImport: List<Items>,
-    val updatedCount: Int,
-    val updatedConversions: Int,
-    val addedTins: Int,
-    val updatedFlagSet: Boolean,
-    val newItemsCount: Int,
-)
-
 data class ImportResults(
     val totalRecords: Int,
     val successfulConversions: Int,
@@ -1119,3 +1039,29 @@ data class ImportResults(
     val tinFlag: Boolean = false,
 )
 
+fun List<String>.toComponents(existingComps: List<String>): List<Components> {
+    return this
+        .map { it }
+        .filter { it.isNotBlank() }
+        .map {  entered ->
+            val normalizedComp = entered.trim().lowercase()
+            val existingComp = existingComps.find { existing ->
+                existing.lowercase() == normalizedComp
+            }
+            Components(componentName = existingComp ?: entered.trim())
+        }
+}
+
+fun List<String>.toFlavoring(existingFlavor: List<String>): List<Flavoring> {
+    return this
+        .map { it }
+        .filter { it.isNotBlank() }
+        .map {  entered ->
+            val normalizedFlavor = entered.trim().lowercase()
+            val existingFlavor = existingFlavor.find { existing ->
+                existing.lowercase() == normalizedFlavor
+            }
+
+            Flavoring(flavoringName = existingFlavor ?: entered.trim())
+        }
+}
