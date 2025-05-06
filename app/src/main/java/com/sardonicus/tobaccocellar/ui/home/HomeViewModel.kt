@@ -412,8 +412,8 @@ class HomeViewModel(
     override fun onExportCsvClick(uri: Uri?) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val itemsWithComponents = itemsRepository.getAllItemsWithComponents()
-                val csvData = csvHelper.exportToCsv(itemsWithComponents)
+                val itemsWithComponentsAndFlavoring = itemsRepository.getAllItemsWithComponentsAndFlavoring()
+                val csvData = csvHelper.exportToCsv(itemsWithComponentsAndFlavoring)
                 if (uri != null) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
                             outputStream ->

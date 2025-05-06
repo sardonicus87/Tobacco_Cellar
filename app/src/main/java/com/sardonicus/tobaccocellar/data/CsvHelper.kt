@@ -37,7 +37,7 @@ class CsvHelper {
         }
     }
 
-    fun exportToCsv(data: List<ItemsWithComponents>): String {
+    fun exportToCsv(data: List<ItemsWithComponentsAndFlavoring>): String {
         val csvWriter = StringWriter()
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)

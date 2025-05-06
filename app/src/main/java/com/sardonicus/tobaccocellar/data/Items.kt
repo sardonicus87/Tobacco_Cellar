@@ -149,7 +149,7 @@ data class ItemsComponentsAndTins(
 )
 
 
-data class ItemsWithComponents(
+data class ItemsWithComponentsAndFlavoring(
     val item: Items,
     val components: List<Components> = emptyList(),
     val flavoring: List<Flavoring> = emptyList(),
