@@ -81,6 +81,7 @@ class AddEntryViewModel(
                 componentString = componentString,
                 autoComps = components.value,
             )
+        updateUiState(itemUiState.itemDetails)
     }
 
     fun updateFlavoringList(flavoringString: String) {
@@ -89,6 +90,7 @@ class AddEntryViewModel(
                 flavoringString = flavoringString,
                 autoFlavors = flavoring.value,
             )
+        updateUiState(itemUiState.itemDetails)
     }
 
     fun updateTinDetails(tinDetails: TinDetails) {

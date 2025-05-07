@@ -139,7 +139,7 @@ class EditEntryViewModel(
             launch {
                 itemsRepository.getItemStream(itemsId)
                     .filterNotNull()
-                    .collect {
+                    .collectLatest {
                         val itemDetails = it.toItemUiState(true)
                             .also { copyOriginalDetails(it.itemDetails) }
                         val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
@@ -154,7 +154,7 @@ class EditEntryViewModel(
             launch {
                 itemsRepository.getComponentsForItemStream(itemsId)
                     .filterNotNull()
-                    .collect {
+                    .collectLatest {
                         val components = it.toComponentList()
                             .also {
                                 _originalComponents = mutableStateOf(it.componentString)
@@ -169,7 +169,7 @@ class EditEntryViewModel(
             launch {
                 itemsRepository.getFlavoringForItemStream(itemsId)
                     .filterNotNull()
-                    .collect {
+                    .collectLatest {
                         val flavoring = it.toFlavoringList()
                             .also {
                                 _originalFlavoring = mutableStateOf(it.flavoringString)
@@ -184,7 +184,7 @@ class EditEntryViewModel(
             launch {
                 itemsRepository.getTinsForItemStream(itemsId)
                     .filterNotNull()
-                    .collect {
+                    .collectLatest {
                         val tins = it.mapIndexed { index, it ->
                             it.toTinDetails().copy(tempTinId = index + 1)
                         }
@@ -389,6 +389,7 @@ class EditEntryViewModel(
                 componentString = componentString,
                 autoComps = components.value,
             )
+        updateUiState(itemUiState.itemDetails)
     }
 
     fun updateFlavoringList(flavoringString: String) {
@@ -397,6 +398,7 @@ class EditEntryViewModel(
                 flavoringString = flavoringString,
                 autoFlavors = flavoring.value,
             )
+        updateUiState(itemUiState.itemDetails)
     }
 
     fun updateTinDetails(tinDetails: TinDetails) {
@@ -434,48 +436,62 @@ class EditEntryViewModel(
 
     suspend fun updateItem() {
         if (validateInput(itemUiState.itemDetails)) {
-            val components = componentList.toComponents(components.value)
-            val previousComps = itemsRepository.getComponentsForItemStream(itemsId).first().map { it.componentName }
-            val newComps = components.filter { !previousComps.contains(it.componentName) }
-            val removedComps = previousComps.filter { !components.map { it.componentName }.contains(it) }
-
-            val flavoring = flavoringList.toFlavoring(flavoring.value)
-            val previousFlavoring = itemsRepository.getFlavoringForItemStream(itemsId).first().map { it.flavoringName }
-            val newFlavoring = flavoring.filter { !previousFlavoring.contains(it.flavoringName) }
-            val removedFlavoring = previousFlavoring.filter { !flavoring.map { it.flavoringName }.contains(it) }
-
-            val existingTinIds = itemsRepository.getTinsForItemStream(itemsId).first().map { it.tinId }
-
             itemsRepository.updateItem(itemUiState.itemDetails.toItem())
             preferencesRepo.setItemSyncState(itemsId, itemUiState.itemDetails.isSynced)
 
-            newComps.forEach {
+            val previousComps = itemsRepository.getComponentsForItemStream(itemsId).first()
+            val previousCompsSet = previousComps.map { it.componentName.lowercase() }
+            val editedComps = componentList.toComponents(components.value)
+            val editedCompsSet = editedComps.map { it.componentName.lowercase() }
+
+            val compsToAdd = editedComps.filter { it.componentName.lowercase() !in previousCompsSet }
+            val compsToRemove = previousComps.filter { it.componentName.lowercase() !in editedCompsSet }
+
+            compsToAdd.forEach {
                 var componentId = itemsRepository.getComponentIdByName(it.componentName)
                 if (componentId == null) {
                     componentId = itemsRepository.insertComponent(it).toInt()
                 }
-                itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = itemsId, componentId = componentId))
+                itemsRepository.insertComponentsCrossRef(
+                    ItemsComponentsCrossRef(itemsId, componentId)
+                )
             }
-            removedComps.forEach {
-                val componentId = itemsRepository.getComponentIdByName(it)
+            compsToRemove.forEach{
+                val componentId = itemsRepository.getComponentIdByName(it.componentName)
                 if (componentId != null) {
-                    itemsRepository.deleteComponentsCrossRef(itemsId, componentId)
+                    itemsRepository.deleteComponentsCrossRef(
+                        ItemsComponentsCrossRef(itemsId, componentId)
+                    )
                 }
             }
 
-            newFlavoring.forEach {
-                var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                if (flavoringId == null) {
-                    flavoringId = itemsRepository.insertFlavoring(it).toInt()
+            val previousFlavors = itemsRepository.getFlavoringForItemStream(itemsId).first()
+            val previousFlavorsSet = previousFlavors.map { it.flavoringName.lowercase() }
+            val editedFlavoring = flavoringList.toFlavoring(flavoring.value)
+            val editedFlavoringSet = editedFlavoring.map { it.flavoringName.lowercase() }
+
+            val flavorToAdd = editedFlavoring.filter { it.flavoringName.lowercase() !in previousFlavorsSet }
+            val flavorToRemove = previousFlavors.filter { it.flavoringName.lowercase() !in editedFlavoringSet }
+
+            flavorToAdd.forEach {
+                var flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                if (flavorId == null) {
+                    flavorId = itemsRepository.insertFlavoring(it).toInt()
                 }
-                itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = itemsId, flavoringId = flavoringId))
+                itemsRepository.insertFlavoringCrossRef(
+                    ItemsFlavoringCrossRef(itemsId, flavorId)
+                )
             }
-            removedFlavoring.forEach {
-                val flavoringId = itemsRepository.getFlavoringIdByName(it)
-                if (flavoringId != null) {
-                    itemsRepository.deleteFlavoringCrossRef(itemsId, flavoringId)
+            flavorToRemove.forEach {
+                val flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
+                if (flavorId != null) {
+                    itemsRepository.deleteFlavoringCrossRef(
+                        ItemsFlavoringCrossRef(itemsId, flavorId)
+                    )
                 }
             }
+
+            val existingTinIds = itemsRepository.getTinsForItemStream(itemsId).first().map { it.tinId }
 
             tinDetailsList.filter { !existingTinIds.contains(it.tinId) }.forEach {
                 val tin = it.toTin(itemsId)
