@@ -10,8 +10,28 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.0.2",
+        buildDate = "7 May, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Batch Edit screen, moved the \"Save\" button to outside the scroll column of the " +
+                    "fields (might appear hidden if user doesn't realize column scrolls).",
+            "Changed some input fields keyboard action to \"Next\" (batch edit screen and " +
+                    "components field in add/edit screens).",
+        ),
+        bugFixes = listOf(
+            "Fixed another bug with CSV import for Components and Flavoring not correctly " +
+                    "importing in some cases. This should now be completely fixed for all cases.",
+            "Fixed another bug with CSV import not handling \"Production Status\" field correctly " +
+                    "resulting in a crash with update option.",
+            "Fixed bug Edit Entry when changing components or flavoring, was failing to add or " +
+                    "remove values correctly if no other fields were also being changed."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.0.1",
-        buildDate = "",
+        buildDate = "4 May, 2025",
         changes = listOf(),
         improvements = listOf(
             "Blend Details and Dates screens: whenever a time period is shown, if the date is " +
