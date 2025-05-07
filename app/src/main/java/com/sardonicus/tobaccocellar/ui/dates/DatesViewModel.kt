@@ -152,7 +152,6 @@ class DatesViewModel(
                     DatesUiState(
                         items = filteredItems,
                         datesExist = tinDates.isNotEmpty(),
-                        loading = false,
 
                         agedDueThisWeek = agingDue(filteredItems).first,
                         agedDueThisMonth = agingDue(filteredItems).second,
@@ -168,6 +167,8 @@ class DatesViewModel(
                         futureManufacture = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.manufactureDate },
                         futureCellared = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.cellarDate },
                         futureOpened = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.openDate },
+
+                        loading = false,
                     )
                 )
             }
