@@ -492,8 +492,8 @@ class CsvImportViewModel(
 
                 if (existingItem != null) {
                     updatedConversions++
-
                     when (importOption) {
+
                         ImportOption.UPDATE -> {
                             updatedFlagSet = true
                             val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
@@ -513,6 +513,18 @@ class CsvImportViewModel(
                                         else -> ""
                                     }
                                 } else existingItem.type,
+                                subGenre = if (existingItem.subGenre.isBlank() &&
+                                    columnIndices[CsvField.SubGenre] != null &&
+                                    columnIndices[CsvField.SubGenre]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.SubGenre]!!]
+                                else existingItem.subGenre,
+                                cut = if (existingItem.cut.isBlank() &&
+                                    columnIndices[CsvField.Cut] != null &&
+                                    columnIndices[CsvField.Cut]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Cut]!!]
+                                else existingItem.cut,
                                 quantity = if (collateTins)
                                     calculateSyncTinsQuantity(tinDataList)
                                 else existingItem.quantity,
@@ -530,24 +542,18 @@ class CsvImportViewModel(
                                 )
                                     record[columnIndices[CsvField.Disliked]!!].toBoolean()
                                 else existingItem.disliked,
+                                inProduction = if (existingItem.inProduction == false &&
+                                    columnIndices[CsvField.Production] != null &&
+                                    columnIndices[CsvField.Production]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Production]!!].toBoolean()
+                                else existingItem.inProduction,
                                 notes = if (existingItem.notes.isBlank() &&
                                     columnIndices[CsvField.Notes] != null &&
                                     columnIndices[CsvField.Notes]!! in record.indices
                                 )
                                     record[columnIndices[CsvField.Notes]!!]
                                 else existingItem.notes,
-                                subGenre = if (existingItem.subGenre.isBlank() &&
-                                    columnIndices[CsvField.SubGenre] != null &&
-                                    columnIndices[CsvField.SubGenre]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.SubGenre]!!]
-                                else existingItem.subGenre,
-                                cut = if (existingItem.cut.isBlank() &&
-                                    columnIndices[CsvField.Cut] != null &&
-                                    columnIndices[CsvField.Cut]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Cut]!!]
-                                else existingItem.cut,
                             )
 
                             val existingComponents = withContext(Dispatchers.IO) {
@@ -632,6 +638,18 @@ class CsvImportViewModel(
                                         else -> ""
                                     }
                                 } else existingItem.type,
+                                subGenre = if (overwriteFields.contains(CsvField.SubGenre) &&
+                                    columnIndices[CsvField.SubGenre] != null &&
+                                    columnIndices[CsvField.SubGenre]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.SubGenre]!!]
+                                else existingItem.subGenre,
+                                cut = if (overwriteFields.contains(CsvField.Cut) &&
+                                    columnIndices[CsvField.Cut] != null &&
+                                    columnIndices[CsvField.Cut]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Cut]!!]
+                                else existingItem.cut,
                                 quantity = if (overwriteFields.contains(CsvField.Quantity) &&
                                     columnIndices[CsvField.Quantity] != null &&
                                     columnIndices[CsvField.Quantity]!! in record.indices
@@ -655,30 +673,18 @@ class CsvImportViewModel(
                                 )
                                     record[columnIndices[CsvField.Disliked]!!].toBoolean()
                                 else existingItem.disliked,
-                                notes = if (overwriteFields.contains(CsvField.Notes) &&
-                                    columnIndices[CsvField.Notes] != null &&
-                                    columnIndices[CsvField.Notes]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Notes]!!]
-                                else existingItem.notes,
-                                subGenre = if (overwriteFields.contains(CsvField.SubGenre) &&
-                                    columnIndices[CsvField.SubGenre] != null &&
-                                    columnIndices[CsvField.SubGenre]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.SubGenre]!!]
-                                else existingItem.subGenre,
-                                cut = if (overwriteFields.contains(CsvField.Cut) &&
-                                    columnIndices[CsvField.Cut] != null &&
-                                    columnIndices[CsvField.Cut]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Cut]!!]
-                                else existingItem.cut,
                                 inProduction = if (overwriteFields.contains(CsvField.Production) &&
                                     columnIndices[CsvField.Production] != null &&
                                     columnIndices[CsvField.Production]!! in record.indices
                                 )
                                     record[columnIndices[CsvField.Production]!!].toBoolean()
                                 else existingItem.inProduction,
+                                notes = if (overwriteFields.contains(CsvField.Notes) &&
+                                    columnIndices[CsvField.Notes] != null &&
+                                    columnIndices[CsvField.Notes]!! in record.indices
+                                )
+                                    record[columnIndices[CsvField.Notes]!!]
+                                else existingItem.notes,
                             )
 
                             val existingComponents = withContext(Dispatchers.IO) {
@@ -769,6 +775,7 @@ class CsvImportViewModel(
                             flavorAdded = false
                             null
                         }
+
                         else -> null
                     }
                 } else { // Default Import Option SKIP and add new records for above options
@@ -787,6 +794,16 @@ class CsvImportViewModel(
                                 } else -> ""
                             }
                         } else "",
+                        subGenre = if (columnIndices[CsvField.SubGenre] != null &&
+                            columnIndices[CsvField.SubGenre]!! >= 0 &&
+                            columnIndices[CsvField.SubGenre]!! < record.size
+                        )
+                            record[columnIndices[CsvField.SubGenre]!!] else "",
+                        cut = if (columnIndices[CsvField.Cut] != null &&
+                            columnIndices[CsvField.Cut]!! >= 0 &&
+                            columnIndices[CsvField.Cut]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Cut]!!] else "",
                         quantity = if (columnIndices[CsvField.Quantity] != null &&
                             columnIndices[CsvField.Quantity]!! >= 0 &&
                             columnIndices[CsvField.Quantity]!! < record.size
@@ -806,26 +823,16 @@ class CsvImportViewModel(
                             columnIndices[CsvField.Disliked]!! < record.size
                         )
                             record[columnIndices[CsvField.Disliked]!!].toBoolean() else false,
+                        inProduction = if (columnIndices[CsvField.Production] != null &&
+                            columnIndices[CsvField.Production]!! >= 0 &&
+                            columnIndices[CsvField.Production]!! < record.size
+                        )
+                            record[columnIndices[CsvField.Production]!!].toBoolean() else true,
                         notes = if (columnIndices[CsvField.Notes] != null &&
                             columnIndices[CsvField.Notes]!! >= 0 &&
                             columnIndices[CsvField.Notes]!! < record.size
                         )
                             record[columnIndices[CsvField.Notes]!!] else "",
-                        subGenre = if (columnIndices[CsvField.SubGenre] != null &&
-                            columnIndices[CsvField.SubGenre]!! >= 0 &&
-                            columnIndices[CsvField.SubGenre]!! < record.size
-                        )
-                            record[columnIndices[CsvField.SubGenre]!!] else "",
-                        cut = if (columnIndices[CsvField.Cut] != null &&
-                            columnIndices[CsvField.Cut]!! >= 0 &&
-                            columnIndices[CsvField.Cut]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Cut]!!] else "",
-                        inProduction = if (columnIndices[CsvField.Production] != null &&
-                            columnIndices[CsvField.Production]!! >= 0 &&
-                            columnIndices[CsvField.Production]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Production]!!].toBoolean() else true
                     )
                 }
             }
