@@ -53,8 +53,11 @@ interface ItemsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
 
+    @Delete
+    suspend fun deleteComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
+
     @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId AND componentId = :componentId")
-    suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int)
+    suspend fun deleteComponentsCrossRef2(itemId: Int, componentId: Int)
 
     @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId")
     suspend fun deleteComponentsCrossRefByItemId(itemId: Int)
@@ -77,8 +80,11 @@ interface ItemsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
 
+    @Delete
+    suspend fun deleteFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
+
     @Query("DELETE FROM items_flavoring_cross_ref WHERE itemId = :itemId AND flavoringId = :flavoringId")
-    suspend fun deleteFlavoringCrossRef(itemId: Int, flavoringId: Int)
+    suspend fun deleteFlavoringCrossRef2(itemId: Int, flavoringId: Int)
 
     @Query("DELETE FROM items_flavoring_cross_ref WHERE itemId = :itemId")
     suspend fun deleteFlavoringCrossRefByItemId(itemId: Int)
@@ -89,7 +95,6 @@ interface ItemsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMultipleFlavoringCrossRef(crossRefs: List<ItemsFlavoringCrossRef>)
 
-    @Transaction
     @Query("DELETE FROM flavoring WHERE flavoringId NOT IN (SELECT flavoringId FROM items_flavoring_cross_ref)")
     suspend fun deleteOrphanedFlavoring()
 
@@ -126,6 +131,7 @@ interface ItemsDao {
     fun getAllItemsExport(): List<Items>
 
     // Get all components flow //
+    @Transaction
     @Query("SELECT * FROM components ORDER BY componentName ASC")
     fun getAllComponents(): Flow<List<Components>>
 
@@ -142,7 +148,6 @@ interface ItemsDao {
     fun getAllItemsComponentsCrossRef(): Flow<List<ItemsComponentsCrossRef>>
 
     // Get all items with components and tins flow //
-    @Transaction
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>>
 
@@ -193,6 +198,7 @@ interface ItemsDao {
     @Query("SELECT componentId FROM components WHERE componentName = :name")
     suspend fun getComponentIdByName(name: String): Int?
 
+    @Transaction
     @Query("SELECT flavoringId FROM flavoring WHERE flavoringName = :name")
     suspend fun getFlavoringIdByName(name: String): Int?
 

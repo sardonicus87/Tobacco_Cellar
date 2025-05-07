@@ -53,8 +53,8 @@ class OfflineItemsRepository(
         itemsDao.insertComponentsCrossRef(crossRef)
     }
 
-    override suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int) {
-        itemsDao.deleteComponentsCrossRef(itemId, componentId)
+    override suspend fun deleteComponentsCrossRef(crossRef: ItemsComponentsCrossRef) {
+        itemsDao.deleteComponentsCrossRef(crossRef)
     }
 
     override suspend fun deleteComponentsCrossRefByItemId(itemId: Int) {
@@ -79,8 +79,8 @@ class OfflineItemsRepository(
         itemsDao.insertFlavoringCrossRef(crossRef)
     }
 
-    override suspend fun deleteFlavoringCrossRef(itemId: Int, flavoringId: Int) {
-        itemsDao.deleteFlavoringCrossRef(itemId, flavoringId)
+    override suspend fun deleteFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef) {
+        itemsDao.deleteFlavoringCrossRef(crossRef)
     }
 
     override suspend fun deleteFlavoringCrossRefByItemId(itemId: Int) {
@@ -183,12 +183,12 @@ class OfflineItemsRepository(
 
     override fun getAllItemsExport(): List<Items> = itemsDao.getAllItemsExport()
 
-    override suspend fun getAllItemsWithComponents(): List<ItemsWithComponents> {
+    override suspend fun getAllItemsWithComponentsAndFlavoring(): List<ItemsWithComponentsAndFlavoring> {
         val items = itemsDao.getAllItemsExport()
         return items.map {
             val components = itemsDao.getComponentsForItemStream(it.id).first()
             val flavoring = itemsDao.getFlavoringForItemStream(it.id).first()
-            ItemsWithComponents(it, components, flavoring)
+            ItemsWithComponentsAndFlavoring(it, components, flavoring)
         }
     }
 

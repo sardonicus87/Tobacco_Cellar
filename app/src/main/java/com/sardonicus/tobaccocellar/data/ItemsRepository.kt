@@ -27,7 +27,7 @@ interface ItemsRepository {
 
     suspend fun insertComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
 
-    suspend fun deleteComponentsCrossRef(itemId: Int, componentId: Int)
+    suspend fun deleteComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
 
     suspend fun deleteComponentsCrossRefByItemId(itemId: Int)
 
@@ -40,7 +40,7 @@ interface ItemsRepository {
 
     suspend fun insertFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
 
-    suspend fun deleteFlavoringCrossRef(itemId: Int, flavoringId: Int)
+    suspend fun deleteFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
 
     suspend fun deleteFlavoringCrossRefByItemId(itemId: Int)
 
@@ -69,7 +69,7 @@ interface ItemsRepository {
 
     fun getAllItemsExport(): List<Items>
 
-    suspend fun getAllItemsWithComponents(): List<ItemsWithComponents>
+    suspend fun getAllItemsWithComponentsAndFlavoring(): List<ItemsWithComponentsAndFlavoring>
 
     fun getAllComponentsStream(): Flow<List<Components>>
 
