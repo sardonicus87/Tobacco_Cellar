@@ -1007,7 +1007,7 @@ fun DetailsEntry(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    imeAction = ImeAction.Next,
                 ),
                 maxLines = 1,
                 placeholder = {

@@ -586,7 +586,7 @@ fun BulkEditing(
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Words,
                                 keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Done,
+                                imeAction = ImeAction.Next,
                             ),
                             enabled = editingState.genreSelected
                         )
@@ -810,7 +810,7 @@ fun BulkEditing(
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
                                 keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Done,
+                                imeAction = ImeAction.Next,
                             ),
                             textStyle = LocalTextStyle.current.copy(
                                 color = color.copy(
