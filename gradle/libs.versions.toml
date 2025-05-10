@@ -2,7 +2,7 @@
 accompanistSystemuicontroller = "0.36.0"
 androidlibrary = "8.10.0"
 agp = "8.10.0"
-commonsCsv = "1.12.0"
+commonsCsv = "1.14.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.6"
 datastoreCoreAndroid = "1.1.4"
