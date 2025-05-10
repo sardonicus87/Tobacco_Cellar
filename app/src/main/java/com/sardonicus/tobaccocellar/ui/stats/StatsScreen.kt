@@ -1,17 +1,19 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
-
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +39,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -43,9 +48,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -91,9 +95,19 @@ fun StatsScreen(
     val filteredStats by viewmodel.filteredStats.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
+    val focusManager = LocalFocusManager.current
+    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
+        this.clickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }) {
+            onClick()
+        }
+    }
+
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .noRippleClickable(onClick = { focusManager.clearFocus() }),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(StatsDestination.titleRes),
@@ -275,54 +289,6 @@ fun QuickStatsSection(
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
-    val totalByType = rawStats.totalByType.toList().sortedBy {
-        when (it.first) {
-            "Burley" -> 0
-            "Virginia" -> 1
-            "English" -> 2
-            "Aromatic" -> 3
-            "Other" -> 4
-            "Unassigned" -> 5
-            else -> 6
-        }
-    }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
-    val totalBySubgenre = rawStats.totalBySubgenre.toList().sortedWith(
-        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
-            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
-    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-    val totalByCut = rawStats.totalByCut.toList().sortedWith(
-        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
-            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
-    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-    val totalByContainer = rawStats.totalByContainer.toList().sortedWith(
-        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
-            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
-    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-
-    val totalByTypeFiltered = filteredStats.totalByType.toList().sortedBy {
-        when (it.first) {
-            "Burley" -> 0
-            "Virginia" -> 1
-            "English" -> 2
-            "Aromatic" -> 3
-            "Other" -> 4
-            "Unassigned" -> 5
-            else -> 6
-        }
-    }.joinToString(separator = "\n") { "${it.second} ${it.first}" }
-    val totalBySubgenreFiltered = filteredStats.totalBySubgenre.toList().sortedWith(
-        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
-            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
-    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-    val totalByCutFiltered = filteredStats.totalByCut.toList().sortedWith(
-        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
-            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
-    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-    val totalByContainerFiltered = filteredStats.totalByContainer.toList().sortedWith(
-        compareBy<Pair<String, Int>> { if (it.first == "Unassigned") 1 else 0 }
-            .thenBy { if (it.first != "Unassigned") it.first.lowercase() else "" }
-    ).joinToString(separator = "\n") { "${it.second} ${it.first}" }
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -361,55 +327,25 @@ fun QuickStatsSection(
         // First Section basic counts
         Row(
             modifier = Modifier
-                .padding(vertical = 2.dp),
+                .padding(vertical = 2.dp)
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            Text(
-                text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
-                        "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                        "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
-                        "${rawStats.estimatedWeight} (estimated)\n" +
-                       // "${rawStats.totalOpened} opened\n" +
-                        "${rawStats.totalZeroQuantity} out of stock",
+            val openedUsed = if (rawStats.totalOpened == 0) "" else "\n"
+            SelectionContainer(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(bottom = 12.dp),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true,
-            )
-            Spacer(
-                modifier = Modifier
-                    .width(8.dp)
-            )
-            Text(
-                text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
-                        "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
-                        "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
-                        "${filteredStats.estimatedWeight} (estimated)\n" +
-                    //    "${filteredStats.totalOpened} opened\n" +
-                        "${filteredStats.totalZeroQuantity} out of stock",
-                modifier = Modifier
-                    .weight(1f),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Start,
-                softWrap = true,
-            )
-        }
-
-        // Second Section counts per type
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
-        ) {
-            if (rawStats.totalByType.any { it.key != "Unassigned" }) {
+            ) {
                 Text(
-                    text = totalByType,
+                    text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
+                            "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
+                            "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
+                            "${rawStats.estimatedWeight} (estimated)\n" +
+                            "${rawStats.totalZeroQuantity} out of stock$openedUsed" +
+                            "${rawStats.totalOpened} opened",
                     modifier = Modifier
                         .weight(1f)
-                        .semantics { contentDescription = totalByType.toString() }
                         .padding(bottom = 12.dp),
                     fontSize = 15.sp,
                     textAlign = TextAlign.Start,
@@ -420,164 +356,70 @@ fun QuickStatsSection(
                 modifier = Modifier
                     .width(8.dp)
             )
-            if (filteredStats.totalByType.any { it.key != "Unassigned" }) {
+            SelectionContainer(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
                 Text(
-                    text = totalByTypeFiltered,
+                    text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
+                            "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
+                            "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
+                            "${filteredStats.estimatedWeight} (estimated)\n" +
+                            "${filteredStats.totalZeroQuantity} out of stock$openedUsed" +
+                            "${filteredStats.totalOpened} opened",
                     modifier = Modifier
-                        .weight(1f)
-                        .semantics { contentDescription = totalByTypeFiltered.toString() },
+                        .weight(1f),
                     fontSize = 15.sp,
                     textAlign = TextAlign.Start,
-                    softWrap = true
+                    softWrap = true,
                 )
             }
+        }
+
+        // Second Section counts per type
+        if (rawStats.totalByType.any { it.key != "Unassigned" }) {
+            StatSubSection(
+                rawField = rawStats.totalByType,
+                filteredField = filteredStats.totalByType,
+                modifier = Modifier
+            )
         }
         if (
             (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) ||
             (rawStats.totalByCut.any { it.key != "Unassigned" }) ||
             (rawStats.totalByContainer.any { it.key != "Unassigned" })
         ) {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
                 if (expanded) {
+
                     // Third section counts by subgenre
-                    Row(
-                        modifier = Modifier,
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
-                            Text(
-                                text = totalBySubgenre,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(bottom = 12.dp)
-                                    .semantics { contentDescription = totalBySubgenre.toString() },
-                                fontSize = 15.sp,
-                                textAlign = TextAlign.Start,
-                                softWrap = true,
-                            )
-                        }
-                        Spacer(
+                    if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+                        StatSubSection(
+                            rawField = rawStats.totalBySubgenre,
+                            filteredField = filteredStats.totalBySubgenre,
                             modifier = Modifier
-                                .width(8.dp)
                         )
-                        if (filteredStats.totalBySubgenre.any { it.key != "Unassigned" }) {
-                            Text(
-                                text = totalBySubgenreFiltered,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .semantics {
-                                        contentDescription = totalBySubgenreFiltered.toString()
-                                    },
-                                fontSize = 15.sp,
-                                textAlign = TextAlign.Start,
-                                softWrap = true,
-                            )
-                        }
                     }
 
                     // Fourth section counts by cuts
-                    Row(
-                        modifier = Modifier,
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
-                            Text(
-                                text = totalByCut,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(bottom = 12.dp)
-                                    .semantics { contentDescription = totalByCut.toString() },
-                                fontSize = 15.sp,
-                                textAlign = TextAlign.Start,
-                                softWrap = true,
-                            )
-                        }
-                        Spacer(
+                    if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
+                        StatSubSection(
+                            rawField = rawStats.totalByCut,
+                            filteredField = filteredStats.totalByCut,
                             modifier = Modifier
-                                .width(8.dp)
                         )
-                        if (filteredStats.totalByCut.any { it.key != "Unassigned" }) {
-                            Text(
-                                text = totalByCutFiltered,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .semantics {
-                                        contentDescription = totalByCutFiltered.toString()
-                                    },
-                                fontSize = 15.sp,
-                                textAlign = TextAlign.Start,
-                                softWrap = true,
-                            )
-                        }
                     }
 
                     // Fifth section counts by container
-                    Row(
-                        modifier = Modifier,
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        if (rawStats.totalByContainer.any { it.key != "Unassigned" }) {
-                            Text(
-                                text = totalByContainer,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .semantics { contentDescription = totalByContainer.toString() },
-                                fontSize = 15.sp,
-                                textAlign = TextAlign.Start,
-                                softWrap = true,
-                            )
-                        }
-                        if (filteredStats.totalByContainer.any { it.key != "Unassigned" }) {
-                            Spacer(
-                                modifier = Modifier
-                                    .width(8.dp)
-                            )
-                            Text(
-                                text = totalByContainerFiltered,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .semantics {
-                                        contentDescription = totalByContainerFiltered.toString()
-                                    },
-                                fontSize = 15.sp,
-                                textAlign = TextAlign.Start,
-                                softWrap = true,
-                            )
-                        }
-                    }
-                    if (rawStats.totalOpened != null) {
-                        Row(
-                            modifier = Modifier,
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.Top,
-                        ) {
-                                Text(
-                                    text = "${rawStats.totalOpened} opened",
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(bottom = 12.dp),
-                                    fontSize = 15.sp,
-                                    textAlign = TextAlign.Start,
-                                    softWrap = true,
-                                )
-                            Spacer(
-                                modifier = Modifier
-                                    .width(8.dp)
-                            )
-                            if (filteredStats.totalOpened != null) {
-                                Text(
-                                    text = "${filteredStats.totalOpened} opened",
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    fontSize = 15.sp,
-                                    textAlign = TextAlign.Start,
-                                    softWrap = true,
-                                )
-                            }
-                        }
+                    if (rawStats.totalByContainer.any { it.key != "Unassigned" }) {
+                        StatSubSection(
+                            rawField = rawStats.totalByContainer,
+                            filteredField = filteredStats.totalByContainer,
+                            modifier = Modifier
+                        )
                     }
                 }
             }
@@ -609,13 +451,188 @@ fun QuickStatsSection(
                 )
             }
         }
-        Spacer(
-            modifier = Modifier
-                .height(8.dp)
-        )
-    }
 
+        Spacer(modifier = Modifier.height(8.dp))
+    }
 }
+
+@Composable
+private fun StatSubSection(
+    rawField: Map<String, Int>,
+    filteredField: Map<String, Int>,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Top,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+    ) {
+        // Raw Stats
+        Column (
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 16.dp)
+        ) {
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .fillMaxWidth(.65f),
+                thickness = 1.dp
+            )
+            SelectionContainer(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    // Value
+                    Column(
+                        modifier = Modifier
+                            .width(IntrinsicSize.Min)
+                            .padding(end = 6.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Top,
+                    ) {
+                        rawField.forEach {
+                            Text(
+                                text = "${it.value} ",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(end = 1.dp),
+                                textAlign = TextAlign.Start,
+                                fontSize = 15.sp,
+                            )
+                        }
+                    }
+                    // Key
+                    Column(
+                        modifier = Modifier,
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Top,
+                    ) {
+                        rawField.forEach {
+                            Text(
+                                text = it.key,
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                textAlign = TextAlign.Start,
+                                fontSize = 15.sp,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Filtered Stats
+        Column (
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+        ) {
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .fillMaxWidth(.65f),
+                thickness = 1.dp,
+            )
+            SelectionContainer {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    if (filteredField.any { it.value > 0 }) {
+                        // Value
+                        Column(
+                            modifier = Modifier
+                                .width(IntrinsicSize.Min)
+                                .padding(end = 6.dp),
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.Top,
+                        ) {
+                            filteredField.forEach {
+                                if (it.value == 0) {
+                                    Text(
+                                        text = "",
+                                        modifier = Modifier,
+                                        textAlign = TextAlign.Start,
+                                        fontSize = 15.sp,
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${it.value} ",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(end = 1.dp),
+                                        textAlign = TextAlign.Start,
+                                        fontSize = 15.sp,
+                                    )
+                                }
+                            }
+                        }
+
+                        // Key
+                        Column(
+                            modifier = Modifier,
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.Top,
+                        ) {
+                            filteredField.forEach {
+                                if (it.value == 0) {
+                                    Text(
+                                        text = "--",
+                                        modifier = Modifier
+                                            .padding(start = 12.dp)
+                                            .alpha(.5f),
+                                        textAlign = TextAlign.Start,
+                                        fontSize = 15.sp,
+                                    )
+                                } else {
+                                    Text(
+                                        text = it.key,
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        textAlign = TextAlign.Start,
+                                        fontSize = 15.sp,
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(.75f)
+                                .padding(bottom = 16.dp),
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(
+                                text = "nothing found",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .alpha(.6f),
+                                textAlign = TextAlign.Center,
+                                fontSize = 15.sp,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
