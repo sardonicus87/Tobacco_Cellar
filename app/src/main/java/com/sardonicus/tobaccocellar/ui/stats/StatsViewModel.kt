@@ -63,19 +63,67 @@ class StatsViewModel(
                     favoriteCount = it.count { it.items.favorite },
                     dislikedCount = it.count { it.items.disliked },
                     totalByBrand = it.groupingBy { it.items.brand }.eachCount(),
-                    totalByType = it.groupingBy {
-                        if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
                     estimatedWeight = calculateTotal(it, preferencesRepo.quantityOption.first()),
-                    totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
+                    totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) 0
                         else it.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
+
+                    totalByType = it.groupingBy {
+                        if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .associate { it.key to it.value }
+                        .let{
+                            val mutableMap = it.toMutableMap()
+                            val unassignedEntry = mutableMap.remove("Unassigned")
+                            if (unassignedEntry != null) {
+                                mutableMap["Unassigned"] = unassignedEntry
+                            }
+                            mutableMap.toMap()
+                        },
                     totalBySubgenre = it.groupingBy {
-                        if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
+                        if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .associate { it.key to it.value }
+                        .let{
+                            val mutableMap = it.toMutableMap()
+                            val unassignedEntry = mutableMap.remove("Unassigned")
+                            if (unassignedEntry != null) {
+                                mutableMap["Unassigned"] = unassignedEntry
+                            }
+                            mutableMap.toMap()
+                        },
                     totalByCut = it.groupingBy {
-                        if(it.items.cut.isBlank()) "Unassigned" else it.items.cut }.eachCount(),
+                        if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .associate { it.key to it.value }
+                        .let {
+                            val mutableMap = it.toMutableMap()
+                            val unassignedEntry = mutableMap.remove("Unassigned")
+                            if (unassignedEntry != null) {
+                                mutableMap["Unassigned"] = unassignedEntry
+                            }
+                            mutableMap.toMap()
+                        },
                     totalByContainer = it.flatMap { it.tins }.groupingBy {
-                        if(it.container.isBlank()) "Unassigned" else it.container }.eachCount(),
+                        if (it.container.isBlank()) "Unassigned" else it.container }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .associate { it.key to it.value }
+                        .let {
+                            val mutableMap = it.toMutableMap()
+                            val unassignedEntry = mutableMap.remove("Unassigned")
+                            if (unassignedEntry != null) {
+                                mutableMap["Unassigned"] = unassignedEntry
+                            }
+                            mutableMap.toMap()
+                        },
 
                     rawLoading = false
                 )
@@ -174,7 +222,6 @@ class StatsViewModel(
 
             val unassignedCount = filteredItems.count { it.items.type.isBlank() }
 
-
             flow {
                 emit(
                     FilteredStats(
@@ -191,21 +238,81 @@ class StatsViewModel(
                         brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
                         favoriteCount = filteredItems.count { it.items.favorite },
                         dislikedCount = filteredItems.count { it.items.disliked },
-                        totalByType = filteredItems.groupingBy {
-                            if (it.items.type.isBlank()) "Unassigned" else it.items.type }
-                            .eachCount(),
                         unassignedCount = unassignedCount,
                         totalQuantity = filteredItems.sumOf { it.items.quantity },
                         estimatedWeight = calculateTotal(filteredItems, preferencesRepo.quantityOption.first()),
-                        totalOpened = if (filteredItems.map { it.tins }.isEmpty() || filteredItems.map { it.tins }.all { it.all { it.openDate == null } }) null
+                        totalOpened = if (filteredItems.map { it.tins }.isEmpty() || filteredItems.map { it.tins }.all { it.all { it.openDate == null } }) 0
                             else filteredItems.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
                         totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
-                        totalBySubgenre = filteredItems.groupingBy {
-                            if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }.eachCount(),
-                        totalByCut = filteredItems.groupingBy {
-                            if(it.items.cut.isBlank()) "Unassigned" else it.items.cut }.eachCount(),
-                        totalByContainer = filteredItems.flatMap { it.tins }.groupingBy {
-                            if(it.container.isBlank()) "Unassigned" else it.container }.eachCount(),
+
+                        totalByType = allItems.groupingBy {
+                            if (it.items.type.isBlank()) "Unassigned" else it.items.type }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .associate {
+                                it.key to (filteredItems.groupingBy {
+                                    if (it.items.type.isBlank()) "Unassigned" else it.items.type
+                                }.eachCount()[it.key] ?: 0)
+                            }.let {
+                                val mutableMap = it.toMutableMap()
+                                val unassignedEntry = mutableMap.remove("Unassigned")
+                                if (unassignedEntry != null) {
+                                    mutableMap["Unassigned"] = unassignedEntry
+                                }
+                                mutableMap.toMap()
+                            },
+                        totalBySubgenre = allItems.groupingBy {
+                            if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .associate {
+                                it.key to (filteredItems.groupingBy {
+                                    if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre
+                                }.eachCount()[it.key] ?: 0)
+                            }.let {
+                                val mutableMap = it.toMutableMap()
+                                val unassignedEntry = mutableMap.remove("Unassigned")
+                                if (unassignedEntry != null) {
+                                    mutableMap["Unassigned"] = unassignedEntry
+                                }
+                                mutableMap.toMap()
+                            },
+                        totalByCut = allItems.groupingBy {
+                            if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .associate {
+                                it.key to (filteredItems.groupingBy {
+                                    if (it.items.cut.isBlank()) "Unassigned" else it.items.cut
+                                }.eachCount()[it.key] ?: 0)
+                            }.let {
+                                val mutableMap = it.toMutableMap()
+                                val unassignedEntry = mutableMap.remove("Unassigned")
+                                if (unassignedEntry != null) {
+                                    mutableMap["Unassigned"] = unassignedEntry
+                                }
+                                mutableMap.toMap()
+                            },
+                        totalByContainer = allItems.flatMap { it.tins }.groupingBy {
+                            if (it.container.isBlank()) "Unassigned" else it.container }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .associate {
+                                it.key to (filteredItems.flatMap { it.tins }.groupingBy {
+                                    if (it.container.isBlank()) "Unassigned" else it.container
+                                }.eachCount()[it.key] ?: 0)
+                            }.let {
+                                val mutableMap = it.toMutableMap()
+                                val unassignedEntry = mutableMap.remove("Unassigned")
+                                if (unassignedEntry != null) {
+                                    mutableMap["Unassigned"] = unassignedEntry
+                                }
+                                mutableMap.toMap()
+                            },
 
 
                         brandsByEntries = filteredItems
@@ -453,11 +560,12 @@ data class RawStats(
     val favoriteCount: Int = 0,
     val dislikedCount: Int = 0,
     val totalByBrand: Map<String, Int> = emptyMap(),
-    val totalByType: Map<String, Int> = emptyMap(),
     val totalQuantity: Int = 0,
     val estimatedWeight: String = "",
-    val totalOpened: Int? = null,
     val totalZeroQuantity: Int = 0,
+    val totalOpened: Int = 0,
+
+    val totalByType: Map<String, Int> = emptyMap(),
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
     val totalByContainer: Map<String, Int> = emptyMap(),
@@ -470,12 +578,13 @@ data class FilteredStats(
     val brandsCount: Int = 0,
     val favoriteCount: Int = 0,
     val dislikedCount: Int = 0,
-    val totalByType: Map<String, Int> = emptyMap(),
     val unassignedCount: Int = 0,
     val totalQuantity: Int = 0,
     val estimatedWeight: String = "",
-    val totalOpened: Int? = null,
     val totalZeroQuantity: Int = 0,
+    val totalOpened: Int = 0,
+
+    val totalByType: Map<String, Int> = emptyMap(),
     val totalBySubgenre: Map<String, Int> = emptyMap(),
     val totalByCut: Map<String, Int> = emptyMap(),
     val totalByContainer: Map<String, Int> = emptyMap(),
