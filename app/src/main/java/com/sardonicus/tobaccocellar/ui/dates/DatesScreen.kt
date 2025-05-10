@@ -177,7 +177,7 @@ fun DatesBody(
                 ) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "No date information found within$filtered entries.",
+                        text = "No date information found within entries.",
                         modifier = Modifier
                             .fillMaxWidth(.75f),
                         textAlign = TextAlign.Center,
@@ -288,11 +288,11 @@ fun DateInfo(
                         showTime = true
                     )
                 } else {
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "No tins ready this week.",
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         fontSize = 15.sp,
                     )
