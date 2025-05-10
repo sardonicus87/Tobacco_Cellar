@@ -145,7 +145,7 @@ class DatesViewModel(
             val averageFutureOpen = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate }
 
             val tins = filteredItems.flatMap { it.tins }
-            val tinDates = listOfNotNull(tins.map { it.manufactureDate }, tins.map { it.cellarDate }, tins.map { it.openDate })
+            val tinDates = tins.mapNotNull { it.manufactureDate } + tins.mapNotNull { it.cellarDate } + tins.mapNotNull { it.openDate }
 
             flow {
                 emit(
