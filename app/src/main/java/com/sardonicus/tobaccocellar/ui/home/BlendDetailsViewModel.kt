@@ -33,9 +33,6 @@ class BlendDetailsViewModel(
 
     private val itemsId: Int = checkNotNull(savedStateHandle[BlendDetailsDestination.itemsIdArg])
 
-//    var blendDetails by mutableStateOf(BlendDetails())
-//        private set
-
     private val _blendDetails = MutableStateFlow(BlendDetails())
     val blendDetails = _blendDetails.asStateFlow()
 
@@ -166,20 +163,6 @@ class BlendDetailsViewModel(
         return formattedSum?.toString() ?: ""
     }
 
-    fun formatDecimal(number: Double): String {
-        val rounded = round(number * 100) / 100
-        val formatted = String.format("%.2f", rounded)
-        return when {
-            formatted.endsWith("00") -> {
-                formatted.substringBefore(".")
-            }
-            formatted.endsWith("0") -> {
-                formatted.substring(0, formatted.length - 1)
-            }
-            else -> formatted
-        }
-    }
-
 }
 
 data class BlendDetails(
@@ -293,5 +276,19 @@ fun isMetricLocale(): Boolean {
     return when (locale.country.uppercase()) {
         "US", "LR", "MM" -> false
         else -> true
+    }
+}
+
+fun formatDecimal(number: Double): String {
+    val rounded = round(number * 100) / 100
+    val formatted = String.format("%.2f", rounded)
+    return when {
+        formatted.endsWith("00") -> {
+            formatted.substringBefore(".")
+        }
+        formatted.endsWith("0") -> {
+            formatted.substring(0, formatted.length - 1)
+        }
+        else -> formatted
     }
 }
