@@ -610,10 +610,10 @@ fun CellarBottomAppBar(
 
                     Box(
                         modifier = Modifier
-                            .size(7.dp)
+                            .size(8.dp)
                             .offset(x = 13.dp, y = (-17).dp)
                             .clip(CircleShape)
-                            .border(1.dp, borderColor, CircleShape)
+                            .border(1.5.dp, borderColor, CircleShape)
                             .background(if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent)
                     )
                     IconButton(
@@ -2794,10 +2794,7 @@ fun FlavoringFilterSection(
                 FilterChip(
                     selected = selectedFlavors.contains(flavor),
                     onClick = {
-                        filterViewModel.updateSelectedFlavoring(
-                            flavor,
-                            !selectedFlavors.contains(flavor)
-                        )
+                        filterViewModel.updateSelectedFlavoring(flavor, !selectedFlavors.contains(flavor))
                     },
                     label = {
                         Text(
@@ -2967,14 +2964,8 @@ fun FlavoringFilterSection(
                                     FlowRow(
                                         modifier = Modifier
                                             .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(
-                                            4.dp,
-                                            Alignment.Start
-                                        ),
-                                        verticalArrangement = Arrangement.spacedBy(
-                                            0.dp,
-                                            Alignment.Top
-                                        )
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
+                                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
                                     ) {
                                         availableFlavors.forEach {
                                             FilterChip(
