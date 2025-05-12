@@ -458,7 +458,7 @@ fun BlendDetailsBody(
                                                 )
                                             }
                                             if (it.unit.isNotEmpty()) {
-                                                val quantity = viewModel.formatDecimal(it.tinQuantity)
+                                                val quantity = formatDecimal(it.tinQuantity)
                                                 Text(
                                                     text = buildString(
                                                         "Quantity: ",
@@ -548,17 +548,11 @@ fun BlendDetailsBody(
                         }
                     }
                 }
-                Spacer(
-                    modifier = Modifier
-                        .height(6.dp)
-                )
+                Spacer(modifier = Modifier.height(6.dp))
             }
         }
 
-        Spacer(
-            modifier = Modifier
-                .height(16.dp)
-        )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
