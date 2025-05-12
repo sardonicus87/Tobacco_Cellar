@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.sardonicus.tobaccocellar.ui.home.ListSorting
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
@@ -30,6 +31,7 @@ class PreferencesRepo(
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
+        val LIST_SORTING = stringPreferencesKey("list_sorting")
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
@@ -112,6 +114,25 @@ class PreferencesRepo(
         dataStore.edit { preferences ->
             preferences[SORT_COLUMN_INDEX] = columnIndex
             preferences[SORT_ASCENDING] = ascending
+        }
+    }
+
+    // setting list sort options //
+    val listSorting: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading list sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[LIST_SORTING] ?: ListSorting.DEFAULT.value
+        }
+
+    suspend fun saveListSorting(listSorting: String) {
+        dataStore.edit {
+            it[LIST_SORTING] = listSorting
         }
     }
 
