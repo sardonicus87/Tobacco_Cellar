@@ -108,6 +108,7 @@ class FilterViewModel (
 
     val sheetSelectedHasTins = MutableStateFlow(false)
     val sheetSelectedNoTins = MutableStateFlow(false)
+    val sheetSelectedContainer = MutableStateFlow<List<String>>(emptyList())
 
 
     // inclusionary filter states //
@@ -168,6 +169,23 @@ class FilterViewModel (
     private val _selectedNoTins = MutableStateFlow(false)
     val selectedNoTins: StateFlow<Boolean> = _selectedNoTins
 
+    // tins switch and filtering
+    val showTins: StateFlow<Boolean> = combine(
+        sheetSelectedContainer
+    ) {
+        val container = it[0] as List<String>
+
+        container.isNotEmpty()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
+
+    private val _selectedContainer = MutableStateFlow<List<String>>(emptyList())
+    val selectedContainer: StateFlow<List<String>> = _selectedContainer
+
 
     // exclusionary filter states //
     private val _selectedExcludeBrands = MutableStateFlow<List<String>>(emptyList())
@@ -182,26 +200,13 @@ class FilterViewModel (
 
     // filter applied state for clear all button //
     val isFilterApplied: StateFlow<Boolean> = combine(
-        sheetSelectedBrands,
-        sheetSelectedTypes,
-        sheetSelectedUnassigned,
-        sheetSelectedFavorites,
-        sheetSelectedDislikeds,
-        sheetSelectedNeutral,
-        sheetSelectedNonNeutral,
-        sheetSelectedInStock,
-        sheetSelectedOutOfStock,
-        sheetSelectedExcludeBrands,
-        sheetSelectedExcludeLikes,
-        sheetSelectedExcludeDislikes,
-        sheetSelectedSubgenres,
-        sheetSelectedCuts,
-        sheetSelectedComponents,
-        sheetSelectedFlavorings,
-        sheetSelectedProduction,
-        sheetSelectedOutOfProduction,
-        sheetSelectedHasTins,
-        sheetSelectedNoTins
+        sheetSelectedBrands, sheetSelectedTypes, sheetSelectedUnassigned, sheetSelectedFavorites,
+        sheetSelectedDislikeds, sheetSelectedNeutral, sheetSelectedNonNeutral, sheetSelectedInStock,
+        sheetSelectedOutOfStock, sheetSelectedExcludeBrands, sheetSelectedExcludeLikes,
+        sheetSelectedExcludeDislikes, sheetSelectedSubgenres, sheetSelectedCuts,
+        sheetSelectedComponents, sheetSelectedFlavorings, sheetSelectedProduction,
+        sheetSelectedOutOfProduction, sheetSelectedHasTins, sheetSelectedNoTins,
+        sheetSelectedContainer
     ) {
         val brands = it[0] as List<String>
         val types = it[1] as List<String>
@@ -223,6 +228,7 @@ class FilterViewModel (
         val outOfProduction = it[17] as Boolean
         val hasTins = it[18] as Boolean
         val noTins = it[19] as Boolean
+        val container = it[20] as List<String>
 
         brands.isNotEmpty() ||
             types.isNotEmpty() ||
@@ -243,7 +249,8 @@ class FilterViewModel (
             production ||
             outOfProduction ||
             hasTins ||
-            noTins
+            noTins ||
+            container.isNotEmpty()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -339,6 +346,10 @@ class FilterViewModel (
     private val _availableFlavors = MutableStateFlow<List<String>>(emptyList())
     val availableFlavors: StateFlow<List<String>> = _availableFlavors
 
+    private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
+    val availableContainers: StateFlow<List<String>> = _availableContainers
+
+
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
     private val refresh = _refresh.asSharedFlow()
 
@@ -384,26 +395,35 @@ class FilterViewModel (
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
                     _availableComponents.value = it.flatMap {
-                        it.components }.map {
-                        if (it.componentName.isBlank()) {
-                            "(None Assigned)"
+                        if (it.components.isEmpty()) {
+                            listOf("(None Assigned)")
                         } else {
-                            it.componentName
+                            it.components.map { it.componentName }
                         }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
                             .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
                     )
                     _availableFlavors.value = it.flatMap {
-                        it.flavoring }.map {
-                        if (it.flavoringName.isBlank()) {
-                            "(None Assigned)"
+                        if (it.flavoring.isEmpty()) {
+                            listOf("(None Assigned)")
                         } else {
-                            it.flavoringName
+                            it.flavoring.map { it.flavoringName }
                         }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
                             .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
+                    )
+                    _availableContainers.value = it.flatMap {
+                        it.tins }.map {
+                        if (it.container.isBlank()) {
+                            "(Unassigned)"
+                        } else {
+                            it.container
+                        }
+                    }.distinct().sortedWith(
+                        compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
+                            .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
                 }
             }
@@ -446,6 +466,25 @@ class FilterViewModel (
                 if (invalidComponents.isNotEmpty()) {
                     sheetSelectedComponents.value = sheetSelectedComponents.value.filter { it in availableComponents.value }
                     _selectedComponent.value = _selectedComponent.value.filter { it in availableComponents.value }
+                }
+            }
+        }
+        viewModelScope.launch {
+            _availableFlavors.collectLatest {
+                val invalidFlavors = _selectedFlavoring.value.filter { it !in availableFlavors.value }
+                if (invalidFlavors.isNotEmpty()) {
+                    sheetSelectedFlavorings.value = sheetSelectedFlavorings.value.filter { it in availableFlavors.value }
+                    _selectedFlavoring.value = _selectedFlavoring.value.filter { it in availableFlavors.value }
+                }
+            }
+        }
+        viewModelScope.launch {
+            _availableContainers.collectLatest {
+                val invalidContainers =
+                    sheetSelectedContainer.value.filter { it !in availableContainers.value }
+                if (invalidContainers.isNotEmpty()) {
+                    sheetSelectedContainer.value = sheetSelectedContainer.value.filter { it in availableContainers.value }
+                    _selectedContainer.value = _selectedContainer.value.filter { it in availableContainers.value }
                 }
             }
         }
@@ -769,6 +808,8 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
+
+    // Tins filtering //
     fun updateSelectedHasTins(isSelected: Boolean) {
         sheetSelectedHasTins.value = isSelected
         _selectedHasTins.value = isSelected
@@ -793,6 +834,19 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
+    fun updateSelectedContainer(container: String, isSelected: Boolean) {
+        if (isSelected) {
+            sheetSelectedContainer.value += container
+            _selectedContainer.value += container
+        } else {
+            sheetSelectedContainer.value -= container
+            _selectedContainer.value -= container
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+
 
     fun clearAllSelectedBrands() {
         sheetSelectedBrands.value = emptyList()
@@ -804,8 +858,8 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
-
     fun resetFilter() {
+        // sheet state //
         sheetSelectedBrands.value = emptyList()
         sheetSelectedTypes.value = emptyList()
         sheetSelectedUnassigned.value = false
@@ -826,9 +880,12 @@ class FilterViewModel (
         sheetSelectedFlavoringMatching.value = "Any"
         sheetSelectedProduction.value = false
         sheetSelectedOutOfProduction.value = false
+
         sheetSelectedHasTins.value = false
         sheetSelectedNoTins.value = false
+        sheetSelectedContainer.value = emptyList()
 
+        // filtering state //
         _selectedBrands.value = emptyList()
         _selectedTypes.value = emptyList()
         _selectedUnassigned.value = false
@@ -849,8 +906,10 @@ class FilterViewModel (
         _flavorMatching.value = "Any"
         _selectedProduction.value = false
         _selectedOutOfProduction.value = false
+
         _selectedHasTins.value = false
         _selectedNoTins.value = false
+        _selectedContainer.value = emptyList()
 
         _shouldScrollUp.value = true
     }
