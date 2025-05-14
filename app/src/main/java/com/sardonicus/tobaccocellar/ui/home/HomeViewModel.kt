@@ -50,8 +50,11 @@ class HomeViewModel(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    private val _sorting = mutableStateOf(Sorting())
-    val sorting: State<Sorting> = _sorting
+    private val _tableTableSorting = mutableStateOf(TableSorting())
+    val tableSorting: State<TableSorting> = _tableTableSorting
+
+    private val _listSorting = MutableStateFlow(ListSorting.DEFAULT.value)
+    val listSorting: StateFlow<String> = _listSorting.asStateFlow()
 
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
@@ -65,9 +68,14 @@ class HomeViewModel(
                 preferencesRepo.sortColumnIndex,
                 preferencesRepo.sortAscending
             ) { columnIndex, sortAscending ->
-                Sorting(columnIndex, sortAscending)
+                TableSorting(columnIndex, sortAscending)
             }.collect {
-                _sorting.value = it
+                _tableTableSorting.value = it
+            }
+        }
+        viewModelScope.launch {
+            preferencesRepo.listSorting.collect {
+                _listSorting.value = it
             }
         }
         viewModelScope.launch {
@@ -119,8 +127,12 @@ class HomeViewModel(
                 initialValue = HomeUiState(isLoading = true)
             )
 
+    // Filtering stuff //
     private val _filteredItems = MutableStateFlow<List<ItemsComponentsAndTins>>(listOf())
     val filteredItems: StateFlow<List<ItemsComponentsAndTins>> = _filteredItems.asStateFlow()
+
+    private val _filteredTins = MutableStateFlow<List<Tins>>(listOf())
+    val filteredTins: StateFlow<List<Tins>> = _filteredTins.asStateFlow()
 
     private fun filterParameters(): FilterParameters {
         return FilterParameters(
@@ -146,7 +158,8 @@ class HomeViewModel(
             filterViewModel.selectedProduction.value,
             filterViewModel.selectedOutOfProduction.value,
             filterViewModel.selectedHasTins.value,
-            filterViewModel.selectedNoTins.value
+            filterViewModel.selectedNoTins.value,
+            filterViewModel.selectedContainer.value
         )
     }
 
@@ -177,6 +190,7 @@ class HomeViewModel(
                 filterViewModel.selectedOutOfProduction,
                 filterViewModel.selectedHasTins,
                 filterViewModel.selectedNoTins,
+                filterViewModel.selectedContainer,
                 preferencesRepo.searchSetting
             ) {
                 filterItems(everythingFlow.first(), filterParameters(), preferencesRepo.searchSetting.first())
@@ -209,6 +223,7 @@ class HomeViewModel(
             val outOfProduction = filterParams.selectedOutOfProduction
             val hasTins = filterParams.selectedHasTins
             val noTins = filterParams.selectedNoTins
+            val container = filterParams.selectedContainer
 
             val filteredItems =
                 if (searchValue.isBlank()) {
@@ -243,7 +258,8 @@ class HomeViewModel(
                                 (!production || items.items.inProduction) &&
                                 (!outOfProduction || !items.items.inProduction) &&
                                 (!hasTins || items.tins.isNotEmpty()) &&
-                                (!noTins || items.tins.isEmpty())
+                                (!noTins || items.tins.isEmpty()) &&
+                                ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || container.any { container-> items.tins.any { it.container == container } } )) // items.tins.map { it.container }.any { it in container }
                     }
                 } else {
                     when (searchSetting) {
@@ -265,7 +281,18 @@ class HomeViewModel(
                     }
                 }
 
+            // quantity, manufacture cellared opened
+            val filteredTins =
+                if (searchValue.isBlank()) {
+                    filteredItems.flatMap { it.tins }.filter {
+                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && it.container.isEmpty()) || container.contains( it.container )))
+                    }
+                } else {
+                    allItems.flatMap { it.tins }
+                }
+
             _filteredItems.value = filteredItems
+            _filteredTins.value = filteredTins
         }
     }
 
@@ -288,31 +315,35 @@ class HomeViewModel(
     }
 
 
-    /** Toggle view **/
+    /** Sorting and toggle view **/
     fun selectView(isTableView: Boolean) {
         viewModelScope.launch {
             preferencesRepo.saveViewPreference(isTableView)
         }
     }
 
+    fun saveListSorting(value: String) {
+        viewModelScope.launch {
+            preferencesRepo.saveListSorting(value)
+        }
+    }
 
-    /** Toggle Sorting **/
     fun updateSorting(columnIndex: Int) {
-        val currentSorting = _sorting.value
-        val newSorting =
+        val currentSorting = _tableTableSorting.value
+        val newTableSorting =
             if (currentSorting.columnIndex == columnIndex) {
                 when {
                     currentSorting.sortAscending -> currentSorting.copy(sortAscending = false)
-                    else -> Sorting()
+                    else -> TableSorting()
                 }
             } else {
-                Sorting(columnIndex, true)
+                TableSorting(columnIndex, true)
             }
 
-        _sorting.value = newSorting
+        _tableTableSorting.value = newTableSorting
         viewModelScope.launch {
             preferencesRepo.saveTableSortingPreferences(
-                newSorting.columnIndex, newSorting.sortAscending
+                newTableSorting.columnIndex, newTableSorting.sortAscending
             )
         }
     }
@@ -465,12 +496,23 @@ data class HomeUiState(
     val isLoading: Boolean = false
 )
 
-data class Sorting(
+data class TableSorting(
     val columnIndex: Int = -1,
     val sortAscending: Boolean = true,
     val sortIcon: Int =
         if (sortAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
 )
+
+data class ListSorting(
+    val value: String = "Default"
+) {
+    companion object {
+        val DEFAULT = ListSorting("Default")
+        val BLEND = ListSorting("Blend")
+        val BRAND = ListSorting("Brand")
+        val TYPE = ListSorting("Type")
+    }
+}
 
 @Stable
 data class FilterParameters(
@@ -495,8 +537,10 @@ data class FilterParameters(
     val selectedCut: List<String>,
     val selectedProduction: Boolean,
     val selectedOutOfProduction: Boolean,
+
     val selectedHasTins: Boolean,
-    val selectedNoTins: Boolean
+    val selectedNoTins: Boolean,
+    val selectedContainer: List<String>
 )
 
 sealed class SearchSetting(val value: String) {
