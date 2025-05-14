@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -83,6 +82,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -115,6 +115,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
@@ -171,12 +172,15 @@ fun HomeScreen(
     val searchText by filterViewModel.searchTextDisplay.collectAsState()
 
     val filteredItems by viewmodel.filteredItems.collectAsState()
+    val filteredTins by viewmodel.filteredTins.collectAsState()
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val resetLoading by viewmodel.resetLoading.collectAsState()
     val isTableView = homeUiState.isTableView
     val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
-    val sorting by viewmodel.sorting
+    val tableSorting by viewmodel.tableSorting
+    val listSorting by viewmodel.listSorting.collectAsState()
+    val currentListSorting by preferencesRepo.listSorting.collectAsState(initial = ListSorting.DEFAULT.value)
 
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     if (showSnackbar.value) {
@@ -486,6 +490,8 @@ fun HomeScreen(
                 searchText = searchText,
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
+                saveListSorting = viewmodel::saveListSorting,
+                listSorting = currentListSorting
             )
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
@@ -496,6 +502,7 @@ fun HomeScreen(
                     resetLoading = resetLoading,
                     isTableView = isTableView,
                     items = filteredItems,
+                    tins = filteredTins,
                     formattedQuantity = homeUiState.formattedQuantities,
                     filterViewModel = filterViewModel,
                     onDetailsClick = { if (lastClickedItemId != it) lastClickedItemId = it },
@@ -505,8 +512,9 @@ fun HomeScreen(
                     onDismissMenu = viewmodel::onDismissMenu,
                     isMenuShown = isMenuShown,
                     searchFocused = searchFocused,
-                    sorting = sorting,
+                    tableSorting = tableSorting,
                     updateSorting = viewmodel::updateSorting,
+                    listSorting = listSorting,
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(0.dp),
@@ -527,6 +535,8 @@ private fun HomeHeader(
     filterViewModel: FilterViewModel,
     searchText: String,
     selectView: (Boolean) -> Unit,
+    saveListSorting: (String) -> Unit,
+    listSorting: String,
 ) {
     Row(
         modifier = modifier
@@ -541,7 +551,9 @@ private fun HomeHeader(
         Row(
             modifier = Modifier
                 .padding(0.dp)
-                .widthIn(min = 84.dp),
+                //    .widthIn(min = 84.dp)
+                .width(74.dp)
+            ,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
@@ -570,9 +582,7 @@ private fun HomeHeader(
             }
         }
         Spacer(
-            modifier = Modifier
-                .width(8.dp)
-        )
+            modifier = Modifier.width(8.dp))
 
         // Search field
         Box(
@@ -691,21 +701,95 @@ private fun HomeHeader(
                 placeholder = "${currentSetting.value} Search",
             )
         }
-        Spacer(
-            modifier = Modifier
-                .width(8.dp)
-        )
 
-        // total items
-        Text(
-            text = "Entries: ${filteredItems.size}",
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // total items & list sorting
+        Row(
             modifier = Modifier
-                .widthIn(min = 84.dp),
-            textAlign = TextAlign.End,
-            fontWeight = FontWeight.Normal,
-            fontSize = 14.sp,
-            maxLines = 1,
-        )
+                .padding(0.dp)
+                //    .widthIn(min = 84.dp)
+                .width(68.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+        ) {
+            var sortingMenu by rememberSaveable { mutableStateOf(false) }
+            Icon(
+                painter = painterResource(id = R.drawable.sort_bars),
+                contentDescription = "List sorting",
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(20.dp)
+                    .clickable(enabled = !isTableView) {
+                        sortingMenu = !sortingMenu
+                    },
+                tint = if (isTableView) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+            )
+            DropdownMenu(
+                expanded = sortingMenu,
+                onDismissRequest = { sortingMenu = false },
+                modifier = Modifier
+                    .width(94.dp),
+                containerColor = LocalCustomColors.current.textField,
+            ) {
+                listOf(ListSorting.DEFAULT, ListSorting.BLEND, ListSorting.BRAND, ListSorting.TYPE).forEach {
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier,
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Start,
+                            ) {
+                                Text(
+                                    text = it.value,
+                                    fontWeight = FontWeight.Normal,
+                                    modifier = Modifier
+                                        .padding(end = 2.dp)
+                                )
+                                if (listSorting == it.value) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .size(5.dp)
+                                            .clip(CircleShape)
+                                            .background(LocalContentColor.current)
+                                    )
+                                }
+                            }
+                        },
+                        onClick = {
+                            saveListSorting(it.value)
+                            sortingMenu = false
+                        },
+                        modifier = Modifier
+                            .padding(0.dp),
+                        enabled = true,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            Box (
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = "999",
+                    modifier = Modifier,
+                    textAlign = TextAlign.End,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    color = Color.Transparent
+                )
+                Text(
+                    text = "${filteredItems.size}",
+                    modifier = Modifier,
+                    textAlign = TextAlign.End,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 
@@ -800,6 +884,7 @@ private fun HomeBody(
     resetLoading: Boolean,
     isTableView: Boolean,
     items: List<ItemsComponentsAndTins>,
+    tins: List<Tins>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     onDetailsClick: (Int) -> Unit,
@@ -809,8 +894,9 @@ private fun HomeBody(
     onDismissMenu: () -> Unit,
     isMenuShown: Boolean,
     searchFocused: Boolean,
-    sorting: Sorting,
+    tableSorting: TableSorting,
     updateSorting: (Int) -> Unit,
+    listSorting: String,
     modifier: Modifier = Modifier,
 ) {
     var showNoteDialog by remember { mutableStateOf(false) }
@@ -863,7 +949,7 @@ private fun HomeBody(
                         onEditClick = { onEditClick(it.id) },
                         onNoteClick = { item -> noteToDisplay = item.notes
                                       showNoteDialog = true },
-                        sorting = sorting,
+                        sorting = tableSorting,
                         updateSorting = updateSorting,
                         modifier = Modifier
                             .padding(0.dp)
@@ -872,6 +958,7 @@ private fun HomeBody(
                 } else {
                     ListViewMode(
                         itemsList = items,
+                        tinsList = tins,
                         formattedQuantity = formattedQuantity,
                         filterViewModel = filterViewModel,
                         searchFocused = searchFocused,
@@ -881,6 +968,7 @@ private fun HomeBody(
                         onShowMenu = onShowMenu,
                         onDismissMenu = onDismissMenu,
                         isMenuShown = isMenuShown,
+                        sorting = listSorting,
                         modifier = Modifier
                             .padding(0.dp)
                             .fillMaxWidth()
@@ -1085,6 +1173,7 @@ fun rememberJumpToState(
 @Composable
 fun ListViewMode(
     itemsList: List<ItemsComponentsAndTins>,
+    tinsList: List<Tins>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     searchFocused: Boolean,
@@ -1094,12 +1183,22 @@ fun ListViewMode(
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
     onDismissMenu: () -> Unit,
+    sorting: String,
     modifier: Modifier = Modifier,
 ) {
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val columnState = rememberLazyListState()
-    val (isVisible, scrollDirection) = rememberJumpToState(columnState, itemsList.size)
+
+    val sortedItems = when (sorting) {
+        "Default" -> itemsList.sortedBy { it.items.id }
+        "Blend" -> itemsList.sortedBy { it.items.blend }
+        "Brand" -> itemsList.sortedBy { it.items.brand }
+        "Type" -> itemsList.sortedBy { it.items.type }
+        else -> itemsList.sortedBy { it.items.id }
+    }
+
+    val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size) // itemsList
 
     Box(
         modifier = Modifier
@@ -1112,7 +1211,7 @@ fun ListViewMode(
                 .padding(0.dp),
             state = columnState,
         ) {
-            items(items = itemsList, key = { it.items.id }) { item ->
+            items(items = sortedItems, key = { it.items.id }) { item -> // itemsList
                 val haptics = LocalHapticFeedback.current
                 val focusManager = LocalFocusManager.current
 
@@ -1122,6 +1221,7 @@ fun ListViewMode(
 
                 CellarListItem(
                     item = item,
+                    filteredTins = tinsList,
                     formattedQuantity = formattedQuantity[item.items.id] ?: "--",
                     filterViewModel = filterViewModel,
                     onEditClick = { onEditClick(item.items) },
@@ -1160,14 +1260,14 @@ fun ListViewMode(
                     onMenuDismiss = {
                         onDismissMenu()
                     },
-                    showMenu = isMenuShown && activeMenuId == item.items.id,
+                    showMenu = isMenuShown && activeMenuId == item.items.id
                 )
             }
         }
 
         // jump to button
         AnimatedVisibility(
-            visible = isVisible && (itemsList.size > 99),
+            visible = isVisible && (sortedItems.size > 99), // itemsList
             enter = fadeIn(animationSpec = tween(150)),
             exit = fadeOut(animationSpec = tween(150)),
             modifier = Modifier
@@ -1190,11 +1290,11 @@ fun ListViewMode(
         }
 
 
-        val currentItemsList by rememberUpdatedState(itemsList)
+        val currentItemsList by rememberUpdatedState(sortedItems) // itemsList
         val currentPosition by filterViewModel.currentPosition.collectAsState()
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
-        val savedItemIndex = itemsList.indexOfFirst { it.items.id == savedItemId }
+        val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val getPosition by filterViewModel.getPosition.collectAsState()
 
@@ -1206,7 +1306,7 @@ fun ListViewMode(
             if (savedItemIndex != -1) {
                 withFrameNanos {
                     coroutineScope.launch {
-                        if (savedItemIndex > 0 && savedItemIndex < (itemsList.size - 1)) {
+                        if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) { // itemsList
                             val offset =
                                 (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                             columnState.scrollToItem(savedItemIndex, offset)
@@ -1237,6 +1337,15 @@ fun ListViewMode(
 
         }
 
+        LaunchedEffect(sorting) {
+            if (!searchPerformed) {
+                filterViewModel.resetScroll()
+                columnState.scrollToItem(0)
+            } else {
+                columnState.scrollToItem(0)
+            }
+        }
+
         // Save scroll position //
         LaunchedEffect(getPosition) {
             if (getPosition > 0 && !searchPerformed) {
@@ -1256,6 +1365,7 @@ fun ListViewMode(
 private fun CellarListItem(
     modifier: Modifier = Modifier,
     item: ItemsComponentsAndTins,
+    filteredTins: List<Tins>,
     formattedQuantity: String,
     filterViewModel: FilterViewModel,
     onMenuDismiss: () -> Unit,
@@ -1263,177 +1373,290 @@ private fun CellarListItem(
     onEditClick: (Items) -> Unit,
 ) {
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+    val showTins by filterViewModel.showTins.collectAsState()
 
-    Box(
-        modifier = modifier
-            .padding(0.dp)
+    Row (
+        modifier = Modifier
+            .fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = modifier
+                .padding(0.dp)
         ) {
-            // Entry info
-            Column(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .weight(1f, false),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-            ) {
-                // Entry Details
-                Column(
+            // main details
+            Column {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth(fraction = .95f),
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // blend name and fav/dis/notes icons
-                    Row(
+                    // Entry info
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(0.dp)
+                            .weight(1f, false),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
-                        Text(
-                            text = item.items.blend,
+                        // Entry Details
+                        Column(
                             modifier = Modifier
-                                .padding(end = 4.dp)
-                                .weight(1f, false),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                textDecoration = TextDecoration.None
-                            ),
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            softWrap = true,
-                            maxLines = 1,
-                        )
-                        if (item.items.favorite) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.heart_filled_24),
-                                contentDescription = null,
+                                .fillMaxWidth(fraction = .95f),
+                        ) {
+                            // blend name and fav/dis/notes icons
+                            Row(
                                 modifier = Modifier
-                                    .padding(start = 2.dp)
-                                    .size(17.dp),
-                                tint = LocalCustomColors.current.favHeart
-                            )
-                        }
-                        if (item.items.disliked) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.heartbroken_filled_24),
-                                contentDescription = null,
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = item.items.blend,
+                                    modifier = Modifier
+                                        .padding(end = 4.dp)
+                                        .weight(1f, false),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textDecoration = TextDecoration.None
+                                    ),
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 16.sp,
+                                    overflow = TextOverflow.Ellipsis,
+                                    softWrap = true,
+                                    maxLines = 1,
+                                )
+                                if (item.items.favorite) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.heart_filled_24),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(start = 2.dp)
+                                            .size(17.dp),
+                                        tint = LocalCustomColors.current.favHeart
+                                    )
+                                }
+                                if (item.items.disliked) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.heartbroken_filled_24),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(start = 2.dp)
+                                            .size(17.dp),
+                                        tint = LocalCustomColors.current.disHeart
+                                    )
+                                }
+                                if (item.items.notes.isNotEmpty()) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.notes_24),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(start = 2.dp)
+                                            .size(16.dp),
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                }
+                            }
+                            // brand and type
+                            Row(
                                 modifier = Modifier
-                                    .padding(start = 2.dp)
-                                    .size(17.dp),
-                                tint = LocalCustomColors.current.disHeart
-                            )
-                        }
-                        if (item.items.notes.isNotEmpty()) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.notes_24),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(start = 2.dp)
-                                    .size(16.dp),
-                                tint = MaterialTheme.colorScheme.tertiary
-                            )
+                                    .fillMaxWidth()
+                                    .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
+                                    .offset(y = (-4).dp),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    10.dp,
+                                    alignment = Alignment.Start
+                                ),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                // Brand Name //
+                                Text(
+                                    text = item.items.brand,
+                                    modifier = Modifier,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textDecoration = TextDecoration.None
+                                    ),
+                                    fontStyle = Italic,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 11.sp
+                                )
+                                // Other Info //
+                                Text(
+                                    text = item.items.type,
+                                    modifier = Modifier,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textDecoration = TextDecoration.None
+                                    ),
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 11.sp,
+                                )
+                            }
                         }
                     }
-                    // brand and type
-                    Row(
+                    // Quantity
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp, top = 0.dp, bottom = 0.dp, end = 8.dp)
-                            .offset(y = (-4).dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Start),
-                        verticalAlignment = Alignment.Top
+                            .width(IntrinsicSize.Max)
+                            .padding(0.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.End
                     ) {
-                        // Brand Name //
+                        val outOfStock = formattedQuantity == "0 oz" ||
+                                formattedQuantity == "x0" ||
+                                formattedQuantity == "0 g"
+
                         Text(
-                            text = item.items.brand,
+                            text = formattedQuantity,
                             modifier = Modifier,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                textDecoration = TextDecoration.None
-                            ),
-                            fontStyle = Italic,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp
-                        )
-                        // Other Info //
-                        Text(
-                            text = item.items.type,
-                            modifier = Modifier,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                textDecoration = TextDecoration.None
-                            ),
+                            style =
+                                if (outOfStock) (MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.error,
+                                    textDecoration = TextDecoration.None
+                                ))
+                                else (MaterialTheme.typography.titleMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textDecoration = TextDecoration.None
+                                )),
                             fontWeight = FontWeight.Normal,
-                            fontSize = 11.sp,
+                            fontSize = 16.sp
                         )
                     }
                 }
-            }
-            // Quantity
-            Column(
-                modifier = Modifier
-                    .width(IntrinsicSize.Max)
-                    .padding(0.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.End
-            ) {
-                val outOfStock = formattedQuantity == "0 oz" ||
-                formattedQuantity == "x0" ||
-                formattedQuantity == "0 g"
 
-                Text(
-                    text = formattedQuantity,
-                    modifier = Modifier,
-                    style =
-                        if (outOfStock) (MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.error,
-                            textDecoration = TextDecoration.None))
-                        else (MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            textDecoration = TextDecoration.None)),
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 16.sp
-                )
-            }
-        }
-
-        if (showMenu) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(0.dp)
-                    .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.75f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp, alignment = Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        onClick = {
-                            if (!searchPerformed) {
-                                filterViewModel.getPositionTrigger()
-                            }
-                            onEditClick(item.items)
-                            onMenuDismiss()
-                        },
-                        modifier = Modifier,
+                // Tins
+                if (item.tins.isNotEmpty() && showTins) {
+                    GlowBox(
+                        color = GlowColor(Color.Black.copy(alpha = .5f)),
+                        size = GlowSize(top = 3.dp),
+                        modifier = Modifier
                     ) {
-                        Text(
-                            text = "Edit Item",
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .background(
+                                        LocalCustomColors.current.sheetBox,
+                                        shape = RoundedCornerShape(bottomStart = 8.dp)
+                                    )
+                                    .padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                val tins = item.tins.filter { it in filteredTins }
+                                tins.forEach {
+                                    Row (
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Text(
+                                            text = it.tinLabel,
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp
+                                        )
+                                        if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
+                                            Text(
+                                                text = " (",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Normal,
+                                                fontSize = 13.sp
+                                            )
+                                            if (it.container.isNotEmpty()) {
+                                                Text(
+                                                    text = it.container,
+                                                    modifier = Modifier,
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            if (it.container.isNotEmpty() && it.unit.isNotEmpty()) {
+                                                Text(
+                                                    text = " - ",
+                                                    modifier = Modifier,
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            if (it.unit.isNotEmpty()) {
+                                                val quantity = formatDecimal(it.tinQuantity)
+                                                val unit = when (it.unit) {
+                                                    "grams" -> "g"
+                                                    else -> it.unit
+                                                }
+                                                Text(
+                                                    text = "$quantity $unit",
+                                                    modifier = Modifier,
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            Text(
+                                                text = ")",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Normal,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                    }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+            }
+
+            if (showMenu) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize() // height 54.dp
+                        .padding(0.dp)
+                   //     .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.75f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                            .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.75f)),
+                        horizontalArrangement = Arrangement.spacedBy(space = 16.dp, alignment = Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                if (!searchPerformed) {
+                                    filterViewModel.getPositionTrigger()
+                                }
+                                onEditClick(item.items)
+                                onMenuDismiss()
+                            },
                             modifier = Modifier,
-                            color = LocalContentColor.current,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        )
+                        ) {
+                            Text(
+                                text = "Edit Item",
+                                modifier = Modifier,
+                                color = LocalContentColor.current,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }
@@ -1458,7 +1681,7 @@ fun TableViewMode(
     onDetailsClick: (Items) -> Unit,
     onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
-    sorting: Sorting,
+    sorting: TableSorting,
     updateSorting: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1498,7 +1721,7 @@ fun TableLayout(
     onDetailsClick: (Items) -> Unit,
     onEditClick: (Items) -> Unit,
     onNoteClick: (Items) -> Unit,
-    sorting: Sorting,
+    sorting: TableSorting,
     updateSorting: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1528,10 +1751,10 @@ fun TableLayout(
         modifier = Modifier
             .fillMaxSize()
     ) {
+        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
         val columnState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
         val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
-        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
         Column(
             modifier = modifier
@@ -1828,12 +2051,15 @@ fun TableLayout(
                         filterViewModel.resetScroll()
                     }
                 }
-
             }
 
             LaunchedEffect(sorting) {
-                filterViewModel.resetScroll()
-                columnState.scrollToItem(0)
+                if (!searchPerformed) {
+                    filterViewModel.resetScroll()
+                    columnState.scrollToItem(0)
+                } else {
+                    columnState.scrollToItem(0)
+                }
             }
 
             // Save positions //
@@ -1881,7 +2107,7 @@ fun HeaderCell(
     text: String? = null,
     icon1: Painter? = null,
     icon2: Painter? = null,
-    sorting: Sorting,
+    sorting: TableSorting,
     primarySort: Boolean,
     onClick: (() -> Unit)? = null,
     contentAlignment: Alignment = Alignment.Center,
