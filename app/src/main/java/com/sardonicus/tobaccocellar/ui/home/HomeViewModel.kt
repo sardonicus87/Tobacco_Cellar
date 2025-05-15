@@ -101,7 +101,6 @@ class HomeViewModel(
             preferencesRepo.quantityOption,
             everythingFlow,
         ) { isTableView, quantityOption, allItems ->
-
             val formattedQuantities = allItems.associate {
                 val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
                 val totalQuantity = calculateTotalQuantity(it, quantityOption)
@@ -109,9 +108,7 @@ class HomeViewModel(
                 it.items.id to formattedQuantity
             }
 
-            if (formattedQuantities.isNotEmpty()) {
-                _resetLoading.value = false
-            }
+            if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
 
             HomeUiState(
                 items = allItems,
@@ -159,7 +156,11 @@ class HomeViewModel(
             filterViewModel.selectedOutOfProduction.value,
             filterViewModel.selectedHasTins.value,
             filterViewModel.selectedNoTins.value,
-            filterViewModel.selectedContainer.value
+            filterViewModel.selectedContainer.value,
+            filterViewModel.selectedOpened.value,
+            filterViewModel.selectedUnopened.value,
+            filterViewModel.selectedFinished.value,
+            filterViewModel.selectedUnfinished.value,
         )
     }
 
@@ -191,6 +192,10 @@ class HomeViewModel(
                 filterViewModel.selectedHasTins,
                 filterViewModel.selectedNoTins,
                 filterViewModel.selectedContainer,
+                filterViewModel.selectedOpened,
+                filterViewModel.selectedUnopened,
+                filterViewModel.selectedFinished,
+                filterViewModel.selectedUnfinished,
                 preferencesRepo.searchSetting
             ) {
                 filterItems(everythingFlow.first(), filterParameters(), preferencesRepo.searchSetting.first())
@@ -224,6 +229,10 @@ class HomeViewModel(
             val hasTins = filterParams.selectedHasTins
             val noTins = filterParams.selectedNoTins
             val container = filterParams.selectedContainer
+            val opened = filterParams.selectedOpened
+            val unopened = filterParams.selectedUnopened
+            val finished = filterParams.selectedFinished
+            val unfinished = filterParams.selectedUnfinished
 
             val filteredItems =
                 if (searchValue.isBlank()) {
@@ -259,7 +268,11 @@ class HomeViewModel(
                                 (!outOfProduction || !items.items.inProduction) &&
                                 (!hasTins || items.tins.isNotEmpty()) &&
                                 (!noTins || items.tins.isEmpty()) &&
-                                ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || container.any { container-> items.tins.any { it.container == container } } )) // items.tins.map { it.container }.any { it in container }
+                                ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) )) &&
+                                (!opened || items.tins.any { it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished) }) &&
+                                (!unopened || items.tins.any { it.openDate == null || it.openDate > System.currentTimeMillis() }) &&
+                                (!finished || items.tins.any { it.finished }) &&
+                                (!unfinished || items.tins.any { !it.finished })
                     }
                 } else {
                     when (searchSetting) {
@@ -284,8 +297,12 @@ class HomeViewModel(
             // quantity, manufacture cellared opened
             val filteredTins =
                 if (searchValue.isBlank()) {
-                    filteredItems.flatMap { it.tins }.filter {
-                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && it.container.isEmpty()) || container.contains( it.container )))
+                    allItems.flatMap { it.tins }.filter {
+                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && it.container.isEmpty()) || container.contains( it.container ))) &&
+                                (!opened || (it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished))) &&
+                                (!unopened || (it.openDate == null || it.openDate > System.currentTimeMillis())) &&
+                                (!finished || it.finished) &&
+                                (!unfinished || !it.finished)
                     }
                 } else {
                     allItems.flatMap { it.tins }
@@ -540,7 +557,11 @@ data class FilterParameters(
 
     val selectedHasTins: Boolean,
     val selectedNoTins: Boolean,
-    val selectedContainer: List<String>
+    val selectedContainer: List<String>,
+    val selectedOpened: Boolean,
+    val selectedUnopened: Boolean,
+    val selectedFinished: Boolean,
+    val selectedUnfinished: Boolean,
 )
 
 sealed class SearchSetting(val value: String) {

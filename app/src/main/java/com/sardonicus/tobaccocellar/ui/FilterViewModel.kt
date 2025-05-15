@@ -109,6 +109,10 @@ class FilterViewModel (
     val sheetSelectedHasTins = MutableStateFlow(false)
     val sheetSelectedNoTins = MutableStateFlow(false)
     val sheetSelectedContainer = MutableStateFlow<List<String>>(emptyList())
+    val sheetSelectedOpened = MutableStateFlow(false)
+    val sheetSelectedUnopened = MutableStateFlow(false)
+    val sheetSelectedFinished = MutableStateFlow(false)
+    val sheetSelectedUnfinished = MutableStateFlow(false)
 
 
     // inclusionary filter states //
@@ -163,28 +167,45 @@ class FilterViewModel (
     private val _selectedOutOfProduction = MutableStateFlow(false)
     val selectedOutOfProduction: StateFlow<Boolean> = _selectedOutOfProduction
 
-    private val _selectedHasTins = MutableStateFlow(false)
-    val selectedHasTins: StateFlow<Boolean> = _selectedHasTins
-
-    private val _selectedNoTins = MutableStateFlow(false)
-    val selectedNoTins: StateFlow<Boolean> = _selectedNoTins
-
     // tins switch and filtering
     val showTins: StateFlow<Boolean> = combine(
-        sheetSelectedContainer
+        sheetSelectedContainer, sheetSelectedOpened, sheetSelectedUnopened, sheetSelectedFinished,
+        sheetSelectedUnfinished
     ) {
         val container = it[0] as List<String>
+        val opened = it[1] as Boolean
+        val unopened = it[2] as Boolean
+        val finished = it[3] as Boolean
+        val unfinished = it[4] as Boolean
 
-        container.isNotEmpty()
+        container.isNotEmpty() || opened || unopened || finished || unfinished
+
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
     )
 
-
     private val _selectedContainer = MutableStateFlow<List<String>>(emptyList())
     val selectedContainer: StateFlow<List<String>> = _selectedContainer
+
+    private val _selectedHasTins = MutableStateFlow(false)
+    val selectedHasTins: StateFlow<Boolean> = _selectedHasTins
+
+    private val _selectedNoTins = MutableStateFlow(false)
+    val selectedNoTins: StateFlow<Boolean> = _selectedNoTins
+
+    private val _selectedOpened = MutableStateFlow(false)
+    val selectedOpened: StateFlow<Boolean> = _selectedOpened
+
+    private val _selectedUnopened = MutableStateFlow(false)
+    val selectedUnopened: StateFlow<Boolean> = _selectedUnopened
+
+    private val _selectedFinished = MutableStateFlow(false)
+    val selectedFinished: StateFlow<Boolean> = _selectedFinished
+
+    private val _selectedUnfinished = MutableStateFlow(false)
+    val selectedUnfinished: StateFlow<Boolean> = _selectedUnfinished
 
 
     // exclusionary filter states //
@@ -206,7 +227,8 @@ class FilterViewModel (
         sheetSelectedExcludeDislikes, sheetSelectedSubgenres, sheetSelectedCuts,
         sheetSelectedComponents, sheetSelectedFlavorings, sheetSelectedProduction,
         sheetSelectedOutOfProduction, sheetSelectedHasTins, sheetSelectedNoTins,
-        sheetSelectedContainer
+        sheetSelectedContainer, sheetSelectedOpened, sheetSelectedUnopened, sheetSelectedFinished,
+        sheetSelectedUnfinished
     ) {
         val brands = it[0] as List<String>
         val types = it[1] as List<String>
@@ -229,28 +251,18 @@ class FilterViewModel (
         val hasTins = it[18] as Boolean
         val noTins = it[19] as Boolean
         val container = it[20] as List<String>
+        val opened = it[21] as Boolean
+        val unopened = it[22] as Boolean
+        val finished = it[23] as Boolean
+        val unfinished = it[24] as Boolean
 
         brands.isNotEmpty() ||
-            types.isNotEmpty() ||
-            unassigned ||
-            favorites ||
-            dislikeds ||
-            neutral ||
-            nonNeutral ||
-            inStock ||
-            outOfStock ||
-            excludeBrands.isNotEmpty() ||
-            excludeLikes ||
-            excludeDislikes ||
-            subgenres.isNotEmpty() ||
-            cuts.isNotEmpty() ||
-            components.isNotEmpty() ||
-            flavorings.isNotEmpty() ||
-            production ||
-            outOfProduction ||
-            hasTins ||
-            noTins ||
-            container.isNotEmpty()
+            types.isNotEmpty() || unassigned || favorites || dislikeds || neutral || nonNeutral ||
+            inStock || outOfStock || excludeBrands.isNotEmpty() || excludeLikes || excludeDislikes ||
+            subgenres.isNotEmpty() || cuts.isNotEmpty() || components.isNotEmpty() ||
+            flavorings.isNotEmpty() || production || outOfProduction || hasTins || noTins ||
+            container.isNotEmpty() || opened || unopened || finished || unfinished
+
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -846,6 +858,53 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
+    fun updateSelectedOpened(isSelected: Boolean) {
+        sheetSelectedOpened.value = isSelected
+        _selectedOpened.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedUnopened.value = false
+            _selectedUnopened.value = false
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedUnopened(isSelected: Boolean) {
+        sheetSelectedUnopened.value = isSelected
+        _selectedUnopened.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedOpened.value = false
+            _selectedOpened.value = false
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedFinished(isSelected: Boolean) {
+        sheetSelectedFinished.value = isSelected
+        _selectedFinished.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedUnfinished.value = false
+            _selectedUnfinished.value = false
+        }
+
+        _shouldScrollUp.value = true
+    }
+
+    fun updateSelectedUnfinished(isSelected: Boolean) {
+        sheetSelectedUnfinished.value = isSelected
+        _selectedUnfinished.value = isSelected
+
+        if (isSelected) {
+            sheetSelectedFinished.value = false
+            _selectedFinished.value = false
+        }
+
+        _shouldScrollUp.value = true
+    }
 
 
     fun clearAllSelectedBrands() {
@@ -884,6 +943,10 @@ class FilterViewModel (
         sheetSelectedHasTins.value = false
         sheetSelectedNoTins.value = false
         sheetSelectedContainer.value = emptyList()
+        sheetSelectedOpened.value = false
+        sheetSelectedUnopened.value = false
+        sheetSelectedFinished.value = false
+        sheetSelectedUnfinished.value = false
 
         // filtering state //
         _selectedBrands.value = emptyList()
@@ -910,6 +973,10 @@ class FilterViewModel (
         _selectedHasTins.value = false
         _selectedNoTins.value = false
         _selectedContainer.value = emptyList()
+        _selectedOpened.value = false
+        _selectedUnopened.value = false
+        _selectedFinished.value = false
+        _selectedUnfinished.value = false
 
         _shouldScrollUp.value = true
     }
