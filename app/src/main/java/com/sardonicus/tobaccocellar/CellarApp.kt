@@ -957,7 +957,7 @@ fun FilterBottomSheet(
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedContainer(string, boolean) },
                             noneField = "(Unassigned)",
                             modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
+                                .padding(horizontal = 6.dp, vertical = 0.dp) // outer
                                 .border(
                                     width = Dp.Hairline,
                                     color = LocalCustomColors.current.sheetBoxBorder,
@@ -1009,35 +1009,28 @@ fun OtherFiltersSection(
 ) {
     val favorites by filterViewModel.sheetSelectedFavorites.collectAsState()
     val excludeFavorites by filterViewModel.sheetSelectedExcludeLikes.collectAsState()
+    val favoritesSelection =
+        if (favorites) ToggleableState.On
+        else if (excludeFavorites) ToggleableState.Indeterminate
+        else ToggleableState.Off
+
     val dislikeds by filterViewModel.sheetSelectedDislikeds.collectAsState()
     val excludeDislikes by filterViewModel.sheetSelectedExcludeDislikes.collectAsState()
-    val neutral by filterViewModel.sheetSelectedNeutral.collectAsState()
-    val nonNeutral by filterViewModel.sheetSelectedNonNeutral.collectAsState()
-    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
-    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
+    val dislikedsSelection =
+        if (dislikeds) ToggleableState.On
+        else if (excludeDislikes) ToggleableState.Indeterminate
+        else ToggleableState.Off
 
     // state for monitoring neutral/nonNeutral filters //
-    val (nonNeutralState) = mutableStateOf(nonNeutral)
-    val (neutralState) = mutableStateOf(neutral)
+    val neutral by filterViewModel.sheetSelectedNeutral.collectAsState()
+    val nonNeutral by filterViewModel.sheetSelectedNonNeutral.collectAsState()
     val dualSelectionIndicatorState =
-        if (nonNeutralState) ToggleableState.On
-        else if (neutralState) ToggleableState.Indeterminate
+        if (nonNeutral) ToggleableState.On
+        else if (neutral) ToggleableState.Indeterminate
         else ToggleableState.Off
 
-    val (favoritesSelected) = mutableStateOf(favorites)
-    val (favoritesExcluded) = mutableStateOf(excludeFavorites)
-    val favoritesSelection =
-        if (favoritesSelected) ToggleableState.On
-        else if (favoritesExcluded) ToggleableState.Indeterminate
-        else ToggleableState.Off
-
-    val (dislikedsSelected) = mutableStateOf(dislikeds)
-    val (dislikedsExcluded) = mutableStateOf(excludeDislikes)
-    val dislikedsSelection =
-        if (dislikedsSelected) ToggleableState.On
-        else if (dislikedsExcluded) ToggleableState.Indeterminate
-        else ToggleableState.Off
-
+    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
+    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
 
     Row(
         modifier = modifier
@@ -1075,12 +1068,12 @@ fun OtherFiltersSection(
                             onClick = { },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
-                                if (nonNeutralState) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                else if (neutralState) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                                 else Color.Transparent,
                                 checkmarkColor =
-                                if (nonNeutralState) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else if (neutralState) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                 else Color.Transparent
                             )
                         )
@@ -1088,19 +1081,19 @@ fun OtherFiltersSection(
                             text = "Favorites",
                             state = favoritesSelection,
                             onClick = {
-                                if (favoritesSelection == ToggleableState.Off) {
-                                    filterViewModel.updateSelectedFavorites(true)
-                                } else if (favoritesSelection == ToggleableState.On) {
-                                    filterViewModel.updateSelectedExcludeLikes(true)
-                                } else if (favoritesSelection == ToggleableState.Indeterminate) {
-                                    filterViewModel.updateSelectedFavorites(false)
-                                    filterViewModel.updateSelectedExcludeLikes(false)
+                                when (favoritesSelection) {
+                                    ToggleableState.Off -> filterViewModel.updateSelectedFavorites(true)
+                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeLikes(true)
+                                    ToggleableState.Indeterminate -> {
+                                        filterViewModel.updateSelectedFavorites(false)
+                                        filterViewModel.updateSelectedExcludeLikes(false)
+                                    }
                                 }
                             },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
-                                if (favoritesSelected) MaterialTheme.colorScheme.primary
-                                else if (favoritesExcluded) MaterialTheme.colorScheme.error
+                                if (favorites) MaterialTheme.colorScheme.primary
+                                else if (excludeFavorites) MaterialTheme.colorScheme.error
                                 else Color.Transparent
                             )
                         )
@@ -1124,12 +1117,12 @@ fun OtherFiltersSection(
                             onClick = { },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
-                                if (nonNeutralState) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                else if (neutralState) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                                 else Color.Transparent,
                                 checkmarkColor =
-                                if (nonNeutralState) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else if (neutralState) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                 else Color.Transparent
                             )
                         )
@@ -1137,19 +1130,19 @@ fun OtherFiltersSection(
                             text = "Dislikes",
                             state = dislikedsSelection,
                             onClick = {
-                                if (dislikedsSelection == ToggleableState.Off) {
-                                    filterViewModel.updateSelectedDislikeds(true)
-                                } else if (dislikedsSelection == ToggleableState.On) {
-                                    filterViewModel.updateSelectedExcludeDislikes(true)
-                                } else if (dislikedsSelection == ToggleableState.Indeterminate) {
-                                    filterViewModel.updateSelectedDislikeds(false)
-                                    filterViewModel.updateSelectedExcludeDislikes(false)
+                                when (dislikedsSelection) {
+                                    ToggleableState.Off -> filterViewModel.updateSelectedDislikeds(true)
+                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeDislikes(true)
+                                    ToggleableState.Indeterminate -> {
+                                        filterViewModel.updateSelectedDislikeds(false)
+                                        filterViewModel.updateSelectedExcludeDislikes(false)
+                                    }
                                 }
                             },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
-                                if (dislikedsSelected) MaterialTheme.colorScheme.primary
-                                else if (dislikedsExcluded) MaterialTheme.colorScheme.error
+                                if (dislikeds) MaterialTheme.colorScheme.primary
+                                else if (excludeDislikes) MaterialTheme.colorScheme.error
                                 else Color.Transparent
                             )
                         )
@@ -1203,82 +1196,142 @@ fun TinsFilterSection(
     Column(
         modifier = modifier
             .fillMaxWidth(),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top)
     ) {
-        val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
-        val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
-        val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-        val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
 
-        // production and tins exist
+        // Production
         Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(horizontal = 2.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.Start
         ) {
-            // production
-            Column(
+            val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
+            val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+
+            CheckboxWithLabel(
+                text = "In Production",
+                checked = inProduction,
+                onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
                 modifier = Modifier
-                    .border(
-                        width = Dp.Hairline,
-                        color = LocalCustomColors.current.sheetBoxBorder,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.sheetBox,
-                        RoundedCornerShape(8.dp)
-                    )
-                    .width(intrinsicSize = IntrinsicSize.Max)
-                    .padding(vertical = 3.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
-                CheckboxWithLabel(
-                    text = "In Production",
-                    checked = inProduction,
-                    onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
-                    modifier = Modifier
-                )
-                CheckboxWithLabel(
-                    text = "Out of Production",
-                    checked = outOfProduction,
-                    onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
-                    modifier = Modifier
-                )
-            }
-            // Tins
-            Column(
+            )
+            CheckboxWithLabel(
+                text = "Discontinued",
+                checked = outOfProduction,
+                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
                 modifier = Modifier
-                    .border(
-                        width = Dp.Hairline,
-                        color = LocalCustomColors.current.sheetBoxBorder,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.sheetBox,
-                        RoundedCornerShape(8.dp)
-                    )
-                    .width(intrinsicSize = IntrinsicSize.Max)
-                    .padding(vertical = 3.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start
-            ) {
-                CheckboxWithLabel(
-                    text = "Has Tins",
-                    checked = hasTins,
-                    onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
-                    modifier = Modifier
+            )
+        }
+
+        // Tins/Opened/Finished
+        Row(
+            modifier = Modifier
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
                 )
-                CheckboxWithLabel(
-                    text = "No Tins",
-                    checked = noTins,
-                    onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
-                    modifier = Modifier
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
                 )
-            }
+                .fillMaxWidth()
+                .padding(vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+            val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
+            val tinsSelection =
+                if (hasTins) ToggleableState.On
+                else if (hasNone) ToggleableState.Indeterminate
+                else ToggleableState.Off
+
+            TriStateCheckWithLabel(
+                text = "Has Tins?",
+                state = tinsSelection,
+                onClick = {
+                    when (tinsSelection) {
+                        ToggleableState.Off -> filterViewModel.updateSelectedHasTins(true)
+                        ToggleableState.On -> filterViewModel.updateSelectedNoTins(true)
+                        ToggleableState.Indeterminate -> {
+                            filterViewModel.updateSelectedHasTins(false)
+                            filterViewModel.updateSelectedNoTins(false)
+                        }
+                    }
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor =
+                        if (hasTins) MaterialTheme.colorScheme.primary
+                        else if (hasNone) MaterialTheme.colorScheme.error
+                        else Color.Transparent
+                )
+            )
+
+            val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
+            val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
+            val openedSelection =
+                if (isOpened) ToggleableState.On
+                else if (isUnopened) ToggleableState.Indeterminate
+                else ToggleableState.Off
+
+            TriStateCheckWithLabel(
+                text = "Opened?",
+                state = openedSelection,
+                onClick = {
+                    when (openedSelection) {
+                        ToggleableState.Off -> filterViewModel.updateSelectedOpened(true)
+                        ToggleableState.On -> filterViewModel.updateSelectedUnopened(true)
+                        ToggleableState.Indeterminate -> {
+                            filterViewModel.updateSelectedOpened(false)
+                            filterViewModel.updateSelectedUnopened(false)
+                        }
+                    }
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor =
+                        if (isOpened) MaterialTheme.colorScheme.primary
+                        else if (isUnopened) MaterialTheme.colorScheme.error
+                        else Color.Transparent
+                )
+            )
+            val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
+            val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
+            val finishedSelection =
+                if (isFinished) ToggleableState.On
+                else if (notFinished) ToggleableState.Indeterminate
+                else ToggleableState.Off
+
+            TriStateCheckWithLabel(
+                text = "Finished?",
+                state = finishedSelection,
+                onClick = {
+                    when (finishedSelection) {
+                        ToggleableState.Off -> filterViewModel.updateSelectedFinished(true)
+                        ToggleableState.On -> filterViewModel.updateSelectedUnfinished(true)
+                        ToggleableState.Indeterminate -> {
+                            filterViewModel.updateSelectedFinished(false)
+                            filterViewModel.updateSelectedUnfinished(false)
+                        }
+                    }
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor =
+                        if (isFinished) MaterialTheme.colorScheme.primary
+                        else if (notFinished) MaterialTheme.colorScheme.error
+                        else Color.Transparent
+                )
+            )
         }
     }
 }
@@ -1826,6 +1879,7 @@ fun FlowFilterSection(
 
         val nothingAssigned = !availableOptions.any { it != noneField }
 
+        // Header and Match options
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1840,7 +1894,6 @@ fun FlowFilterSection(
                 modifier = Modifier,
                 color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
             )
-            // Match options
             if (enableMatchOption) {
                 Row(
                     modifier = Modifier
