@@ -361,6 +361,8 @@ class FilterViewModel (
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
     val availableContainers: StateFlow<List<String>> = _availableContainers
 
+    private val _hasTins = MutableStateFlow(false)
+    val hasTins: StateFlow<Boolean> = _hasTins
 
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
     private val refresh = _refresh.asSharedFlow()
@@ -437,6 +439,7 @@ class FilterViewModel (
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
+                    _hasTins.value = it.any { it.tins.isNotEmpty() }
                 }
             }
         }
@@ -829,6 +832,15 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedNoTins.value = false
             _selectedNoTins.value = false
+
+            sheetSelectedOpened.value = false
+            sheetSelectedUnopened.value = false
+            sheetSelectedFinished.value = false
+            sheetSelectedUnfinished.value = false
+            _selectedOpened.value = false
+            _selectedUnopened.value = false
+            _selectedFinished.value = false
+            _selectedUnfinished.value = false
         }
 
         _shouldScrollUp.value = true
@@ -841,6 +853,15 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedHasTins.value = false
             _selectedHasTins.value = false
+
+            sheetSelectedOpened.value = false
+            sheetSelectedUnopened.value = false
+            sheetSelectedFinished.value = false
+            sheetSelectedUnfinished.value = false
+            _selectedOpened.value = false
+            _selectedUnopened.value = false
+            _selectedFinished.value = false
+            _selectedUnfinished.value = false
         }
 
         _shouldScrollUp.value = true
@@ -865,6 +886,15 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedUnopened.value = false
             _selectedUnopened.value = false
+
+            sheetSelectedHasTins.value = false
+            sheetSelectedNoTins.value = false
+            sheetSelectedFinished.value = false
+            sheetSelectedUnfinished.value = false
+            _selectedHasTins.value = false
+            _selectedNoTins.value = false
+            _selectedFinished.value = false
+            _selectedUnfinished.value = false
         }
 
         _shouldScrollUp.value = true
@@ -877,6 +907,15 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedOpened.value = false
             _selectedOpened.value = false
+
+            sheetSelectedHasTins.value = false
+            sheetSelectedNoTins.value = false
+            sheetSelectedFinished.value = false
+            sheetSelectedUnfinished.value = false
+            _selectedHasTins.value = false
+            _selectedNoTins.value = false
+            _selectedFinished.value = false
+            _selectedUnfinished.value = false
         }
 
         _shouldScrollUp.value = true
@@ -889,6 +928,15 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedUnfinished.value = false
             _selectedUnfinished.value = false
+
+            sheetSelectedHasTins.value = false
+            sheetSelectedNoTins.value = false
+            sheetSelectedOpened.value = false
+            sheetSelectedUnopened.value = false
+            _selectedHasTins.value = false
+            _selectedNoTins.value = false
+            _selectedOpened.value = false
+            _selectedUnopened.value = false
         }
 
         _shouldScrollUp.value = true
@@ -901,6 +949,15 @@ class FilterViewModel (
         if (isSelected) {
             sheetSelectedFinished.value = false
             _selectedFinished.value = false
+
+            sheetSelectedHasTins.value = false
+            sheetSelectedNoTins.value = false
+            sheetSelectedOpened.value = false
+            sheetSelectedUnopened.value = false
+            _selectedHasTins.value = false
+            _selectedNoTins.value = false
+            _selectedOpened.value = false
+            _selectedUnopened.value = false
         }
 
         _shouldScrollUp.value = true
