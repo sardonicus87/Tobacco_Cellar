@@ -161,7 +161,12 @@ class StatsViewModel(
             filterViewModel.selectedProduction,
             filterViewModel.selectedOutOfProduction,
             filterViewModel.selectedHasTins,
-            filterViewModel.selectedNoTins
+            filterViewModel.selectedNoTins,
+            filterViewModel.selectedContainer,
+            filterViewModel.selectedOpened,
+            filterViewModel.selectedUnopened,
+            filterViewModel.selectedFinished,
+            filterViewModel.selectedUnfinished
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val brands = values[1] as List<String>
@@ -186,6 +191,11 @@ class StatsViewModel(
             val outOfProduction = values[20] as Boolean
             val hasTins = values[21] as Boolean
             val noTins = values[22] as Boolean
+            val container = values[23] as List<String>
+            val opened = values[24] as Boolean
+            val unopened = values[25] as Boolean
+            val finished = values[26] as Boolean
+            val unfinished = values[27] as Boolean
 
             val filteredItems = allItems.filter { items ->
                 val componentMatching = when (compMatching) {
@@ -217,7 +227,12 @@ class StatsViewModel(
                         (!production || items.items.inProduction) &&
                         (!outOfProduction || !items.items.inProduction) &&
                         (!hasTins || items.tins.isNotEmpty()) &&
-                        (!noTins || items.tins.isEmpty())
+                        (!noTins || items.tins.isEmpty()) &&
+                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) )) &&
+                        (!opened || items.tins.any { it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished) }) &&
+                        (!unopened || items.tins.any { it.openDate == null || it.openDate > System.currentTimeMillis() }) &&
+                        (!finished || items.tins.any { it.finished }) &&
+                        (!unfinished || items.tins.any { !it.finished })
             }
 
             val unassignedCount = filteredItems.count { it.items.type.isBlank() }
