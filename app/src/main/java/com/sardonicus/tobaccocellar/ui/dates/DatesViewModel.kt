@@ -79,8 +79,7 @@ class DatesViewModel(
             filterViewModel.selectedCut,
             filterViewModel.selectedProduction,
             filterViewModel.selectedOutOfProduction,
-            filterViewModel.selectedHasTins,
-            filterViewModel.selectedNoTins
+            filterViewModel.selectedContainer,
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val brands = values[1] as List<String>
@@ -103,8 +102,7 @@ class DatesViewModel(
             val cuts = values[18] as List<String>
             val production = values[19] as Boolean
             val outOfProduction = values[20] as Boolean
-            val hasTins = values[21] as Boolean
-            val noTins = values[22] as Boolean
+            val container = values[21] as List<String>
 
             val filteredItems = allItems.filter { items ->
                 val componentMatching = when (compMatching) {
@@ -135,8 +133,7 @@ class DatesViewModel(
                         ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
                         (!production || items.items.inProduction) &&
                         (!outOfProduction || !items.items.inProduction) &&
-                        (!hasTins || items.tins.isNotEmpty()) &&
-                        (!noTins || items.tins.isEmpty())
+                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) ))
             }
 
             val averageDateManufacture = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.manufactureDate }
