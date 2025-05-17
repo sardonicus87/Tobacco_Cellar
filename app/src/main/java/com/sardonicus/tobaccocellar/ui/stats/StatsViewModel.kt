@@ -232,7 +232,7 @@ class StatsViewModel(
                         (!opened || items.tins.any { it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished) }) &&
                         (!unopened || items.tins.any { it.openDate == null || it.openDate > System.currentTimeMillis() }) &&
                         (!finished || items.tins.any { it.finished }) &&
-                        (!unfinished || items.tins.any { !it.finished })
+                        (!unfinished || items.tins.any { !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis() })
             }
 
             val unassignedCount = filteredItems.count { it.items.type.isBlank() }

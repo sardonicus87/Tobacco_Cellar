@@ -272,7 +272,7 @@ class HomeViewModel(
                                 (!opened || items.tins.any { it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished) }) &&
                                 (!unopened || items.tins.any { it.openDate == null || it.openDate > System.currentTimeMillis() }) &&
                                 (!finished || items.tins.any { it.finished }) &&
-                                (!unfinished || items.tins.any { !it.finished })
+                                (!unfinished || items.tins.any { !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis() })
                     }
                 } else {
                     when (searchSetting) {
@@ -302,7 +302,7 @@ class HomeViewModel(
                                 (!opened || (it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished))) &&
                                 (!unopened || (it.openDate == null || it.openDate > System.currentTimeMillis())) &&
                                 (!finished || it.finished) &&
-                                (!unfinished || !it.finished)
+                                (!unfinished || !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis())
                     }
                 } else {
                     allItems.flatMap { it.tins }
