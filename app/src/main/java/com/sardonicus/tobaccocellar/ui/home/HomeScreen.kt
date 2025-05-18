@@ -592,7 +592,7 @@ private fun HomeHeader(
         ) {
             val coroutineScope = rememberCoroutineScope()
             val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-            val currentSetting by LocalCellarApplication.current.preferencesRepo.searchSetting.collectAsState(initial = SearchSetting.BLEND)
+            val currentSetting by LocalCellarApplication.current.preferencesRepo.searchSetting.collectAsState(initial = SearchSetting.Blend)
 
             CustomBlendSearch(
                 value = searchText,
@@ -660,7 +660,7 @@ private fun HomeHeader(
                         containerColor = LocalCustomColors.current.textField,
                         offset = DpOffset((-2).dp, 2.dp)
                     ) {
-                        listOf(SearchSetting.BLEND, SearchSetting.NOTES, SearchSetting.CONTAINER).forEach {
+                        listOf(SearchSetting.Blend, SearchSetting.Notes, SearchSetting.TinLabel).forEach {
                             DropdownMenuItem(
                                 text = { Text(text = it.value) },
                                 onClick = {
@@ -942,6 +942,7 @@ private fun HomeBody(
                 if (isTableView) {
                     TableViewMode(
                         itemsList = items,
+                        filteredTins = tins,
                         formattedQuantity = formattedQuantity,
                         filterViewModel = filterViewModel,
                         searchFocused = searchFocused,
@@ -1527,7 +1528,8 @@ private fun CellarListItem(
                 }
 
                 // Tins
-                if (item.tins.isNotEmpty() && showTins) {
+                val isTinSearch by filterViewModel.isTinSearch.collectAsState()
+                if (item.tins.isNotEmpty() && (showTins || (searchPerformed && isTinSearch))) {
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = .5f)),
                         size = GlowSize(top = 3.dp),
@@ -1542,10 +1544,7 @@ private fun CellarListItem(
                         ) {
                             Column(
                                 modifier = Modifier
-                                    .background(
-                                        LocalCustomColors.current.sheetBox,
-                                        shape = RoundedCornerShape(bottomStart = 8.dp)
-                                    )
+                                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(bottomStart = 8.dp))
                                     .padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
                                     .fillMaxWidth()
                             ) {
@@ -1607,14 +1606,14 @@ private fun CellarListItem(
                                             )
                                         }
                                     }
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Start,
-                                        verticalAlignment = Alignment.Top
-                                    ) {
-
-                                    }
+//                                    Row(
+//                                        modifier = Modifier
+//                                            .fillMaxWidth(),
+//                                        horizontalArrangement = Arrangement.Start,
+//                                        verticalAlignment = Alignment.Top
+//                                    ) {
+//
+//                                    }
                                 }
                             }
                         }
@@ -1675,6 +1674,7 @@ private fun CellarListItem(
 @Composable
 fun TableViewMode(
     itemsList: List<ItemsComponentsAndTins>,
+    filteredTins: List<Tins>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     searchFocused: Boolean,
@@ -1696,6 +1696,7 @@ fun TableViewMode(
 
     TableLayout(
         items = itemsList,
+        filteredTins = filteredTins,
         formattedQuantity = formattedQuantity,
         filterViewModel = filterViewModel,
         blendSearchFocused = searchFocused,
@@ -1714,6 +1715,7 @@ fun TableViewMode(
 @Composable
 fun TableLayout(
     items: List<ItemsComponentsAndTins>,
+    filteredTins: List<Tins>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     blendSearchFocused: Boolean,
@@ -1752,6 +1754,7 @@ fun TableLayout(
             .fillMaxSize()
     ) {
         val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+        val showTins by filterViewModel.showTins.collectAsState()
         val columnState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
         val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
@@ -1999,6 +2002,90 @@ fun TableLayout(
                                             contentAlignment = alignment,
                                         )
                                     } // [2] type
+                                }
+                            }
+                        }
+                    }
+                    // tins
+                    val isTinSearch by filterViewModel.isTinSearch.collectAsState()
+                    if (item.tins.isNotEmpty() && (showTins || (searchPerformed && isTinSearch))) {
+                        Row(
+                            modifier = Modifier
+                                .width(814.dp)
+                                .padding(start = 12.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(bottomStart = 8.dp))
+                                    .padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                val tins = item.tins.filter { it in filteredTins }
+                                tins.forEach {
+                                    Row (
+                                        modifier = Modifier,
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Text(
+                                            text = it.tinLabel,
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp
+                                        )
+                                        if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
+                                            Text(
+                                                text = " (",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Normal,
+                                                fontSize = 13.sp
+                                            )
+                                            if (it.container.isNotEmpty()) {
+                                                Text(
+                                                    text = it.container,
+                                                    modifier = Modifier,
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            if (it.container.isNotEmpty() && it.unit.isNotEmpty()) {
+                                                Text(
+                                                    text = " - ",
+                                                    modifier = Modifier,
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            if (it.unit.isNotEmpty()) {
+                                                val quantity = formatDecimal(it.tinQuantity)
+                                                val unit = when (it.unit) {
+                                                    "grams" -> "g"
+                                                    else -> it.unit
+                                                }
+                                                Text(
+                                                    text = "$quantity $unit",
+                                                    modifier = Modifier,
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontSize = 13.sp
+                                                )
+                                            }
+                                            Text(
+                                                text = ")",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Normal,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                        if (tins.indexOf(it) != tins.lastIndex) {
+                                            Text(
+                                                text = ", ",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Normal,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
