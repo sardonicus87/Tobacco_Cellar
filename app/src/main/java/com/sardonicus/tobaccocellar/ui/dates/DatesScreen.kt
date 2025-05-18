@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -104,7 +105,7 @@ fun DatesScreen(
                 scrollBehavior = scrollBehavior,
                 showMenu = false,
                 canNavigateBack = false,
-                modifier = Modifier
+                modifier = Modifier,
             )
         },
         bottomBar = {
@@ -387,40 +388,42 @@ fun DateInfo(
         ) {
             Spacer(modifier = Modifier.height(10.dp))
             if (datesUiState.averageAgeManufacture.isNotBlank() || datesUiState.averageAgeCellar.isNotBlank() || datesUiState.averageAgeOpen.isNotBlank() || datesUiState.averageWaitTime.isNotBlank()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    if (datesUiState.averageAgeManufacture.isNotBlank()) {
-                        Text(
-                            text = "Average age of tins: ${datesUiState.averageAgeManufacture}",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                        )
-                    }
-                    if (datesUiState.averageAgeCellar.isNotBlank()) {
-                        Text(
-                            text = "Average time in cellar: ${datesUiState.averageAgeCellar}",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                        )
-                    }
-                    if (datesUiState.averageAgeOpen.isNotBlank()) {
-                        Text(
-                            text = "Average opened time: ${datesUiState.averageAgeOpen}",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                        )
-                    }
-                    if (datesUiState.averageWaitTime.isNotBlank()) {
-                        Text(
-                            text = "Average wait time: ${datesUiState.averageWaitTime}",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                        )
+                SelectionContainer {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        if (datesUiState.averageAgeManufacture.isNotBlank()) {
+                            Text(
+                                text = "Average age of tins: ${datesUiState.averageAgeManufacture}",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                            )
+                        }
+                        if (datesUiState.averageAgeCellar.isNotBlank()) {
+                            Text(
+                                text = "Average time in cellar: ${datesUiState.averageAgeCellar}",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                            )
+                        }
+                        if (datesUiState.averageAgeOpen.isNotBlank()) {
+                            Text(
+                                text = "Average opened time: ${datesUiState.averageAgeOpen}",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                            )
+                        }
+                        if (datesUiState.averageWaitTime.isNotBlank()) {
+                            Text(
+                                text = "Average wait time: ${datesUiState.averageWaitTime}",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
