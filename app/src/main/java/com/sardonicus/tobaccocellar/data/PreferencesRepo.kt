@@ -234,10 +234,10 @@ class PreferencesRepo(
             }
         }.map {
             when (it[SEARCH_SETTING]) {
-                SearchSetting.BLEND.value -> SearchSetting.BLEND
-                SearchSetting.NOTES.value -> SearchSetting.NOTES
-                SearchSetting.CONTAINER.value -> SearchSetting.CONTAINER
-                else -> SearchSetting.BLEND
+                SearchSetting.Blend.value -> SearchSetting.Blend
+                SearchSetting.Notes.value -> SearchSetting.Notes
+                SearchSetting.TinLabel.value -> SearchSetting.TinLabel
+                else -> SearchSetting.Blend
             }
         }
 
