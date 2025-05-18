@@ -681,7 +681,7 @@ private fun ChartsSection(
                 thickness = 1.dp,
             )
             ChartsFormat(
-                label = "Brands by Tins",
+                label = "Brands by \"No. of Tins\"",
                 chartData = filteredStats.brandsByQuantity
             )
             if (filteredStats.typesByEntries.count() > 1) {
@@ -700,7 +700,7 @@ private fun ChartsSection(
                     thickness = 1.dp,
                 )
                 ChartsFormat(
-                    label = "Types by Tins",
+                    label = "Types by \"No. of Tins\"",
                     chartData = filteredStats.typesByQuantity
                 )
             }
@@ -730,7 +730,7 @@ private fun ChartsSection(
                         .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
                 )
                 ChartsFormat(
-                    label = "Subgenres by Tins",
+                    label = "Subgenres by \"No. of Tins\"",
                     chartData = filteredStats.subgenresByQuantity
                 )
             }
@@ -750,7 +750,7 @@ private fun ChartsSection(
                     thickness = 1.dp,
                 )
                 ChartsFormat(
-                    label = "Cuts by Tins",
+                    label = "Cuts by \"No. of Tins\"",
                     chartData = filteredStats.cutsByQuantity
                 )
             }
