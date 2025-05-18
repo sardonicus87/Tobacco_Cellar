@@ -276,19 +276,19 @@ class HomeViewModel(
                     }
                 } else {
                     when (searchSetting) {
-                         SearchSetting.BLEND -> {
+                         SearchSetting.Blend -> {
                             allItems.filter {
                                 it.items.blend.contains(searchValue, ignoreCase = true)
                             }
                         }
-                        SearchSetting.NOTES -> {
+                        SearchSetting.Notes -> {
                             allItems.filter {
                                 it.items.notes.contains(searchValue, ignoreCase = true)
                             }
                         }
-                        SearchSetting.CONTAINER -> {
+                        SearchSetting.TinLabel -> {
                             allItems.filter {
-                                it.tins.any { it.container.contains(searchValue, ignoreCase = true) }
+                                it.tins.any { it.tinLabel.contains(searchValue, ignoreCase = true) }
                             }
                         }
                     }
@@ -305,7 +305,13 @@ class HomeViewModel(
                                 (!unfinished || !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis())
                     }
                 } else {
-                    allItems.flatMap { it.tins }
+                    if (searchSetting == SearchSetting.TinLabel) {
+                        allItems.flatMap { it.tins }.filter {
+                            it.tinLabel.contains(searchValue, ignoreCase = true)
+                        }
+                    } else {
+                        emptyList()
+                    }
                 }
 
             _filteredItems.value = filteredItems
@@ -565,7 +571,7 @@ data class FilterParameters(
 )
 
 sealed class SearchSetting(val value: String) {
-    data object BLEND: SearchSetting("Blend")
-    data object NOTES: SearchSetting("Notes")
-    data object CONTAINER: SearchSetting("Container")
+    data object Blend: SearchSetting("Blend")
+    data object Notes: SearchSetting("Notes")
+    data object TinLabel: SearchSetting("Tin Label")
 }
