@@ -127,6 +127,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
@@ -151,6 +152,9 @@ fun CellarApp(
     navController: NavHostController = rememberNavController()
 ) {
     CellarNavHost(navController = navController)
+    val currentBackStack by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStack?.destination?.route
+    val dateScreen = currentRoute == DatesDestination.route
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
@@ -169,6 +173,7 @@ fun CellarApp(
             Box {
                 FilterBottomSheet(
                     filterViewModel = filterViewModel,
+                    dateScreen = dateScreen,
                     modifier = Modifier
                 )
                 Box (
@@ -712,6 +717,7 @@ fun CellarBottomAppBar(
 @Composable
 fun FilterBottomSheet(
     filterViewModel: FilterViewModel,
+    dateScreen: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
@@ -969,6 +975,7 @@ fun FilterBottomSheet(
                         )
                         TinsFilterSection(
                             filterViewModel = filterViewModel,
+                            dateScreen = dateScreen,
                             tins = tins,
                             modifier = Modifier
                                 .padding(horizontal = 6.dp)
@@ -1232,10 +1239,10 @@ fun OtherFiltersSection(
 @Composable
 fun TinsFilterSection(
     filterViewModel: FilterViewModel,
+    dateScreen: Boolean,
     tins: Boolean,
     modifier: Modifier = Modifier,
 ) {
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -1243,114 +1250,122 @@ fun TinsFilterSection(
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top)
     ) {
         // Has tins/Opened/Finished
-        Row(
-            modifier = Modifier
-                .border(
-                    Dp.Hairline,
-                    LocalCustomColors.current.sheetBoxBorder,
-                    RoundedCornerShape(8.dp)
-                )
-                .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-                .fillMaxWidth()
-                .padding(vertical = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            if (tins) {
-                val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-                val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
-                val tinsSelection =
-                    if (hasTins) ToggleableState.On
-                    else if (hasNone) ToggleableState.Indeterminate
-                    else ToggleableState.Off
-                TriStateCheckWithLabel(
-                    text = "Has Tins?",
-                    state = tinsSelection,
-                    onClick = {
-                        when (tinsSelection) {
-                            ToggleableState.Off -> filterViewModel.updateSelectedHasTins(true)
-                            ToggleableState.On -> filterViewModel.updateSelectedNoTins(true)
-                            ToggleableState.Indeterminate -> {
-                                filterViewModel.updateSelectedHasTins(false)
-                                filterViewModel.updateSelectedNoTins(false)
-                            }
-                        }
-                    },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor =
-                            if (hasTins) MaterialTheme.colorScheme.primary
-                            else if (hasNone) MaterialTheme.colorScheme.error
-                            else Color.Transparent
+        Box{
+            Row(
+                modifier = Modifier
+                    .border(
+                        Dp.Hairline,
+                        LocalCustomColors.current.sheetBoxBorder,
+                        RoundedCornerShape(8.dp)
                     )
-                )
+                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (tins) {
+                    // Has Tins
+                    Column {
+                        val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+                        val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
+                        CheckboxWithLabel(
+                            text = "Has tins",
+                            checked = hasTins,
+                            onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
+                            modifier = Modifier,
+                            enabled = !dateScreen,
+                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
+                        CheckboxWithLabel(
+                            text = "No tins",
+                            checked = hasNone,
+                            onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
+                            modifier = Modifier,
+                            enabled = !dateScreen,
+                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
+                    }
 
-                val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
-                val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
-                val openedSelection =
-                    if (isOpened) ToggleableState.On
-                    else if (isUnopened) ToggleableState.Indeterminate
-                    else ToggleableState.Off
+                    // Opened
+                    Column {
+                        val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
+                        val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
+                        CheckboxWithLabel(
+                            text = "Opened",
+                            checked = isOpened,
+                            onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
+                            modifier = Modifier,
+                            enabled = !dateScreen,
+                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
+                        CheckboxWithLabel(
+                            text = "Unopened",
+                            checked = isUnopened,
+                            onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
+                            modifier = Modifier,
+                            enabled = !dateScreen,
+                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
+                    }
 
-                TriStateCheckWithLabel(
-                    text = "Opened?",
-                    state = openedSelection,
-                    onClick = {
-                        when (openedSelection) {
-                            ToggleableState.Off -> filterViewModel.updateSelectedOpened(true)
-                            ToggleableState.On -> filterViewModel.updateSelectedUnopened(true)
-                            ToggleableState.Indeterminate -> {
-                                filterViewModel.updateSelectedOpened(false)
-                                filterViewModel.updateSelectedUnopened(false)
-                            }
-                        }
-                    },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor =
-                            if (isOpened) MaterialTheme.colorScheme.primary
-                            else if (isUnopened) MaterialTheme.colorScheme.error
-                            else Color.Transparent
-                    )
-                )
-                val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
-                val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
-                val finishedSelection =
-                    if (isFinished) ToggleableState.On
-                    else if (notFinished) ToggleableState.Indeterminate
-                    else ToggleableState.Off
+                    // Finished
+                    Column {
+                        val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
+                        val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
+                        CheckboxWithLabel(
+                            text = "Finished",
+                            checked = isFinished,
+                            onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
+                            modifier = Modifier,
+                            enabled = !dateScreen,
+                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
+                        CheckboxWithLabel(
+                            text = "Unfinished",
+                            checked = notFinished,
+                            onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
+                            modifier = Modifier,
+                            enabled = !dateScreen,
+                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
 
-                TriStateCheckWithLabel(
-                    text = "Finished?",
-                    state = finishedSelection,
-                    onClick = {
-                        when (finishedSelection) {
-                            ToggleableState.Off -> filterViewModel.updateSelectedFinished(true)
-                            ToggleableState.On -> filterViewModel.updateSelectedUnfinished(true)
-                            ToggleableState.Indeterminate -> {
-                                filterViewModel.updateSelectedFinished(false)
-                                filterViewModel.updateSelectedUnfinished(false)
-                            }
-                        }
-                    },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor =
-                            if (isFinished) MaterialTheme.colorScheme.primary
-                            else if (notFinished) MaterialTheme.colorScheme.error
-                            else Color.Transparent
-                    )
-                )
-            } else {
-                Row(
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "No tins assigned to any blends.",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            textAlign = TextAlign.Center,
+                            color = if (dateScreen) Color.Transparent else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+            if (dateScreen) {
+                Box(
                     modifier = Modifier
+                        .matchParentSize()
+                        .border(
+                            Dp.Hairline,
+                            LocalCustomColors.current.sheetBoxBorder,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(Color.Black.copy(alpha = .75f), RoundedCornerShape(8.dp))
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No tins assigned to any blends.",
+                        text = "N/A on Dates screen.",
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
                     )
                 }
             }
