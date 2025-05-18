@@ -140,7 +140,7 @@ private fun HelpBody(
             )
             HelpSection(
                 title = "Cellar Screen",
-                content = { CellarView() }
+                content = { CellarScreen() }
             )
             HelpSection(
                 title = "Stats Screen",
@@ -233,7 +233,7 @@ private fun BasicUse(
 }
 
 @Composable
-private fun CellarView(
+private fun CellarScreen(
     modifier: Modifier = Modifier,
 ) {
     var showFullscreen by remember { mutableStateOf(false) }
@@ -257,12 +257,23 @@ private fun CellarView(
             softWrap = true,
         )
         Text(
-            text = "Also found in the header is a \"Quick Search\". This search only returns " +
-                    "results based on the chosen field, and works independently of filtering." +
-                    "To change search fields, tap the search icon on the left for a menu. " +
-                    "To return to the full list/table, click the clear button, erase the search " +
-                    "text, to tap the system back button. Any previously chosen filters will be " +
-                    "re-applied.",
+            text = "Tapping the view icon in the header switches between list and table modes. " +
+                    "Next to this is a \"Quick Search\". This search only returns results based  " +
+                    "on the chosen field, and works independently of filtering. To change search " +
+                    "fields, tap the search icon on the left for a menu. To return to the full " +
+                    "list/table, click the clear button, erase the search text, or tap the system " +
+                    "back button. Any previously chosen filters will be re-applied.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Next to the Quick Search is another icon, which is used to change the sorting " +
+                    "in the list view mode. The default sorting returns items in the order in " +
+                    "which they were added to the database. This applies only to list view (in " +
+                    "table view, tapping the table header cell sorts by that field). Finally, the " +
+                    "number next to the sort icon shows how many items are currently returned " +
+                    "based on your filtering or search value.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -625,8 +636,30 @@ private fun Filtering(
             softWrap = true,
         )
         Text(
-            text = "The third page has filtering for blend production status and whether or not " +
-                    "you have added individual tins to the blend. More filtering coming soon.",
+            text = "The third page has filtering for tin-related parameters. The Tin Containers " +
+                    "filtering works the same as the boxes on the previous page. However, this " +
+                    "will also cause these filtered entries to expand a simplified list of the " +
+                    "tins for that item which also match the chosen filter.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The next box with the three check boxes are for filtering items for those " +
+                    "with or without assigned tins, those that are opened or unopened (opened " +
+                    "only returns tins that have a non-future \"Open Date\" applied and not a " +
+                    "\"finished\" tag), and those that are finished or unfinished (though " +
+                    "\"unfinished\" only returns tins with a non-future open date). These three " +
+                    "filters are mutually-exclusive and do not apply to the Dates screen. And " +
+                    "like the containers filter, the opened/unopened and finished/unfinished " +
+                    "filters will show the simplified tins expansion with the relevant tins.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "The last box is for production status and these two check boxes are mutually " +
+                    "exclusive with one another as well.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
