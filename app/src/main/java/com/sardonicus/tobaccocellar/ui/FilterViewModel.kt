@@ -7,6 +7,7 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
+import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
@@ -78,6 +79,19 @@ class FilterViewModel (
 
     fun updateSearchFocused(focused: Boolean) {
         _searchFocused.value = focused
+    }
+
+    private val _isTinSearch = MutableStateFlow(false)
+    val isTinSearch: StateFlow<Boolean> = _isTinSearch
+
+    init {
+        viewModelScope.launch {
+            preferencesRepo.searchSetting.collect {
+                if (it == SearchSetting.TinLabel) {
+                    _isTinSearch.value = true
+                } else false
+            }
+        }
     }
 
 
@@ -312,6 +326,7 @@ class FilterViewModel (
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
     }
 
+    // Events from EventBus //
     init {
         viewModelScope.launch {
             EventBus.events.collect {
