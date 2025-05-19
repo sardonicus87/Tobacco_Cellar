@@ -92,6 +92,7 @@ val appBarContainerLight = Color(0xFF218056)
 val indicatorCircleLight = Color(0xFFFF4040)
 val sheetBoxLight = Color(0xFFE6F0E6)
 val sheetBoxBorderLight = Color(0xFFB5BDB5)
+val indicatorBorderCorrectionLight = Color(0xFF59AD86)
 
 val listMenuScrimDark = Color(0xFF000000)
 val deleteButtonDark = Color(0xFF990000)
@@ -108,6 +109,7 @@ val appBarContainerDark = Color(0xFF206A4D)
 val indicatorCircleDark = Color(0xFFFF4040)
 val sheetBoxDark = Color(0xFF19241E) // original 0xFF17201B
 val sheetBoxBorderDark = Color(0xFF364B40)
+val indicatorBorderCorrectionDark = Color(0xFF59A081)
 
 // pie charts light
 val pieOneLight = Color(0xFF03B1FF)

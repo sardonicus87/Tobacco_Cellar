@@ -432,6 +432,7 @@ fun CellarBottomAppBar(
     val sheetState by filterViewModel.bottomSheetState.collectAsState()
     val sheetOpen = sheetState == BottomSheetState.OPENED
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
     BottomAppBar(
         modifier = modifier
@@ -609,9 +610,21 @@ fun CellarBottomAppBar(
                 ) {
                     val borderColor =
                         if (filteringApplied) {
-                            if (sheetOpen) onPrimaryLight
-                            else LocalContentColor.current
+                            if (searchPerformed) {
+                                LocalCustomColors.current.indicatorBorderCorrection
+                            } else {
+                                if (sheetOpen) {
+                                    onPrimaryLight
+                                } else LocalContentColor.current
+                            }
                         } else { Color.Transparent }
+
+                    val indicatorColor =
+                        if (filteringApplied) {
+                            if (searchPerformed) {
+                                LocalCustomColors.current.indicatorCircle.copy(alpha = 0.5f)
+                            } else LocalCustomColors.current.indicatorCircle
+                        } else Color.Transparent
 
                     Box(
                         modifier = Modifier
@@ -619,12 +632,13 @@ fun CellarBottomAppBar(
                             .offset(x = 13.dp, y = (-17).dp)
                             .clip(CircleShape)
                             .border(1.5.dp, borderColor, CircleShape)
-                            .background(if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent)
+                            .background(indicatorColor)
                     )
                     IconButton(
                         onClick = { filterViewModel.openBottomSheet() },
                         modifier = Modifier
-                            .padding(0.dp)
+                            .padding(0.dp),
+                        enabled = !searchPerformed
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.filter_24),
@@ -654,7 +668,9 @@ fun CellarBottomAppBar(
                         color = if (sheetOpen) {
                             onPrimaryLight
                         } else {
-                            LocalContentColor.current
+                            if (searchPerformed) {
+                                LocalContentColor.current.copy(alpha = 0.5f)
+                            } else LocalContentColor.current
                         }
                     )
                 }
