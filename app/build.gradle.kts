@@ -5,6 +5,10 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+ksp {
+    arg("room.schemaLocation", "${projectDir}/schemas")
+}
+
 android {
     compileSdk = 36
 
@@ -12,16 +16,13 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "3.0.2"
+        versionCode = 18
+        versionName = "3.1.0"
 
         vectorDrawables {
             useSupportLibrary = true
         }
 
-        ksp {
-            arg("room.schemaLocation", "${projectDir}/schemas")
-        }
     }
 
     buildTypes {
