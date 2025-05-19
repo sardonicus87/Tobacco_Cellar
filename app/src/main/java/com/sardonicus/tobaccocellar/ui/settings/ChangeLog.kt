@@ -10,6 +10,17 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.1",
+        buildDate = "19 May, 2025",
+        changes = listOf(),
+        improvements = listOf(),
+        bugFixes = listOf(
+            "Fixed a crash on app startup related to new Google/Android messing up the Datastore " +
+                    "api (no longer works with the code shrinking)."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.0",
         buildDate = "19 May, 2025",
         changes = listOf(
@@ -29,8 +40,7 @@ val changelogEntries = listOf(
         improvements = listOf(
             "Set up the status bar to hide automatically in landscape orientation to provide a " +
                     "little more usable reading space. In landscape, you can swipe down to see " +
-                    "the status bar. This might not work consistently across all versions of " +
-                    "Android. Please e-mail if this results in issues.",
+                    "the status bar temporarily.",
             "Stats screen Quick Stats section now sorts the various sub-sections in descending " +
                     "order (by the \"Raw Stats\" values) and keeps the filtered stat in-line with " +
                     "the raw stat. Alignment also improved as well as text can now be selected " +
