@@ -413,7 +413,25 @@ fun QuickStatsSection(
                         )
                     }
 
-                    // Fifth section counts by container
+                    // Fifth section counts by components
+                    if (rawStats.totalByComponent.any { it.key != "None Assigned" }) {
+                        StatSubSection(
+                            rawField = rawStats.totalByComponent,
+                            filteredField = filteredStats.totalByComponent,
+                            modifier = Modifier
+                        )
+                    }
+
+                    // Sixth section counts by flavorings
+                    if (rawStats.totalByFlavoring.any { it.key != "None Assigned" }) {
+                        StatSubSection(
+                            rawField = rawStats.totalByFlavoring,
+                            filteredField = filteredStats.totalByFlavoring,
+                            modifier = Modifier
+                        )
+                    }
+
+                    // Seventh section counts by container
                     if (rawStats.totalByContainer.any { it.key != "Unassigned" }) {
                         StatSubSection(
                             rawField = rawStats.totalByContainer,
@@ -754,6 +772,7 @@ private fun ChartsSection(
                     chartData = filteredStats.cutsByQuantity
                 )
             }
+
             Spacer(
                 modifier = Modifier
                     .height(16.dp)
