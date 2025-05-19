@@ -10,6 +10,47 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.0",
+        buildDate = "19 May, 2025",
+        changes = listOf(
+            "Cellar screen, added list view sorting option to the header.",
+            "List view mode now expands a basic filtered list of tins for an item if a tin filter " +
+                    "is chosen (listed tins for an item also fit the tin filtering).",
+            "Filtering, added a \"(None Assigned)\" option for components and flavorings, as well " +
+                    "as adding more tins filters: opened/unopened, finished/unfinished, and " +
+                    "containers. Please see the Help/FAQ for more details.",
+            "Changed the \"Container\" search option to \"Tin Label\" as searching containers is " +
+                    "now redundant/irrelevant with the new filters, and searching by \"Tin Label\" " +
+                    "is likely more useful. The Tin Label search will show an expansion on each " +
+                    "item with a simplified list of tins that match the search.",
+            "Stats screen, added two more sub-sections to Quick Stats, one for components and one " +
+                    "for flavorings."
+        ),
+        improvements = listOf(
+            "Set up the status bar to hide automatically in landscape orientation to provide a " +
+                    "little more usable reading space. In landscape, you can swipe down to see " +
+                    "the status bar. This might not work consistently across all versions of " +
+                    "Android. Please e-mail if this results in issues.",
+            "Stats screen Quick Stats section now sorts the various sub-sections in descending " +
+                    "order (by the \"Raw Stats\" values) and keeps the filtered stat in-line with " +
+                    "the raw stat. Alignment also improved as well as text can now be selected " +
+                    "(highlight and copy) and dividers added between sub-sections.",
+            "Stats screen pie charts where \"... by Tins\" has been re-labelled to \"... by \"No. " +
+                    "of Tins\"\" for clarity of the data source.",
+            "Minor UI polishing (filter applied indicator, padding on various elements, etc).",
+            "Made \"Quick Date Stats\" on the Dates screen selectable (highlight and copy text).",
+            "Disabled the Filter button and set disabled colors when on a search result (as " +
+                    "filters don't apply to the search).",
+        ),
+        bugFixes = listOf(
+            "Dates screen fixed a minor bug where if no date data was present, it wasn't showing " +
+                    "the correct layout (instead, just showing all sections empty).",
+            "Cellar Table view fixed a minor bug where list position could be lost when changing " +
+                    "sorting while in a search result.",
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.0.2",
         buildDate = "7 May, 2025",
         changes = listOf(),
@@ -23,7 +64,7 @@ val changelogEntries = listOf(
             "Fixed another bug with CSV import for Components and Flavoring not correctly " +
                     "importing in some cases. This should now be completely fixed for all cases.",
             "Fixed another bug with CSV import not handling \"Production Status\" field correctly " +
-                    "resulting in a crash with update option.",
+                    "resulting in a crash when using the update option.",
             "Fixed bug Edit Entry when changing components or flavoring, was failing to add or " +
                     "remove values correctly if no other fields were also being changed."
         ),
@@ -62,7 +103,8 @@ val changelogEntries = listOf(
             "Filtering: added \"Only\" component matching option. \"Any\" and \"All\" remain the " +
                     "same as they were while the new option \"Only\" is more strict, returning " +
                     "only exact matches to the selected components. Also added a filter option to " +
-                    "return only those items that have tins and filtering options for tins.",
+                    "return only those items that have tins and filtering options for production " +
+                    "status.",
             "Tins now have an additional option to mark as being finished, which has also been " +
                     "added to Add/Edit screens and CSV import field.",
             "Flavoring field now added to items and to CSV Import, Add/Edit/Bulk Edit screens, " +
