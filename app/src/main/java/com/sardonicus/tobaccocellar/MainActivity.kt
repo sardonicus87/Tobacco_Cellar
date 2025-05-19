@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -29,12 +30,16 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
 
 class MainActivity : ComponentActivity() {
 
     private var backPressedOnce = false
+    private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
     @OptIn(ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,6 +71,12 @@ class MainActivity : ComponentActivity() {
             }
         })
 
+        windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+        updateSystemBarsForOrientation(resources.configuration.orientation)
+
+
         setContent {
             val application = (application as CellarApplication)
 
@@ -85,7 +96,21 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateSystemBarsForOrientation(newConfig.orientation)
+    }
+
+    private fun updateSystemBarsForOrientation(orientation: Int) {
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
+        } else {
+            windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
+    }
 }
+
 
 @Composable
 private fun SystemBarsProtection(
