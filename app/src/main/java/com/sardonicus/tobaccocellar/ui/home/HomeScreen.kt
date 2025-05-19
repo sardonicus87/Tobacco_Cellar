@@ -1606,14 +1606,6 @@ private fun CellarListItem(
                                             )
                                         }
                                     }
-//                                    Row(
-//                                        modifier = Modifier
-//                                            .fillMaxWidth(),
-//                                        horizontalArrangement = Arrangement.Start,
-//                                        verticalAlignment = Alignment.Top
-//                                    ) {
-//
-//                                    }
                                 }
                             }
                         }
