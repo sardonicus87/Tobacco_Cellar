@@ -179,8 +179,7 @@ fun HomeScreen(
     val activeMenuId by viewmodel.activeMenuId
     val isMenuShown by viewmodel.isMenuShown
     val tableSorting by viewmodel.tableSorting
-    val listSorting by viewmodel.listSorting.collectAsState()
-    val currentListSorting by preferencesRepo.listSorting.collectAsState(initial = ListSorting.DEFAULT.value)
+    val listSorting by preferencesRepo.listSorting.collectAsState(initial = ListSorting.DEFAULT.value)
 
     val showSnackbar = viewmodel.showSnackbar.collectAsState()
     if (showSnackbar.value) {
@@ -491,7 +490,7 @@ fun HomeScreen(
                 selectView = viewmodel::selectView,
                 isTableView = isTableView,
                 saveListSorting = viewmodel::saveListSorting,
-                listSorting = currentListSorting
+                listSorting = listSorting
             )
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
