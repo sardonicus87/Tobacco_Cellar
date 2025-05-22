@@ -10,6 +10,31 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.2",
+        buildDate = "22 May, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Stats screen Quick Stats sub-sections, if the name of what's being counted is too " +
+                    "long, now resizes to fit. Also, the number of opened tins in the first " +
+                    "section of Quick Stats now has visibility conditional on the use of tin " +
+                    "open dates (previously always showed and showed 0 even when tins or dates " +
+                    "weren't used).",
+            "Stats screen also added subtle headers to each subsection for clarity. Also set to " +
+                    "scroll back to the top of the screen when collapsing quick stats.",
+            "Minor detail, but further shortened the suggested file names for backup files. They " +
+                    "now take the pattern \"TC_[db/settings/complete]_[Short-Date-Format]\". The " +
+                    "date format is based on your locale (day, month, year order). For example, " +
+                    "a database backup will suggest \"TC_db_5-22-25.tcbu\"."
+        ),
+        bugFixes = listOf(
+            "Fixed bug on Stats screen where components and flavorings weren't being counted " +
+                    "and mapped correctly in the Quick Stats.",
+            "Fixed bug on Stats screen where the number of opened tins in the first section was " +
+                    "not being printed on a new line."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.1",
         buildDate = "19 May, 2025",
         changes = listOf(),
