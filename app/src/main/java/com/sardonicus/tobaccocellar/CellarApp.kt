@@ -1267,6 +1267,7 @@ fun TinsFilterSection(
     ) {
         // Has tins/Opened/Finished
         Box{
+            val tinsExist by filterViewModel.hasTins.collectAsState()
             Row(
                 modifier = Modifier
                     .border(
@@ -1280,74 +1281,85 @@ fun TinsFilterSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (tins) {
-                    // Has Tins
-                    Column {
-                        val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-                        val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
-                        CheckboxWithLabel(
-                            text = "Has tins",
-                            checked = hasTins,
-                            onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
-                            modifier = Modifier,
-                            enabled = !dateScreen,
-                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                        )
-                        CheckboxWithLabel(
-                            text = "No tins",
-                            checked = hasNone,
-                            onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
-                            modifier = Modifier,
-                            enabled = !dateScreen,
-                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                        )
-                    }
+                // Has Tins
+                Column {
+                    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+                    val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
+                    CheckboxWithLabel(
+                        text = "Has tins",
+                        checked = hasTins,
+                        onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
+                        modifier = Modifier,
+                        enabled = tinsExist && !dateScreen,
+                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                    CheckboxWithLabel(
+                        text = "No tins",
+                        checked = hasNone,
+                        onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
+                        modifier = Modifier,
+                        enabled = tinsExist && !dateScreen,
+                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                }
 
-                    // Opened
-                    Column {
-                        val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
-                        val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
-                        CheckboxWithLabel(
-                            text = "Opened",
-                            checked = isOpened,
-                            onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
-                            modifier = Modifier,
-                            enabled = !dateScreen,
-                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                        )
-                        CheckboxWithLabel(
-                            text = "Unopened",
-                            checked = isUnopened,
-                            onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
-                            modifier = Modifier,
-                            enabled = !dateScreen,
-                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                        )
-                    }
+                // Opened
+                Column {
+                    val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
+                    val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
+                    CheckboxWithLabel(
+                        text = "Opened",
+                        checked = isOpened,
+                        onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
+                        modifier = Modifier,
+                        enabled = tinsExist && !dateScreen,
+                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                    CheckboxWithLabel(
+                        text = "Unopened",
+                        checked = isUnopened,
+                        onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
+                        modifier = Modifier,
+                        enabled = tinsExist && !dateScreen,
+                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                }
 
-                    // Finished
-                    Column {
-                        val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
-                        val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
-                        CheckboxWithLabel(
-                            text = "Finished",
-                            checked = isFinished,
-                            onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
-                            modifier = Modifier,
-                            enabled = !dateScreen,
-                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                // Finished
+                Column {
+                    val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
+                    val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
+                    CheckboxWithLabel(
+                        text = "Finished",
+                        checked = isFinished,
+                        onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
+                        modifier = Modifier,
+                        enabled = tinsExist && !dateScreen,
+                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                    CheckboxWithLabel(
+                        text = "Unfinished",
+                        checked = notFinished,
+                        onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
+                        modifier = Modifier,
+                        enabled = tinsExist && !dateScreen,
+                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                }
+            }
+            if (!tinsExist && !dateScreen) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .border(
+                            Dp.Hairline,
+                            LocalCustomColors.current.sheetBoxBorder,
+                            RoundedCornerShape(8.dp)
                         )
-                        CheckboxWithLabel(
-                            text = "Unfinished",
-                            checked = notFinished,
-                            onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
-                            modifier = Modifier,
-                            enabled = !dateScreen,
-                            fontColor = if (dateScreen) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                        )
-
-                    }
-                } else {
+                        .background(LocalCustomColors.current.sheetBox.copy(alpha = .85f), RoundedCornerShape(8.dp))
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -1359,7 +1371,7 @@ fun TinsFilterSection(
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center,
-                            color = if (dateScreen) Color.Transparent else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -1381,7 +1393,7 @@ fun TinsFilterSection(
                         text = "N/A on Dates screen.",
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -2112,12 +2124,7 @@ fun FlowFilterSection(
                 FilterChip(
                     selected = selectedOptions.contains(option),
                     onClick = { updateSelectedOptions(option, !selectedOptions.contains(option)) },
-                    label = {
-                        Text(
-                            text = option,
-                            fontSize = 14.sp,
-                        )
-                    },
+                    label = { Text(text = option, fontSize = 14.sp) },
                     modifier = Modifier
                         .padding(0.dp),
                     shape = MaterialTheme.shapes.small,
@@ -2190,6 +2197,7 @@ fun FlowFilterSection(
                                                 fontWeight = FontWeight.Medium,
                                                 modifier = Modifier
                                             )
+                                            // Any
                                             Box(
                                                 modifier = Modifier
                                                     .padding(0.dp)
@@ -2220,6 +2228,7 @@ fun FlowFilterSection(
                                                 fontWeight = FontWeight.Normal,
                                                 modifier = Modifier
                                             )
+                                            // All
                                             Box(
                                                 modifier = Modifier
                                                     .padding(0.dp)
@@ -2250,6 +2259,7 @@ fun FlowFilterSection(
                                                 fontWeight = FontWeight.Normal,
                                                 modifier = Modifier
                                             )
+                                            // Only
                                             Box(
                                                 modifier = Modifier
                                                     .padding(0.dp)
@@ -2276,6 +2286,7 @@ fun FlowFilterSection(
                                             }
                                         }
                                     }
+
                                     // Chips
                                     FlowRow(
                                         modifier = Modifier
