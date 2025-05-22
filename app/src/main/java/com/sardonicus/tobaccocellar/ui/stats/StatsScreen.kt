@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,10 +34,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,6 +53,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -71,6 +77,8 @@ import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -157,11 +165,21 @@ private fun StatsBody(
     modifier: Modifier = Modifier,
 ) {
     val separatorColor = colorScheme.secondary
+    val scrollState = rememberScrollState()
+    var contracted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(contracted) {
+        if (contracted) {
+            scrollState.animateScrollTo(0)
+            delay(5)
+            contracted = false
+        }
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
@@ -219,6 +237,7 @@ private fun StatsBody(
         QuickStatsSection(
             rawStats = rawStats,
             filteredStats = filteredStats,
+            contracted = { contracted = it },
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
@@ -285,6 +304,7 @@ private fun StatsBody(
 fun QuickStatsSection(
     rawStats: RawStats,
     filteredStats: FilteredStats,
+    contracted: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -332,7 +352,6 @@ fun QuickStatsSection(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            val openedUsed = if (rawStats.totalOpened == 0) "" else "\n"
             SelectionContainer(
                 modifier = Modifier
                     .weight(1f)
@@ -342,8 +361,8 @@ fun QuickStatsSection(
                             "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
                             "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
                             "${rawStats.estimatedWeight} (estimated)\n" +
-                            "${rawStats.totalZeroQuantity} out of stock$openedUsed" +
-                            "${rawStats.totalOpened} opened",
+                            "${rawStats.totalZeroQuantity} out of stock" +
+                            if (rawStats.totalOpened != null) "\n${rawStats.totalOpened} opened" else "",
                     modifier = Modifier
                         .weight(1f)
                         .padding(bottom = 12.dp),
@@ -365,8 +384,8 @@ fun QuickStatsSection(
                             "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
                             "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
                             "${filteredStats.estimatedWeight} (estimated)\n" +
-                            "${filteredStats.totalZeroQuantity} out of stock$openedUsed" +
-                            "${filteredStats.totalOpened} opened",
+                            "${filteredStats.totalZeroQuantity} out of stock" +
+                            if (rawStats.totalOpened != null)"\n${filteredStats.totalOpened} opened" else "",
                     modifier = Modifier
                         .weight(1f),
                     fontSize = 15.sp,
@@ -379,6 +398,7 @@ fun QuickStatsSection(
         // Second Section counts per type
         if (rawStats.totalByType.any { it.key != "Unassigned" }) {
             StatSubSection(
+                label = "Blend Type",
                 rawField = rawStats.totalByType,
                 filteredField = filteredStats.totalByType,
                 modifier = Modifier
@@ -387,6 +407,8 @@ fun QuickStatsSection(
         if (
             (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) ||
             (rawStats.totalByCut.any { it.key != "Unassigned" }) ||
+            (rawStats.totalByComponent.any { it.key != "None Assigned" }) ||
+            (rawStats.totalByFlavoring.any { it.key != "None Assigned" }) ||
             (rawStats.totalByContainer.any { it.key != "Unassigned" })
         ) {
             Column(
@@ -398,6 +420,7 @@ fun QuickStatsSection(
                     // Third section counts by subgenre
                     if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
                         StatSubSection(
+                            label = "Subgenres",
                             rawField = rawStats.totalBySubgenre,
                             filteredField = filteredStats.totalBySubgenre,
                             modifier = Modifier
@@ -407,6 +430,7 @@ fun QuickStatsSection(
                     // Fourth section counts by cuts
                     if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
                         StatSubSection(
+                            label = "Cuts",
                             rawField = rawStats.totalByCut,
                             filteredField = filteredStats.totalByCut,
                             modifier = Modifier
@@ -416,6 +440,7 @@ fun QuickStatsSection(
                     // Fifth section counts by components
                     if (rawStats.totalByComponent.any { it.key != "None Assigned" }) {
                         StatSubSection(
+                            label = "Components",
                             rawField = rawStats.totalByComponent,
                             filteredField = filteredStats.totalByComponent,
                             modifier = Modifier
@@ -425,6 +450,7 @@ fun QuickStatsSection(
                     // Sixth section counts by flavorings
                     if (rawStats.totalByFlavoring.any { it.key != "None Assigned" }) {
                         StatSubSection(
+                            label = "Flavoring",
                             rawField = rawStats.totalByFlavoring,
                             filteredField = filteredStats.totalByFlavoring,
                             modifier = Modifier
@@ -434,6 +460,7 @@ fun QuickStatsSection(
                     // Seventh section counts by container
                     if (rawStats.totalByContainer.any { it.key != "Unassigned" }) {
                         StatSubSection(
+                            label = "Tin Containers",
                             rawField = rawStats.totalByContainer,
                             filteredField = filteredStats.totalByContainer,
                             modifier = Modifier
@@ -442,6 +469,7 @@ fun QuickStatsSection(
                 }
             }
             if (expanded) {
+                val coroutineScope = rememberCoroutineScope()
                 Text(
                     text = "Collapse",
                     fontSize = 14.sp,
@@ -449,7 +477,11 @@ fun QuickStatsSection(
                     color = LocalContentColor.current.copy(alpha = 0.5f),
                     modifier = Modifier
                         .clickable {
-                            expanded = false
+                            coroutineScope.launch {
+                                contracted(true)
+                                delay(5)
+                                expanded = false
+                            }
                         }
                         .padding(vertical = 1.dp)
                         .fillMaxWidth()
@@ -476,100 +508,56 @@ fun QuickStatsSection(
 
 @Composable
 private fun StatSubSection(
+    label: String,
     rawField: Map<String, Int>,
     filteredField: Map<String, Int>,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.Top,
+    Box (
         modifier = modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.TopStart
     ) {
-        // Raw Stats
-        Column (
+        Text(
+            text = label,
+            fontSize = 13.5.sp,
             modifier = Modifier
-                .weight(1f)
-                .padding(bottom = 16.dp)
+                .padding(start = 2.dp)
+                .offset(y = (-2).dp),
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Start,
+            color = colorScheme.onBackground.copy(alpha = 0.4f)
+        )
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top,
+            modifier = modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
         ) {
-            HorizontalDivider(
+            // Raw Stats
+            Column (
                 modifier = Modifier
+                    .weight(1f)
                     .padding(bottom = 16.dp)
-                    .fillMaxWidth(.65f),
-                thickness = 1.dp
-            )
-            SelectionContainer(
-                modifier = Modifier
-                    .fillMaxWidth()
             ) {
-                Row(
+                HorizontalDivider(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.Top,
+                        .padding(bottom = 20.dp)
+                        .fillMaxWidth(.65f),
+                    thickness = 1.dp
+                )
+                SelectionContainer(
+                    modifier = Modifier
+                        .fillMaxWidth()
                 ) {
-                    // Value
-                    Column(
+                    Row(
                         modifier = Modifier
-                            .width(IntrinsicSize.Min)
-                            .padding(end = 6.dp),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Top,
+                            .fillMaxWidth()
+                            .padding(start = 4.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top,
                     ) {
-                        rawField.forEach {
-                            Text(
-                                text = "${it.value} ",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(end = 1.dp),
-                                textAlign = TextAlign.Start,
-                                fontSize = 15.sp,
-                            )
-                        }
-                    }
-                    // Key
-                    Column(
-                        modifier = Modifier,
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Top,
-                    ) {
-                        rawField.forEach {
-                            Text(
-                                text = it.key,
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                textAlign = TextAlign.Start,
-                                fontSize = 15.sp,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Filtered Stats
-        Column (
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        ) {
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 16.dp)
-                    .fillMaxWidth(.65f),
-                thickness = 1.dp,
-            )
-            SelectionContainer {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    if (filteredField.any { it.value > 0 }) {
                         // Value
                         Column(
                             modifier = Modifier
@@ -578,71 +566,164 @@ private fun StatSubSection(
                             horizontalAlignment = Alignment.Start,
                             verticalArrangement = Arrangement.Top,
                         ) {
-                            filteredField.forEach {
-                                if (it.value == 0) {
-                                    Text(
-                                        text = "",
-                                        modifier = Modifier,
-                                        textAlign = TextAlign.Start,
-                                        fontSize = 15.sp,
-                                    )
-                                } else {
-                                    Text(
-                                        text = "${it.value} ",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(end = 1.dp),
-                                        textAlign = TextAlign.Start,
-                                        fontSize = 15.sp,
-                                    )
-                                }
+                            rawField.forEach {
+                                Text(
+                                    text = "${it.value} ",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(end = 1.dp),
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 15.sp,
+                                )
                             }
                         }
-
                         // Key
                         Column(
-                            modifier = Modifier,
+                            modifier = Modifier
+                                .fillMaxWidth(),
                             horizontalAlignment = Alignment.Start,
                             verticalArrangement = Arrangement.Top,
                         ) {
-                            filteredField.forEach {
-                                if (it.value == 0) {
-                                    Text(
-                                        text = "--",
-                                        modifier = Modifier
-                                            .padding(start = 12.dp)
-                                            .alpha(.5f),
-                                        textAlign = TextAlign.Start,
-                                        fontSize = 15.sp,
-                                    )
-                                } else {
-                                    Text(
+                            val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
+                            rawField.forEach {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(.8f)
+                                        .height(height),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicText(
                                         text = it.key,
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        textAlign = TextAlign.Start,
-                                        fontSize = 15.sp,
+                                        style = TextStyle(
+                                            color = LocalContentColor.current
+                                        ),
+                                        maxLines = 2,
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 9.sp,
+                                            maxFontSize = 15.sp,
+                                            stepSize = .02.sp
+                                        ),
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         }
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(.75f)
-                                .padding(bottom = 16.dp),
-                            horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = "nothing found",
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Filtered Stats
+            Column (
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(bottom = 20.dp)
+                        .fillMaxWidth(.65f),
+                    thickness = 1.dp,
+                )
+                SelectionContainer {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 4.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        if (filteredField.any { it.value > 0 } ) {
+                            // Value
+                            Column(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .alpha(.6f),
-                                textAlign = TextAlign.Center,
-                                fontSize = 15.sp,
-                            )
+                                    .width(IntrinsicSize.Min)
+                                    .padding(end = 12.dp),
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Top,
+                            ) {
+                                filteredField.forEach {
+                                    if (it.value == 0) {
+                                        Text(
+                                            text = "",
+                                            modifier = Modifier,
+                                            textAlign = TextAlign.Start,
+                                            fontSize = 15.sp,
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "${it.value} ",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(end = 1.dp),
+                                            textAlign = TextAlign.Start,
+                                            fontSize = 15.sp,
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Key
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Top,
+                            ) {
+                                val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
+                                filteredField.forEach {
+                                    if (it.value == 0) {
+                                        Text(
+                                            text = "--",
+                                            modifier = Modifier
+                                                .padding(start = 12.dp)
+                                                .alpha(.5f),
+                                            textAlign = TextAlign.Start,
+                                            fontSize = 15.sp,
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(.8f)
+                                                .height(height),
+                                            contentAlignment = Alignment.CenterStart
+                                        ) {
+                                            BasicText(
+                                                text = it.key,
+                                                style = TextStyle(
+                                                    color = LocalContentColor.current
+                                                ),
+                                                maxLines = 2,
+                                                autoSize = TextAutoSize.StepBased(
+                                                    minFontSize = 9.sp,
+                                                    maxFontSize = 15.sp,
+                                                    stepSize = .02.sp
+                                                ),
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(),
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                Text(
+                                    text = "nothing found",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .alpha(.6f)
+                                        .padding(start = 12.dp),
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 15.sp,
+                                )
+                            }
                         }
                     }
                 }
