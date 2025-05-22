@@ -1,5 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -621,6 +624,12 @@ class StatsViewModel(
             }
 
         return formattedSum?.toString() ?: ""
+    }
+
+    var expanded by mutableStateOf(false)
+
+    fun updateExpanded(newExpanded: Boolean) {
+        expanded = newExpanded
     }
 
 }
