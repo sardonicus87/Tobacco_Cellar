@@ -39,8 +39,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,7 +76,6 @@ import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -149,6 +146,7 @@ fun StatsScreen(
                 StatsBody(
                     rawStats = rawStats,
                     filteredStats = filteredStats,
+                    viewmodel = viewmodel,
                     modifier = modifier
                         .fillMaxSize(),
                 )
@@ -162,19 +160,28 @@ fun StatsScreen(
 private fun StatsBody(
     rawStats: RawStats,
     filteredStats: FilteredStats,
+    viewmodel: StatsViewModel,
     modifier: Modifier = Modifier,
 ) {
     val separatorColor = colorScheme.secondary
     val scrollState = rememberScrollState()
     var contracted by remember { mutableStateOf(false) }
 
+    val expanded = viewmodel.expanded
+
     LaunchedEffect(contracted) {
         if (contracted) {
-            scrollState.animateScrollTo(0)
-            delay(5)
+            scrollState.scrollTo(0)
+            while (scrollState.value > 0) {
+                delay(5)
+            }
+            viewmodel.updateExpanded(false)
+            delay(10)
             contracted = false
         }
     }
+
+
 
     Column(
         modifier = modifier
@@ -238,6 +245,8 @@ private fun StatsBody(
             rawStats = rawStats,
             filteredStats = filteredStats,
             contracted = { contracted = it },
+            expanded = expanded,
+            updateExpanded = { viewmodel.updateExpanded(it) },
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
@@ -305,9 +314,11 @@ fun QuickStatsSection(
     rawStats: RawStats,
     filteredStats: FilteredStats,
     contracted: (Boolean) -> Unit,
+    expanded: Boolean,
+    updateExpanded: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+   // var expanded by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -469,7 +480,6 @@ fun QuickStatsSection(
                 }
             }
             if (expanded) {
-                val coroutineScope = rememberCoroutineScope()
                 Text(
                     text = "Collapse",
                     fontSize = 14.sp,
@@ -477,11 +487,7 @@ fun QuickStatsSection(
                     color = LocalContentColor.current.copy(alpha = 0.5f),
                     modifier = Modifier
                         .clickable {
-                            coroutineScope.launch {
-                                contracted(true)
-                                delay(5)
-                                expanded = false
-                            }
+                            contracted(true)
                         }
                         .padding(vertical = 1.dp)
                         .fillMaxWidth()
@@ -494,7 +500,7 @@ fun QuickStatsSection(
                     color = LocalContentColor.current.copy(alpha = 0.5f),
                     modifier = Modifier
                         .clickable {
-                            expanded = true
+                            updateExpanded(true)
                         }
                         .padding(vertical = 1.dp)
                         .fillMaxWidth()
