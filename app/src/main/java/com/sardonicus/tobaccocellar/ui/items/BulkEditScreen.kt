@@ -74,11 +74,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -510,10 +512,10 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Sub-genre: ",
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                style = TextStyle(
                                     color = if (!editingState.genreSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
-                                    ) else LocalContentColor.current
+                                    ) else LocalContentColor.current,
                                 ),
                                 modifier = Modifier
                                     .heightIn(max = 38.dp)
@@ -709,7 +711,7 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Components: ",
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                style = TextStyle(
                                     color = if (!editingState.compsSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -858,7 +860,7 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Flavoring: ",
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                style = TextStyle(
                                     color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -1127,10 +1129,11 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Production Status:",
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                style = TextStyle(
                                     color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
-                                    ) else LocalContentColor.current
+                                    ) else LocalContentColor.current,
+                                    lineBreak = LineBreak.Paragraph
                                 ),
                                 modifier = Modifier
                                     .heightIn(max = 36.dp)
@@ -1159,7 +1162,7 @@ fun BulkEditing(
                                     .offset(x = 0.dp, y = 1.dp),
                                 color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
-                                ) else LocalContentColor.current
+                                ) else LocalContentColor.current,
                             )
                             CustomCheckBox(
                                 checked = editingState.inProduction,
@@ -1200,10 +1203,10 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Sync entry/\ntin quantity:",
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                style = TextStyle(
                                     color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
-                                    ) else LocalContentColor.current
+                                    ) else LocalContentColor.current,
                                 ),
                                 modifier = Modifier
                                     .heightIn(max = 36.dp)

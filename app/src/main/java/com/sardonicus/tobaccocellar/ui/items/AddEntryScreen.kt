@@ -98,6 +98,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -919,7 +920,7 @@ fun DetailsEntry(
         ) {
             BasicText(
                 text = "Components: ",
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = TextStyle(
                     color = LocalContentColor.current
                 ),
                 modifier = Modifier
@@ -1032,7 +1033,7 @@ fun DetailsEntry(
         ) {
             BasicText(
                 text = "Flavoring: ",
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = TextStyle(
                     color = LocalContentColor.current
                 ),
                 modifier = Modifier
@@ -1145,7 +1146,7 @@ fun DetailsEntry(
         ) {
             BasicText(
                 text = "No. of\nTins:",
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = TextStyle(
                     color = LocalContentColor.current
                 ),
                 modifier = Modifier

@@ -80,6 +80,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -557,7 +558,7 @@ fun CsvImportBody(
                                                     } else {
                                                         ""
                                                     },
-                                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                                    style = TextStyle(
                                                         color = MaterialTheme.colorScheme.error,
                                                         textAlign = TextAlign.End
                                                     ),
@@ -1800,7 +1801,7 @@ fun MappingField(
             ) {
                 BasicText(
                     text = label,
-                    style = MaterialTheme.typography.bodyLarge.copy(
+                    style = TextStyle(
                         color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
                         textAlign = TextAlign.Start,
                         lineBreak = LineBreak.Paragraph
