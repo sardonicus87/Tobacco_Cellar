@@ -537,6 +537,9 @@ private fun HomeHeader(
     saveListSorting: (String) -> Unit,
     listSorting: String,
 ) {
+    val tinsExist by filterViewModel.tinsExist.collectAsState()
+    val notesExist by filterViewModel.notesExist.collectAsState()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -668,7 +671,11 @@ private fun HomeHeader(
                                 },
                                 modifier = Modifier
                                     .padding(0.dp),
-                                enabled = true,
+                                enabled = when (it) {
+                                    SearchSetting.Blend -> true
+                                    SearchSetting.Notes -> notesExist
+                                    SearchSetting.TinLabel -> tinsExist
+                                },
                             )
                         }
                     }
