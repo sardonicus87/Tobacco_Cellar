@@ -80,7 +80,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -365,8 +364,7 @@ fun CsvImportBody(
                                         Text(
                                             text = "Hide Help",
                                             fontWeight = FontWeight.SemiBold,
-
-                                            )
+                                        )
                                     } else {
                                         Box(
                                             modifier = Modifier
@@ -437,12 +435,7 @@ fun CsvImportBody(
                                         Text(
                                             text = csvImportState.header.joinToString(", "),
                                             modifier = Modifier
-                                                .padding(
-                                                    start = 8.dp,
-                                                    top = 0.dp,
-                                                    end = 0.dp,
-                                                    bottom = 8.dp
-                                                ),
+                                                .padding(start = 8.dp, bottom = 8.dp),
                                         )
                                         Text(
                                             text = stringResource(R.string.possible_record),
@@ -458,12 +451,7 @@ fun CsvImportBody(
                                         Text(
                                             text = parseTest,
                                             modifier = Modifier
-                                                .padding(
-                                                    start = 8.dp,
-                                                    top = 0.dp,
-                                                    end = 0.dp,
-                                                    bottom = 0.dp
-                                                ),
+                                                .padding(start = 8.dp),
                                         )
                                     }
 
@@ -569,7 +557,7 @@ fun CsvImportBody(
                                                     } else {
                                                         ""
                                                     },
-                                                    style = TextStyle(
+                                                    style = MaterialTheme.typography.bodyLarge.copy(
                                                         color = MaterialTheme.colorScheme.error,
                                                         textAlign = TextAlign.End
                                                     ),
@@ -589,10 +577,7 @@ fun CsvImportBody(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(top = 8.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(
-                                                8.dp,
-                                                Alignment.Start
-                                            ),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Text(
@@ -1231,6 +1216,18 @@ fun CsvHelpBody(
             )
 
             Text(
+                text = "Use the \"Sync tins?\" option to synchronize the \"No. of Tins\" field " +
+                        "with the quantities of the imported tins. This will be determined by " +
+                        "adding up the total quantity of the tins and dividing it by the tin " +
+                        "conversion rates set on the settings screen (default is 1 tin = 1.75 " +
+                        "oz or 50 grams).",
+                modifier = modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 12.dp),
+                softWrap = true,
+            )
+
+            Text(
                 text = "The next line contains options for handling records that already match " +
                         "entries in the database. Each entry must be a unique combination of Brand " +
                         "+ Blend.",
@@ -1397,8 +1394,10 @@ fun CsvHelpBody(
                 softWrap = true,
             )
             Text(
-                text = "If you select the tin collation option, the Number of Tins field is disabled, " +
-                        "this field will be calculated by the \"Quantity\" field in tins mapping.",
+                text = "If you select the tin collation option, the Number of Tins field can " +
+                        "take a different value than the tin quantity field if you keep the " +
+                        "number of tins separate (only whole numbers will map). This field will " +
+                        "be disabled if you select the \"Sync Tins?\" option.",
                 modifier = modifier
                     .align(Alignment.Start)
                     .padding(bottom = 16.dp),
@@ -1507,7 +1506,6 @@ fun ImportError(
     navigateToHome: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.Center,
@@ -1802,7 +1800,7 @@ fun MappingField(
             ) {
                 BasicText(
                     text = label,
-                    style = TextStyle(
+                    style = MaterialTheme.typography.bodyLarge.copy(
                         color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
                         textAlign = TextAlign.Start,
                         lineBreak = LineBreak.Paragraph
