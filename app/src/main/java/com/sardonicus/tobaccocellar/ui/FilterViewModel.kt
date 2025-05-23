@@ -376,8 +376,11 @@ class FilterViewModel (
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
     val availableContainers: StateFlow<List<String>> = _availableContainers
 
-    private val _hasTins = MutableStateFlow(false)
-    val hasTins: StateFlow<Boolean> = _hasTins
+    private val _tinsExist = MutableStateFlow(false)
+    val tinsExist: StateFlow<Boolean> = _tinsExist
+
+    private val _notesExist = MutableStateFlow(false)
+    val notesExist: StateFlow<Boolean> = _notesExist
 
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
     private val refresh = _refresh.asSharedFlow()
@@ -454,7 +457,8 @@ class FilterViewModel (
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
-                    _hasTins.value = it.any { it.tins.isNotEmpty() }
+                    _tinsExist.value = it.any { it.tins.isNotEmpty() }
+                    _notesExist.value = it.any { it.items.notes.isNotBlank() }
                 }
             }
         }
