@@ -74,13 +74,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -512,7 +510,7 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Sub-genre: ",
-                                style = TextStyle(
+                                style = MaterialTheme.typography.bodyLarge.copy(
                                     color = if (!editingState.genreSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -711,7 +709,7 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Components: ",
-                                style = TextStyle(
+                                style = MaterialTheme.typography.bodyLarge.copy(
                                     color = if (!editingState.compsSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -860,7 +858,7 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Flavoring: ",
-                                style = TextStyle(
+                                style = MaterialTheme.typography.bodyLarge.copy(
                                     color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -1129,11 +1127,10 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Production Status:",
-                                style = TextStyle(
+                                style = MaterialTheme.typography.bodyLarge.copy(
                                     color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
-                                    ) else LocalContentColor.current,
-                                    lineBreak = LineBreak.Paragraph
+                                    ) else LocalContentColor.current
                                 ),
                                 modifier = Modifier
                                     .heightIn(max = 36.dp)
@@ -1203,7 +1200,7 @@ fun BulkEditing(
                             }
                             BasicText(
                                 text = "Sync entry/\ntin quantity:",
-                                style = TextStyle(
+                                style = MaterialTheme.typography.bodyLarge.copy(
                                     color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -1257,6 +1254,7 @@ fun BulkEditing(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
         // Batch edit confirm //
         Button(
             onClick = { confirmEdit = true },

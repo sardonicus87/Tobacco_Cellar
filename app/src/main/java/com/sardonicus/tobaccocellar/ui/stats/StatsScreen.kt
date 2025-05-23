@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -182,7 +183,6 @@ private fun StatsBody(
     }
 
 
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -318,8 +318,6 @@ fun QuickStatsSection(
     updateExpanded: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-   // var expanded by rememberSaveable { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -600,8 +598,8 @@ private fun StatSubSection(
                                 ) {
                                     BasicText(
                                         text = it.key,
-                                        style = TextStyle(
-                                            color = LocalContentColor.current
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            color = LocalContentColor.current,
                                         ),
                                         maxLines = 2,
                                         autoSize = TextAutoSize.StepBased(
@@ -697,8 +695,8 @@ private fun StatSubSection(
                                         ) {
                                             BasicText(
                                                 text = it.key,
-                                                style = TextStyle(
-                                                    color = LocalContentColor.current
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    color = LocalContentColor.current,
                                                 ),
                                                 maxLines = 2,
                                                 autoSize = TextAutoSize.StepBased(
