@@ -54,8 +54,10 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -957,7 +959,7 @@ fun FilterBottomSheet(
 
                 // tin filtering, containers, production //
                 2 -> {
-                    val tins by filterViewModel.hasTins.collectAsState()
+                    val tins by filterViewModel.tinsExist.collectAsState()
 
                     Column(
                         modifier = Modifier
@@ -1267,7 +1269,7 @@ fun TinsFilterSection(
     ) {
         // Has tins/Opened/Finished
         Box{
-            val tinsExist by filterViewModel.hasTins.collectAsState()
+            val tinsExist by filterViewModel.tinsExist.collectAsState()
             Row(
                 modifier = Modifier
                     .border(
@@ -1282,7 +1284,11 @@ fun TinsFilterSection(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Has Tins
-                Column {
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
                     val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
                     val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
                     CheckboxWithLabel(
@@ -1304,7 +1310,11 @@ fun TinsFilterSection(
                 }
 
                 // Opened
-                Column {
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
                     val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
                     val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
                     CheckboxWithLabel(
@@ -1326,7 +1336,11 @@ fun TinsFilterSection(
                 }
 
                 // Finished
-                Column {
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
                     val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
                     val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
                     CheckboxWithLabel(
@@ -1430,15 +1444,27 @@ fun CheckboxWithLabel(
             enabled = enabled,
             colors = colors,
         )
-        Text(
-            text = text,
+        Box(
             modifier = Modifier
                 .offset(x = (-4).dp)
                 .padding(end = 6.dp),
-            color = fontColor,
-            fontSize = fontSize,
-            lineHeight = lineHeight,
-        )
+            contentAlignment = Alignment.CenterStart
+        ) {
+            BasicText(
+                text = text,
+                style = LocalTextStyle.current.copy(
+                    color = fontColor,
+                    lineHeight = lineHeight
+                ),
+                modifier = Modifier,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    maxFontSize = fontSize,
+                    minFontSize = 9.sp,
+                    stepSize = .2.sp
+                )
+            )
+        }
     }
 }
 
@@ -2136,6 +2162,7 @@ fun FlowFilterSection(
                     } else true
                 )
             }
+
             if (showOverflowPopup) {
                 AlertDialog(
                     onDismissRequest = { showOverflowPopup = false },
