@@ -6,6 +6,9 @@ import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.text.NumberFormat
+import java.util.Locale
+import kotlin.math.floor
 
 class OfflineItemsRepository(
     private var itemsDao: ItemsDao,
@@ -120,14 +123,23 @@ class OfflineItemsRepository(
     override suspend fun getTinExportData(): List<TinExportData> {
         val items = itemsDao.getAllItemsExport()
         val tinExportData = mutableListOf<TinExportData>()
+        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
+        val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())
 
         for (item in items) {
             val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
             val flavoring = itemsDao.getFlavoringForItemStream(item.id).first().joinToString(", ") { it.flavoringName }
             val tins = itemsDao.getTinsForItemStream(item.id).first()
 
+
             if (tins.isNotEmpty()) {
                 for (tin in tins) {
+                    val quantity = if (tin.tinQuantity == floor(tin.tinQuantity)) {
+                        integerFormat.format(tin.tinQuantity.toLong())
+                    } else {
+                        numberFormat.format(tin.tinQuantity)
+                    }
+
                     val tinExport = TinExportData(
                         brand = item.brand,
                         blend = item.blend,
@@ -141,7 +153,7 @@ class OfflineItemsRepository(
                         components = components,
                         flavoring = flavoring,
                         container = tin.container,
-                        quantity = "${tin.tinQuantity} ${tin.unit}",
+                        quantity = if (tin.unit.isNotBlank()) "$quantity ${tin.unit}" else "",
                         manufactureDate = formatMediumDate(tin.manufactureDate),
                         cellarDate = formatMediumDate(tin.cellarDate),
                         openDate = formatMediumDate(tin.openDate),
