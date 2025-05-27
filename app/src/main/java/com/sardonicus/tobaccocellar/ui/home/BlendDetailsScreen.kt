@@ -155,8 +155,6 @@ fun BlendDetailsBody(
                 .height(IntrinsicSize.Min)
                 .padding(top = 16.dp)
         ) {
-            val padding: Dp = with(LocalDensity.current) { 16.sp.toDp() }
-
             Spacer(modifier = Modifier.width(24.dp))
             // Blend name
             Box (
