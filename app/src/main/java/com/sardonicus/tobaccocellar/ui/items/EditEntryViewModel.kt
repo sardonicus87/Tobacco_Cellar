@@ -48,10 +48,10 @@ class EditEntryViewModel(
     var loading by mutableStateOf(false)
 
     private var _originalComponents = mutableStateOf("")
-    val originalComponents = _originalComponents
+  //  val originalComponents = _originalComponents
 
     private var _originalFlavoring = mutableStateOf("")
-    val originalFlavoring = _originalFlavoring
+ //   val originalFlavoring = _originalFlavoring
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         var validDetails = true
