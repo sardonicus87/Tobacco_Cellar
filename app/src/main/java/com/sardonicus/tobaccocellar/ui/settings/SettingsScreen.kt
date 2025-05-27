@@ -108,6 +108,8 @@ import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -1149,7 +1151,11 @@ fun TinRatesDialog(
                         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
+                        val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                        val allowedPattern = remember(symbols.decimalSeparator, symbols.groupingSeparator) {
+                            val ds = Regex.escape(symbols.decimalSeparator.toString())
+                            Regex("^(\\s*|\\d+($ds\\d{0,2})?)$")
+                        }
 
                         Row(
                             modifier = Modifier,
@@ -1159,7 +1165,7 @@ fun TinRatesDialog(
                             CustomTextField(
                                 value = tinOzRate,
                                 onValueChange = {
-                                    if (it.matches(pattern)) {
+                                    if (it.matches(allowedPattern)) {
                                         tinOzRate = it
                                     }
                                 },
@@ -1198,7 +1204,7 @@ fun TinRatesDialog(
                             CustomTextField(
                                 value = tinGramsRate,
                                 onValueChange = {
-                                    if (it.matches(pattern)) {
+                                    if (it.matches(allowedPattern)) {
                                         tinGramsRate = it
                                     }
                                 },
@@ -1230,22 +1236,38 @@ fun TinRatesDialog(
                         }
                     }
                 }
-                TextButton(
-                    onClick = {
-                        onSet(
-                            tinOzRate.toDoubleOrNull() ?: 1.75,
-                            tinGramsRate.toDoubleOrNull() ?: 50.0
-                        )
-                    },
+                Row(
                     modifier = Modifier
-                        .padding(top = 16.dp)
-                        .align(Alignment.End)
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Save",
+                    TextButton(
+                        onClick = { onDismiss() },
                         modifier = Modifier
-                            .padding(0.dp)
-                    )
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            modifier = Modifier
+                                .padding(0.dp)
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            onSet(
+                                tinOzRate.toDoubleOrNull() ?: 1.75,
+                                tinGramsRate.toDoubleOrNull() ?: 50.0
+                            )
+                        },
+                        modifier = Modifier
+                    ) {
+                        Text(
+                            text = "Save",
+                            modifier = Modifier
+                                .padding(0.dp)
+                        )
+                    }
                 }
             }
         }
@@ -1333,6 +1355,15 @@ private fun BackupDialog(
                     modifier = Modifier
                         .padding(bottom = 0.dp),
                 )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text(stringResource(R.string.cancel))
             }
         },
         confirmButton = {
