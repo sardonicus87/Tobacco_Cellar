@@ -468,7 +468,7 @@ fun HomeScreen(
                     Snackbar(
                         snackbarData = it,
                         modifier = Modifier
-                            .padding(bottom = 20.dp)
+                            .padding(bottom = 10.dp)
                     )
                 }
             )
