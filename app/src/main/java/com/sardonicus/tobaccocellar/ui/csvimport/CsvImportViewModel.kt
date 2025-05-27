@@ -909,6 +909,7 @@ class CsvImportViewModel(
                 }
             }
         } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
             _importStatus.value = ImportStatus.Error(e)
         } finally {
             val successfulConversions = itemsToImport.size + updatedConversions

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
 import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
@@ -168,7 +169,6 @@ class SettingsViewModel(
             databaseChecked = backupState.databaseChecked,
             settingsChecked = backupState.settingsChecked,
         )
-
         updateSuggestedFilename()
     }
 
@@ -276,8 +276,8 @@ class SettingsViewModel(
                 writeBytesToFile(uri, combinedBytes, context)
                 message = "Backup complete."
             } catch (e: Exception) {
+                FirebaseCrashlytics.getInstance().recordException(e)
                 message = "Backup failed."
-                throw e
             } finally {
                 deleteTempFile(tempDbZip)
                 setLoadingState(false)
@@ -327,6 +327,7 @@ class SettingsViewModel(
                                 restoreSettings(settingsBytes)
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {
+                                FirebaseCrashlytics.getInstance().recordException(e)
                                 restoreSettings(settingsBytes)
                                 message = "Error restoring database, settings successfully restored."
                             }
@@ -345,6 +346,7 @@ class SettingsViewModel(
                                 restoreItemSyncState(itemSyncStateBytes)
                                 message = "Database restored."
                             } catch (e: Exception) {
+                                FirebaseCrashlytics.getInstance().recordException(e)
                                 message = "Error restoring database."
                             }
                         } else { message = "Backup file does not contain database data." }
@@ -457,11 +459,11 @@ class SettingsViewModel(
             }
 
         } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
             copyFile(backupDbFile, dbFile)
             if (File("$dbPath-wal.bak").exists()) { copyFile(File("$dbPath-wal.bak"), walFile) }
             if (File("$dbPath-shm.bak").exists()) { copyFile(File("$dbPath-shm.bak"), shmFile) }
             throw e
-
         } finally {
             backupDbFile.delete()
             backupWalFile.delete()
@@ -494,6 +496,7 @@ class SettingsViewModel(
                     openHelper.writableDatabase
                 }
         } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
             throw e
         }
     }
@@ -508,6 +511,7 @@ class SettingsViewModel(
             if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
             if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
         } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
             throw e
         }
     }
@@ -706,6 +710,7 @@ fun backupDatabase(context: Context, backupFile: File) {
         zipFiles(dbFiles, backupFile)
 
     } catch (e: Exception) {
+        FirebaseCrashlytics.getInstance().recordException(e)
         throw e
     }
 }
@@ -730,7 +735,7 @@ fun writeBytesToFile(uri: Uri, bytes: ByteArray, context: Context) {
             outputStream.write(bytes)
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+        FirebaseCrashlytics.getInstance().recordException(e)
     }
 }
 
@@ -741,7 +746,7 @@ fun readBytesFromFile(uri: Uri, context: Context): ByteArray? {
             inputStream.readBytes()
         }
     } catch (e: IOException) {
-        e.printStackTrace()
+        FirebaseCrashlytics.getInstance().recordException(e)
         null
     }
 }
