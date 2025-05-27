@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.gms.services)
 }
 
 ksp {
@@ -16,8 +17,8 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 20
-        versionName = "3.1.2"
+        versionCode = 21
+        versionName = "3.1.3"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -80,6 +81,10 @@ dependencies {
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.core.splashscreen)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+
 
 
     implementation(libs.androidx.room.runtime)

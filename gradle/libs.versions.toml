@@ -1,23 +1,25 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
+activityCompose = "1.10.1"
 androidlibrary = "8.10.0"
 agp = "8.10.0"
 commonsCsv = "1.14.0"
+composeBom = "2025.05.01"
+coreKtx = "1.16.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.7"
 datastoreCoreAndroid = "1.1.4"
 devtoolsKsp = "2.1.20-2.0.1"
+firebaseBom = "33.14.0"
+googleGmsServices = "4.4.2"
 kotlin = "2.1.20"
-coreKtx = "1.16.0"
 kotlinxCoroutinesAndroid = "1.10.2"
 lifecycleRuntimeKtx = "2.9.0"
-activityCompose = "1.10.1"
-composeBom = "2025.05.01"
+material = "1.12.0"
 monitor = "1.7.2"
 navigationCompose = "2.9.0"
 roomRuntime = "2.7.1"
 uiTextGoogleFonts = "1.8.2"
-material = "1.12.0"
 viewpager2 = "1.1.0"
 
 [libraries]
@@ -38,6 +40,9 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 material3 = { module = "androidx.compose.material3:material3" }
@@ -48,6 +53,7 @@ ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 [plugins]
 android-library = { id = "com.android.library", version.ref = "androidlibrary" }
 android-application = { id = "com.android.application", version.ref = "agp" }
-org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "devtoolsKsp" }
+google-gms-services = { id = "com.google.gms.google-services", version.ref = "googleGmsServices" }
+org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
