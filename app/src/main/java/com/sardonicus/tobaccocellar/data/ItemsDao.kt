@@ -264,11 +264,11 @@ interface ItemsDao {
     fun getBrandsCount(): Flow<Int>
 
     // total items per brand //
-    @Query("SELECT DISTINCT brand, COUNT(*) as bcount FROM items GROUP BY brand")
+    @Query("SELECT DISTINCT brand, COUNT(*) as brandCount FROM items GROUP BY brand")
     fun getTotalByBrand(): Flow<List<BrandCount>>
 
     // total items per type //
-    @Query("SELECT type, COUNT(*) as tcount FROM items GROUP BY type")
+    @Query("SELECT type, COUNT(*) as typeCount FROM items GROUP BY type")
     fun getTotalByType(): Flow<List<TypeCount>>
 
     // total favorite //
