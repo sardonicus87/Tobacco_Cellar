@@ -21,10 +21,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 class AddEntryViewModel(
@@ -505,25 +508,39 @@ fun List<Flavoring>.toFlavoringList(): FlavoringList {
     )
 }
 
-fun Tins.toTinDetails(): TinDetails = TinDetails(
-    tinId = tinId,
-    itemsId = itemsId,
-    tinLabel = tinLabel,
-    container = container,
-    tinQuantity = tinQuantity,
-    tinQuantityString = if (unit.isNotBlank()) tinQuantity.toString() else "",
-    unit = unit,
-    manufactureDate = manufactureDate,
-    cellarDate = cellarDate,
-    openDate = openDate,
-    finished = finished,
-    manufactureDateShort = formatShortDate(manufactureDate),
-    cellarDateShort = formatShortDate(cellarDate),
-    openDateShort = formatShortDate(openDate),
-    manufactureDateLong = formatMediumDate(manufactureDate),
-    cellarDateLong = formatMediumDate(cellarDate),
-    openDateLong = formatMediumDate(openDate),
-)
+fun Tins.toTinDetails(): TinDetails {
+    val numberFormat = NumberFormat.getInstance(Locale.getDefault())
+    val quantityString = if (unit.isNotBlank()) {
+        if (tinQuantity == floor(tinQuantity)) {
+            val integerFormatter = NumberFormat.getIntegerInstance(Locale.getDefault())
+            integerFormatter.format(tinQuantity.toLong())
+        } else {
+            numberFormat.format(tinQuantity)
+        }
+    } else {
+        ""
+    }
+
+    return TinDetails(
+        tinId = tinId,
+        itemsId = itemsId,
+        tinLabel = tinLabel,
+        container = container,
+        unit = unit,
+        tinQuantity = tinQuantity,
+        tinQuantityString = quantityString,
+        manufactureDate = manufactureDate,
+        cellarDate = cellarDate,
+        openDate = openDate,
+        finished = finished,
+        manufactureDateShort = formatShortDate(manufactureDate),
+        cellarDateShort = formatShortDate(cellarDate),
+        openDateShort = formatShortDate(openDate),
+        manufactureDateLong = formatMediumDate(manufactureDate),
+        cellarDateLong = formatMediumDate(cellarDate),
+        openDateLong = formatMediumDate(openDate),
+    )
+}
 
 
 /** Date functions **/
