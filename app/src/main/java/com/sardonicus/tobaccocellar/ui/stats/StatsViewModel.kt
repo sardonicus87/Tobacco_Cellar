@@ -28,6 +28,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.math.round
 
 class StatsViewModel(
@@ -170,6 +173,7 @@ class StatsViewModel(
 
 
     /** Filtered stats */
+    @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredStats: StateFlow<FilteredStats> =
         combine(
@@ -566,31 +570,43 @@ class StatsViewModel(
                         if (sum >= 16.00) {
                             val pounds = sum / 16
                             val rounded = round(pounds * 100) / 100
-                            val decimal = String.format("%.2f", rounded)
+                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
+                            decimal.maximumFractionDigits = 2
+                            decimal.minimumFractionDigits = 2
+
+                            var formattedString = decimal.format(rounded)
+                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
                             when {
-                                decimal.endsWith("00") -> {
-                                    decimal.substringBefore(".")
+                                formattedString.endsWith("00") -> {
+                                    formattedString.substringBefore(decimalSeparator)
                                 }
 
-                                decimal.endsWith("0") -> {
-                                    decimal.substring(0, decimal.length - 1)
+                                formattedString.endsWith("0") -> {
+                                    formattedString.substring(0, formattedString.length - 1)
                                 }
 
-                                else -> decimal
+                                else -> formattedString
                             } + " lbs"
                         } else {
                             val rounded = round(sum * 100) / 100
-                            val decimal = String.format("%.2f", rounded)
+                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
+                            decimal.maximumFractionDigits = 2
+                            decimal.minimumFractionDigits = 2
+
+                            var formattedString = decimal.format(rounded)
+                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
                             when {
-                                decimal.endsWith("00") -> {
-                                    decimal.substringBefore(".")
+                                formattedString.endsWith("00") -> {
+                                    formattedString.substringBefore(decimalSeparator)
                                 }
 
-                                decimal.endsWith("0") -> {
-                                    decimal.substring(0, decimal.length - 1)
+                                formattedString.endsWith("0") -> {
+                                    formattedString.substring(0, formattedString.length - 1)
                                 }
 
-                                else -> decimal
+                                else -> formattedString
                             } + " oz"
                         }
                     } else {
@@ -601,17 +617,23 @@ class StatsViewModel(
                 QuantityOption.GRAMS -> {
                     if (sum != null) {
                         val rounded = round(sum * 100) / 100
-                        val decimal = String.format("%.2f", rounded)
+                        val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
+                        decimal.maximumFractionDigits = 2
+                        decimal.minimumFractionDigits = 2
+
+                        var formattedString = decimal.format(rounded)
+                        val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
                         when {
-                            decimal.endsWith("00") -> {
-                                decimal.substringBefore(".")
+                            formattedString.endsWith("00") -> {
+                                formattedString.substringBefore(decimalSeparator)
                             }
 
-                            decimal.endsWith("0") -> {
-                                decimal.substring(0, decimal.length - 1)
+                            formattedString.endsWith("0") -> {
+                                formattedString.substring(0, formattedString.length - 1)
                             }
 
-                            else -> decimal
+                            else -> formattedString
                         } + " g"
                     } else {
                         null
@@ -637,12 +659,12 @@ class StatsViewModel(
 
 data class BrandCount(
     val brand: String,
-    val bcount: Int
+    val brandCount: Int
 )
 
 data class TypeCount(
     val type: String,
-    val tcount: Int
+    val typeCount: Int
 )
 
 data class RawStats(

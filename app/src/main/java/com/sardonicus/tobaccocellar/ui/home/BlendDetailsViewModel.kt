@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
@@ -103,31 +105,43 @@ class BlendDetailsViewModel(
                         if (sum >= 16.00) {
                             val pounds = sum / 16
                             val rounded = round(pounds * 100) / 100
-                            val decimal = String.format("%.2f", rounded)
+                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
+                            decimal.maximumFractionDigits = 2
+                            decimal.minimumFractionDigits = 2
+
+                            var formattedString = decimal.format(rounded)
+                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
                             when {
-                                decimal.endsWith("00") -> {
-                                    decimal.substringBefore(".")
+                                formattedString.endsWith("00") -> {
+                                    formattedString.substringBefore(decimalSeparator)
                                 }
 
-                                decimal.endsWith("0") -> {
-                                    decimal.substring(0, decimal.length - 1)
+                                formattedString.endsWith("0") -> {
+                                    formattedString.substring(0, formattedString.length - 1)
                                 }
 
-                                else -> decimal
+                                else -> formattedString
                             } + " lbs"
                         } else {
                             val rounded = round(sum * 100) / 100
-                            val decimal = String.format("%.2f", rounded)
+                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
+                            decimal.maximumFractionDigits = 2
+                            decimal.minimumFractionDigits = 2
+
+                            var formattedString = decimal.format(rounded)
+                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
                             when {
-                                decimal.endsWith("00") -> {
-                                    decimal.substringBefore(".")
+                                formattedString.endsWith("00") -> {
+                                    formattedString.substringBefore(decimalSeparator)
                                 }
 
-                                decimal.endsWith("0") -> {
-                                    decimal.substring(0, decimal.length - 1)
+                                formattedString.endsWith("0") -> {
+                                    formattedString.substring(0, formattedString.length - 1)
                                 }
 
-                                else -> decimal
+                                else -> formattedString
                             } + " oz"
                         }
                     } else {
@@ -138,17 +152,23 @@ class BlendDetailsViewModel(
                 QuantityOption.GRAMS -> {
                     if (sum != null) {
                         val rounded = round(sum * 100) / 100
-                        val decimal = String.format("%.2f", rounded)
+                        val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
+                        decimal.maximumFractionDigits = 2
+                        decimal.minimumFractionDigits = 2
+
+                        var formattedString = decimal.format(rounded)
+                        val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
                         when {
-                            decimal.endsWith("00") -> {
-                                decimal.substringBefore(".")
+                            formattedString.endsWith("00") -> {
+                                formattedString.substringBefore(decimalSeparator)
                             }
 
-                            decimal.endsWith("0") -> {
-                                decimal.substring(0, decimal.length - 1)
+                            formattedString.endsWith("0") -> {
+                                formattedString.substring(0, formattedString.length - 1)
                             }
 
-                            else -> decimal
+                            else -> formattedString
                         } + " g"
                     } else {
                         null
@@ -281,14 +301,19 @@ fun isMetricLocale(): Boolean {
 
 fun formatDecimal(number: Double): String {
     val rounded = round(number * 100) / 100
-    val formatted = String.format("%.2f", rounded)
+    val formatted = NumberFormat.getNumberInstance(Locale.getDefault())
+    formatted.maximumFractionDigits = 2
+    formatted.minimumFractionDigits = 2
+
+    var formattedString = formatted.format(rounded)
+    val decimalSeparator = (formatted as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
     return when {
-        formatted.endsWith("00") -> {
-            formatted.substringBefore(".")
+        formattedString.endsWith("00") -> {
+            formattedString.substringBefore(decimalSeparator)
         }
-        formatted.endsWith("0") -> {
-            formatted.substring(0, formatted.length - 1)
+        formattedString.endsWith("0") -> {
+            formattedString.substring(0, formattedString.length - 1)
         }
-        else -> formatted
+        else -> formattedString
     }
 }

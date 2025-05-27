@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
@@ -23,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -165,12 +168,25 @@ class CsvImportViewModel(
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {
-        val regex = Regex("""(\d+(?:\.\d+)?)\s?(.*)""")
-        val matchResult = regex.find(this)
+        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
+        val symbols = DecimalFormatSymbols.getInstance(Locale.getDefault())
+        val ds = Regex.escape(symbols.decimalSeparator.toString())
+
+        val regex = Regex("""^(\d+(?:[.,]\d+)?)\s*(.+)$""")
+        val matchResult = regex.find(this.trim())
 
         return if (matchResult != null) {
-            val quantity = matchResult.groupValues[1].toDoubleOrNull() ?: 0.0
+            val preQuantity1 = matchResult.groupValues[1]
+            val preQuantity2 = preQuantity1.replace(',', '.')
+            val preQuantity3 = preQuantity2.toDoubleOrNull() ?: 0.0
+            val quantity = if (preQuantity3 != 0.0) {
+                (kotlin.math.round(preQuantity3 * 100.0)) / 100.0
+            } else {
+                0.0
+            }
+
             val unit = matchResult.groupValues[2].trim().lowercase()
+
             val mappedUnit = when {
                 unit.startsWith("ou") || unit.startsWith("oz") -> "oz"
                 unit.startsWith("lb") || unit.startsWith("po") -> "lbs"
@@ -299,6 +315,7 @@ class CsvImportViewModel(
                 else -> null
             }
         } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
             null
         }
     }

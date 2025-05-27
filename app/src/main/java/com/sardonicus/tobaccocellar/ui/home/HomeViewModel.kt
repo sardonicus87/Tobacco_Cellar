@@ -36,6 +36,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.DecimalFormat
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.math.round
 
 class HomeViewModel(
@@ -54,7 +57,7 @@ class HomeViewModel(
     val tableSorting: State<TableSorting> = _tableTableSorting
 
     private val _listSorting = MutableStateFlow(ListSorting.DEFAULT.value)
-    val listSorting: StateFlow<String> = _listSorting.asStateFlow()
+  //  val listSorting: StateFlow<String> = _listSorting.asStateFlow()
 
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
@@ -442,16 +445,33 @@ class HomeViewModel(
 
     private fun formatDecimal(number: Double): String {
         val rounded = round(number * 100) / 100
-        val formatted = String.format("%.2f", rounded)
-        return when {
-            formatted.endsWith("00") -> {
-                formatted.substringBefore(".")
+        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
+        numberFormat.maximumFractionDigits = 2
+        numberFormat.minimumFractionDigits = 2
+
+        var formattedString = numberFormat.format(rounded)
+        val decimalSeparator = (numberFormat as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
+
+        return when{
+            formattedString.endsWith("00") -> {
+                formattedString.substringBefore(decimalSeparator)
             }
-            formatted.endsWith("0") -> {
-                formatted.substring(0, formatted.length - 1)
+            formattedString.endsWith("0") -> {
+                formattedString.substring(0, formattedString.length - 1)
             }
-            else -> formatted
+            else -> formattedString
         }
+
+//        val formatted = String.format("%.2f", rounded)
+//        return when {
+//            formatted.endsWith("00") -> {
+//                formatted.substringBefore(".")
+//            }
+//            formatted.endsWith("0") -> {
+//                formatted.substring(0, formatted.length - 1)
+//            }
+//            else -> formatted
+//        }
     }
 
 

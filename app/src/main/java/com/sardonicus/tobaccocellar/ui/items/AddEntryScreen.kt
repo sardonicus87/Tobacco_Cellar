@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -125,6 +126,9 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
+import java.text.ParseException
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -132,6 +136,7 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 
 object AddEntryDestination : NavigationDestination {
@@ -1640,8 +1645,8 @@ fun IndividualTin(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            val boxWithConstraintsScope = this
-            val maxWidth = maxWidth
+        //    val boxWithConstraintsScope = this
+            val maxWidth = this.maxWidth
             val textFieldMax = maxWidth - 72.dp
 
             Row(
@@ -1870,18 +1875,39 @@ fun IndividualTin(
 
                     var quantityIsFocused by rememberSaveable { mutableStateOf(false) }
                     var unitIsFocused by rememberSaveable { mutableStateOf(false) }
-                    val pattern = remember { Regex("^(\\s*|\\d+(\\.\\d{0,2})?)\$") }
+
+                    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+                    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                    val allowedPattern = remember(symbols.decimalSeparator, symbols.groupingSeparator) {
+                        val ds = Regex.escape(symbols.decimalSeparator.toString())
+                        Regex("^(\\s*|\\d+($ds\\d{0,2})?)$")
+                    }
+
                     TextField(
                         value = tinDetails.tinQuantityString,
                         onValueChange = {
-                            if (it.matches(pattern)) {
-                                onTinValueChange(
-                                    tinDetails.copy(
-                                        tinQuantityString = it,
-                                        tinQuantity = it.toDoubleOrNull() ?: 0.0
+                            if (it.matches(allowedPattern)) {
+                                try {
+                                    var parsedDouble: Double? = null
+
+                                    if (it.isNotBlank()) {
+                                        val number = numberFormat.parse(it)
+                                        parsedDouble = number?.toDouble() ?: 0.0
+                                    } else {
+                                        parsedDouble = 0.0
+                                    }
+
+                                    onTinValueChange(
+                                        tinDetails.copy(
+                                            tinQuantityString = it,
+                                            tinQuantity = parsedDouble,
+                                        )
                                     )
-                                )
+                                } catch (e: ParseException) {
+                                    Log.e("Add/Edit Entry", "Input: $it", e)
+                                }
                             }
+
                         },
                         modifier = Modifier
                             .weight(1f)
