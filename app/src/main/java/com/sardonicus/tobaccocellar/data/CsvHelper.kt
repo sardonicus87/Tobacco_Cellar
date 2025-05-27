@@ -46,7 +46,7 @@ class CsvHelper {
                 "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Components", "Flavoring", "No. of Tins", "Favorite",
                 "Disliked", "Production Status", "Notes"
             )
-            .build()
+            .get()
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
@@ -84,7 +84,7 @@ class CsvHelper {
                 "Production Status", "Notes", "Components", "Flavoring", "Container", "Quantity",
                 "Manufacture Date", "Cellar Date", "Open Date", "Finished"
             )
-            .build()
+            .get()
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
