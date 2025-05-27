@@ -11,6 +11,7 @@ datastorePreferences = "1.1.7"
 datastoreCoreAndroid = "1.1.4"
 devtoolsKsp = "2.1.20-2.0.1"
 firebaseBom = "33.14.0"
+firebaseCrashlytics = "3.0.3"
 googleGmsServices = "4.4.2"
 kotlin = "2.1.20"
 kotlinxCoroutinesAndroid = "1.10.2"
@@ -56,4 +57,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "devtoolsKsp" }
 google-gms-services = { id = "com.google.gms.google-services", version.ref = "googleGmsServices" }
+google-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

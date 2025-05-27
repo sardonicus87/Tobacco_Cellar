@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.gms.services)
+    alias(libs.plugins.google.firebase.crashlytics)
 }
 
 ksp {
