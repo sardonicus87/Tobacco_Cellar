@@ -182,6 +182,7 @@ class FilterViewModel (
     val selectedOutOfProduction: StateFlow<Boolean> = _selectedOutOfProduction
 
     // tins switch and filtering
+    @Suppress("UNCHECKED_CAST")
     val showTins: StateFlow<Boolean> = combine(
         sheetSelectedContainer, sheetSelectedOpened, sheetSelectedUnopened, sheetSelectedFinished,
         sheetSelectedUnfinished
@@ -234,6 +235,7 @@ class FilterViewModel (
 
 
     // filter applied state for clear all button //
+    @Suppress("UNCHECKED_CAST")
     val isFilterApplied: StateFlow<Boolean> = combine(
         sheetSelectedBrands, sheetSelectedTypes, sheetSelectedUnassigned, sheetSelectedFavorites,
         sheetSelectedDislikeds, sheetSelectedNeutral, sheetSelectedNonNeutral, sheetSelectedInStock,

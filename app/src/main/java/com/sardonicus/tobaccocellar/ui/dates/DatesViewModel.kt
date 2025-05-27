@@ -55,6 +55,7 @@ class DatesViewModel(
             itemsRepository.getEverythingStream()
         }
 
+    @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
     val datesUiState: StateFlow<DatesUiState> =
         combine(
