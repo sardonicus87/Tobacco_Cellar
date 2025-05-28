@@ -8,8 +8,6 @@ plugins {
     alias(libs.plugins.devtools.ksp) apply false
     alias(libs.plugins.org.jetbrains.kotlin.android) apply false
     alias(libs.plugins.compose.compiler) apply false
-    alias(libs.plugins.google.gms.services) apply false
-    alias(libs.plugins.google.firebase.crashlytics) apply false
 }
 
 tasks.register("clean", Delete::class) {
