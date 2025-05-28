@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
@@ -315,7 +314,7 @@ class CsvImportViewModel(
                 else -> null
             }
         } catch (e: Exception) {
-            FirebaseCrashlytics.getInstance().recordException(e)
+            println("Exception: $e")
             null
         }
     }
@@ -909,7 +908,6 @@ class CsvImportViewModel(
                 }
             }
         } catch (e: Exception) {
-            FirebaseCrashlytics.getInstance().recordException(e)
             _importStatus.value = ImportStatus.Error(e)
         } finally {
             val successfulConversions = itemsToImport.size + updatedConversions
