@@ -100,7 +100,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -219,8 +218,6 @@ fun CellarTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    val coroutineScope = rememberCoroutineScope()
-
     var expanded by rememberSaveable { mutableStateOf(false) }
     var menuState by rememberSaveable { mutableStateOf(MenuState.MAIN) }
 
@@ -415,10 +412,7 @@ fun CellarTopAppBar(
     )
 }
 
-enum class MenuState {
-    MAIN,
-    EXPORT_CSV
-}
+enum class MenuState { MAIN, EXPORT_CSV }
 
 
 @Composable
@@ -1034,6 +1028,7 @@ fun FilterBottomSheet(
                                 modifier = Modifier
                             )
                         }
+
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
@@ -1269,7 +1264,6 @@ fun TinsFilterSection(
     ) {
         // Has tins/Opened/Finished
         Box{
-            val tinsExist by filterViewModel.tinsExist.collectAsState()
             Row(
                 modifier = Modifier
                     .border(
@@ -1296,16 +1290,16 @@ fun TinsFilterSection(
                         checked = hasTins,
                         onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
                         modifier = Modifier,
-                        enabled = tinsExist && !dateScreen,
-                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = tins && !dateScreen,
+                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "No tins",
                         checked = hasNone,
                         onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
                         modifier = Modifier,
-                        enabled = tinsExist && !dateScreen,
-                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = tins && !dateScreen,
+                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
 
@@ -1322,16 +1316,16 @@ fun TinsFilterSection(
                         checked = isOpened,
                         onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
                         modifier = Modifier,
-                        enabled = tinsExist && !dateScreen,
-                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = tins && !dateScreen,
+                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unopened",
                         checked = isUnopened,
                         onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
                         modifier = Modifier,
-                        enabled = tinsExist && !dateScreen,
-                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = tins && !dateScreen,
+                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
 
@@ -1348,20 +1342,20 @@ fun TinsFilterSection(
                         checked = isFinished,
                         onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
                         modifier = Modifier,
-                        enabled = tinsExist && !dateScreen,
-                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = tins && !dateScreen,
+                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unfinished",
                         checked = notFinished,
                         onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
                         modifier = Modifier,
-                        enabled = tinsExist && !dateScreen,
-                        fontColor = if (dateScreen || !tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = tins && !dateScreen,
+                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
             }
-            if (!tinsExist && !dateScreen) {
+            if (!tins && !dateScreen) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -1743,8 +1737,7 @@ fun BrandFilterSection(
 
         // Selected brands chip box //
         BoxWithConstraints {
-            val boxWithConstraintsScope = this
-            val maxWidth = (maxWidth * 0.32f) - 4.dp
+            val maxWidth = (this.maxWidth * 0.32f) - 4.dp
             val chipCountToShow = 5
             val overflowCount =
                 if (excluded) { selectedExcludedBrands.size - chipCountToShow }
