@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +29,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
@@ -476,32 +479,66 @@ fun QuickStatsSection(
                     }
                 }
             }
+
+            // Expand/collapse
             if (expanded) {
-                Text(
-                    text = "Collapse",
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clickable {
-                            contracted(true)
-                        }
-                        .padding(vertical = 1.dp)
                         .fillMaxWidth()
-                )
+                        .height(24.dp)
+                        .padding(end = 24.dp)
+                        .clickable { contracted(true) }
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .weight(1f),
+                        thickness = 1.dp,
+                    )
+                    Icon(
+                        painter = painterResource(id = R.drawable.double_up),
+                        contentDescription = "Collapse",
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(18.dp),
+                        tint = LocalContentColor.current.copy(alpha = 0.3f)
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .weight(1f),
+                        thickness = 1.dp,
+                    )
+                }
             } else {
-                Text(
-                    text = "Expand",
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clickable {
-                            updateExpanded(true)
-                        }
-                        .padding(vertical = 1.dp)
                         .fillMaxWidth()
-                )
+                        .height(24.dp)
+                        .padding(end = 24.dp)
+                        .clickable { updateExpanded(true) }
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .weight(1f),
+                        thickness = 1.dp,
+                    )
+                    Icon(
+                        painter = painterResource(id = R.drawable.double_down),
+                        contentDescription = "Expand",
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(18.dp),
+                        tint = LocalContentColor.current.copy(alpha = 0.3f)
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .weight(1f),
+                        thickness = 1.dp,
+                    )
+                }
             }
         }
 
