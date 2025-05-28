@@ -3,8 +3,6 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.google.gms.services)
-    alias(libs.plugins.google.firebase.crashlytics)
 }
 
 ksp {
@@ -82,17 +80,12 @@ dependencies {
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.core.splashscreen)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
 
 
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.monitor)
     implementation(libs.androidx.ui.text.google.fonts)
-//    implementation(libs.androidx.datastore.core.android)
-//    implementation(libs.androidx.datastore.preferences.core.jvm)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
