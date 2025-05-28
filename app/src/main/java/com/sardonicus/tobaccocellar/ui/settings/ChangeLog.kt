@@ -10,6 +10,45 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.3",
+        buildDate = "28 May, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Filter sheet minor UI improvement to tins section check boxes, the text now resizes " +
+                    "(some smaller phones the text would get cut off or pushed to a new line).",
+            "Home screen, conditionally disable tin label and notes search options from even " +
+                    "being selected if no entries contain tins or notes.",
+            "Settings screen, added missing \"cancel\" buttons to some dialogs.",
+            "Stats screen, minor UI improvement in the expand/collapse of Quick Stats section, " +
+                    "it's now a divider with an arrow (looks better than just a text that says " +
+                    "expand/collapse, still functions the same way).",
+            "Locale-specific number formatting (123,456.78 vs 123.456,78), where applicable " +
+                    "based on location settings. This includes all numerical entry fields, any " +
+                    "displays related to quantities, and CSV exporting. However for entry fields, " +
+                    "grouping separators are disallowed (only decimal separators and digits are " +
+                    "allowed, and leading 0 is required for sub 1 numbers, eg. 0.5).",
+            "Further number formatting improvements in quantities include dropping trailing 0's " +
+                    "in all places where this previously was missed (some input fields).",
+            "CSV Import, more robust number/quantity safety when parsing the quantity/unit in tin " +
+                    "mapping to ensure parsed quantities remain viable (rounds off decimals " +
+                    "beyond 2 places).",
+            "Handled various potential errors more gracefully (do not allow app to crash, log " +
+                    "error and pass message to user of the error).",
+            "Added Firebase Crashlytics logging so that I can see when non-fatal errors occur to " +
+                    "know what happened so I can fix them (as Google's analytics only show fatal " +
+                    "crashes). This does not collect any personal data whatsoever, it only tells " +
+                    "me about app errors.",
+            "Updated the CSV import help dialog with information I forgot to add back when I " +
+                    "updated the mapping options to allow importing \"No of Tins\" separately or " +
+                    "syncing it with tin quantities (optional).",
+        ),
+        bugFixes = listOf(
+            "Dates screen, fixed a bug that would intermittently cause a crash when navigating to " +
+                    "the dates screen."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.2",
         buildDate = "22 May, 2025",
         changes = listOf(),
