@@ -184,44 +184,46 @@ class DatesViewModel(
         period: DatePeriod,
         dateSelector: (Tins) -> Long?,
         ): List<DateInfoItem> {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
+        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        return items.flatMap { item ->
-            item.tins.map { tin ->
-                DateInfoItem(
-                    id = item.items.id,
-                    brand = item.items.brand,
-                    blend = item.items.blend,
-                    tinLabel = tin.tinLabel,
-                    date = formatMediumDate(dateSelector(tin)),
-                    time = calculateAge(dateSelector(tin), ""),
+        val itemsWithDate: List<Pair<DateInfoItem, Long?>> = items.flatMap{ item ->
+            item.tins.map {
+                val originalMillis = dateSelector(it)
+                Pair(
+                    DateInfoItem(
+                        id = item.items.id,
+                        brand = item.items.brand,
+                        blend = item.items.blend,
+                        tinLabel = it.tinLabel,
+                        date = formatMediumDate(originalMillis),
+                        time = calculateAge(originalMillis, ""),
+                    ),
+                    originalMillis
                 )
             }
-        }
-            .filter { it.date.isNotBlank() }
-            .let {
-                when (period) {
-                    DatePeriod.PAST -> it
-                        .filter {
-                            val millis = items.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.let { dateSelector(it) }
-                            val localMillis = Instant.ofEpochMilli(millis!!).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                            localMillis < now
-                        }
-                        .sortedBy {
-                            items.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.let { dateSelector(it) } ?: Long.MAX_VALUE
-                        }
+        }. filter { it.first.date.isNotBlank() }
 
-                    DatePeriod.FUTURE -> it
-                        .filter {
-                            val millis = items.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.let { dateSelector(it) }
-                            val localMillis = Instant.ofEpochMilli(millis!!).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                            localMillis > now
-                        }
-                        .sortedBy {
-                            items.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.let { dateSelector(it) } ?: Long.MAX_VALUE
-                        }
+        return when (period) {
+            DatePeriod.PAST -> itemsWithDate
+                .filter { (dateInfoItem, millis) ->
+                    millis?.let {
+                        val itemDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        itemDate <= now
+                    } ?: false
                 }
-            }
+                .sortedBy { (_, millis) -> millis ?: Long.MAX_VALUE }
+                .map { it.first }
+
+            DatePeriod.FUTURE -> itemsWithDate
+                .filter { (dateInfoItem, millis) ->
+                    millis?.let {
+                        val itemDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        itemDate > now
+                    } ?: false
+                }
+                .sortedBy { (_, millis) -> millis ?: Long.MAX_VALUE }
+                .map { it.first }
+        }
             .take(5)
     }
 
@@ -360,6 +362,4 @@ data class DateInfoItem(
     val time: String = "",
 )
 
-enum class DatePeriod {
-    PAST, FUTURE
-}
+enum class DatePeriod { PAST, FUTURE }
