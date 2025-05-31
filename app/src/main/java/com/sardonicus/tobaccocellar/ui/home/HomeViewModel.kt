@@ -297,7 +297,6 @@ class HomeViewModel(
                     }
                 }
 
-            // quantity, manufacture cellared opened
             val filteredTins =
                 if (searchValue.isBlank()) {
                     allItems.flatMap { it.tins }.filter {
