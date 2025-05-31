@@ -856,6 +856,15 @@ private fun AddingTins(
             softWrap = true,
         )
         Text(
+            text = "While amount and unit are optional, if you enter an amount, you must also " +
+                    "enter a unit. Entering a unit without an amount will default the amount " +
+                    "to 0. Do not use grouping separators for 1000 or more, only numbers and " +
+                    "your locale-specific decimal separator are allowed.",
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            softWrap = true,
+        )
+        Text(
             text = "The date fields on this entry screen will show the chosen date as MM/YY if " +
                     "the field is not wide enough, or it will show the date in medium length " +
                     "format based on your locale settings if there is room. Regardless of how it " +
