@@ -205,7 +205,7 @@ class DatesViewModel(
 
         return when (period) {
             DatePeriod.PAST -> itemsWithDate
-                .filter { (dateInfoItem, millis) ->
+                .filter { (_, millis) ->
                     millis?.let {
                         val itemDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                         itemDate <= now
@@ -215,7 +215,7 @@ class DatesViewModel(
                 .map { it.first }
 
             DatePeriod.FUTURE -> itemsWithDate
-                .filter { (dateInfoItem, millis) ->
+                .filter { (_, millis) ->
                     millis?.let {
                         val itemDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                         itemDate > now
