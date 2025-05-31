@@ -1878,9 +1878,10 @@ fun IndividualTin(
 
                     val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
                     val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
-                    val allowedPattern = remember(symbols.decimalSeparator, symbols.groupingSeparator) {
-                        val ds = Regex.escape(symbols.decimalSeparator.toString())
-                        Regex("^(\\s*|\\d+($ds\\d{0,2})?)$")
+                    val decimalSeparator = symbols.decimalSeparator.toString()
+                    val allowedPattern = remember(decimalSeparator) {
+                        val ds = Regex.escape(decimalSeparator)
+                        Regex("^(\\s*|(\\d*)?($ds\\d{0,2})?)$")
                     }
 
                     TextField(
@@ -1891,7 +1892,10 @@ fun IndividualTin(
                                     var parsedDouble: Double? = null
 
                                     if (it.isNotBlank()) {
-                                        val number = numberFormat.parse(it)
+                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+                                            "0$it"
+                                        } else it
+                                        val number = numberFormat.parse(preNumber)
                                         parsedDouble = number?.toDouble() ?: 0.0
                                     } else {
                                         parsedDouble = 0.0
@@ -2002,20 +2006,18 @@ fun IndividualTin(
 
                     // Manufacture //
                     OutlinedTextField(
-                        value = if (tinDetails.manufactureDateShort.isEmpty()) {
-                            " " } else {
-                            if (dateFieldWidth > 420) {
-                                tinDetails.manufactureDateLong
-                            } else {
-                                tinDetails.manufactureDateShort
-                            }
-                        },
+                        value =
+                            if (tinDetails.manufactureDateShort.isEmpty()) { " " } else {
+                                if (dateFieldWidth > 420) {
+                                    tinDetails.manufactureDateLong
+                                } else {
+                                    tinDetails.manufactureDateShort
+                                }
+                            },
                         onValueChange = { },
                         modifier = Modifier
                             .weight(1f)
-                            .onGloballyPositioned {
-                                dateFieldWidth = it.size.width
-                            }
+                            .onGloballyPositioned { dateFieldWidth = it.size.width }
                             .onFocusChanged { manuIsFocused = it.isFocused }
                             .focusRequester(manuFocusRequester),
                         enabled = true,
@@ -2027,11 +2029,11 @@ fun IndividualTin(
                                 onClick = {
                                     manuFocusRequester.requestFocus()
                                     showPicker("Manufacture")
-                                }
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.DateRange,
-                                    contentDescription = "Select date",
+                                    contentDescription = "Select manufacture date",
                                     tint = LocalContentColor.current
                                 )
                             }
@@ -2072,14 +2074,14 @@ fun IndividualTin(
 
                     // Cellar //
                     OutlinedTextField(
-                        value = if (tinDetails.cellarDateShort.isEmpty()) {
-                            " " } else {
-                            if (dateFieldWidth > 420) {
-                                tinDetails.cellarDateLong
-                            } else {
-                                tinDetails.cellarDateShort
-                            }
-                        },
+                        value =
+                            if (tinDetails.cellarDateShort.isEmpty()) { " " } else {
+                                if (dateFieldWidth > 420) {
+                                    tinDetails.cellarDateLong
+                                } else {
+                                    tinDetails.cellarDateShort
+                                }
+                            },
                         onValueChange = { },
                         label = {
                             Text(
@@ -2102,7 +2104,7 @@ fun IndividualTin(
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.DateRange,
-                                    contentDescription = "Select date",
+                                    contentDescription = "Select cellared date",
                                     tint = LocalContentColor.current
                                 )
                             }
@@ -2136,14 +2138,14 @@ fun IndividualTin(
 
                     // Opened //
                     OutlinedTextField(
-                        value = if (tinDetails.openDateShort.isEmpty()) {
-                            " " } else {
-                            if (dateFieldWidth > 420) {
-                                tinDetails.openDateLong
-                            } else {
-                                tinDetails.openDateShort
-                            }
-                        },
+                        value =
+                            if (tinDetails.openDateShort.isEmpty()) { " " } else {
+                                if (dateFieldWidth > 420) {
+                                    tinDetails.openDateLong
+                                } else {
+                                    tinDetails.openDateShort
+                                }
+                            },
                         onValueChange = { },
                         label = {
                             Text(
@@ -2166,7 +2168,7 @@ fun IndividualTin(
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.DateRange,
-                                    contentDescription = "Select date",
+                                    contentDescription = "Select open date",
                                     tint = LocalContentColor.current
                                 )
                             }
