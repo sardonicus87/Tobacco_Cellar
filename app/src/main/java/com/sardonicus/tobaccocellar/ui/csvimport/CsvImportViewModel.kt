@@ -23,8 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -167,19 +165,24 @@ class CsvImportViewModel(
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {
-        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
-        val symbols = DecimalFormatSymbols.getInstance(Locale.getDefault())
-        val ds = Regex.escape(symbols.decimalSeparator.toString())
-
-        val regex = Regex("""^(\d+(?:[.,]\d+)?)\s*(.+)$""")
+        val regex = Regex("""^(\d[\d.,  ]*(?:[.,]\d+)?)\s*(.+)$""")
         val matchResult = regex.find(this.trim())
 
         return if (matchResult != null) {
             val preQuantity1 = matchResult.groupValues[1]
-            val preQuantity2 = preQuantity1.replace(',', '.')
-            val preQuantity3 = preQuantity2.toDoubleOrNull() ?: 0.0
-            val quantity = if (preQuantity3 != 0.0) {
-                (kotlin.math.round(preQuantity3 * 100.0)) / 100.0
+            val preQuantity2a = preQuantity1.replace(',', '.')
+            val preQuantity2b = preQuantity2a.replace(" ", "")
+            val preQuantity2c = preQuantity2b.replace(" ", "")
+            val lastDot = preQuantity2c.lastIndexOf('.')
+            val preQuantity3 = if (lastDot != -1) {
+                val integer = preQuantity2c.substring(0, lastDot)
+                val fractional = preQuantity2c.substring(lastDot + 1)
+                val cleaned = integer.replace(".", "")
+                "$cleaned.$fractional" } else { preQuantity2c }
+            val preQuantity4 = preQuantity3.toDoubleOrNull() ?: 0.0
+
+            val quantity = if (preQuantity4 != 0.0) {
+                (kotlin.math.round(preQuantity4 * 100.0)) / 100.0
             } else {
                 0.0
             }
