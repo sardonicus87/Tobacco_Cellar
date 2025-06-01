@@ -154,10 +154,8 @@ fun ImportResultsBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(
-            modifier = Modifier
-                .weight(1.5f)
-        )
+        Spacer(modifier = Modifier.weight(1.5f))
+
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -265,7 +263,7 @@ fun ImportResultsBody(
                         )
                     }
 
-                    // Updates and Tins
+                    // Updates AND Tins
                     if (indexCondition == 7) {
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
@@ -311,7 +309,7 @@ fun ImportResultsBody(
                         }
                     }
 
-                    // Updates or Tins
+                    // Updates OR Tins
                     if (indexCondition == 6) {
                         val label = if (updateFlag) "Total records updated: " else "Total tins inserted: "
                         if (visibleItemIndex <= 4) {
@@ -337,10 +335,7 @@ fun ImportResultsBody(
                     }
                 }
 
-                Spacer(
-                    modifier = Modifier
-                        .width(12.dp)
-                )
+                Spacer(modifier = Modifier.width(12.dp))
 
                 // Counts
                 Column(
@@ -416,7 +411,7 @@ fun ImportResultsBody(
                         )
                     }
 
-                    // Updates and Tins
+                    // Updates AND Tins
                     if (indexCondition == 7) {
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
@@ -463,7 +458,7 @@ fun ImportResultsBody(
                         }
                     }
 
-                    // Successful Updates or Tins only
+                    // Updates OR Tins
                     if (indexCondition == 6) {
                         val count = if (updateFlag) successfulUpdates else successfulTins
 
@@ -528,9 +523,7 @@ fun ImportResultsBody(
                 }
             }
         }
-        Spacer(
-            modifier = Modifier
-                .weight(2f)
-        )
+
+        Spacer(modifier = Modifier.weight(2f))
     }
 }

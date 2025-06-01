@@ -300,7 +300,7 @@ class FilterViewModel (
     val getPosition: StateFlow<Int> = _getPosition.asStateFlow()
 
     private val _searchCleared = MutableStateFlow(false)
-    val searchCleared: StateFlow<Boolean> = _searchCleared.asStateFlow()
+//    val searchCleared: StateFlow<Boolean> = _searchCleared.asStateFlow()
 
     private val _searchPerformed = MutableStateFlow(false)
     val searchPerformed: StateFlow<Boolean> = _searchPerformed.asStateFlow()

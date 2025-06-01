@@ -909,18 +909,6 @@ private fun ChartsFormat(
 ) {
     val countVal = chartData.values.sum()
     var showValue = remember { mutableStateOf(false) }
-    val pieColors = listOf(
-        LocalCustomColors.current.pieOne,
-        LocalCustomColors.current.pieTwo,
-        LocalCustomColors.current.pieThree,
-        LocalCustomColors.current.pieFour,
-        LocalCustomColors.current.pieFive,
-        LocalCustomColors.current.pieSix,
-        LocalCustomColors.current.pieSeven,
-        LocalCustomColors.current.pieEight,
-        LocalCustomColors.current.pieNine,
-        LocalCustomColors.current.pieTen,
-    )
 
     Column(
         modifier = Modifier
@@ -986,7 +974,6 @@ private fun ChartsFormat(
 
 
 /** Pie Chart stuff*/
-
 @Composable
 private fun PieChart(
     data: Map<String, Int>,
@@ -1247,10 +1234,10 @@ private fun DrawScope.drawLabels(
             else -> 0f
         }
 
-        val topOffsetSwitch = when (normalizedMidpointAngle) {
-            in 225f..270f -> 1  // originally 255-270
-            else -> 0
-        }
+//        val topOffsetSwitch = when (normalizedMidpointAngle) {
+//            in 225f..270f -> 1  // originally 255-270
+//            else -> 0
+//        }
 
         val alternatingOffsetMax = 20.dp.toPx()
         val alternatingOffsetFactor = when (normalizedMidpointAngle) {

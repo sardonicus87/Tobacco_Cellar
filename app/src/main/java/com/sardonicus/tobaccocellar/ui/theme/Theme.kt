@@ -331,20 +331,17 @@ fun TobaccoCellarTheme(
         initial = ThemeSetting.SYSTEM.value
     )
 
-    val colorScheme = when {
+    val colorScheme = when (userThemeSetting) {
 //        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && userThemeSetting == ThemeSetting.SYSTEM.value -> {
 //            val context = LocalContext.current
 //            if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
 //                    dynamicLightColorScheme(context)
 //            }
 
-        userThemeSetting == ThemeSetting.DARK.value -> darkScheme
-        userThemeSetting == ThemeSetting.LIGHT.value -> lightScheme
-        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
-            if (isSystemInDarkTheme()) darkScheme else lightScheme
-        } else {
-            lightScheme
-        }
+        ThemeSetting.DARK.value -> darkScheme
+        ThemeSetting.LIGHT.value -> lightScheme
+        ThemeSetting.SYSTEM.value -> { if (isSystemInDarkTheme()) darkScheme else lightScheme }
+        else -> lightScheme
     }
 
     val customColors = when (userThemeSetting) {

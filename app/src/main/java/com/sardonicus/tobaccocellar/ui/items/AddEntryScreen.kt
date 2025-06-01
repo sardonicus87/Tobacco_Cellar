@@ -1173,7 +1173,7 @@ fun DetailsEntry(
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val pattern = remember { Regex("^(\\s*|\\d+)\$") }
+                val pattern = remember { Regex("^(\\s*|\\d+)$") }
 
                 TextField(
                     value =
