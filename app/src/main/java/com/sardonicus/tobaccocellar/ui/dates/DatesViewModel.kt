@@ -179,6 +179,7 @@ class DatesViewModel(
             )
 
 
+    @Suppress("NullableBooleanElvis")
     fun findDatedTins(
         items: List<ItemsComponentsAndTins>,
         period: DatePeriod,
@@ -233,7 +234,7 @@ class DatesViewModel(
         period: DatePeriod,
         field: (Tins) -> Long?
     ): Long? {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atTime(12, 0).toInstant(ZoneOffset.UTC).toEpochMilli()
+        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         val sumDate = when (period) {
             DatePeriod.PAST -> {
@@ -275,8 +276,7 @@ class DatesViewModel(
     }
 
     fun agingDue(filteredItems: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
-            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val oneWeek =
             LocalDate.now().plusDays(7).atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
         val endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(23, 59)
