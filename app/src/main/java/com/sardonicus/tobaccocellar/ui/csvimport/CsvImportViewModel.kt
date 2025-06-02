@@ -165,24 +165,26 @@ class CsvImportViewModel(
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {
-        val regex = Regex("""^(\d[\d.,  ]*(?:[.,]\d+)?)\s*(.+)$""")
+        val regex = Regex("""^(\d*[\d.,  ]*(?:[.,]\d+)?)\s*(.+)$""")
         val matchResult = regex.find(this.trim())
 
         return if (matchResult != null) {
             val preQuantity1 = matchResult.groupValues[1]
-            val preQuantity2a = preQuantity1.replace(',', '.')
-            val preQuantity2b = preQuantity2a.replace(" ", "")
-            val preQuantity2c = preQuantity2b.replace(" ", "")
-            val lastDot = preQuantity2c.lastIndexOf('.')
-            val preQuantity3 = if (lastDot != -1) {
-                val integer = preQuantity2c.substring(0, lastDot)
-                val fractional = preQuantity2c.substring(lastDot + 1)
+            val preQuantity2 = if (preQuantity1.startsWith(".") || preQuantity1.startsWith(",")) {
+                "0$preQuantity1" } else { preQuantity1 }
+            val preQuantity3a = preQuantity2.replace(',', '.')
+            val preQuantity3b = preQuantity3a.replace(" ", "")
+            val preQuantity3c = preQuantity3b.replace(" ", "")
+            val lastDot = preQuantity3c.lastIndexOf('.')
+            val preQuantity4 = if (lastDot != -1) {
+                val integer = preQuantity3c.substring(0, lastDot)
+                val fractional = preQuantity3c.substring(lastDot + 1)
                 val cleaned = integer.replace(".", "")
-                "$cleaned.$fractional" } else { preQuantity2c }
-            val preQuantity4 = preQuantity3.toDoubleOrNull() ?: 0.0
+                "$cleaned.$fractional" } else { preQuantity3c }
+            val preQuantity5 = preQuantity4.toDoubleOrNull() ?: 0.0
 
-            val quantity = if (preQuantity4 != 0.0) {
-                (kotlin.math.round(preQuantity4 * 100.0)) / 100.0
+            val quantity = if (preQuantity5 != 0.0) {
+                (kotlin.math.round(preQuantity5 * 100.0)) / 100.0
             } else {
                 0.0
             }
