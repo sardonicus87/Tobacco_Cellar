@@ -165,7 +165,7 @@ class CsvImportViewModel(
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {
-        val regex = Regex("""^(\d*[\d.,  ]*(?:[.,]\d+)?)\s*(.+)$""")
+        val regex = Regex("""^([\d.,  ]*)\s*(.+)$""")
         val matchResult = regex.find(this.trim())
 
         return if (matchResult != null) {
@@ -178,9 +178,9 @@ class CsvImportViewModel(
             val lastDot = preQuantity3c.lastIndexOf('.')
             val preQuantity4 = if (lastDot != -1) {
                 val integer = preQuantity3c.substring(0, lastDot)
-                val fractional = preQuantity3c.substring(lastDot + 1)
+                val fractional = preQuantity3c.substring(lastDot)
                 val cleaned = integer.replace(".", "")
-                "$cleaned.$fractional" } else { preQuantity3c }
+                cleaned + fractional } else { preQuantity3c }
             val preQuantity5 = preQuantity4.toDoubleOrNull() ?: 0.0
 
             val quantity = if (preQuantity5 != 0.0) {
