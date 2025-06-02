@@ -10,6 +10,21 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.4",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Add/Edit entry, eliminated the need to enter a leading \"0\" for fractional amounts " +
+                    "on tins. It's now possible to simply enter \".75\" instead of \"0.75\".",
+            "CSV Import, a slight refinement to parsing tin quantity to handle potential cases of " +
+                    "numbers containing grouping and decimal separators (eg. 1,234.56 or 1.234,56).",
+            "Added themed icon support for Android 12/13+.",
+            "Slight adjustment to date calculations for better accuracy.",
+        ),
+        bugFixes = listOf(),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.3",
         buildDate = "28 May, 2025",
         changes = listOf(),
@@ -24,20 +39,16 @@ val changelogEntries = listOf(
                     "expand/collapse, still functions the same way).",
             "Locale-specific number formatting (123,456.78 vs 123.456,78), where applicable " +
                     "based on location settings. This includes all numerical entry fields, any " +
-                    "displays related to quantities, and CSV exporting. However for entry fields, " +
-                    "grouping separators are disallowed (only decimal separators and digits are " +
-                    "allowed, and leading 0 is required for sub 1 numbers, eg. 0.5).",
-            "Further number formatting improvements in quantities include dropping trailing 0's " +
-                    "in all places where this previously was missed (some input fields).",
+                    "displays related to quantities, and CSV import/export. However for entry " +
+                    "fields, grouping separators are disallowed (only decimal separators and " +
+                    "digits allowed, and leading 0 is required for sub 1 numbers, eg. 0.5).",
+            "Further number formatting improvements in quantities include dropping trailing " +
+                    "decimal 0's in all places where this previously was missed.",
             "CSV Import, more robust number/quantity safety when parsing the quantity/unit in tin " +
                     "mapping to ensure parsed quantities remain viable (rounds off decimals " +
                     "beyond 2 places).",
             "Handled various potential errors more gracefully (do not allow app to crash, log " +
                     "error and pass message to user of the error).",
-            "Added Firebase Crashlytics logging so that I can see when non-fatal errors occur to " +
-                    "know what happened so I can fix them (as Google's analytics only show fatal " +
-                    "crashes). This does not collect any personal data whatsoever, it only tells " +
-                    "me about app errors.",
             "Updated the CSV import help dialog with information I forgot to add back when I " +
                     "updated the mapping options to allow importing \"No of Tins\" separately or " +
                     "syncing it with tin quantities (optional).",
