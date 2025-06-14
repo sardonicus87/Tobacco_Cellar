@@ -716,12 +716,14 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val themeSetting = preferencesRepo.themeSetting.first()
     val tinOzConversionRate = preferencesRepo.tinOzConversionRate.first().toString()
     val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first().toString()
+    val alertShown = preferencesRepo.lastAlertFlow.first().toString()
 
     return """
             quantityOption=$quantityOption
             themeSetting=$themeSetting
             tinOzConversionRate=$tinOzConversionRate
             tinGramsConversionRate=$tinGramsConversionRate
+            alertShown=$alertShown
         """.trimIndent()
 }
 
@@ -760,6 +762,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                 "themeSetting" -> preferencesRepo.saveThemeSetting(value)
                 "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
                 "tinGramsConversionRate" -> preferencesRepo.setTinGramsConversionRate(value.toDouble())
+                "alertShown" -> preferencesRepo.saveAlertShown(value.toInt())
             }
         }
     }
