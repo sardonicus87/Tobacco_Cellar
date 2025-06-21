@@ -148,6 +148,7 @@ interface ItemsDao {
     fun getAllItemsComponentsCrossRef(): Flow<List<ItemsComponentsCrossRef>>
 
     // Get all items with components and tins flow //
+    @Transaction
     @Query("SELECT * FROM items ORDER BY id ASC")
     fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>>
 
