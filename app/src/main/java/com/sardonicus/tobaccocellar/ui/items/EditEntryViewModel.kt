@@ -135,6 +135,7 @@ class EditEntryViewModel(
         var flavoringLoaded by mutableStateOf(false)
         var tinsLoaded by mutableStateOf(false)
 
+        @Suppress("KotlinConstantConditions")
         viewModelScope.launch {
             launch {
                 itemsRepository.getItemStream(itemsId)

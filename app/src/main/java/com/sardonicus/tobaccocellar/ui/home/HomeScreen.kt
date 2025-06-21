@@ -236,6 +236,7 @@ fun HomeScreen(
     var remainingUnseen by remember { mutableIntStateOf(0) }
     var currentPastAlertId by remember { mutableIntStateOf(-1) }
 
+    @Suppress("KotlinConstantConditions")
     LaunchedEffect(lastAlertShown) {
         if (lastAlertShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
             currentAlert = OneTimeAlerts.alerts.find { it.id == OneTimeAlerts.CURRENT_ALERT_VERSION }
