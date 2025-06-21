@@ -553,9 +553,7 @@ private fun HomeHeader(
         Row(
             modifier = Modifier
                 .padding(0.dp)
-                //    .widthIn(min = 84.dp)
-                .width(74.dp)
-            ,
+                .width(74.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
@@ -714,7 +712,6 @@ private fun HomeHeader(
         Row(
             modifier = Modifier
                 .padding(0.dp)
-                //    .widthIn(min = 84.dp)
                 .width(68.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
@@ -773,7 +770,9 @@ private fun HomeHeader(
                     )
                 }
             }
+
             Spacer(modifier = Modifier.width(6.dp))
+
             Box (
                 contentAlignment = Alignment.CenterEnd
             ) {
