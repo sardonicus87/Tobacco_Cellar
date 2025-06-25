@@ -488,9 +488,11 @@ fun ImportResultsBody(
 
             // Navigate to Cellar
             val finalIndex =
-                if (indexCondition == 7) 6
-                else if (indexCondition == 6) 5
-                else 4
+                when (indexCondition) {
+                    7 -> 6
+                    6 -> 5
+                    else -> 4
+                }
 
             if (visibleItemIndex <= finalIndex) {
                 TextButton(
