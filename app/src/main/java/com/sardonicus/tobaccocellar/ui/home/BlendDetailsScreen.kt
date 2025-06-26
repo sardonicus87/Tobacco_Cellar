@@ -275,7 +275,7 @@ fun BlendDetailsBody(
                         .fillMaxWidth()
                         .padding(start = 12.dp)
                 ) {
-                    val type = if (blendDetails.type.isBlank()) "Unassigned" else blendDetails.type
+                    val type = blendDetails.type.ifBlank { "Unassigned" }
                     Text(
                         text = buildString("Type: ", type),
                         modifier = Modifier,

@@ -54,21 +54,17 @@ class EditEntryViewModel(
  //   val originalFlavoring = _originalFlavoring
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
-        var validDetails = true
-        var validTins = true
-
-        validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
-        validTins = uiState.tinDetailsList.all {
+        val validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
+        val validTins = uiState.tinDetailsList.all {
             it.tinLabel.isNotBlank() &&
             tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
             tinDetailsList.all {
                 (it.tinQuantityString.isNotBlank() && it.unit.isNotBlank()) ||
                     it.tinQuantityString.isBlank() } &&
                     tinDetailsList.all {
-                        var valid = true
                         val (manufactureValid, cellarValid, openValid) =
                             validateDates(it.manufactureDate, it.cellarDate, it.openDate)
-                        valid = manufactureValid && cellarValid && openValid
+                        val valid = manufactureValid && cellarValid && openValid
                         valid
                     }
         }
@@ -274,13 +270,13 @@ class EditEntryViewModel(
             }
     }
 
-    private val _labelInvalid = MutableStateFlow<Boolean>(false)
+    private val _labelInvalid = MutableStateFlow(false)
     val labelInvalid: StateFlow<Boolean> = _labelInvalid
 
     fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
         val check = tinDetailsList.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
-        return !check
         _labelInvalid.value = !check
+        return !check
     }
 
 

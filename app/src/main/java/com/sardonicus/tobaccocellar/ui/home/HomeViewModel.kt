@@ -397,9 +397,9 @@ class HomeViewModel(
     private fun calculateOunces(tins: List<Tins>): Double {
         return tins.sumOf {
             when (it.unit) {
-                "oz" -> it.tinQuantity.toDouble()
-                "lbs" -> it.tinQuantity.toDouble() * 16
-                "grams" -> it.tinQuantity.toDouble() / 28.3495
+                "oz" -> it.tinQuantity
+                "lbs" -> it.tinQuantity * 16
+                "grams" -> it.tinQuantity / 28.3495
                 else -> 0.0
             }
         }
@@ -408,9 +408,9 @@ class HomeViewModel(
     private fun calculateGrams(tins: List<Tins>): Double {
         return tins.sumOf {
             when (it.unit) {
-                "oz" -> it.tinQuantity.toDouble() * 28.3495
-                "lbs" -> it.tinQuantity.toDouble() * 453.592
-                "grams" -> it.tinQuantity.toDouble()
+                "oz" -> it.tinQuantity * 28.3495
+                "lbs" -> it.tinQuantity * 453.592
+                "grams" -> it.tinQuantity
                 else -> 0.0
             }
         }
@@ -448,7 +448,7 @@ class HomeViewModel(
         numberFormat.maximumFractionDigits = 2
         numberFormat.minimumFractionDigits = 2
 
-        var formattedString = numberFormat.format(rounded)
+        val formattedString = numberFormat.format(rounded)
         val decimalSeparator = (numberFormat as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
 
         return when{

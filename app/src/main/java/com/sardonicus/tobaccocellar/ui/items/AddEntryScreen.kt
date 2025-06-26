@@ -1889,7 +1889,7 @@ fun IndividualTin(
                         onValueChange = {
                             if (it.matches(allowedPattern)) {
                                 try {
-                                    var parsedDouble: Double? = null
+                                    var parsedDouble: Double?
 
                                     if (it.isNotBlank()) {
                                         val preNumber = if (it.startsWith(decimalSeparator)) {
@@ -1992,11 +1992,8 @@ fun IndividualTin(
                         showDatePicker = true
                     }
 
-                    var manuIsFocused by rememberSaveable { mutableStateOf(false) }
                     val manuFocusRequester = remember { FocusRequester() }
-                    var cellaredIsFocused by rememberSaveable { mutableStateOf(false) }
                     val cellaredFocusRequester = remember { FocusRequester() }
-                    var openedIsFocused by rememberSaveable { mutableStateOf(false) }
                     val openedFocusRequester = remember { FocusRequester() }
                     val interactionSource = remember { MutableInteractionSource() }
 
@@ -2018,7 +2015,6 @@ fun IndividualTin(
                         modifier = Modifier
                             .weight(1f)
                             .onGloballyPositioned { dateFieldWidth = it.size.width }
-                            .onFocusChanged { manuIsFocused = it.isFocused }
                             .focusRequester(manuFocusRequester),
                         enabled = true,
                         readOnly = true,
@@ -2092,7 +2088,6 @@ fun IndividualTin(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .onFocusChanged { cellaredIsFocused = it.isFocused }
                             .focusRequester(cellaredFocusRequester),
                         enabled = true,
                         readOnly = true,
@@ -2156,7 +2151,6 @@ fun IndividualTin(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .onFocusChanged { openedIsFocused = it.isFocused }
                             .focusRequester(openedFocusRequester),
                         enabled = true,
                         readOnly = true,

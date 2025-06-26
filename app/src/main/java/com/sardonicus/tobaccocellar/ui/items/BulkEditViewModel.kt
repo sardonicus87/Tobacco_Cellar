@@ -273,7 +273,7 @@ class BulkEditViewModel (
 
                     val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
                     val syncedQuantity = calculateSyncTins(tins)
-                    if (editingState.syncTins == true) {
+                    if (editingState.syncTins) {
                         itemsRepository.updateItem(
                             it.items.copy(
                                 quantity = syncedQuantity,

@@ -78,9 +78,9 @@ class BlendDetailsViewModel(
                 QuantityOption.OUNCES -> {
                     tins.sumOf{
                         when (it.unit) {
-                            "oz" -> it.tinQuantity.toDouble()
-                            "lbs" -> it.tinQuantity.toDouble() * 16
-                            "grams" -> it.tinQuantity.toDouble() / 28.3495
+                            "oz" -> it.tinQuantity
+                            "lbs" -> it.tinQuantity * 16
+                            "grams" -> it.tinQuantity / 28.3495
                             else -> 0.0
                         }
                     }
@@ -88,9 +88,9 @@ class BlendDetailsViewModel(
                 QuantityOption.GRAMS -> {
                     tins.sumOf{
                         when (it.unit) {
-                            "oz" -> it.tinQuantity.toDouble() * 28.3495
-                            "lbs" -> it.tinQuantity.toDouble() * 453.592
-                            "grams" -> it.tinQuantity.toDouble()
+                            "oz" -> it.tinQuantity * 28.3495
+                            "lbs" -> it.tinQuantity * 453.592
+                            "grams" -> it.tinQuantity
                             else -> 0.0
                         }
                     }
@@ -109,7 +109,7 @@ class BlendDetailsViewModel(
                             decimal.maximumFractionDigits = 2
                             decimal.minimumFractionDigits = 2
 
-                            var formattedString = decimal.format(rounded)
+                            val formattedString = decimal.format(rounded)
                             val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
 
                             when {
@@ -129,7 +129,7 @@ class BlendDetailsViewModel(
                             decimal.maximumFractionDigits = 2
                             decimal.minimumFractionDigits = 2
 
-                            var formattedString = decimal.format(rounded)
+                            val formattedString = decimal.format(rounded)
                             val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
 
                             when {
@@ -156,7 +156,7 @@ class BlendDetailsViewModel(
                         decimal.maximumFractionDigits = 2
                         decimal.minimumFractionDigits = 2
 
-                        var formattedString = decimal.format(rounded)
+                        val formattedString = decimal.format(rounded)
                         val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
 
                         when {
@@ -180,7 +180,7 @@ class BlendDetailsViewModel(
                 }
             }
 
-        return formattedSum?.toString() ?: ""
+        return formattedSum ?: ""
     }
 
 }
@@ -305,7 +305,7 @@ fun formatDecimal(number: Double): String {
     formatted.maximumFractionDigits = 2
     formatted.minimumFractionDigits = 2
 
-    var formattedString = formatted.format(rounded)
+    val formattedString = formatted.format(rounded)
     val decimalSeparator = (formatted as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
     return when {
         formattedString.endsWith("00") -> {

@@ -145,13 +145,13 @@ class AddEntryViewModel(
             }
     }
 
-    private val _labelInvalid = MutableStateFlow<Boolean>(false)
+    private val _labelInvalid = MutableStateFlow(false)
     val labelInvalid: StateFlow<Boolean> = _labelInvalid
 
     fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
         val check = tinDetailsList.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
-        return !check
         _labelInvalid.value = !check
+        return !check
     }
 
     /** tin conversion and sync state **/
@@ -272,11 +272,8 @@ class AddEntryViewModel(
 
     /** save to database **/
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
-        var validDetails = true
-        var validTins = true
-
-        validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
-        validTins = uiState.tinDetailsList.all {
+        val validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
+        val validTins = uiState.tinDetailsList.all {
             it.tinLabel.isNotBlank() &&
                     tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
                     tinDetailsList.all {

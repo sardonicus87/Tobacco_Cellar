@@ -114,9 +114,9 @@ class FilterViewModel (
     val sheetSelectedSubgenres = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedCuts = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedComponents = MutableStateFlow<List<String>>(emptyList())
-    val sheetSelectedComponentMatching = MutableStateFlow<String>("Any")
+    val sheetSelectedComponentMatching = MutableStateFlow("Any")
     val sheetSelectedFlavorings = MutableStateFlow<List<String>>(emptyList())
-    val sheetSelectedFlavoringMatching = MutableStateFlow<String>("Any")
+    val sheetSelectedFlavoringMatching = MutableStateFlow("Any")
     val sheetSelectedProduction = MutableStateFlow(false)
     val sheetSelectedOutOfProduction = MutableStateFlow(false)
 
@@ -166,13 +166,13 @@ class FilterViewModel (
     private val _selectedComponent = MutableStateFlow<List<String>>(emptyList())
     val selectedComponent: StateFlow<List<String>> = _selectedComponent
 
-    private val _compMatching = MutableStateFlow<String>("Any")
+    private val _compMatching = MutableStateFlow("Any")
     val compMatching: StateFlow<String> = _compMatching
 
     private val _selectedFlavoring = MutableStateFlow<List<String>>(emptyList())
     val selectedFlavoring: StateFlow<List<String>> = _selectedFlavoring
 
-    private val _flavorMatching = MutableStateFlow<String>("Any")
+    private val _flavorMatching = MutableStateFlow("Any")
     val flavorMatching: StateFlow<String> = _flavorMatching
 
     private val _selectedProduction = MutableStateFlow(false)
@@ -409,20 +409,16 @@ class FilterViewModel (
                 everythingFlow.collectLatest {
                     _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
                     _availableSubgenres.value = it.map {
-                        if (it.items.subGenre.isBlank()) {
+                        it.items.subGenre.ifBlank {
                             "(Unassigned)"
-                        } else {
-                            it.items.subGenre
                         }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
                     _availableCuts.value = it.map {
-                        if (it.items.cut.isBlank()) {
+                        it.items.cut.ifBlank {
                             "(Unassigned)"
-                        } else {
-                            it.items.cut
                         }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
@@ -450,10 +446,8 @@ class FilterViewModel (
                     )
                     _availableContainers.value = it.flatMap {
                         it.tins }.map {
-                        if (it.container.isBlank()) {
+                        it.container.ifBlank {
                             "(Unassigned)"
-                        } else {
-                            it.container
                         }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }

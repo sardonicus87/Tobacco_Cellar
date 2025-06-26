@@ -139,7 +139,7 @@ class DatesViewModel(
 
             val averageDateManufacture = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.manufactureDate }
             val averageDateCellar = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.cellarDate }
-            val averageDateOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (it.finished == false) it.openDate else null }
+            val averageDateOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
             val averageFutureOpen = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate }
 
             val tins = allItems.flatMap { it.tins }
@@ -161,7 +161,7 @@ class DatesViewModel(
 
                         pastManufacture = findDatedTins(filteredItems, DatePeriod.PAST) { it.manufactureDate },
                         pastCellared = findDatedTins(filteredItems, DatePeriod.PAST) { it.cellarDate },
-                        pastOpened = findDatedTins(filteredItems, DatePeriod.PAST) { if (it.finished == false) it.openDate else null },
+                        pastOpened = findDatedTins(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
                         futureManufacture = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.manufactureDate },
                         futureCellared = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.cellarDate },
                         futureOpened = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.openDate },
