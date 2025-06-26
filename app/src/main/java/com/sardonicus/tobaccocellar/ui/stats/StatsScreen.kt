@@ -908,7 +908,7 @@ private fun ChartsFormat(
     chartData: Map<String, Int>,
 ) {
     val countVal = chartData.values.sum()
-    var showValue = remember { mutableStateOf(false) }
+    val showValue = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
