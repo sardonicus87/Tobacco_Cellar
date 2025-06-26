@@ -634,9 +634,6 @@ class CsvImportViewModel(
                             }
                             if (existingItem != updatedItem) updatedCount++
                             if (existingItem == updatedItem && (compsAdded || flavorAdded || tinsAddedToItem)) updatedCount++
-                            tinsAddedToItem = false
-                            compsAdded = false
-                            flavorAdded = false
                             null
                         }
 
@@ -793,8 +790,6 @@ class CsvImportViewModel(
                             }
                             if (existingItem != updatedItem) updatedCount++
                             if (existingItem == updatedItem && (compsAdded || flavorAdded)) updatedCount++
-                            compsAdded = false
-                            flavorAdded = false
                             null
                         }
 

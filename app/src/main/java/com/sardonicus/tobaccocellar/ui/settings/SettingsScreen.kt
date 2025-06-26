@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
-import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -233,7 +232,6 @@ private fun SettingsBody(
     var showChangelog by rememberSaveable { mutableStateOf(false) }
 
     var isDragging by remember { mutableStateOf(false) }
-    var isBeingDismissedByDrag by remember { mutableStateOf(false) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
@@ -247,7 +245,6 @@ private fun SettingsBody(
     LaunchedEffect(showChangelog) {
         if (!showChangelog) {
             dragOffset = 0f
-            isBeingDismissedByDrag = false
         }
     }
 
@@ -268,7 +265,6 @@ private fun SettingsBody(
     }
 
     val context = LocalContext.current
-    val activity = context as Activity
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -430,10 +426,8 @@ private fun SettingsBody(
             ChangelogDialog(
                 changelogEntries = changelogEntries,
                 showChangelog = {
-                    // showChangelog = it
                     coroutineScope.launch {
                         if (!it) {
-                            isBeingDismissedByDrag = false
                             dragOffset = 0f
                         }
                         showChangelog = it
@@ -459,7 +453,6 @@ private fun SettingsBody(
                             onDragEnd = {
                                 isDragging = false
                                 if (dragOffset > density.run { 100.dp.toPx() }) {
-                                    isBeingDismissedByDrag = true
                                     dragOffset = windowWidth
                                     showChangelog = false
                                 } else {
