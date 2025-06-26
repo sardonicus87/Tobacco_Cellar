@@ -381,7 +381,10 @@ class SettingsViewModel(
         val settingsBytes = bytes.copyOfRange(bytes.size - settingsLength, bytes.size)
         val databaseAndSyncStateBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
 
-        return FileContentState(databaseAndSyncStateBytes.isNotEmpty(), settingsBytes.isNotEmpty(), true, true)
+        return FileContentState(databaseAndSyncStateBytes.isNotEmpty(), settingsBytes.isNotEmpty(),
+            versionValid = true,
+            magicNumberValid = true
+        )
     }
 
     private fun parseBackup(bytes: ByteArray): Triple<ByteArray, ByteArray, ByteArray> {
