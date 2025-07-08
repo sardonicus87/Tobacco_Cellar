@@ -10,14 +10,31 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.5",
+        buildDate = "8 July, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Added a check to disable the \"Unassigned\" chip in the type section of the filter " +
+                    "sheet if no entries are unassigned to a blend type.",
+            "Added slight horizontal offset to the percentage labels at the very top of the " +
+                    "pie charts on the stats screen when there are many thin slices.",
+            "Minor reliability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed another bug with the Dates screen causing a crash in some cases."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.4",
-        buildDate = "",
+        buildDate = "2 June, 2025",
         changes = listOf(),
         improvements = listOf(
             "Add/Edit entry, eliminated the need to enter a leading \"0\" for fractional amounts " +
                     "on tins. It's now possible to simply enter \".75\" instead of \"0.75\".",
             "CSV Import, a slight refinement to parsing tin quantity to handle potential cases of " +
-                    "numbers containing grouping and decimal separators (eg. 1,234.56 or 1.234,56).",
+                    "tin quantities being in varied presentations (mixed separators, lacking unit " +
+                    "qualifiers, having only a unit qualifier and no amount, etc).",
             "Added themed icon support for Android 12/13+.",
             "Slight adjustment to date calculations for better accuracy.",
         ),
