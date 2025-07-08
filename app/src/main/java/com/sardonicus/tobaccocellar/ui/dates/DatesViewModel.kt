@@ -275,6 +275,7 @@ class DatesViewModel(
         return averageDate
     }
 
+
     fun agingDue(filteredItems: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
         val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val oneWeek =
@@ -282,43 +283,62 @@ class DatesViewModel(
         val endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(23, 59)
             .toInstant(ZoneOffset.UTC).toEpochMilli()
 
-        val thisWeekTins = filteredItems.flatMap { item ->
-            item.tins.map { tin ->
-                val openDate = if (!tin.finished) tin.openDate else null
-                DateInfoItem(
-                    id = item.items.id,
-                    brand = item.items.brand,
-                    blend = item.items.blend,
-                    tinLabel = tin.tinLabel,
-                    date = formatMediumDate(openDate),
-                    time = calculateAge(openDate, ""),
-                )
-            }.filter {
-                val openDate = if (it.date.isNotBlank()) Instant.ofEpochMilli(filteredItems.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.openDate!!).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() else null
-                it.date.isNotBlank() &&
-                        tinTimeInPeriod(openDate!!, now, oneWeek)
-            }
+        val itemsWithDate = filteredItems.flatMap { item ->
+            item.tins
+                .filter {
+                    !it.finished && it.openDate != null
+                }
+                .mapNotNull {
+                    val openDate = it.openDate
+
+                    if (openDate != null) {
+                        Triple(
+                            item,
+                            it,
+                            openDate
+                        )
+                    } else {
+                        null
+                    }
+                }
         }
 
-        val thisMonthTins = filteredItems.flatMap { item ->
-            item.tins.map { tin ->
-                val openDate = if (!tin.finished) tin.openDate else null
-                DateInfoItem(
-                    id = item.items.id,
-                    brand = item.items.brand,
-                    blend = item.items.blend,
-                    tinLabel = tin.tinLabel,
-                    date = formatMediumDate(openDate),
-                    time = calculateAge(openDate, ""),
-                )
-            }.filter {
-                val openDate = if (it.date.isNotBlank()) Instant.ofEpochMilli(filteredItems.flatMap { it.tins }.find { tin -> it.tinLabel == tin.tinLabel }?.openDate!!).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() else null
-                it.date.isNotBlank() &&
-                        tinTimeInPeriod(openDate!!, now, endOfMonth) && !thisWeekTins.contains(it)
+        val thisWeekTins = itemsWithDate
+            .filter {
+                val openDate = Instant.ofEpochMilli(it.third).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                tinTimeInPeriod(openDate, now, oneWeek)
             }
-        }
+            .map {
+                DateInfoItem(
+                    id = it.first.items.id,
+                    brand = it.first.items.brand,
+                    blend = it.first.items.blend,
+                    tinLabel = it.second.tinLabel,
+                    date = formatMediumDate(it.third),
+                    time = calculateAge(it.third, ""),
+                )
+            }
+
+        val thisMonthTins = itemsWithDate
+            .filter {
+                val openDate = Instant.ofEpochMilli(it.third).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                tinTimeInPeriod(openDate, now, endOfMonth)
+            }
+            .map {
+                DateInfoItem(
+                    id = it.first.items.id,
+                    brand = it.first.items.brand,
+                    blend = it.first.items.blend,
+                    tinLabel = it.second.tinLabel,
+                    date = formatMediumDate(it.third),
+                    time = calculateAge(it.third, ""),
+                )
+            }
+            .filter { !thisWeekTins.contains(it) }
+
         return Pair(thisWeekTins, thisMonthTins)
     }
+
 
     fun tinTimeInPeriod(tinTime: Long, start: Long, end: Long): Boolean {
         return tinTime >= start && tinTime <= end
