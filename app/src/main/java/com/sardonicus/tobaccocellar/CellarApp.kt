@@ -1509,8 +1509,8 @@ fun TypeFilterSection(
 ) {
     val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
     val selectedUnassigned by filterViewModel.sheetSelectedUnassigned.collectAsState()
-
     val availableTypes = listOf("Aromatic", "English", "Burley", "Virginia", "Other")
+    val unassignedExists by filterViewModel.unassignedTypeExists.collectAsState()
 
     Column(
         modifier = modifier
@@ -1553,7 +1553,8 @@ fun TypeFilterSection(
                 shape = MaterialTheme.shapes.small,
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                )
+                ),
+                enabled = unassignedExists
             )
         }
     }
