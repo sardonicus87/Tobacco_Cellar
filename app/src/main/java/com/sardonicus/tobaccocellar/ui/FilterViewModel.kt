@@ -378,6 +378,9 @@ class FilterViewModel (
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
     val availableContainers: StateFlow<List<String>> = _availableContainers
 
+    private val _unassignedTypeExists = MutableStateFlow(false)
+    val unassignedTypeExists: StateFlow<Boolean> = _unassignedTypeExists
+
     private val _tinsExist = MutableStateFlow(false)
     val tinsExist: StateFlow<Boolean> = _tinsExist
 
@@ -453,6 +456,7 @@ class FilterViewModel (
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
+                    _unassignedTypeExists.value = it.any { it.items.type.isBlank() }
                     _tinsExist.value = it.any { it.tins.isNotEmpty() }
                     _notesExist.value = it.any { it.items.notes.isNotBlank() }
                 }
@@ -464,57 +468,74 @@ class FilterViewModel (
     // remove selected filters if the last item with that filter is removed or changed //
     init {
         viewModelScope.launch {
-            _availableBrands.collectLatest {
-                val invalidBrands = _selectedBrands.value.filter { it !in availableBrands.value }
-                if (invalidBrands.isNotEmpty()) {
-                    sheetSelectedBrands.value = sheetSelectedBrands.value.filter { it in availableBrands.value }
-                    _selectedBrands.value = _selectedBrands.value.filter { it in availableBrands.value }
+            launch {
+                _availableBrands.collectLatest {
+                    val invalidBrands =
+                        _selectedBrands.value.filter { it !in availableBrands.value }
+                    if (invalidBrands.isNotEmpty()) {
+                        sheetSelectedBrands.value =
+                            sheetSelectedBrands.value.filter { it in availableBrands.value }
+                        _selectedBrands.value =
+                            _selectedBrands.value.filter { it in availableBrands.value }
+                    }
                 }
             }
-        }
-        viewModelScope.launch {
-            _availableSubgenres.collectLatest {
-                val invalidSubgenres = _selectedSubgenre.value.filter { it !in availableSubgenres.value }
-                if (invalidSubgenres.isNotEmpty()) {
-                    sheetSelectedSubgenres.value = sheetSelectedSubgenres.value.filter { it in availableSubgenres.value }
-                    _selectedSubgenre.value = _selectedSubgenre.value.filter { it in availableSubgenres.value }
+            launch {
+                _availableSubgenres.collectLatest {
+                    val invalidSubgenres =
+                        _selectedSubgenre.value.filter { it !in availableSubgenres.value }
+                    if (invalidSubgenres.isNotEmpty()) {
+                        sheetSelectedSubgenres.value =
+                            sheetSelectedSubgenres.value.filter { it in availableSubgenres.value }
+                        _selectedSubgenre.value =
+                            _selectedSubgenre.value.filter { it in availableSubgenres.value }
+                    }
                 }
             }
-        }
-        viewModelScope.launch {
-            _availableCuts.collectLatest {
-                val invalidCuts = sheetSelectedCuts.value.filter { it !in availableCuts.value }
-                if (invalidCuts.isNotEmpty()) {
-                    sheetSelectedCuts.value = _selectedCut.value.filter { it in availableCuts.value }
-                    _selectedCut.value = _selectedCut.value.filter { it in availableCuts.value }
+            launch {
+                _availableCuts.collectLatest {
+                    val invalidCuts = sheetSelectedCuts.value.filter { it !in availableCuts.value }
+                    if (invalidCuts.isNotEmpty()) {
+                        sheetSelectedCuts.value =
+                            _selectedCut.value.filter { it in availableCuts.value }
+                        _selectedCut.value = _selectedCut.value.filter { it in availableCuts.value }
+                    }
                 }
             }
-        }
-        viewModelScope.launch {
-            _availableComponents.collectLatest {
-                val invalidComponents = _selectedComponent.value.filter { it !in availableComponents.value }
-                if (invalidComponents.isNotEmpty()) {
-                    sheetSelectedComponents.value = sheetSelectedComponents.value.filter { it in availableComponents.value }
-                    _selectedComponent.value = _selectedComponent.value.filter { it in availableComponents.value }
+            launch {
+                _availableComponents.collectLatest {
+                    val invalidComponents =
+                        _selectedComponent.value.filter { it !in availableComponents.value }
+                    if (invalidComponents.isNotEmpty()) {
+                        sheetSelectedComponents.value =
+                            sheetSelectedComponents.value.filter { it in availableComponents.value }
+                        _selectedComponent.value =
+                            _selectedComponent.value.filter { it in availableComponents.value }
+                    }
                 }
             }
-        }
-        viewModelScope.launch {
-            _availableFlavors.collectLatest {
-                val invalidFlavors = _selectedFlavoring.value.filter { it !in availableFlavors.value }
-                if (invalidFlavors.isNotEmpty()) {
-                    sheetSelectedFlavorings.value = sheetSelectedFlavorings.value.filter { it in availableFlavors.value }
-                    _selectedFlavoring.value = _selectedFlavoring.value.filter { it in availableFlavors.value }
+            launch {
+                _availableFlavors.collectLatest {
+                    val invalidFlavors =
+                        _selectedFlavoring.value.filter { it !in availableFlavors.value }
+                    if (invalidFlavors.isNotEmpty()) {
+                        sheetSelectedFlavorings.value =
+                            sheetSelectedFlavorings.value.filter { it in availableFlavors.value }
+                        _selectedFlavoring.value =
+                            _selectedFlavoring.value.filter { it in availableFlavors.value }
+                    }
                 }
             }
-        }
-        viewModelScope.launch {
-            _availableContainers.collectLatest {
-                val invalidContainers =
-                    sheetSelectedContainer.value.filter { it !in availableContainers.value }
-                if (invalidContainers.isNotEmpty()) {
-                    sheetSelectedContainer.value = sheetSelectedContainer.value.filter { it in availableContainers.value }
-                    _selectedContainer.value = _selectedContainer.value.filter { it in availableContainers.value }
+            launch {
+                _availableContainers.collectLatest {
+                    val invalidContainers =
+                        sheetSelectedContainer.value.filter { it !in availableContainers.value }
+                    if (invalidContainers.isNotEmpty()) {
+                        sheetSelectedContainer.value =
+                            sheetSelectedContainer.value.filter { it in availableContainers.value }
+                        _selectedContainer.value =
+                            _selectedContainer.value.filter { it in availableContainers.value }
+                    }
                 }
             }
         }
