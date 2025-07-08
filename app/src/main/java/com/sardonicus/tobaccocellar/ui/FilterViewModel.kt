@@ -195,7 +195,8 @@ class FilterViewModel (
 
         container.isNotEmpty() || opened || unopened || finished || unfinished
 
-    }.stateIn(
+    }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
@@ -279,7 +280,8 @@ class FilterViewModel (
             flavorings.isNotEmpty() || production || outOfProduction || hasTins || noTins ||
             container.isNotEmpty() || opened || unopened || finished || unfinished
 
-    }.stateIn(
+    }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
