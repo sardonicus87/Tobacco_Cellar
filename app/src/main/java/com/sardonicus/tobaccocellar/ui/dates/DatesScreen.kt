@@ -291,11 +291,12 @@ fun DateInfo(
                 } else {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "No tins ready this week.",
+                        text = "No tins ready this week in$filtered entries.",
                         modifier = Modifier
                             .fillMaxWidth(),
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                         fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
                     )
                 }
 
@@ -317,18 +318,19 @@ fun DateInfo(
                     )
                 } else {
                     Text(
-                        text = "No more tins ready this month.",
+                        text = "No more tins ready this month in$filtered entries.",
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                         fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
                     )
                 }
                 Spacer(modifier = Modifier.height(20.dp))
             } else {
                 Text(
-                    text = "No tins coming of age this week or month.",
+                    text = "No tins coming of age this week or month in$filtered entries.",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 20.dp),
@@ -761,7 +763,7 @@ fun AgingSection(
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(.9f)
+                        .fillMaxWidth()
                 ) {
                     Text(
                         text = "• ${it.brand}",
@@ -796,15 +798,12 @@ fun AgingSection(
                                 .width(IntrinsicSize.Max)
                         )
                     }
-                }
-                if (showDate) {
-                    Row(
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                    ) {
+                    if (showDate) {
                         Text(
-                            text = it.date,
+                            text = " (${it.date})",
                             fontSize = 14.sp,
+                            modifier = Modifier
+                                .width(IntrinsicSize.Max)
                         )
                     }
                 }
