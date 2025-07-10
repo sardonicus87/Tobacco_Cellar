@@ -36,10 +36,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
-import kotlin.math.round
 
 class HomeViewModel(
     private val itemsRepository: ItemsRepository,
@@ -56,9 +52,6 @@ class HomeViewModel(
     private val _tableTableSorting = mutableStateOf(TableSorting())
     val tableSorting: State<TableSorting> = _tableTableSorting
 
-    private val _listSorting = MutableStateFlow(ListSorting.DEFAULT.value)
-  //  val listSorting: StateFlow<String> = _listSorting.asStateFlow()
-
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
 
@@ -74,11 +67,6 @@ class HomeViewModel(
                 TableSorting(columnIndex, sortAscending)
             }.collect {
                 _tableTableSorting.value = it
-            }
-        }
-        viewModelScope.launch {
-            preferencesRepo.listSorting.collect {
-                _listSorting.value = it
             }
         }
         viewModelScope.launch {
@@ -439,26 +427,6 @@ class HomeViewModel(
                 }
             }
             else -> { "--" }
-        }
-    }
-
-    private fun formatDecimal(number: Double): String {
-        val rounded = round(number * 100) / 100
-        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
-        numberFormat.maximumFractionDigits = 2
-        numberFormat.minimumFractionDigits = 2
-
-        val formattedString = numberFormat.format(rounded)
-        val decimalSeparator = (numberFormat as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-        return when{
-            formattedString.endsWith("00") -> {
-                formattedString.substringBefore(decimalSeparator)
-            }
-            formattedString.endsWith("0") -> {
-                formattedString.substring(0, formattedString.length - 1)
-            }
-            else -> formattedString
         }
     }
 
