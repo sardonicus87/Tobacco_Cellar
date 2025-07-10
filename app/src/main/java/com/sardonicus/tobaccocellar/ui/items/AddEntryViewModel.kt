@@ -566,6 +566,3 @@ fun formatLongDate(millis: Long?): String {
         formatter.format(localDate)
     } else { "" }
 }
-
-
-
