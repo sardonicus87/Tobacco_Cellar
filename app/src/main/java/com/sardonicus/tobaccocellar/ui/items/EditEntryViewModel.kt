@@ -47,11 +47,6 @@ class EditEntryViewModel(
         private set
     var loading by mutableStateOf(false)
 
-    private var _originalComponents = mutableStateOf("")
-  //  val originalComponents = _originalComponents
-
-    private var _originalFlavoring = mutableStateOf("")
- //   val originalFlavoring = _originalFlavoring
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         val validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
@@ -153,9 +148,6 @@ class EditEntryViewModel(
                     .filterNotNull()
                     .collectLatest {
                         val components = it.toComponentList()
-                            .also {
-                                _originalComponents = mutableStateOf(it.componentString)
-                            }
                         componentList = components
 
                         componentsLoaded = true
@@ -168,9 +160,6 @@ class EditEntryViewModel(
                     .filterNotNull()
                     .collectLatest {
                         val flavoring = it.toFlavoringList()
-                            .also {
-                                _originalFlavoring = mutableStateOf(it.flavoringString)
-                            }
                         flavoringList = flavoring
 
                         flavoringLoaded = true
