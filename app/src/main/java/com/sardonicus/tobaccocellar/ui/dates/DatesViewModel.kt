@@ -142,7 +142,7 @@ class DatesViewModel(
             val averageDateOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
             val averageFutureOpen = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate }
 
-            val tins = allItems.flatMap { it.tins }
+            val tins = filteredItems.flatMap { it.tins }
             val tinDates = tins.mapNotNull { it.manufactureDate } + tins.mapNotNull { it.cellarDate } + tins.mapNotNull { it.openDate }
 
             flow {
@@ -319,11 +319,6 @@ class DatesViewModel(
     fun tinTimeInPeriod(tinTime: Long, start: Long, end: Long): Boolean {
         return tinTime >= start && tinTime <= end
     }
-
-
-
-
-
 
 }
 

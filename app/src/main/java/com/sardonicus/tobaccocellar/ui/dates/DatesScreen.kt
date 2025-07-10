@@ -178,7 +178,7 @@ fun DatesBody(
                 ) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "No date information found within entries.",
+                        text = "No date information found within filtered entries.",
                         modifier = Modifier
                             .fillMaxWidth(.75f),
                         textAlign = TextAlign.Center,
