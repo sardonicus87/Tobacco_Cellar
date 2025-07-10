@@ -389,6 +389,9 @@ class FilterViewModel (
     private val _notesExist = MutableStateFlow(false)
     val notesExist: StateFlow<Boolean> = _notesExist
 
+    private val _datesExist = MutableStateFlow(false)
+    val datesExist: StateFlow<Boolean> = _datesExist
+
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
     private val refresh = _refresh.asSharedFlow()
 
@@ -461,6 +464,9 @@ class FilterViewModel (
                     _unassignedTypeExists.value = it.any { it.items.type.isBlank() }
                     _tinsExist.value = it.any { it.tins.isNotEmpty() }
                     _notesExist.value = it.any { it.items.notes.isNotBlank() }
+                    _datesExist.value = it.flatMap { it.tins }.any {
+                        it.manufactureDate != null || it.cellarDate != null || it.openDate != null
+                    }
                 }
             }
         }

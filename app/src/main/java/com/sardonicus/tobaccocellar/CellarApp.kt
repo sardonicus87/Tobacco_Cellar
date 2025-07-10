@@ -429,6 +429,7 @@ fun CellarBottomAppBar(
     val sheetOpen = sheetState == BottomSheetState.OPENED
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+    val datesExist by filterViewModel.datesExist.collectAsState()
 
     BottomAppBar(
         modifier = modifier
@@ -560,7 +561,8 @@ fun CellarBottomAppBar(
                                 navigateToDates()
                             },
                         modifier = Modifier
-                            .padding(0.dp)
+                            .padding(0.dp),
+                        enabled = datesExist
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.calendar_month),
@@ -592,7 +594,10 @@ fun CellarBottomAppBar(
                             if (currentDestination == DatesDestination && !clickToAdd) {
                                 onPrimaryLight
                             } else {
-                                LocalContentColor.current
+                                if (datesExist) {
+                                LocalContentColor.current} else {
+                                    LocalContentColor.current.copy(alpha = 0.5f)
+                                }
                             },
                     )
                 }
@@ -1364,7 +1369,10 @@ fun TinsFilterSection(
                             LocalCustomColors.current.sheetBoxBorder,
                             RoundedCornerShape(8.dp)
                         )
-                        .background(LocalCustomColors.current.sheetBox.copy(alpha = .85f), RoundedCornerShape(8.dp))
+                        .background(
+                            LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                            RoundedCornerShape(8.dp)
+                        )
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
