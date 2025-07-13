@@ -599,42 +599,11 @@ fun DetailsEntry(
                     .width(80.dp)
             )
 
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
             AutoCompleteText(
                 value = itemDetails.brand,
-                onValueChange = {
-                    onValueChange(itemDetails.copy(brand = it))
-
-                    if (it.length >= 2) {
-                        val startsWith = itemUiState.autoBrands.filter { brand ->
-                            brand.startsWith(it, ignoreCase = true)
-                        }
-                        val otherWordsStartsWith = itemUiState.autoBrands.filter { brand ->
-                            brand.split(" ").drop(1).any { word ->
-                                word.startsWith(it, ignoreCase = true)
-                            } && !brand.startsWith(it, ignoreCase = true)
-                        }
-                        val contains = itemUiState.autoBrands.filter { brand ->
-                            brand.contains(it, ignoreCase = true)
-                                    && !brand.startsWith(it, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(brand)
-                        }
-                        val selected = itemUiState.autoBrands.filter { brand ->
-                            brand == it
-                        }
-
-                        suggestions.value =
-                            (startsWith + otherWordsStartsWith + contains) - selected
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
-                onOptionSelected = { suggestion, currentText ->
-                    onValueChange(itemDetails.copy(brand = suggestion))
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
+                allItems = itemUiState.autoBrands,
+                onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
+                onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
                 modifier = Modifier
                     .fillMaxWidth(),
                 placeholder = {
@@ -781,42 +750,11 @@ fun DetailsEntry(
                     .width(80.dp)
             )
 
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
             AutoCompleteText(
                 value = itemDetails.subGenre,
-                onValueChange = {
-                    onValueChange(itemDetails.copy(subGenre = it))
-
-                    if (it.length >= 2) {
-                        val startsWith = itemUiState.autoGenres.filter { genre ->
-                            genre.startsWith(it, ignoreCase = true)
-                        }
-                        val otherWordsStartsWith = itemUiState.autoGenres.filter { genre ->
-                            genre.split(" ").drop(1).any { word ->
-                                word.startsWith(it, ignoreCase = true)
-                            } && !genre.startsWith(it, ignoreCase = true)
-                        }
-                        val contains = itemUiState.autoGenres.filter { genre ->
-                            genre.contains(it, ignoreCase = true)
-                                    && !genre.startsWith(it, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(genre)
-                        }
-                        val selected = itemUiState.autoGenres.filter { genre ->
-                            genre == it
-                        }
-
-                        suggestions.value =
-                            (startsWith + otherWordsStartsWith + contains) - selected
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
-                onOptionSelected = { suggestion, currentText ->
-                    onValueChange(itemDetails.copy(subGenre = suggestion))
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
+                onValueChange = { onValueChange(itemDetails.copy(subGenre = it)) },
+                allItems = itemUiState.autoGenres,
+                onOptionSelected = { onValueChange(itemDetails.copy(subGenre = it)) },
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
@@ -855,42 +793,11 @@ fun DetailsEntry(
                     .width(80.dp)
             )
 
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
             AutoCompleteText(
                 value = itemDetails.cut,
-                onValueChange = {
-                    onValueChange(itemDetails.copy(cut = it))
-
-                    if (it.length >= 2) {
-                        val startsWith = itemUiState.autoCuts.filter { cut ->
-                            cut.startsWith(it, ignoreCase = true)
-                        }
-                        val otherWordsStartsWith = itemUiState.autoCuts.filter { cut ->
-                            cut.split(" ").drop(1).any { word ->
-                                word.startsWith(it, ignoreCase = true)
-                            } && !cut.startsWith(it, ignoreCase = true)
-                        }
-                        val contains = itemUiState.autoCuts.filter { cut ->
-                            cut.contains(it, ignoreCase = true)
-                                    && !cut.startsWith(it, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(cut)
-                        }
-                        val selected = itemUiState.autoCuts.filter { cut ->
-                            cut == it
-                        }
-
-                        suggestions.value =
-                            (startsWith + otherWordsStartsWith + contains) - selected
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
-                onOptionSelected = { suggestion, currentText ->
-                    onValueChange(itemDetails.copy(cut = suggestion))
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
+                onValueChange = { onValueChange(itemDetails.copy(cut = it)) },
+                onOptionSelected = { onValueChange(itemDetails.copy(cut = it)) },
+                allItems = itemUiState.autoCuts,
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
@@ -939,59 +846,12 @@ fun DetailsEntry(
                 maxLines = 1,
             )
 
-
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
             AutoCompleteText(
                 value = componentList.componentString,
-                onValueChange = { string ->
-                    onComponentChange(string)
-
-                    val substring = if (string.contains(", ")) {
-                        string.substringAfterLast(", ", "")
-                    } else {
-                        string
-                    }
-
-                    if (substring.length >= 2) {
-                        val startsWith = componentList.autoComps.filter { comp ->
-                            comp.startsWith(substring, ignoreCase = true)
-                        }
-
-                        val otherWordsStartsWith = componentList.autoComps.filter { comp ->
-                            comp.split(" ").drop(1).any { word ->
-                                word.startsWith(substring, ignoreCase = true)
-                            } && !comp.startsWith(substring, ignoreCase = true)
-                        }
-
-                        val contains = componentList.autoComps.filter { comp ->
-                            comp.contains(substring, ignoreCase = true)
-                                    && !comp.startsWith(substring, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(comp)
-                        }
-
-                        val selected = componentList.autoComps.filter { comp ->
-                            string.split(", ").filter { string.isNotBlank() }.contains(comp)
-                        }
-
-                        suggestions.value =
-                            (startsWith + otherWordsStartsWith + contains) - selected
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
+                allItems = componentList.autoComps,
+                onValueChange = { onComponentChange(it) },
                 componentField = true,
-                onOptionSelected = { suggestion, currentText ->
-                    val updatedText =
-                        if (currentText.contains(", ")) {
-                            currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", "
-                        } else {
-                            "$suggestion, "
-                        }
-                    onComponentChange(updatedText)
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
+                onOptionSelected = { onComponentChange(it) },
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
@@ -1052,58 +912,12 @@ fun DetailsEntry(
                 maxLines = 1,
             )
 
-            val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
             AutoCompleteText(
                 value = flavoringList.flavoringString,
-                onValueChange = { string ->
-                    onFlavoringChange(string)
-
-                    val substring = if (string.contains(", ")) {
-                        string.substringAfterLast(", ", "")
-                    } else {
-                        string
-                    }
-
-                    if (substring.length >= 2) {
-                        val startsWith = flavoringList.autoFlavors.filter { flavor ->
-                            flavor.startsWith(substring, ignoreCase = true)
-                        }
-
-                        val otherWordsStartsWith = flavoringList.autoFlavors.filter { flavor ->
-                            flavor.split(" ").drop(1).any { word ->
-                                word.startsWith(substring, ignoreCase = true)
-                            } && !flavor.startsWith(substring, ignoreCase = true)
-                        }
-
-                        val contains = flavoringList.autoFlavors.filter { flavor ->
-                            flavor.contains(substring, ignoreCase = true)
-                                    && !flavor.startsWith(substring, ignoreCase = true) &&
-                                    !otherWordsStartsWith.contains(flavor)
-                        }
-
-                        val selected = flavoringList.autoFlavors.filter { flavor ->
-                            string.split(", ").filter { string.isNotBlank() }.contains(flavor)
-                        }
-
-                        suggestions.value =
-                            (startsWith + otherWordsStartsWith + contains) - selected
-                    } else {
-                        suggestions.value = emptyList()
-                    }
-                },
+                onValueChange = { onFlavoringChange(it) },
                 componentField = true,
-                onOptionSelected = { suggestion, currentText ->
-                    val updatedText =
-                        if (currentText.contains(", ")) {
-                            currentText.substringBeforeLast(", ", "") + ", " + suggestion + ", "
-                        } else {
-                            "$suggestion, "
-                        }
-                    onFlavoringChange(updatedText)
-                    suggestions.value = emptyList()
-                },
-                suggestions = suggestions.value,
+                onOptionSelected = { onFlavoringChange(it) },
+                allItems = flavoringList.autoFlavors,
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
@@ -1645,7 +1459,6 @@ fun IndividualTin(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-        //    val boxWithConstraintsScope = this
             val maxWidth = this.maxWidth
             val textFieldMax = maxWidth - 72.dp
 
@@ -1798,43 +1611,11 @@ fun IndividualTin(
                             .width(80.dp)
                     )
 
-                    val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
                     AutoCompleteText(
                         value = tinDetails.container,
-                        onValueChange = {
-                            onTinValueChange(tinDetails.copy(container = it))
-
-                            if (it.length >= 2) {
-                                val startsWith = itemUiState.autoContainers.filter { container ->
-                                    container.startsWith(it, ignoreCase = true)
-                                }
-                                val otherWordsStartsWith =
-                                    itemUiState.autoContainers.filter { container ->
-                                        container.split(" ").drop(1).any { word ->
-                                            word.startsWith(it, ignoreCase = true)
-                                        } && !container.startsWith(it, ignoreCase = true)
-                                    }
-                                val contains = itemUiState.autoContainers.filter { container ->
-                                    container.contains(it, ignoreCase = true)
-                                            && !container.startsWith(it, ignoreCase = true) &&
-                                            !otherWordsStartsWith.contains(container)
-                                }
-                                val selected = itemUiState.autoContainers.filter { container ->
-                                    container == it
-                                }
-
-                                suggestions.value =
-                                    (startsWith + otherWordsStartsWith + contains) - selected
-                            } else {
-                                suggestions.value = emptyList()
-                            }
-                        },
-                        onOptionSelected = { suggestion, currentText ->
-                            onTinValueChange(tinDetails.copy(container = suggestion))
-                            suggestions.value = emptyList()
-                        },
-                        suggestions = suggestions.value,
+                        onValueChange = { onTinValueChange(tinDetails.copy(container = it)) },
+                        onOptionSelected = { onTinValueChange(tinDetails.copy(container = it)) },
+                        allItems = itemUiState.autoContainers,
                         modifier = Modifier
                             .fillMaxWidth(),
                         trailingIcon = {

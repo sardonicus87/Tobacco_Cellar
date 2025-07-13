@@ -530,42 +530,11 @@ fun BulkEditing(
                             )
                         }
 
-                        val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
                         AutoCompleteText(
                             value = editingState.subGenre,
-                            onValueChange = {
-                                onValueChange(editingState.copy(subGenre = it))
-
-                                if (it.length >= 2) {
-                                    val startsWith = autoGenres.filter { genre ->
-                                        genre.startsWith(it, ignoreCase = true)
-                                    }
-                                    val otherWordsStartsWith = autoGenres.filter { genre ->
-                                        genre.split(" ").drop(1).any { word ->
-                                            word.startsWith(it, ignoreCase = true)
-                                        } && !genre.startsWith(it, ignoreCase = true)
-                                    }
-                                    val contains = autoGenres.filter { genre ->
-                                        genre.contains(it, ignoreCase = true)
-                                                && !genre.startsWith(it, ignoreCase = true) &&
-                                                !otherWordsStartsWith.contains(genre)
-                                    }
-                                    val selected = autoGenres.filter { genre ->
-                                        genre == it
-                                    }
-
-                                    suggestions.value =
-                                        (startsWith + otherWordsStartsWith + contains) - selected
-                                } else {
-                                    suggestions.value = emptyList()
-                                }
-                            },
-                            onOptionSelected = { suggestion, currentText ->
-                                onValueChange(editingState.copy(subGenre = suggestion))
-                                suggestions.value = emptyList()
-                            },
-                            suggestions = suggestions.value,
+                            onValueChange = { onValueChange(editingState.copy(subGenre = it)) },
+                            onOptionSelected = { onValueChange(editingState.copy(subGenre = it)) },
+                            allItems = autoGenres,
                             modifier = Modifier
                                 .weight(.7f),
                             trailingIcon = {
@@ -624,42 +593,11 @@ fun BulkEditing(
                             )
                         }
 
-                        val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-
                         AutoCompleteText(
                             value = editingState.cut,
-                            onValueChange = {
-                                onValueChange(editingState.copy(cut = it))
-
-                                if (it.length >= 2) {
-                                    val startsWith = autoCuts.filter { cut ->
-                                        cut.startsWith(it, ignoreCase = true)
-                                    }
-                                    val otherWordsStartsWith = autoCuts.filter { cut ->
-                                        cut.split(" ").drop(1).any { word ->
-                                            word.startsWith(it, ignoreCase = true)
-                                        } && !cut.startsWith(it, ignoreCase = true)
-                                    }
-                                    val contains = autoCuts.filter { cut ->
-                                        cut.contains(it, ignoreCase = true)
-                                                && !cut.startsWith(it, ignoreCase = true) &&
-                                                !otherWordsStartsWith.contains(cut)
-                                    }
-                                    val selected = autoCuts.filter { cut ->
-                                        cut == it
-                                    }
-
-                                    suggestions.value =
-                                        (startsWith + otherWordsStartsWith + contains) - selected
-                                } else {
-                                    suggestions.value = emptyList()
-                                }
-                            },
-                            onOptionSelected = { suggestion, currentText ->
-                                onValueChange(editingState.copy(cut = suggestion))
-                                suggestions.value = emptyList()
-                            },
-                            suggestions = suggestions.value,
+                            onValueChange = { onValueChange(editingState.copy(cut = it)) },
+                            onOptionSelected = { onValueChange(editingState.copy(cut = it)) },
+                            allItems = autoCuts,
                             modifier = Modifier
                                 .weight(.7f),
                             trailingIcon = {
@@ -729,64 +667,17 @@ fun BulkEditing(
                             )
                         }
 
-                        val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
-                        val color = if (editingState.compsAdd) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.error
+                        val color =
+                            if (editingState.compsAdd) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error
                         val alpha = if (editingState.compsSelected) 0.66f else .33f
 
                         AutoCompleteText(
                             value = editingState.compsString,
-                            onValueChange = {
-                                onValueChange(editingState.copy(compsString = it))
-
-                                val substring = if (it.contains(", ")) {
-                                    it.substringAfterLast(", ", "")
-                                } else {
-                                    it
-                                }
-
-                                if (substring.length >= 2) {
-                                    val startsWith = autoComps.filter { comp ->
-                                        comp.startsWith(substring, ignoreCase = true)
-                                    }
-
-                                    val otherWordsStartsWith = autoComps.filter { comp ->
-                                        comp.split(" ").drop(1).any { word ->
-                                            word.startsWith(substring, ignoreCase = true)
-                                        } && !comp.startsWith(substring, ignoreCase = true)
-                                    }
-
-                                    val contains = autoComps.filter { comp ->
-                                        comp.contains(substring, ignoreCase = true)
-                                                && !comp.startsWith(substring, ignoreCase = true) &&
-                                                !otherWordsStartsWith.contains(comp)
-                                    }
-
-                                    val selected = autoComps.filter { comp ->
-                                        it.split(", ").filter { it.isNotBlank() }.contains(comp)
-                                    }
-
-                                    suggestions.value =
-                                        (startsWith + otherWordsStartsWith + contains) - selected
-                                } else {
-                                    suggestions.value = emptyList()
-                                }
-                            },
+                            onValueChange = { onValueChange(editingState.copy(compsString = it)) },
                             componentField = true,
-                            onOptionSelected = { suggestion, currentText ->
-                                val updatedText =
-                                    if (currentText.contains(", ")) {
-                                        currentText.substringBeforeLast(
-                                            ", ",
-                                            ""
-                                        ) + ", " + suggestion + ", "
-                                    } else {
-                                        "$suggestion, "
-                                    }
-                                onValueChange(editingState.copy(compsString = updatedText))
-                                suggestions.value = emptyList()
-                            },
-                            suggestions = suggestions.value,
+                            onOptionSelected = { onValueChange(editingState.copy(compsString = it)) },
+                            allItems = autoComps,
                             modifier = Modifier
                                 .weight(.7f),
                             trailingIcon = {
@@ -801,7 +692,6 @@ fun BulkEditing(
                                             .clickable {
                                                 onValueChange(editingState.copy(compsAdd = !editingState.compsAdd))
                                             }
-                                            //    .alpha(0.66f)
                                             .size(20.dp)
                                             .focusable(false)
                                     )
@@ -878,67 +768,16 @@ fun BulkEditing(
                             )
                         }
 
-                        val suggestions = remember { mutableStateOf<List<String>>(emptyList()) }
                         val color = if (editingState.flavorAdd) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.error
                         val alpha = if (editingState.flavorSelected) 0.66f else .33f
 
                         AutoCompleteText(
                             value = editingState.flavorString,
-                            onValueChange = {
-                                onValueChange(editingState.copy(flavorString = it))
-
-                                val substring = if (it.contains(", ")) {
-                                    it.substringAfterLast(", ", "")
-                                } else {
-                                    it
-                                }
-
-                                if (substring.length >= 2) {
-                                    val startsWith = autoFlavor.filter { flavor ->
-                                        flavor.startsWith(substring, ignoreCase = true)
-                                    }
-
-                                    val otherWordsStartsWith = autoFlavor.filter { flavor ->
-                                        flavor.split(" ").drop(1).any { word ->
-                                            word.startsWith(substring, ignoreCase = true)
-                                        } && !flavor.startsWith(substring, ignoreCase = true)
-                                    }
-
-                                    val contains = autoFlavor.filter { flavor ->
-                                        flavor.contains(substring, ignoreCase = true)
-                                                && !flavor.startsWith(
-                                            substring,
-                                            ignoreCase = true
-                                        ) &&
-                                                !otherWordsStartsWith.contains(flavor)
-                                    }
-
-                                    val selected = autoFlavor.filter { flavor ->
-                                        it.split(", ").filter { it.isNotBlank() }.contains(flavor)
-                                    }
-
-                                    suggestions.value =
-                                        (startsWith + otherWordsStartsWith + contains) - selected
-                                } else {
-                                    suggestions.value = emptyList()
-                                }
-                            },
+                            onValueChange = { onValueChange(editingState.copy(flavorString = it)) },
                             componentField = true,
-                            onOptionSelected = { suggestion, currentText ->
-                                val updatedText =
-                                    if (currentText.contains(", ")) {
-                                        currentText.substringBeforeLast(
-                                            ", ",
-                                            ""
-                                        ) + ", " + suggestion + ", "
-                                    } else {
-                                        "$suggestion, "
-                                    }
-                                onValueChange(editingState.copy(flavorString = updatedText))
-                                suggestions.value = emptyList()
-                            },
-                            suggestions = suggestions.value,
+                            onOptionSelected = { onValueChange(editingState.copy(flavorString = it)) },
+                            allItems = autoFlavor,
                             modifier = Modifier
                                 .weight(.7f),
                             trailingIcon = {
