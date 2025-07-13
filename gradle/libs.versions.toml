@@ -1,20 +1,18 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
 activityCompose = "1.10.1"
-androidlibrary = "8.11.0"
-agp = "8.11.0"
+androidlibrary = "8.11.1"
+agp = "8.11.1"
 commonsCsv = "1.14.0"
 composeBom = "2025.06.01"
 coreKtx = "1.16.0"
 coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.7"
-datastoreCoreAndroid = "1.1.4"
 devtoolsKsp = "2.2.0-2.0.2"
 kotlin = "2.2.0"
 kotlinxCoroutinesAndroid = "1.10.2"
 lifecycleRuntimeKtx = "2.9.1"
 material = "1.12.0"
-monitor = "1.7.2"
 navigationCompose = "2.9.1"
 roomRuntime = "2.7.2"
 uiTextGoogleFonts = "1.8.3"
@@ -29,7 +27,6 @@ androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", versi
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
-androidx-monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
