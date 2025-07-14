@@ -511,6 +511,7 @@ fun HomeScreen(
                     onDismissMenu = viewmodel::onDismissMenu,
                     isMenuShown = isMenuShown,
                     searchFocused = searchFocused,
+                    searchPerformed = searchPerformed,
                     tableSorting = tableSorting,
                     updateSorting = viewmodel::updateSorting,
                     listSorting = listSorting,
@@ -539,6 +540,7 @@ private fun HomeHeader(
 ) {
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
+    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
 
     Row(
         modifier = modifier
@@ -613,6 +615,7 @@ private fun HomeHeader(
                         if (it.isFocused) filterViewModel.updateSearchFocused(true)
                         else filterViewModel.updateSearchFocused(false)
                     },
+                enabled = !emptyDatabase,
                 onImeAction = {
                     coroutineScope.launch {
                         if (!searchPerformed) {
@@ -631,7 +634,7 @@ private fun HomeHeader(
                         modifier = Modifier
                             .padding(0.dp)
                             .clickable(
-                                enabled = true,
+                                enabled = !emptyDatabase,
                                 onClick = { expanded = !expanded }
                             )
                     ) {
@@ -810,7 +813,8 @@ private fun CustomBlendSearch(
     placeholder: String = "Blend Search",
     leadingIcon: @Composable () -> Unit = {},
     trailingIcon: @Composable () -> Unit = {},
-    onImeAction: () -> Unit = {}
+    onImeAction: () -> Unit = {},
+    enabled: Boolean = true,
 ) {
     var showCursor by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
@@ -819,6 +823,7 @@ private fun CustomBlendSearch(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
+        enabled = enabled,
         modifier = modifier
             .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
             .height(30.dp)
@@ -900,6 +905,7 @@ private fun HomeBody(
     onDismissMenu: () -> Unit,
     isMenuShown: Boolean,
     searchFocused: Boolean,
+    searchPerformed: Boolean,
     tableSorting: TableSorting,
     updateSorting: (Int) -> Unit,
     listSorting: String,
@@ -907,6 +913,9 @@ private fun HomeBody(
 ) {
     var showNoteDialog by remember { mutableStateOf(false) }
     var noteToDisplay by remember { mutableStateOf("") }
+    val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
+    val searchText by filterViewModel.searchValue.collectAsState()
+    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
 
     if (showNoteDialog) {
         NoteDialog(
@@ -915,6 +924,9 @@ private fun HomeBody(
             modifier = Modifier
         )
     }
+
+    var emptyMessage by remember { mutableStateOf("") }
+    var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
 
 
     Column(
@@ -928,6 +940,24 @@ private fun HomeBody(
             FullScreenLoading()
         } else {
             if (items.isEmpty()) {
+
+                val noItemsString =
+                    if (searchPerformed) { "No entries found matching\n\"$searchText\"." }
+                    else if (filteringApplied) { "No entries found matching\nselected filters." }
+                    else if (emptyDatabase) { "No entries found in cellar.\nClick \"+\" to\nadd items,\n" +
+                            "or use options to import CSV." }
+                    else { "" }
+
+                LaunchedEffect(noItemsString, searchPerformed, searchWasPerformed) {
+                    if (searchWasPerformed && !searchPerformed) {
+                        delay(20L)
+                        emptyMessage = noItemsString
+                    } else {
+                        emptyMessage = noItemsString
+                    }
+                    searchWasPerformed = searchPerformed
+                }
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -936,7 +966,7 @@ private fun HomeBody(
                 ) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = stringResource(R.string.no_items),
+                        text = emptyMessage,
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier
