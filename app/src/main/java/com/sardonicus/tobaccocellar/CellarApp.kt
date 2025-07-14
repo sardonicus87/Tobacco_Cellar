@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ContextualFlowRow
-import androidx.compose.foundation.layout.ContextualFlowRowOverflow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -137,6 +135,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IndicatorSizes
+import com.sardonicus.tobaccocellar.ui.composables.OverflowRow
 import com.sardonicus.tobaccocellar.ui.composables.PagerIndicator
 import com.sardonicus.tobaccocellar.ui.dates.DatesDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
@@ -2111,24 +2110,36 @@ fun FlowFilterSection(
                 )
             }
         } else {
-            ContextualFlowRow(
+            OverflowRow(
                 itemCount = availableOptions.size,
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(Alignment.Top)
                     .padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                maxLines = 1,
-                overflow = ContextualFlowRowOverflow.expandIndicator {
-                    shownItems = shownItemCount
-                    overflowCount = availableOptions.size - shownItems
-
+                itemSpacing = 6.dp,
+                itemContent = {
+                    val option = availableOptions[it]
+                    FilterChip(
+                        selected = selectedOptions.contains(option),
+                        onClick = { updateSelectedOptions(option, !selectedOptions.contains(option)) },
+                        label = { Text(text = option, fontSize = 14.sp) },
+                        modifier = Modifier
+                            .padding(0.dp),
+                        shape = MaterialTheme.shapes.small,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        ),
+                        enabled = if (enableMatchOption) {
+                            matchOption == "Any" || (!option.contains(noneField))
+                        } else true
+                    )
+                },
+                overflowIndicator = {
                     val overflowedSelected =
-                        filterViewModel.overflowCheck(selectedOptions, availableOptions, shownItemCount)
+                        filterViewModel.overflowCheck(selectedOptions, availableOptions, availableOptions.size - it)
 
                     Chip(
-                        text = "+$overflowCount",
+                        text = "+$it",
                         onChipClicked = { showOverflowPopup = true },
                         onChipRemoved = { },
                         trailingIcon = false,
@@ -2143,27 +2154,10 @@ fun FlowFilterSection(
                             enabled = true,
                             borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
                                 MaterialTheme.colorScheme.outline
-                        ),
+                        )
                     )
                 },
-            ) {
-                val option = availableOptions[it]
-
-                FilterChip(
-                    selected = selectedOptions.contains(option),
-                    onClick = { updateSelectedOptions(option, !selectedOptions.contains(option)) },
-                    label = { Text(text = option, fontSize = 14.sp) },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    shape = MaterialTheme.shapes.small,
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    ),
-                    enabled = if (enableMatchOption) {
-                        matchOption == "Any" || (!option.contains(noneField))
-                    } else true
-                )
-            }
+            )
 
             if (showOverflowPopup) {
                 AlertDialog(
@@ -2375,7 +2369,6 @@ private fun CustomFilterTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-//    colors: TextFieldColors = TextFieldDefaults.colors(),
     singleLine: Boolean = false,
     maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
 ) {
