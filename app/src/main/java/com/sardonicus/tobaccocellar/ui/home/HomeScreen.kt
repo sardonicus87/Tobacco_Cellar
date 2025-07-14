@@ -540,7 +540,6 @@ private fun HomeHeader(
 ) {
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
-    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
 
     Row(
         modifier = modifier
@@ -615,7 +614,6 @@ private fun HomeHeader(
                         if (it.isFocused) filterViewModel.updateSearchFocused(true)
                         else filterViewModel.updateSearchFocused(false)
                     },
-                enabled = !emptyDatabase,
                 onImeAction = {
                     coroutineScope.launch {
                         if (!searchPerformed) {
@@ -633,10 +631,7 @@ private fun HomeHeader(
                     Box(
                         modifier = Modifier
                             .padding(0.dp)
-                            .clickable(
-                                enabled = !emptyDatabase,
-                                onClick = { expanded = !expanded }
-                            )
+                            .clickable(onClick = { expanded = !expanded })
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.search),
@@ -814,7 +809,6 @@ private fun CustomBlendSearch(
     leadingIcon: @Composable () -> Unit = {},
     trailingIcon: @Composable () -> Unit = {},
     onImeAction: () -> Unit = {},
-    enabled: Boolean = true,
 ) {
     var showCursor by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
@@ -823,7 +817,6 @@ private fun CustomBlendSearch(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        enabled = enabled,
         modifier = modifier
             .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
             .height(30.dp)
@@ -944,7 +937,7 @@ private fun HomeBody(
                 val noItemsString =
                     if (searchPerformed) { "No entries found matching\n\"$searchText\"." }
                     else if (filteringApplied) { "No entries found matching\nselected filters." }
-                    else if (emptyDatabase) { "No entries found in cellar.\nClick \"+\" to\nadd items,\n" +
+                    else if (emptyDatabase) { "No entries found in cellar.\nClick \"+\" to add items,\n" +
                             "or use options to import CSV." }
                     else { "" }
 
