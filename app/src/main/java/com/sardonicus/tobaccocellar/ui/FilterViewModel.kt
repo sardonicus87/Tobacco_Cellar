@@ -235,7 +235,7 @@ class FilterViewModel (
     val selectedExcludeDislikes: StateFlow<Boolean> = _selectedExcludeDislikes
 
 
-    // filter applied state for clear all button //
+    // filter applied state //
     @Suppress("UNCHECKED_CAST")
     val isFilterApplied: StateFlow<Boolean> = combine(
         sheetSelectedBrands, sheetSelectedTypes, sheetSelectedUnassigned, sheetSelectedFavorites,
@@ -392,6 +392,9 @@ class FilterViewModel (
     private val _datesExist = MutableStateFlow(false)
     val datesExist: StateFlow<Boolean> = _datesExist
 
+    private val _emptyDatabase = MutableStateFlow(false)
+    val emptyDatabase: StateFlow<Boolean> = _emptyDatabase
+
     private val _refresh = MutableSharedFlow<Unit>(replay = 0)
     private val refresh = _refresh.asSharedFlow()
 
@@ -467,6 +470,7 @@ class FilterViewModel (
                     _datesExist.value = it.flatMap { it.tins }.any {
                         it.manufactureDate != null || it.cellarDate != null || it.openDate != null
                     }
+                    _emptyDatabase.value = it.isEmpty()
                 }
             }
         }
