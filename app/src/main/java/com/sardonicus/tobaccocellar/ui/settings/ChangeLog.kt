@@ -10,14 +10,32 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.6",
+        buildDate = "14 July, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Slight tweaks to Dates screen to indicate Aging Tracker lack of results in entries " +
+                    "generally or in filtered entries (when filters applied), as well as moving " +
+                    "the date to the same line as the tin for \"Other tins ready this month\".",
+            "Added a disabled state to the \"Dates\" navigation button in the bottom app bar if " +
+                    "dates are unused (reacts without regard to selected filters).",
+            "Autocomplete Suggestion fields improved.",
+            "Changed Cellar screen display message when no entries are returned based on chosen " +
+                    "filters or search input.",
+            "Further stability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed bug in Filter Sheet randomly causing a crash in some circumstances."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.5",
         buildDate = "8 July, 2025",
         changes = listOf(),
         improvements = listOf(
             "Added a check to disable the \"Unassigned\" chip in the type section of the filter " +
                     "sheet if no entries are unassigned to a blend type.",
-            "Added slight horizontal offset to the percentage labels at the very top of the " +
-                    "pie charts on the stats screen when there are many thin slices.",
             "Minor reliability and performance improvements."
         ),
         bugFixes = listOf(
