@@ -57,11 +57,15 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -117,12 +121,14 @@ fun DrawScope.drawGlow(glowColor: GlowColor, glowSize: GlowSize) {
             startSize = glowSize.size
             endSize = glowSize.size
         }
+
         is GlowSize.HorizontalVertical -> {
             topSize = glowSize.vertical
             bottomSize = glowSize.vertical
             startSize = glowSize.horizontal
             endSize = glowSize.horizontal
         }
+
         is GlowSize.Edges -> {
             topSize = glowSize.top
             bottomSize = glowSize.bottom
@@ -138,12 +144,14 @@ fun DrawScope.drawGlow(glowColor: GlowColor, glowSize: GlowSize) {
             startColor = glowColor.color
             endColor = glowColor.color
         }
+
         is GlowColor.HorizontalVertical -> {
             topColor = glowColor.vertical
             bottomColor = glowColor.vertical
             startColor = glowColor.horizontal
             endColor = glowColor.horizontal
         }
+
         is GlowColor.Edges -> {
             topColor = glowColor.top
             bottomColor = glowColor.bottom
@@ -337,11 +345,11 @@ fun CustomTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     shape: Shape = TextFieldDefaults.shape,
     colors: TextFieldColors = TextFieldDefaults.colors(),
-    contentPadding:  PaddingValues = contentPaddingWithoutLabel(),
+    contentPadding: PaddingValues = contentPaddingWithoutLabel(),
     leadingIcon: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
@@ -401,7 +409,7 @@ fun AutoCompleteText(
     label: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     supportingText: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
@@ -425,27 +433,46 @@ fun AutoCompleteText(
 
                 val input =
                     if (componentField && text.contains(", ")) {
-                        text.substringAfterLast(", ", "") }
-                    else { text }
+                        text.substringAfterLast(", ", "")
+                    } else {
+                        text
+                    }
 
                 if (input.length >= 2) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
-                    val otherWordsStartsWith = allItems.filter { it.split(" ").drop(1)
-                        .any { it.startsWith(input, ignoreCase = true) } && !startsWith.contains(it) }
-                    val contains = allItems.filter { it.contains(input, ignoreCase = true)
-                            && !startsWith.contains(it) && !otherWordsStartsWith.contains(it) }
+                    val otherWordsStartsWith = allItems.filter {
+                        it.split(" ").drop(1)
+                            .any {
+                                it.startsWith(
+                                    input,
+                                    ignoreCase = true
+                                )
+                            } && !startsWith.contains(it)
+                    }
+                    val contains = allItems.filter {
+                        it.contains(input, ignoreCase = true)
+                                && !startsWith.contains(it) && !otherWordsStartsWith.contains(it)
+                    }
 
                     val selectedInput =
                         if (componentField) {
                             val components = text.substringBeforeLast(", ", "").trim()
                             if (components.isNotBlank()) {
-                                components.split(", ").map { it.trim() }.filter { it.isNotBlank() }.toSet()
-                            } else { emptySet() }
-                        } else { setOf(input) }
+                                components.split(", ").map { it.trim() }.filter { it.isNotBlank() }
+                                    .toSet()
+                            } else {
+                                emptySet()
+                            }
+                        } else {
+                            setOf(input)
+                        }
 
                     val selected = allItems.filter {
-                        if (componentField) { selectedInput.contains(it) }
-                        else { input.equals(it, ignoreCase = true) }
+                        if (componentField) {
+                            selectedInput.contains(it)
+                        } else {
+                            input.equals(it, ignoreCase = true)
+                        }
                     }.toSet()
 
                     suggestionsState = (startsWith + otherWordsStartsWith + contains) - selected
@@ -537,6 +564,108 @@ fun AutoCompleteText(
 }
 
 
+/** Replacement stuff for ContextualFlowRow */
+@Composable
+fun OverflowRow(
+    itemCount: Int,
+    itemContent: @Composable (index: Int) -> Unit,
+    overflowIndicator: @Composable (overflowCount: Int) -> Unit,
+    modifier: Modifier = Modifier,
+    itemSpacing: Dp = 0.dp,
+) {
+    val density = LocalDensity.current
+    val spacingPx =
+        remember(itemSpacing, density) { with(density) { itemSpacing.toPx() } }.toInt()
+
+    SubcomposeLayout(modifier = modifier) { constraints ->
+        val maxWidth = constraints.maxWidth
+        if (itemCount == 0) {
+            return@SubcomposeLayout layout(0, 0) {}
+        }
+
+        // measure indicator
+        val maxPossibleOverflow = itemCount
+        val overflowMeasurable = subcompose("overflow_max") { overflowIndicator(maxPossibleOverflow) }.firstOrNull()
+        val overflowPlaceable = overflowMeasurable?.measure(Constraints())
+        val overflowIndicatorWidth = overflowPlaceable?.width ?: 0
+        val overflowIndicatorHeight = overflowPlaceable?.height ?: 0
+
+        // measure items and check fit in row
+        var currentItemsWidth = 0
+        var visibleItemCount = 0
+        val placeables = mutableListOf<Placeable>()
+        var lineMaxHeight = 0
+
+        val allItemMeasurables = subcompose("items_measure") {
+            for (i in 0 until itemCount) itemContent(i)
+        }
+
+        for (i in 0 until itemCount) {
+            val itemMeasurable = allItemMeasurables[i]
+            val itemPlaceable = itemMeasurable.measure(Constraints())
+
+            val itemWidth = itemPlaceable.width + if (visibleItemCount > 0) spacingPx else 0
+
+            // checking item fit by adding items until over width
+            if (currentItemsWidth + itemWidth <= maxWidth) {
+                placeables.add(itemPlaceable)
+                currentItemsWidth += itemWidth
+                lineMaxHeight = maxOf(lineMaxHeight, itemPlaceable.height)
+                visibleItemCount++
+            } else {
+                val widthVisibleSoFar = currentItemsWidth
+                val widthWithOverflow =
+                    widthVisibleSoFar + (if (visibleItemCount > 0 && overflowIndicatorWidth > 0) spacingPx else 0) + overflowIndicatorWidth
+
+                if (widthWithOverflow <= maxWidth) {
+                    // everything fits,  no op
+                } else {
+                    // remove additional items as needed until overflow indicator fits
+                    while (visibleItemCount > 0) {
+                        visibleItemCount--
+                        currentItemsWidth = placeables.take(visibleItemCount)
+                            .sumOf { it.width } + if (visibleItemCount > 0) (visibleItemCount - 1) * spacingPx else 0
+
+                        val newWidthWithOverflow =
+                            currentItemsWidth + (if (visibleItemCount > 0 && overflowIndicatorWidth > 0) spacingPx else 0) + overflowIndicatorWidth
+                        if (newWidthWithOverflow <= maxWidth) {
+                            break // overflow indicator fits
+                        }
+                    }
+
+                    if (visibleItemCount == 0 && overflowIndicatorWidth > 0 && overflowIndicatorWidth > maxWidth) {
+                        return@SubcomposeLayout layout(0, 0) {} // even overflow indicator doesn't fit
+                    }
+                }
+                break
+            }
+        }
+
+        // final composition
+        val actualOverCount = itemCount - visibleItemCount
+        val showOver = actualOverCount > 0 && overflowIndicatorWidth > 0
+
+        val finalPlaceables = subcompose("final_render") {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(itemSpacing)
+            ) {
+                for (i in 0 until visibleItemCount) { itemContent(i) }
+                if (showOver) { overflowIndicator(actualOverCount) }
+            }
+        }.map { it.measure(constraints) }
+
+        val finalWidth = finalPlaceables.firstOrNull()?.width ?: 0
+        val finalHeight = finalPlaceables.firstOrNull()?.height ?: maxOf(
+            lineMaxHeight, if (showOver) overflowIndicatorHeight else 0
+        )
+
+        layout(finalWidth, finalHeight) {
+            finalPlaceables.forEach { it.placeRelative(0, 0) }
+        }
+    }
+}
+
+
 /** pager indicator **/
 data class IndicatorSizes(val current: Dp, val other: Dp)
 
@@ -555,10 +684,12 @@ fun PagerIndicator(
     ) {
         repeat(pagerState.pageCount) {
             val color = if (pagerState.currentPage == it) {
-                MaterialTheme.colorScheme.primary } else {
+                MaterialTheme.colorScheme.primary
+            } else {
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
             }
-            val size = if (pagerState.currentPage == it) indicatorSize.current else indicatorSize.other
+            val size =
+                if (pagerState.currentPage == it) indicatorSize.current else indicatorSize.other
 
             Box(
                 modifier = Modifier
