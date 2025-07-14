@@ -16,8 +16,8 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 24
-        versionName = "3.1.5"
+        versionCode = 25
+        versionName = "3.1.6"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -91,7 +91,7 @@ dependencies {
 
 
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.monitor)
+//    implementation(libs.androidx.monitor)
     implementation(libs.androidx.ui.text.google.fonts)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
