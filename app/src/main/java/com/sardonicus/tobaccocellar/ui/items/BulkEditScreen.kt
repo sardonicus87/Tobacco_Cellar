@@ -553,7 +553,7 @@ fun BulkEditing(
                                 }
                             },
                             keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Words,
+                                capitalization = KeyboardCapitalization.Sentences,
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Next,
                             ),

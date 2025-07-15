@@ -640,7 +640,7 @@ fun DetailsEntry(
                     }
                 },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
+                    capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 )
@@ -700,7 +700,7 @@ fun DetailsEntry(
                     }
                 },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
+                    capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                 ),
@@ -773,7 +773,7 @@ fun DetailsEntry(
                     }
                 },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
+                    capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                 )
@@ -1531,7 +1531,7 @@ fun IndividualTin(
                             )
                         },
                         keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Words,
+                            capitalization = KeyboardCapitalization.Sentences,
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         ),
