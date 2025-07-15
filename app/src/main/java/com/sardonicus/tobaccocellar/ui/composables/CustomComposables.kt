@@ -37,6 +37,7 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -421,7 +422,14 @@ fun AutoCompleteText(
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
     val focusRequester = remember { FocusRequester() }
     val focusState = remember { mutableStateOf(false) }
-    val expanded = value.isNotEmpty() && suggestionsState.isNotEmpty() && focusState.value
+    var expandedState by remember { mutableStateOf(false) }
+
+    LaunchedEffect(value) {
+        if (value.length < 2) {
+            expandedState = false
+            suggestionsState = emptyList()
+        }
+    }
 
     Box(modifier = modifier) {
         TextField(
@@ -434,19 +442,14 @@ fun AutoCompleteText(
                 val input =
                     if (componentField && text.contains(", ")) {
                         text.substringAfterLast(", ", "")
-                    } else {
-                        text
-                    }
+                    } else { text }
 
                 if (input.length >= 2) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
                     val otherWordsStartsWith = allItems.filter {
                         it.split(" ").drop(1)
                             .any {
-                                it.startsWith(
-                                    input,
-                                    ignoreCase = true
-                                )
+                                it.startsWith(input, ignoreCase = true)
                             } && !startsWith.contains(it)
                     }
                     val contains = allItems.filter {
@@ -459,32 +462,24 @@ fun AutoCompleteText(
                             val components = text.substringBeforeLast(", ", "").trim()
                             if (components.isNotBlank()) {
                                 components.split(", ").map { it.trim() }.filter { it.isNotBlank() }
-                                    .toSet()
-                            } else {
-                                emptySet()
-                            }
-                        } else {
-                            setOf(input)
-                        }
+                                    .toSet() }
+                            else { emptySet() } }
+                        else { setOf(input) }
 
                     val selected = allItems.filter {
-                        if (componentField) {
-                            selectedInput.contains(it)
-                        } else {
-                            input.equals(it, ignoreCase = true)
-                        }
-                    }.toSet()
-
+                        if (componentField) { selectedInput.contains(it) }
+                        else { it.equals(input, ignoreCase = false) } }.toSet()
                     suggestionsState = (startsWith + otherWordsStartsWith + contains) - selected
+                    expandedState = suggestionsState.isNotEmpty() && focusState.value && value.isNotEmpty()
                 } else {
                     suggestionsState = emptyList()
                 }
             },
-            modifier = Modifier.Companion
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
-                .onFocusChanged { focusState.value = it.isFocused }
-                .focusRequester(focusRequester),
+                .focusRequester(focusRequester)
+                .onFocusChanged { focusState.value = it.isFocused },
             enabled = enabled,
             trailingIcon = trailingIcon,
             singleLine = true,
@@ -507,13 +502,13 @@ fun AutoCompleteText(
 
             )
         DropdownMenu(
-            expanded = expanded,
+            expanded = expandedState,
             onDismissRequest = { /**/ },
             modifier = Modifier
                 .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
                 .heightIn(max = 82.dp),
             properties = PopupProperties(focusable = false),
-            offset = DpOffset(32.dp, (-12).dp), // (-12).dp
+            offset = DpOffset(32.dp, (-10).dp),
             containerColor = MaterialTheme.colorScheme.background,
         ) {
             suggestionsState.take(3).forEach { label ->
@@ -534,14 +529,8 @@ fun AutoCompleteText(
 
                         val updatedText =
                             if (componentField && currentText.contains(", ")) {
-                                currentText.substringBeforeLast(", ", "") + ", " + label + ", "
-                            } else {
-                                if (componentField) {
-                                    "$label, "
-                                } else {
-                                    label
-                                }
-                            }
+                                currentText.substringBeforeLast(", ", "") + ", " + label + ", " }
+                            else { if (componentField) { "$label, " } else { label } }
 
                         textFieldValueState = TextFieldValue(
                             text = updatedText,
@@ -549,7 +538,8 @@ fun AutoCompleteText(
                         )
 
                         onOptionSelected?.invoke(updatedText)
-                        suggestionsState = emptyList()
+                        expandedState = false
+                        suggestionsState -= updatedText
                     },
                     enabled = true,
                     modifier = Modifier
