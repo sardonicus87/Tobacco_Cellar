@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -39,6 +40,7 @@ import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,6 +62,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
@@ -424,11 +428,18 @@ fun AutoCompleteText(
     val focusState = remember { mutableStateOf(false) }
     var expandedState by remember { mutableStateOf(false) }
 
+    var fieldY by remember { mutableFloatStateOf(0f) }
+    var menuY by remember { mutableFloatStateOf(0f) }
+
     LaunchedEffect(value) {
         if (value.length < 2) {
             expandedState = false
             suggestionsState = emptyList()
         }
+    }
+
+    BackHandler(enabled = expandedState) {
+        expandedState = false
     }
 
     Box(modifier = modifier) {
@@ -479,7 +490,10 @@ fun AutoCompleteText(
                 .fillMaxWidth()
                 .padding(0.dp)
                 .focusRequester(focusRequester)
-                .onFocusChanged { focusState.value = it.isFocused },
+                .onFocusChanged { focusState.value = it.isFocused }
+                .onGloballyPositioned {
+                    fieldY = it.positionOnScreen().y
+                },
             enabled = enabled,
             trailingIcon = trailingIcon,
             singleLine = true,
@@ -499,16 +513,21 @@ fun AutoCompleteText(
             maxLines = maxLines,
             minLines = minLines,
             supportingText = supportingText,
+        )
 
-            )
+        val yOffset = if (fieldY > menuY) 8.dp else (-8).dp
+
         DropdownMenu(
             expanded = expandedState,
             onDismissRequest = { /**/ },
             modifier = Modifier
                 .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
-                .heightIn(max = 82.dp),
+                .heightIn(max = 82.dp)
+                .onGloballyPositioned{
+                    menuY = it.positionOnScreen().y
+                },
             properties = PopupProperties(focusable = false),
-            offset = DpOffset(32.dp, (-10).dp),
+            offset = DpOffset(32.dp, yOffset),
             containerColor = MaterialTheme.colorScheme.background,
         ) {
             suggestionsState.take(3).forEach { label ->
