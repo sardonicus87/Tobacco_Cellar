@@ -5,10 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.data.Components
+import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.home.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
@@ -28,10 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
-import kotlin.math.round
+import kotlin.collections.eachCount
 
 class StatsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -63,9 +63,6 @@ class StatsViewModel(
     val rawStats: StateFlow<RawStats> =
         everythingFlow
             .map {
-                val noComps = if (it.any { it.components.isEmpty() }) it.count { it.components.isEmpty() } else null
-                val noFlavor = if (it.any { it.flavoring.isEmpty() }) it.count { it.flavoring.isEmpty() } else null
-
                 RawStats(
                     itemsCount = it.size,
                     brandsCount = it.groupingBy { it.items.brand }.eachCount().size,
@@ -75,12 +72,12 @@ class StatsViewModel(
                     totalQuantity = it.sumOf { it.items.quantity },
                     estimatedWeight = calculateTotal(it, preferencesRepo.quantityOption.first()),
                     totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
-                        else it.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
+                        else it.flatMap { it.tins }.count { it.openDate != null && !it.finished },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
 
 
-                    totalByType = it.groupingBy {
-                        if (it.items.type.isBlank()) "Unassigned" else it.items.type }.eachCount()
+                    totalByType = it.groupingBy { it.items.type.ifBlank { "Unassigned" } }
+                        .eachCount()
                         .entries
                         .sortedByDescending { it.value }
                         .associate { it.key to it.value }
@@ -93,7 +90,7 @@ class StatsViewModel(
                             mutableMap.toMap()
                         },
                     totalBySubgenre = it.groupingBy {
-                        if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                        it.items.subGenre.ifBlank { "Unassigned" } }
                         .eachCount()
                         .entries
                         .sortedByDescending { it.value }
@@ -107,7 +104,7 @@ class StatsViewModel(
                             mutableMap.toMap()
                         },
                     totalByCut = it.groupingBy {
-                        if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                        it.items.cut.ifBlank { "Unassigned" } }
                         .eachCount()
                         .entries
                         .sortedByDescending { it.value }
@@ -120,7 +117,8 @@ class StatsViewModel(
                             }
                             mutableMap.toMap()
                         },
-                    totalByComponent = it.flatMap { it.components }
+                    totalByComponent = it.flatMap { it.components
+                        .ifEmpty { listOf(Components(componentName = "None Assigned")) } }
                         .groupingBy { it.componentName }
                         .eachCount()
                         .entries
@@ -128,12 +126,14 @@ class StatsViewModel(
                         .associate { it.key to it.value }
                         .let {
                             val mutableMap = it.toMutableMap()
+                            val noComps = mutableMap.remove("None Assigned")
                             if (noComps != null) {
                                 mutableMap["None Assigned"] = noComps
                             }
                             mutableMap.toMap()
                         },
-                    totalByFlavoring = it.flatMap { it.flavoring }
+                    totalByFlavoring = it.flatMap { it.flavoring
+                        .ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
                         .groupingBy { it.flavoringName }
                         .eachCount()
                         .entries
@@ -141,14 +141,14 @@ class StatsViewModel(
                         .associate { it.key to it.value }
                         .let {
                             val mutableMap = it.toMutableMap()
+                            val noFlavor = mutableMap.remove("None Assigned")
                             if (noFlavor != null) {
                                 mutableMap["None Assigned"] = noFlavor
                             }
                             mutableMap.toMap()
                         },
                     totalByContainer = it.flatMap { it.tins }
-                        .groupingBy {
-                            if (it.container.isBlank()) "Unassigned" else it.container }
+                        .groupingBy { it.container.ifBlank { "Unassigned" } }
                         .eachCount()
                         .entries
                         .sortedByDescending { it.value }
@@ -273,13 +273,6 @@ class StatsViewModel(
                         (!unfinished || items.tins.any { !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis() })
             }
 
-            val unassignedCount = filteredItems.count { it.items.type.isBlank() }
-
-            val noCompsAll = if (allItems.any { it.components.isEmpty() }) allItems.count { it.components.isEmpty() } else null
-            val noCompsFiltered = if (filteredItems.any { it.components.isEmpty() }) filteredItems.count { it.components.isEmpty() } else null
-
-            val noFlavorAll = if (allItems.any { it.flavoring.isEmpty() }) allItems.count { it.flavoring.isEmpty() } else null
-            val noFlavorFiltered = if (filteredItems.any { it.flavoring.isEmpty() }) filteredItems.count { it.flavoring.isEmpty() } else null
 
             flow {
                 emit(
@@ -297,21 +290,21 @@ class StatsViewModel(
                         brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
                         favoriteCount = filteredItems.count { it.items.favorite },
                         dislikedCount = filteredItems.count { it.items.disliked },
-                        unassignedCount = unassignedCount,
+                        unassignedCount = filteredItems.count { it.items.type.isBlank() },
                         totalQuantity = filteredItems.sumOf { it.items.quantity },
                         estimatedWeight = calculateTotal(filteredItems, preferencesRepo.quantityOption.first()),
                         totalOpened = if (filteredItems.map { it.tins }.isEmpty() || filteredItems.map { it.tins }.all { it.all { it.openDate == null } }) 0
-                            else filteredItems.flatMap { it.tins }.count { it.openDate != null && it.finished == false },
+                            else filteredItems.flatMap { it.tins }.count { it.openDate != null && !it.finished },
                         totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
 
                         totalByType = allItems.groupingBy {
-                            if (it.items.type.isBlank()) "Unassigned" else it.items.type }
+                            it.items.type.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .associate {
                                 it.key to (filteredItems.groupingBy {
-                                    if (it.items.type.isBlank()) "Unassigned" else it.items.type
+                                    it.items.type.ifBlank { "Unassigned" }
                                 }.eachCount()[it.key] ?: 0)
                             }.let {
                                 val mutableMap = it.toMutableMap()
@@ -321,15 +314,14 @@ class StatsViewModel(
                                 }
                                 mutableMap.toMap()
                             },
-                        totalBySubgenre = allItems
-                            .groupingBy {
-                                if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                        totalBySubgenre = allItems.groupingBy {
+                                it.items.subGenre.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .associate {
                                 it.key to (filteredItems.groupingBy {
-                                    if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre
+                                    it.items.subGenre.ifBlank { "Unassigned" }
                                 }.eachCount()[it.key] ?: 0)
                             }.let {
                                 val mutableMap = it.toMutableMap()
@@ -339,15 +331,14 @@ class StatsViewModel(
                                 }
                                 mutableMap.toMap()
                             },
-                        totalByCut = allItems
-                            .groupingBy {
-                                if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                        totalByCut = allItems.groupingBy {
+                                it.items.cut.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .associate {
                                 it.key to (filteredItems.groupingBy {
-                                    if (it.items.cut.isBlank()) "Unassigned" else it.items.cut
+                                    it.items.cut.ifBlank { "Unassigned" }
                                 }.eachCount()[it.key] ?: 0)
                             }
                             .let {
@@ -358,43 +349,49 @@ class StatsViewModel(
                                 }
                                 mutableMap.toMap()
                             },
-                        totalByComponent = allItems.flatMap { it.components }
+                        totalByComponent = allItems.flatMap { it.components.ifEmpty {
+                            listOf(Components(componentName = "None Assigned")) } }
                             .groupingBy { it.componentName }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .let {
-                                val mutableMap = it.associate { it.key to (filteredItems.flatMap { it.components }.groupingBy {
-                                    it.componentName }.eachCount()[it.key] ?: 0) }
+                                val mutableMap = it.associate { it.key to (filteredItems.flatMap {
+                                        it.components.ifEmpty { listOf(Components(componentName = "None Assigned")) } }
+                                    .groupingBy { it.componentName }.eachCount()[it.key] ?: 0) }
                                     .toMutableMap()
-                                if (noCompsAll != null) {
-                                    mutableMap["None Assigned"] = noCompsFiltered ?: 0
+                                val noComps = mutableMap.remove("None Assigned")
+                                if (noComps != null) {
+                                    mutableMap["None Assigned"] = noComps
                                 }
                                 mutableMap.toMap()
                             },
-                        totalByFlavoring = allItems.flatMap { it.flavoring }
+                        totalByFlavoring = allItems.flatMap { it.flavoring.ifEmpty{
+                            listOf(Flavoring(flavoringName = "None Assigned")) } }
                             .groupingBy { it.flavoringName }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .let {
-                                val mutableMap = it.associate { it.key to (filteredItems.flatMap { it.flavoring }.groupingBy {
-                                    it.flavoringName }.eachCount()[it.key] ?: 0) }
+                                val mutableMap = it.associate { it.key to (filteredItems.flatMap {
+                                        it.flavoring.ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
+                                    .groupingBy { it.flavoringName }.eachCount()[it.key] ?: 0) }
                                     .toMutableMap()
-                                if (noFlavorAll != null) {
-                                    mutableMap["None Assigned"] = noFlavorFiltered ?: 0
+                                val noFlavor = mutableMap.remove("None Assigned")
+                                if (noFlavor != null) {
+                                    mutableMap["None Assigned"] = noFlavor
                                 }
                                 mutableMap.toMap()
                             },
                         totalByContainer = allItems.flatMap { it.tins }
                             .groupingBy {
-                                if (it.container.isBlank()) "Unassigned" else it.container }
+                                it.container.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .associate {
                                 it.key to (filteredItems.flatMap { it.tins }.groupingBy {
-                                    if (it.container.isBlank()) "Unassigned" else it.container
+                                    it.container.ifBlank { "Unassigned" }
                                 }.eachCount()[it.key] ?: 0)
                             }.let {
                                 val mutableMap = it.toMutableMap()
@@ -450,15 +447,15 @@ class StatsViewModel(
                                     it.associate { it.key to it.value }
                                 }
                             },
-                        typesByEntries = filteredItems
-                            .groupingBy { if (it.items.type.isBlank()) "Unassigned" else it.items.type }
+                        typesByEntries = filteredItems.groupingBy {
+                            it.items.type.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
                             .associate { it.key to it.value },
                         typesByQuantity = filteredItems
                             .filter { it.items.quantity > 0 }
-                            .groupingBy { if (it.items.type.isBlank()) "Unassigned" else it.items.type }
+                            .groupingBy { it.items.type.ifBlank { "Unassigned" } }
                             .fold(0) { acc, item -> acc + item.items.quantity }
                             .entries
                             .sortedByDescending { it.value }
@@ -470,7 +467,7 @@ class StatsViewModel(
                             .sortedByDescending { it.value }
                             .associate { it.key to it.value },
                         subgenresByEntries = filteredItems
-                            .groupingBy { if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                            .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
@@ -485,7 +482,7 @@ class StatsViewModel(
                             },
                         subgenresByQuantity = filteredItems
                             .filter { it.items.quantity > 0 }
-                            .groupingBy { if (it.items.subGenre.isBlank()) "Unassigned" else it.items.subGenre }
+                            .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
                             .fold(0) { acc, item -> acc + item.items.quantity }
                             .entries
                                 .sortedByDescending { it.value }
@@ -499,7 +496,7 @@ class StatsViewModel(
                                 }
                             },
                         cutsByEntries = filteredItems
-                            .groupingBy { if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                            .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
                             .eachCount()
                             .entries
                             .sortedByDescending { it.value }
@@ -514,7 +511,7 @@ class StatsViewModel(
                             },
                         cutsByQuantity = filteredItems
                             .filter { it.items.quantity > 0 }
-                            .groupingBy { if (it.items.cut.isBlank()) "Unassigned" else it.items.cut }
+                            .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
                             .fold(0) { acc, item -> acc + item.items.quantity }
                             .entries
                             .sortedByDescending { it.value }
@@ -540,6 +537,7 @@ class StatsViewModel(
                 initialValue = FilteredStats(filteredLoading = true)
             )
 
+
     private suspend fun calculateTotal(items: List<ItemsComponentsAndTins>, quantityOption: QuantityOption): String {
         val ozRate = preferencesRepo.tinOzConversionRate.first()
         val gramsRate = preferencesRepo.tinGramsConversionRate.first()
@@ -554,12 +552,8 @@ class StatsViewModel(
 
         val sum =
             when (quantityRemap) {
-                QuantityOption.OUNCES -> {
-                    items.sumOf { it.items.quantity } * ozRate
-                }
-                QuantityOption.GRAMS -> {
-                    items.sumOf { it.items.quantity } * gramsRate
-                }
+                QuantityOption.OUNCES -> { items.sumOf { it.items.quantity } * ozRate }
+                QuantityOption.GRAMS -> { items.sumOf { it.items.quantity } * gramsRate }
                 else -> null
             }
 
@@ -569,83 +563,16 @@ class StatsViewModel(
                     if (sum != null) {
                         if (sum >= 16.00) {
                             val pounds = sum / 16
-                            val rounded = round(pounds * 100) / 100
-                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
-                            decimal.maximumFractionDigits = 2
-                            decimal.minimumFractionDigits = 2
-
-                            var formattedString = decimal.format(rounded)
-                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-                            when {
-                                formattedString.endsWith("00") -> {
-                                    formattedString.substringBefore(decimalSeparator)
-                                }
-
-                                formattedString.endsWith("0") -> {
-                                    formattedString.substring(0, formattedString.length - 1)
-                                }
-
-                                else -> formattedString
-                            } + " lbs"
+                            formatDecimal(pounds) + " lbs"
                         } else {
-                            val rounded = round(sum * 100) / 100
-                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
-                            decimal.maximumFractionDigits = 2
-                            decimal.minimumFractionDigits = 2
-
-                            var formattedString = decimal.format(rounded)
-                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-                            when {
-                                formattedString.endsWith("00") -> {
-                                    formattedString.substringBefore(decimalSeparator)
-                                }
-
-                                formattedString.endsWith("0") -> {
-                                    formattedString.substring(0, formattedString.length - 1)
-                                }
-
-                                else -> formattedString
-                            } + " oz"
+                            formatDecimal(sum) + " oz"
                         }
-                    } else {
-                        null
-                    }
+                    } else null
                 }
-
-                QuantityOption.GRAMS -> {
-                    if (sum != null) {
-                        val rounded = round(sum * 100) / 100
-                        val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
-                        decimal.maximumFractionDigits = 2
-                        decimal.minimumFractionDigits = 2
-
-                        var formattedString = decimal.format(rounded)
-                        val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-                        when {
-                            formattedString.endsWith("00") -> {
-                                formattedString.substringBefore(decimalSeparator)
-                            }
-
-                            formattedString.endsWith("0") -> {
-                                formattedString.substring(0, formattedString.length - 1)
-                            }
-
-                            else -> formattedString
-                        } + " g"
-                    } else {
-                        null
-                    }
-                }
-
-                else -> {
-                    null
-                }
+                QuantityOption.GRAMS -> { if (sum != null) { formatDecimal(sum) + " g" } else null }
+                else -> null
             }
-
-        return formattedSum?.toString() ?: ""
+        return formattedSum ?: ""
     }
 
     var expanded by mutableStateOf(false)
