@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSorting
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
@@ -34,6 +35,7 @@ class PreferencesRepo(
         val LIST_SORTING = stringPreferencesKey("list_sorting")
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
+        val DATES_SEEN = longPreferencesKey("dates_seen")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -223,6 +225,7 @@ class PreferencesRepo(
         }
     }
 
+
     /** Home header search setting **/
     val searchSetting: Flow<SearchSetting> = dataStore.data
         .catch {
@@ -247,6 +250,7 @@ class PreferencesRepo(
         }
     }
 
+
     /** Alert shown **/
     val lastAlertFlow: Flow<Int> = dataStore.data
         .catch {
@@ -263,6 +267,26 @@ class PreferencesRepo(
     suspend fun saveAlertShown(alertId: Int) {
         dataStore.edit {
             it[LAST_ALERT_SHOWN] = alertId
+        }
+    }
+
+
+    /** Dates indicator seen **/
+    val datesSeen: Flow<Long?> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading dates indicator preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[DATES_SEEN]
+        }
+
+    suspend fun setDatesSeen(seen: Long) {
+        dataStore.edit {
+            it[DATES_SEEN] = seen
         }
     }
 
