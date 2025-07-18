@@ -47,6 +47,10 @@ class DatesViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            val now = LocalDate.now().toEpochDay()
+            preferencesRepo.setDatesSeen(now)
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
