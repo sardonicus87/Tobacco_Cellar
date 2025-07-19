@@ -10,6 +10,31 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.7",
+        buildDate = "19 July, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Added a notification dot to the Dates navigation button if any tins are ready today " +
+                    "through the next 7 days. This is based on tin \"open date\"s having been " +
+                    "previously set to a future date (presumed to be the date ready to open). " +
+                    "The dot will disappear upon viewing the Dates screen and will only reappear " +
+                    "when a new tin is ready in a week from the day of running the app.",
+            "Refined the autocomplete suggestion fields once more for better control over when " +
+                    "suggestions appear/dismiss and their offset above/below the input field. " +
+                    "Pressing the system back button now dismisses the keyboard, then the " +
+                    "suggestions, then navigates back. The offset for the suggestions list when " +
+                    "it appears above the input field has also been fixed. Suggestions are now " +
+                    "also properly removed when matching entered text, and don't pop back up " +
+                    "after selecting a suggestion (unless the text input is manually changed).",
+            "Revert some entry fields to being sentence capitalization by default as this seems " +
+                    "more commonly how such fields are used in other apps/sites. Affected fields " +
+                    "are brand, blend, subgenre and tin label.",
+            "More stability and performance improvements."
+        ),
+        bugFixes = listOf(),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.6",
         buildDate = "14 July, 2025",
         changes = listOf(),
@@ -518,7 +543,7 @@ val changelogEntries = listOf(
             "Components field autocomplete wasn't automatically putting a comma + space when " +
                     "selecting a suggestion when the field was empty.",
             "Fixed a bug when adding tins in the add/edit screens where if a tin were added when " +
-                    "there were none, tbe first tin entry should have started in expanded state."
+                    "there were none, the first tin entry should have started in expanded state."
         ),
     ),
     ChangelogEntryData(
@@ -533,7 +558,7 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Fixed CSV Import date mapping wasn't working at all. Date's might still not import, " +
                     "but now they should now at least attempt to import.",
-            "Fixed CSV Import bug where new records would have the \"Sync Tins?\" option set even" +
+            "Fixed CSV Import bug where new records would have the \"Sync Tins?\" option set even " +
                     "when not selecting to collate tins.",
             "Fixed incorrect counting of number of updates in CSV import when tins or components " +
                     "were added.",
