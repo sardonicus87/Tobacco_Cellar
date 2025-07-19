@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.collections.eachCount
@@ -56,7 +57,7 @@ class StatsViewModel(
     private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
             itemsRepository.getEverythingStream()
-        }
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
 
     /** Raw stats */
@@ -273,7 +274,6 @@ class StatsViewModel(
                         (!unfinished || items.tins.any { !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis() })
             }
 
-
             flow {
                 emit(
                     FilteredStats(
@@ -305,8 +305,8 @@ class StatsViewModel(
                             .associate {
                                 it.key to (filteredItems.groupingBy {
                                     it.items.type.ifBlank { "Unassigned" }
-                                }.eachCount()[it.key] ?: 0)
-                            }.let {
+                                }.eachCount()[it.key] ?: 0) }
+                            .let {
                                 val mutableMap = it.toMutableMap()
                                 val unassignedEntry = mutableMap.remove("Unassigned")
                                 if (unassignedEntry != null) {
@@ -323,7 +323,8 @@ class StatsViewModel(
                                 it.key to (filteredItems.groupingBy {
                                     it.items.subGenre.ifBlank { "Unassigned" }
                                 }.eachCount()[it.key] ?: 0)
-                            }.let {
+                            }
+                            .let {
                                 val mutableMap = it.toMutableMap()
                                 val unassignedEntry = mutableMap.remove("Unassigned")
                                 if (unassignedEntry != null) {
@@ -393,7 +394,8 @@ class StatsViewModel(
                                 it.key to (filteredItems.flatMap { it.tins }.groupingBy {
                                     it.container.ifBlank { "Unassigned" }
                                 }.eachCount()[it.key] ?: 0)
-                            }.let {
+                            }
+                            .let {
                                 val mutableMap = it.toMutableMap()
                                 val unassignedEntry = mutableMap.remove("Unassigned")
                                 if (unassignedEntry != null) {
@@ -485,7 +487,7 @@ class StatsViewModel(
                             .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
                             .fold(0) { acc, item -> acc + item.items.quantity }
                             .entries
-                                .sortedByDescending { it.value }
+                            .sortedByDescending { it.value }
                             .let {
                                 if (it.size > 10) {
                                     val topNine = it.take(9).associate { it.key to it.value }
