@@ -2,6 +2,8 @@ package com.sardonicus.tobaccocellar.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.data.Components
+import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
@@ -12,7 +14,6 @@ import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,13 +22,18 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 class FilterViewModel (
     private val itemsRepository: ItemsRepository,
@@ -386,6 +392,9 @@ class FilterViewModel (
     private val _tinsExist = MutableStateFlow(false)
     val tinsExist: StateFlow<Boolean> = _tinsExist
 
+    private val _tinsReady = MutableStateFlow(false)
+    val tinsReady: StateFlow<Boolean> = _tinsReady
+
     private val _notesExist = MutableStateFlow(false)
     val notesExist: StateFlow<Boolean> = _notesExist
 
@@ -412,54 +421,48 @@ class FilterViewModel (
     private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
             itemsRepository.getEverythingStream()
-        }
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+    private val lastSeenFlow: Flow<List<Int>> = preferencesRepo.datesSeen.map {
+        if (it.isBlank()) { emptyList() }
+        else { it.split(",").mapNotNull { it.trim().toIntOrNull() } }
+    }
 
     init {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+        //    withContext(Dispatchers.IO) {
                 everythingFlow.collectLatest {
                     _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
                     _availableSubgenres.value = it.map {
-                        it.items.subGenre.ifBlank {
-                            "(Unassigned)"
-                        }
+                        it.items.subGenre.ifBlank { "(Unassigned)" }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
                     _availableCuts.value = it.map {
-                        it.items.cut.ifBlank {
-                            "(Unassigned)"
-                        }
+                        it.items.cut.ifBlank { "(Unassigned)" }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                     )
                     _availableComponents.value = it.flatMap {
-                        if (it.components.isEmpty()) {
-                            listOf("(None Assigned)")
-                        } else {
-                            it.components.map { it.componentName }
-                        }
+                        it.components.ifEmpty {
+                            listOf(Components(componentName = "(None Assigned)"))
+                        }.map { it.componentName }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
                             .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
                     )
                     _availableFlavors.value = it.flatMap {
-                        if (it.flavoring.isEmpty()) {
-                            listOf("(None Assigned)")
-                        } else {
-                            it.flavoring.map { it.flavoringName }
-                        }
+                        it.flavoring.ifEmpty {
+                            listOf(Flavoring(flavoringName = "(None Assigned)"))
+                        }.map { it.flavoringName }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
                             .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
                     )
                     _availableContainers.value = it.flatMap {
-                        it.tins }.map {
-                        it.container.ifBlank {
-                            "(Unassigned)"
-                        }
+                        it.tins }.map { it.container.ifBlank { "(Unassigned)" }
                     }.distinct().sortedWith(
                         compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                             .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
@@ -472,7 +475,23 @@ class FilterViewModel (
                     }
                     _emptyDatabase.value = it.isEmpty()
                 }
-            }
+        //    }
+        }
+        viewModelScope.launch {
+            combine (
+                everythingFlow,
+                lastSeenFlow
+            ) { everything, lastSeen ->
+                val currentReady = everything.flatMap { it.tins }
+                    .filter {
+                        it.openDate?.let {
+                            Instant.ofEpochMilli(it)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
+                        } ?: false
+                    }.map { it.tinId }
+                _tinsReady.value = currentReady.any { it !in lastSeen }
+            }.collect()
         }
     }
 
