@@ -482,6 +482,7 @@ class CsvImportViewModel(
             tinDataMap.getOrPut(brandBlendKey) { mutableListOf() }.addAll(tinDataList)
         }
 
+        @Suppress("SimplifyBooleanWithConstants")
         val itemsToImport = recordsToImport.mapNotNull { record ->
             val brand =
                 if (columnIndices[CsvField.Brand] != null &&
