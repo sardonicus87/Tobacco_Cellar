@@ -452,16 +452,16 @@ fun AutoCompleteText(
 
                 val input =
                     if (componentField && text.contains(", ")) {
-                        text.substringAfterLast(", ", "")
-                    } else { text }
+                        text.substringAfterLast(", ", "") }
+                    else { text }
 
                 if (input.length >= 2) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
                     val otherWordsStartsWith = allItems.filter {
                         it.split(" ").drop(1)
                             .any {
-                                it.startsWith(input, ignoreCase = true)
-                            } && !startsWith.contains(it)
+                                it.startsWith(input, ignoreCase = true) }
+                                && !startsWith.contains(it)
                     }
                     val contains = allItems.filter {
                         it.contains(input, ignoreCase = true)
@@ -472,14 +472,13 @@ fun AutoCompleteText(
                         if (componentField) {
                             val components = text.substringBeforeLast(", ", "").trim()
                             if (components.isNotBlank()) {
-                                components.split(", ").map { it.trim() }.filter { it.isNotBlank() }
-                                    .toSet() }
-                            else { emptySet() } }
-                        else { setOf(input) }
+                                components.split(", ").map { it.trim() }.filter { it.isNotBlank() } }
+                            else { emptyList() } }
+                        else { listOf(input) }
 
                     val selected = allItems.filter {
                         if (componentField) { selectedInput.contains(it) }
-                        else { it.equals(input, ignoreCase = false) } }.toSet()
+                        else { it.equals(input, ignoreCase = false) } }
                     suggestionsState = (startsWith + otherWordsStartsWith + contains) - selected
                     expandedState = suggestionsState.isNotEmpty() && focusState.value && value.isNotEmpty()
                 } else {
@@ -491,9 +490,7 @@ fun AutoCompleteText(
                 .padding(0.dp)
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState.value = it.isFocused }
-                .onGloballyPositioned {
-                    fieldY = it.positionOnScreen().y
-                },
+                .onGloballyPositioned { fieldY = it.positionOnScreen().y },
             enabled = enabled,
             trailingIcon = trailingIcon,
             singleLine = true,
@@ -523,9 +520,7 @@ fun AutoCompleteText(
             modifier = Modifier
                 .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
                 .heightIn(max = 82.dp)
-                .onGloballyPositioned{
-                    menuY = it.positionOnScreen().y
-                },
+                .onGloballyPositioned{ menuY = it.positionOnScreen().y },
             properties = PopupProperties(focusable = false),
             offset = DpOffset(32.dp, yOffset),
             containerColor = MaterialTheme.colorScheme.background,
