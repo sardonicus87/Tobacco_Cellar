@@ -95,7 +95,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -1986,8 +1985,6 @@ fun FlowFilterSection(
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
         var showOverflowPopup by remember { mutableStateOf(false) }
-        var overflowCount by remember { mutableIntStateOf(0) }
-        var shownItems by remember { mutableIntStateOf(0) }
         val enableMatchOption = matchOption.isNotBlank()
 
         val nothingAssigned = !availableOptions.any { it != noneField }
