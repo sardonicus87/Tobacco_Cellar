@@ -430,6 +430,8 @@ fun CellarBottomAppBar(
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val datesExist by filterViewModel.datesExist.collectAsState()
 
+    val tinsReady by filterViewModel.tinsReady.collectAsState()
+
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -554,6 +556,25 @@ fun CellarBottomAppBar(
                         .weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val borderColor =
+                        if (tinsReady) { // && !datesSeen
+                            if (currentDestination == DatesDestination && !clickToAdd) {
+                                onPrimaryLight }
+                            else LocalContentColor.current }
+                        else Color.Transparent
+                    val indicatorColor =
+                        if (tinsReady) { // && !datesSeen
+                            LocalCustomColors.current.indicatorCircle }
+                        else Color.Transparent
+
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .offset(x = 13.dp, y = (-17).dp)
+                            .clip(CircleShape)
+                            .border(1.5.dp, borderColor, CircleShape)
+                            .background(indicatorColor)
+                    )
                     IconButton(
                         onClick = {
                                 filterViewModel.getPositionTrigger()
