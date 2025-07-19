@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -83,7 +84,7 @@ class HomeViewModel(
     private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
             itemsRepository.getEverythingStream()
-        }
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     /** States and Flows **/
     val homeUiState: StateFlow<HomeUiState> =
