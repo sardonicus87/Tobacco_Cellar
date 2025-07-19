@@ -18,10 +18,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flattenMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -47,17 +49,13 @@ class DatesViewModel(
                 }
             }
         }
-        viewModelScope.launch {
-            val now = LocalDate.now().toEpochDay()
-            preferencesRepo.setDatesSeen(now)
-        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
             itemsRepository.getEverythingStream()
-        }
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -181,6 +179,21 @@ class DatesViewModel(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = DatesUiState(loading = true)
             )
+
+    init {
+        viewModelScope.launch {
+            val currentReady = everythingFlow.first().flatMap { it.tins }
+                .filter {
+                    it.openDate?.let {
+                        Instant.ofEpochMilli(it)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
+                    } ?: false
+                }.joinToString(",") { it.tinId.toString() }
+
+            preferencesRepo.setDatesSeen(currentReady)
+        }
+    }
 
 
     @Suppress("NullableBooleanElvis")
