@@ -1228,7 +1228,7 @@ fun ListViewMode(
         else -> itemsList.sortedBy { it.items.id }
     }
 
-    val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size) // itemsList
+    val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
 
     Box(
         modifier = Modifier
@@ -1241,7 +1241,7 @@ fun ListViewMode(
                 .padding(0.dp),
             state = columnState,
         ) {
-            items(items = sortedItems, key = { it.items.id }) { item -> // itemsList
+            items(items = sortedItems, key = { it.items.id }) { item ->
                 val haptics = LocalHapticFeedback.current
                 val focusManager = LocalFocusManager.current
 
@@ -1297,7 +1297,7 @@ fun ListViewMode(
 
         // jump to button
         AnimatedVisibility(
-            visible = isVisible && (sortedItems.size > 99), // itemsList
+            visible = isVisible && (sortedItems.size > 99),
             enter = fadeIn(animationSpec = tween(150)),
             exit = fadeOut(animationSpec = tween(150)),
             modifier = Modifier
@@ -1320,7 +1320,7 @@ fun ListViewMode(
         }
 
 
-        val currentItemsList by rememberUpdatedState(sortedItems) // itemsList
+        val currentItemsList by rememberUpdatedState(sortedItems)
         val currentPosition by filterViewModel.currentPosition.collectAsState()
         val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
         val savedItemId by filterViewModel.savedItemId.collectAsState()
@@ -1336,7 +1336,7 @@ fun ListViewMode(
             if (savedItemIndex != -1) {
                 withFrameNanos {
                     coroutineScope.launch {
-                        if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) { // itemsList
+                        if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
                             val offset =
                                 (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                             columnState.scrollToItem(savedItemIndex, offset)
