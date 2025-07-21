@@ -8,12 +8,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -78,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import com.sardonicus.tobaccocellar.ui.items.CustomDropdownMenuItem
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Fade effect boxes. If you want a set height and scrolling effect, add scroll modifier to
@@ -425,21 +427,31 @@ fun AutoCompleteText(
     var suggestionsState by remember { mutableStateOf<List<String>>(emptyList()) }
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
     val focusRequester = remember { FocusRequester() }
-    val focusState = remember { mutableStateOf(false) }
+    var override by remember { mutableStateOf(false) }
     var expandedState by remember { mutableStateOf(false) }
 
     var fieldY by remember { mutableFloatStateOf(0f) }
     var menuY by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(value) {
-        if (value.length < 2) {
+        if (value.length >= 2) {
+                expandedState = suggestionsState.isNotEmpty()
+        } else {
             expandedState = false
             suggestionsState = emptyList()
         }
     }
 
+    LaunchedEffect(override) {
+        if (override) {
+            delay(250)
+            override = false
+        }
+    }
+
     BackHandler(enabled = expandedState) {
         expandedState = false
+        suggestionsState = emptyList()
     }
 
     Box(modifier = modifier) {
@@ -455,7 +467,7 @@ fun AutoCompleteText(
                         text.substringAfterLast(", ", "") }
                     else { text }
 
-                if (input.length >= 2) {
+                if (input.length >= 2 && !override) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
                     val otherWordsStartsWith = allItems.filter {
                         it.split(" ").drop(1)
@@ -475,21 +487,23 @@ fun AutoCompleteText(
                                 components.split(", ").map { it.trim() }.filter { it.isNotBlank() } }
                             else { emptyList() } }
                         else { listOf(input) }
-
                     val selected = allItems.filter {
                         if (componentField) { selectedInput.contains(it) }
                         else { it.equals(input, ignoreCase = false) } }
+
                     suggestionsState = (startsWith + otherWordsStartsWith + contains) - selected
-                    expandedState = suggestionsState.isNotEmpty() && focusState.value && value.isNotEmpty()
-                } else {
-                    suggestionsState = emptyList()
-                }
+                } else { suggestionsState = emptyList() }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
                 .focusRequester(focusRequester)
-                .onFocusChanged { focusState.value = it.isFocused }
+                .onFocusChanged {
+                    if (!it.isFocused) {
+                        expandedState = false
+                        suggestionsState = emptyList()
+                    }
+                }
                 .onGloballyPositioned { fieldY = it.positionOnScreen().y },
             enabled = enabled,
             trailingIcon = trailingIcon,
@@ -519,8 +533,8 @@ fun AutoCompleteText(
             onDismissRequest = { /**/ },
             modifier = Modifier
                 .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
-                .heightIn(max = 82.dp)
-                .onGloballyPositioned{ menuY = it.positionOnScreen().y },
+                .height(intrinsicSize = IntrinsicSize.Max)
+                .onGloballyPositioned { menuY = it.positionOnScreen().y },
             properties = PopupProperties(focusable = false),
             offset = DpOffset(32.dp, yOffset),
             containerColor = MaterialTheme.colorScheme.background,
@@ -551,9 +565,10 @@ fun AutoCompleteText(
                             selection = TextRange(updatedText.length)
                         )
 
+                        override = true
                         onOptionSelected?.invoke(updatedText)
                         expandedState = false
-                        suggestionsState -= updatedText
+                        suggestionsState = emptyList()
                     },
                     enabled = true,
                     modifier = Modifier
