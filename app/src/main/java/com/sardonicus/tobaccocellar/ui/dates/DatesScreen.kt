@@ -58,9 +58,7 @@ import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
-import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -81,7 +79,6 @@ fun DatesScreen(
     onNavigateUp: () -> Unit,
     viewModel: DatesViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
 
@@ -116,7 +113,6 @@ fun DatesScreen(
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = DatesDestination,
-                filterViewModel = filterViewModel,
             )
         },
     ) { innerPadding ->
@@ -132,7 +128,6 @@ fun DatesScreen(
                 items = datesUiState.items,
                 navigateToDetails = navigateToDetails,
                 datesUiState = datesUiState,
-                filterViewModel = filterViewModel,
                 modifier = Modifier
             )
         }
@@ -146,11 +141,8 @@ fun DatesBody(
     items: List<ItemsComponentsAndTins>,
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
-    filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
-    val filtering = filterViewModel.isFilterApplied.collectAsState()
-    val filtered: String = if (filtering.value) { " filtered" } else { "" }
 
     Column(
         modifier = modifier
@@ -166,7 +158,6 @@ fun DatesBody(
                     items = items,
                     navigateToDetails = navigateToDetails,
                     datesUiState = datesUiState,
-                    filtered = filtered,
                     modifier = Modifier
                 )
             } else {
@@ -197,7 +188,6 @@ fun DateInfo(
     items: List<ItemsComponentsAndTins>,
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
-    filtered: String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -291,7 +281,7 @@ fun DateInfo(
                 } else {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "No tins ready this week in$filtered entries.",
+                        text = "No tins ready this week in entries.",
                         modifier = Modifier
                             .fillMaxWidth(),
                         textAlign = TextAlign.Start,
@@ -318,7 +308,7 @@ fun DateInfo(
                     )
                 } else {
                     Text(
-                        text = "No more tins ready this month in$filtered entries.",
+                        text = "No more tins ready this month in entries.",
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
@@ -330,7 +320,7 @@ fun DateInfo(
                 Spacer(modifier = Modifier.height(20.dp))
             } else {
                 Text(
-                    text = "No tins coming of age this week or month in$filtered entries.",
+                    text = "No tins coming of age this week or month in entries.",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 20.dp),
@@ -431,7 +421,7 @@ fun DateInfo(
                 Spacer(modifier = Modifier.height(20.dp))
             } else {
                 Text(
-                    text = "No relevant date stats found in$filtered entries.",
+                    text = "No relevant date stats found in entries.",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 20.dp),

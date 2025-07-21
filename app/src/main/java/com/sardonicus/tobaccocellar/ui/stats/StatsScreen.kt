@@ -73,7 +73,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
@@ -101,7 +100,6 @@ fun StatsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val rawStats by viewmodel.rawStats.collectAsState()
     val filteredStats by viewmodel.filteredStats.collectAsState()
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     val focusManager = LocalFocusManager.current
     fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
@@ -132,7 +130,6 @@ fun StatsScreen(
                 navigateToDates = navigateToDates,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = StatsDestination,
-                filterViewModel = filterViewModel,
             )
         },
     ) { innerPadding ->
