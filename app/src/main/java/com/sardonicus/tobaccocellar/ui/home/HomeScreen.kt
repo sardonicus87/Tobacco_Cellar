@@ -456,7 +456,6 @@ fun HomeScreen(
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
-                filterViewModel = filterViewModel,
             )
         },
         snackbarHost = {
