@@ -430,52 +430,50 @@ class FilterViewModel (
 
     init {
         viewModelScope.launch {
-        //    withContext(Dispatchers.IO) {
-                everythingFlow.collectLatest {
-                    _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
-                    _availableSubgenres.value = it.map {
-                        it.items.subGenre.ifBlank { "(Unassigned)" }
-                    }.distinct().sortedWith(
-                        compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
-                            .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
-                    )
-                    _availableCuts.value = it.map {
-                        it.items.cut.ifBlank { "(Unassigned)" }
-                    }.distinct().sortedWith(
-                        compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
-                            .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
-                    )
-                    _availableComponents.value = it.flatMap {
-                        it.components.ifEmpty {
-                            listOf(Components(componentName = "(None Assigned)"))
-                        }.map { it.componentName }
-                    }.distinct().sortedWith(
-                        compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
-                            .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
-                    )
-                    _availableFlavors.value = it.flatMap {
-                        it.flavoring.ifEmpty {
-                            listOf(Flavoring(flavoringName = "(None Assigned)"))
-                        }.map { it.flavoringName }
-                    }.distinct().sortedWith(
-                        compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
-                            .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
-                    )
-                    _availableContainers.value = it.flatMap {
-                        it.tins }.map { it.container.ifBlank { "(Unassigned)" }
-                    }.distinct().sortedWith(
-                        compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
-                            .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
-                    )
-                    _unassignedTypeExists.value = it.any { it.items.type.isBlank() }
-                    _tinsExist.value = it.any { it.tins.isNotEmpty() }
-                    _notesExist.value = it.any { it.items.notes.isNotBlank() }
-                    _datesExist.value = it.flatMap { it.tins }.any {
-                        it.manufactureDate != null || it.cellarDate != null || it.openDate != null
-                    }
-                    _emptyDatabase.value = it.isEmpty()
+            everythingFlow.collectLatest {
+                _availableBrands.value = it.map { it.items.brand }.distinct().sorted()
+                _availableSubgenres.value = it.map {
+                    it.items.subGenre.ifBlank { "(Unassigned)" }
+                }.distinct().sortedWith(
+                    compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
+                        .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
+                )
+                _availableCuts.value = it.map {
+                    it.items.cut.ifBlank { "(Unassigned)" }
+                }.distinct().sortedWith(
+                    compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
+                        .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
+                )
+                _availableComponents.value = it.flatMap {
+                    it.components.ifEmpty {
+                        listOf(Components(componentName = "(None Assigned)"))
+                    }.map { it.componentName }
+                }.distinct().sortedWith(
+                    compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
+                        .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
+                )
+                _availableFlavors.value = it.flatMap {
+                    it.flavoring.ifEmpty {
+                        listOf(Flavoring(flavoringName = "(None Assigned)"))
+                    }.map { it.flavoringName }
+                }.distinct().sortedWith(
+                    compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
+                        .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
+                )
+                _availableContainers.value = it.flatMap {
+                    it.tins }.map { it.container.ifBlank { "(Unassigned)" }
+                }.distinct().sortedWith(
+                    compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
+                        .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
+                )
+                _unassignedTypeExists.value = it.any { it.items.type.isBlank() }
+                _tinsExist.value = it.any { it.tins.isNotEmpty() }
+                _notesExist.value = it.any { it.items.notes.isNotBlank() }
+                _datesExist.value = it.flatMap { it.tins }.any {
+                    it.manufactureDate != null || it.cellarDate != null || it.openDate != null
                 }
-        //    }
+                _emptyDatabase.value = it.isEmpty()
+            }
         }
         viewModelScope.launch {
             combine (
