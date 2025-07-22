@@ -10,6 +10,20 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.8",
+        buildDate = "22 July, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Swapped the order of tin filtering check boxes and tin containers in the filter sheet.",
+            "Performance and stability improvements.",
+        ),
+        bugFixes = listOf(
+            "Yet another attempt to fix autocomplete suggestions on some devices not properly " +
+                    "dismissing. Hopefully this time it's FINALLY fixed and consistent."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.7",
         buildDate = "19 July, 2025",
         changes = listOf(),
@@ -39,9 +53,8 @@ val changelogEntries = listOf(
         buildDate = "14 July, 2025",
         changes = listOf(),
         improvements = listOf(
-            "Slight tweaks to Dates screen to indicate Aging Tracker lack of results in entries " +
-                    "generally or in filtered entries (when filters applied), as well as moving " +
-                    "the date to the same line as the tin for \"Other tins ready this month\".",
+            "Slight tweak to Dates screen, moved the date to the same line as the tin for \"Other " +
+                    "tins ready this month\".",
             "Added a disabled state to the \"Dates\" navigation button in the bottom app bar if " +
                     "dates are unused (reacts without regard to selected filters).",
             "Autocomplete Suggestion fields improved.",
