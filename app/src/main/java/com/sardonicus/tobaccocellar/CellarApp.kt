@@ -205,7 +205,6 @@ fun CellarTopAppBar(
     title: String,
     canNavigateBack: Boolean,
     modifier: Modifier = Modifier,
-    showHelp: Boolean = false,
     showMenu: Boolean = false,
     currentDestination: NavigationDestination? = null,
     navigateUp: () -> Unit = {},
@@ -263,21 +262,6 @@ fun CellarTopAppBar(
             }
         },
         actions = {
-            if (showHelp) {
-                IconButton(
-                    onClick = {},
-                    modifier = Modifier
-                        .size(36.dp),
-                    enabled = false
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.help_outline),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(22.dp)
-                    )
-                }
-            }
             if (showMenu) {
                 IconButton(
                     onClick = {
