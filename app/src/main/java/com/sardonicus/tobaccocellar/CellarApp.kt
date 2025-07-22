@@ -203,9 +203,10 @@ fun CellarApp(
 @Composable
 fun CellarTopAppBar(
     title: String,
-    showMenu: Boolean,
     canNavigateBack: Boolean,
     modifier: Modifier = Modifier,
+    showHelp: Boolean = false,
+    showMenu: Boolean = false,
     currentDestination: NavigationDestination? = null,
     navigateUp: () -> Unit = {},
     navigateToBulkEdit: () -> Unit = {},
@@ -262,16 +263,35 @@ fun CellarTopAppBar(
             }
         },
         actions = {
+            if (showHelp) {
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .size(36.dp),
+                    enabled = false
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.help_outline),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(22.dp)
+                    )
+                }
+            }
             if (showMenu) {
                 IconButton(
                     onClick = {
                         expanded = !expanded
                         filterViewModel.getPositionTrigger()
-                    }
+                    },
+                    modifier = Modifier
+                        .size(36.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = null
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(24.dp)
                     )
                     DropdownMenu(
                         expanded = expanded,
@@ -986,6 +1006,13 @@ fun FilterBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        TinsFilterSection(
+                            filterViewModel = filterViewModel,
+                            dateScreen = dateScreen,
+                            tins = tins,
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp)
+                        )
                         val availableCont by filterViewModel.availableContainers.collectAsState()
                         val selectedCont by filterViewModel.sheetSelectedContainer.collectAsState()
                         FlowFilterSection(
@@ -1008,13 +1035,6 @@ fun FilterBottomSheet(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 5.dp)
-                        )
-                        TinsFilterSection(
-                            filterViewModel = filterViewModel,
-                            dateScreen = dateScreen,
-                            tins = tins,
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp)
                         )
                         // Production
                         Row(
