@@ -25,6 +25,7 @@ import java.time.LocalDate
 import java.time.Period
 import java.time.ZoneId
 import java.util.Locale
+import kotlin.math.pow
 import kotlin.math.round
 
 class BlendDetailsViewModel(
@@ -273,7 +274,7 @@ fun calculateAge(date: Long?, field: String): String {
             if (then < now) {
                 " open"
             } else {
-                " until opening."
+                " until opening"
             }
         }
         else -> { "" }
@@ -296,21 +297,22 @@ fun isMetricLocale(): Boolean {
     }
 }
 
-fun formatDecimal(number: Double): String {
-    val rounded = round(number * 100) / 100
+fun formatDecimal(number: Double, places: Int = 2): String {
+    val multiplier = 10.0.pow(places)
+    val rounded = round(number * multiplier) / multiplier
     val formatted = NumberFormat.getNumberInstance(Locale.getDefault())
-    formatted.maximumFractionDigits = 2
-    formatted.minimumFractionDigits = 2
+    formatted.maximumFractionDigits = places
+    formatted.minimumFractionDigits = places
 
-    val formattedString = formatted.format(rounded)
+    var formattedString = formatted.format(rounded)
     val decimalSeparator = (formatted as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-    return when {
-        formattedString.endsWith("00") -> {
-            formattedString.substringBefore(decimalSeparator)
+    if (places > 0 && formattedString.contains(decimalSeparator)) {
+        while (formattedString.endsWith("0") && formattedString.contains(decimalSeparator)) {
+            formattedString = formattedString.dropLast(1)
         }
-        formattedString.endsWith("0") -> {
-            formattedString.substring(0, formattedString.length - 1)
+        if (formattedString.endsWith(decimalSeparator)) {
+            formattedString = formattedString.dropLast(1)
         }
-        else -> formattedString
     }
+    return formattedString
 }
