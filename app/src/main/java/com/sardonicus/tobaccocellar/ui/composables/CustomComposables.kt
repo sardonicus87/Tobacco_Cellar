@@ -434,11 +434,10 @@ fun AutoCompleteText(
     var menuY by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(value) {
-        if (value.length >= 2) {
-                expandedState = suggestionsState.isNotEmpty()
+        expandedState = if (value.length >= 2) {
+            suggestionsState.isNotEmpty() && !override
         } else {
-            expandedState = false
-            suggestionsState = emptyList()
+            false
         }
     }
 
@@ -446,13 +445,13 @@ fun AutoCompleteText(
         if (override) {
             delay(250)
             override = false
+            if (componentField) {
+                suggestionsState = emptyList()
+            }
         }
     }
 
-    BackHandler(enabled = expandedState) {
-        expandedState = false
-        suggestionsState = emptyList()
-    }
+    BackHandler(enabled = expandedState) { expandedState = false }
 
     Box(modifier = modifier) {
         TextField(
@@ -467,7 +466,7 @@ fun AutoCompleteText(
                         text.substringAfterLast(", ", "") }
                     else { text }
 
-                if (input.length >= 2 && !override) {
+                if (input.length >= 2) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
                     val otherWordsStartsWith = allItems.filter {
                         it.split(" ").drop(1)
@@ -492,18 +491,13 @@ fun AutoCompleteText(
                         else { it.equals(input, ignoreCase = false) } }
 
                     suggestionsState = (startsWith + otherWordsStartsWith + contains) - selected
-                } else { suggestionsState = emptyList() }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
                 .focusRequester(focusRequester)
-                .onFocusChanged {
-                    if (!it.isFocused) {
-                        expandedState = false
-                        suggestionsState = emptyList()
-                    }
-                }
+                .onFocusChanged { if (!it.isFocused) { expandedState = false } }
                 .onGloballyPositioned { fieldY = it.positionOnScreen().y },
             enabled = enabled,
             trailingIcon = trailingIcon,
@@ -566,9 +560,8 @@ fun AutoCompleteText(
                         )
 
                         override = true
-                        onOptionSelected?.invoke(updatedText)
                         expandedState = false
-                        suggestionsState = emptyList()
+                        onOptionSelected?.invoke(updatedText)
                     },
                     enabled = true,
                     modifier = Modifier
