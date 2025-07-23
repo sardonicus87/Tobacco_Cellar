@@ -10,6 +10,18 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.9",
+        buildDate = "22 July, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Performance and stability improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed another but in the Dates screen that resulted in a crash."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.8",
         buildDate = "22 July, 2025",
         changes = listOf(),
