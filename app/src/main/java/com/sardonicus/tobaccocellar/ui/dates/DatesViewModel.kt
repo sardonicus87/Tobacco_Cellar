@@ -8,6 +8,7 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.home.calculateAge
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -28,9 +29,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.Period
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAdjusters
+import kotlin.math.floor
 
 class DatesViewModel(
     private val itemsRepository: ItemsRepository,
@@ -139,11 +142,6 @@ class DatesViewModel(
                         ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) ))
             }
 
-            val averageDateManufacture = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.manufactureDate }
-            val averageDateCellar = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.cellarDate }
-            val averageDateOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
-            val averageFutureOpen = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate }
-
             val tins = filteredItems.flatMap { it.tins }
             val tinDates = tins.mapNotNull { it.manufactureDate } + tins.mapNotNull { it.cellarDate } + tins.mapNotNull { it.openDate }
 
@@ -156,10 +154,10 @@ class DatesViewModel(
                         agedDueThisWeek = agingDue(filteredItems).first,
                         agedDueThisMonth = agingDue(filteredItems).second,
 
-                        averageAgeManufacture = calculateAge(averageDateManufacture, ""),
-                        averageAgeCellar = calculateAge(averageDateCellar, ""),
-                        averageAgeOpen = calculateAge(averageDateOpen, ""),
-                        averageWaitTime = calculateAge(averageFutureOpen, ""),
+                        averageAgeManufacture = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.manufactureDate },
+                        averageAgeCellar = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.cellarDate },
+                        averageAgeOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
+                        averageWaitTime = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate },
 
                         pastManufacture = findDatedTins(filteredItems, DatePeriod.PAST) { it.manufactureDate },
                         pastCellared = findDatedTins(filteredItems, DatePeriod.PAST) { it.cellarDate },
@@ -248,42 +246,82 @@ class DatesViewModel(
 
     fun calculateAverageDate(
         filteredItems: List<ItemsComponentsAndTins>,
-        period: DatePeriod,
+        periodSelection: DatePeriod,
         field: (Tins) -> Long?
-    ): Long? {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    ): String {
+        val now = LocalDate.now()
 
-        val pastDates = filteredItems.flatMap { it.tins }.filter {
-            field(it) != null &&
-                    (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
-                        .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-                        .toEpochMilli() <= now)
-        }
-        val futureDates = filteredItems.flatMap { it.tins }.filter {
-            field(it) != null &&
-                    (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
-                        .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-                        .toEpochMilli() > now)
-        }
-
-        val sumDate = when (period) {
-            DatePeriod.PAST -> {
-                if (pastDates.isNotEmpty()) pastDates.sumOf { field(it)!! } else 0
-            }
-            DatePeriod.FUTURE -> {
-                if (futureDates.isNotEmpty()) futureDates.sumOf { field(it)!! } else 0
+        val relevantTins = filteredItems.flatMap { it.tins }.mapNotNull {
+            val dateMillis = field(it)
+            if (dateMillis != null) {
+                val then =
+                    Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                val period = if (periodSelection == DatePeriod.PAST) {
+                    then <= now } else { then > now }
+                if (period) {
+                    it
+                } else {
+                    null
+                }
+            } else {
+                null
             }
         }
 
-        val averageDate = when (period) {
-            DatePeriod.PAST -> {
-                if (sumDate > 0 && pastDates.isNotEmpty()) sumDate / pastDates.size else null
-            }
-            DatePeriod.FUTURE -> {
-                if (sumDate > 0 && futureDates.isNotEmpty()) sumDate / futureDates.size else null
-            }
+        if (relevantTins.isEmpty()) {
+            return ""
         }
-        return averageDate
+
+        var totalYears = 0.0
+        var totalMonths = 0.0
+        var totalDays = 0.0
+        val count = relevantTins.size
+
+        for (date in relevantTins) {
+            val dateParts = getAgeParts(field(date)!!, periodSelection)
+            totalYears += dateParts.first
+            totalMonths += dateParts.second
+            totalDays += dateParts.third
+        }
+
+        var years: Int
+        var months: Int
+        var days: Double
+
+        val rawYears = totalYears / count
+        years = floor(rawYears).toInt()
+        val fractionalYearMonths = (rawYears - years) * 12.0
+
+        val rawMonths = (totalMonths + fractionalYearMonths) / count
+        months = floor(rawMonths).toInt()
+        val fractionalMonthsDays = (rawMonths - months) * 30.4375
+
+        days = (totalDays + fractionalMonthsDays) / count
+        val dayString = formatDecimal(days, 1)
+
+        val parts = mutableListOf<String>()
+
+        if (years > 0) {
+           parts.add("$years year${if (years > 1) "s" else ""}")
+        }
+        if (months > 0) {
+            parts.add("$months month${if (months > 1) "s" else ""}")
+        }
+        if (days > 0.09) {
+            parts.add("$dayString day${if (dayString != "1") "s" else ""}")
+        }
+
+        return if (parts.isEmpty()) {
+            ""
+        } else parts.joinToString(", ")
+    }
+
+    fun getAgeParts(date: Long, period: DatePeriod): Triple<Int, Int, Int> {
+        val now = LocalDate.now()
+        val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
+        val datePeriod = if (period == DatePeriod.PAST) Period.between(then, now) else Period.between(now, then)
+
+        return Triple(datePeriod.years, datePeriod.months, datePeriod.days)
     }
 
 
