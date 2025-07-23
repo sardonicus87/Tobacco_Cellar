@@ -253,40 +253,34 @@ class DatesViewModel(
     ): Long? {
         val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
+        val pastDates = filteredItems.flatMap { it.tins }.filter {
+            field(it) != null &&
+                    (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
+                        .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
+                        .toEpochMilli() <= now)
+        }
+        val futureDates = filteredItems.flatMap { it.tins }.filter {
+            field(it) != null &&
+                    (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
+                        .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
+                        .toEpochMilli() > now)
+        }
+
         val sumDate = when (period) {
             DatePeriod.PAST -> {
-                filteredItems.flatMap { it.tins }.filter {
-                    field(it) != null &&
-                            (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
-                                .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-                                .toEpochMilli() < now)
-                }.sumOf { field(it)!! }
+                if (pastDates.isNotEmpty()) pastDates.sumOf { field(it)!! } else 0
             }
             DatePeriod.FUTURE -> {
-                filteredItems.flatMap { it.tins }.filter {
-                    field(it) != null &&
-                            (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
-                                .toLocalDate().atTime(23, 59).toInstant(ZoneOffset.UTC)
-                                .toEpochMilli() > now)
-                }.sumOf { field(it)!! }
+                if (futureDates.isNotEmpty()) futureDates.sumOf { field(it)!! } else 0
             }
         }
+
         val averageDate = when (period) {
             DatePeriod.PAST -> {
-                if (sumDate > 0) sumDate / filteredItems.flatMap { it.tins }.filter {
-                    field(it) != null &&
-                            (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
-                                .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-                                .toEpochMilli() < now)
-                }.size else null
+                if (sumDate > 0 && pastDates.isNotEmpty()) sumDate / pastDates.size else null
             }
             DatePeriod.FUTURE -> {
-                if (sumDate > 0) sumDate / filteredItems.flatMap { it.tins }.filter {
-                    field(it) != null &&
-                            (Instant.ofEpochMilli(field(it)!!).atZone(ZoneId.systemDefault())
-                                .toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-                                .toEpochMilli() > now)
-                }.size else null
+                if (sumDate > 0 && futureDates.isNotEmpty()) sumDate / futureDates.size else null
             }
         }
         return averageDate
