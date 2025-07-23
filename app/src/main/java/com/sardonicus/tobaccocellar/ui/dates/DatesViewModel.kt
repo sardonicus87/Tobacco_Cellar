@@ -254,23 +254,15 @@ class DatesViewModel(
         val relevantTins = filteredItems.flatMap { it.tins }.mapNotNull {
             val dateMillis = field(it)
             if (dateMillis != null) {
-                val then =
-                    Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-                val period = if (periodSelection == DatePeriod.PAST) {
-                    then <= now } else { then > now }
-                if (period) {
-                    it
-                } else {
-                    null
-                }
+                val then = Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                val period = if (periodSelection == DatePeriod.PAST) { then <= now } else { then > now }
+                if (period) { it } else { null }
             } else {
                 null
             }
         }
 
-        if (relevantTins.isEmpty()) {
-            return ""
-        }
+        if (relevantTins.isEmpty()) { return "" }
 
         var totalYears = 0.0
         var totalMonths = 0.0
@@ -301,15 +293,9 @@ class DatesViewModel(
 
         val parts = mutableListOf<String>()
 
-        if (years > 0) {
-           parts.add("$years year${if (years > 1) "s" else ""}")
-        }
-        if (months > 0) {
-            parts.add("$months month${if (months > 1) "s" else ""}")
-        }
-        if (days > 0.09) {
-            parts.add("$dayString day${if (dayString != "1") "s" else ""}")
-        }
+        if (years > 0) { parts.add("$years year${if (years > 1) "s" else ""}") }
+        if (months > 0) { parts.add("$months month${if (months > 1) "s" else ""}") }
+        if (days > 0.09) { parts.add("$dayString day${if (dayString != "1") "s" else ""}") }
 
         return if (parts.isEmpty()) {
             ""
