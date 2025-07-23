@@ -221,14 +221,11 @@ fun ItemsComponentsAndTins.toBlendDetails(): BlendDetails = BlendDetails(
 )
 
 fun calculateAge(date: Long?, field: String): String {
-    if (date == null) {
-        return ""
-    }
+    if (date == null) { return "" }
 
     val now = LocalDate.now()
     val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
     val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
-
 
     val years = period.years
     val months = period.months
