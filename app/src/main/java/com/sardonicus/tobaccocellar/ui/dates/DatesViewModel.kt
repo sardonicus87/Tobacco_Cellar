@@ -289,7 +289,8 @@ class DatesViewModel(
         val fractionalMonthsDays = (rawMonths - months) * 30.4375
 
         days = (totalDays + fractionalMonthsDays) / count
-        val dayString = formatDecimal(days, 1)
+        val places = if (years == 0 && months == 0) 1 else 0
+        val dayString = formatDecimal(days, places)
 
         val parts = mutableListOf<String>()
 
