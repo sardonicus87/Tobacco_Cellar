@@ -1073,6 +1073,7 @@ private fun DrawScope.drawLabels(
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
         val midpointAngle = currentStartAngle + (sweepAngle / 2)
+        val normalizedMidpointAngle = (midpointAngle) % 360f
         val isOther = label == "(Other)"
         if (sweepAngle < outsideLabelThreshold && !isOther) {
             outsideLabelCount++
@@ -1203,7 +1204,7 @@ private fun DrawScope.drawLabels(
         }
 
         val labelX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
-        val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat() // - combinedHeight / 2
+        val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat()
         val percentageX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
         val percentageY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat()
 
@@ -1214,8 +1215,6 @@ private fun DrawScope.drawLabels(
 
 
         /** additional adjustment based on quadrant */
-        val normalizedMidpointAngle = (midpointAngle) % 360f
-
         val xOffsetFactor = when (normalizedMidpointAngle) {
             in 0f..90f -> (normalizedMidpointAngle - 0f) / (180f) // 0 to 0.5
             in 90f..180f -> (normalizedMidpointAngle - 0f) / (180f) // 0.5 to 1
@@ -1230,11 +1229,6 @@ private fun DrawScope.drawLabels(
             in 270f..360f -> (450f - normalizedMidpointAngle) / (180f) // 1 to 0.5
             else -> 0f
         }
-
-//        val topOffsetSwitch = when (normalizedMidpointAngle) {
-//            in 225f..270f -> 1  // originally 255-270
-//            else -> 0
-//        }
 
         val alternatingOffsetMax = 20.dp.toPx()
         val alternatingOffsetFactor = when (normalizedMidpointAngle) {
