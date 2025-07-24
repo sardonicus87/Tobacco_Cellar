@@ -233,58 +233,25 @@ fun calculateAge(date: Long?, field: String): String {
     val days = period.days
 
     val parts = mutableListOf<String>()
+
     if (years > 0) {
-        if (years > 1) {
-            parts.add("$years years")
-        } else {
-            parts.add("$years year")
-        }
+        parts.add("$years year${if (years > 1) "s" else ""}")
     }
     if (months > 0) {
-        if (months > 1) {
-            parts.add("$months months")
-        } else {
-            parts.add("$months month")
-        }
+        parts.add("$months month${if (months > 1) "s" else ""}")
     }
     if (days > 0) {
-        if (days > 1) {
-            parts.add("$days days")
-        } else {
-            parts.add("$days day")
-        }
+        parts.add("$days day${if (days > 1) "s" else ""}")
     }
 
     val end = when (field) {
-        "manufacture" -> {
-            if (then < now) {
-                " old"
-            } else {
-                " until made/available?"
-            }
-        }
-        "cellar" -> {
-            if (then < now) {
-                " in cellar"
-            } else {
-                " until adding/available?"
-            }
-        }
-        "open" -> {
-            if (then < now) {
-                " open"
-            } else {
-                " until opening"
-            }
-        }
-        else -> { "" }
+        "manufacture" -> if (then < now) { " old" } else { " until made/available?" }
+        "cellar" -> if (then < now) { " in cellar" } else { " until adding/available?" }
+        "open" -> if (then < now) { " open" } else { " until opening" }
+        else -> ""
     }
 
-    return if (parts.isEmpty()) {
-        "today"
-    } else {
-        parts.joinToString(", ") + end
-    }
+    return if (parts.isEmpty()) { "today" } else { parts.joinToString(", ") + end }
 }
 
 fun isMetricLocale(): Boolean {
