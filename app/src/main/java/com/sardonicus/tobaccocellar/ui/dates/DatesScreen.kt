@@ -381,40 +381,84 @@ fun DateInfo(
             Spacer(modifier = Modifier.height(10.dp))
             if (datesUiState.averageAgeManufacture.isNotBlank() || datesUiState.averageAgeCellar.isNotBlank() || datesUiState.averageAgeOpen.isNotBlank() || datesUiState.averageWaitTime.isNotBlank()) {
                 SelectionContainer {
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                        horizontalAlignment = Alignment.Start
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
                     ) {
-                        if (datesUiState.averageAgeManufacture.isNotBlank()) {
-                            Text(
-                                text = "Average age of tins: ${datesUiState.averageAgeManufacture}",
-                                modifier = Modifier,
-                                fontSize = 15.sp,
-                            )
+                        Column(
+                            modifier = Modifier
+                                .width(IntrinsicSize.Max)
+                                .padding(start = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            if (datesUiState.averageAgeManufacture.isNotBlank()) {
+                                Text(
+                                    text = "Average age (manuf): ",
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                            if (datesUiState.averageAgeCellar.isNotBlank()) {
+                                Text(
+                                    text = "Average time in cellar: ",
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                            if (datesUiState.averageAgeOpen.isNotBlank()) {
+                                Text(
+                                    text = "Average opened time: ",
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                            if (datesUiState.averageWaitTime.isNotBlank()) {
+                                Text(
+                                    text = "Average wait (open): ",
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
                         }
-                        if (datesUiState.averageAgeCellar.isNotBlank()) {
-                            Text(
-                                text = "Average time in cellar: ${datesUiState.averageAgeCellar}",
-                                modifier = Modifier,
-                                fontSize = 15.sp,
-                            )
-                        }
-                        if (datesUiState.averageAgeOpen.isNotBlank()) {
-                            Text(
-                                text = "Average opened time: ${datesUiState.averageAgeOpen}",
-                                modifier = Modifier,
-                                fontSize = 15.sp,
-                            )
-                        }
-                        if (datesUiState.averageWaitTime.isNotBlank()) {
-                            Text(
-                                text = "Average wait time: ${datesUiState.averageWaitTime}",
-                                modifier = Modifier,
-                                fontSize = 15.sp,
-                            )
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            if (datesUiState.averageAgeManufacture.isNotBlank()) {
+                                Text(
+                                    text = datesUiState.averageAgeManufacture,
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                            if (datesUiState.averageAgeCellar.isNotBlank()) {
+                                Text(
+                                    text = datesUiState.averageAgeCellar,
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                            if (datesUiState.averageAgeOpen.isNotBlank()) {
+                                Text(
+                                    text = datesUiState.averageAgeOpen,
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
+                            if (datesUiState.averageWaitTime.isNotBlank()) {
+                                Text(
+                                    text = datesUiState.averageWaitTime,
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                )
+                            }
                         }
                     }
                 }
