@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -37,11 +38,11 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -63,6 +64,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
@@ -1086,7 +1088,12 @@ fun DetailsEntry(
                                 .align(Alignment.Bottom)
                                 .clickable(enabled = !itemDetails.isSynced) {
                                     if (itemDetails.quantityString.isEmpty()) {
-                                        /* do nothing */
+                                        onValueChange(
+                                            itemDetails.copy(
+                                                quantityString = "0",
+                                                quantity = 0
+                                            )
+                                        )
                                     } else {
                                         if (itemDetails.quantityString.toInt() > 0) {
                                             onValueChange(
@@ -1248,6 +1255,8 @@ fun NotesEntry(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    LaunchedEffect(itemDetails){ onValueChange(itemDetails) }
+
     Column(
         modifier = modifier
             .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
@@ -1441,7 +1450,6 @@ fun IndividualTin(
         )
     }
 
-
     Column (
         modifier = modifier
             .border(
@@ -1508,11 +1516,7 @@ fun IndividualTin(
                         },
                         modifier = Modifier
                             .widthIn(max = textFieldMax)
-                            .onFocusChanged(
-                                onFocusChanged = {
-                                    labelIsFocused = it.isFocused
-                                }
-                            ),
+                            .onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
                             color = if (showError) MaterialTheme.colorScheme.error else LocalContentColor.current,
@@ -1654,9 +1658,6 @@ fun IndividualTin(
                             .width(80.dp)
                     )
 
-                    var quantityIsFocused by rememberSaveable { mutableStateOf(false) }
-                    var unitIsFocused by rememberSaveable { mutableStateOf(false) }
-
                     val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
                     val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
                     val decimalSeparator = symbols.decimalSeparator.toString()
@@ -1695,12 +1696,7 @@ fun IndividualTin(
 
                         },
                         modifier = Modifier
-                            .weight(1f)
-                            .onFocusChanged(
-                                onFocusChanged = {
-                                    quantityIsFocused = it.isFocused
-                                }
-                            ),
+                            .weight(1f),
                         enabled = true,
                         singleLine = true,
                         textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
@@ -1720,11 +1716,7 @@ fun IndividualTin(
 
                     CustomDropDown(
                         selectedValue = tinDetails.unit,
-                        onValueChange = {
-                            onTinValueChange(
-                                tinDetails.copy(unit = it)
-                            )
-                        },
+                        onValueChange = { onTinValueChange(tinDetails.copy(unit = it)) },
                         options = listOf("", "oz", "lbs", "grams"),
                         placeholder = {
                             Text(
@@ -1735,15 +1727,9 @@ fun IndividualTin(
                             )
                         },
                         isError = tinDetails.tinQuantityString.isNotBlank() &&
-                                !quantityIsFocused && !unitIsFocused &&
                                 tinDetails.unit.isBlank(),
                         modifier = Modifier
-                            .weight(2f)
-                            .onFocusChanged(
-                                onFocusChanged = {
-                                    unitIsFocused = it.isFocused
-                                }
-                            ),
+                            .weight(2f),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
@@ -2067,7 +2053,6 @@ fun IndividualTin(
                                 tinDetails.manufactureDate
                             }
                         }
-
                         "Cellared" -> {
                             if (tinDetails.cellarDate == null && (tinDetails.manufactureDate != null || tinDetails.openDate != null)) {
                                 val minDate =
@@ -2096,7 +2081,6 @@ fun IndividualTin(
                                 tinDetails.cellarDate
                             }
                         }
-
                         "Opened" -> {
                             if (tinDetails.openDate == null && (tinDetails.manufactureDate != null || tinDetails.cellarDate != null)) {
                                 val minDate = tinDetails.cellarDate?.let {
@@ -2149,7 +2133,6 @@ fun IndividualTin(
 
                                     longFormat.format(localDate)
                                 } else { "" }
-
 
                                 when (datePickerLabel) {
                                     "Manufacture" -> {
@@ -2245,9 +2228,7 @@ fun IndividualTin(
                 color = LocalContentColor.current.copy(alpha = 0.5f),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .clickable {
-                        onTinValueChange(tinDetails.copy(detailsExpanded = true))
-                    }
+                    .clickable { onTinValueChange(tinDetails.copy(detailsExpanded = true)) }
                     .fillMaxWidth()
             )
         }
@@ -2274,79 +2255,119 @@ fun CustomDatePickerDialog(
     )
     val datePickerFormatter = remember { DatePickerDefaults.dateFormatter() }
 
-    DatePickerDialog(
+    BasicAlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val selectedDate = datePickerState.selectedDateMillis
-                    if (selectedDate != null) {
-                        val utcDate =
-                            LocalDateTime.ofInstant(
-                                Instant.ofEpochMilli(selectedDate), ZoneOffset.UTC
-                            )
-                        val timeZoneDate = ZonedDateTime.of(utcDate, ZoneId.systemDefault())
-                        val timeZoneDateLong = timeZoneDate.toInstant().toEpochMilli()
-                        onDateSelected(timeZoneDateLong)
-                    } else { onDateSelected(null) }
-
-                    onDismiss()
-                }
-            ) {
-                Text(text = "Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-                Text(text = "Cancel")
-            }
-        },
-        modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        colors = DatePickerDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.background,
-        ),
+        modifier = modifier
+          .wrapContentHeight(),
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
-        )
+        ),
     ) {
-        DatePicker(
-            state = datePickerState,
+        Surface(
             modifier = Modifier
-                .verticalScroll(rememberScrollState()),
-            title = {
-                Text(
-                    text = "$label Date",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
+                .requiredWidth(360.dp)
+                .heightIn(max = 582.dp),
+            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colorScheme.background,
+            tonalElevation = DatePickerDefaults.TonalElevation,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                // date picker
+                Box(Modifier.weight(1f, fill = false)) {
+                    DatePicker(
+                        state = datePickerState,
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState()),
+                        title = {
+                            Text(
+                                text = "$label Date",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                modifier = Modifier
+                                    .padding(start = 16.dp, top = 16.dp)
+                            )
+                        },
+                        headline = {
+                            Text(
+                                text = "Select a date",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .padding(start = 16.dp)
+                            )
+                        },
+                        dateFormatter = datePickerFormatter,
+                        showModeToggle = true,
+                        colors = DatePickerDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            titleContentColor = MaterialTheme.colorScheme.onBackground,
+                            headlineContentColor = MaterialTheme.colorScheme.onBackground,
+                            disabledDayContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
+                        )
+                    )
+                }
+
+                // clear option
+                if (datePickerState.displayMode == DisplayMode.Picker) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.End),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = { datePickerState.selectedDateMillis = null },
+                            enabled = datePickerState.selectedDateMillis != null,
+                            contentPadding = PaddingValues(12.dp, 4.dp),
+                            modifier = Modifier
+                                .heightIn(32.dp, 32.dp)
+                        ) {
+                            Text(text = "Clear Date")
+                        }
+                    }
+                }
+
+                // confirm/cancel buttons
+                Row(
                     modifier = Modifier
-                        .padding(start = 16.dp, top = 16.dp)
-                )
-            },
-            headline = {
-                Text(
-                    text = "Select a date",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                )
-            },
-            dateFormatter = datePickerFormatter,
-            showModeToggle = true,
-            colors = DatePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.background,
-                titleContentColor = MaterialTheme.colorScheme.onBackground,
-                headlineContentColor = MaterialTheme.colorScheme.onBackground,
-                disabledDayContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
-            )
-        )
+                        .align(Alignment.End)
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    TextButton(
+                        onClick = { onDismiss() },
+                        contentPadding = PaddingValues(12.dp, 4.dp),
+                        modifier = Modifier
+                            .heightIn(32.dp, 32.dp)
+                    ) {
+                        Text(text = "Cancel")
+                    }
+                    TextButton(
+                        onClick = {
+                            val selectedDate = datePickerState.selectedDateMillis
+                            if (selectedDate != null) {
+                                val utcDate =
+                                    LocalDateTime.ofInstant(
+                                        Instant.ofEpochMilli(selectedDate), ZoneOffset.UTC
+                                    )
+                                val timeZoneDate = ZonedDateTime.of(utcDate, ZoneId.systemDefault())
+                                val timeZoneDateLong = timeZoneDate.toInstant().toEpochMilli()
+                                onDateSelected(timeZoneDateLong)
+                            } else { onDateSelected(null) }
+                            onDismiss()
+                        },
+                        contentPadding = PaddingValues(12.dp, 4.dp),
+                        modifier = Modifier
+                            .heightIn(32.dp, 32.dp)
+                    ) {
+                        Text(text = "Confirm")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -2424,12 +2445,17 @@ fun CustomDropDown(
             matchTextFieldWidth = true,
             containerColor = LocalCustomColors.current.textField,
         ) {
-            options.forEach { option: String ->
+            options.forEach {
                 DropdownMenuItem(
-                    text = { Text(text = option) },
+                    text = {
+                        Text(
+                            text = it.ifBlank { "<Blank>" },
+                            color = if (it.isBlank()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        )
+                    },
                     onClick = {
                         expanded = false
-                        onValueChange(option)
+                        onValueChange(it)
                     }
                 )
             }
