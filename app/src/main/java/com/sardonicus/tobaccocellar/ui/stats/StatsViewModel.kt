@@ -32,7 +32,6 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.collections.eachCount
 
 class StatsViewModel(
     private val itemsRepository: ItemsRepository,
