@@ -427,9 +427,7 @@ private fun SettingsBody(
                 changelogEntries = changelogEntries,
                 showChangelog = {
                     coroutineScope.launch {
-                        if (!it) {
-                            dragOffset = 0f
-                        }
+                        if (!it) { dragOffset = 0f }
                         showChangelog = it
                     }
                 },
@@ -485,26 +483,30 @@ fun DisplaySettings(
                 .padding(bottom = 4.dp),
             fontSize = 16.sp
         )
-        Text(
-            text = "Theme",
+        TextButton(
+            onClick = { showThemeDialog(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { showThemeDialog(true) }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Cellar Quantity Display",
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Theme",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
+            onClick = { showQuantityDialog(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { showQuantityDialog(true) }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text (
+                text = "Cellar Quantity Display",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
     }
 }
 
@@ -530,57 +532,68 @@ fun DatabaseSettings(
                 .padding(bottom = 4.dp),
             fontSize = 16.sp
         )
-        Text(
-            text = "Tin Conversion Rates",
+        TextButton(
+            onClick = { showTinRates(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { showTinRates(true) }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Clean & Optimize Database",
+                .heightIn(28.dp, 28.dp)
+        ){
+            Text(
+                text = "Tin Conversion Rates",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
+            onClick = { optimizeDatabase() },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { optimizeDatabase() }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Backup",
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Clean & Optimize Database",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
+            onClick = { showBackup(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { showBackup(true) }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Backup",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
 
-        Text(
-            text = "Restore",
+        TextButton(
+            onClick = { showRestore(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { showRestore(true) }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Delete Database",
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Restore",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
+            onClick = { deleteAllConfirm(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
-                .padding(start = 4.dp)
-                .clickable { deleteAllConfirm(true) }
-                .padding(vertical = 2.dp, horizontal = 4.dp),
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.error
-        )
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Delete Database",
+                modifier = Modifier,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
     }
 }
