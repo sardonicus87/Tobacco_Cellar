@@ -2449,7 +2449,7 @@ fun CustomDropDown(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = it.ifBlank { "<Blank>" },
+                            text = it.ifBlank { "(Blank)" },
                             color = if (it.isBlank()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                         )
                     },
