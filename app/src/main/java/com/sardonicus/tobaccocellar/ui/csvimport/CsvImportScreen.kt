@@ -46,6 +46,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
@@ -267,11 +268,7 @@ fun CsvImportBody(
             is ImportStatus.Loading -> { FullScreenLoading() }
             is ImportStatus.Error -> {
                 ImportError(
-                    onTryAgain = {
-                        coroutineScope.launch {
-                            viewModel.resetImportState()
-                        }
-                    },
+                    onTryAgain = { coroutineScope.launch { viewModel.resetImportState() } },
                     navigateToHome = { navigateToHome() },
                     modifier = Modifier,
                 )
@@ -322,10 +319,7 @@ fun CsvImportBody(
                         horizontalAlignment = Alignment.Start,
                     ) {
                         if (csvUiState.columns.isNotEmpty()) {
-                            Spacer(
-                                modifier = Modifier
-                                    .height(12.dp)
-                            )
+                            Spacer(Modifier.height(12.dp))
                             // Select CSV and Help buttons //
                             Row(
                                 modifier = Modifier
@@ -661,6 +655,8 @@ fun CsvImportBody(
                                         }
                                     }
 
+                                    HorizontalDivider(Modifier.padding(bottom = 16.dp))
+
                                     // column mapping options //
                                     Column(
                                         modifier = Modifier
@@ -669,6 +665,69 @@ fun CsvImportBody(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.spacedBy(0.dp),
                                     ) {
+                                        // Header
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 16.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            BasicText(
+                                                text = "Database Field",
+                                                style = LocalTextStyle.current.copy(
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    lineBreak = LineBreak.Paragraph,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.Start
+                                                ),
+                                                maxLines = 2,
+                                                modifier = Modifier
+                                                    .weight(1f),
+                                                autoSize = TextAutoSize.StepBased(
+                                                    minFontSize = 13.sp,
+                                                    maxFontSize = 15.sp,
+                                                    stepSize = .25.sp,
+                                                )
+                                            )
+                                            Spacer(Modifier.weight(1f))
+                                            BasicText(
+                                                text = "CSV Column",
+                                                style = LocalTextStyle.current.copy(
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    lineBreak = LineBreak.Paragraph,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.Center
+                                                ),
+                                                maxLines = 2,
+                                                modifier = Modifier
+                                                    .weight(1f),
+                                                autoSize = TextAutoSize.StepBased(
+                                                    minFontSize = 13.sp,
+                                                    maxFontSize = 15.sp,
+                                                    stepSize = .25.sp,
+                                                )
+                                            )
+                                            Spacer(Modifier.weight(1f))
+                                            BasicText(
+                                                text = "Override Option",
+                                                style = LocalTextStyle.current.copy(
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    lineBreak = LineBreak.Paragraph,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.End
+                                                ),
+                                                maxLines = 2,
+                                                modifier = Modifier
+                                                    .weight(1f),
+                                                autoSize = TextAutoSize.StepBased(
+                                                    minFontSize = 13.sp,
+                                                    maxFontSize = 15.sp,
+                                                    stepSize = .25.sp,
+                                                )
+                                            )
+                                        }
+
                                         MappingField(
                                             label = "Brand:",
                                             selectedColumn = mappingOptions.brandColumn,
@@ -1855,11 +1914,16 @@ fun MappingField(
                         containerColor = LocalCustomColors.current.textField,
                     ) {
                         DropdownMenuItem(
-                            text = { Text(text = "") },
+                            text = {
+                                Text(
+                                    text = "(Blank)",
+                                    color = LocalContentColor.current.copy(alpha = 0.5f)
+                                )
+                            },
                             onClick = {
                                 onColumnSelected("")
                                 expanded = false
-                            }
+                            },
                         )
                         csvColumns.forEach { column ->
                             DropdownMenuItem(
