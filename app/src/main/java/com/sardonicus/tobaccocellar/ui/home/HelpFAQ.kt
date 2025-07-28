@@ -6,14 +6,10 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,12 +17,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,23 +29,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
@@ -110,9 +98,10 @@ private fun HelpBody(
             .padding(0.dp)
     ) {
         Text(
-            text = "Tobacco Cellar was originally intended to be a basic inventory tracker and \"" +
-                    "tobacco passport\", combined with the ease of searching and filtering and " +
-                    "statistical analysis, with varying degrees of verbosity.",
+            text = "Tobacco Cellar was originally intended to be a basic inventory list and \"" +
+                    "tobacco passport\" combined with the ease of searching and filtering, and " +
+                    "interesting statics. This remains the primary gaol, despite any additional " +
+                    "features added since launch or possible future features..",
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 12.dp),
             softWrap = true,
@@ -126,6 +115,7 @@ private fun HelpBody(
         // Help section
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
             modifier = modifier
                 .fillMaxWidth()
                 .padding(0.dp)
@@ -171,25 +161,7 @@ private fun HelpBody(
                 content = { Settings() }
             )
         }
-//        Column(
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            modifier = modifier
-//                .fillMaxWidth()
-//                .padding(0.dp)
-//        ) {
-//            Text(
-//                text = "FAQ:",
-//                modifier = Modifier
-//                    .padding(horizontal = 12.dp, vertical = 12.dp),
-//                softWrap = true,
-//                fontWeight = FontWeight.Bold,
-//                fontSize = 20.sp,
-//            )
-//            HelpSection(
-//                title = "Basic Use",
-//                content = { BasicUse() }
-//            )
-//        }
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -197,211 +169,86 @@ private fun HelpBody(
 
 /** Sections */
 @Composable
-private fun BasicUse(
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
-    ) {
-        Text(
-            text = "Tobacco Cellar is intended to be a basic inventory tracker and \'tobacco " +
-                    "passport\", combined with the ease of searching and filtering. The future " +
-                    "will bring optional detailed cellar tracking (dates and more).",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The \"Filtering\" button at the bottom of the screen applies filtering " +
-                    "globally, persisting between the \"Cellar\" and \"Stats\" screens. The " +
-                    "\"Blend Search\" bar at the top allows quick searching by Blend name (more " +
-                    "details in the \"Cellar Screen\" section).",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "Please see the relevant sections for more detailed information.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-    }
-}
-
-@Composable
 private fun CellarScreen(
     modifier: Modifier = Modifier,
 ) {
-    var showFullscreen by remember { mutableStateOf(false) }
-    var fullImage by remember { mutableStateOf<Painter?>(null) }
-    val viewMode = painterResource(id = R.drawable.help_view_mode)
-    val listMenu = painterResource(id = R.drawable.help_list_menu)
-    val tableMenu = painterResource(id = R.drawable.help_table_1)
-    val tableMenu2 = painterResource(id = R.drawable.help_table_2)
-
     Column(
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
+        verticalArrangement = Arrangement.Top,
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp)
     ) {
         Text(
-            text = "Cellar is the starting point of the app. There are two view options, " +
-                    "List and Table, which can be switched in the header.",
+            text = "\"Cellar\" is the starting point of the app. Some view options are available " +
+                    "in the header, while others are in the settings.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
-            text = "Tapping the view icon in the header switches between list and table modes. " +
-                    "Next to this is a \"Quick Search\". This search only returns results based  " +
-                    "on the chosen field, and works independently of filtering. To change search " +
-                    "fields, tap the search icon on the left for a menu. To return to the full " +
-                    "list/table, click the clear button, erase the search text, or tap the system " +
-                    "back button. Any previously chosen filters will be re-applied.",
+            text = "Header",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "The header at the top of the screen contains a view mode switch for changing " +
+                    "between list and table modes, a \"Quick Search\" with a search field option, " +
+                    "a sort button (only for list view), and a count of the current entries based " +
+                    "on chosen filtering or searching.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
-            text = "Next to the Quick Search is another icon, which is used to change the sorting " +
-                    "in the list view mode. The default sorting returns items in the order in " +
-                    "which they were added to the database. This applies only to list view (in " +
-                    "table view, tapping the table header cell sorts by that field). Finally, the " +
-                    "number next to the sort icon shows how many items are currently returned " +
-                    "based on your filtering or search value.",
+            text = "The search bar icon can be selected to change the field to search. Searching " +
+                    "works independently of any chosen filters. To clear search results, tap the " +
+                    "\"X\" icon, erase the search text, or use the system back navigation. " +
+                    "Previously chosen filters will be re-applied.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
-        Image(
-            painter = viewMode,
-            contentDescription = "View mode image",
+
+        // View Mode
+        Text(
+            text = "List/Table Views",
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(fraction = 0.5f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .clickable {
-                    showFullscreen = true
-                    fullImage = viewMode
-                }
-                .padding(0.dp),
-            contentScale = ContentScale.Inside,
-            alignment = Alignment.Center
-        )
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
         )
         Text(
-            text = "In List View, tapping an entry will navigate to the full details for that " +
-                    "entry (if menu overlay is not open on any other item and the blend search " +
-                    "is not focused). Long-press to access edit item option.",
+            text = "In either view mode, tapping an entry will navigate to the details screen for " +
+                    "that entry, long-pressing will show a menu overlay with an option to edit. " +
+                    "Clear the menu overlay by tapping outside of it or using the system back " +
+                    "navigation.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
-        Image(
-            painter = listMenu,
-            contentDescription = "List menu image",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(fraction = 0.5f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .clickable {
-                    showFullscreen = true
-                    fullImage = listMenu
-                }
-                .padding(0.dp),
-            contentScale = ContentScale.Inside,
-            alignment = Alignment.Center
-        )
         Text(
-            text = "In Table View, items can be sorted by tapping the \"Brand\" or \"Blend\" " +
-                    "column headers. The default sorting is by the order the items were entered " +
+            text = "Items can be sorted in list mode by tapping the sort button in the header. " +
+                    "In Table View, sorting is done by tapping the \"Brand\", \"Blend\" or \"" +
+                    "Type\" column headers. Default sorting is the order the items were entered " +
                     "into the database. The first tap will sort the column ascending, the second " +
                     "descending, and the third returns to the default sort order.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
-        Text(
-            text = "Long-pressing the brand or blend cell will take you to the edit screen for " +
-                    "that entry. Tapping will take you to the blend details if the blend search " +
-                    "field is not focused.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Image(
-            painter = tableMenu,
-            contentDescription = "Table mode image",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(fraction = 0.5f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .clickable {
-                    showFullscreen = true
-                    fullImage = tableMenu
-                }
-                .padding(0.dp),
-            contentScale = ContentScale.Inside,
-            alignment = Alignment.Center
-        )
-        Text(
-            text = "Scrolling is enabled in both directions, but only one direction can be " +
-                    "scrolled at a time. To view notes, tap the icon in the \"Notes\" column.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Image(
-            painter = tableMenu2,
-            contentDescription = "Table mode image",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(fraction = 0.5f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .clickable {
-                    showFullscreen = true
-                    fullImage = tableMenu2
-                }
-                .padding(0.dp),
-            contentScale = ContentScale.Inside
-        )
-        Text(
-            text = "The quantity displayed is the \"No. of Tins\" by default. In the settings " +
-                    "screen, there is an option to change this quantity display to being oz/lbs " +
-                    "or grams. This display value is based on the sum of the quantities entered " +
-                    "for each tin. If no tins are given for an entry, the default will revert to " +
-                    "the value saved in \"No. of Tins\".",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-    }
 
-    if (showFullscreen) {
-        FullscreenImage(
-            imagePainter = fullImage!!,
-            onDismiss = { showFullscreen = false },
-            modifier = Modifier
+        Text(
+            text = "The quantity displayed is the \"No. of Tins\" by default. There is an option " +
+                    "on the settings screen to change this being oz/lbs or grams based on the sum " +
+                    "of the quantities entered for each tin. If no tins are given for an entry, " +
+                    "the default will revert to the value saved in \"No. of Tins\".",
+            modifier = Modifier,
+            softWrap = true,
         )
     }
 }
@@ -412,34 +259,16 @@ private fun StatsPage(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "The \"Stats\" screen gives you a \"Quick Stats\" section with two columns " +
-                    "for comparing stats between the unfiltered stats on the left and stats " +
-                    "based on your chosen filters on the right.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "Quick Stats is collapsed by default, tapping where it says \"Expand\" will " +
-                    "show all quick stats. Tapping again will collapse this section. The Quick " +
-                    "Stats are broken up into subsections for convenience: general stats, counts " +
-                    "per type, subgenre, cut, tin containers. Any subsection is only visible if " +
-                    "the relevant data is used in any entries.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The \"Charts\" section provides pie charts for visually comparing data " +
-                    "by many different metrics. These charts are all populated based on the data " +
-                    "that matches your chosen filters.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            text = "The \"Stats\" screen gives you an expandable \"Quick Stats\" section (with " +
+                    "raw stats on the left and stats based on your filters on the right) and a " +
+                    "section of pie charts (which are filter reactive).",
+            modifier = Modifier,
             softWrap = true,
         )
     }
@@ -451,24 +280,54 @@ private fun DatesPage(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "The \"Dates\" screen contains various date-related information This part is " +
-                    "still under construction, but more date-tracking features will be coming soon.",
+            text = "The \"Dates\" screen contains various date-related information, all of which " +
+                    "is filter-reactive. The Dates navigation button will have an indicator dot " +
+                    "if any aging tins will be ready within the next 7 days. Viewing the Dates " +
+                    "screen will clear this indicator until any other new tins are ready.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+
+        // Aging Tracker
+        Text(
+            text = "Aging Tracker",
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "This section shows blends which are ready to be opened within the next " +
+                    "week and month, based on any open dates that were previously set to a " +
+                    "future date. See the Adding Tins section for more details.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
-            text = "The first section shows blends which are ready to be opened within the next " +
-                    "week and month, based on any open dates that were previously set in the " +
-                    "future. See the Adding Tins section for more details.",
+            text = "Tapping on any tin listed on this screen will take you to the details page " +
+                    "for the blend that the tin belongs to.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
+        )
+
+        // Quick Stats
+        Text(
+            text = "Quick Stats",
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
         )
         Text(
             text = "The \"Quick Stats\" are calculated based only on tins which have relevant " +
@@ -478,27 +337,23 @@ private fun DatesPage(
                     "These calculations also do not factor future tins. Average wait time is " +
                     "calculated based on all future dates.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
+
+        // Oldest/Future Tins
         Text(
-            text = "The next section is a list of the 5 oldest tins per each date field, sorted " +
-                    "from oldest to youngest. The section after this shows the 5 tins furthest " +
-                    "into the future per each date field, sorted by soonest to latest. Any of " +
-                    "these sections can be collapsed by tapping the icon/header. Tapping any of " +
-                    "the tins in this list will take you to the Details screen for the entry with " +
-                    "that tin.",
+            text = "Oldest/Future Tins",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
         )
         Text(
-            text = " " +
-                    " " +
-                    " " +
-                    "",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            text = "The next two sections list the 5 tins per each date field of past dates from " +
+                    "oldest to youngest, and future dates from soonest to latest.",
+            modifier = Modifier,
             softWrap = true,
         )
     }
@@ -508,169 +363,131 @@ private fun DatesPage(
 private fun Filtering(
     modifier: Modifier = Modifier,
 ) {
-    var showFullscreen by remember { mutableStateOf(false) }
-    var fullImage by remember { mutableStateOf<Painter?>(null) }
-    val filterSheet = painterResource(id = R.drawable.help_filter_sheet)
-
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "The \"Filter Sheet\" opens on top of the Cellar, Stats and Date screens. Any " +
                     "filters persist through navigation around the app and affect all three of " +
-                    "these main screens. Filters have no effect on the quick search. If any " +
-                    "filters are applied, this icon will have an indicator dot.",
+                    "these main screens (but have no effect on the quick search). If any filters " +
+                    "are applied, this icon will have an indicator dot.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
+        )
+
+        // Basic Use
+        Text(
+            text = "Basic Use",
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
         )
         Text(
             text = "Multiple filters can be combined and these main screens will all react " +
                     "instantly to changes. Once you have selected filters, the sheet can be " +
                     "dismissed by tapping outside of it, tapping the close button, or swiping it " +
-                    "away.",
+                    "down.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "The \"Clear All\" button at the bottom will clear all chosen filters.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Image(
-            painter = filterSheet,
-            contentDescription = "Filter sheet image",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(fraction = 0.5f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .clickable {
-                    showFullscreen = true
-                    fullImage = filterSheet
-                }
-                .padding(0.dp),
-            contentScale = ContentScale.Inside,
-            alignment = Alignment.Center
-        )
-        Text(
-            text = "The filter sheet has three pages, swipe left/right to swap between pages.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
-            text = "The first part is brand filtering. Simply tap the name of a brand in the row " +
-                    "below the search bar to add it to the brand filter list. The \"Search " +
-                    "Brands\" field is just a filter for this row of brands. The button next to " +
-                    "the search bar switches the brands filter between include or exclude filtering.",
+            text = "The filter sheet has three pages, swipe left/right to swap between pages, or " +
+                    "tap the page indicator dot at the top to swap to that page.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+
+        // Filtering
+        Text(
+            text = "Selecting Filters",
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "Filter brands by tapping the name of a brand in the row of brands (row " +
+                    "scrolls horizontally). The \"Search Brands\" field is just a filter for this " +
+                    "row of brands. Tap the include/exclude button to swap brand filter modes.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "Selected brands are shown in the box below and can be removed by tapping " +
                     "the close icon on each brand. Brands that exceed this space are placed in an " +
                     "overflow. To see the full list of selected brands, tap the overflow button. " +
-                    "The \"Clear All\" button here only removes the selected brands.",
+                    "The \"Clear All\" button here only removes the selected brand filters.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "To filter by type, tap one of the types to add it to the filtering, tap it " +
+                    "tap again to remove it. The \"Unassigned\" button will filter for entries " +
+                    "that have a blank blend type.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Filter ratings by tapping one of the four check boxes. Tapping \"Favorites\" " +
+                    "or \"Dislikes\" once returns only entries that match the rating, tapping " +
+                    "again excludes blends with that rating, and tapping again removes that " +
+                    "filter. If you would like to see only blends that are rated or unrated, " +
+                    "use the appropriate checkboxes below.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Filtering by in-stock/out is based on the \"No. of Tins\" field.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "Filters for subgenres, cuts, components and flavorings are on the second page. " +
+                    "Tap the overflow chip will to show a full list of available selections for " +
+                    "that section.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
         )
         Text(
-            text = "The next section is for filtering by blend type. Tap the button to add it " +
-                    "to the filtering, tap again to remove it. The \"Unassigned\" button will " +
-                    "filter for entries that have a blank blend type.",
+            text = "There is an additional option in components and flavoring for matching type. " +
+                    "Selecting \"Any\" will return blends that contain any of the selections, \"" +
+                    "All\" will return only those blends that contain all of the selections, and " +
+                    "\"Only\" will strictly return those blends that contain only the selections " +
+                    "(and no others, exact matching).",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
-            text = "The box below this on the left contains filtering for ratings. Tapping " +
-                    "\"Favorites\" or \"Dislikes\" once returns only entries that match" +
-                    "the rating, tapping again excludes blends with that rating, tapping again " +
-                    "removes that filter. If you would like to see only blends that are rated or " +
-                    "unrated, use the appropriate checkboxes below.",
+            text = "Tin-related parameters are on the third page. Tins related filtering is " +
+                    "disabled on the dates screen (and any previously selected filters will be " +
+                    "ignored). Some tins filters will also result in a filtered list of matching " +
+                    "tins being shown for the relevant blends on the Cellar screen.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
-        )
-        Text(
-            text = "The box to the right contains filtering for whether or not a blend is " +
-                    "in-stock, and is based on the \"No. of Tins\". For ease of use, this is " +
-                    "why leaving the \"Tins\" field blank when adding will presume a quantity of " +
-                    "1 for those that wish to use the \"Tins\" field just for quick reference " +
-                    "of whether or not they have a given blend on-hand. See the \"Add Items\" " +
-                    "section for more details.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The second page contains four sections that all work mostly the same for " +
-                    "Subgenres, Cuts, Components and Flavorings. The overflow chip will be " +
-                    "highlighted if any selected filters in this section aren't shown on the " +
-                    "screen. Tapping the overflow chip will show a full list of available " +
-                    "selections for that section.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "One key difference is the additional option in Components and Flavoring for " +
-                    "matching. Selecting \"Any\" will return blends that contain any of the " +
-                    "selections. Selecting \"All\" will return only those blends that contain " +
-                    "all of the field selections (though they may contain other non selected " +
-                    "options in addition to the selected ones). Finally, selecting \"Only\" will " +
-                    "return those blends that contain only the selections (and no others), an " +
-                    "exact match and the strictest filtering.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The third page has filtering for tin-related parameters. The Tin Containers " +
-                    "filtering works the same as the boxes on the previous page. However, this " +
-                    "will also cause these filtered entries to expand a simplified list of the " +
-                    "tins for that item which also match the chosen filter.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The next box with the three check boxes are for filtering items for those " +
-                    "with or without assigned tins, those that are opened or unopened (opened " +
-                    "only returns tins that have a non-future \"Open Date\" applied and not a " +
-                    "\"finished\" tag), and those that are finished or unfinished (though " +
-                    "\"unfinished\" only returns tins with a non-future open date). These three " +
-                    "filters are mutually-exclusive and do not apply to the Dates screen. And " +
-                    "like the containers filter, the opened/unopened and finished/unfinished " +
-                    "filters will show the simplified tins expansion with the relevant tins.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "The last box is for production status and these two check boxes are mutually " +
-                    "exclusive with one another as well.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-    }
-
-    if (showFullscreen) {
-        FullscreenImage(
-            imagePainter = fullImage!!,
-            onDismiss = { showFullscreen = false },
-            modifier = Modifier
         )
     }
 }
@@ -681,16 +498,25 @@ private fun AddingItems(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "Items can be added in one of two ways: by tapping the \"Add\" button in the " +
                     "navigation bar, or by importing a CSV file through the top bar overflow " +
-                    "menu.",
+                    "menu. For more information on adding items by CSV, please see the \"Help\" " +
+                    "section on the CSV import screen.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+        Text(
+            text = "There are three tabs on the add entry screen that are self-explanatory. " +
+                    "Please see the \"Adding Tins\" section for more details on the tins tab.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -698,7 +524,7 @@ private fun AddingItems(
                     "entries can contain the same brand OR blend, but only one entry can contain " +
                     "the same brand AND blend. All other fields are optional.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -707,7 +533,7 @@ private fun AddingItems(
                     "Next to this field, there are \"increase/decrease\" buttons for quickly " +
                     "updating the number of tins.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -716,30 +542,13 @@ private fun AddingItems(
                     "calculated based on the Tin Conversion Rates set in the settings screen (" +
                     "default is 1.75 oz or 50g per tin).",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "When adding components or flavorings, please separate each with a comma and a " +
                     "space. For example: \"virginia, burley, perique\".",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "There are three tabs on the add entry screen that are self-explanatory. " +
-                    "Please see the \"Adding Tins\" section for more details on the tins tab.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "Entries can also be imported through the \"CSV Import Wizard\" by selecting " +
-                    "the \"Import CSV\" option in the top app bar on the \"Cellar\" screen. " +
-                    "For more information and help on adding items by CSV, please see the \"Help\" " +
-                    "button at the top of the CSV Import Wizard screen.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            modifier = Modifier,
             softWrap = true,
         )
     }
@@ -753,7 +562,7 @@ private fun EditingItems(
         modifier = modifier
             .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "Items can be edited by long-pressing the entry in the cellar screen, using " +
@@ -761,14 +570,14 @@ private fun EditingItems(
                     "or through a CSV import and selecting the \"Update\" or \"Overwrite\" option " +
                     "(see help file on the CSV Import screen for more information).",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "The edit entry screen is the same as the add entry screen and functions the " +
                     "same way, just with the existing data pre-loaded in all of the fields.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -778,10 +587,9 @@ private fun EditingItems(
                     "it blank will result in erasing that field for the selected entries, with " +
                     "exception of the components and flavoring fields.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
-
         Text(
             text = "Batch editing components/flavoring works the same as the Add/Edit screens in " +
                     "regards to entering values into the field (separate each with a comma and a " +
@@ -790,8 +598,7 @@ private fun EditingItems(
                     "(or removed) from the existing values of the selected entries if they aren't " +
                     "already present (or are present in the case of remove). Switch between add " +
                     "and remove by tapping the +/- icon at the end of the field.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            modifier = Modifier,
             softWrap = true,
         )
     }
@@ -801,15 +608,11 @@ private fun EditingItems(
 private fun AddingTins(
     modifier: Modifier = Modifier,
 ) {
-    var showFullscreen by remember { mutableStateOf(false) }
-    var fullImage by remember { mutableStateOf<Painter?>(null) }
-    val tins = painterResource(id = R.drawable.help_tins_entry)
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "When adding or editing an entry, navigate to the Tins tab on the right and " +
@@ -817,26 +620,8 @@ private fun AddingTins(
                     "the \"+\" button below the given tin. To remove a tin, tap the \"-\" icon " +
                     "in the top right corner of the tin.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
-        )
-        Image(
-            painter = tins,
-            contentDescription = "Tins entry image",
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(fraction = 0.5f)
-                .wrapContentSize(align = Alignment.Center)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(4.dp))
-                .clickable {
-                    showFullscreen = true
-                    fullImage = tins
-                }
-                .padding(0.dp),
-            contentScale = ContentScale.Inside,
-            alignment = Alignment.Center
         )
         Text(
             text = "Each \"tin\" must have a unique label within a given entry. When collating " +
@@ -844,7 +629,7 @@ private fun AddingTins(
                     "The same label can be reused under different entries. All other fields are " +
                     "optional.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -852,7 +637,7 @@ private fun AddingTins(
                     "or \"expand\" text at the bottom (if collapsed). The tin list will be " +
                     "scrollable if it exceeds the height of the given area.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -861,7 +646,7 @@ private fun AddingTins(
                     "to 0. Do not use grouping separators for 1000 or more, only numbers and " +
                     "your locale-specific decimal separator are allowed.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -870,7 +655,7 @@ private fun AddingTins(
                     "format based on your locale settings if there is room. Regardless of how it " +
                     "displays here, the full selected day, month and year are saved.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -880,23 +665,14 @@ private fun AddingTins(
                     "schema: Manufacture must be on/before Cellar/Opened, Cellar must be on/" +
                     "between Manufacture and Opened, Opened must be on/after Cellar/Manufacture.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
-            text = "The default view is the calendar picker mode when adding dates. If you would " +
-                    "like to clear a previously entered date, you must switch to input mode by " +
-                    "tapping the edit icon on the right and erasing the entered date. This is a " +
-                    "limitation to the date picker as Google hasn't added a deselect method to " +
-                    "the calendar picker mode.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "If an Open date is entered and that date is not in the future, the option to " +
-                    "select the \"Finished\" checkbox is enabled. This is relevant for removing a " +
-                    "given tin from certain date stats without having to erase the saved date.",
+            text = "Selecting the \"Finished\" check box will affect some of the stats and dates " +
+                    "on the Stats and Dates screens. This checkbox allows you to keep the open " +
+                    "date filled in, but exclude the tin from being included in anything related " +
+                    "to open dates.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -905,21 +681,10 @@ private fun AddingTins(
             text = "If you would like to keep track of aging, set the open date to a future date " +
                     "of when you'd like to open the tin. The dates screen will have a section for " +
                     "blends that will be ready to open in a given week/month, see the dates " +
-                    "section for more details. So for instance, if you would like to age a tin " +
-                    "for three years, set an open date for 3 years in the future. In three years, " +
-                    "the Dates screen will show the tin is ready to open.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                    "section for more details.",
+            modifier = Modifier,
             softWrap = true,
         )
-
-        if (showFullscreen) {
-            FullscreenImage(
-                imagePainter = fullImage!!,
-                onDismiss = { showFullscreen = false },
-                modifier = Modifier
-            )
-        }
     }
 }
 
@@ -931,12 +696,12 @@ private fun Settings(
         modifier = modifier
             .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "Most settings are self-explanatory, but a few might need further clarification.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -946,7 +711,7 @@ private fun Settings(
                     "adding individual tins and using the sync option. It is also used on the " +
                     "Statistics screen.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -957,7 +722,7 @@ private fun Settings(
                     "have much of an effect beyond cleaning up orphaned data. You don't need to " +
                     "use this very often, if ever (except to clean up orphaned components).",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -966,22 +731,24 @@ private fun Settings(
                     "will save the app settings (like display settings). One backup file is made " +
                     "regardless of whether you select one or both (both backups will be in one).",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "This is an entirely optional process for creating a manual backup. The app " +
                     "does participate in the automatic Google services backup if you have that " +
-                    "enabled in your phone's settings, and will save the database and settings.",
+                    "enabled in your phone's settings, and will save the database and settings. " +
+                    "However, a Google backup might not represent the latest data, depending on " +
+                    "when scheduled backup was last performed.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "These backups are saved as \".tcbu\" files, and are given a suggested name " +
                     "(that you don't have to use) depending on the selected options.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
@@ -990,14 +757,13 @@ private fun Settings(
                     "backup file will only restore the database, and a settings file will restore " +
                     "only the settings.",
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(bottom = 12.dp),
             softWrap = true,
         )
         Text(
             text = "Delete Database will erase all entries in the database, and this cannot be " +
                     "undone.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            modifier = Modifier,
             softWrap = true,
         )
     }
@@ -1058,49 +824,24 @@ private fun HelpSection(
                     .height(8.dp)
             )
             content()
-            Spacer(
+            Spacer(Modifier.height(8.dp))
+            Row(
                 modifier = Modifier
-                    .height(8.dp)
-            )
-        }
-    }
-    Spacer(
-        modifier = Modifier
-            .height(2.dp)
-    )
-}
-
-// Fullscreen Image //
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun FullscreenImage(
-    imagePainter: Painter,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = false
-        )
-    ) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(onClick = onDismiss),
-        ) {
-            Image(
-                painter = imagePainter,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .align(Alignment.Center),
-                alignment = Alignment.Center,
-                contentScale = ContentScale.Inside,
-            )
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .clickable{visible = !visible},
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.double_up),
+                    contentDescription = "Collapse",
+                    modifier = Modifier
+                        .size(18.dp),
+                    tint = LocalContentColor.current.copy(alpha = 0.75f)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
