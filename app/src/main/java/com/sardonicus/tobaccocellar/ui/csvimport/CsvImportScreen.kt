@@ -71,6 +71,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -686,11 +687,11 @@ fun CsvImportBody(
                                                     .weight(1f),
                                                 autoSize = TextAutoSize.StepBased(
                                                     minFontSize = 13.sp,
-                                                    maxFontSize = 15.sp,
+                                                    maxFontSize = 14.sp,
                                                     stepSize = .25.sp,
                                                 )
                                             )
-                                            Spacer(Modifier.weight(1f))
+                                            Spacer(Modifier.weight(1.1f))
                                             BasicText(
                                                 text = "CSV Column",
                                                 style = LocalTextStyle.current.copy(
@@ -704,13 +705,13 @@ fun CsvImportBody(
                                                     .weight(1f),
                                                 autoSize = TextAutoSize.StepBased(
                                                     minFontSize = 13.sp,
-                                                    maxFontSize = 15.sp,
+                                                    maxFontSize = 14.sp,
                                                     stepSize = .25.sp,
                                                 )
                                             )
-                                            Spacer(Modifier.weight(1f))
+                                            Spacer(Modifier.weight(.9f))
                                             BasicText(
-                                                text = "Override Option",
+                                                text = "Overwrite Allowed",
                                                 style = LocalTextStyle.current.copy(
                                                     color = MaterialTheme.colorScheme.onBackground,
                                                     lineBreak = LineBreak.Paragraph,
@@ -719,10 +720,11 @@ fun CsvImportBody(
                                                 ),
                                                 maxLines = 2,
                                                 modifier = Modifier
+                                                    .alpha(if (importOption == ImportOption.OVERWRITE) 1f else 0.5f)
                                                     .weight(1f),
                                                 autoSize = TextAutoSize.StepBased(
                                                     minFontSize = 13.sp,
-                                                    maxFontSize = 15.sp,
+                                                    maxFontSize = 14.sp,
                                                     stepSize = .25.sp,
                                                 )
                                             )
@@ -1940,7 +1942,7 @@ fun MappingField(
 
             Column(
                 modifier = Modifier
-                    .width(48.dp),
+                    .width(54.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center,
             ) {
