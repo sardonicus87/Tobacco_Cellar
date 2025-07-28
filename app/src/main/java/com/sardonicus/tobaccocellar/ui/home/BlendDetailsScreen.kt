@@ -410,7 +410,7 @@ fun BlendDetailsBody(
                         modifier = Modifier
                             .weight(1f)
                     )
-                    if (blendDetails.tins.any{ it.tinQuantity > 0}) {
+                    if (blendDetails.tins.any { it.tinQuantity > 0 && !it.finished} ) {
                         Text(
                             text = "(${blendDetails.tinsTotal})",
                             modifier = Modifier,
