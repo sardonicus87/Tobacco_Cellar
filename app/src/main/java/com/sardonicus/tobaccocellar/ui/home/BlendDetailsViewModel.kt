@@ -105,45 +105,9 @@ class BlendDetailsViewModel(
                     if (sum != null) {
                         if (sum >= 16.00) {
                             val pounds = sum / 16
-                            val rounded = round(pounds * 100) / 100
-                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
-                            decimal.maximumFractionDigits = 2
-                            decimal.minimumFractionDigits = 2
-
-                            val formattedString = decimal.format(rounded)
-                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-                            when {
-                                formattedString.endsWith("00") -> {
-                                    formattedString.substringBefore(decimalSeparator)
-                                }
-
-                                formattedString.endsWith("0") -> {
-                                    formattedString.substring(0, formattedString.length - 1)
-                                }
-
-                                else -> formattedString
-                            } + " lbs"
+                            formatDecimal(pounds) + " lbs"
                         } else {
-                            val rounded = round(sum * 100) / 100
-                            val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
-                            decimal.maximumFractionDigits = 2
-                            decimal.minimumFractionDigits = 2
-
-                            val formattedString = decimal.format(rounded)
-                            val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-                            when {
-                                formattedString.endsWith("00") -> {
-                                    formattedString.substringBefore(decimalSeparator)
-                                }
-
-                                formattedString.endsWith("0") -> {
-                                    formattedString.substring(0, formattedString.length - 1)
-                                }
-
-                                else -> formattedString
-                            } + " oz"
+                            formatDecimal(sum) + " oz"
                         }
                     } else {
                         null
@@ -152,25 +116,7 @@ class BlendDetailsViewModel(
 
                 QuantityOption.GRAMS -> {
                     if (sum != null) {
-                        val rounded = round(sum * 100) / 100
-                        val decimal = NumberFormat.getNumberInstance(Locale.getDefault())
-                        decimal.maximumFractionDigits = 2
-                        decimal.minimumFractionDigits = 2
-
-                        val formattedString = decimal.format(rounded)
-                        val decimalSeparator = (decimal as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-
-                        when {
-                            formattedString.endsWith("00") -> {
-                                formattedString.substringBefore(decimalSeparator)
-                            }
-
-                            formattedString.endsWith("0") -> {
-                                formattedString.substring(0, formattedString.length - 1)
-                            }
-
-                            else -> formattedString
-                        } + " g"
+                        formatDecimal(sum) + " g"
                     } else {
                         null
                     }
