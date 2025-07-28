@@ -499,7 +499,7 @@ fun QuickStatsSection(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .size(18.dp),
-                        tint = LocalContentColor.current.copy(alpha = 0.3f)
+                        tint = LocalContentColor.current.copy(alpha = 0.5f)
                     )
                     HorizontalDivider(
                         modifier = Modifier
@@ -528,7 +528,7 @@ fun QuickStatsSection(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .size(18.dp),
-                        tint = LocalContentColor.current.copy(alpha = 0.3f)
+                        tint = LocalContentColor.current.copy(alpha = 0.5f)
                     )
                     HorizontalDivider(
                         modifier = Modifier
