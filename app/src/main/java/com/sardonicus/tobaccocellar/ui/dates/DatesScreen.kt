@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.dates
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -673,7 +674,11 @@ fun DatesSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = expandEnabled) { expanded = !expanded },
+                .clickable(
+                    enabled = expandEnabled,
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { expanded = !expanded },
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
@@ -711,7 +716,10 @@ fun DatesSection(
                         verticalArrangement = Arrangement.Top,
                         modifier = Modifier
                             .padding(start = 12.dp)
-                            .clickable(onClick = { navigateToDetails(it.id) })
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { navigateToDetails(it.id) }
                     ) {
                         Row(
                             modifier = Modifier
@@ -793,7 +801,10 @@ fun AgingSection(
                 verticalArrangement = Arrangement.Top,
                 modifier = Modifier
                     .padding(start = 12.dp)
-                    .clickable(onClick = { navigateToDetails(it.id) })
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { navigateToDetails(it.id) }
             ) {
                 Row(
                     modifier = Modifier
