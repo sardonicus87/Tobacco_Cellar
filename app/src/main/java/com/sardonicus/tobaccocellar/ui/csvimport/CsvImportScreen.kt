@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -254,9 +255,7 @@ fun CsvImportBody(
         }
     }
 
-    BackHandler(enabled = showHelp) {
-        showHelp = false
-    }
+    BackHandler(showHelp) { showHelp = false }
 
 
     Column(
@@ -592,12 +591,9 @@ fun CsvImportBody(
                                                 Box(
                                                     modifier = Modifier
                                                         .clickable(
-                                                            onClick = {
-                                                                viewModel.updateImportOption(
-                                                                    ImportOption.SKIP
-                                                                )
-                                                            }
-                                                        )
+                                                            indication = LocalIndication.current,
+                                                            interactionSource = null
+                                                        ) { viewModel.updateImportOption(ImportOption.SKIP) }
                                                         .width(36.dp),
                                                     contentAlignment = Alignment.Center
                                                 ) {
@@ -613,12 +609,9 @@ fun CsvImportBody(
                                                 Box(
                                                     modifier = Modifier
                                                         .clickable(
-                                                            onClick = {
-                                                                viewModel.updateImportOption(
-                                                                    ImportOption.UPDATE
-                                                                )
-                                                            }
-                                                        )
+                                                            indication = LocalIndication.current,
+                                                            interactionSource = null
+                                                        ) { viewModel.updateImportOption(ImportOption.UPDATE) }
                                                         .width(56.dp),
                                                     contentAlignment = Alignment.Center
                                                 ) {
@@ -634,12 +627,9 @@ fun CsvImportBody(
                                                 Box(
                                                     modifier = Modifier
                                                         .clickable(
-                                                            onClick = {
-                                                                viewModel.updateImportOption(
-                                                                    ImportOption.OVERWRITE
-                                                                )
-                                                            }
-                                                        )
+                                                            indication = LocalIndication.current,
+                                                            interactionSource = null
+                                                        ) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
                                                         .width(76.dp),
                                                     contentAlignment = Alignment.Center
                                                 ) {
@@ -1089,9 +1079,7 @@ fun CsvImportBody(
                                     // Confirm and  Import button //
                                     Button(
                                         onClick = {
-                                            coroutineScope.launch {
-                                                viewModel.confirmImport()
-                                            }
+                                            coroutineScope.launch { viewModel.confirmImport() }
                                         },
                                         enabled = csvUiState.isFormValid,
                                         modifier = Modifier
@@ -1104,10 +1092,7 @@ fun CsvImportBody(
                                             fontWeight = FontWeight.SemiBold,
                                         )
                                     }
-                                    Spacer(
-                                        modifier = Modifier
-                                            .height(16.dp)
-                                    )
+                                    Spacer(Modifier.height(16.dp))
                                 }
                                 Column {
                                     AnimatedVisibility(
