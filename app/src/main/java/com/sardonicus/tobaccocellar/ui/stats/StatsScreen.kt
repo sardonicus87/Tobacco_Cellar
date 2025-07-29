@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.stats
 
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -484,9 +485,12 @@ fun QuickStatsSection(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { contracted(true) }
                         .height(24.dp)
                         .padding(end = 24.dp)
-                        .clickable { contracted(true) }
                 ) {
                     HorizontalDivider(
                         modifier = Modifier
@@ -513,9 +517,12 @@ fun QuickStatsSection(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { updateExpanded(true) }
                         .height(24.dp)
                         .padding(end = 24.dp)
-                        .clickable { updateExpanded(true) }
                 ) {
                     HorizontalDivider(
                         modifier = Modifier
@@ -935,8 +942,9 @@ private fun ChartsFormat(
                 text = if (!showValue.value) "Show Values" else "Hide Values",
                 modifier = Modifier
                     .clickable(
-                        onClick = { showValue.value = !showValue.value }
-                    )
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { showValue.value = !showValue.value }
                     .width(75.dp),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
