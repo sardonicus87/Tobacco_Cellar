@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.home
 
-import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -8,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -99,6 +100,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -129,9 +131,7 @@ object HomeDestination : NavigationDestination {
     override val titleRes = R.string.home_title
 }
 
-enum class ScrollDirection {
-    UP, DOWN
-}
+enum class ScrollDirection { UP, DOWN }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,13 +187,13 @@ fun HomeScreen(
         }
     }
 
-    BackHandler(enabled = searchFocused) {
+    BackHandler(searchFocused) {
         if (searchFocused) {
             focusManager.clearFocus()
             filterViewModel.updateSearchFocused(false)
         }
     }
-    BackHandler(enabled = searchPerformed) {
+    BackHandler(searchPerformed) {
         if (!searchFocused) {
             filterViewModel.updateSearchText("")
             filterViewModel.onSearch("")
@@ -577,8 +577,7 @@ private fun HomeHeader(
             }
         }
 
-        Spacer(
-            modifier = Modifier.width(8.dp))
+        Spacer(Modifier.width(8.dp))
 
         // Search field
         Box(
@@ -634,7 +633,10 @@ private fun HomeHeader(
                     Box(
                         modifier = Modifier
                             .padding(0.dp)
-                            .clickable { expanded = !expanded }
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { expanded = !expanded }
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.search),
@@ -688,18 +690,20 @@ private fun HomeHeader(
                             modifier = Modifier
                                 .size(20.dp)
                                 .clickable(
-                                    onClick = {
-                                        filterViewModel.updateSearchText("")
-                                        filterViewModel.onSearch("")
-                                        filterViewModel.updateSearchIconOpacity(0.5f)
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) {
+                                    filterViewModel.updateSearchText("")
+                                    filterViewModel.onSearch("")
+                                    filterViewModel.updateSearchIconOpacity(0.5f)
 
-                                        if (searchPerformed) {
-                                            coroutineScope.launch {
-                                                EventBus.emit(SearchClearedEvent)
-                                            }
+                                    if (searchPerformed) {
+                                        coroutineScope.launch {
+                                            EventBus.emit(SearchClearedEvent)
                                         }
                                     }
-                                )
+                                }
+
                                 .padding(0.dp),
                         )
                     }
@@ -708,7 +712,7 @@ private fun HomeHeader(
             )
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(Modifier.width(8.dp))
 
         // total items & list sorting
         Row(
@@ -725,9 +729,11 @@ private fun HomeHeader(
                 modifier = Modifier
                     .padding(4.dp)
                     .size(20.dp)
-                    .clickable(enabled = !isTableView) {
-                        sortingMenu = !sortingMenu
-                    },
+                    .clickable(
+                        enabled = !isTableView,
+                        indication = LocalIndication.current,
+                        interactionSource = null,
+                    ) { sortingMenu = !sortingMenu },
                 tint = if (isTableView) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
             )
             DropdownMenu(
@@ -1542,8 +1548,8 @@ private fun CellarListItem(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp)
-                            .background(LocalCustomColors.current.listMenuScrim.copy(alpha = 0.75f)),
-                        horizontalArrangement = Arrangement.spacedBy(space = 16.dp, alignment = Alignment.CenterHorizontally),
+                            .background(LocalCustomColors.current.listMenuScrim),
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(
@@ -1625,7 +1631,6 @@ fun TableViewMode(
     )
 }
 
-@SuppressLint("ConfigurationScreenWidthHeight")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TableLayout(
@@ -1645,7 +1650,9 @@ fun TableLayout(
     updateSorting: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
+    val horizontalScroll = rememberScrollState()
+
 
     val columnMapping = listOf(
         { item: Items -> item.brand }, // 0
@@ -1682,7 +1689,8 @@ fun TableLayout(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(horizontalScroll),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
             Row(
@@ -1887,7 +1895,6 @@ fun TableLayout(
                                                         modifier = Modifier
                                                             .size(20.dp)
                                                             .align(alignment),
-                                                        //    .clickable { onNoteClick(item.items) },
                                                         colorFilter = ColorFilter.tint(
                                                             MaterialTheme.colorScheme.tertiary
                                                         ),
@@ -1937,32 +1944,42 @@ fun TableLayout(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .background(
-                                                LocalCustomColors.current.listMenuScrim.copy(
-                                                    alpha = 0.75f
-                                                )
-                                            ),
-                                        horizontalArrangement = Arrangement.spacedBy(space = 16.dp, alignment = Alignment.Start),
+                                            .background(LocalCustomColors.current.listMenuScrim),
+                                        horizontalArrangement = Arrangement.Start,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Spacer(Modifier.width(screenWidth/3))
-                                        TextButton(
-                                            onClick = {
-                                                if (!searchPerformed) {
-                                                    filterViewModel.getPositionTrigger()
-                                                }
-                                                onEditClick(item.items)
-                                                onDismissMenu()
-                                            },
-                                            modifier = Modifier,
+                                        val currentScrollOffset = horizontalScroll.value
+                                        val switch = screenWidth.dp >= 814.dp
+                                        val width = if (switch) 814.dp else screenWidth.dp
+
+                                        Box (
+                                            modifier = Modifier
+                                                .fillMaxHeight()
+                                                .width(width)
+                                                .offset {
+                                                    IntOffset(
+                                                        x = if (!switch) currentScrollOffset else 0,
+                                                        y = 0
+                                                    )
+                                                },
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            Text(
-                                                text = "Edit Item",
-                                                modifier = Modifier,
-                                                color = LocalContentColor.current,
-                                                fontWeight = FontWeight.SemiBold,
-                                                fontSize = 14.sp
-                                            )
+                                            TextButton(
+                                                onClick = {
+                                                    if (!searchPerformed) { filterViewModel.getPositionTrigger() }
+                                                    onEditClick(item.items)
+                                                    onDismissMenu()
+                                                },
+                                                modifier = Modifier
+                                            ) {
+                                                Text(
+                                                    text = "Edit Item",
+                                                    modifier = Modifier,
+                                                    color = LocalContentColor.current,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 14.sp
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -2181,7 +2198,9 @@ fun HeaderCell(
                 onClick = {
                     focusManager.clearFocus()
                     onClick?.invoke()
-                }
+                },
+                indication = LocalIndication.current,
+                interactionSource = null
             )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         contentAlignment = contentAlignment
