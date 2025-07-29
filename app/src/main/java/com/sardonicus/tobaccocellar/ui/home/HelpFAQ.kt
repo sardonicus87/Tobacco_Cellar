@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -614,6 +615,7 @@ private fun AddingTins(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
+        // Basic use
         Text(
             text = "When adding or editing an entry, navigate to the Tins tab on the right and " +
                     "select the \"Add Tin\" button to add a tin. Add additional tins by tapping " +
@@ -640,6 +642,16 @@ private fun AddingTins(
                 .padding(bottom = 12.dp),
             softWrap = true,
         )
+
+        // Quantity
+        Text(
+            text = "Quantity",
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
         Text(
             text = "While amount and unit are optional, if you enter an amount, you must also " +
                     "enter a unit. Entering a unit without an amount will default the amount " +
@@ -648,6 +660,26 @@ private fun AddingTins(
             modifier = Modifier
                 .padding(bottom = 12.dp),
             softWrap = true,
+        )
+        Text(
+            text = "This value is used for the \"Cellar Quantity Display\" setting on the main " +
+                    "Cellar screen, as well as the total quantity displayed on a Blend Details " +
+                    "screen. When using \"Sync\" on the Add/Edit details tab, this quantity is " +
+                    "also used with the \"Tin Conversion Rates\" setting to set the \"No. of Tins" +
+                    "\" field.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            softWrap = true,
+        )
+
+        // Dates
+        Text(
+            text = "Dates",
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
         )
         Text(
             text = "The date fields on this entry screen will show the chosen date as MM/YY if " +
@@ -670,9 +702,9 @@ private fun AddingTins(
         )
         Text(
             text = "Selecting the \"Finished\" check box will affect some of the stats and dates " +
-                    "on the Stats and Dates screens. This checkbox allows you to keep the open " +
-                    "date filled in, but exclude the tin from being included in anything related " +
-                    "to open dates.",
+                    "and the calculated total on Details screens. This checkbox allows you to " +
+                    "keep the open date, but exclude the tin from being included in anything " +
+                    "related to open dates.",
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             softWrap = true,
@@ -782,7 +814,10 @@ private fun HelpSection(
 
     Row(
         modifier = modifier
-            .clickable { visible = !visible }
+            .clickable(
+                indication = LocalIndication.current,
+                interactionSource = null
+            ) { visible = !visible }
             .fillMaxWidth()
             .background(color = LocalCustomColors.current.backgroundVariant),
         verticalAlignment = Alignment.CenterVertically,
@@ -829,7 +864,10 @@ private fun HelpSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(24.dp)
-                    .clickable{visible = !visible},
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { visible = !visible },
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
