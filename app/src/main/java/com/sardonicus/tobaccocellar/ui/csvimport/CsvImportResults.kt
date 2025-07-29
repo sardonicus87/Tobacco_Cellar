@@ -73,9 +73,7 @@ fun CsvImportResultsScreen (
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    BackHandler(enabled = true) {
-        navigateToHome()
-    }
+    BackHandler(true) { navigateToHome() }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
