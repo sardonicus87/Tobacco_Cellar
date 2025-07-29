@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -263,7 +264,10 @@ fun BlendDetailsBody(
                     modifier = Modifier
                         .size(18.dp)
                         .offset(y = 2.dp)
-                        .clickable(onClick = { navigateToEditEntry(blendDetails.id) }),
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { navigateToEditEntry(blendDetails.id) },
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
                 )
             }
