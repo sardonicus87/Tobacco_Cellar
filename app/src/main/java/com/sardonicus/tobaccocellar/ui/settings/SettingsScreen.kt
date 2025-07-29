@@ -9,14 +9,15 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +29,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -609,10 +609,6 @@ fun AboutSection(
     val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
 
     val contactString = buildAnnotatedString {
-        withStyle(style = SpanStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Normal)
-        ) { append("Contact me if you experience any bugs: ") }
         val emailStart = length
         withStyle(style = SpanStyle(
             color = MaterialTheme.colorScheme.primary,
@@ -674,25 +670,31 @@ fun AboutSection(
                 fontSize = 14.sp,
                 softWrap = true,
             )
-            Text(
-                text = contactString,
+            FlowRow(
                 modifier = Modifier
-                    .wrapContentWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {
+                    .padding(top = 6.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                Text(
+                    text = "Contact me if you experience any bugs: ",
+                    modifier = Modifier,
+                    fontSize = 14.sp,
+                    softWrap = true,
+                )
+                Text(
+                    text = contactString,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = null,
+                            indication = LocalIndication.current,
+                        ) {
                             val annotations =
-                                contactString.getStringAnnotations(
-                                    "Email",
-                                    0,
-                                    contactString.length
-                                )
+                                contactString.getStringAnnotations("Email", 0, contactString.length)
                             annotations
                                 .firstOrNull()
-                                ?.let { annotation ->
+                                ?.let {
                                     val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                        data = annotation.item.toUri()
+                                        data = it.item.toUri()
                                         putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
                                     }
                                     context.startActivity(
@@ -702,17 +704,12 @@ fun AboutSection(
                                         )
                                     )
                                 }
-                        }
-                    )
-                    .padding(top = 6.dp, bottom = 4.dp),
-                fontSize = 14.sp,
-                softWrap = true,
-            )
-
-            Spacer(
-                modifier = Modifier
-                    .height(14.dp)
-            )
+                        },
+                    fontSize = 14.sp,
+                    softWrap = true,
+                )
+            }
+            Spacer(Modifier.height(14.dp))
             Text(
                 text = versionInfo,
                 modifier = Modifier
@@ -723,7 +720,10 @@ fun AboutSection(
             Text(
                 text = "Changelog ",
                 modifier = Modifier
-                    .clickable { showChangelog(true) }
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { showChangelog(true) }
                     .padding(vertical = 1.dp),
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
@@ -1002,20 +1002,23 @@ fun ThemeDialog(
                 listOf(ThemeSetting.LIGHT, ThemeSetting.DARK, ThemeSetting.SYSTEM).forEach { theme ->
                     Row(
                         modifier = Modifier
-                            .padding(bottom = 0.dp),
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onThemeSelected(theme.value) }
+                            .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
                         RadioButton(
                             selected = currentTheme == theme.value,
-                            onClick = { onThemeSelected(theme.value) },
+                            onClick = {  },
                             modifier = Modifier
                                 .size(36.dp)
                         )
                         Text(
                             text = theme.value,
-                            modifier = Modifier
-                                .clickable { onThemeSelected(theme.value) },
+                            modifier = Modifier,
                             fontSize = 15.sp,
                         )
                     }
@@ -1067,20 +1070,23 @@ fun QuantityDialog(
                 listOf(QuantityOption.TINS, QuantityOption.OUNCES, QuantityOption.GRAMS).forEach {
                     Row(
                         modifier = Modifier
-                            .padding(bottom = 0.dp),
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onQuantityOption(it.value) }
+                            .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
                         RadioButton(
                             selected = currentQuantity == it,
-                            onClick = { onQuantityOption(it.value) },
+                            onClick = {  },
                             modifier = Modifier
                                 .size(36.dp)
                         )
                         Text(
                             text = it.value,
-                            modifier = Modifier
-                                .clickable { onQuantityOption(it.value) },
+                            modifier = Modifier,
                             fontSize = 15.sp,
                         )
                     }
