@@ -11,6 +11,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -807,7 +808,10 @@ fun FilterBottomSheet(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
-                        .clickable { filterViewModel.closeBottomSheet() }
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { filterViewModel.closeBottomSheet() }
                         .padding(4.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                 )
@@ -1468,6 +1472,7 @@ fun CheckboxWithLabel(
                 .padding(0.dp),
             enabled = enabled,
             colors = colors,
+            interactionSource = remember { MutableInteractionSource() }
         )
         Box(
             modifier = Modifier
@@ -1519,6 +1524,7 @@ fun TriStateCheckWithLabel(
                     .padding(0.dp),
                 enabled = enabled,
                 colors = colors,
+                interactionSource = remember { MutableInteractionSource() }
             )
         }
         Text(
@@ -1762,9 +1768,7 @@ fun BrandFilterSection(
                 }
             }
 
-            LaunchedEffect(filteredBrands) {
-                lazyListState.scrollToItem(0)
-            }
+            LaunchedEffect(filteredBrands) { lazyListState.scrollToItem(0) }
         }
 
         // Selected brands chip box //
@@ -2027,8 +2031,9 @@ fun FlowFilterSection(
                             .padding(0.dp)
                             .clickable(
                                 enabled = !nothingAssigned,
-                                onClick = { onMatchOptionChange("Any") }
-                            ),
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onMatchOptionChange("Any") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -2057,8 +2062,9 @@ fun FlowFilterSection(
                             .padding(0.dp)
                             .clickable(
                                 enabled = !nothingAssigned,
-                                onClick = { onMatchOptionChange("All") }
-                            ),
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onMatchOptionChange("All") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -2089,8 +2095,9 @@ fun FlowFilterSection(
                             .padding(0.dp)
                             .clickable(
                                 enabled = !nothingAssigned,
-                                onClick = { onMatchOptionChange("Only") }
-                            ),
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onMatchOptionChange("Only") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -2246,9 +2253,10 @@ fun FlowFilterSection(
                                             Box(
                                                 modifier = Modifier
                                                     .padding(0.dp)
-                                                    .clickable(onClick = {
-                                                        onMatchOptionChange("Any")
-                                                    }),
+                                                    .clickable(
+                                                        indication = LocalIndication.current,
+                                                        interactionSource = null
+                                                    ) { onMatchOptionChange("Any") },
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
@@ -2277,9 +2285,10 @@ fun FlowFilterSection(
                                             Box(
                                                 modifier = Modifier
                                                     .padding(0.dp)
-                                                    .clickable(onClick = {
-                                                        onMatchOptionChange("All")
-                                                    }),
+                                                    .clickable(
+                                                        indication = LocalIndication.current,
+                                                        interactionSource = null
+                                                    ) { onMatchOptionChange("All") },
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
@@ -2309,8 +2318,9 @@ fun FlowFilterSection(
                                                 modifier = Modifier
                                                     .padding(0.dp)
                                                     .clickable(
-                                                        onClick = { onMatchOptionChange("Only") }
-                                                    ),
+                                                        indication = LocalIndication.current,
+                                                        interactionSource = null
+                                                    ) { onMatchOptionChange("Only") },
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
@@ -2491,7 +2501,10 @@ fun Chip(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Remove Chip",
                     modifier = Modifier
-                        .clickable { onChipRemoved() }
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { onChipRemoved() }
                         .size(iconSize),
                     tint = trailingTint
                 )
