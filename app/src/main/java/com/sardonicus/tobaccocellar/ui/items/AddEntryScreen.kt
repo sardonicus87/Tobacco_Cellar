@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.items
 
 import android.util.Log
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,8 +59,6 @@ import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -632,9 +631,10 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable {
-                                    onValueChange(itemDetails.copy(brand = ""))
-                                }
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { onValueChange(itemDetails.copy(brand = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -692,9 +692,10 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable {
-                                    onValueChange(itemDetails.copy(blend = ""))
-                                }
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { onValueChange(itemDetails.copy(blend = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -765,9 +766,10 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable {
-                                    onValueChange(itemDetails.copy(subGenre = ""))
-                                }
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { onValueChange(itemDetails.copy(subGenre = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -808,9 +810,10 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable {
-                                    onValueChange(itemDetails.copy(cut = ""))
-                                }
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { onValueChange(itemDetails.copy(cut = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -862,9 +865,10 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable {
-                                    onComponentChange("")
-                                }
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { onComponentChange("") }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -928,9 +932,10 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable {
-                                    onFlavoringChange("")
-                                }
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { onFlavoringChange("") }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -1052,7 +1057,11 @@ fun DetailsEntry(
                             contentDescription = "Increase Quantity",
                             modifier = Modifier
                                 .align(Alignment.Top)
-                                .clickable(enabled = !itemDetails.isSynced) {
+                                .clickable(
+                                    enabled = !itemDetails.isSynced,
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) {
                                     if (itemDetails.quantityString.isEmpty()) {
                                         onValueChange(
                                             itemDetails.copy(
@@ -1086,7 +1095,11 @@ fun DetailsEntry(
                             contentDescription = "Decrease Quantity",
                             modifier = Modifier
                                 .align(Alignment.Bottom)
-                                .clickable(enabled = !itemDetails.isSynced) {
+                                .clickable(
+                                    enabled = !itemDetails.isSynced,
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) {
                                     if (itemDetails.quantityString.isEmpty()) {
                                         onValueChange(
                                             itemDetails.copy(
@@ -1490,9 +1503,10 @@ fun IndividualTin(
                         },
                         contentDescription = "Expand/contract details",
                         modifier = Modifier
-                            .clickable {
-                                onTinValueChange(tinDetails.copy(detailsExpanded = !tinDetails.detailsExpanded))
-                            }
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onTinValueChange(tinDetails.copy(detailsExpanded = !tinDetails.detailsExpanded)) }
                             .padding(4.dp)
                             .size(22.dp),
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
@@ -1585,9 +1599,10 @@ fun IndividualTin(
                         imageVector = ImageVector.vectorResource(id = R.drawable.remove_circle_outline),
                         contentDescription = "Close",
                         modifier = Modifier
-                            .clickable {
-                                removeTin()
-                            }
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { removeTin() }
                             .padding(4.dp)
                             .size(20.dp),
                         tint = LocalCustomColors.current.pieNine.copy(alpha = 0.8f)
@@ -1628,9 +1643,10 @@ fun IndividualTin(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
-                                        .clickable {
-                                            onTinValueChange(tinDetails.copy(container = ""))
-                                        }
+                                        .clickable(
+                                            indication = LocalIndication.current,
+                                            interactionSource = null
+                                        ) { onTinValueChange(tinDetails.copy(container = "")) }
                                         .alpha(0.66f)
                                         .size(20.dp)
                                         .focusable(false)
@@ -2228,7 +2244,10 @@ fun IndividualTin(
                 color = LocalContentColor.current.copy(alpha = 0.5f),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .clickable { onTinValueChange(tinDetails.copy(detailsExpanded = true)) }
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { onTinValueChange(tinDetails.copy(detailsExpanded = true)) }
                     .fillMaxWidth()
             )
         }
@@ -2367,29 +2386,6 @@ fun CustomDatePickerDialog(
                     }
                 }
             }
-        }
-    }
-}
-
-
-@Composable
-fun CustomDropdownMenuItem(
-    text: @Composable () -> Unit,
-    onClick: () -> Unit,
-    enabled: Boolean = false,
-    modifier: Modifier,
-    colors: MenuItemColors = MenuDefaults.itemColors(textColor = LocalContentColor.current),
-) {
-    Box(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
-    ) {
-        text()
-        if (enabled) {
-            colors.copy(
-                textColor = colors.textColor
-            )
         }
     }
 }
