@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -543,9 +544,10 @@ fun BulkEditing(
                                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                         contentDescription = "Clear",
                                         modifier = Modifier
-                                            .clickable {
-                                                onValueChange(editingState.copy(subGenre = ""))
-                                            }
+                                            .clickable(
+                                                indication = LocalIndication.current,
+                                                interactionSource = null
+                                            ) { onValueChange(editingState.copy(subGenre = "")) }
                                             .alpha(0.66f)
                                             .size(20.dp)
                                             .focusable(false)
@@ -606,9 +608,10 @@ fun BulkEditing(
                                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                         contentDescription = "Clear",
                                         modifier = Modifier
-                                            .clickable {
-                                                onValueChange(editingState.copy(cut = ""))
-                                            }
+                                            .clickable(
+                                                indication = LocalIndication.current,
+                                                interactionSource = null
+                                            ) { onValueChange(editingState.copy(cut = "")) }
                                             .alpha(0.66f)
                                             .size(20.dp)
                                             .focusable(false)
@@ -689,9 +692,10 @@ fun BulkEditing(
                                         contentDescription = "Add or remove",
                                         tint = color,
                                         modifier = Modifier
-                                            .clickable {
-                                                onValueChange(editingState.copy(compsAdd = !editingState.compsAdd))
-                                            }
+                                            .clickable(
+                                                indication = LocalIndication.current,
+                                                interactionSource = null
+                                            ) { onValueChange(editingState.copy(compsAdd = !editingState.compsAdd)) }
                                             .size(20.dp)
                                             .focusable(false)
                                     )
@@ -789,9 +793,10 @@ fun BulkEditing(
                                         contentDescription = "Add or remove",
                                         tint = color,
                                         modifier = Modifier
-                                            .clickable {
-                                                onValueChange(editingState.copy(flavorAdd = !editingState.flavorAdd))
-                                            }
+                                            .clickable(
+                                                indication = LocalIndication.current,
+                                                interactionSource = null
+                                            ) { onValueChange(editingState.copy(flavorAdd = !editingState.flavorAdd)) }
                                             .size(20.dp)
                                             .focusable(false)
                                     )
@@ -1170,9 +1175,9 @@ fun BulkSelectionsItem(
             .border(1.dp, borderColor, shape = RoundedCornerShape(4.dp))
             .background(color = background, shape = RoundedCornerShape(4.dp))
             .clickable(
-                onClick = onItemClick,
                 indication = null,
-                interactionSource = remember { MutableInteractionSource() })
+                interactionSource = null
+            ) { onItemClick() }
             .padding(6.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center
