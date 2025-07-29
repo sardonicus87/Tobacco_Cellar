@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -30,9 +31,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.IconToggleButtonColors
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
@@ -77,7 +80,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
-import com.sardonicus.tobaccocellar.ui.items.CustomDropdownMenuItem
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -575,6 +577,31 @@ fun AutoCompleteText(
     }
 }
 
+@Composable
+fun CustomDropdownMenuItem(
+    text: @Composable () -> Unit,
+    onClick: () -> Unit,
+    enabled: Boolean = false,
+    modifier: Modifier,
+    colors: MenuItemColors = MenuDefaults.itemColors(textColor = LocalContentColor.current),
+) {
+    Box(
+        modifier = modifier
+            .clickable(
+                indication = LocalIndication.current,
+                interactionSource = null
+            ) { onClick() }
+            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+    ) {
+        text()
+        if (enabled) {
+            colors.copy(
+                textColor = colors.textColor
+            )
+        }
+    }
+}
+
 
 /** Replacement stuff for ContextualFlowRow */
 @Composable
@@ -709,11 +736,10 @@ fun PagerIndicator(
                     .clip(CircleShape)
                     .background(color)
                     .size(size)
-                    .clickable {
-                        animationScope.launch {
-                            pagerState.animateScrollToPage(it)
-                        }
-                    }
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { animationScope.launch { pagerState.animateScrollToPage(it) } }
             )
         }
     }
