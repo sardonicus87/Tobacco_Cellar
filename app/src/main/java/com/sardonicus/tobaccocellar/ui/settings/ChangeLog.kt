@@ -10,14 +10,44 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.1.10",
+        buildDate = "30 July, 2025",
+        changes = listOf(
+            "Table view blend details and edit navigation now behaves like list view (tap entry " +
+                    "anywhere on row to go to details, long-press for menu to edit."
+        ),
+        improvements = listOf(
+            "Dates screen, much more accurate average time calculations in Quick Date Stats, as " +
+                    "well as improving the layout of the Quick Date Stats text layout.",
+            "Add/Edit Entry screens date selection, added a \"clear\" button to the date-picker " +
+                    "to clear selected date on the calendar picker, eliminating the need to " +
+                    "switch to input mode to erase a date. After tapping clear, tap confirm to " +
+                    "clear a previously selected date.",
+            "Add/Edit Entry screens, the down arrow for \"No. of Tins\" now sets the value to 0 " +
+                    "if the field is blank.",
+            "Drop-down selection menus (Add/Edit, CSV Import, Bulk Edit), added a label to the " +
+                    "\"blank/clear\" option for more clarity (\"(Blank)\").",
+            "CSV Import screen, added a header to the mapping columns for clarity.",
+            "Updated the Help/FAQ due to various changes over time and made it more concise.",
+            "Other minor UI, performance and stability improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed Edit Entry screen, when switching to the notes tab without having yet changed " +
+                    "any details or viewing tins tab, Details tab would falsely indicate an error.",
+            "Details screen, tins marked as \"Finished\" were being counted in the quantity."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.9",
         buildDate = "22 July, 2025",
         changes = listOf(),
         improvements = listOf(
-            "Performance and stability improvements."
+            "Performance and stability improvements, another tweak to Auto Complete suggestions " +
+                    "for smoother closing of the list when selecting a suggestion."
         ),
         bugFixes = listOf(
-            "Fixed another but in the Dates screen that resulted in a crash."
+            "Fixed another bug in the Dates screen that resulted in a crash."
         ),
     ),
 
