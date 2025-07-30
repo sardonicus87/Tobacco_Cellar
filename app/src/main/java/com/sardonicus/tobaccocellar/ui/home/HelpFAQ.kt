@@ -175,22 +175,19 @@ private fun CellarScreen(
 ) {
     Column(
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
     ) {
         Text(
             text = "\"Cellar\" is the starting point of the app. Some view options are available " +
                     "in the header, while others are in the settings.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Header",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -200,8 +197,7 @@ private fun CellarScreen(
                     "between list and table modes, a \"Quick Search\" with a search field option, " +
                     "a sort button (only for list view), and a count of the current entries based " +
                     "on chosen filtering or searching.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -209,8 +205,7 @@ private fun CellarScreen(
                     "works independently of any chosen filters. To clear search results, tap the " +
                     "\"X\" icon, erase the search text, or use the system back navigation. " +
                     "Previously chosen filters will be re-applied.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -218,7 +213,7 @@ private fun CellarScreen(
         Text(
             text = "List/Table Views",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -228,8 +223,7 @@ private fun CellarScreen(
                     "that entry, long-pressing will show a menu overlay with an option to edit. " +
                     "Clear the menu overlay by tapping outside of it or using the system back " +
                     "navigation.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -238,8 +232,7 @@ private fun CellarScreen(
                     "Type\" column headers. Default sorting is the order the items were entered " +
                     "into the database. The first tap will sort the column ascending, the second " +
                     "descending, and the third returns to the default sort order.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -259,11 +252,9 @@ private fun StatsPage(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
             text = "The \"Stats\" screen gives you an expandable \"Quick Stats\" section (with " +
@@ -280,19 +271,16 @@ private fun DatesPage(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
             text = "The \"Dates\" screen contains various date-related information, all of which " +
                     "is filter-reactive. The Dates navigation button will have an indicator dot " +
                     "if any aging tins will be ready within the next 7 days. Viewing the Dates " +
                     "screen will clear this indicator until any other new tins are ready.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -300,7 +288,7 @@ private fun DatesPage(
         Text(
             text = "Aging Tracker",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -309,15 +297,13 @@ private fun DatesPage(
             text = "This section shows blends which are ready to be opened within the next " +
                     "week and month, based on any open dates that were previously set to a " +
                     "future date. See the Adding Tins section for more details.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Tapping on any tin listed on this screen will take you to the details page " +
                     "for the blend that the tin belongs to.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -325,7 +311,7 @@ private fun DatesPage(
         Text(
             text = "Quick Stats",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -337,8 +323,7 @@ private fun DatesPage(
                     "time opened based on tins with open dates that aren't marked as finished. " +
                     "These calculations also do not factor future tins. Average wait time is " +
                     "calculated based on all future dates.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -346,7 +331,7 @@ private fun DatesPage(
         Text(
             text = "Oldest/Future Tins",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -365,19 +350,16 @@ private fun Filtering(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
             text = "The \"Filter Sheet\" opens on top of the Cellar, Stats and Date screens. Any " +
                     "filters persist through navigation around the app and affect all three of " +
                     "these main screens (but have no effect on the quick search). If any filters " +
                     "are applied, this icon will have an indicator dot.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -385,7 +367,7 @@ private fun Filtering(
         Text(
             text = "Basic Use",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -395,21 +377,18 @@ private fun Filtering(
                     "instantly to changes. Once you have selected filters, the sheet can be " +
                     "dismissed by tapping outside of it, tapping the close button, or swiping it " +
                     "down.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "The \"Clear All\" button at the bottom will clear all chosen filters.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "The filter sheet has three pages, swipe left/right to swap between pages, or " +
                     "tap the page indicator dot at the top to swap to that page.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -417,7 +396,7 @@ private fun Filtering(
         Text(
             text = "Selecting Filters",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -426,8 +405,7 @@ private fun Filtering(
             text = "Filter brands by tapping the name of a brand in the row of brands (row " +
                     "scrolls horizontally). The \"Search Brands\" field is just a filter for this " +
                     "row of brands. Tap the include/exclude button to swap brand filter modes.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -435,16 +413,14 @@ private fun Filtering(
                     "the close icon on each brand. Brands that exceed this space are placed in an " +
                     "overflow. To see the full list of selected brands, tap the overflow button. " +
                     "The \"Clear All\" button here only removes the selected brand filters.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "To filter by type, tap one of the types to add it to the filtering, tap it " +
                     "tap again to remove it. The \"Unassigned\" button will filter for entries " +
                     "that have a blank blend type.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -453,22 +429,19 @@ private fun Filtering(
                     "again excludes blends with that rating, and tapping again removes that " +
                     "filter. If you would like to see only blends that are rated or unrated, " +
                     "use the appropriate checkboxes below.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Filtering by in-stock/out is based on the \"No. of Tins\" field.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Filters for subgenres, cuts, components and flavorings are on the second page. " +
                     "Tap the overflow chip will to show a full list of available selections for " +
                     "that section.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -477,8 +450,7 @@ private fun Filtering(
                     "All\" will return only those blends that contain all of the selections, and " +
                     "\"Only\" will strictly return those blends that contain only the selections " +
                     "(and no others, exact matching).",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -486,8 +458,7 @@ private fun Filtering(
                     "disabled on the dates screen (and any previously selected filters will be " +
                     "ignored). Some tins filters will also result in a filtered list of matching " +
                     "tins being shown for the relevant blends on the Cellar screen.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
     }
@@ -498,34 +469,29 @@ private fun AddingItems(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
             text = "Items can be added in one of two ways: by tapping the \"Add\" button in the " +
                     "navigation bar, or by importing a CSV file through the top bar overflow " +
                     "menu. For more information on adding items by CSV, please see the \"Help\" " +
                     "section on the CSV import screen.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "There are three tabs on the add entry screen that are self-explanatory. " +
                     "Please see the \"Adding Tins\" section for more details on the tins tab.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "All entries require a unique combination of \"Brand\" and \"Blend\". Multiple " +
                     "entries can contain the same brand OR blend, but only one entry can contain " +
                     "the same brand AND blend. All other fields are optional.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -533,8 +499,7 @@ private fun AddingItems(
                     "leaving the \"No. of Tins\" field blank will presume the quantity to be 1. " +
                     "Next to this field, there are \"increase/decrease\" buttons for quickly " +
                     "updating the number of tins.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -542,8 +507,7 @@ private fun AddingItems(
                     "the total quantities of individual tins/containers. The total tins are " +
                     "calculated based on the Tin Conversion Rates set in the settings screen (" +
                     "default is 1.75 oz or 50g per tin).",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -563,22 +527,20 @@ private fun EditingItems(
         modifier = modifier
             .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
             text = "Items can be edited by long-pressing the entry in the cellar screen, using " +
                     "the bulk edit option in the top bar menu, tapping edit on the details screen, " +
                     "or through a CSV import and selecting the \"Update\" or \"Overwrite\" option " +
                     "(see help file on the CSV Import screen for more information).",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "The edit entry screen is the same as the add entry screen and functions the " +
                     "same way, just with the existing data pre-loaded in all of the fields.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -587,8 +549,7 @@ private fun EditingItems(
                     "checkbox only for the fields you wish to edit. Selecting a field and leaving " +
                     "it blank will result in erasing that field for the selected entries, with " +
                     "exception of the components and flavoring fields.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -610,10 +571,9 @@ private fun AddingTins(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         // Basic use
         Text(
@@ -621,8 +581,7 @@ private fun AddingTins(
                     "select the \"Add Tin\" button to add a tin. Add additional tins by tapping " +
                     "the \"+\" button below the given tin. To remove a tin, tap the \"-\" icon " +
                     "in the top right corner of the tin.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -630,16 +589,14 @@ private fun AddingTins(
                     "tins in CSV import, the label will be automatically generated as \"Lot __\". " +
                     "The same label can be reused under different entries. All other fields are " +
                     "optional.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Expand/collapse the details of any given tin using the icon in the top left, " +
                     "or \"expand\" text at the bottom (if collapsed). The tin list will be " +
                     "scrollable if it exceeds the height of the given area.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -647,7 +604,7 @@ private fun AddingTins(
         Text(
             text = "Quantity",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -657,8 +614,7 @@ private fun AddingTins(
                     "enter a unit. Entering a unit without an amount will default the amount " +
                     "to 0. Do not use grouping separators for 1000 or more, only numbers and " +
                     "your locale-specific decimal separator are allowed.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -667,8 +623,7 @@ private fun AddingTins(
                     "screen. When using \"Sync\" on the Add/Edit details tab, this quantity is " +
                     "also used with the \"Tin Conversion Rates\" setting to set the \"No. of Tins" +
                     "\" field.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
 
@@ -676,7 +631,7 @@ private fun AddingTins(
         Text(
             text = "Dates",
             modifier = Modifier
-                .padding(vertical = 12.dp)
+                .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
@@ -686,8 +641,7 @@ private fun AddingTins(
                     "the field is not wide enough, or it will show the date in medium length " +
                     "format based on your locale settings if there is room. Regardless of how it " +
                     "displays here, the full selected day, month and year are saved.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -696,8 +650,7 @@ private fun AddingTins(
                     "first date field to be entered will then start limiting others. The limit " +
                     "schema: Manufacture must be on/before Cellar/Opened, Cellar must be on/" +
                     "between Manufacture and Opened, Opened must be on/after Cellar/Manufacture.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -705,8 +658,7 @@ private fun AddingTins(
                     "and the calculated total on Details screens. This checkbox allows you to " +
                     "keep the open date, but exclude the tin from being included in anything " +
                     "related to open dates.",
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -725,15 +677,13 @@ private fun Settings(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier,
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
             text = "Most settings are self-explanatory, but a few might need further clarification.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -742,8 +692,7 @@ private fun Settings(
                     "conversion rate is used when calculating the \"No. of Tins\" field when " +
                     "adding individual tins and using the sync option. It is also used on the " +
                     "Statistics screen.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -753,8 +702,7 @@ private fun Settings(
                     "effect if you have updated or deleted a lot of entries, otherwise it won't " +
                     "have much of an effect beyond cleaning up orphaned data. You don't need to " +
                     "use this very often, if ever (except to clean up orphaned components).",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -762,8 +710,7 @@ private fun Settings(
                     "Selecting database will make a copy of the entire database, and settings " +
                     "will save the app settings (like display settings). One backup file is made " +
                     "regardless of whether you select one or both (both backups will be in one).",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -772,15 +719,13 @@ private fun Settings(
                     "enabled in your phone's settings, and will save the database and settings. " +
                     "However, a Google backup might not represent the latest data, depending on " +
                     "when scheduled backup was last performed.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "These backups are saved as \".tcbu\" files, and are given a suggested name " +
                     "(that you don't have to use) depending on the selected options.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -788,8 +733,7 @@ private fun Settings(
                     "settings, or both from a backup file that contains both, but a database " +
                     "backup file will only restore the database, and a settings file will restore " +
                     "only the settings.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
+            modifier = Modifier,
             softWrap = true,
         )
         Text(
@@ -853,11 +797,10 @@ private fun HelpSection(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
         ) {
-            Spacer(
-                modifier = Modifier
-                    .height(8.dp)
-            )
+            Spacer(Modifier.height(8.dp))
             content()
             Spacer(Modifier.height(8.dp))
             Row(
