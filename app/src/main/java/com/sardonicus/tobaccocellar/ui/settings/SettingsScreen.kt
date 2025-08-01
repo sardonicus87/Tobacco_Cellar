@@ -260,9 +260,7 @@ private fun SettingsBody(
         }
     }
 
-    BackHandler(enabled = showChangelog) {
-        showChangelog = false
-    }
+    BackHandler(showChangelog) { showChangelog = false }
 
     val context = LocalContext.current
 
