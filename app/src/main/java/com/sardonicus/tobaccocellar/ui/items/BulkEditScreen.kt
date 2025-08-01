@@ -67,7 +67,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -100,6 +99,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 
 object BulkEditDestination : NavigationDestination {
     override val route = "bulk_edit"
@@ -122,14 +122,6 @@ fun BulkEditScreen(
     val showSnackbar = viewModel.showSnackbar.collectAsState()
     val saveIndicator by viewModel.saveIndicator.collectAsState()
 
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
-
     if (showSnackbar.value) {
         LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
@@ -149,7 +141,7 @@ fun BulkEditScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier
-                    .noRippleClickable(onClick = { focusManager.clearFocus() }),
+                    .noRippleClickable{ focusManager.clearFocus() },
                 navigateUp = onNavigateUp,
                 showMenu = false,
             )

@@ -1,7 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.items
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,11 +9,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
@@ -27,6 +23,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,15 +49,6 @@ fun EditEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
-
-
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -72,8 +60,8 @@ fun EditEntryScreen(
                 navigateUp = onNavigateUp,
                 showMenu = false,
                 modifier = Modifier
-                    .noRippleClickable(onClick = { focusManager.clearFocus() })
-                )
+                    .noRippleClickable{ focusManager.clearFocus() }
+            )
         },
     ) { innerPadding ->
         Column(

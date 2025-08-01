@@ -87,7 +87,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -124,6 +123,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -159,14 +159,6 @@ fun AddEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
-
 
     Scaffold(
         modifier = modifier
@@ -177,7 +169,7 @@ fun AddEntryScreen(
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier
-                    .noRippleClickable(onClick = { focusManager.clearFocus() }),
+                    .noRippleClickable{ focusManager.clearFocus() },
                 navigateUp = onNavigateUp,
                 showMenu = false,
             )
@@ -572,18 +564,10 @@ fun DetailsEntry(
 ) {
     val focusManager = LocalFocusManager.current
 
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable(onClick = { focusManager.clearFocus() })
+            .noRippleClickable{ focusManager.clearFocus() }
             .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -1269,10 +1253,12 @@ fun NotesEntry(
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(itemDetails){ onValueChange(itemDetails) }
+    val focusManager = LocalFocusManager.current
 
     Column(
         modifier = modifier
-            .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
+            .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp)
+            .noRippleClickable{ focusManager.clearFocus() },
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Notes //
@@ -1348,13 +1334,6 @@ fun TinsEntry(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
 
     LaunchedEffect(tinDetailsList) {
         onValueChange(itemUiState.itemDetails)
@@ -1369,7 +1348,7 @@ fun TinsEntry(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable(onClick = { focusManager.clearFocus() })
+            .noRippleClickable{ focusManager.clearFocus() }
             .padding(vertical = 6.dp, horizontal = 8.dp)
             .background(
                 color = if (tinDetailsList.isEmpty()) Color.Transparent else

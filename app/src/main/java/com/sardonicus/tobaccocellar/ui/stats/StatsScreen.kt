@@ -5,7 +5,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -78,6 +76,7 @@ import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.min
@@ -103,18 +102,11 @@ fun StatsScreen(
     val filteredStats by viewmodel.filteredStats.collectAsState()
 
     val focusManager = LocalFocusManager.current
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .noRippleClickable(onClick = { focusManager.clearFocus() }),
+            .noRippleClickable{ focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(StatsDestination.titleRes),
@@ -167,7 +159,6 @@ private fun StatsBody(
     val separatorColor = colorScheme.secondary
     val scrollState = rememberScrollState()
     var contracted by remember { mutableStateOf(false) }
-
     val expanded = viewmodel.expanded
 
     LaunchedEffect(contracted) {
@@ -425,7 +416,6 @@ fun QuickStatsSection(
                     .fillMaxWidth()
             ) {
                 if (expanded) {
-
                     // Third section counts by subgenre
                     if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
                         StatSubSection(
