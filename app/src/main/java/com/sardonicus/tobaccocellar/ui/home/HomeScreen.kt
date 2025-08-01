@@ -13,7 +13,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,7 +74,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -122,6 +120,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -154,13 +153,7 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val preferencesRepo = LocalCellarApplication.current.preferencesRepo
-    fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
-        this.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() }) {
-            onClick()
-        }
-    }
+    val onDismissMenu = viewmodel::onDismissMenu
 
     val searchFocused by filterViewModel.searchFocused.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
@@ -429,7 +422,10 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .noRippleClickable(onClick = { focusManager.clearFocus() }),
+            .noRippleClickable{
+                focusManager.clearFocus()
+                onDismissMenu()
+            },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(HomeDestination.titleRes),
@@ -502,7 +498,7 @@ fun HomeScreen(
                     onEditClick = navigateToEditEntry,
                     activeMenuId = activeMenuId,
                     onShowMenu = viewmodel::onShowMenu,
-                    onDismissMenu = viewmodel::onDismissMenu,
+                    onDismissMenu = onDismissMenu,
                     isMenuShown = isMenuShown,
                     searchFocused = searchFocused,
                     searchPerformed = searchPerformed,
@@ -1163,7 +1159,6 @@ fun ListViewMode(
                                     } else {
                                         if (isMenuShown) {
                                             onDismissMenu()
-                                            focusManager.clearFocus()
                                         } else {
                                             if (!searchPerformed) {
                                                 filterViewModel.getPositionTrigger()
@@ -1181,7 +1176,7 @@ fun ListViewMode(
                                 onShowMenu(item.items.id)
                             },
                             indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
+                            interactionSource = null
                         ),
                     onMenuDismiss = { onDismissMenu() },
                     showMenu = isMenuShown && activeMenuId == item.items.id
@@ -1796,7 +1791,6 @@ fun TableLayout(
                                                 } else {
                                                     if (isMenuShown) {
                                                         onDismissMenu()
-                                                        focusManager.clearFocus()
                                                     } else {
                                                         if (!searchPerformed) {
                                                             filterViewModel.getPositionTrigger()
@@ -1816,7 +1810,7 @@ fun TableLayout(
                                             onShowMenu(item.items.id)
                                         },
                                         indication = null,
-                                        interactionSource = remember { MutableInteractionSource() }
+                                        interactionSource = null
                                     )
                             ) {
                                 for (columnIndex in columnMinWidths.indices) {
