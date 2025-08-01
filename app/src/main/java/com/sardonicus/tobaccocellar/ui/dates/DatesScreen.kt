@@ -61,7 +61,6 @@ import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 
 object DatesDestination : NavigationDestination {
     override val route = "dates_title"
@@ -87,7 +86,7 @@ fun DatesScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .noRippleClickable{ focusManager.clearFocus() },
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(DatesDestination.titleRes),

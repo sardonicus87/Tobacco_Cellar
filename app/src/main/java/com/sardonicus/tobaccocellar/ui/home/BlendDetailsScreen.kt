@@ -57,7 +57,6 @@ import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 
 object BlendDetailsDestination : NavigationDestination {
     override val route = "blend_details_title"
@@ -84,7 +83,7 @@ fun BlendDetailsScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .noRippleClickable{ focusManager.clearFocus() },
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(BlendDetailsDestination.titleRes),

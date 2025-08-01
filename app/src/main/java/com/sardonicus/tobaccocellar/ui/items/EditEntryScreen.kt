@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +24,6 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
-import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,7 +51,8 @@ fun EditEntryScreen(
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(EditEntryDestination.titleRes),
@@ -60,7 +61,6 @@ fun EditEntryScreen(
                 navigateUp = onNavigateUp,
                 showMenu = false,
                 modifier = Modifier
-                    .noRippleClickable{ focusManager.clearFocus() }
             )
         },
     ) { innerPadding ->

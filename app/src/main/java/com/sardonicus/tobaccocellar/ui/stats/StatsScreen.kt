@@ -76,7 +76,6 @@ import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.min
@@ -106,7 +105,7 @@ fun StatsScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .noRippleClickable{ focusManager.clearFocus() },
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(StatsDestination.titleRes),

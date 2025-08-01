@@ -123,7 +123,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -162,14 +161,14 @@ fun AddEntryScreen(
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(AddEntryDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
-                modifier = Modifier
-                    .noRippleClickable{ focusManager.clearFocus() },
+                modifier = Modifier,
                 navigateUp = onNavigateUp,
                 showMenu = false,
             )
@@ -562,12 +561,9 @@ fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val focusManager = LocalFocusManager.current
-
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable{ focusManager.clearFocus() }
             .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -1253,12 +1249,10 @@ fun NotesEntry(
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(itemDetails){ onValueChange(itemDetails) }
-    val focusManager = LocalFocusManager.current
 
     Column(
         modifier = modifier
-            .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp)
-            .noRippleClickable{ focusManager.clearFocus() },
+            .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Notes //
@@ -1285,10 +1279,10 @@ fun NotesEntry(
                             val currentLine = lines.last()
                             val lastWord = lastLine.substringAfterLast(" ")
                             if (currentLine.startsWith(lastWord) && currentLine.length > 1) {
-                                if (currentLine.length == lastWord.length + 1) {
-                                    updatedText = it.dropLast(lastWord.length + 1)
+                                updatedText = if (currentLine.length == lastWord.length + 1) {
+                                    it.dropLast(lastWord.length + 1)
                                 } else {
-                                    updatedText = it.dropLast(lastWord.length)
+                                    it.dropLast(lastWord.length)
                                 }
                             }
                         }
@@ -1333,8 +1327,6 @@ fun TinsEntry(
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
-    val focusManager = LocalFocusManager.current
-
     LaunchedEffect(tinDetailsList) {
         onValueChange(itemUiState.itemDetails)
         if (itemUiState.itemDetails.isSynced) {
@@ -1348,7 +1340,6 @@ fun TinsEntry(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable{ focusManager.clearFocus() }
             .padding(vertical = 6.dp, horizontal = 8.dp)
             .background(
                 color = if (tinDetailsList.isEmpty()) Color.Transparent else

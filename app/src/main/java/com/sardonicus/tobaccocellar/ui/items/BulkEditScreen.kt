@@ -99,7 +99,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.noRippleClickable
 
 object BulkEditDestination : NavigationDestination {
     override val route = "bulk_edit"
@@ -134,14 +133,14 @@ fun BulkEditScreen(
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(BulkEditDestination.titleRes),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
-                modifier = Modifier
-                    .noRippleClickable{ focusManager.clearFocus() },
+                modifier = Modifier,
                 navigateUp = onNavigateUp,
                 showMenu = false,
             )
