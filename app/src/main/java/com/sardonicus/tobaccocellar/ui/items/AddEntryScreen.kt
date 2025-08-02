@@ -1069,6 +1069,7 @@ fun DetailsEntry(
                                 }
                                 .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
                                 .offset(x = 1.dp, y = 2.dp)
+                                .alpha(if (itemDetails.isSynced) 0.5f else 1f)
                         )
                         Icon(
                             painter = painterResource(id = R.drawable.triangle_arrow_down),
@@ -1107,6 +1108,7 @@ fun DetailsEntry(
                                 }
                                 .padding(start = 2.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
                                 .offset(x = (-1).dp, y = (-2).dp)
+                                .alpha(if (itemDetails.isSynced) 0.5f else 1f)
                         )
                     }
 
