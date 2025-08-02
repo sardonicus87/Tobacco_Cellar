@@ -1066,6 +1066,11 @@ private fun DrawScope.drawLabels(
     var outsideLabelCount = 0
     val sliceCount = data.size
     val totalOutsideLabels = data.values.count { (it.toFloat() / total) * 360f < outsideLabelThreshold }
+    val totalThinPercent = data.values.count {
+        val normalizedMidpointAngle = (currentStartAngle + (it.toFloat() / total) * 360f) % 360f
+        (it.toFloat() / total) * 360f < 10f && normalizedMidpointAngle > 225f
+    }
+    var thinCount = 0
 
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
@@ -1074,6 +1079,9 @@ private fun DrawScope.drawLabels(
         val isOther = label == "(Other)"
         if (sweepAngle < outsideLabelThreshold && !isOther) {
             outsideLabelCount++
+        }
+        if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
+            thinCount++
         }
 
         val radius = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
@@ -1264,12 +1272,18 @@ private fun DrawScope.drawLabels(
         val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
                 // very thin slices at the top of the chart
-                val additionalOffset = if (outsideLabelCount % 2 == 0) {
-                    (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor))) // (-1 * (percentageHeight * 0.25f))
-                    } else {
-                    (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
+                if (totalThinPercent > 4) {
+                    val down = (totalThinPercent - thinCount)
+                    (percentageY - percentageHeight) + (down * percentageHeight)
                 }
-                (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
+                else {
+                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
+                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
+                    } else {
+                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
+                    }
+                    (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
+                }
             } else {
                 // outside slice placement
                 percentageY - (percentageHeight * yOffsetFactor)
