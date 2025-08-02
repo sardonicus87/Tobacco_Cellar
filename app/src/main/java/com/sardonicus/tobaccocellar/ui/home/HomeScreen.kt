@@ -774,7 +774,7 @@ private fun HomeHeader(
                 }
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(Modifier.width(6.dp))
 
             Box (
                 contentAlignment = Alignment.CenterEnd
@@ -1665,6 +1665,7 @@ fun TableLayout(
     val sortedItems = when (sorting.columnIndex) {
         0 -> items.sortedBy { it.items.brand }
         1 -> items.sortedBy { it.items.blend }
+        2 -> items.sortedBy { it.items.type.ifBlank { "Z" } }
         else -> items
     }.let {
         if (!sorting.sortAscending) it.reversed() else it
@@ -1724,7 +1725,7 @@ fun TableLayout(
                             updateSorting(newSortColumn)
                         }
                         when (columnIndex) {
-                            0, 1 -> {
+                            0, 1, 2 -> {
                                 HeaderCell(
                                     text = headerText,
                                     onClick = { onSortChange(columnIndex) },
@@ -2182,14 +2183,11 @@ fun HeaderCell(
     onClick: (() -> Unit)? = null,
     contentAlignment: Alignment = Alignment.Center,
 ) {
-    val focusManager = LocalFocusManager.current
-
     Box(
         modifier = modifier
             .clickable(
                 enabled = onClick != null,
                 onClick = {
-                    focusManager.clearFocus()
                     onClick?.invoke()
                 },
                 indication = LocalIndication.current,
@@ -2199,10 +2197,7 @@ fun HeaderCell(
         contentAlignment = contentAlignment
     ) {
         if (primarySort) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Box(contentAlignment = Alignment.Center) {
                 if (text != null) {
                     Text(
                         text = text,
@@ -2214,7 +2209,9 @@ fun HeaderCell(
                     painter = painterResource(id = sorting.sortIcon),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(22.dp),
+                        .size(22.dp)
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 20.dp),
                     colorFilter = ColorFilter.tint(LocalContentColor.current)
                 )
             }
