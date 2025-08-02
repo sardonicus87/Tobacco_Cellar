@@ -313,7 +313,7 @@ class SettingsViewModel(
                     message = "Restore failed: file is invalid."
                 }
                 else if (!fileContentState.versionValid) {
-                    message = "Restore failed: file is for an older version."
+                    message = "Restore failed: file is for an unsupported version."
                 }
                 else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
                     message = "Restore failed: file does not contain database or settings data."
