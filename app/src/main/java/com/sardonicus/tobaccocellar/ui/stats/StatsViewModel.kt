@@ -180,7 +180,6 @@ class StatsViewModel(
             everythingFlow,
             filterViewModel.selectedBrands,
             filterViewModel.selectedTypes,
-            filterViewModel.selectedUnassigned,
             filterViewModel.selectedFavorites,
             filterViewModel.selectedDislikeds,
             filterViewModel.selectedNeutral,
@@ -209,31 +208,30 @@ class StatsViewModel(
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val brands = values[1] as List<String>
             val types = values[2] as List<String>
-            val unassigned = values[3] as Boolean
-            val favorites = values[4] as Boolean
-            val dislikeds = values[5] as Boolean
-            val neutral = values[6] as Boolean
-            val nonNeutral = values[7] as Boolean
-            val inStock = values[8] as Boolean
-            val outOfStock = values[9] as Boolean
-            val excludedBrands = values[10] as List<String>
-            val excludedLikes = values[11] as Boolean
-            val excludedDislikes = values[12] as Boolean
-            val components = values[13] as List<String>
-            val compMatching = values[14] as String
-            val flavoring = values[15] as List<String>
-            val flavorMatching = values[16] as String
-            val subgenres = values[17] as List<String>
-            val cuts = values[18] as List<String>
-            val production = values[19] as Boolean
-            val outOfProduction = values[20] as Boolean
-            val hasTins = values[21] as Boolean
-            val noTins = values[22] as Boolean
-            val container = values[23] as List<String>
-            val opened = values[24] as Boolean
-            val unopened = values[25] as Boolean
-            val finished = values[26] as Boolean
-            val unfinished = values[27] as Boolean
+            val favorites = values[3] as Boolean
+            val dislikeds = values[4] as Boolean
+            val neutral = values[5] as Boolean
+            val nonNeutral = values[6] as Boolean
+            val inStock = values[7] as Boolean
+            val outOfStock = values[8] as Boolean
+            val excludedBrands = values[9] as List<String>
+            val excludedLikes = values[10] as Boolean
+            val excludedDislikes = values[11] as Boolean
+            val components = values[12] as List<String>
+            val compMatching = values[13] as String
+            val flavoring = values[14] as List<String>
+            val flavorMatching = values[15] as String
+            val subgenres = values[16] as List<String>
+            val cuts = values[17] as List<String>
+            val production = values[18] as Boolean
+            val outOfProduction = values[19] as Boolean
+            val hasTins = values[20] as Boolean
+            val noTins = values[21] as Boolean
+            val container = values[22] as List<String>
+            val opened = values[23] as Boolean
+            val unopened = values[24] as Boolean
+            val finished = values[25] as Boolean
+            val unfinished = values[26] as Boolean
 
             val filteredItems = allItems.filter { items ->
                 val componentMatching = when (compMatching) {
@@ -248,7 +246,7 @@ class StatsViewModel(
                 }
 
                 (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                        ((types.isEmpty() && !unassigned) || (types.contains(items.items.type) || (unassigned && items.items.type.isBlank()))) &&
+                        ((types.isEmpty() && !types.contains("(Unassigned)")) || ((types.contains("(Unassigned)") && items.items.type.isBlank()) || types.contains(items.items.type))) &&
                         (!favorites || items.items.favorite) &&
                         (!dislikeds || items.items.disliked) &&
                         (!neutral || (!items.items.favorite && !items.items.disliked)) &&

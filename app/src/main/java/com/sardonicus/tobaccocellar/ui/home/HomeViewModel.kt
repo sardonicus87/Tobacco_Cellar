@@ -128,7 +128,6 @@ class HomeViewModel(
             filterViewModel.searchValue.value,
             filterViewModel.selectedBrands.value,
             filterViewModel.selectedTypes.value,
-            filterViewModel.selectedUnassigned.value,
             filterViewModel.selectedFavorites.value,
             filterViewModel.selectedDislikeds.value,
             filterViewModel.selectedNeutral.value,
@@ -163,7 +162,6 @@ class HomeViewModel(
                 filterViewModel.searchValue,
                 filterViewModel.selectedBrands,
                 filterViewModel.selectedTypes,
-                filterViewModel.selectedUnassigned,
                 filterViewModel.selectedFavorites,
                 filterViewModel.selectedDislikeds,
                 filterViewModel.selectedNeutral,
@@ -200,7 +198,6 @@ class HomeViewModel(
             val searchValue = filterParams.searchValue
             val brands = filterParams.selectedBrands
             val types = filterParams.selectedTypes
-            val unassigned = filterParams.selectedUnassigned
             val favorites = filterParams.selectedFavorites
             val dislikeds = filterParams.selectedDislikeds
             val neutral = filterParams.selectedNeutral
@@ -242,7 +239,7 @@ class HomeViewModel(
 
                         /** ( [filter not selected side] || [filter selected side] ) */
                         (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                                ((types.isEmpty() && !unassigned) || (types.contains(items.items.type) || (unassigned && items.items.type.isBlank()))) &&
+                                ((types.isEmpty() && !types.contains("(Unassigned)")) || ((types.contains("(Unassigned)") && items.items.type.isBlank()) || types.contains(items.items.type))) &&
                                 (!favorites || items.items.favorite) &&
                                 (!dislikeds || items.items.disliked) &&
                                 (!neutral || (!items.items.favorite && !items.items.disliked)) &&
@@ -519,7 +516,6 @@ data class FilterParameters(
     val searchValue: String,
     val selectedBrands: List<String>,
     val selectedTypes: List<String>,
-    val selectedUnassigned: Boolean,
     val selectedFavorites: Boolean,
     val selectedDislikeds: Boolean,
     val selectedNeutral: Boolean,

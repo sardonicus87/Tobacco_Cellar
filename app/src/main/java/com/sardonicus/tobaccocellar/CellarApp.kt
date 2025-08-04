@@ -1545,9 +1545,7 @@ fun TypeFilterSection(
     modifier: Modifier = Modifier,
 ) {
     val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
-    val selectedUnassigned by filterViewModel.sheetSelectedUnassigned.collectAsState()
-    val availableTypes = listOf("Aromatic", "English", "Burley", "Virginia", "Other")
-    val unassignedExists by filterViewModel.unassignedTypeExists.collectAsState()
+    val availableTypes by filterViewModel.availableTypes.collectAsState()
 
     Column(
         modifier = modifier
@@ -1558,16 +1556,11 @@ fun TypeFilterSection(
             horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            availableTypes.forEach { type ->
+            availableTypes.forEach {
                 FilterChip(
-                    selected = selectedTypes.contains(type),
-                    onClick = { filterViewModel.updateSelectedTypes(type, !selectedTypes.contains(type)) },
-                    label = {
-                        Text(
-                            type,
-                            fontSize = 14.sp,
-                        )
-                    },
+                    selected = selectedTypes.contains(it),
+                    onClick = { filterViewModel.updateSelectedTypes(it, !selectedTypes.contains(it)) },
+                    label = { Text(it, fontSize = 14.sp) },
                     modifier = Modifier
                         .padding(0.dp),
                     shape = MaterialTheme.shapes.small,
@@ -1576,23 +1569,6 @@ fun TypeFilterSection(
                     )
                 )
             }
-            FilterChip(
-                selected = selectedUnassigned,
-                onClick = { filterViewModel.updateSelectedUnassigned(!selectedUnassigned) },
-                label = {
-                    Text(
-                        "Unassigned",
-                        fontSize = 14.sp,
-                    )
-                },
-                modifier = Modifier
-                    .padding(0.dp),
-                shape = MaterialTheme.shapes.small,
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-                enabled = unassignedExists
-            )
         }
     }
 }
