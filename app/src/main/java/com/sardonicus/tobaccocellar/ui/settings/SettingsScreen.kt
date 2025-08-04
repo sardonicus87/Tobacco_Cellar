@@ -1010,7 +1010,7 @@ fun ThemeDialog(
                     ) {
                         RadioButton(
                             selected = currentTheme == theme.value,
-                            onClick = {  },
+                            onClick = null,
                             modifier = Modifier
                                 .size(36.dp)
                         )
@@ -1078,7 +1078,7 @@ fun QuantityDialog(
                     ) {
                         RadioButton(
                             selected = currentQuantity == it,
-                            onClick = {  },
+                            onClick = null,
                             modifier = Modifier
                                 .size(36.dp)
                         )
