@@ -1174,7 +1174,7 @@ fun ListViewMode(
                                 }
                                 onShowMenu(item.items.id)
                             },
-                            indication = null,
+                            indication = LocalIndication.current,
                             interactionSource = null
                         ),
                     onMenuDismiss = { onDismissMenu() },
@@ -1809,7 +1809,7 @@ fun TableLayout(
                                             }
                                             onShowMenu(item.items.id)
                                         },
-                                        indication = null,
+                                        indication = LocalIndication.current,
                                         interactionSource = null
                                     )
                             ) {
@@ -1835,24 +1835,14 @@ fun TableLayout(
                                             else -> Alignment.CenterStart
                                         }
                                         when (columnIndex) {
-                                            0 -> { // brand
+                                            0, 1, 2 -> { // brand, blend, type
                                                 TableCell(
                                                     value = cellValue,
                                                     modifier = Modifier
-                                                        .matchParentSize()
                                                         .align(alignment),
                                                     contentAlignment = alignment,
                                                 )
-                                            } // brand
-                                            1 -> { // blend
-                                                TableCell(
-                                                    value = cellValue,
-                                                    modifier = Modifier
-                                                        .matchParentSize()
-                                                        .align(alignment),
-                                                    contentAlignment = alignment,
-                                                )
-                                            } // blend
+                                            } // brand, blend, type
                                             3 -> { // fav/disliked
                                                 val favDisValue = cellValue as Int
                                                 val icon = when (favDisValue) {
@@ -1917,14 +1907,14 @@ fun TableLayout(
                                                     else MaterialTheme.colorScheme.onSecondaryContainer,
                                                 )
                                             } // quantity
-                                            else -> { // [2] type
+                                            else -> {
                                                 TableCell(
                                                     value = cellValue,
                                                     modifier = Modifier
                                                         .align(alignment),
                                                     contentAlignment = alignment,
                                                 )
-                                            } // [2] type
+                                            }
                                         }
                                     }
                                 }
