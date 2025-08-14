@@ -3,7 +3,6 @@ package com.sardonicus.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
@@ -20,19 +19,12 @@ import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,23 +33,16 @@ import java.io.File
 class HomeViewModel(
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
-    private val filterViewModel: FilterViewModel,
+    filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
     application: Application
 ): AndroidViewModel(application), ExportCsvHandler {
-
-    companion object {
-        private const val TIMEOUT_MILLIS = 5_000L
-    }
 
     private val _tableTableSorting = mutableStateOf(TableSorting())
     val tableSorting: State<TableSorting> = _tableTableSorting
 
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
-
-    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
-    private val refresh = _refresh.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -74,29 +59,29 @@ class HomeViewModel(
             EventBus.events.collect {
                 if (it is DatabaseRestoreEvent) {
                     _resetLoading.value = true
-                    _refresh.emit(Unit)
                 }
             }
         }
     }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
-        refresh.onStart { emit(Unit) }.flatMapLatest {
-            itemsRepository.getEverythingStream()
-        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     /** States and Flows **/
     val homeUiState: StateFlow<HomeUiState> =
         combine(
             preferencesRepo.isTableView,
             preferencesRepo.quantityOption,
-            everythingFlow,
-        ) { isTableView, quantityOption, allItems ->
-            val formattedQuantities = allItems.associate {
-                val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
-                val totalQuantity = calculateTotalQuantity(it, quantityOption)
-                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, tins)
+            filterViewModel.everythingFlow,
+            filterViewModel.unifiedFilteredItems,
+            filterViewModel.unifiedFilteredTins
+        ) { isTableView, quantityOption, allItems, filteredItems, filteredTins ->
+            var formattedQuantities = mapOf<Int, String>()
+
+            val sortQuantity = filteredItems.associate {
+                it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption)
+            }
+
+            formattedQuantities = filteredItems.associate {
+                val totalQuantity = calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption)
+                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { !it.finished && it in filteredTins })
                 it.items.id to formattedQuantity
             }
 
@@ -106,206 +91,16 @@ class HomeViewModel(
                 items = allItems,
                 isTableView = isTableView,
                 quantityDisplay = quantityOption,
+                sortQuantity = sortQuantity,
                 formattedQuantities = formattedQuantities,
                 isLoading = false
             )
         }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = HomeUiState(isLoading = true)
             )
-
-    // Filtering stuff //
-    private val _filteredItems = MutableStateFlow<List<ItemsComponentsAndTins>>(listOf())
-    val filteredItems: StateFlow<List<ItemsComponentsAndTins>> = _filteredItems.asStateFlow()
-
-    private val _filteredTins = MutableStateFlow<List<Tins>>(listOf())
-    val filteredTins: StateFlow<List<Tins>> = _filteredTins.asStateFlow()
-
-    private fun filterParameters(): FilterParameters {
-        return FilterParameters(
-            filterViewModel.searchValue.value,
-            filterViewModel.selectedBrands.value,
-            filterViewModel.selectedTypes.value,
-            filterViewModel.selectedFavorites.value,
-            filterViewModel.selectedDislikeds.value,
-            filterViewModel.selectedNeutral.value,
-            filterViewModel.selectedNonNeutral.value,
-            filterViewModel.selectedInStock.value,
-            filterViewModel.selectedOutOfStock.value,
-            filterViewModel.selectedExcludeBrands.value,
-            filterViewModel.selectedExcludeLikes.value,
-            filterViewModel.selectedExcludeDislikes.value,
-            filterViewModel.selectedComponent.value,
-            filterViewModel.compMatching.value,
-            filterViewModel.selectedFlavoring.value,
-            filterViewModel.flavorMatching.value,
-            filterViewModel.selectedSubgenre.value,
-            filterViewModel.selectedCut.value,
-            filterViewModel.selectedProduction.value,
-            filterViewModel.selectedOutOfProduction.value,
-            filterViewModel.selectedHasTins.value,
-            filterViewModel.selectedNoTins.value,
-            filterViewModel.selectedContainer.value,
-            filterViewModel.selectedOpened.value,
-            filterViewModel.selectedUnopened.value,
-            filterViewModel.selectedFinished.value,
-            filterViewModel.selectedUnfinished.value,
-        )
-    }
-
-    init {
-        viewModelScope.launch {
-            combine(
-                everythingFlow,
-                filterViewModel.searchValue,
-                filterViewModel.selectedBrands,
-                filterViewModel.selectedTypes,
-                filterViewModel.selectedFavorites,
-                filterViewModel.selectedDislikeds,
-                filterViewModel.selectedNeutral,
-                filterViewModel.selectedNonNeutral,
-                filterViewModel.selectedInStock,
-                filterViewModel.selectedOutOfStock,
-                filterViewModel.selectedExcludeBrands,
-                filterViewModel.selectedExcludeLikes,
-                filterViewModel.selectedExcludeDislikes,
-                filterViewModel.selectedComponent,
-                filterViewModel.compMatching,
-                filterViewModel.selectedFlavoring,
-                filterViewModel.flavorMatching,
-                filterViewModel.selectedSubgenre,
-                filterViewModel.selectedCut,
-                filterViewModel.selectedProduction,
-                filterViewModel.selectedOutOfProduction,
-                filterViewModel.selectedHasTins,
-                filterViewModel.selectedNoTins,
-                filterViewModel.selectedContainer,
-                filterViewModel.selectedOpened,
-                filterViewModel.selectedUnopened,
-                filterViewModel.selectedFinished,
-                filterViewModel.selectedUnfinished,
-                preferencesRepo.searchSetting
-            ) {
-                filterItems(everythingFlow.first(), filterParameters(), preferencesRepo.searchSetting.first())
-            }.collect { }
-        }
-    }
-
-    private fun filterItems(allItems: List<ItemsComponentsAndTins>, filterParams: FilterParameters, searchSetting: SearchSetting) {
-        viewModelScope.launch{
-            val searchValue = filterParams.searchValue
-            val brands = filterParams.selectedBrands
-            val types = filterParams.selectedTypes
-            val favorites = filterParams.selectedFavorites
-            val dislikeds = filterParams.selectedDislikeds
-            val neutral = filterParams.selectedNeutral
-            val nonNeutral = filterParams.selectedNonNeutral
-            val inStock = filterParams.selectedInStock
-            val outOfStock = filterParams.selectedOutOfStock
-            val excludedBrands = filterParams.selectedExcludeBrands
-            val excludedLikes = filterParams.selectedExcludeLikes
-            val excludedDislikes = filterParams.selectedExcludeDislikes
-            val components = filterParams.selectedComponent
-            val compMatching = filterParams.compMatching
-            val flavoring = filterParams.selectedFlavoring
-            val flavorMatching = filterParams.flavorMatching
-            val subgenres = filterParams.selectedSubgenre
-            val cuts = filterParams.selectedCut
-            val production = filterParams.selectedProduction
-            val outOfProduction = filterParams.selectedOutOfProduction
-            val hasTins = filterParams.selectedHasTins
-            val noTins = filterParams.selectedNoTins
-            val container = filterParams.selectedContainer
-            val opened = filterParams.selectedOpened
-            val unopened = filterParams.selectedUnopened
-            val finished = filterParams.selectedFinished
-            val unfinished = filterParams.selectedUnfinished
-
-            val filteredItems =
-                if (searchValue.isBlank()) {
-                    allItems.filter { items ->
-                        val componentMatching = when (compMatching) {
-                            "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
-                            "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
-                            else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
-                        }
-                        val flavorMatching = when (flavorMatching) {
-                            "All" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring)))
-                            "Only" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring) && items.flavoring.size == flavoring.size))
-                            else -> ((flavoring.isEmpty() && !flavoring.contains("(None Assigned)")) || ((flavoring.contains("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.any { flavoring.contains(it) })))
-                        }
-
-                        /** ( [filter not selected side] || [filter selected side] ) */
-                        (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                                ((types.isEmpty() && !types.contains("(Unassigned)")) || ((types.contains("(Unassigned)") && items.items.type.isBlank()) || types.contains(items.items.type))) &&
-                                (!favorites || items.items.favorite) &&
-                                (!dislikeds || items.items.disliked) &&
-                                (!neutral || (!items.items.favorite && !items.items.disliked)) &&
-                                (!nonNeutral || (items.items.favorite || items.items.disliked)) &&
-                                (!inStock || items.items.quantity > 0) &&
-                                (!outOfStock || items.items.quantity == 0) &&
-                                (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
-                                (!excludedLikes || !items.items.favorite) &&
-                                (!excludedDislikes || !items.items.disliked) &&
-                                componentMatching &&
-                                flavorMatching &&
-                                ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
-                                ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
-                                (!production || items.items.inProduction) &&
-                                (!outOfProduction || !items.items.inProduction) &&
-                                (!hasTins || items.tins.isNotEmpty()) &&
-                                (!noTins || items.tins.isEmpty()) &&
-                                ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) )) &&
-                                (!opened || items.tins.any { it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished) }) &&
-                                (!unopened || items.tins.any { it.openDate == null || it.openDate > System.currentTimeMillis() }) &&
-                                (!finished || items.tins.any { it.finished }) &&
-                                (!unfinished || items.tins.any { !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis() })
-                    }
-                } else {
-                    when (searchSetting) {
-                         SearchSetting.Blend -> {
-                            allItems.filter {
-                                it.items.blend.contains(searchValue, ignoreCase = true)
-                            }
-                        }
-                        SearchSetting.Notes -> {
-                            allItems.filter {
-                                it.items.notes.contains(searchValue, ignoreCase = true)
-                            }
-                        }
-                        SearchSetting.TinLabel -> {
-                            allItems.filter {
-                                it.tins.any { it.tinLabel.contains(searchValue, ignoreCase = true) }
-                            }
-                        }
-                    }
-                }
-
-            val filteredTins =
-                if (searchValue.isBlank()) {
-                    allItems.flatMap { it.tins }.filter {
-                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && it.container.isEmpty()) || container.contains( it.container ))) &&
-                                (!opened || (it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished))) &&
-                                (!unopened || (it.openDate == null || it.openDate > System.currentTimeMillis())) &&
-                                (!finished || it.finished) &&
-                                (!unfinished || !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis())
-                    }
-                } else {
-                    if (searchSetting == SearchSetting.TinLabel) {
-                        allItems.flatMap { it.tins }.filter {
-                            it.tinLabel.contains(searchValue, ignoreCase = true)
-                        }
-                    } else {
-                        emptyList()
-                    }
-                }
-
-            _filteredItems.value = filteredItems
-            _filteredTins.value = filteredTins
-        }
-    }
 
 
     /** List View item menu overlay and expand details **/
@@ -361,13 +156,15 @@ class HomeViewModel(
 
 
     /** helper functions for quantity display **/
-    private suspend fun calculateTotalQuantity(items: ItemsComponentsAndTins, quantityOption: QuantityOption): Double {
-        val tins = itemsRepository.getTinsForItemStream(items.items.id).first()
-        return if (tins.isEmpty()) {
+    private suspend fun calculateTotalQuantity(items: ItemsComponentsAndTins, tins: List<Tins>, quantityOption: QuantityOption): Double {
+        val ounceRate = preferencesRepo.tinOzConversionRate.first()
+        val gramRate = preferencesRepo.tinGramsConversionRate.first()
+
+        return if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
             when (quantityOption) {
                 QuantityOption.TINS -> items.items.quantity.toDouble()
-                QuantityOption.OUNCES -> items.items.quantity.toDouble()
-                QuantityOption.GRAMS -> items.items.quantity.toDouble()
+                QuantityOption.OUNCES -> items.items.quantity.toDouble() * ounceRate
+                QuantityOption.GRAMS -> items.items.quantity.toDouble() * gramRate
                 else -> 0.0
             }
         } else {
@@ -406,7 +203,7 @@ class HomeViewModel(
         return when (quantityOption) {
             QuantityOption.TINS -> "x${quantity.toInt()}"
             QuantityOption.OUNCES -> {
-                if (tins.isNotEmpty()) {
+                if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                     if (quantity >= 16) {
                         val pounds = quantity / 16
                         formatDecimal(pounds) + " lbs"
@@ -414,14 +211,18 @@ class HomeViewModel(
                         formatDecimal(quantity) + " oz"
                     }
                 } else {
-                    "x${quantity.toInt()}"
+                    if (quantity >= 16) {
+                       val pounds = quantity / 16
+                       "${formatDecimal(pounds)}* lbs"
+                    } else
+                        "${formatDecimal(quantity)}* oz"
                 }
             }
             QuantityOption.GRAMS -> {
-                if (tins.isNotEmpty()) {
+                if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                     formatDecimal(quantity) + " g"
                 } else {
-                    "x${quantity.toInt()}"
+                    "${formatDecimal(quantity)}* g"
                 }
             }
             else -> { "--" }
@@ -433,9 +234,7 @@ class HomeViewModel(
     private val _showSnackbar = MutableStateFlow(false)
     val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()
 
-    fun snackbarShown() {
-        _showSnackbar.value = false
-    }
+    fun snackbarShown() { _showSnackbar.value = false }
 
     override fun onExportCsvClick(uri: Uri?) {
         viewModelScope.launch {
@@ -485,6 +284,7 @@ data class HomeUiState(
     val items: List<ItemsComponentsAndTins> = listOf(),
     val isTableView: Boolean = false,
     val quantityDisplay: QuantityOption = QuantityOption.TINS,
+    val sortQuantity: Map<Int, Double> = mapOf(),
     val formattedQuantities: Map<Int, String> = mapOf(),
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
@@ -508,40 +308,9 @@ data class ListSorting(
         val BLEND = ListSorting("Blend")
         val BRAND = ListSorting("Brand")
         val TYPE = ListSorting("Type")
+        val QUANTITY = ListSorting("Quantity")
     }
 }
-
-@Stable
-data class FilterParameters(
-    val searchValue: String,
-    val selectedBrands: List<String>,
-    val selectedTypes: List<String>,
-    val selectedFavorites: Boolean,
-    val selectedDislikeds: Boolean,
-    val selectedNeutral: Boolean,
-    val selectedNonNeutral: Boolean,
-    val selectedInStock: Boolean,
-    val selectedOutOfStock: Boolean,
-    val selectedExcludeBrands: List<String>,
-    val selectedExcludeLikes: Boolean,
-    val selectedExcludeDislikes: Boolean,
-    val selectedComponent: List<String>,
-    val compMatching: String,
-    val selectedFlavoring: List<String>,
-    val flavorMatching: String,
-    val selectedSubgenre: List<String>,
-    val selectedCut: List<String>,
-    val selectedProduction: Boolean,
-    val selectedOutOfProduction: Boolean,
-
-    val selectedHasTins: Boolean,
-    val selectedNoTins: Boolean,
-    val selectedContainer: List<String>,
-    val selectedOpened: Boolean,
-    val selectedUnopened: Boolean,
-    val selectedFinished: Boolean,
-    val selectedUnfinished: Boolean,
-)
 
 sealed class SearchSetting(val value: String) {
     data object Blend: SearchSetting("Blend")
