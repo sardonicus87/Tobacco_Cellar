@@ -57,6 +57,7 @@ fun CellarNavHost(
             }
         ) {
             HomeScreen(
+                navController = navController,
                 navigateToStats = { navController.navigate(StatsDestination.route) {
                     launchSingleTop = true
                     popUpTo(HomeDestination.route) { inclusive = false }
