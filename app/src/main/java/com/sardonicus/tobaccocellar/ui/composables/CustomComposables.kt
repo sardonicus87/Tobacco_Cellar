@@ -310,10 +310,28 @@ sealed class GlowSize {
 
 /** Full screen loading indicator */
 @Composable
-fun FullScreenLoading(
+fun LoadingIndicator(
     modifier: Modifier = Modifier,
     scrimColor: Color = Color.Transparent,
+    center: Boolean = false,
 ) {
+    var topWeight: Float
+    var middleWeight: Float
+    var bottomWeight: Float
+
+    when (center) {
+        true -> {
+            topWeight = 1f
+            middleWeight = 1f
+            bottomWeight = 1f
+        }
+        false -> {
+            topWeight = 1.5f
+            middleWeight = 0.5f
+            bottomWeight = 2f
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -323,17 +341,17 @@ fun FullScreenLoading(
     ) {
         Spacer(
             modifier = Modifier
-                .weight(1.5f)
+                .weight(topWeight)
         )
         CircularProgressIndicator(
             modifier = Modifier
                 .padding(0.dp)
                 .size(48.dp)
-                .weight(0.5f),
+                .weight(middleWeight),
         )
         Spacer(
             modifier = Modifier
-                .weight(2f)
+                .weight(bottomWeight)
         )
     }
 }
@@ -608,9 +626,14 @@ fun CustomDropdownMenuItem(
 fun OverflowRow(
     itemCount: Int,
     itemContent: @Composable (index: Int) -> Unit,
-    overflowIndicator: @Composable (overflowCount: Int) -> Unit,
+    overflowIndicator: @Composable (
+        overflowCount: Int,
+        enabledOverflowCount: Int,
+        isOverflowEnabled: Boolean,
+    ) -> Unit,
     modifier: Modifier = Modifier,
     itemSpacing: Dp = 0.dp,
+    enabledAtIndex: ((index: Int) -> Boolean)? = null,
 ) {
     val density = LocalDensity.current
     val spacingPx =
@@ -624,7 +647,7 @@ fun OverflowRow(
 
         // measure indicator
         val maxPossibleOverflow = itemCount
-        val overflowMeasurable = subcompose("overflow_max") { overflowIndicator(maxPossibleOverflow) }.firstOrNull()
+        val overflowMeasurable = subcompose("overflow_max") { overflowIndicator(maxPossibleOverflow, maxPossibleOverflow, true) }.firstOrNull()
         val overflowPlaceable = overflowMeasurable?.measure(Constraints())
         val overflowIndicatorWidth = overflowPlaceable?.width ?: 0
         val overflowIndicatorHeight = overflowPlaceable?.height ?: 0
@@ -642,7 +665,6 @@ fun OverflowRow(
         for (i in 0 until itemCount) {
             val itemMeasurable = allItemMeasurables[i]
             val itemPlaceable = itemMeasurable.measure(Constraints())
-
             val itemWidth = itemPlaceable.width + if (visibleItemCount > 0) spacingPx else 0
 
             // checking item fit by adding items until over width
@@ -680,16 +702,30 @@ fun OverflowRow(
             }
         }
 
-        // final composition
         val actualOverCount = itemCount - visibleItemCount
         val showOver = actualOverCount > 0 && overflowIndicatorWidth > 0
 
+        var enabledOverflowCount = 0
+        var anyOverflowedEnabled = false
+        if (showOver && enabledAtIndex != null) {
+            for (i in visibleItemCount until itemCount) {
+                if (enabledAtIndex(i)) {
+                    enabledOverflowCount++
+                    anyOverflowedEnabled = true
+                }
+            }
+        } else if (showOver) {
+            enabledOverflowCount = actualOverCount
+            anyOverflowedEnabled = true
+        }
+
+        // final composition
         val finalPlaceables = subcompose("final_render") {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(itemSpacing)
             ) {
                 for (i in 0 until visibleItemCount) { itemContent(i) }
-                if (showOver) { overflowIndicator(actualOverCount) }
+                if (showOver) { overflowIndicator(actualOverCount, enabledOverflowCount, anyOverflowedEnabled) }
             }
         }.map { it.measure(constraints) }
 
