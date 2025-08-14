@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -95,9 +97,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -129,6 +133,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.ui.ActiveScreen
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -145,6 +150,7 @@ import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -154,10 +160,23 @@ fun CellarApp(
     CellarNavHost(navController = navController)
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route
-    val dateScreen = currentRoute == DatesDestination.route
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
+
+    val pagerState = rememberPagerState(
+        pageCount = { 3 }
+    )
+
+    LaunchedEffect(currentRoute) {
+        val screen = when (currentRoute) {
+            HomeDestination.route -> ActiveScreen.HOME
+            StatsDestination.route -> ActiveScreen.STATS
+            DatesDestination.route -> ActiveScreen.DATES
+            else -> ActiveScreen.HOME
+        }
+        filterViewModel.setActiveScreen(screen)
+    }
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
@@ -173,7 +192,7 @@ fun CellarApp(
             Box {
                 FilterBottomSheet(
                     filterViewModel = filterViewModel,
-                    dateScreen = dateScreen,
+                    pagerState = pagerState,
                     modifier = Modifier
                 )
                 Box (
@@ -182,10 +201,7 @@ fun CellarApp(
                 ) {
                     val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
 
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
+                    Canvas(Modifier.fillMaxSize()) {
                         drawRect(
                             color = Color.Black,
                             topLeft = Offset(0f, (size.height)),
@@ -635,7 +651,7 @@ fun CellarBottomAppBar(
                 ) {
                     val borderColor =
                         if (filteringApplied) {
-                            if (searchPerformed) {
+                            if (searchPerformed && currentDestination == HomeDestination) {
                                 LocalCustomColors.current.indicatorBorderCorrection
                             } else {
                                 if (sheetOpen) {
@@ -646,7 +662,7 @@ fun CellarBottomAppBar(
 
                     val indicatorColor =
                         if (filteringApplied) {
-                            if (searchPerformed) {
+                            if (searchPerformed && currentDestination == HomeDestination) {
                                 LocalCustomColors.current.indicatorCircle.copy(alpha = 0.5f)
                             } else LocalCustomColors.current.indicatorCircle
                         } else Color.Transparent
@@ -663,7 +679,7 @@ fun CellarBottomAppBar(
                         onClick = { filterViewModel.openBottomSheet() },
                         modifier = Modifier
                             .padding(0.dp),
-                        enabled = !searchPerformed
+                        enabled = if (currentDestination == HomeDestination) !searchPerformed else true
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.filter_24),
@@ -693,7 +709,7 @@ fun CellarBottomAppBar(
                         color = if (sheetOpen) {
                             onPrimaryLight
                         } else {
-                            if (searchPerformed) {
+                            if (searchPerformed && currentDestination == HomeDestination) {
                                 LocalContentColor.current.copy(alpha = 0.5f)
                             } else LocalContentColor.current
                         }
@@ -758,7 +774,7 @@ fun CellarBottomAppBar(
 @Composable
 fun FilterBottomSheet(
     filterViewModel: FilterViewModel,
-    dateScreen: Boolean,
+    pagerState: PagerState,
     modifier: Modifier = Modifier,
 ) {
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
@@ -776,7 +792,7 @@ fun FilterBottomSheet(
         Row (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp, bottom = 6.dp),
+                .padding(vertical = 6.dp), // top
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -819,13 +835,32 @@ fun FilterBottomSheet(
         }
 
         // Pager //
-        val pagerState = rememberPagerState(pageCount = { 3 })
         var innerScrolling by remember { mutableStateOf(false) }
+        val coroutineScope = rememberCoroutineScope()
 
         Row (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp),
+                .padding(vertical = 6.dp)
+                .pointerInput(pagerState) {
+                    var totalDrag = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { totalDrag = 0f },
+                        onHorizontalDrag = { change, amount ->
+                            change.consume()
+                            totalDrag += amount
+                        },
+                        onDragEnd = {
+                            coroutineScope.launch {
+                                if (totalDrag < (-50) && pagerState.currentPage < (pagerState.pageCount - 1)) {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                } else if (totalDrag > 50 && pagerState.currentPage > 0) {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            }
+                        }
+                    )
+                },
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -833,7 +868,7 @@ fun FilterBottomSheet(
                 pagerState = pagerState,
                 modifier = Modifier
                     .padding(0.dp),
-                indicatorSize = IndicatorSizes(7.dp, 6.dp)
+                indicatorSize = IndicatorSizes(6.5.dp, 6.dp)
             )
         }
 
@@ -843,7 +878,7 @@ fun FilterBottomSheet(
                 .fillMaxWidth(),
             userScrollEnabled = !innerScrolling,
             beyondViewportPageCount = 2,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top,
         ) {
             when (it) {
                 // brand, type, rating, stock filters //
@@ -882,8 +917,15 @@ fun FilterBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        val availableGenres by filterViewModel.availableSubgenres.collectAsState()
                         val selectedGenres by filterViewModel.sheetSelectedSubgenres.collectAsState()
+                        val genresEnabled by filterViewModel.subgenresEnabled.collectAsState()
+                        val availableGenres by remember {
+                            derivedStateOf {
+                                val available = filterViewModel.availableSubgenres.value
+                                filterViewModel.reorderByEnabled(available, genresEnabled)
+                            }
+                        }
+
                         FlowFilterSection(
                             label = "Subgenre",
                             nothingLabel = "No subgenres assigned to any blends.",
@@ -903,10 +945,18 @@ fun FilterBottomSheet(
                                     LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                            enabledStates = genresEnabled
                         )
-                        val availableCuts by filterViewModel.availableCuts.collectAsState()
+
                         val selectedCuts by filterViewModel.sheetSelectedCuts.collectAsState()
+                        val cutsEnabled by filterViewModel.cutsEnabled.collectAsState()
+                        val availableCuts by remember {
+                            derivedStateOf {
+                                val available = filterViewModel.availableCuts.value
+                                filterViewModel.reorderByEnabled(available, cutsEnabled)
+                            }
+                        }
                         FlowFilterSection(
                             label = "Cut",
                             nothingLabel = "No cuts assigned to any blends.",
@@ -914,7 +964,7 @@ fun FilterBottomSheet(
                             availableOptions = availableCuts,
                             selectedOptions = selectedCuts,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedCut(string, boolean) },
-                            noneField = "(None Assigned)",
+                            noneField = "(Unassigned)",
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
@@ -926,11 +976,19 @@ fun FilterBottomSheet(
                                     LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                            enabledStates = cutsEnabled
                         )
-                        val availableComps by filterViewModel.availableComponents.collectAsState()
+
                         val selectedComps by filterViewModel.sheetSelectedComponents.collectAsState()
-                        val compMatchOption by filterViewModel.sheetSelectedComponentMatching.collectAsState()
+                        val compMatchOption by filterViewModel.sheetSelectedCompMatching.collectAsState()
+                        val componentsEnabled by filterViewModel.componentsEnabled.collectAsState()
+                        val availableComps by remember {
+                            derivedStateOf {
+                                val available = filterViewModel.availableComponents.value
+                                filterViewModel.reorderByEnabled(available, componentsEnabled)
+                            }
+                        }
                         FlowFilterSection(
                             label = "Components",
                             nothingLabel = "No components assigned to any blends.",
@@ -953,10 +1011,18 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
                             matchOption = compMatchOption,
                             onMatchOptionChange = { filterViewModel.updateCompMatching(it) },
+                            enabledStates = componentsEnabled
                         )
-                        val availableFlavor by filterViewModel.availableFlavors.collectAsState()
+
                         val selectedFlavor by filterViewModel.sheetSelectedFlavorings.collectAsState()
-                        val flavorMatchOption by filterViewModel.sheetSelectedFlavoringMatching.collectAsState()
+                        val flavorMatchOption by filterViewModel.sheetSelectedFlavorMatching.collectAsState()
+                        val flavorEnabled by filterViewModel.flavoringsEnabled.collectAsState()
+                        val availableFlavor by remember {
+                            derivedStateOf {
+                                val available = filterViewModel.availableFlavorings.value
+                                filterViewModel.reorderByEnabled(available, flavorEnabled)
+                            }
+                        }
                         FlowFilterSection(
                             label = "Flavorings",
                             nothingLabel = "No flavorings assigned to any blends.",
@@ -979,6 +1045,7 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
                             matchOption = flavorMatchOption,
                             onMatchOptionChange = { filterViewModel.updateFlavorMatching(it) },
+                            enabledStates = flavorEnabled,
                         )
                     }
                 }
@@ -996,34 +1063,78 @@ fun FilterBottomSheet(
                     ) {
                         TinsFilterSection(
                             filterViewModel = filterViewModel,
-                            dateScreen = dateScreen,
                             tins = tins,
                             modifier = Modifier
                                 .padding(horizontal = 6.dp)
                         )
-                        val availableCont by filterViewModel.availableContainers.collectAsState()
+
                         val selectedCont by filterViewModel.sheetSelectedContainer.collectAsState()
-                        FlowFilterSection(
-                            label = "Tin Containers",
-                            nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
-                            filterViewModel = filterViewModel,
-                            availableOptions = availableCont,
-                            selectedOptions = selectedCont,
-                            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedContainer(string, boolean) },
-                            noneField = "(Unassigned)",
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 5.dp)
-                        )
+                        val enableCont by filterViewModel.containerEnabled.collectAsState()
+                        val availableCont by remember {
+                            derivedStateOf {
+                                val available = filterViewModel.availableContainers.value
+                                filterViewModel.reorderByEnabled(available, enableCont)
+                            }
+                        }
+                        Box {
+                            FlowFilterSection(
+                                label = "Tin Containers",
+                                nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
+                                filterViewModel = filterViewModel,
+                                availableOptions = availableCont,
+                                selectedOptions = selectedCont,
+                                updateSelectedOptions = { string, boolean ->
+                                    filterViewModel.updateSelectedContainer(string, boolean)
+                                },
+                                noneField = "(Unassigned)",
+                                modifier = Modifier
+                                    .padding(horizontal = 6.dp, vertical = 0.dp)
+                                    .border(
+                                        width = Dp.Hairline,
+                                        color = LocalCustomColors.current.sheetBoxBorder,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .background(
+                                        LocalCustomColors.current.sheetBox,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                                enabledStates = enableCont
+                            )
+                            if (!tins) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .border(
+                                            Dp.Hairline,
+                                            LocalCustomColors.current.sheetBoxBorder,
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .background(
+                                            LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "No tins assigned to any blends.",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            textAlign = TextAlign.Center,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         // Production
                         Row(
                             modifier = Modifier
@@ -1041,23 +1152,23 @@ fun FilterBottomSheet(
                             horizontalArrangement = Arrangement.Start
                         ) {
                             val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
+                            val inProductionEnabled by filterViewModel.productionEnabled.collectAsState()
                             val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+                            val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()
 
                             CheckboxWithLabel(
                                 text = "In Production",
                                 checked = inProduction,
                                 onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
-                                modifier = Modifier
+                                modifier = Modifier,
+                                enabled = inProductionEnabled
                             )
                             CheckboxWithLabel(
                                 text = "Discontinued",
                                 checked = outOfProduction,
-                                onCheckedChange = {
-                                    filterViewModel.updateSelectedOutOfProduction(
-                                        it
-                                    )
-                                },
-                                modifier = Modifier
+                                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
+                                modifier = Modifier,
+                                enabled = outOfProductionEnabled
                             )
                         }
 
@@ -1095,484 +1206,6 @@ fun FilterBottomSheet(
 }
 
 
-@Composable
-fun OtherFiltersSection(
-    filterViewModel: FilterViewModel,
-    modifier: Modifier = Modifier,
-) {
-    val favorites by filterViewModel.sheetSelectedFavorites.collectAsState()
-    val excludeFavorites by filterViewModel.sheetSelectedExcludeLikes.collectAsState()
-    val favoritesSelection =
-        if (favorites) ToggleableState.On
-        else if (excludeFavorites) ToggleableState.Indeterminate
-        else ToggleableState.Off
-
-    val dislikeds by filterViewModel.sheetSelectedDislikeds.collectAsState()
-    val excludeDislikes by filterViewModel.sheetSelectedExcludeDislikes.collectAsState()
-    val dislikedsSelection =
-        if (dislikeds) ToggleableState.On
-        else if (excludeDislikes) ToggleableState.Indeterminate
-        else ToggleableState.Off
-
-    // state for monitoring neutral/nonNeutral filters //
-    val neutral by filterViewModel.sheetSelectedNeutral.collectAsState()
-    val nonNeutral by filterViewModel.sheetSelectedNonNeutral.collectAsState()
-    val dualSelectionIndicatorState =
-        if (nonNeutral) ToggleableState.On
-        else if (neutral) ToggleableState.Indeterminate
-        else ToggleableState.Off
-
-    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
-    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .padding(vertical = 3.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Row {
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Box {
-                        TriStateCheckWithLabel(
-                            text = "",
-                            state = dualSelectionIndicatorState,
-                            onClick = { },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                else Color.Transparent,
-                                checkmarkColor =
-                                if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else Color.Transparent
-                            )
-                        )
-                        TriStateCheckWithLabel(
-                            text = "Favorites",
-                            state = favoritesSelection,
-                            onClick = {
-                                when (favoritesSelection) {
-                                    ToggleableState.Off -> filterViewModel.updateSelectedFavorites(true)
-                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeLikes(true)
-                                    ToggleableState.Indeterminate -> {
-                                        filterViewModel.updateSelectedFavorites(false)
-                                        filterViewModel.updateSelectedExcludeLikes(false)
-                                    }
-                                }
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                if (favorites) MaterialTheme.colorScheme.primary
-                                else if (excludeFavorites) MaterialTheme.colorScheme.error
-                                else Color.Transparent
-                            )
-                        )
-                    }
-                    CheckboxWithLabel(
-                        text = "Rated",
-                        checked = nonNeutral,
-                        onCheckedChange = { filterViewModel.updateSelectedNonNeutral(it) },
-                        modifier = Modifier
-                    )
-                }
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Box {
-                        TriStateCheckWithLabel(
-                            text = "",
-                            state = dualSelectionIndicatorState,
-                            onClick = { },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                else Color.Transparent,
-                                checkmarkColor =
-                                if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                else Color.Transparent
-                            )
-                        )
-                        TriStateCheckWithLabel(
-                            text = "Dislikes",
-                            state = dislikedsSelection,
-                            onClick = {
-                                when (dislikedsSelection) {
-                                    ToggleableState.Off -> filterViewModel.updateSelectedDislikeds(true)
-                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeDislikes(true)
-                                    ToggleableState.Indeterminate -> {
-                                        filterViewModel.updateSelectedDislikeds(false)
-                                        filterViewModel.updateSelectedExcludeDislikes(false)
-                                    }
-                                }
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                if (dislikeds) MaterialTheme.colorScheme.primary
-                                else if (excludeDislikes) MaterialTheme.colorScheme.error
-                                else Color.Transparent
-                            )
-                        )
-                    }
-                    CheckboxWithLabel(
-                        text = "Unrated",
-                        checked = neutral,
-                        onCheckedChange = { filterViewModel.updateSelectedNeutral(it) },
-                        modifier = Modifier
-                    )
-                }
-            }
-        }
-        Column(
-            modifier = Modifier
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .padding(vertical = 3.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            CheckboxWithLabel(
-                text = "In-stock",
-                checked = inStock,
-                onCheckedChange = { filterViewModel.updateSelectedInStock(it) },
-                modifier = Modifier
-            )
-            CheckboxWithLabel(
-                text = "Out",
-                checked = outOfStock,
-                onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) },
-                modifier = Modifier
-            )
-        }
-    }
-}
-
-@Composable
-fun TinsFilterSection(
-    filterViewModel: FilterViewModel,
-    dateScreen: Boolean,
-    tins: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top)
-    ) {
-        // Has tins/Opened/Finished
-        Box{
-            Row(
-                modifier = Modifier
-                    .border(
-                        Dp.Hairline,
-                        LocalCustomColors.current.sheetBoxBorder,
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-                    .fillMaxWidth()
-                    .padding(vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Has Tins
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-                    val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
-                    CheckboxWithLabel(
-                        text = "Has tins",
-                        checked = hasTins,
-                        onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
-                        modifier = Modifier,
-                        enabled = tins && !dateScreen,
-                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    )
-                    CheckboxWithLabel(
-                        text = "No tins",
-                        checked = hasNone,
-                        onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
-                        modifier = Modifier,
-                        enabled = tins && !dateScreen,
-                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    )
-                }
-
-                // Opened
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
-                    val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
-                    CheckboxWithLabel(
-                        text = "Opened",
-                        checked = isOpened,
-                        onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
-                        modifier = Modifier,
-                        enabled = tins && !dateScreen,
-                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    )
-                    CheckboxWithLabel(
-                        text = "Unopened",
-                        checked = isUnopened,
-                        onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
-                        modifier = Modifier,
-                        enabled = tins && !dateScreen,
-                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    )
-                }
-
-                // Finished
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
-                    val notFinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
-                    CheckboxWithLabel(
-                        text = "Finished",
-                        checked = isFinished,
-                        onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
-                        modifier = Modifier,
-                        enabled = tins && !dateScreen,
-                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    )
-                    CheckboxWithLabel(
-                        text = "Unfinished",
-                        checked = notFinished,
-                        onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
-                        modifier = Modifier,
-                        enabled = tins && !dateScreen,
-                        fontColor = if (dateScreen || !tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-                    )
-                }
-            }
-            if (!tins && !dateScreen) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .border(
-                            Dp.Hairline,
-                            LocalCustomColors.current.sheetBoxBorder,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .background(
-                            LocalCustomColors.current.sheetBox.copy(alpha = .85f),
-                            RoundedCornerShape(8.dp)
-                        )
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "No tins assigned to any blends.",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-            if (dateScreen) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .border(
-                            Dp.Hairline,
-                            LocalCustomColors.current.sheetBoxBorder,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .background(Color.Black.copy(alpha = .75f), RoundedCornerShape(8.dp))
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "N/A on Dates screen.",
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CheckboxWithLabel(
-    text: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    fontSize: TextUnit = 15.sp,
-    lineHeight: TextUnit = TextUnit.Unspecified,
-    height: Dp = 36.dp,
-    enabled: Boolean = true,
-    fontColor: Color = LocalContentColor.current,
-    colors: CheckboxColors = CheckboxDefaults.colors(),
-) {
-    Row(
-        modifier = modifier
-            .padding(0.dp)
-            .height(height)
-            .offset(x = (-2).dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier
-                .padding(0.dp),
-            enabled = enabled,
-            colors = colors,
-            interactionSource = remember { MutableInteractionSource() }
-        )
-        Box(
-            modifier = Modifier
-                .offset(x = (-4).dp)
-                .padding(end = 6.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            BasicText(
-                text = text,
-                style = LocalTextStyle.current.copy(
-                    color = fontColor,
-                    lineHeight = lineHeight
-                ),
-                modifier = Modifier,
-                maxLines = 1,
-                autoSize = TextAutoSize.StepBased(
-                    maxFontSize = fontSize,
-                    minFontSize = 9.sp,
-                    stepSize = .2.sp
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun TriStateCheckWithLabel(
-    text: String,
-    state: ToggleableState,
-    onClick: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    fontColor: Color = LocalContentColor.current,
-    colors: CheckboxColors = CheckboxDefaults.colors()
-) {
-    Row(
-        modifier = modifier
-            .padding(0.dp)
-            .height(36.dp)
-            .offset(x = (-2).dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Box {
-            TriStateCheckbox(
-                state = state,
-                onClick = onClick,
-                modifier = Modifier
-                    .padding(0.dp),
-                enabled = enabled,
-                colors = colors,
-                interactionSource = remember { MutableInteractionSource() }
-            )
-        }
-        Text(
-            text = text,
-            modifier = Modifier
-                .offset(x = (-4).dp)
-                .padding(end = 6.dp),
-            color = fontColor,
-            fontSize = 15.sp,
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun TypeFilterSection(
-    filterViewModel: FilterViewModel,
-    modifier: Modifier = Modifier,
-) {
-    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
-    val availableTypes by filterViewModel.availableTypes.collectAsState()
-
-    Column(
-        modifier = modifier
-    ) {
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-        ) {
-            availableTypes.forEach {
-                FilterChip(
-                    selected = selectedTypes.contains(it),
-                    onClick = { filterViewModel.updateSelectedTypes(it, !selectedTypes.contains(it)) },
-                    label = { Text(it, fontSize = 14.sp) },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    shape = MaterialTheme.shapes.small,
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                    )
-                )
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BrandFilterSection(
@@ -1584,6 +1217,10 @@ fun BrandFilterSection(
     val selectedExcludedBrands by filterViewModel.sheetSelectedExcludeBrands.collectAsState()
     val excluded by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
     val allBrands by filterViewModel.availableBrands.collectAsState()
+
+    val includeEnabled by filterViewModel.brandsEnabled.collectAsState()
+    val excludeEnabled by filterViewModel.excludeBrandsEnabled.collectAsState()
+    val brandEnabled = if (excluded) excludeEnabled else includeEnabled
 
     var brandSearchText by remember { mutableStateOf("") }
     var filteredBrands by remember { mutableStateOf(allBrands) }
@@ -1686,6 +1323,18 @@ fun BrandFilterSection(
 
         // Selectable brands row //
         val lazyListState = rememberLazyListState()
+
+        val preSortUnselected = filteredBrands.filterNot {
+            if (!excluded) { selectedBrands.contains(it) }
+            else { selectedExcludedBrands.contains(it) }
+        }
+
+//        val (enabled, disabled) = preSortUnselected.partition { brandEnabled[it] ?: false }
+//        val unselectedBrands = enabled + disabled
+
+        val unselectedBrands = filterViewModel.reorderByEnabled(preSortUnselected, brandEnabled)
+
+
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
             size = GlowSize(horizontal = 15.dp),
@@ -1713,13 +1362,6 @@ fun BrandFilterSection(
                 verticalAlignment = Alignment.CenterVertically,
                 state = lazyListState
             ) {
-                val unselectedBrands = filteredBrands.filterNot {
-                    if ((selectedExcludedBrands.isEmpty())) {
-                        selectedBrands.contains(it)
-                    } else {
-                        selectedExcludedBrands.contains(it)
-                    }
-                }
                 items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
                     val brand = unselectedBrands[index]
                     TextButton(
@@ -1733,7 +1375,8 @@ fun BrandFilterSection(
                             filteredBrands = allBrands
                         },
                         modifier = Modifier
-                            .wrapContentSize()
+                            .wrapContentSize(),
+                        enabled = brandEnabled[brand] ?: false,
                     ) {
                         Text(
                             text = brand,
@@ -1745,6 +1388,7 @@ fun BrandFilterSection(
             }
 
             LaunchedEffect(filteredBrands) { lazyListState.scrollToItem(0) }
+            LaunchedEffect(brandEnabled) { lazyListState.scrollToItem(0) }
         }
 
         // Selected brands chip box //
@@ -1830,15 +1474,15 @@ fun BrandFilterSection(
 
                     Box {
                         if (selectedBrands.isEmpty() && selectedExcludedBrands.isEmpty())
-                        Text(
-                            text = if (excluded) "Excluded Brands" else "Included Brands",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            color = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center
-                        )
+                            Text(
+                                text = if (excluded) "Excluded Brands" else "Included Brands",
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                color = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Normal,
+                                textAlign = TextAlign.Center
+                            )
                     }
                 }
                 if (showOverflowPopup) {
@@ -1949,6 +1593,258 @@ fun BrandFilterSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TypeFilterSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
+    val availableTypes by filterViewModel.availableTypes.collectAsState()
+    val enabledTypes by filterViewModel.typesEnabled.collectAsState()
+
+    Column(
+        modifier = modifier
+    ) {
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+        ) {
+            availableTypes.forEach {
+                FilterChip(
+                    selected = selectedTypes.contains(it),
+                    onClick = { filterViewModel.updateSelectedTypes(it, !selectedTypes.contains(it)) },
+                    label = { Text(it, fontSize = 14.sp) },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    shape = MaterialTheme.shapes.small,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ),
+                    enabled = enabledTypes[it] ?: false
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun OtherFiltersSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val favorites by filterViewModel.sheetSelectedFavorites.collectAsState()
+    val excludeFavorites by filterViewModel.sheetSelectedExcludeFavorites.collectAsState()
+    val favoritesSelection =
+        if (favorites) ToggleableState.On
+        else if (excludeFavorites) ToggleableState.Indeterminate
+        else ToggleableState.Off
+    val favoritesEnabled by filterViewModel.favoritesEnabled.collectAsState()
+    val favoritesExcludeEnabled by filterViewModel.excludeFavoritesEnabled.collectAsState()
+    val favoritesEnabledTristate = when (favoritesSelection) {
+        ToggleableState.Off -> favoritesEnabled
+        ToggleableState.On -> favoritesExcludeEnabled
+        ToggleableState.Indeterminate -> true
+    }
+
+    val dislikeds by filterViewModel.sheetSelectedDislikeds.collectAsState()
+    val excludeDislikes by filterViewModel.sheetSelectedExcludeDislikeds.collectAsState()
+    val dislikedsSelection =
+        if (dislikeds) ToggleableState.On
+        else if (excludeDislikes) ToggleableState.Indeterminate
+        else ToggleableState.Off
+    val dislikedsEnabled by filterViewModel.dislikedsEnabled.collectAsState()
+    val excludeDislikesEnabled by filterViewModel.excludeDislikesEnabled.collectAsState()
+    val dislikedsEnabledTristate = when (dislikedsSelection) {
+        ToggleableState.Off -> dislikedsEnabled
+        ToggleableState.On -> excludeDislikesEnabled
+        ToggleableState.Indeterminate -> true
+    }
+
+    // state for monitoring neutral/nonNeutral filters //
+    val neutral by filterViewModel.sheetSelectedUnrated.collectAsState()
+    val neutralEnabled by filterViewModel.unratedEnabled.collectAsState()
+    val nonNeutral by filterViewModel.sheetSelectedRated.collectAsState()
+    val nonNeutralEnabled by filterViewModel.ratedEnabled.collectAsState()
+    val dualSelectionIndicatorState =
+        if (nonNeutral) ToggleableState.On
+        else if (neutral) ToggleableState.Indeterminate
+        else ToggleableState.Off
+
+    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
+    val inStockEnabled by filterViewModel.inStockEnabled.collectAsState()
+
+    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
+    val outOfStockEnabled by filterViewModel.outOfStockEnabled.collectAsState()
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max)
+                .padding(vertical = 3.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row {
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Box {
+                        TriStateCheckWithLabel(
+                            text = "",
+                            state = dualSelectionIndicatorState,
+                            onClick = { },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor =
+                                    if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                    else Color.Transparent,
+                                checkmarkColor =
+                                    if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    else Color.Transparent,
+                                uncheckedColor = Color.Transparent,
+                                disabledUncheckedColor = Color.Transparent
+                            )
+                        )
+                        TriStateCheckWithLabel(
+                            text = "Favorites",
+                            state = favoritesSelection,
+                            onClick = {
+                                when (favoritesSelection) {
+                                    ToggleableState.Off -> filterViewModel.updateSelectedFavorites(true)
+                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeFavorites(true)
+                                    ToggleableState.Indeterminate -> {
+                                        filterViewModel.updateSelectedFavorites(false)
+                                        filterViewModel.updateSelectedExcludeFavorites(false)
+                                    }
+                                }
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor =
+                                    if (favorites) MaterialTheme.colorScheme.primary
+                                    else if (excludeFavorites) MaterialTheme.colorScheme.error
+                                    else Color.Transparent,
+                            ),
+                            enabled = favoritesEnabledTristate
+                        )
+                    }
+                    CheckboxWithLabel(
+                        text = "Rated",
+                        checked = nonNeutral,
+                        onCheckedChange = { filterViewModel.updateSelectedRated(it) },
+                        modifier = Modifier,
+                        enabled = nonNeutralEnabled
+                    )
+                }
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Box {
+                        TriStateCheckWithLabel(
+                            text = "",
+                            state = dualSelectionIndicatorState,
+                            onClick = { },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor =
+                                    if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                    else Color.Transparent,
+                                checkmarkColor =
+                                    if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    else Color.Transparent,
+                                uncheckedColor = Color.Transparent,
+                                disabledUncheckedColor = Color.Transparent
+                            )
+                        )
+                        TriStateCheckWithLabel(
+                            text = "Dislikes",
+                            state = dislikedsSelection,
+                            onClick = {
+                                when (dislikedsSelection) {
+                                    ToggleableState.Off -> filterViewModel.updateSelectedDislikeds(true)
+                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeDislikes(true)
+                                    ToggleableState.Indeterminate -> {
+                                        filterViewModel.updateSelectedDislikeds(false)
+                                        filterViewModel.updateSelectedExcludeDislikes(false)
+                                    }
+                                }
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor =
+                                    if (dislikeds) MaterialTheme.colorScheme.primary
+                                    else if (excludeDislikes) MaterialTheme.colorScheme.error
+                                    else Color.Transparent,
+                            ),
+                            enabled = dislikedsEnabledTristate
+                        )
+                    }
+                    CheckboxWithLabel(
+                        text = "Unrated",
+                        checked = neutral,
+                        onCheckedChange = { filterViewModel.updateSelectedUnrated(it) },
+                        modifier = Modifier,
+                        enabled = neutralEnabled
+                    )
+                }
+            }
+        }
+        Column(
+            modifier = Modifier
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max)
+                .padding(vertical = 3.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            CheckboxWithLabel(
+                text = "In-stock",
+                checked = inStock,
+                onCheckedChange = { filterViewModel.updateSelectedInStock(it) },
+                modifier = Modifier,
+                enabled = inStockEnabled
+            )
+            CheckboxWithLabel(
+                text = "Out",
+                checked = outOfStock,
+                onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) },
+                modifier = Modifier,
+                enabled = outOfStockEnabled
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun FlowFilterSection(
@@ -1962,6 +1858,7 @@ fun FlowFilterSection(
     modifier: Modifier = Modifier,
     matchOption: String = "",
     onMatchOptionChange: (String) -> Unit = {},
+    enabledStates: Map<String, Boolean> = emptyMap(),
 ) {
     Column(
         modifier = modifier,
@@ -2124,6 +2021,7 @@ fun FlowFilterSection(
                 itemSpacing = 6.dp,
                 itemContent = {
                     val option = availableOptions[it]
+
                     FilterChip(
                         selected = selectedOptions.contains(option),
                         onClick = { updateSelectedOptions(option, !selectedOptions.contains(option)) },
@@ -2134,32 +2032,47 @@ fun FlowFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background
                         ),
-                        enabled = if (enableMatchOption) {
-                            matchOption == "Any" || (!option.contains(noneField))
-                        } else true
+                        enabled = enabledStates[option] ?: false
                     )
                 },
-                overflowIndicator = {
+                enabledAtIndex = {
+                    enabledStates[availableOptions[it]] ?: true
+                },
+                overflowIndicator = { overflowCount, enabledCount, overflowEnabled ->
                     val overflowedSelected =
-                        filterViewModel.overflowCheck(selectedOptions, availableOptions, availableOptions.size - it)
+                        filterViewModel.overflowCheck(selectedOptions, availableOptions, availableOptions.size - overflowCount)
+
+                    val labelColor =
+                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
+                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75f)
+                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .75f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    val containerColor =
+                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f)
+                        else if (!overflowEnabled) MaterialTheme.colorScheme.background.copy(alpha = .75f)
+                        else MaterialTheme.colorScheme.background
+                    val borderColor =
+                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f)
+                        else if (!overflowEnabled) MaterialTheme.colorScheme.outline.copy(alpha = .75f)
+                        else MaterialTheme.colorScheme.outline
 
                     Chip(
-                        text = "+$it",
+                        text = "+$enabledCount",  // "+$overflowCount"
                         onChipClicked = { showOverflowPopup = true },
                         onChipRemoved = { },
+                        enabled = true,
                         trailingIcon = false,
                         modifier = Modifier,
                         colors = AssistChipDefaults.assistChipColors(
-                            labelColor = if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer else
-                                MaterialTheme.colorScheme.onSurfaceVariant,
-                            containerColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                                MaterialTheme.colorScheme.background,
+                            labelColor = labelColor,
+                            containerColor = containerColor
                         ),
                         border = AssistChipDefaults.assistChipBorder(
                             enabled = true,
-                            borderColor = if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer else
-                                MaterialTheme.colorScheme.outline
-                        )
+                            borderColor = borderColor
+                        ),
                     )
                 },
             )
@@ -2346,7 +2259,7 @@ fun FlowFilterSection(
                                                 colors = FilterChipDefaults.filterChipColors(
                                                     containerColor = MaterialTheme.colorScheme.background
                                                 ),
-                                                enabled = matchOption == "Any" || (!it.contains(noneField))
+                                                enabled = enabledStates[it] ?: false
                                             )
                                         }
                                     }
@@ -2368,8 +2281,269 @@ fun FlowFilterSection(
     }
 }
 
+@Composable
+fun TinsFilterSection(
+    filterViewModel: FilterViewModel,
+    tins: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top)
+    ) {
+        // Has tins/Opened/Finished
+        Box{
+            Row(
+                modifier = Modifier
+                    .border(
+                        Dp.Hairline,
+                        LocalCustomColors.current.sheetBoxBorder,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+                val hasEnabled by filterViewModel.hasTinsEnabled.collectAsState()
+                val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
+                val noneEnabled by filterViewModel.noTinsEnabled.collectAsState()
 
-/** Custom composable fields **/
+                val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
+                val openEnabled by filterViewModel.openedEnabled.collectAsState()
+                val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
+                val unopenedEnabled by filterViewModel.unopenedEnabled.collectAsState()
+                val container by filterViewModel.sheetSelectedContainer.collectAsState()
+
+                val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
+                val finishedEnabled by filterViewModel.finishedEnabled.collectAsState()
+                val unfinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
+                val unfinishedEnabled by filterViewModel.unfinishedEnabled.collectAsState()
+
+                val implicitHas = !hasTins && (isOpened || isUnopened || isFinished || unfinished || container.isNotEmpty())
+
+                // Has Tins
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Box {
+                        CheckboxWithLabel(
+                            text = "",
+                            checked = implicitHas,
+                            onCheckedChange = { },
+                            modifier = Modifier,
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                checkmarkColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                                uncheckedColor = Color.Transparent,
+                                disabledUncheckedColor = Color.Transparent
+                            ),
+                        )
+                        CheckboxWithLabel(
+                            text = "Has tins",
+                            checked = hasTins,
+                            onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
+                            modifier = Modifier,
+                            enabled = tins && hasEnabled,  // (tins && !dateScreen) && hasEnabled
+                            fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current, //if (dateScreen || !tins)
+                        )
+                    }
+                    CheckboxWithLabel(
+                        text = "No tins",
+                        checked = hasNone,
+                        onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
+                        modifier = Modifier,
+                        enabled = tins && noneEnabled, //(tins && !dateScreen) && noneEnabled
+                        fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                }
+
+                // Opened
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    CheckboxWithLabel(
+                        text = "Opened",
+                        checked = isOpened,
+                        onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
+                        modifier = Modifier,
+                        enabled = tins && openEnabled,
+                        fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                    CheckboxWithLabel(
+                        text = "Unopened",
+                        checked = isUnopened,
+                        onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
+                        modifier = Modifier,
+                        enabled = tins && unopenedEnabled,
+                        fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                }
+
+                // Finished
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    CheckboxWithLabel(
+                        text = "Finished",
+                        checked = isFinished,
+                        onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
+                        modifier = Modifier,
+                        enabled = tins && finishedEnabled,
+                        fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                    CheckboxWithLabel(
+                        text = "Unfinished",
+                        checked = unfinished,
+                        onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
+                        modifier = Modifier,
+                        enabled = tins && unfinishedEnabled,
+                        fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                    )
+                }
+            }
+            if (!tins) { // !tins && !dateScreen
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .border(
+                            Dp.Hairline,
+                            LocalCustomColors.current.sheetBoxBorder,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "No tins assigned to any blends.",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/** Custom composables for sheet **/
+@Composable
+fun CheckboxWithLabel(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 15.sp,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    height: Dp = 36.dp,
+    enabled: Boolean = true,
+    fontColor: Color = LocalContentColor.current,
+    colors: CheckboxColors = CheckboxDefaults.colors(),
+) {
+    Row(
+        modifier = modifier
+            .padding(0.dp)
+            .height(height)
+            .offset(x = (-2).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier
+                .padding(0.dp),
+            enabled = enabled,
+            colors = colors,
+            interactionSource = remember { MutableInteractionSource() }
+        )
+        Box(
+            modifier = Modifier
+                .offset(x = (-4).dp)
+                .padding(end = 6.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            BasicText(
+                text = text,
+                style = LocalTextStyle.current.copy(
+                    color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
+                    lineHeight = lineHeight
+                ),
+                modifier = Modifier,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    maxFontSize = fontSize,
+                    minFontSize = 9.sp,
+                    stepSize = .2.sp
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun TriStateCheckWithLabel(
+    text: String,
+    state: ToggleableState,
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    fontColor: Color = LocalContentColor.current,
+    colors: CheckboxColors = CheckboxDefaults.colors()
+) {
+    Row(
+        modifier = modifier
+            .padding(0.dp)
+            .height(36.dp)
+            .offset(x = (-2).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box {
+            TriStateCheckbox(
+                state = state,
+                onClick = onClick,
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = enabled,
+                colors = colors,
+                interactionSource = remember { MutableInteractionSource() }
+            )
+        }
+        Text(
+            text = text,
+            modifier = Modifier
+                .offset(x = (-4).dp)
+                .padding(end = 6.dp),
+            color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
+            fontSize = 15.sp,
+        )
+    }
+}
+
 @Composable
 private fun CustomFilterTextField(
     value: String,
@@ -2442,11 +2616,15 @@ fun Chip(
     onChipClicked: (String) -> Unit,
     onChipRemoved: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     fontSize: TextUnit = 14.sp,
     trailingIcon: Boolean = true,
     iconSize: Dp = 24.dp,
     colors: ChipColors = AssistChipDefaults.assistChipColors(),
-    border: BorderStroke? = AssistChipDefaults.assistChipBorder(enabled = true, borderColor = MaterialTheme.colorScheme.outline),
+    border: BorderStroke? = AssistChipDefaults.assistChipBorder(
+        enabled = enabled,
+        borderColor = MaterialTheme.colorScheme.outline,
+    ),
     maxWidth: Dp = Dp.Infinity,
     trailingTint: Color = LocalContentColor.current
 ) {
@@ -2454,13 +2632,26 @@ fun Chip(
         onClick = { onChipClicked(text) },
         label = {
             if (text.startsWith("+")) {
-                Text(
-                    text = text,
-                    fontSize = fontSize,
-                    textAlign = TextAlign.Center,
+                Box (
                     modifier = Modifier
-                        .width(25.dp)
-                )
+                        .width(25.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BasicText(
+                        text = text,
+                        maxLines = 1,
+                        modifier = Modifier,
+                        style = LocalTextStyle.current.copy(
+                            color = LocalContentColor.current
+                        ),
+                        minLines = 1,
+                        autoSize = TextAutoSize.StepBased(
+                            maxFontSize = fontSize,
+                            minFontSize = 9.sp,
+                            stepSize = .2.sp
+                        )
+                    )
+                }
             }
             else {
                 Text(
@@ -2489,6 +2680,7 @@ fun Chip(
         modifier = modifier
             .widthIn(max = maxWidth)
             .padding(0.dp),
+        enabled = enabled,
         colors = colors,
         border = border
     )
