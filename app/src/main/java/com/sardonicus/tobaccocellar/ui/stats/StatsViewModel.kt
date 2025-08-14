@@ -8,61 +8,30 @@ import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
-import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.home.isMetricLocale
-import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
-import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flattenMerge
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class StatsViewModel(
-    private val itemsRepository: ItemsRepository,
-    private val filterViewModel: FilterViewModel,
+    filterViewModel: FilterViewModel,
     private val preferencesRepo: PreferencesRepo
 ): ViewModel() {
 
-    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
-    private val refresh = _refresh.asSharedFlow()
-
-    init {
-        viewModelScope.launch {
-            EventBus.events.collect {
-                if (it is DatabaseRestoreEvent) {
-                    _refresh.emit(Unit)
-                }
-            }
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
-        refresh.onStart { emit(Unit) }.flatMapLatest {
-            itemsRepository.getEverythingStream()
-        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
-
-
     /** Raw stats */
     val rawStats: StateFlow<RawStats> =
-        everythingFlow
-            .map {
+        combine (
+            filterViewModel.everythingFlow,
+            preferencesRepo.quantityOption
+        ) { it, quantityOption ->
                 RawStats(
                     itemsCount = it.size,
                     brandsCount = it.groupingBy { it.items.brand }.eachCount().size,
@@ -70,7 +39,7 @@ class StatsViewModel(
                     dislikedCount = it.count { it.items.disliked },
                     totalByBrand = it.groupingBy { it.items.brand }.eachCount(),
                     totalQuantity = it.sumOf { it.items.quantity },
-                    estimatedWeight = calculateTotal(it, preferencesRepo.quantityOption.first()),
+                    estimatedWeight = calculateTotal(it, it.flatMap { it.tins.filter { !it.finished } }, quantityOption),
                     totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
                         else it.flatMap { it.tins }.count { it.openDate != null && !it.finished },
                     totalZeroQuantity = it.count { it.items.quantity == 0 },
@@ -173,363 +142,261 @@ class StatsViewModel(
 
 
     /** Filtered stats */
-    @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredStats: StateFlow<FilteredStats> =
         combine(
-            everythingFlow,
-            filterViewModel.selectedBrands,
-            filterViewModel.selectedTypes,
-            filterViewModel.selectedFavorites,
-            filterViewModel.selectedDislikeds,
-            filterViewModel.selectedNeutral,
-            filterViewModel.selectedNonNeutral,
-            filterViewModel.selectedInStock,
-            filterViewModel.selectedOutOfStock,
-            filterViewModel.selectedExcludeBrands,
-            filterViewModel.selectedExcludeLikes,
-            filterViewModel.selectedExcludeDislikes,
-            filterViewModel.selectedComponent,
-            filterViewModel.compMatching,
-            filterViewModel.selectedFlavoring,
-            filterViewModel.flavorMatching,
-            filterViewModel.selectedSubgenre,
-            filterViewModel.selectedCut,
-            filterViewModel.selectedProduction,
-            filterViewModel.selectedOutOfProduction,
-            filterViewModel.selectedHasTins,
-            filterViewModel.selectedNoTins,
-            filterViewModel.selectedContainer,
-            filterViewModel.selectedOpened,
-            filterViewModel.selectedUnopened,
-            filterViewModel.selectedFinished,
-            filterViewModel.selectedUnfinished
-        ) { values ->
-            val allItems = values[0] as List<ItemsComponentsAndTins>
-            val brands = values[1] as List<String>
-            val types = values[2] as List<String>
-            val favorites = values[3] as Boolean
-            val dislikeds = values[4] as Boolean
-            val neutral = values[5] as Boolean
-            val nonNeutral = values[6] as Boolean
-            val inStock = values[7] as Boolean
-            val outOfStock = values[8] as Boolean
-            val excludedBrands = values[9] as List<String>
-            val excludedLikes = values[10] as Boolean
-            val excludedDislikes = values[11] as Boolean
-            val components = values[12] as List<String>
-            val compMatching = values[13] as String
-            val flavoring = values[14] as List<String>
-            val flavorMatching = values[15] as String
-            val subgenres = values[16] as List<String>
-            val cuts = values[17] as List<String>
-            val production = values[18] as Boolean
-            val outOfProduction = values[19] as Boolean
-            val hasTins = values[20] as Boolean
-            val noTins = values[21] as Boolean
-            val container = values[22] as List<String>
-            val opened = values[23] as Boolean
-            val unopened = values[24] as Boolean
-            val finished = values[25] as Boolean
-            val unfinished = values[26] as Boolean
+            filterViewModel.everythingFlow,
+            filterViewModel.unifiedFilteredItems,
+            filterViewModel.unifiedFilteredTins,
+            preferencesRepo.quantityOption
+        ) { allItems, filteredItems, filteredTins, quantityOption ->
 
-            val filteredItems = allItems.filter { items ->
-                val componentMatching = when (compMatching) {
-                    "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
-                    "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
-                    else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
-                }
-                val flavorMatching = when (flavorMatching) {
-                    "All" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring)))
-                    "Only" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring) && items.flavoring.size == flavoring.size))
-                    else -> ((flavoring.isEmpty() && !flavoring.contains("(None Assigned)")) || ((flavoring.contains("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.any { flavoring.contains(it) })))
-                }
+            val tinIds = filteredTins.map { it.tinId }
+            val relevantTins = filteredItems.flatMap { it.tins }.filter { it.tinId in tinIds }
 
-                (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                        ((types.isEmpty() && !types.contains("(Unassigned)")) || ((types.contains("(Unassigned)") && items.items.type.isBlank()) || types.contains(items.items.type))) &&
-                        (!favorites || items.items.favorite) &&
-                        (!dislikeds || items.items.disliked) &&
-                        (!neutral || (!items.items.favorite && !items.items.disliked)) &&
-                        (!nonNeutral || (items.items.favorite || items.items.disliked)) &&
-                        (!inStock || items.items.quantity > 0) &&
-                        (!outOfStock || items.items.quantity == 0) &&
-                        (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
-                        (!excludedLikes || !items.items.favorite) &&
-                        (!excludedDislikes || !items.items.disliked) &&
-                        componentMatching &&
-                        flavorMatching &&
-                        ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
-                        ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
-                        (!production || items.items.inProduction) &&
-                        (!outOfProduction || !items.items.inProduction) &&
-                        (!hasTins || items.tins.isNotEmpty()) &&
-                        (!noTins || items.tins.isEmpty()) &&
-                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) )) &&
-                        (!opened || items.tins.any { it.openDate != null && (it.openDate < System.currentTimeMillis() && !it.finished) }) &&
-                        (!unopened || items.tins.any { it.openDate == null || it.openDate > System.currentTimeMillis() }) &&
-                        (!finished || items.tins.any { it.finished }) &&
-                        (!unfinished || items.tins.any { !it.finished && it.openDate != null && it.openDate < System.currentTimeMillis() })
-            }
+            FilteredStats(
+                itemsCount = filteredItems.size,
+                brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
+                favoriteCount = filteredItems.count { it.items.favorite },
+                dislikedCount = filteredItems.count { it.items.disliked },
+                unassignedCount = filteredItems.count { it.items.type.isBlank() },
+                totalQuantity = filteredItems.sumOf { it.items.quantity },
+                estimatedWeight = calculateTotal(filteredItems, filteredItems.flatMap { it.tins.filter { !it.finished && it in filteredTins } }, quantityOption),
+                totalOpened = relevantTins.count { it.openDate != null && !it.finished },
+                totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
 
-            flow {
-                emit(
-                    FilteredStats(
-                        brands = brands,
-                        types = types,
-                        favorites = favorites,
-                        dislikeds = dislikeds,
-                        neutral = neutral,
-                        nonNeutral = nonNeutral,
-                        inStock = inStock,
-                        outOfStock = outOfStock,
-
-                        itemsCount = filteredItems.size,
-                        brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
-                        favoriteCount = filteredItems.count { it.items.favorite },
-                        dislikedCount = filteredItems.count { it.items.disliked },
-                        unassignedCount = filteredItems.count { it.items.type.isBlank() },
-                        totalQuantity = filteredItems.sumOf { it.items.quantity },
-                        estimatedWeight = calculateTotal(filteredItems, preferencesRepo.quantityOption.first()),
-                        totalOpened = if (filteredItems.map { it.tins }.isEmpty() || filteredItems.map { it.tins }.all { it.all { it.openDate == null } }) 0
-                            else filteredItems.flatMap { it.tins }.count { it.openDate != null && !it.finished },
-                        totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
-
-                        totalByType = allItems.groupingBy {
-                            it.items.type.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate {
-                                it.key to (filteredItems.groupingBy {
-                                    it.items.type.ifBlank { "Unassigned" }
-                                }.eachCount()[it.key] ?: 0) }
-                            .let {
-                                val mutableMap = it.toMutableMap()
-                                val unassignedEntry = mutableMap.remove("Unassigned")
-                                if (unassignedEntry != null) {
-                                    mutableMap["Unassigned"] = unassignedEntry
-                                }
-                                mutableMap.toMap()
-                            },
-                        totalBySubgenre = allItems.groupingBy {
-                                it.items.subGenre.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate {
-                                it.key to (filteredItems.groupingBy {
-                                    it.items.subGenre.ifBlank { "Unassigned" }
-                                }.eachCount()[it.key] ?: 0)
-                            }
-                            .let {
-                                val mutableMap = it.toMutableMap()
-                                val unassignedEntry = mutableMap.remove("Unassigned")
-                                if (unassignedEntry != null) {
-                                    mutableMap["Unassigned"] = unassignedEntry
-                                }
-                                mutableMap.toMap()
-                            },
-                        totalByCut = allItems.groupingBy {
-                                it.items.cut.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate {
-                                it.key to (filteredItems.groupingBy {
-                                    it.items.cut.ifBlank { "Unassigned" }
-                                }.eachCount()[it.key] ?: 0)
-                            }
-                            .let {
-                                val mutableMap = it.toMutableMap()
-                                val unassignedEntry = mutableMap.remove("Unassigned")
-                                if (unassignedEntry != null) {
-                                    mutableMap["Unassigned"] = unassignedEntry
-                                }
-                                mutableMap.toMap()
-                            },
-                        totalByComponent = allItems.flatMap { it.components.ifEmpty {
-                            listOf(Components(componentName = "None Assigned")) } }
-                            .groupingBy { it.componentName }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                val mutableMap = it.associate { it.key to (filteredItems.flatMap {
-                                        it.components.ifEmpty { listOf(Components(componentName = "None Assigned")) } }
-                                    .groupingBy { it.componentName }.eachCount()[it.key] ?: 0) }
-                                    .toMutableMap()
-                                val noComps = mutableMap.remove("None Assigned")
-                                if (noComps != null) {
-                                    mutableMap["None Assigned"] = noComps
-                                }
-                                mutableMap.toMap()
-                            },
-                        totalByFlavoring = allItems.flatMap { it.flavoring.ifEmpty{
-                            listOf(Flavoring(flavoringName = "None Assigned")) } }
-                            .groupingBy { it.flavoringName }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                val mutableMap = it.associate { it.key to (filteredItems.flatMap {
-                                        it.flavoring.ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
-                                    .groupingBy { it.flavoringName }.eachCount()[it.key] ?: 0) }
-                                    .toMutableMap()
-                                val noFlavor = mutableMap.remove("None Assigned")
-                                if (noFlavor != null) {
-                                    mutableMap["None Assigned"] = noFlavor
-                                }
-                                mutableMap.toMap()
-                            },
-                        totalByContainer = allItems.flatMap { it.tins }
-                            .groupingBy {
-                                it.container.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate {
-                                it.key to (filteredItems.flatMap { it.tins }.groupingBy {
-                                    it.container.ifBlank { "Unassigned" }
-                                }.eachCount()[it.key] ?: 0)
-                            }
-                            .let {
-                                val mutableMap = it.toMutableMap()
-                                val unassignedEntry = mutableMap.remove("Unassigned")
-                                if (unassignedEntry != null) {
-                                    mutableMap["Unassigned"] = unassignedEntry
-                                }
-                                mutableMap.toMap()
-                            },
+                totalByType = allItems.groupingBy {
+                    it.items.type.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate {
+                        it.key to (filteredItems.groupingBy {
+                            it.items.type.ifBlank { "Unassigned" }
+                        }.eachCount()[it.key] ?: 0) }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
+                totalBySubgenre = allItems.groupingBy {
+                    it.items.subGenre.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate {
+                        it.key to (filteredItems.groupingBy {
+                            it.items.subGenre.ifBlank { "Unassigned" }
+                        }.eachCount()[it.key] ?: 0)
+                    }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByCut = allItems.groupingBy {
+                    it.items.cut.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate {
+                        it.key to (filteredItems.groupingBy {
+                            it.items.cut.ifBlank { "Unassigned" }
+                        }.eachCount()[it.key] ?: 0)
+                    }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByComponent = allItems.flatMap { it.components.ifEmpty {
+                    listOf(Components(componentName = "None Assigned")) } }
+                    .groupingBy { it.componentName }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        val mutableMap = it.associate { it.key to (filteredItems.flatMap {
+                            it.components.ifEmpty { listOf(Components(componentName = "None Assigned")) } }
+                            .groupingBy { it.componentName }.eachCount()[it.key] ?: 0) }
+                            .toMutableMap()
+                        val noComps = mutableMap.remove("None Assigned")
+                        if (noComps != null) {
+                            mutableMap["None Assigned"] = noComps
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByFlavoring = allItems.flatMap { it.flavoring.ifEmpty{
+                    listOf(Flavoring(flavoringName = "None Assigned")) } }
+                    .groupingBy { it.flavoringName }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        val mutableMap = it.associate { it.key to (filteredItems.flatMap {
+                            it.flavoring.ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
+                            .groupingBy { it.flavoringName }.eachCount()[it.key] ?: 0) }
+                            .toMutableMap()
+                        val noFlavor = mutableMap.remove("None Assigned")
+                        if (noFlavor != null) {
+                            mutableMap["None Assigned"] = noFlavor
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByContainer = allItems.flatMap { it.tins }
+                    .groupingBy { it.container.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { entry ->
+                        entry.key to (relevantTins.groupingBy {
+                            it.container.ifBlank { "Unassigned" }
+                        }.eachCount()[entry.key] ?: 0)
+                    }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
 
 
-                        brandsByEntries = filteredItems
-                            .groupingBy { it.items.brand }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
-                        brandsByQuantity = filteredItems
-                            .filter { it.items.quantity > 0 }
-                            .groupingBy { it.items.brand }
-                            .fold(0) { acc, item -> acc + item.items.quantity }
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
-                        brandsByFavorites = filteredItems
-                            .filter{ it.items.favorite }
-                            .groupingBy { it.items.brand }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
-                        typesByEntries = filteredItems.groupingBy {
-                            it.items.type.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate { it.key to it.value },
-                        typesByQuantity = filteredItems
-                            .filter { it.items.quantity > 0 }
-                            .groupingBy { it.items.type.ifBlank { "Unassigned" } }
-                            .fold(0) { acc, item -> acc + item.items.quantity }
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate { it.key to it.value },
-                        ratingsByEntries = filteredItems
-                            .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .associate { it.key to it.value },
-                        subgenresByEntries = filteredItems
-                            .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
-                        subgenresByQuantity = filteredItems
-                            .filter { it.items.quantity > 0 }
-                            .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
-                            .fold(0) { acc, item -> acc + item.items.quantity }
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
-                        cutsByEntries = filteredItems
-                            .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
-                            .eachCount()
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
-                        cutsByQuantity = filteredItems
-                            .filter { it.items.quantity > 0 }
-                            .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
-                            .fold(0) { acc, item -> acc + item.items.quantity }
-                            .entries
-                            .sortedByDescending { it.value }
-                            .let {
-                                if (it.size > 10) {
-                                    val topNine = it.take(9).associate { it.key to it.value }
-                                    val otherCount = it.drop(9).sumOf { it.value }
-                                    topNine + ("(Other)" to otherCount)
-                                } else {
-                                    it.associate { it.key to it.value }
-                                }
-                            },
+                brandsByEntries = filteredItems
+                    .groupingBy { it.items.brand }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
+                brandsByQuantity = filteredItems
+                    .filter { it.items.quantity > 0 }
+                    .groupingBy { it.items.brand }
+                    .fold(0) { acc, item -> acc + item.items.quantity }
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
+                brandsByFavorites = filteredItems
+                    .filter{ it.items.favorite }
+                    .groupingBy { it.items.brand }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
+                typesByEntries = filteredItems.groupingBy {
+                    it.items.type.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value },
+                typesByQuantity = filteredItems
+                    .filter { it.items.quantity > 0 }
+                    .groupingBy { it.items.type.ifBlank { "Unassigned" } }
+                    .fold(0) { acc, item -> acc + item.items.quantity }
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value },
+                ratingsByEntries = filteredItems
+                    .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value },
+                subgenresByEntries = filteredItems
+                    .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
+                subgenresByQuantity = filteredItems
+                    .filter { it.items.quantity > 0 }
+                    .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
+                    .fold(0) { acc, item -> acc + item.items.quantity }
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
+                cutsByEntries = filteredItems
+                    .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
+                cutsByQuantity = filteredItems
+                    .filter { it.items.quantity > 0 }
+                    .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
+                    .fold(0) { acc, item -> acc + item.items.quantity }
+                    .entries
+                    .sortedByDescending { it.value }
+                    .let {
+                        if (it.size > 10) {
+                            val topNine = it.take(9).associate { it.key to it.value }
+                            val otherCount = it.drop(9).sumOf { it.value }
+                            topNine + ("(Other)" to otherCount)
+                        } else {
+                            it.associate { it.key to it.value }
+                        }
+                    },
 
-                        filteredLoading = false
-                    )
-                )
-            }
+                filteredLoading = false,
+            )
         }
-            .flattenMerge()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
@@ -537,10 +404,9 @@ class StatsViewModel(
             )
 
 
-    private suspend fun calculateTotal(items: List<ItemsComponentsAndTins>, quantityOption: QuantityOption): String {
+    private suspend fun calculateTotal(items: List<ItemsComponentsAndTins>, tins: List<Tins>, quantityOption: QuantityOption): String {
         val ozRate = preferencesRepo.tinOzConversionRate.first()
         val gramsRate = preferencesRepo.tinGramsConversionRate.first()
-
         val quantityRemap = when (quantityOption) {
             QuantityOption.TINS -> {
                 val isMetric = isMetricLocale()
@@ -548,27 +414,58 @@ class StatsViewModel(
             }
             else -> quantityOption
         }
+        val itemTinsMap = tins.groupBy { it.itemsId }
 
-        val sum =
-            when (quantityRemap) {
-                QuantityOption.OUNCES -> { items.sumOf { it.items.quantity } * ozRate }
-                QuantityOption.GRAMS -> { items.sumOf { it.items.quantity } * gramsRate }
-                else -> null
+        var totalWeight = 0.0
+
+        for (item in items) {
+            val item = item.items
+            val itemTins = itemTinsMap[item.id] ?: emptyList()
+
+            var itemWeight = 0.0
+
+            if (itemTins.isNotEmpty() && itemTins.all { it.unit.isNotBlank() }) {
+                for (tin in itemTins) {
+                    itemWeight += when (quantityRemap) {
+                        QuantityOption.OUNCES -> {
+                            when (tin.unit) {
+                                "oz" -> tin.tinQuantity
+                                "lbs" -> tin.tinQuantity * 16
+                                "grams" -> tin.tinQuantity / 28.3495
+                                else -> 0.0
+                            }
+                        }
+                        QuantityOption.GRAMS -> {
+                            when (tin.unit) {
+                                "oz" -> tin.tinQuantity * 28.3495
+                                "lbs" -> tin.tinQuantity * 453.592
+                                "grams" -> tin.tinQuantity
+                                else -> 0.0
+                            }
+                        }
+                        else -> 0.0
+                    }
+                }
+            } else {
+                itemWeight +=
+                    when (quantityRemap) {
+                        QuantityOption.OUNCES -> { item.quantity * ozRate }
+                        QuantityOption.GRAMS -> { item.quantity * gramsRate }
+                        else -> 0.0
+                    }
             }
+            totalWeight += itemWeight
+        }
+
+        val sum = totalWeight
 
         val formattedSum =
             when (quantityRemap) {
                 QuantityOption.OUNCES -> {
-                    if (sum != null) {
-                        if (sum >= 16.00) {
-                            val pounds = sum / 16
-                            formatDecimal(pounds) + " lbs"
-                        } else {
-                            formatDecimal(sum) + " oz"
-                        }
-                    } else null
+                    if (sum >= 16.00) { formatDecimal((sum / 16)) + " lbs" }
+                    else { formatDecimal(sum) + " oz" }
                 }
-                QuantityOption.GRAMS -> { if (sum != null) { formatDecimal(sum) + " g" } else null }
+                QuantityOption.GRAMS -> { formatDecimal(sum) + " g" }
                 else -> null
             }
         return formattedSum ?: ""
@@ -633,15 +530,6 @@ data class FilteredStats(
     val totalByComponent: Map<String, Int> = emptyMap(),
     val totalByFlavoring: Map<String, Int> = emptyMap(),
     val totalByContainer: Map<String, Int> = emptyMap(),
-
-    val brands: List<String> = emptyList(),
-    val types: List<String> = emptyList(),
-    val favorites: Boolean = false,
-    val dislikeds: Boolean = false,
-    val neutral: Boolean = false,
-    val nonNeutral: Boolean = false,
-    val inStock: Boolean = false,
-    val outOfStock: Boolean = false,
 
     val brandsByEntries: Map<String, Int> = emptyMap(),
     val brandsByQuantity: Map<String, Int> = emptyMap(),
