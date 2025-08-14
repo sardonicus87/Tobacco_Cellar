@@ -228,10 +228,10 @@ private fun CellarScreen(
         )
         Text(
             text = "Items can be sorted in list mode by tapping the sort button in the header. " +
-                    "In Table View, sorting is done by tapping the \"Brand\", \"Blend\" or \"" +
-                    "Type\" column headers. Default sorting is the order the items were entered " +
-                    "into the database. The first tap will sort the column ascending, the second " +
-                    "descending, and the third returns to the default sort order.",
+                    "In Table View, sorting is done by tapping the \"Brand\", \"Blend\", \"Type\"" +
+                    ", or \"Qty\" column headers. Default sorting is the order the items were " +
+                    "entered into the database. The first tap will sort the column ascending, the " +
+                    "second descending, and the third returns to the default sort order.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -240,7 +240,8 @@ private fun CellarScreen(
             text = "The quantity displayed is the \"No. of Tins\" by default. There is an option " +
                     "on the settings screen to change this being oz/lbs or grams based on the sum " +
                     "of the quantities entered for each tin. If no tins are given for an entry, " +
-                    "the default will revert to the value saved in \"No. of Tins\".",
+                    "the \"No. of Tins\" field will be used (converted by the tin conversion rates " +
+                    "set on the settings screen.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -277,7 +278,8 @@ private fun DatesPage(
     ) {
         Text(
             text = "The \"Dates\" screen contains various date-related information, all of which " +
-                    "is filter-reactive. The Dates navigation button will have an indicator dot " +
+                    "is filter-reactive (except the \"Aging Tracker\", which is based on all un-" +
+                    "filtered entries). The Dates navigation button will have an indicator dot " +
                     "if any aging tins will be ready within the next 7 days. Viewing the Dates " +
                     "screen will clear this indicator until any other new tins are ready.",
             modifier = Modifier,
@@ -386,8 +388,8 @@ private fun Filtering(
             softWrap = true,
         )
         Text(
-            text = "The filter sheet has three pages, swipe left/right to swap between pages, or " +
-                    "tap the page indicator dot at the top to swap to that page.",
+            text = "The filter sheet has three pages, swipe/flick left/right to swap between pages, " +
+                    "or tap the page indicator dot at the top to swap to that page.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -449,15 +451,14 @@ private fun Filtering(
                     "Selecting \"Any\" will return blends that contain any of the selections, \"" +
                     "All\" will return only those blends that contain all of the selections, and " +
                     "\"Only\" will strictly return those blends that contain only the selections " +
-                    "(and no others, exact matching).",
+                    "(and no others—exact matching).",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = "Tin-related parameters are on the third page. Tins related filtering is " +
-                    "disabled on the dates screen (and any previously selected filters will be " +
-                    "ignored). Some tins filters will also result in a filtered list of matching " +
-                    "tins being shown for the relevant blends on the Cellar screen.",
+            text = "Tin-related parameters are on the third page. Some tins filters will also " +
+                    "result in a filtered list of matching tins being shown for the relevant " +
+                    "blends on the Cellar screen.",
             modifier = Modifier,
             softWrap = true,
         )
