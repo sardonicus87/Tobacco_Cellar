@@ -56,9 +56,6 @@ interface ItemsDao {
     @Delete
     suspend fun deleteComponentsCrossRef(crossRef: ItemsComponentsCrossRef)
 
-    @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId AND componentId = :componentId")
-    suspend fun deleteComponentsCrossRef2(itemId: Int, componentId: Int)
-
     @Query("DELETE FROM items_components_cross_ref WHERE itemId = :itemId")
     suspend fun deleteComponentsCrossRefByItemId(itemId: Int)
 
@@ -82,9 +79,6 @@ interface ItemsDao {
 
     @Delete
     suspend fun deleteFlavoringCrossRef(crossRef: ItemsFlavoringCrossRef)
-
-    @Query("DELETE FROM items_flavoring_cross_ref WHERE itemId = :itemId AND flavoringId = :flavoringId")
-    suspend fun deleteFlavoringCrossRef2(itemId: Int, flavoringId: Int)
 
     @Query("DELETE FROM items_flavoring_cross_ref WHERE itemId = :itemId")
     suspend fun deleteFlavoringCrossRefByItemId(itemId: Int)
