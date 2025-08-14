@@ -3,28 +3,17 @@ package com.sardonicus.tobaccocellar.ui.dates
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
-import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.home.calculateAge
 import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
-import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
-import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flattenMerge
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -36,149 +25,52 @@ import java.time.temporal.TemporalAdjusters
 import kotlin.math.floor
 
 class DatesViewModel(
-    private val itemsRepository: ItemsRepository,
     private val filterViewModel: FilterViewModel,
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
-    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
-    private val refresh = _refresh.asSharedFlow()
-
-    init {
-        viewModelScope.launch {
-            EventBus.events.collect {
-                if (it is DatabaseRestoreEvent) {
-                    _refresh.emit(Unit)
-                }
-            }
-        }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
-        refresh.onStart { emit(Unit) }.flatMapLatest {
-            itemsRepository.getEverythingStream()
-        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
-
-    @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
     val datesUiState: StateFlow<DatesUiState> =
         combine(
-            everythingFlow,
-            filterViewModel.selectedBrands,
-            filterViewModel.selectedTypes,
-            filterViewModel.selectedFavorites,
-            filterViewModel.selectedDislikeds,
-            filterViewModel.selectedNeutral,
-            filterViewModel.selectedNonNeutral,
-            filterViewModel.selectedInStock,
-            filterViewModel.selectedOutOfStock,
-            filterViewModel.selectedExcludeBrands,
-            filterViewModel.selectedExcludeLikes,
-            filterViewModel.selectedExcludeDislikes,
-            filterViewModel.selectedComponent,
-            filterViewModel.compMatching,
-            filterViewModel.selectedFlavoring,
-            filterViewModel.flavorMatching,
-            filterViewModel.selectedSubgenre,
-            filterViewModel.selectedCut,
-            filterViewModel.selectedProduction,
-            filterViewModel.selectedOutOfProduction,
-            filterViewModel.selectedContainer,
-        ) { values ->
-            val allItems = values[0] as List<ItemsComponentsAndTins>
-            val brands = values[1] as List<String>
-            val types = values[2] as List<String>
-            val favorites = values[3] as Boolean
-            val dislikeds = values[4] as Boolean
-            val neutral = values[5] as Boolean
-            val nonNeutral = values[6] as Boolean
-            val inStock = values[7] as Boolean
-            val outOfStock = values[8] as Boolean
-            val excludedBrands = values[9] as List<String>
-            val excludedLikes = values[10] as Boolean
-            val excludedDislikes = values[11] as Boolean
-            val components = values[12] as List<String>
-            val compMatching = values[13] as String
-            val flavoring = values[14] as List<String>
-            val flavorMatching = values[15] as String
-            val subgenres = values[16] as List<String>
-            val cuts = values[17] as List<String>
-            val production = values[18] as Boolean
-            val outOfProduction = values[19] as Boolean
-            val container = values[20] as List<String>
+            filterViewModel.unifiedFilteredItems,
+            filterViewModel.unifiedFilteredTins,
+            filterViewModel.everythingFlow
+        ) { filteredItems, filteredTins, allItems ->
 
-            val filteredItems = allItems.filter { items ->
-                val componentMatching = when (compMatching) {
-                    "All" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components)))
-                    "Only" -> ((components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
-                    else -> ((components.isEmpty() && !components.contains("(None Assigned)")) || ((components.contains("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.any { components.contains(it) })))
-                }
-                val flavoringMatching = when (flavorMatching) {
-                    "All" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring)))
-                    "Only" -> ((flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavoring) && items.flavoring.size == flavoring.size))
-                    else -> ((flavoring.isEmpty() && !flavoring.contains("(None Assigned)")) || ((flavoring.contains("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.any { flavoring.contains(it) })))
-                }
+            val tinDates = filteredTins.mapNotNull { it.manufactureDate } + filteredTins.mapNotNull { it.cellarDate } + filteredTins.mapNotNull { it.openDate }
 
-                (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                        ((types.isEmpty() && !types.contains("(Unassigned)")) || ((types.contains("(Unassigned)") && items.items.type.isBlank()) || types.contains(items.items.type))) &&
-                        (!favorites || items.items.favorite) &&
-                        (!dislikeds || items.items.disliked) &&
-                        (!neutral || (!items.items.favorite && !items.items.disliked)) &&
-                        (!nonNeutral || (items.items.favorite || items.items.disliked)) &&
-                        (!inStock || items.items.quantity > 0) &&
-                        (!outOfStock || items.items.quantity == 0) &&
-                        (excludedBrands.isEmpty() || !excludedBrands.contains(items.items.brand)) &&
-                        (!excludedLikes || !items.items.favorite) &&
-                        (!excludedDislikes || !items.items.disliked) &&
-                        componentMatching &&
-                        flavoringMatching &&
-                        ((subgenres.isEmpty() && !subgenres.contains("(Unassigned)")) || ((subgenres.contains("(Unassigned)") && items.items.subGenre.isBlank()) || subgenres.contains(items.items.subGenre))) &&
-                        ((cuts.isEmpty() && !cuts.contains("(Unassigned)")) || ((cuts.contains("(Unassigned)") && items.items.cut.isBlank()) || cuts.contains(items.items.cut))) &&
-                        (!production || items.items.inProduction) &&
-                        (!outOfProduction || !items.items.inProduction) &&
-                        ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && items.tins.any { it.container.isBlank() }) || (items.tins.map { it.container }.any { container.contains(it) }) ))
-            }
+            DatesUiState(
+                items = filteredItems,
+                datesExist = tinDates.isNotEmpty(),
 
-            val tins = filteredItems.flatMap { it.tins }
-            val tinDates = tins.mapNotNull { it.manufactureDate } + tins.mapNotNull { it.cellarDate } + tins.mapNotNull { it.openDate }
+                agedDueThisWeek = agingDue(allItems).first,
+                agedDueThisMonth = agingDue(allItems).second,
 
-            flow {
-                emit(
-                    DatesUiState(
-                        items = filteredItems,
-                        datesExist = tinDates.isNotEmpty(),
+                averageAgeManufacture = calculateAverageDate(filteredTins, DatePeriod.PAST) { it.manufactureDate },
+                averageAgeCellar = calculateAverageDate(filteredTins, DatePeriod.PAST) { it.cellarDate },
+                averageAgeOpen = calculateAverageDate(filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
+                averageWaitTime = calculateAverageDate(filteredTins, DatePeriod.FUTURE) { it.openDate },
 
-                        agedDueThisWeek = agingDue(filteredItems).first,
-                        agedDueThisMonth = agingDue(filteredItems).second,
+                pastManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.manufactureDate },
+                pastCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.cellarDate },
+                pastOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
+                futureManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.manufactureDate },
+                futureCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.cellarDate },
+                futureOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.openDate },
 
-                        averageAgeManufacture = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.manufactureDate },
-                        averageAgeCellar = calculateAverageDate(filteredItems, DatePeriod.PAST) { it.cellarDate },
-                        averageAgeOpen = calculateAverageDate(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
-                        averageWaitTime = calculateAverageDate(filteredItems, DatePeriod.FUTURE) { it.openDate },
-
-                        pastManufacture = findDatedTins(filteredItems, DatePeriod.PAST) { it.manufactureDate },
-                        pastCellared = findDatedTins(filteredItems, DatePeriod.PAST) { it.cellarDate },
-                        pastOpened = findDatedTins(filteredItems, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
-                        futureManufacture = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.manufactureDate },
-                        futureCellared = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.cellarDate },
-                        futureOpened = findDatedTins(filteredItems, DatePeriod.FUTURE) { it.openDate },
-
-                        loading = false,
-                    )
-                )
-            }
+                loading = false,
+            )
         }
-            .flattenMerge()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = DatesUiState(loading = true)
             )
 
+
     init {
         viewModelScope.launch {
-            val currentReady = everythingFlow.first().flatMap { it.tins }
+            val currentReady = filterViewModel.everythingFlow.first().flatMap { it.tins }
                 .filter {
                     it.openDate?.let {
                         Instant.ofEpochMilli(it)
@@ -195,13 +87,18 @@ class DatesViewModel(
     @Suppress("NullableBooleanElvis")
     fun findDatedTins(
         items: List<ItemsComponentsAndTins>,
+        tins: List<Tins>,
         period: DatePeriod,
         dateSelector: (Tins) -> Long?,
         ): List<DateInfoItem> {
         val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
+        val tinIds = tins.map { it.tinId }
+
         val itemsWithDate: List<Pair<DateInfoItem, Long?>> = items.flatMap{ item ->
-            item.tins.map {
+            item.tins
+                .filter { it.tinId in tinIds }
+                .map {
                 val originalMillis = dateSelector(it)
                 Pair(
                     DateInfoItem(
@@ -243,13 +140,13 @@ class DatesViewModel(
 
 
     fun calculateAverageDate(
-        filteredItems: List<ItemsComponentsAndTins>,
+        tins: List<Tins>,
         periodSelection: DatePeriod,
         field: (Tins) -> Long?
     ): String {
         val now = LocalDate.now()
 
-        val relevantTins = filteredItems.flatMap { it.tins }.mapNotNull {
+        val relevantTins = tins.mapNotNull {
             val dateMillis = field(it)
             if (dateMillis != null) {
                 val then = Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -301,6 +198,7 @@ class DatesViewModel(
         } else parts.joinToString(", ")
     }
 
+
     fun getAgeParts(date: Long, period: DatePeriod): Triple<Int, Int, Int> {
         val now = LocalDate.now()
         val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -308,7 +206,6 @@ class DatesViewModel(
 
         return Triple(datePeriod.years, datePeriod.months, datePeriod.days)
     }
-
 
     fun agingDue(filteredItems: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
         val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -348,7 +245,6 @@ class DatesViewModel(
 
         return Pair(thisWeekTins, thisMonthTins)
     }
-
 
     fun tinTimeInPeriod(tinTime: Long, start: Long, end: Long): Boolean {
         return tinTime >= start && tinTime <= end
