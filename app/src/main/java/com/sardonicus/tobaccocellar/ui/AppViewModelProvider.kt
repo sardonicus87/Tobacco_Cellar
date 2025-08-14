@@ -28,7 +28,6 @@ object AppViewModelProvider {
 
         initializer {
             StatsViewModel(
-                cellarApplication().container.itemsRepository,
                 cellarApplication().filterViewModel,
                 cellarApplication().preferencesRepo
             )
@@ -54,7 +53,6 @@ object AppViewModelProvider {
 
         initializer {
             DatesViewModel(
-                cellarApplication().container.itemsRepository,
                 cellarApplication().filterViewModel,
                 cellarApplication().preferencesRepo
             )
