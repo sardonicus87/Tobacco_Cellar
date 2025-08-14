@@ -73,7 +73,7 @@ import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
-import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
@@ -133,7 +133,7 @@ fun StatsScreen(
                 .padding(innerPadding)
         ) {
             if (rawStats.rawLoading || filteredStats.filteredLoading) {
-                FullScreenLoading()
+                LoadingIndicator()
             } else {
                 StatsBody(
                     rawStats = rawStats,
@@ -764,7 +764,6 @@ private fun StatSubSection(
         }
     }
 }
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
