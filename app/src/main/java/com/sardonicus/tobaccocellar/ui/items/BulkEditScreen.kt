@@ -93,10 +93,10 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
-import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -216,7 +216,7 @@ fun BulkEditBody(
         verticalArrangement = Arrangement.Top
     ) {
         if (loading) {
-            FullScreenLoading()
+            LoadingIndicator()
         } else {
             val titles = listOf("Select Items", "Batch Edit")
 
@@ -309,7 +309,7 @@ fun BulkEditBody(
                     }
                 }
                 if (saveIndicator) {
-                    FullScreenLoading(
+                    LoadingIndicator(
                         scrimColor = Color.Black.copy(alpha = .38f)
                     )
                 }

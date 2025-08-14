@@ -493,7 +493,7 @@ fun BlendDetailsBody(
                                             if (it.openDate != null) {
                                                 Text(
                                                     text = buildString(
-                                                        "Opened Date: ",
+                                                        "Open Date: ",
                                                         formatMediumDate(it.openDate),
                                                     ),
                                                     modifier = Modifier,

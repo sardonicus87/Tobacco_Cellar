@@ -92,7 +92,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.CsvResult
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
-import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
@@ -260,7 +260,7 @@ fun CsvImportBody(
         verticalArrangement = Arrangement.Top,
     ) {
         when (importStatus) {
-            is ImportStatus.Loading -> { FullScreenLoading() }
+            is ImportStatus.Loading -> { LoadingIndicator() }
             is ImportStatus.Error -> {
                 ImportError(
                     onTryAgain = { coroutineScope.launch { viewModel.resetImportState() } },
