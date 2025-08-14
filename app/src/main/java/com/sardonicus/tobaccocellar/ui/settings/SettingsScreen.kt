@@ -103,7 +103,7 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
-import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
@@ -200,7 +200,7 @@ fun SettingsScreen(
                         .fillMaxSize(),
                 )
                 if (loading) {
-                    FullScreenLoading(
+                    LoadingIndicator(
                         scrimColor = Color.Black.copy(alpha = 0.5f),
                     )
                 }
