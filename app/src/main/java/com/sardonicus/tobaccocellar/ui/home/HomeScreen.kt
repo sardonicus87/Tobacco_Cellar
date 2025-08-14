@@ -104,6 +104,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
@@ -113,10 +115,10 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.composables.FullScreenLoading
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -134,6 +136,7 @@ enum class ScrollDirection { UP, DOWN }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    navController: NavController,
     navigateToStats: () -> Unit,
     navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
@@ -157,9 +160,11 @@ fun HomeScreen(
     val searchFocused by filterViewModel.searchFocused.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val searchText by filterViewModel.searchTextDisplay.collectAsState()
+    val searchValue by filterViewModel.searchValue.collectAsState()
 
-    val filteredItems by viewmodel.filteredItems.collectAsState()
-    val filteredTins by viewmodel.filteredTins.collectAsState()
+    val filteredItemsLive by filterViewModel.unifiedFilteredItems.collectAsState()
+    val showTins by filterViewModel.showTins.collectAsState()
+    val filteredTins by filterViewModel.unifiedFilteredTins.collectAsState()
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val resetLoading by viewmodel.resetLoading.collectAsState()
     val isTableView = homeUiState.isTableView
@@ -215,6 +220,36 @@ fun HomeScreen(
         }
     }
 
+
+    // Flash list fix on navigation from search
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    var cellarSnapshot by remember { mutableStateOf<List<ItemsComponentsAndTins>?>(null) }
+    val filteredItems = remember(currentRoute, filteredItemsLive, cellarSnapshot) {
+        if (currentRoute != HomeDestination.route && cellarSnapshot != null) {
+            cellarSnapshot!!
+        } else {
+            if (currentRoute == HomeDestination.route) {
+                cellarSnapshot = null
+            }
+            filteredItemsLive
+        }
+    }
+    val wrappedStatsNav = {
+        if (currentRoute == HomeDestination.route && (searchValue.isNotBlank() || showTins)) {
+            cellarSnapshot = filteredItemsLive
+        }
+        navigateToStats()
+    }
+    val wrappedDatesNav = {
+        if (currentRoute == HomeDestination.route && (searchValue.isNotBlank() || showTins)) {
+            cellarSnapshot = filteredItemsLive
+        }
+        navigateToDates()
+    }
+
+
+    // Important Alert stuff
     val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
     var showImportantAlert by remember { mutableStateOf(false) }
     var currentAlert: OneTimeAlert? by remember { mutableStateOf(null) }
@@ -442,8 +477,8 @@ fun HomeScreen(
         bottomBar = {
             CellarBottomAppBar(
                 modifier = Modifier,
-                navigateToDates = navigateToDates,
-                navigateToStats = navigateToStats,
+                navigateToDates = wrappedDatesNav,
+                navigateToStats = wrappedStatsNav,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
             )
@@ -490,7 +525,9 @@ fun HomeScreen(
                     resetLoading = resetLoading,
                     isTableView = isTableView,
                     items = filteredItems,
+                    showTins = showTins,
                     tins = filteredTins,
+                    sortQuantity = homeUiState.sortQuantity,
                     formattedQuantity = homeUiState.formattedQuantities,
                     filterViewModel = filterViewModel,
                     onDetailsClick = { if (lastClickedItemId != it) lastClickedItemId = it },
@@ -738,7 +775,7 @@ private fun HomeHeader(
                     .width(94.dp),
                 containerColor = LocalCustomColors.current.textField,
             ) {
-                listOf(ListSorting.DEFAULT, ListSorting.BLEND, ListSorting.BRAND, ListSorting.TYPE).forEach {
+                listOf(ListSorting.DEFAULT, ListSorting.BLEND, ListSorting.BRAND, ListSorting.TYPE, ListSorting.QUANTITY).forEach {
                     DropdownMenuItem(
                         text = {
                             Row(
@@ -892,7 +929,9 @@ private fun HomeBody(
     resetLoading: Boolean,
     isTableView: Boolean,
     items: List<ItemsComponentsAndTins>,
+    showTins: Boolean,
     tins: List<Tins>,
+    sortQuantity: Map<Int, Double>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     onDetailsClick: (Int) -> Unit,
@@ -924,7 +963,7 @@ private fun HomeBody(
             .padding(0.dp)
     ) {
         if (isLoading || resetLoading) {
-            FullScreenLoading()
+            LoadingIndicator()
         } else {
             if (items.isEmpty()) {
 
@@ -965,8 +1004,10 @@ private fun HomeBody(
                 if (isTableView) {
                     TableViewMode(
                         itemsList = items,
+                        showTins = showTins,
                         filteredTins = tins,
                         formattedQuantity = formattedQuantity,
+                        sortQuantity = sortQuantity,
                         filterViewModel = filterViewModel,
                         searchFocused = searchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
@@ -984,8 +1025,10 @@ private fun HomeBody(
                 } else {
                     ListViewMode(
                         itemsList = items,
+                        showTins = showTins,
                         tinsList = tins,
                         formattedQuantity = formattedQuantity,
+                        sortQuantity = sortQuantity,
                         filterViewModel = filterViewModel,
                         searchFocused = searchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
@@ -1096,8 +1139,10 @@ fun rememberJumpToState(
 @Composable
 fun ListViewMode(
     itemsList: List<ItemsComponentsAndTins>,
+    showTins: Boolean,
     tinsList: List<Tins>,
     formattedQuantity: Map<Int, String>,
+    sortQuantity: Map<Int, Double>,
     filterViewModel: FilterViewModel,
     searchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
@@ -1118,6 +1163,7 @@ fun ListViewMode(
         "Blend" -> itemsList.sortedBy { it.items.blend }
         "Brand" -> itemsList.sortedBy { it.items.brand }
         "Type" -> itemsList.sortedBy { it.items.type }
+        "Quantity" -> itemsList.sortedBy { sortQuantity[it.items.id] }.reversed()
         else -> itemsList.sortedBy { it.items.id }
     }
 
@@ -1142,6 +1188,7 @@ fun ListViewMode(
 
                 CellarListItem(
                     item = item,
+                    showTins = showTins,
                     filteredTins = tinsList,
                     formattedQuantity = formattedQuantity[item.items.id] ?: "--",
                     filterViewModel = filterViewModel,
@@ -1174,7 +1221,7 @@ fun ListViewMode(
                                 }
                                 onShowMenu(item.items.id)
                             },
-                            indication = LocalIndication.current,
+                            indication = null,
                             interactionSource = null
                         ),
                     onMenuDismiss = { onDismissMenu() },
@@ -1263,7 +1310,7 @@ fun ListViewMode(
             }
         }
 
-        // Save scroll position //
+        // Save positions //
         LaunchedEffect(getPosition) {
             if (getPosition > 0 && !searchPerformed) {
                 val layoutInfo = columnState.layoutInfo
@@ -1282,6 +1329,7 @@ fun ListViewMode(
 private fun CellarListItem(
     modifier: Modifier = Modifier,
     item: ItemsComponentsAndTins,
+    showTins: Boolean,
     filteredTins: List<Tins>,
     formattedQuantity: String,
     filterViewModel: FilterViewModel,
@@ -1290,7 +1338,6 @@ private fun CellarListItem(
     onEditClick: (Items) -> Unit,
 ) {
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-    val showTins by filterViewModel.showTins.collectAsState()
 
     Row (
         modifier = Modifier
@@ -1421,9 +1468,11 @@ private fun CellarListItem(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.End
                     ) {
-                        val outOfStock = formattedQuantity == "0 oz" ||
-                                formattedQuantity == "x0" ||
-                                formattedQuantity == "0 g"
+                        val outOfStock = formattedQuantity == "x0" ||
+                                formattedQuantity == "0 oz" ||
+                                formattedQuantity == "0* oz" ||
+                                formattedQuantity == "0 g" ||
+                                formattedQuantity == "0* g"
 
                         Text(
                             text = formattedQuantity,
@@ -1445,7 +1494,7 @@ private fun CellarListItem(
 
                 // Tins
                 val isTinSearch by filterViewModel.isTinSearch.collectAsState()
-                if (item.tins.isNotEmpty() && (showTins || (searchPerformed && isTinSearch))) {
+                if (filteredTins.isNotEmpty() && (showTins || (searchPerformed && isTinSearch))) { //item.tins.isNotEmpty()
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = .5f)),
                         size = GlowSize(top = 3.dp),
@@ -1524,6 +1573,16 @@ private fun CellarListItem(
                                                 fontSize = 13.sp
                                             )
                                         }
+                                        if (it.finished) {
+                                            Text(
+                                                text = " (Finished)",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Normal,
+                                                fontSize = 13.sp,
+                                                fontStyle = Italic,
+                                                color = LocalContentColor.current.copy(alpha = .5f)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1570,10 +1629,7 @@ private fun CellarListItem(
         }
     }
 
-    Spacer(
-        modifier = Modifier
-            .height(1.dp)
-            .background(LocalCustomColors.current.backgroundVariant)
+    Spacer(Modifier.height(1.dp).background(LocalCustomColors.current.backgroundVariant)
     )
 }
 
@@ -1582,7 +1638,9 @@ private fun CellarListItem(
 @Composable
 fun TableViewMode(
     itemsList: List<ItemsComponentsAndTins>,
+    showTins: Boolean,
     filteredTins: List<Tins>,
+    sortQuantity: Map<Int, Double>,
     formattedQuantity: Map<Int, String>,
     filterViewModel: FilterViewModel,
     searchFocused: Boolean,
@@ -1607,8 +1665,10 @@ fun TableViewMode(
 
     TableLayout(
         items = itemsList,
+        showTins = showTins,
         filteredTins = filteredTins,
-        formattedQuantity = formattedQuantity,
+        sortQuantity = sortQuantity,
+        formattedQty = formattedQuantity,
         filterViewModel = filterViewModel,
         searchFocused = searchFocused,
         columnMinWidths = columnMinWidths,
@@ -1629,8 +1689,10 @@ fun TableViewMode(
 @Composable
 fun TableLayout(
     items: List<ItemsComponentsAndTins>,
+    showTins: Boolean,
     filteredTins: List<Tins>,
-    formattedQuantity: Map<Int, String>,
+    sortQuantity: Map<Int, Double>,
+    formattedQty: Map<Int, String>,
     filterViewModel: FilterViewModel,
     searchFocused: Boolean,
     columnMinWidths: List<Dp>,
@@ -1646,7 +1708,6 @@ fun TableLayout(
 ) {
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
     val horizontalScroll = rememberScrollState()
-
 
     val columnMapping = listOf(
         { item: Items -> item.brand }, // 0
@@ -1666,6 +1727,7 @@ fun TableLayout(
         0 -> items.sortedBy { it.items.brand }
         1 -> items.sortedBy { it.items.blend }
         2 -> items.sortedBy { it.items.type.ifBlank { "Z" } }
+        5 -> items.sortedBy { sortQuantity[it.items.id] }.reversed()
         else -> items
     }.let {
         if (!sorting.sortAscending) it.reversed() else it
@@ -1676,7 +1738,6 @@ fun TableLayout(
             .fillMaxSize()
     ) {
         val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-        val showTins by filterViewModel.showTins.collectAsState()
         val columnState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
         val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
@@ -1725,7 +1786,7 @@ fun TableLayout(
                             updateSorting(newSortColumn)
                         }
                         when (columnIndex) {
-                            0, 1, 2 -> {
+                            0, 1, 2, 5 -> {
                                 HeaderCell(
                                     text = headerText,
                                     onClick = { onSortChange(columnIndex) },
@@ -1809,7 +1870,7 @@ fun TableLayout(
                                             }
                                             onShowMenu(item.items.id)
                                         },
-                                        indication = LocalIndication.current,
+                                        indication = null,
                                         interactionSource = null
                                     )
                             ) {
@@ -1891,15 +1952,17 @@ fun TableLayout(
                                                 }
                                             } // notes
                                             5 -> { // quantity
-                                                val formattedQty =
-                                                    formattedQuantity[item.items.id] ?: "--"
+                                                val formattedQuantity =
+                                                    formattedQty[item.items.id] ?: "--"
                                                 val outOfStock =
-                                                    formattedQuantity[item.items.id] == "0 oz" ||
-                                                            formattedQuantity[item.items.id] == "x0" ||
-                                                            formattedQuantity[item.items.id] == "0 g"
+                                                    formattedQuantity == "x0" ||
+                                                            formattedQuantity == "0 oz" ||
+                                                            formattedQuantity == "0* oz" ||
+                                                            formattedQuantity == "0 g" ||
+                                                            formattedQuantity == "0* g"
 
                                                 TableCell(
-                                                    value = formattedQty,
+                                                    value = formattedQuantity,
                                                     modifier = Modifier
                                                         .align(alignment),
                                                     contentAlignment = alignment,
@@ -2084,7 +2147,7 @@ fun TableLayout(
                 if (savedItemIndex != -1) {
                     withFrameNanos {
                         coroutineScope.launch {
-                            if (savedItemIndex > 1 && savedItemIndex < (sortedItems.size - 1)) {
+                            if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
                                 val offset =
                                     (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                                 columnState.scrollToItem(savedItemIndex, offset)
