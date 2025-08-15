@@ -1775,10 +1775,14 @@ class FilterViewModel (
             "Components" -> {
                 sheetSelectedComponents.value = emptyList()
                 _selectedComponents.value = emptyList()
+                _compMatching.value = "Any"
+                sheetSelectedCompMatching.value = "Any"
             }
             "Flavorings" -> {
                 sheetSelectedFlavorings.value = emptyList()
                 _selectedFlavorings.value = emptyList()
+                _flavorMatching.value = "Any"
+                sheetSelectedFlavorMatching.value = "Any"
             }
             "Container" -> {
                 sheetSelectedContainer.value = emptyList()
