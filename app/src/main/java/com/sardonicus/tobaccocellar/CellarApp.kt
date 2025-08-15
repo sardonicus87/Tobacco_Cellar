@@ -97,7 +97,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -135,6 +134,7 @@ import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.ActiveScreen
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
+import com.sardonicus.tobaccocellar.ui.FilterSectionData
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
@@ -164,10 +164,6 @@ fun CellarApp(
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
 
-    val pagerState = rememberPagerState(
-        pageCount = { 3 }
-    )
-
     LaunchedEffect(currentRoute) {
         val screen = when (currentRoute) {
             HomeDestination.route -> ActiveScreen.HOME
@@ -177,6 +173,22 @@ fun CellarApp(
         }
         filterViewModel.setActiveScreen(screen)
     }
+
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val tins by filterViewModel.tinsExist.collectAsState()
+
+    val subgenreData by filterViewModel.subgenreData.collectAsState()
+    val cutData by filterViewModel.cutData.collectAsState()
+    val componentData by filterViewModel.componentData.collectAsState()
+    val flavoringData by filterViewModel.flavoringData.collectAsState()
+    val containerData by filterViewModel.containerData.collectAsState()
+
+    val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
+    val inProductionEnabled by filterViewModel.productionEnabled.collectAsState()
+    val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+    val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()
+
+    val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
@@ -193,6 +205,17 @@ fun CellarApp(
                 FilterBottomSheet(
                     filterViewModel = filterViewModel,
                     pagerState = pagerState,
+                    filtersApplied = filtersApplied,
+                    tins = tins,
+                    subgenreData = subgenreData,
+                    cutData = cutData,
+                    componentData = componentData,
+                    flavoringData = flavoringData,
+                    containerData = containerData,
+                    inProduction = inProduction,
+                    inProductionEnabled = inProductionEnabled,
+                    outOfProduction = outOfProduction,
+                    outOfProductionEnabled = outOfProductionEnabled,
                     modifier = Modifier
                 )
                 Box (
@@ -775,10 +798,19 @@ fun CellarBottomAppBar(
 fun FilterBottomSheet(
     filterViewModel: FilterViewModel,
     pagerState: PagerState,
+    filtersApplied: Boolean,
+    tins: Boolean,
+    subgenreData: FilterSectionData,
+    cutData: FilterSectionData,
+    componentData: FilterSectionData,
+    flavoringData: FilterSectionData,
+    containerData: FilterSectionData,
+    inProduction: Boolean,
+    inProductionEnabled: Boolean,
+    outOfProduction: Boolean,
+    outOfProductionEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
-
     Column (
         modifier = modifier
             .fillMaxWidth()
@@ -917,23 +949,14 @@ fun FilterBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        val selectedGenres by filterViewModel.sheetSelectedSubgenres.collectAsState()
-                        val genresEnabled by filterViewModel.subgenresEnabled.collectAsState()
-                        val availableGenres by remember {
-                            derivedStateOf {
-                                val available = filterViewModel.availableSubgenres.value
-                                filterViewModel.reorderByEnabled(available, genresEnabled)
-                            }
-                        }
-
                         FlowFilterSection(
                             label = "Subgenre",
                             nothingLabel = "No subgenres assigned to any blends.",
                             filterViewModel = filterViewModel,
-                            availableOptions = availableGenres,
-                            selectedOptions = selectedGenres,
+                            displayData = subgenreData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedSubgenre(string, boolean) },
                             noneField = "(Unassigned)",
+                            clearAll = { filterViewModel.clearAllSelectedFlow("Subgenre") },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
@@ -945,26 +968,17 @@ fun FilterBottomSheet(
                                     LocalCustomColors.current.sheetBox,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                            enabledStates = genresEnabled
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
                         )
 
-                        val selectedCuts by filterViewModel.sheetSelectedCuts.collectAsState()
-                        val cutsEnabled by filterViewModel.cutsEnabled.collectAsState()
-                        val availableCuts by remember {
-                            derivedStateOf {
-                                val available = filterViewModel.availableCuts.value
-                                filterViewModel.reorderByEnabled(available, cutsEnabled)
-                            }
-                        }
                         FlowFilterSection(
                             label = "Cut",
                             nothingLabel = "No cuts assigned to any blends.",
                             filterViewModel = filterViewModel,
-                            availableOptions = availableCuts,
-                            selectedOptions = selectedCuts,
+                            displayData = cutData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedCut(string, boolean) },
                             noneField = "(Unassigned)",
+                            clearAll = { filterViewModel.clearAllSelectedFlow("Cut") },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
@@ -977,24 +991,13 @@ fun FilterBottomSheet(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
-                            enabledStates = cutsEnabled
                         )
 
-                        val selectedComps by filterViewModel.sheetSelectedComponents.collectAsState()
-                        val compMatchOption by filterViewModel.sheetSelectedCompMatching.collectAsState()
-                        val componentsEnabled by filterViewModel.componentsEnabled.collectAsState()
-                        val availableComps by remember {
-                            derivedStateOf {
-                                val available = filterViewModel.availableComponents.value
-                                filterViewModel.reorderByEnabled(available, componentsEnabled)
-                            }
-                        }
                         FlowFilterSection(
                             label = "Components",
                             nothingLabel = "No components assigned to any blends.",
                             filterViewModel = filterViewModel,
-                            availableOptions = availableComps,
-                            selectedOptions = selectedComps,
+                            displayData = componentData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedComponent(string, boolean) },
                             noneField = "(None Assigned)",
                             modifier = Modifier
@@ -1009,26 +1012,15 @@ fun FilterBottomSheet(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
-                            matchOption = compMatchOption,
+                            clearAll = { filterViewModel.clearAllSelectedFlow("Components") },
                             onMatchOptionChange = { filterViewModel.updateCompMatching(it) },
-                            enabledStates = componentsEnabled
                         )
 
-                        val selectedFlavor by filterViewModel.sheetSelectedFlavorings.collectAsState()
-                        val flavorMatchOption by filterViewModel.sheetSelectedFlavorMatching.collectAsState()
-                        val flavorEnabled by filterViewModel.flavoringsEnabled.collectAsState()
-                        val availableFlavor by remember {
-                            derivedStateOf {
-                                val available = filterViewModel.availableFlavorings.value
-                                filterViewModel.reorderByEnabled(available, flavorEnabled)
-                            }
-                        }
                         FlowFilterSection(
                             label = "Flavorings",
                             nothingLabel = "No flavorings assigned to any blends.",
                             filterViewModel = filterViewModel,
-                            availableOptions = availableFlavor,
-                            selectedOptions = selectedFlavor,
+                            displayData = flavoringData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedFlavoring(string, boolean) },
                             noneField = "(None Assigned)",
                             modifier = Modifier
@@ -1043,17 +1035,14 @@ fun FilterBottomSheet(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
-                            matchOption = flavorMatchOption,
+                            clearAll = { filterViewModel.clearAllSelectedFlow("Flavorings") },
                             onMatchOptionChange = { filterViewModel.updateFlavorMatching(it) },
-                            enabledStates = flavorEnabled,
                         )
                     }
                 }
 
                 // tin filtering, containers, production //
                 2 -> {
-                    val tins by filterViewModel.tinsExist.collectAsState()
-
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1068,25 +1057,17 @@ fun FilterBottomSheet(
                                 .padding(horizontal = 6.dp)
                         )
 
-                        val selectedCont by filterViewModel.sheetSelectedContainer.collectAsState()
-                        val enableCont by filterViewModel.containerEnabled.collectAsState()
-                        val availableCont by remember {
-                            derivedStateOf {
-                                val available = filterViewModel.availableContainers.value
-                                filterViewModel.reorderByEnabled(available, enableCont)
-                            }
-                        }
                         Box {
                             FlowFilterSection(
                                 label = "Tin Containers",
                                 nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
                                 filterViewModel = filterViewModel,
-                                availableOptions = availableCont,
-                                selectedOptions = selectedCont,
+                                displayData = containerData,
                                 updateSelectedOptions = { string, boolean ->
                                     filterViewModel.updateSelectedContainer(string, boolean)
                                 },
                                 noneField = "(Unassigned)",
+                                clearAll = { filterViewModel.clearAllSelectedFlow("Container") },
                                 modifier = Modifier
                                     .padding(horizontal = 6.dp, vertical = 0.dp)
                                     .border(
@@ -1099,7 +1080,6 @@ fun FilterBottomSheet(
                                         RoundedCornerShape(8.dp)
                                     )
                                     .padding(horizontal = 8.dp, vertical = 5.dp),
-                                enabledStates = enableCont
                             )
                             if (!tins) {
                                 Box(
@@ -1151,11 +1131,6 @@ fun FilterBottomSheet(
                             verticalAlignment = Alignment.Top,
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
-                            val inProductionEnabled by filterViewModel.productionEnabled.collectAsState()
-                            val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
-                            val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()
-
                             CheckboxWithLabel(
                                 text = "In Production",
                                 checked = inProduction,
@@ -1323,17 +1298,11 @@ fun BrandFilterSection(
 
         // Selectable brands row //
         val lazyListState = rememberLazyListState()
-
         val preSortUnselected = filteredBrands.filterNot {
             if (!excluded) { selectedBrands.contains(it) }
             else { selectedExcludedBrands.contains(it) }
         }
-
-//        val (enabled, disabled) = preSortUnselected.partition { brandEnabled[it] ?: false }
-//        val unselectedBrands = enabled + disabled
-
-        val unselectedBrands = filterViewModel.reorderByEnabled(preSortUnselected, brandEnabled)
-
+        val unselectedBrands = filterViewModel.reorderChips(preSortUnselected, brandEnabled)
 
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
@@ -1851,14 +1820,12 @@ fun FlowFilterSection(
     filterViewModel: FilterViewModel,
     label: String,
     nothingLabel: String,
-    availableOptions: List<String>,
-    selectedOptions: List<String>,
+    displayData: FilterSectionData,
     updateSelectedOptions: (String, Boolean) -> Unit,
     noneField: String,
     modifier: Modifier = Modifier,
-    matchOption: String = "",
+    clearAll: () -> Unit = {},
     onMatchOptionChange: (String) -> Unit = {},
-    enabledStates: Map<String, Boolean> = emptyMap(),
 ) {
     Column(
         modifier = modifier,
@@ -1866,9 +1833,8 @@ fun FlowFilterSection(
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
         var showOverflowPopup by remember { mutableStateOf(false) }
-        val enableMatchOption = matchOption.isNotBlank()
-
-        val nothingAssigned = !availableOptions.any { it != noneField }
+        val enableMatchOption = !displayData.matching.isNullOrBlank()
+        val nothingAssigned = !displayData.available.any { it != noneField }
 
         // Header and Match options
         Row(
@@ -1918,8 +1884,8 @@ fun FlowFilterSection(
                         Text(
                             text = "Any",
                             fontSize = 14.sp,
-                            fontWeight = if (matchOption == "Any" && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
-                            color = if (matchOption == "Any" && !nothingAssigned) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .6f),
+                            fontWeight = if (displayData.matching == "Any" && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
+                            color = if (displayData.matching == "Any" && !nothingAssigned) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .6f),
                             modifier = Modifier
                         )
                     }
@@ -1949,8 +1915,8 @@ fun FlowFilterSection(
                         Text(
                             text = "All",
                             fontSize = 14.sp,
-                            fontWeight = if (matchOption == "All") FontWeight.Medium else FontWeight.Normal,
-                            color = if (matchOption == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            fontWeight = if (displayData.matching == "All") FontWeight.Medium else FontWeight.Normal,
+                            color = if (displayData.matching == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                 alpha = .6f
                             ),
                             modifier = Modifier
@@ -1982,8 +1948,8 @@ fun FlowFilterSection(
                         Text(
                             text = "Only",
                             fontSize = 14.sp,
-                            fontWeight = if (matchOption == "Only") FontWeight.Medium else FontWeight.Normal,
-                            color = if (matchOption == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                            fontWeight = if (displayData.matching == "Only") FontWeight.Medium else FontWeight.Normal,
+                            color = if (displayData.matching == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                 alpha = .6f
                             ),
                             modifier = Modifier
@@ -2013,18 +1979,18 @@ fun FlowFilterSection(
             }
         } else {
             OverflowRow(
-                itemCount = availableOptions.size,
+                itemCount = displayData.available.size,
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(Alignment.Top)
                     .padding(horizontal = 4.dp),
                 itemSpacing = 6.dp,
                 itemContent = {
-                    val option = availableOptions[it]
+                    val option = displayData.available[it]
 
                     FilterChip(
-                        selected = selectedOptions.contains(option),
-                        onClick = { updateSelectedOptions(option, !selectedOptions.contains(option)) },
+                        selected = displayData.selected.contains(option),
+                        onClick = { updateSelectedOptions(option, !displayData.selected.contains(option)) },
                         label = { Text(text = option, fontSize = 14.sp) },
                         modifier = Modifier
                             .padding(0.dp),
@@ -2032,15 +1998,16 @@ fun FlowFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background
                         ),
-                        enabled = enabledStates[option] ?: false
+                        enabled = displayData.enabled[option] ?: false
                     )
                 },
                 enabledAtIndex = {
-                    enabledStates[availableOptions[it]] ?: true
+                    val option = displayData.available[it]
+                    displayData.enabled[option] ?: true
                 },
                 overflowIndicator = { overflowCount, enabledCount, overflowEnabled ->
                     val overflowedSelected =
-                        filterViewModel.overflowCheck(selectedOptions, availableOptions, availableOptions.size - overflowCount)
+                        filterViewModel.overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
 
                     val labelColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
@@ -2113,7 +2080,7 @@ fun FlowFilterSection(
                                 size = GlowSize(vertical = 10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 0.dp, max = 280.dp),
+                                    .weight(1f, false),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(
@@ -2157,8 +2124,8 @@ fun FlowFilterSection(
                                                 Text(
                                                     text = "Any",
                                                     fontSize = 14.sp,
-                                                    fontWeight = if (matchOption == "Any") FontWeight.Medium else FontWeight.Normal,
-                                                    color = if (matchOption == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    fontWeight = if (displayData.matching == "Any") FontWeight.Medium else FontWeight.Normal,
+                                                    color = if (displayData.matching == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                                         alpha = .7f
                                                     ),
                                                     modifier = Modifier
@@ -2189,8 +2156,8 @@ fun FlowFilterSection(
                                                 Text(
                                                     text = "All",
                                                     fontSize = 14.sp,
-                                                    fontWeight = if (matchOption == "All") FontWeight.Medium else FontWeight.Normal,
-                                                    color = if (matchOption == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    fontWeight = if (displayData.matching == "All") FontWeight.Medium else FontWeight.Normal,
+                                                    color = if (displayData.matching == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                                         alpha = .7f
                                                     ),
                                                     modifier = Modifier
@@ -2221,8 +2188,8 @@ fun FlowFilterSection(
                                                 Text(
                                                     text = "Only",
                                                     fontSize = 14.sp,
-                                                    fontWeight = if (matchOption == "Only") FontWeight.Medium else FontWeight.Normal,
-                                                    color = if (matchOption == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                                                    fontWeight = if (displayData.matching == "Only") FontWeight.Medium else FontWeight.Normal,
+                                                    color = if (displayData.matching == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
                                                         alpha = .7f
                                                     ),
                                                     modifier = Modifier
@@ -2234,7 +2201,8 @@ fun FlowFilterSection(
                                     // Chips
                                     FlowRow(
                                         modifier = Modifier
-                                            .fillMaxWidth(),
+                                            .fillMaxWidth()
+                                            .wrapContentHeight(),
                                         horizontalArrangement = Arrangement.spacedBy(
                                             4.dp,
                                             Alignment.Start
@@ -2244,12 +2212,12 @@ fun FlowFilterSection(
                                             Alignment.Top
                                         )
                                     ) {
-                                        availableOptions.forEach {
+                                        displayData.available.forEach {
                                             FilterChip(
-                                                selected = selectedOptions.contains(it),
+                                                selected = displayData.selected.contains(it),
                                                 onClick = {
                                                     updateSelectedOptions(
-                                                        it, !selectedOptions.contains(it)
+                                                        it, !displayData.selected.contains(it)
                                                     )
                                                 },
                                                 label = { Text(text = it, fontSize = 14.sp) },
@@ -2259,10 +2227,39 @@ fun FlowFilterSection(
                                                 colors = FilterChipDefaults.filterChipColors(
                                                     containerColor = MaterialTheme.colorScheme.background
                                                 ),
-                                                enabled = enabledStates[it] ?: false
+                                                enabled = displayData.enabled[it] ?: false
                                             )
                                         }
                                     }
+                                }
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        clearAll()
+                                        showOverflowPopup = false
+                                    },
+                                    modifier = Modifier
+                                        .offset(x = (-4).dp),
+                                    enabled = displayData.selected.isNotEmpty()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "",
+                                        modifier = Modifier
+                                            .padding(end = 3.dp)
+                                            .size(20.dp)
+                                    )
+                                    Text(
+                                        text = "Clear All",
+                                        modifier = Modifier,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             }
                         }
