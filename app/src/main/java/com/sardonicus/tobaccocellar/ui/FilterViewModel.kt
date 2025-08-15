@@ -1249,11 +1249,96 @@ class FilterViewModel (
         { it.outOfProduction }
     )
 
-    fun reorderByEnabled(available: List<String>, enablement: Map<String, Boolean>): List<String> {
+    fun reorderChips(available: List<String>, enablement: Map<String, Boolean>): List<String> {
         if (available.isEmpty()) return emptyList()
         return available.sortedBy { if (enablement[it] == true) 0 else 1 }
     }
 
+    // Flow section filtering data
+    val subgenreData: StateFlow<FilterSectionData> = combine(
+        availableSubgenres,
+        subgenresEnabled,
+        sheetSelectedSubgenres
+    ) { available, enabled, selected ->
+        FilterSectionData(
+            available = reorderChips(available, enabled),
+            selected = selected,
+            enabled = enabled
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
+        )
+    val cutData: StateFlow<FilterSectionData> = combine(
+        availableCuts,
+        cutsEnabled,
+        sheetSelectedCuts
+    ) { available, enabled, selected ->
+        FilterSectionData(
+            available = reorderChips(available, enabled),
+            selected = selected,
+            enabled = enabled
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
+        )
+    val componentData: StateFlow<FilterSectionData> = combine(
+        availableComponents,
+        componentsEnabled,
+        sheetSelectedComponents,
+        sheetSelectedCompMatching
+    ) { available, enabled, selected, matching ->
+        FilterSectionData(
+            available = reorderChips(available, enabled),
+            selected = selected,
+            enabled = enabled,
+            matching = matching
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
+        )
+    val flavoringData: StateFlow<FilterSectionData> = combine(
+        availableFlavorings,
+        flavoringsEnabled,
+        sheetSelectedFlavorings,
+        sheetSelectedFlavorMatching
+    ) { available, enabled, selected, matching ->
+        FilterSectionData(
+            available = reorderChips(available, enabled),
+            selected = selected,
+            enabled = enabled,
+            matching = matching
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
+        )
+    val containerData: StateFlow<FilterSectionData> = combine(
+        availableContainers,
+        containerEnabled,
+        sheetSelectedContainer
+    ) { available, enabled, selected ->
+        FilterSectionData(
+            available = reorderChips(available, enabled),
+            selected = selected,
+            enabled = enabled
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
+        )
 
     // filter selection update functions //
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
@@ -1677,6 +1762,32 @@ class FilterViewModel (
         return selected.any { overflowedItems.contains(it) }
     }
 
+    fun clearAllSelectedFlow(field: String) {
+        when (field) {
+            "Subgenre" -> {
+                sheetSelectedSubgenres.value = emptyList()
+                _selectedSubgenre.value = emptyList()
+            }
+            "Cut" -> {
+                sheetSelectedCuts.value = emptyList()
+                _selectedCut.value = emptyList()
+            }
+            "Components" -> {
+                sheetSelectedComponents.value = emptyList()
+                _selectedComponents.value = emptyList()
+            }
+            "Flavorings" -> {
+                sheetSelectedFlavorings.value = emptyList()
+                _selectedFlavorings.value = emptyList()
+            }
+            "Container" -> {
+                sheetSelectedContainer.value = emptyList()
+                _selectedContainer.value = emptyList()
+            }
+        }
+        _shouldScrollUp.value = true
+    }
+
     fun clearAllSelectedBrands() {
         sheetSelectedBrands.value = emptyList()
         _selectedBrands.value = emptyList()
@@ -1788,6 +1899,13 @@ data class SheetSelections(
     val container: List<String> = emptyList(),
     val production: Boolean = false,
     val outOfProduction: Boolean = false,
+)
+
+data class FilterSectionData(
+    val available: List<String>,
+    val selected: List<String>,
+    val enabled: Map<String, Boolean>,
+    val matching: String? = null,
 )
 
 val typeOrder = mapOf(
