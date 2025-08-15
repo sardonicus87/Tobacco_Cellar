@@ -2001,10 +2001,7 @@ fun FlowFilterSection(
                         enabled = displayData.enabled[option] ?: false
                     )
                 },
-                enabledAtIndex = {
-                    val option = displayData.available[it]
-                    displayData.enabled[option] ?: true
-                },
+                enabledAtIndex = { displayData.enabled[displayData.available[it]] ?: true },
                 overflowIndicator = { overflowCount, enabledCount, overflowEnabled ->
                     val overflowedSelected =
                         filterViewModel.overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
