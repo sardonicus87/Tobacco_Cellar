@@ -1255,90 +1255,85 @@ class FilterViewModel (
     }
 
     // Flow section filtering data
-    val subgenreData: StateFlow<FilterSectionData> = combine(
-        availableSubgenres,
-        subgenresEnabled,
-        sheetSelectedSubgenres
-    ) { available, enabled, selected ->
-        FilterSectionData(
-            available = reorderChips(available, enabled),
-            selected = selected,
-            enabled = enabled
+    val subgenreData: StateFlow<FilterSectionData> = generateFilterSectionData(
+            availableSubgenres,
+            subgenresEnabled,
+            sheetSelectedSubgenres
         )
+
+    val cutData: StateFlow<FilterSectionData> = generateFilterSectionData(
+            availableCuts,
+            cutsEnabled,
+            sheetSelectedCuts
+        )
+
+    val componentData: StateFlow<FilterSectionData> = generateFilterSectionData(
+            availableComponents,
+            componentsEnabled,
+            sheetSelectedComponents,
+            sheetSelectedCompMatching
+        )
+
+    val flavoringData: StateFlow<FilterSectionData> = generateFilterSectionData(
+            availableFlavorings,
+            flavoringsEnabled,
+            sheetSelectedFlavorings,
+            sheetSelectedFlavorMatching
+        )
+
+    val containerData: StateFlow<FilterSectionData> = generateFilterSectionData(
+            availableContainers,
+            containerEnabled,
+            sheetSelectedContainer
+        )
+
+    private fun generateFilterSectionData(
+        available: StateFlow<List<String>>,
+        enabled: StateFlow<Map<String, Boolean>>,
+        selected: StateFlow<List<String>>,
+        matching: StateFlow<String>? = null
+    ): StateFlow<FilterSectionData> {
+        return if (matching != null) {
+            combine(
+                available,
+                enabled,
+                selected,
+                matching
+            ) { available, enabled, selected, matching ->
+                FilterSectionData(
+                    available = reorderChips(available, enabled),
+                    selected = selected,
+                    enabled = enabled,
+                    matching = matching
+                )
+            }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(500L),
+                    initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap(), null)
+                )
+
+        } else {
+            combine(
+                available,
+                enabled,
+                selected,
+            ) { available, enabled, selected ->
+                FilterSectionData(
+                    available = reorderChips(available, enabled),
+                    selected = selected,
+                    enabled = enabled,
+                    matching = ""
+                )
+            }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(500L),
+                    initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
+                )
+        }
     }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
-        )
-    val cutData: StateFlow<FilterSectionData> = combine(
-        availableCuts,
-        cutsEnabled,
-        sheetSelectedCuts
-    ) { available, enabled, selected ->
-        FilterSectionData(
-            available = reorderChips(available, enabled),
-            selected = selected,
-            enabled = enabled
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
-        )
-    val componentData: StateFlow<FilterSectionData> = combine(
-        availableComponents,
-        componentsEnabled,
-        sheetSelectedComponents,
-        sheetSelectedCompMatching
-    ) { available, enabled, selected, matching ->
-        FilterSectionData(
-            available = reorderChips(available, enabled),
-            selected = selected,
-            enabled = enabled,
-            matching = matching
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
-        )
-    val flavoringData: StateFlow<FilterSectionData> = combine(
-        availableFlavorings,
-        flavoringsEnabled,
-        sheetSelectedFlavorings,
-        sheetSelectedFlavorMatching
-    ) { available, enabled, selected, matching ->
-        FilterSectionData(
-            available = reorderChips(available, enabled),
-            selected = selected,
-            enabled = enabled,
-            matching = matching
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
-        )
-    val containerData: StateFlow<FilterSectionData> = combine(
-        availableContainers,
-        containerEnabled,
-        sheetSelectedContainer
-    ) { available, enabled, selected ->
-        FilterSectionData(
-            available = reorderChips(available, enabled),
-            selected = selected,
-            enabled = enabled
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = FilterSectionData(emptyList(), emptyList(), emptyMap())
-        )
+
 
     // filter selection update functions //
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
