@@ -183,9 +183,8 @@ class FilterViewModel (
         val unopened = it[2] as Boolean
         val finished = it[3] as Boolean
         val unfinished = it[4] as Boolean
-        val tinSearch = it[5] as Boolean
 
-        container.isNotEmpty() || opened || unopened || finished || unfinished || tinSearch
+        container.isNotEmpty() || opened || unopened || finished || unfinished
 
     }
         .stateIn(
