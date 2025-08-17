@@ -117,6 +117,7 @@ class StatsViewModel(
                             mutableMap.toMap()
                         },
                     totalByContainer = it.flatMap { it.tins }
+                        .filter { !it.finished }
                         .groupingBy { it.container.ifBlank { "Unassigned" } }
                         .eachCount()
                         .entries
@@ -253,6 +254,7 @@ class StatsViewModel(
                         mutableMap.toMap()
                     },
                 totalByContainer = allItems.flatMap { it.tins }
+                    .filter { !it.finished }
                     .groupingBy { it.container.ifBlank { "Unassigned" } }
                     .eachCount()
                     .entries

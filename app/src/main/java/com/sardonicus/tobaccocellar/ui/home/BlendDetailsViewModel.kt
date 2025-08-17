@@ -67,7 +67,7 @@ class BlendDetailsViewModel(
 
             _blendDetails.update {
                 details.copy(
-                    tinsTotal = calculateTotal(details.tins, quantityRemap)
+                    tinsTotal = calculateTotal(details.tins.filter { !it.finished }, quantityRemap)
                 )
             }
         }

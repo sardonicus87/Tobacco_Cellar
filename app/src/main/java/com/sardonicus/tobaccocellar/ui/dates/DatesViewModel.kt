@@ -47,12 +47,12 @@ class DatesViewModel(
                 agedDueThisMonth = agingDue(allItems).second,
 
                 averageAgeManufacture = calculateAverageDate(filteredTins, DatePeriod.PAST) { it.manufactureDate },
-                averageAgeCellar = calculateAverageDate(filteredTins, DatePeriod.PAST) { it.cellarDate },
+                averageAgeCellar = calculateAverageDate(filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
                 averageAgeOpen = calculateAverageDate(filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
                 averageWaitTime = calculateAverageDate(filteredTins, DatePeriod.FUTURE) { it.openDate },
 
                 pastManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.manufactureDate },
-                pastCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.cellarDate },
+                pastCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
                 pastOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
                 futureManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.manufactureDate },
                 futureCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.cellarDate },
