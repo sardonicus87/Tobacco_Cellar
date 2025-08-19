@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
@@ -24,7 +25,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,6 +41,9 @@ class HomeViewModel(
     private val _tableTableSorting = mutableStateOf(TableSorting())
     val tableSorting: State<TableSorting> = _tableTableSorting
 
+    private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
+    val quantityOption = _quantityOption.asStateFlow()
+
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
 
@@ -56,6 +59,11 @@ class HomeViewModel(
             }
         }
         viewModelScope.launch {
+            preferencesRepo.quantityOption.collect {
+                _quantityOption.value = it
+            }
+        }
+        viewModelScope.launch {
             EventBus.events.collect {
                 if (it is DatabaseRestoreEvent) {
                     _resetLoading.value = true
@@ -65,34 +73,22 @@ class HomeViewModel(
     }
 
     /** States and Flows **/
-    val homeUiState: StateFlow<HomeUiState> =
+    @Suppress("UNCHECKED_CAST")
+    val homeUiState =
         combine(
             preferencesRepo.isTableView,
-            preferencesRepo.quantityOption,
-            filterViewModel.everythingFlow,
-            filterViewModel.unifiedFilteredItems,
-            filterViewModel.unifiedFilteredTins
-        ) { isTableView, quantityOption, allItems, filteredItems, filteredTins ->
-            var formattedQuantities = mapOf<Int, String>()
-
-            val sortQuantity = filteredItems.associate {
-                it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption)
-            }
-
-            formattedQuantities = filteredItems.associate {
-                val totalQuantity = calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption)
-                val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { !it.finished && it in filteredTins })
-                it.items.id to formattedQuantity
-            }
-
-            if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
+            snapshotFlow { tableSorting.value },
+            preferencesRepo.listSorting,
+            preferencesRepo.tinOzConversionRate,
+            preferencesRepo.tinGramsConversionRate
+        ) {
+            val isTableView = it[0] as Boolean
+            val tableSorting = it[1] as TableSorting
+            val listSorting = it[2] as String
 
             HomeUiState(
-                items = allItems,
                 isTableView = isTableView,
-                quantityDisplay = quantityOption,
-                sortQuantity = sortQuantity,
-                formattedQuantities = formattedQuantities,
+                sorting = if (isTableView) tableSorting else listSorting,
                 isLoading = false
             )
         }
@@ -101,6 +97,55 @@ class HomeViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = HomeUiState(isLoading = true)
             )
+
+
+    fun generateSortedList(
+        filteredItems: List<ItemsComponentsAndTins>,
+        filteredTins: List<Tins>,
+        quantityOption: QuantityOption,
+        ounceRate: Double,
+        gramsRate: Double,
+        isTableView: Boolean,
+        tableSorting: TableSorting,
+        listSorting: String
+    ): Pair<List<ItemsComponentsAndTins>, Map<Int, String>> {
+        val sortQuantity = filteredItems.associate {
+            it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption, ounceRate, gramsRate)
+        }
+
+        val sortedItems = if (filteredItems.isNotEmpty()) {
+            if (isTableView) {
+                when (tableSorting.columnIndex) {
+                    0 -> filteredItems.sortedBy { it.items.blend }
+                    1 -> filteredItems.sortedBy { it.items.brand }
+                    2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                    5 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                    else -> filteredItems
+                }.let {
+                    if (tableSorting.sortAscending) it else it.reversed()
+                }
+            } else {
+                when (listSorting) {
+                    "Default" -> filteredItems.sortedBy { it.items.id }
+                    "Blend" -> filteredItems.sortedBy { it.items.blend }
+                    "Brand" -> filteredItems.sortedBy { it.items.brand }
+                    "Type" -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                    "Quantity" -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                    else -> filteredItems
+                }
+            }
+        } else emptyList()
+
+        val formattedQuantities = sortedItems.associate {
+            val totalQuantity = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ounceRate, gramsRate) // !it.finished &&
+            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { it in filteredTins }) // !it.finished &&
+            it.items.id to formattedQuantity
+        }
+
+        if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
+
+        return sortedItems to formattedQuantities
+    }
 
 
     /** List View item menu overlay and expand details **/
@@ -122,6 +167,35 @@ class HomeViewModel(
 
 
     /** Sorting and toggle view **/
+    val emptyMessage: StateFlow<String> =
+        combine(
+            filterViewModel.searchValue,
+            filterViewModel.searchPerformed,
+            filterViewModel.isFilterApplied,
+            filterViewModel.emptyDatabase,
+            filterViewModel.unifiedFilteredItems
+        ) { searchText, searchPerformed, filteringApplied, emptyDatabase, filteredItems ->
+            val emptyList = filteredItems.isEmpty()
+            if (!emptyList) { "" }
+            else if (searchPerformed) {
+                "No entries found matching\n\"$searchText\"."
+            }
+            else if (filteringApplied) {
+                "No entries found matching\nselected filters."
+            }
+            else if (emptyDatabase) {
+                "No entries found in cellar.\nClick \"+\" to add items,\n" +
+                        "or use options to import CSV."
+            }
+            else { "" }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = ""
+            )
+
+
     fun selectView(isTableView: Boolean) {
         viewModelScope.launch {
             preferencesRepo.saveViewPreference(isTableView)
@@ -156,9 +230,22 @@ class HomeViewModel(
 
 
     /** helper functions for quantity display **/
-    private suspend fun calculateTotalQuantity(items: ItemsComponentsAndTins, tins: List<Tins>, quantityOption: QuantityOption): Double {
-        val ounceRate = preferencesRepo.tinOzConversionRate.first()
-        val gramRate = preferencesRepo.tinGramsConversionRate.first()
+    private fun calculateTotalQuantity(
+        items: ItemsComponentsAndTins,
+        tins: List<Tins>,
+        quantityOption: QuantityOption,
+        ounceRate: Double,
+        gramRate: Double
+    ): Double {
+        val tinQuantities = tins.map {
+            when (it.finished) {
+                true -> 0.0
+                false -> it.tinQuantity
+            }
+        }
+        val tinsRemap = tins.mapIndexed { index, it ->
+            it.copy(tinQuantity = tinQuantities[index])
+        }
 
         return if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
             when (quantityOption) {
@@ -170,8 +257,8 @@ class HomeViewModel(
         } else {
             when (quantityOption) {
                 QuantityOption.TINS -> items.items.quantity.toDouble()
-                QuantityOption.OUNCES -> calculateOunces(tins)
-                QuantityOption.GRAMS -> calculateGrams(tins)
+                QuantityOption.OUNCES -> calculateOunces(tinsRemap)
+                QuantityOption.GRAMS -> calculateGrams(tinsRemap)
                 else -> 0.0
             }
         }
@@ -179,23 +266,27 @@ class HomeViewModel(
 
     private fun calculateOunces(tins: List<Tins>): Double {
         return tins.sumOf {
-            when (it.unit) {
-                "oz" -> it.tinQuantity
-                "lbs" -> it.tinQuantity * 16
-                "grams" -> it.tinQuantity / 28.3495
-                else -> 0.0
-            }
+            if (it.tinQuantity > 0.0) {
+                when (it.unit) {
+                    "oz" -> it.tinQuantity
+                    "lbs" -> it.tinQuantity * 16
+                    "grams" -> it.tinQuantity / 28.3495
+                    else -> 0.0
+                }
+            } else 0.0
         }
     }
 
     private fun calculateGrams(tins: List<Tins>): Double {
         return tins.sumOf {
-            when (it.unit) {
-                "oz" -> it.tinQuantity * 28.3495
-                "lbs" -> it.tinQuantity * 453.592
-                "grams" -> it.tinQuantity
-                else -> 0.0
-            }
+            if (it.tinQuantity > 0.0) {
+                when (it.unit) {
+                    "oz" -> it.tinQuantity * 28.3495
+                    "lbs" -> it.tinQuantity * 453.592
+                    "grams" -> it.tinQuantity
+                    else -> 0.0
+                }
+            } else 0.0
         }
     }
 
@@ -203,16 +294,15 @@ class HomeViewModel(
         return when (quantityOption) {
             QuantityOption.TINS -> "x${quantity.toInt()}"
             QuantityOption.OUNCES -> {
+                val pounds = quantity / 16
                 if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                     if (quantity >= 16) {
-                        val pounds = quantity / 16
                         formatDecimal(pounds) + " lbs"
                     } else {
                         formatDecimal(quantity) + " oz"
                     }
                 } else {
                     if (quantity >= 16) {
-                       val pounds = quantity / 16
                        "${formatDecimal(pounds)}* lbs"
                     } else
                         "${formatDecimal(quantity)}* oz"
@@ -281,11 +371,8 @@ class HomeViewModel(
 }
 
 data class HomeUiState(
-    val items: List<ItemsComponentsAndTins> = listOf(),
     val isTableView: Boolean = false,
-    val quantityDisplay: QuantityOption = QuantityOption.TINS,
-    val sortQuantity: Map<Int, Double> = mapOf(),
-    val formattedQuantities: Map<Int, String> = mapOf(),
+    val sorting: Any = if (isTableView) TableSorting() else ListSorting.DEFAULT.value,
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
     val toggleIcon: Int =
