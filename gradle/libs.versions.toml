@@ -1,8 +1,8 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
 activityCompose = "1.10.1"
-androidlibrary = "8.12.0"
-agp = "8.12.0"
+androidlibrary = "8.12.1"
+agp = "8.12.1"
 commonsCsv = "1.14.1"
 composeBom = "2025.08.00"
 coreKtx = "1.17.0"
