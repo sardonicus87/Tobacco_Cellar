@@ -1262,8 +1262,14 @@ private fun DrawScope.drawLabels(
         }
 
         val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            // outside slice placement
-            percentageX - (percentageWidth * xOffsetFactor)
+            // very thin slices extra adjustment
+            if (sweepAngle < 10f && normalizedMidpointAngle > 225f && totalThinPercent > 4) {
+                val right = (totalThinPercent - thinCount)
+                (percentageX - (percentageWidth * xOffsetFactor)) - ((right * percentageHeight) * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
+            } else {
+                // normal outside slice placement
+                percentageX - (percentageWidth * xOffsetFactor)
+            }
         } else {
             // normal inside slice placement
             adjustedLabelX + (labelWidth - percentageWidth) / 2
@@ -1276,9 +1282,12 @@ private fun DrawScope.drawLabels(
                     (percentageY - percentageHeight) + (down * percentageHeight)
                 }
                 else {
+                    // alternating
                     val additionalOffset = if (outsideLabelCount % 2 == 0) {
+                        // evens up
                         (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
                     } else {
+                        // odds down
                         (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
                     }
                     (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
