@@ -122,6 +122,7 @@ import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -149,32 +150,66 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
+    val preferencesRepo = LocalCellarApplication.current.preferencesRepo
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
-    val preferencesRepo = LocalCellarApplication.current.preferencesRepo
+
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val onDismissMenu = viewmodel::onDismissMenu
 
     val searchFocused by filterViewModel.searchFocused.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+    val isTinSearch by filterViewModel.isTinSearch.collectAsState()
     val searchText by filterViewModel.searchTextDisplay.collectAsState()
     val searchValue by filterViewModel.searchValue.collectAsState()
 
-    val filteredItemsLive by filterViewModel.unifiedFilteredItems.collectAsState()
-    val showTins by filterViewModel.showTins.collectAsState()
+    val preFilteredItems by filterViewModel.unifiedFilteredItems.collectAsState()
     val filteredTins by filterViewModel.unifiedFilteredTins.collectAsState()
-    val homeUiState by viewmodel.homeUiState.collectAsState()
-    val resetLoading by viewmodel.resetLoading.collectAsState()
-    val isTableView = homeUiState.isTableView
-    val activeMenuId by viewmodel.activeMenuId
-    val isMenuShown by viewmodel.isMenuShown
-    val tableSorting by viewmodel.tableSorting
-    val listSorting by preferencesRepo.listSorting.collectAsState(initial = ListSorting.DEFAULT.value)
+    val quantityOption by viewmodel.quantityOption.collectAsState()
+    val ozRate by preferencesRepo.tinOzConversionRate.collectAsState(initial = 1.75)
+    val gramsRate by preferencesRepo.tinGramsConversionRate.collectAsState(initial = 50.0)
 
-    val showSnackbar = viewmodel.showSnackbar.collectAsState()
-    if (showSnackbar.value) {
+    val homeUiState by viewmodel.homeUiState.collectAsState()
+    val tableSorting by remember { viewmodel.tableSorting }
+    val listSorting by preferencesRepo.listSorting.collectAsState(initial = ListSorting.DEFAULT.value)
+    val resetLoading by viewmodel.resetLoading.collectAsState()
+    val activeMenuId by remember { viewmodel.activeMenuId }
+    val isMenuShown by remember { viewmodel.isMenuShown }
+    val emptyMessage by viewmodel.emptyMessage.collectAsState()
+    val showTins by filterViewModel.showTins.collectAsState()
+    val columnState = rememberLazyListState()
+
+    val (filteredItemsLive, formattedQuantities) = remember(
+        preFilteredItems,
+        filteredTins,
+        quantityOption,
+        ozRate,
+        gramsRate,
+        homeUiState.isTableView,
+        tableSorting,
+        listSorting
+    ) {
+        if (preFilteredItems.isNotEmpty()) {
+            viewmodel.generateSortedList(
+                preFilteredItems,
+                filteredTins,
+                quantityOption,
+                ozRate,
+                gramsRate,
+                homeUiState.isTableView,
+                tableSorting,
+                listSorting
+            )
+        }
+        else {
+            emptyList<ItemsComponentsAndTins>() to emptyMap()
+        }
+    }
+
+    val showSnackbar by viewmodel.showSnackbar.collectAsState()
+    if (showSnackbar) {
         LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
                 message = "CSV Exported",
@@ -247,7 +282,6 @@ fun HomeScreen(
         }
         navigateToDates()
     }
-
 
     // Important Alert stuff
     val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
@@ -508,13 +542,13 @@ fun HomeScreen(
             HomeHeader(
                 modifier = Modifier,
                 homeUiState = homeUiState,
-                filteredItems = filteredItems,
+                isTableView = homeUiState.isTableView,
+                selectView = viewmodel::selectView,
                 filterViewModel = filterViewModel,
                 searchText = searchText,
-                selectView = viewmodel::selectView,
-                isTableView = isTableView,
                 saveListSorting = viewmodel::saveListSorting,
-                listSorting = listSorting
+                listSorting = listSorting,
+                filteredItems = filteredItems,
             )
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
@@ -523,24 +557,28 @@ fun HomeScreen(
                 HomeBody(
                     isLoading = homeUiState.isLoading,
                     resetLoading = resetLoading,
-                    isTableView = isTableView,
-                    items = filteredItems,
-                    showTins = showTins,
+                    isTableView = homeUiState.isTableView,
+                    emptyMessage = emptyMessage,
+                    columnState = columnState,
+                    sortedItems = filteredItems,
                     tins = filteredTins,
-                    sortQuantity = homeUiState.sortQuantity,
-                    formattedQuantity = homeUiState.formattedQuantities,
+                    formattedQuantity = formattedQuantities,
+                    coroutineScope = coroutineScope,
+                    showTins = showTins,
+                    sorting = homeUiState.sorting,
                     filterViewModel = filterViewModel,
                     onDetailsClick = { if (lastClickedItemId != it) lastClickedItemId = it },
                     onEditClick = navigateToEditEntry,
+                    isMenuShown = isMenuShown,
                     activeMenuId = activeMenuId,
                     onShowMenu = viewmodel::onShowMenu,
                     onDismissMenu = onDismissMenu,
-                    isMenuShown = isMenuShown,
+                    getPositionTrigger = filterViewModel::getPositionTrigger,
                     searchFocused = searchFocused,
                     searchPerformed = searchPerformed,
+                    isTinSearch = isTinSearch,
                     tableSorting = tableSorting,
                     updateSorting = viewmodel::updateSorting,
-                    listSorting = listSorting,
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(0.dp),
@@ -556,13 +594,13 @@ fun HomeScreen(
 private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
-    filteredItems: List<ItemsComponentsAndTins>,
     isTableView: Boolean,
+    selectView: (Boolean) -> Unit,
     filterViewModel: FilterViewModel,
     searchText: String,
-    selectView: (Boolean) -> Unit,
     saveListSorting: (String) -> Unit,
     listSorting: String,
+    filteredItems: List<ItemsComponentsAndTins>
 ) {
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
@@ -638,12 +676,12 @@ private fun HomeHeader(
                     },
                 onImeAction = {
                     coroutineScope.launch {
-                        if (!searchPerformed) {
-                            filterViewModel.getPositionTrigger()
+                        if (searchText.isNotBlank()) {
+                            if (!searchPerformed) { filterViewModel.getPositionTrigger() }
+                            delay(15)
+                            EventBus.emit(SearchPerformedEvent)
+                            filterViewModel.onSearch(searchText)
                         }
-                        delay(15)
-                        EventBus.emit(SearchPerformedEvent)
-                        filterViewModel.onSearch(searchText)
                     }
                 },
                 leadingIcon = {
@@ -755,19 +793,21 @@ private fun HomeHeader(
             horizontalArrangement = Arrangement.End,
         ) {
             var sortingMenu by rememberSaveable { mutableStateOf(false) }
-            Icon(
-                painter = painterResource(id = R.drawable.sort_bars),
-                contentDescription = "List sorting",
+            IconButton(
+                onClick = { sortingMenu = !sortingMenu },
                 modifier = Modifier
                     .padding(4.dp)
-                    .size(20.dp)
-                    .clickable(
-                        enabled = !isTableView,
-                        indication = LocalIndication.current,
-                        interactionSource = null,
-                    ) { sortingMenu = !sortingMenu },
-                tint = if (isTableView) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
-            )
+                    .size(22.dp),
+                enabled = !isTableView,
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.sort_bars),
+                    contentDescription = "List sorting",
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(0.dp),
+                )
+            }
             DropdownMenu(
                 expanded = sortingMenu,
                 onDismissRequest = { sortingMenu = false },
@@ -928,58 +968,59 @@ private fun HomeBody(
     isLoading: Boolean,
     resetLoading: Boolean,
     isTableView: Boolean,
-    items: List<ItemsComponentsAndTins>,
-    showTins: Boolean,
+    emptyMessage: String,
+    columnState: LazyListState,
+    sortedItems: List<ItemsComponentsAndTins>,
     tins: List<Tins>,
-    sortQuantity: Map<Int, Double>,
     formattedQuantity: Map<Int, String>,
+    coroutineScope: CoroutineScope,
+    showTins: Boolean,
+    sorting: Any,
     filterViewModel: FilterViewModel,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
+    isMenuShown: Boolean,
     activeMenuId: Int?,
     onShowMenu: (Int) -> Unit,
     onDismissMenu: () -> Unit,
-    isMenuShown: Boolean,
+    getPositionTrigger: () -> Unit,
     searchFocused: Boolean,
     searchPerformed: Boolean,
+    isTinSearch: Boolean,
     tableSorting: TableSorting,
     updateSorting: (Int) -> Unit,
-    listSorting: String,
     modifier: Modifier = Modifier,
 ) {
-    val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
-    val searchText by filterViewModel.searchValue.collectAsState()
-    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
-
-    var emptyMessage by remember { mutableStateOf("") }
+    var displayedMessage by remember { mutableStateOf(emptyMessage) }
     var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
 
+    val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
-        modifier = modifier
-            .fillMaxSize()
-            .padding(0.dp)
-    ) {
-        if (isLoading || resetLoading) {
-            LoadingIndicator()
-        } else {
-            if (items.isEmpty()) {
+    var listRendering by remember { mutableStateOf(true) }
+    LaunchedEffect(sortedItems.size, columnState) {
+        if (sortedItems.isNotEmpty()) {
+            if (columnState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
+                listRendering = false
+            }
+        }
+    }
 
-                val noItemsString =
-                    if (searchPerformed) { "No entries found matching\n\"$searchText\"." }
-                    else if (filteringApplied) { "No entries found matching\nselected filters." }
-                    else if (emptyDatabase) { "No entries found in cellar.\nClick \"+\" to add items,\n" +
-                            "or use options to import CSV." }
-                    else { "" }
 
-                LaunchedEffect(noItemsString, searchPerformed, searchWasPerformed) {
+    Box {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(0.dp)
+        ) {
+            if (sortedItems.isEmpty()) {
+                LaunchedEffect(emptyMessage, searchPerformed, searchWasPerformed) {
                     if (searchWasPerformed && !searchPerformed) {
                         delay(20L)
-                        emptyMessage = noItemsString
+                        displayedMessage = emptyMessage
                     } else {
-                        emptyMessage = noItemsString
+                        displayedMessage = emptyMessage
                     }
                     searchWasPerformed = searchPerformed
                 }
@@ -992,7 +1033,7 @@ private fun HomeBody(
                 ) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = emptyMessage,
+                        text = displayedMessage,
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier
@@ -1003,15 +1044,17 @@ private fun HomeBody(
             } else {
                 if (isTableView) {
                     TableViewMode(
-                        itemsList = items,
+                        sortedItems = sortedItems,
+                        columnState = columnState,
                         showTins = showTins,
                         filteredTins = tins,
-                        formattedQuantity = formattedQuantity,
-                        sortQuantity = sortQuantity,
-                        filterViewModel = filterViewModel,
+                        formattedQty = formattedQuantity,
+                        searchPerformed = searchPerformed,
+                        isTinSearch = isTinSearch,
                         searchFocused = searchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
                         onEditClick = { onEditClick(it.id) },
+                        getPositionTrigger = { getPositionTrigger() },
                         activeMenuId = activeMenuId,
                         onShowMenu = onShowMenu,
                         onDismissMenu = onDismissMenu,
@@ -1024,24 +1067,119 @@ private fun HomeBody(
                     )
                 } else {
                     ListViewMode(
-                        itemsList = items,
+                        sortedItems = sortedItems,
+                        columnState = columnState,
                         showTins = showTins,
                         tinsList = tins,
                         formattedQuantity = formattedQuantity,
-                        sortQuantity = sortQuantity,
-                        filterViewModel = filterViewModel,
+                        searchPerformed = searchPerformed,
+                        isTinSearch = isTinSearch,
                         searchFocused = searchFocused,
                         onDetailsClick = { onDetailsClick(it.id) },
                         onEditClick = { onEditClick(it.id) },
+                        getPositionTrigger = { getPositionTrigger() },
                         activeMenuId = activeMenuId,
                         onShowMenu = onShowMenu,
                         onDismissMenu = onDismissMenu,
                         isMenuShown = isMenuShown,
-                        sorting = listSorting,
                         modifier = Modifier
                             .padding(0.dp)
                             .fillMaxWidth()
                     )
+                }
+            }
+        }
+
+        if (isLoading || resetLoading || listRendering) { LoadingIndicator() }
+
+
+        // jump to button
+        AnimatedVisibility(
+            visible = isVisible && (sortedItems.size > 75),
+            enter = fadeIn(animationSpec = tween(150)),
+            exit = fadeOut(animationSpec = tween(150)),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(16.dp)
+        ) {
+            JumpToButton(
+                jumpTo = {
+                    coroutineScope.launch {
+                        if (scrollDirection == ScrollDirection.DOWN) {
+                            columnState.scrollToItem(sortedItems.lastIndex)
+                        } else {
+                            columnState.scrollToItem(0)
+                        }
+                    }
+                },
+                scrollDirection = scrollDirection,
+                modifier = Modifier
+            )
+        }
+
+        val currentItemsList by rememberUpdatedState(sortedItems)
+        val currentPosition by filterViewModel.currentPosition.collectAsState()
+        val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
+        val savedItemId by filterViewModel.savedItemId.collectAsState()
+        val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
+        val shouldReturn by filterViewModel.shouldReturn.collectAsState()
+        val getPosition by filterViewModel.getPosition.collectAsState()
+
+        // Scroll to Positions //
+        LaunchedEffect(currentItemsList) {
+            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) {
+                delay(5)
+            }
+            if (savedItemIndex != -1) {
+                withFrameNanos {
+                    coroutineScope.launch {
+                        if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
+                            val offset =
+                                (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                            columnState.scrollToItem(savedItemIndex, offset)
+                        } else {
+                            columnState.scrollToItem(savedItemIndex)
+                        }
+                    }
+                }
+                filterViewModel.resetScroll()
+            }
+            if (shouldScrollUp) {
+                columnState.scrollToItem(0)
+                filterViewModel.resetScroll()
+            }
+            if (shouldReturn && !searchPerformed && !shouldScrollUp) {
+                val index = currentPosition[0]
+                val offset = currentPosition[1]
+
+                if (index != null && offset != null) {
+                    withFrameNanos {
+                        coroutineScope.launch {
+                            columnState.scrollToItem(index, offset)
+                        }
+                    }
+                    filterViewModel.resetScroll()
+                }
+            }
+        }
+
+        LaunchedEffect(sorting) {
+            if (!searchPerformed) {
+                filterViewModel.resetScroll()
+                columnState.scrollToItem(0)
+            } else {
+                columnState.scrollToItem(0)
+            }
+        }
+
+        // Save positions //
+        LaunchedEffect(getPosition) {
+            if (getPosition > 0 && !searchPerformed) {
+                val layoutInfo = columnState.layoutInfo
+                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+                if (firstVisibleItem != null) {
+                    filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
                 }
             }
         }
@@ -1138,37 +1276,23 @@ fun rememberJumpToState(
 @Stable
 @Composable
 fun ListViewMode(
-    itemsList: List<ItemsComponentsAndTins>,
+    sortedItems: List<ItemsComponentsAndTins>,
+    columnState: LazyListState,
     showTins: Boolean,
     tinsList: List<Tins>,
     formattedQuantity: Map<Int, String>,
-    sortQuantity: Map<Int, Double>,
-    filterViewModel: FilterViewModel,
+    searchPerformed: Boolean,
+    isTinSearch: Boolean,
     searchFocused: Boolean,
     onDetailsClick: (Items) -> Unit,
     onEditClick: (Items) -> Unit,
+    getPositionTrigger: () -> Unit,
     activeMenuId: Int?,
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
     onDismissMenu: () -> Unit,
-    sorting: String,
     modifier: Modifier = Modifier,
 ) {
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-    val columnState = rememberLazyListState()
-
-    val sortedItems = when (sorting) {
-        "Default" -> itemsList.sortedBy { it.items.id }
-        "Blend" -> itemsList.sortedBy { it.items.blend }
-        "Brand" -> itemsList.sortedBy { it.items.brand }
-        "Type" -> itemsList.sortedBy { it.items.type }
-        "Quantity" -> itemsList.sortedBy { sortQuantity[it.items.id] }.reversed()
-        else -> itemsList.sortedBy { it.items.id }
-    }
-
-    val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
-
     Box(
         modifier = Modifier
             .padding(0.dp)
@@ -1191,7 +1315,8 @@ fun ListViewMode(
                     showTins = showTins,
                     filteredTins = tinsList,
                     formattedQuantity = formattedQuantity[item.items.id] ?: "--",
-                    filterViewModel = filterViewModel,
+                    searchPerformed = searchPerformed,
+                    isTinSearch = isTinSearch,
                     onEditClick = { onEditClick(item.items) },
                     modifier = Modifier
                         .padding(0.dp)
@@ -1207,7 +1332,7 @@ fun ListViewMode(
                                             onDismissMenu()
                                         } else {
                                             if (!searchPerformed) {
-                                                filterViewModel.getPositionTrigger()
+                                                getPositionTrigger()
                                             }
                                             onDetailsClick(item.items)
                                         }
@@ -1217,7 +1342,7 @@ fun ListViewMode(
                             onLongClick = {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 if (!searchPerformed) {
-                                    filterViewModel.getPositionTrigger()
+                                    getPositionTrigger()
                                 }
                                 onShowMenu(item.items.id)
                             },
@@ -1225,120 +1350,30 @@ fun ListViewMode(
                             interactionSource = null
                         ),
                     onMenuDismiss = { onDismissMenu() },
+                    getPositionTrigger = { getPositionTrigger() },
                     showMenu = isMenuShown && activeMenuId == item.items.id
                 )
-            }
-        }
-
-        // jump to button
-        AnimatedVisibility(
-            visible = isVisible && (sortedItems.size > 99),
-            enter = fadeIn(animationSpec = tween(150)),
-            exit = fadeOut(animationSpec = tween(150)),
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(16.dp)
-        ) {
-            JumpToButton(
-                jumpTo = {
-                    coroutineScope.launch {
-                        if (scrollDirection == ScrollDirection.DOWN) {
-                            columnState.scrollToItem(itemsList.lastIndex)
-                        } else {
-                            columnState.scrollToItem(0)
-                        }
-                    }
-                },
-                scrollDirection = scrollDirection,
-                modifier = Modifier
-            )
-        }
-
-
-        val currentItemsList by rememberUpdatedState(sortedItems)
-        val currentPosition by filterViewModel.currentPosition.collectAsState()
-        val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-        val savedItemId by filterViewModel.savedItemId.collectAsState()
-        val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
-        val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-        val getPosition by filterViewModel.getPosition.collectAsState()
-
-        // Scroll to Positions //
-        LaunchedEffect(currentItemsList) {
-            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) {
-                delay(5)
-            }
-            if (savedItemIndex != -1) {
-                withFrameNanos {
-                    coroutineScope.launch {
-                        if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
-                            val offset =
-                                (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-                            columnState.scrollToItem(savedItemIndex, offset)
-                        } else {
-                            columnState.scrollToItem(savedItemIndex)
-                        }
-                    }
-                }
-                filterViewModel.resetScroll()
-            }
-            if (shouldScrollUp) {
-                columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
-            }
-            if (shouldReturn && !searchPerformed && !shouldScrollUp) {
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
-
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-            }
-        }
-
-        LaunchedEffect(sorting) {
-            if (!searchPerformed) {
-                filterViewModel.resetScroll()
-                columnState.scrollToItem(0)
-            } else {
-                columnState.scrollToItem(0)
-            }
-        }
-
-        // Save positions //
-        LaunchedEffect(getPosition) {
-            if (getPosition > 0 && !searchPerformed) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                if (firstVisibleItem != null) {
-                    filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                }
             }
         }
     }
 }
 
 
+@Stable
 @Composable
 private fun CellarListItem(
     modifier: Modifier = Modifier,
     item: ItemsComponentsAndTins,
     showTins: Boolean,
+    searchPerformed: Boolean,
+    isTinSearch: Boolean,
     filteredTins: List<Tins>,
     formattedQuantity: String,
-    filterViewModel: FilterViewModel,
+    getPositionTrigger: () -> Unit,
     onMenuDismiss: () -> Unit,
     showMenu: Boolean,
     onEditClick: (Items) -> Unit,
 ) {
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-
     Row (
         modifier = Modifier
             .fillMaxWidth()
@@ -1493,7 +1528,6 @@ private fun CellarListItem(
                 }
 
                 // Tins
-                val isTinSearch by filterViewModel.isTinSearch.collectAsState()
                 if (filteredTins.isNotEmpty() && (showTins || (searchPerformed && isTinSearch))) { //item.tins.isNotEmpty()
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = .5f)),
@@ -1608,7 +1642,7 @@ private fun CellarListItem(
                         TextButton(
                             onClick = {
                                 if (!searchPerformed) {
-                                    filterViewModel.getPositionTrigger()
+                                    getPositionTrigger()
                                 }
                                 onEditClick(item.items)
                                 onMenuDismiss()
@@ -1629,7 +1663,9 @@ private fun CellarListItem(
         }
     }
 
-    Spacer(Modifier.height(1.dp).background(LocalCustomColors.current.backgroundVariant)
+    Spacer(Modifier
+        .height(1.dp)
+        .background(LocalCustomColors.current.backgroundVariant)
     )
 }
 
@@ -1637,67 +1673,17 @@ private fun CellarListItem(
 /** Table View Mode **/
 @Composable
 fun TableViewMode(
-    itemsList: List<ItemsComponentsAndTins>,
+    sortedItems: List<ItemsComponentsAndTins>,
+    columnState: LazyListState,
     showTins: Boolean,
     filteredTins: List<Tins>,
-    sortQuantity: Map<Int, Double>,
-    formattedQuantity: Map<Int, String>,
-    filterViewModel: FilterViewModel,
-    searchFocused: Boolean,
-    onDetailsClick: (Items) -> Unit,
-    onEditClick: (Items) -> Unit,
-    activeMenuId: Int?,
-    onShowMenu: (Int) -> Unit,
-    isMenuShown: Boolean,
-    onDismissMenu: () -> Unit,
-    sorting: TableSorting,
-    updateSorting: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val columnMinWidths = listOf(
-        180.dp, // Brand
-        300.dp, // Blend
-        108.dp, // Type
-        64.dp, // Fav/Dis
-        64.dp, // Note
-        98.dp // Tins
-    )
-
-    TableLayout(
-        items = itemsList,
-        showTins = showTins,
-        filteredTins = filteredTins,
-        sortQuantity = sortQuantity,
-        formattedQty = formattedQuantity,
-        filterViewModel = filterViewModel,
-        searchFocused = searchFocused,
-        columnMinWidths = columnMinWidths,
-        onDetailsClick = onDetailsClick,
-        onEditClick = onEditClick,
-        activeMenuId = activeMenuId,
-        onShowMenu = onShowMenu,
-        isMenuShown = isMenuShown,
-        onDismissMenu = onDismissMenu,
-        sorting = sorting,
-        updateSorting = updateSorting,
-        modifier = modifier
-            .fillMaxWidth()
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun TableLayout(
-    items: List<ItemsComponentsAndTins>,
-    showTins: Boolean,
-    filteredTins: List<Tins>,
-    sortQuantity: Map<Int, Double>,
     formattedQty: Map<Int, String>,
-    filterViewModel: FilterViewModel,
+    searchPerformed: Boolean,
+    isTinSearch: Boolean,
     searchFocused: Boolean,
-    columnMinWidths: List<Dp>,
     onDetailsClick: (Items) -> Unit,
     onEditClick: (Items) -> Unit,
+    getPositionTrigger: () -> Unit,
     activeMenuId: Int?,
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
@@ -1709,6 +1695,14 @@ fun TableLayout(
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
     val horizontalScroll = rememberScrollState()
 
+    val columnMinWidths = listOf(
+        180.dp, // Brand
+        300.dp, // Blend
+        108.dp, // Type
+        64.dp, // Fav/Dis
+        64.dp, // Note
+        98.dp // Tins
+    )
     val columnMapping = listOf(
         { item: Items -> item.brand }, // 0
         { item: Items -> item.blend }, // 1
@@ -1723,25 +1717,11 @@ fun TableLayout(
         { item: Items -> item.notes }, // 4
         { item: Items -> item.id }, // 5
     )
-    val sortedItems = when (sorting.columnIndex) {
-        0 -> items.sortedBy { it.items.brand }
-        1 -> items.sortedBy { it.items.blend }
-        2 -> items.sortedBy { it.items.type.ifBlank { "Z" } }
-        5 -> items.sortedBy { sortQuantity[it.items.id] }.reversed()
-        else -> items
-    }.let {
-        if (!sorting.sortAscending) it.reversed() else it
-    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-        val columnState = rememberLazyListState()
-        val coroutineScope = rememberCoroutineScope()
-        val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
-
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -1854,7 +1834,7 @@ fun TableLayout(
                                                         onDismissMenu()
                                                     } else {
                                                         if (!searchPerformed) {
-                                                            filterViewModel.getPositionTrigger()
+                                                            getPositionTrigger()
                                                         }
                                                         onDetailsClick(item.items)
                                                     }
@@ -1866,7 +1846,7 @@ fun TableLayout(
                                                 HapticFeedbackType.LongPress
                                             )
                                             if (!searchPerformed) {
-                                                filterViewModel.getPositionTrigger()
+                                                getPositionTrigger()
                                             }
                                             onShowMenu(item.items.id)
                                         },
@@ -2013,7 +1993,7 @@ fun TableLayout(
                                         ) {
                                             TextButton(
                                                 onClick = {
-                                                    if (!searchPerformed) { filterViewModel.getPositionTrigger() }
+                                                    if (!searchPerformed) { getPositionTrigger() }
                                                     onEditClick(item.items)
                                                     onDismissMenu()
                                                 },
@@ -2034,7 +2014,6 @@ fun TableLayout(
                         }
                     }
                     // tins
-                    val isTinSearch by filterViewModel.isTinSearch.collectAsState()
                     if (item.tins.isNotEmpty() && (showTins || (searchPerformed && isTinSearch))) {
                         Row(
                             modifier = Modifier
@@ -2129,101 +2108,10 @@ fun TableLayout(
                     }
                 }
             }
-
-
-            val currentItemsList by rememberUpdatedState(sortedItems)
-            val currentPosition by filterViewModel.currentPosition.collectAsState()
-            val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-            val savedItemId by filterViewModel.savedItemId.collectAsState()
-            val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
-            val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-            val getPosition by filterViewModel.getPosition.collectAsState()
-
-            // Scroll to Positions //
-            LaunchedEffect(currentItemsList) {
-                while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) {
-                    delay(5)
-                }
-                if (savedItemIndex != -1) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
-                                val offset =
-                                    (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-                                columnState.scrollToItem(savedItemIndex, offset)
-                            } else {
-                                columnState.scrollToItem(savedItemIndex)
-                            }
-                        }
-                    }
-                    filterViewModel.resetScroll()
-                }
-                if (shouldScrollUp) {
-                    columnState.scrollToItem(0)
-                    filterViewModel.resetScroll()
-                }
-                if (shouldReturn && !searchPerformed && !shouldScrollUp) {
-                    val index = currentPosition[0]
-                    val offset = currentPosition[1]
-
-                    if (index != null && offset != null) {
-                        withFrameNanos {
-                            coroutineScope.launch {
-                                columnState.scrollToItem(index, offset)
-                            }
-                        }
-                        filterViewModel.resetScroll()
-                    }
-                }
-            }
-
-            LaunchedEffect(sorting) {
-                if (!searchPerformed) {
-                    filterViewModel.resetScroll()
-                    columnState.scrollToItem(0)
-                } else {
-                    columnState.scrollToItem(0)
-                }
-            }
-
-            // Save positions //
-            LaunchedEffect(getPosition) {
-                if (getPosition > 0 && !searchPerformed) {
-                    val layoutInfo = columnState.layoutInfo
-                    val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-                    if (firstVisibleItem != null) {
-                        filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-                    }
-                }
-            }
-        }
-
-        // jump to button
-        AnimatedVisibility(
-            visible = isVisible && (sortedItems.size > 99),
-            enter = fadeIn(animationSpec = tween(150)),
-            exit = fadeOut(animationSpec = tween(150)),
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(16.dp)
-        ) {
-            JumpToButton(
-                jumpTo = {
-                    coroutineScope.launch {
-                        if (scrollDirection == ScrollDirection.DOWN) {
-                            columnState.scrollToItem(sortedItems.lastIndex)
-                        } else {
-                            columnState.scrollToItem(0)
-                        }
-                    }
-                },
-                scrollDirection = scrollDirection,
-                modifier = Modifier
-            )
         }
     }
 }
+
 
 @Composable
 fun HeaderCell(
