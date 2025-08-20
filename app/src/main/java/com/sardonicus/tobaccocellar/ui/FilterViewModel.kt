@@ -1052,83 +1052,70 @@ class FilterViewModel (
         FilterCategory.BRAND,
         { it, option -> it.brands.contains(option) }
     )
-
     val excludeBrandsEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableBrands,
         { name -> { it.items.brand != name } },
         FilterCategory.EXCLUDE_BRAND,
         { it, option -> !it.excludeBrands.contains(option) }
     )
-
     val typesEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableTypes,
         { name -> { it.items.type.ifBlank { "(Unassigned)" } == name } },
         FilterCategory.TYPE,
         { it, option -> it.types.contains(option) }
     )
-
     val favoritesEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.items.favorite },
         FilterCategory.FAVORITE,
         { it.favorites }
     )
-
     val excludeFavoritesEnabled: StateFlow<Boolean> = createEnabledFlow(
         { !it.items.favorite },
         FilterCategory.EXCLUDE_FAVORITE,
         { it.excludeFavorites }
     )
-
     val dislikedsEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.items.disliked },
         FilterCategory.DISLIKED,
         { it.dislikeds }
     )
-
     val excludeDislikesEnabled: StateFlow<Boolean> = createEnabledFlow(
         { !it.items.disliked },
         FilterCategory.EXCLUDE_DISLIKED,
         { it.excludeDislikeds }
     )
-
     val ratedEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.items.favorite || it.items.disliked },
         FilterCategory.RATED,
         { it.rated }
     )
-
     val unratedEnabled: StateFlow<Boolean> = createEnabledFlow(
         { !it.items.favorite && !it.items.disliked },
         FilterCategory.UNRATED,
         { it.unrated }
     )
-
     val inStockEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.items.quantity > 0 },
         FilterCategory.IN_STOCK,
         { it.inStock }
     )
-
     val outOfStockEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.items.quantity == 0 },
         FilterCategory.OUT_OF_STOCK,
         { it.outOfStock }
     )
-
     val subgenresEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableSubgenres,
         { name -> { it.items.subGenre.ifBlank { "(Unassigned)" } == name } },
         FilterCategory.SUBGENRE,
         { it, option -> it.subgenres.contains(option) }
     )
-
     val cutsEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableCuts,
         { name -> { it.items.cut.ifBlank { "(Unassigned)" } == name } },
         FilterCategory.CUT,
         { it, option -> it.cuts.contains(option) }
     )
-
     val componentsEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableComponents,
         { option ->
@@ -1160,7 +1147,6 @@ class FilterViewModel (
         FilterCategory.COMPONENT,
         { it, option -> it.components.contains(option) }
     )
-
     val flavoringsEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableFlavorings,
         { option ->
@@ -1192,56 +1178,47 @@ class FilterViewModel (
         FilterCategory.FLAVORING,
         { it, option -> it.flavorings.contains(option) }
     )
-
     val hasTinsEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.tins.isNotEmpty() },
         FilterCategory.HAS_TINS,
         { it.hasTins }
     )
-
     val noTinsEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.tins.isEmpty() },
         FilterCategory.NO_TINS,
         { it.noTins }
     )
-
     val openedEnabled: StateFlow<Boolean> = createEnabledFlow(
         { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.OPENED).any { it.openDate != null && (it.openDate < System.currentTimeMillis()) } },
         FilterCategory.OPENED,
         { it.opened }
     )
-
     val unopenedEnabled: StateFlow<Boolean> = createEnabledFlow(
         { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.UNOPENED).any { (it.openDate == null || it.openDate >= System.currentTimeMillis()) && !it.finished } },
         FilterCategory.UNOPENED,
         { it.unopened }
     )
-
     val finishedEnabled: StateFlow<Boolean> = createEnabledFlow(
         { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.FINISHED).any { it.finished } },
         FilterCategory.FINISHED,
         { it.finished }
     )
-
     val unfinishedEnabled: StateFlow<Boolean> = createEnabledFlow(
         { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.UNFINISHED).any { !it.finished } },
         FilterCategory.UNFINISHED,
         { it.unfinished }
     )
-
     val containerEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableContainers,
         { name -> { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.CONTAINER).any { it.container.ifBlank { "(Unassigned)" } == name } } },
         FilterCategory.CONTAINER,
         { it, option -> it.container.contains(option) }
     )
-
     val productionEnabled: StateFlow<Boolean> = createEnabledFlow(
         { it.items.inProduction },
         FilterCategory.PRODUCTION,
         { it.production }
     )
-
     val outOfProductionEnabled: StateFlow<Boolean> = createEnabledFlow(
         { !it.items.inProduction },
         FilterCategory.OUT_OF_PRODUCTION,
@@ -1254,53 +1231,205 @@ class FilterViewModel (
     }
 
     // Flow section filtering data
-    val subgenreData: StateFlow<FilterSectionData> = generateFilterSectionData(
-            availableSubgenres,
-            subgenresEnabled,
-            sheetSelectedSubgenres
+    @Suppress("UNCHECKED_CAST")
+    val brandsData: StateFlow<BrandsSectionData> = combine(
+        availableBrands,
+        sheetSelectedBrands,
+        sheetSelectedExcludeBrands,
+        sheetSelectedExcludeBrandSwitch,
+        brandsEnabled,
+        excludeBrandsEnabled
+    ) {
+            val allBrands = it[0] as List<String>
+            val selectedBrands = it[1] as List<String>
+            val excludeBrands = it[2] as List<String>
+            val excludeBrandSwitch = it[3] as Boolean
+            val brandsEnabled = it[4] as Map<String, Boolean>
+            val excludeBrandsEnabled = it[5] as Map<String, Boolean>
+            BrandsSectionData(
+                allBrands,
+                selectedBrands,
+                excludeBrands,
+                excludeBrandSwitch,
+                brandsEnabled,
+                excludeBrandsEnabled
+            )
+    }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = BrandsSectionData()
         )
+    val typeData: StateFlow<FilterSectionData> = generateFilterSectionData(
+        availableTypes,
+        typesEnabled,
+        sheetSelectedTypes,
+        reorder = false
+    )
+    val otherData: StateFlow<OtherSectionData> = combine(
+        sheetSelectedFavorites,
+        favoritesEnabled,
+        sheetSelectedExcludeFavorites,
+        excludeFavoritesEnabled,
+        sheetSelectedDislikeds,
+        dislikedsEnabled,
+        sheetSelectedExcludeDislikeds,
+        excludeDislikesEnabled,
+        sheetSelectedUnrated,
+        unratedEnabled,
+        sheetSelectedRated,
+        ratedEnabled,
+        sheetSelectedInStock,
+        inStockEnabled,
+        sheetSelectedOutOfStock,
+        outOfStockEnabled
+    ) {
+        val favorites = it[0]
+        val favoritesEnabled = it[1]
+        val excludeFavorites = it[2]
+        val excludeFavoritesEnabled = it[3]
+        val dislikeds = it[4]
+        val dislikedsEnabled = it[5]
+        val excludeDislikeds = it[6]
+        val excludeDislikedsEnabled = it[7]
+        val unrated = it[8]
+        val unratedEnabled = it[9]
+        val rated = it[10]
+        val ratedEnabled = it[11]
+        val inStock = it[12]
+        val inStockEnabled = it[13]
+        val outOfStock = it[14]
+        val outOfStockEnabled = it[15]
 
+        OtherSectionData(
+            favorites,
+            excludeFavorites,
+            dislikeds,
+            excludeDislikeds,
+            rated,
+            unrated,
+            inStock,
+            outOfStock,
+            favoritesEnabled,
+            excludeFavoritesEnabled,
+            dislikedsEnabled,
+            excludeDislikedsEnabled,
+            ratedEnabled,
+            unratedEnabled,
+            inStockEnabled,
+            outOfStockEnabled
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(500L),
+        initialValue = OtherSectionData()
+    )
+    val subgenreData: StateFlow<FilterSectionData> = generateFilterSectionData(
+        availableSubgenres,
+        subgenresEnabled,
+        sheetSelectedSubgenres
+    )
     val cutData: StateFlow<FilterSectionData> = generateFilterSectionData(
             availableCuts,
             cutsEnabled,
             sheetSelectedCuts
         )
-
     val componentData: StateFlow<FilterSectionData> = generateFilterSectionData(
             availableComponents,
             componentsEnabled,
             sheetSelectedComponents,
             sheetSelectedCompMatching
         )
-
     val flavoringData: StateFlow<FilterSectionData> = generateFilterSectionData(
             availableFlavorings,
             flavoringsEnabled,
             sheetSelectedFlavorings,
             sheetSelectedFlavorMatching
         )
-
     val containerData: StateFlow<FilterSectionData> = generateFilterSectionData(
             availableContainers,
             containerEnabled,
             sheetSelectedContainer
+        )
+    val tinsFilterData: StateFlow<TinsFilterData> = combine(
+        sheetSelectedHasTins,
+        hasTinsEnabled,
+        sheetSelectedNoTins,
+        noTinsEnabled,
+        sheetSelectedOpened,
+        openedEnabled,
+        sheetSelectedUnopened,
+        unopenedEnabled,
+        sheetSelectedFinished,
+        finishedEnabled,
+        sheetSelectedUnfinished,
+        unfinishedEnabled
+    ) {
+        val hasTins = it[0]
+        val hasEnabled = it[1]
+        val noTins = it[2]
+        val noEnabled = it[3]
+        val opened = it[4]
+        val openedEnabled = it[5]
+        val unopened = it[6]
+        val unopenedEnabled = it[7]
+        val finished = it[8]
+        val finishedEnabled = it[9]
+        val unfinished = it[10]
+        val unfinishedEnabled = it[11]
+
+        TinsFilterData(
+            hasTins,
+            noTins,
+            opened,
+            unopened,
+            finished,
+            unfinished,
+            hasEnabled,
+            noEnabled,
+            openedEnabled,
+            unopenedEnabled,
+            finishedEnabled,
+            unfinishedEnabled
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(500L),
+        initialValue = TinsFilterData()
+    )
+    val productionData: StateFlow<ProductionSectionData> = combine(
+        sheetSelectedProduction,
+        productionEnabled,
+        sheetSelectedOutOfProduction,
+        outOfProductionEnabled
+    ) { production, productionEnabled, outOfProduction, outOfProductionEnabled ->
+        ProductionSectionData(
+            production,
+            outOfProduction,
+            productionEnabled,
+            outOfProductionEnabled
+        )
+    }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = ProductionSectionData()
         )
 
     private fun generateFilterSectionData(
         available: StateFlow<List<String>>,
         enabled: StateFlow<Map<String, Boolean>>,
         selected: StateFlow<List<String>>,
-        matching: StateFlow<String>? = null
+        matching: StateFlow<String>? = null,
+        reorder: Boolean = true
     ): StateFlow<FilterSectionData> {
         return if (matching != null) {
             combine(
                 available,
                 enabled,
                 selected,
-                matching
+                matching,
             ) { available, enabled, selected, matching ->
                 FilterSectionData(
-                    available = reorderChips(available, enabled),
+                    available = if (reorder) reorderChips(available, enabled) else available,
                     selected = selected,
                     enabled = enabled,
                     matching = matching
@@ -1319,7 +1448,7 @@ class FilterViewModel (
                 selected,
             ) { available, enabled, selected ->
                 FilterSectionData(
-                    available = reorderChips(available, enabled),
+                    available = if (reorder) reorderChips(available, enabled) else available,
                     selected = selected,
                     enabled = enabled,
                     matching = ""
@@ -1458,7 +1587,7 @@ class FilterViewModel (
         _shouldScrollUp.value = true
     }
 
-    fun updateSelectedExcludeDislikes(isSelected: Boolean) {
+    fun updateSelectedExcludeDislikeds(isSelected: Boolean) {
         sheetSelectedExcludeDislikeds.value = isSelected
         _selectedExcludeDislikeds.value = isSelected
 
@@ -1645,6 +1774,17 @@ class FilterViewModel (
 
 
     // Tins filtering //
+    fun updateSelectedTins(string: String, it: Boolean) {
+        when (string) {
+            "has" -> updateSelectedHasTins(it)
+            "no" -> updateSelectedNoTins(it)
+            "opened" -> updateSelectedOpened(it)
+            "unopened" -> updateSelectedUnopened(it)
+            "finished" -> updateSelectedFinished(it)
+            "unfinished" -> updateSelectedUnfinished(it)
+        }
+    }
+
     fun updateSelectedHasTins(isSelected: Boolean) {
         sheetSelectedHasTins.value = isSelected
         _selectedHasTins.value = isSelected
@@ -1756,7 +1896,7 @@ class FilterViewModel (
         return selected.any { overflowedItems.contains(it) }
     }
 
-    fun clearAllSelectedFlow(field: String) {
+    fun clearAllSelected(field: String) {
         when (field) {
             "Subgenre" -> {
                 sheetSelectedSubgenres.value = emptyList()
@@ -1905,6 +2045,61 @@ data class FilterSectionData(
     val enabled: Map<String, Boolean>,
     val matching: String? = null,
 )
+
+data class BrandsSectionData(
+    val allBrands: List<String> = emptyList(),
+    val selectedBrands: List<String> = emptyList(),
+    val excludeBrands: List<String> = emptyList(),
+    val excludeBrandSwitch: Boolean = false,
+
+    val includeBrandsEnabled: Map<String, Boolean> = emptyMap(),
+    val excludeBrandsEnabled: Map<String, Boolean> = emptyMap(),
+)
+
+data class OtherSectionData(
+    val favorites: Boolean = false,
+    val excludeFavorites: Boolean = false,
+    val dislikeds: Boolean = false,
+    val excludeDislikeds: Boolean = false,
+    val rated: Boolean = false,
+    val unrated: Boolean = false,
+    val inStock: Boolean = false,
+    val outOfStock: Boolean = false,
+
+    val favoritesEnabled: Boolean = false,
+    val excludeFavoritesEnabled: Boolean = false,
+    val dislikedsEnabled: Boolean = false,
+    val excludeDislikedsEnabled: Boolean = false,
+    val ratedEnabled: Boolean = false,
+    val unratedEnabled: Boolean = false,
+    val inStockEnabled: Boolean = false,
+    val outOfStockEnabled: Boolean = false,
+)
+
+data class TinsFilterData(
+    val hasTins: Boolean = false,
+    val noTins: Boolean = false,
+    val opened: Boolean = false,
+    val unopened: Boolean = false,
+    val finished: Boolean = false,
+    val unfinished: Boolean = false,
+
+    val hasEnabled: Boolean = false,
+    val noEnabled: Boolean = false,
+    val openedEnabled: Boolean = false,
+    val unopenedEnabled: Boolean = false,
+    val finishedEnabled: Boolean = false,
+    val unfinishedEnabled: Boolean = false,
+)
+
+data class ProductionSectionData(
+    val production: Boolean = false,
+    val outOfProduction: Boolean = false,
+
+    val productionEnabled: Boolean = false,
+    val outOfProductionEnabled: Boolean = false,
+)
+
 
 val typeOrder = mapOf(
     "Aromatic" to 0,
