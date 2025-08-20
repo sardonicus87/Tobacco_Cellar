@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -589,7 +588,6 @@ fun HomeScreen(
 }
 
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeHeader(
     modifier: Modifier = Modifier,
@@ -1127,9 +1125,7 @@ private fun HomeBody(
 
         // Scroll to Positions //
         LaunchedEffect(currentItemsList) {
-            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) {
-                delay(5)
-            }
+            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) { delay(5) }
             if (savedItemIndex != -1) {
                 withFrameNanos {
                     coroutineScope.launch {
@@ -1272,7 +1268,6 @@ fun rememberJumpToState(
 
 
 /** List View Mode **/
-@OptIn(ExperimentalFoundationApi::class)
 @Stable
 @Composable
 fun ListViewMode(
@@ -2187,7 +2182,6 @@ fun HeaderCell(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TableCell(
     value: Any?,
