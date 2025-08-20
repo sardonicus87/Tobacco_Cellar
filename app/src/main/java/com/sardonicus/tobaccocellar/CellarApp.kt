@@ -10,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -134,8 +132,12 @@ import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.ActiveScreen
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
+import com.sardonicus.tobaccocellar.ui.BrandsSectionData
 import com.sardonicus.tobaccocellar.ui.FilterSectionData
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.OtherSectionData
+import com.sardonicus.tobaccocellar.ui.ProductionSectionData
+import com.sardonicus.tobaccocellar.ui.TinsFilterData
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -175,19 +177,20 @@ fun CellarApp(
     }
 
     val pagerState = rememberPagerState(pageCount = { 3 })
-    val tins by filterViewModel.tinsExist.collectAsState()
 
+    val brandsData by filterViewModel.brandsData.collectAsState()
+    val typeData by filterViewModel.typeData.collectAsState()
+    val otherData by filterViewModel.otherData.collectAsState()
     val subgenreData by filterViewModel.subgenreData.collectAsState()
     val cutData by filterViewModel.cutData.collectAsState()
     val componentData by filterViewModel.componentData.collectAsState()
     val flavoringData by filterViewModel.flavoringData.collectAsState()
+    val tinsData by filterViewModel.tinsFilterData.collectAsState()
     val containerData by filterViewModel.containerData.collectAsState()
+    val productionData by filterViewModel.productionData.collectAsState()
 
-    val inProduction by filterViewModel.sheetSelectedProduction.collectAsState()
-    val inProductionEnabled by filterViewModel.productionEnabled.collectAsState()
-    val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
-    val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()
-
+    val tins by filterViewModel.tinsExist.collectAsState()
+    val hasContainer = remember(containerData) { containerData.selected.isNotEmpty() }
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
 
     if (bottomSheetState == BottomSheetState.OPENED) {
@@ -204,18 +207,22 @@ fun CellarApp(
             Box {
                 FilterBottomSheet(
                     filterViewModel = filterViewModel,
+                    closeSheet = { filterViewModel.closeBottomSheet() },
                     pagerState = pagerState,
                     filtersApplied = filtersApplied,
-                    tins = tins,
+                    brandsData = brandsData,
+                    typeData = typeData,
+                    otherData = otherData,
                     subgenreData = subgenreData,
                     cutData = cutData,
                     componentData = componentData,
                     flavoringData = flavoringData,
                     containerData = containerData,
-                    inProduction = inProduction,
-                    inProductionEnabled = inProductionEnabled,
-                    outOfProduction = outOfProduction,
-                    outOfProductionEnabled = outOfProductionEnabled,
+                    tinsFilterData = tinsData,
+                    updateSelectedTins = { string, it -> filterViewModel.updateSelectedTins(string, it) },
+                    hasContainer = hasContainer,
+                    tins = tins,
+                    productionData = productionData,
                     modifier = Modifier
                 )
                 Box (
@@ -797,18 +804,22 @@ fun CellarBottomAppBar(
 @Composable
 fun FilterBottomSheet(
     filterViewModel: FilterViewModel,
+    closeSheet: () -> Unit,
     pagerState: PagerState,
     filtersApplied: Boolean,
-    tins: Boolean,
+    brandsData: BrandsSectionData,
+    typeData: FilterSectionData,
+    otherData: OtherSectionData,
     subgenreData: FilterSectionData,
     cutData: FilterSectionData,
     componentData: FilterSectionData,
     flavoringData: FilterSectionData,
     containerData: FilterSectionData,
-    inProduction: Boolean,
-    inProductionEnabled: Boolean,
-    outOfProduction: Boolean,
-    outOfProductionEnabled: Boolean,
+    tinsFilterData: TinsFilterData,
+    updateSelectedTins: (String, Boolean) -> Unit,
+    hasContainer: Boolean,
+    tins: Boolean,
+    productionData: ProductionSectionData,
     modifier: Modifier = Modifier,
 ) {
     Column (
@@ -859,7 +870,7 @@ fun FilterBottomSheet(
                         .clickable(
                             indication = LocalIndication.current,
                             interactionSource = null
-                        ) { filterViewModel.closeBottomSheet() }
+                        ) { closeSheet() }
                         .padding(4.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                 )
@@ -922,18 +933,32 @@ fun FilterBottomSheet(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         BrandFilterSection(
-                            filterViewModel = filterViewModel,
+                            brandsData = brandsData,
+                            brandSwitch = { filterViewModel.updateSelectedExcludeBrandsSwitch(it) },
+                            reorderChips = { list, map -> filterViewModel.reorderChips(list, map) },
+                            updateSelectedBrands = { string, boolean -> filterViewModel.updateSelectedBrands(string, boolean) },
+                            updateSelectedExcludedBrands = { string, boolean -> filterViewModel.updateSelectedExcludedBrands(string, boolean) },
+                            clearAll = { filterViewModel.clearAllSelectedBrands() },
                             modifier = Modifier
                                 .padding(6.dp),
                             innerScrolling = { innerScrolling = it }
                         )
                         TypeFilterSection(
-                            filterViewModel = filterViewModel,
+                            typeData = typeData,
+                            updateSelectedTypes = { string, boolean -> filterViewModel.updateSelectedTypes(string, boolean) },
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
                         )
                         OtherFiltersSection(
-                            filterViewModel = filterViewModel,
+                            otherData = otherData,
+                            updateSelectedFavorites = { filterViewModel.updateSelectedFavorites(it) },
+                            updateSelectedExcludeFavorites = { filterViewModel.updateSelectedExcludeFavorites(it) },
+                            updateSelectedDislikeds = { filterViewModel.updateSelectedDislikeds(it) },
+                            updateSelectedExcludeDislikeds = { filterViewModel.updateSelectedExcludeDislikeds(it) },
+                            updateSelectedRated = { filterViewModel.updateSelectedRated(it) },
+                            updateSelectedUnrated = { filterViewModel.updateSelectedUnrated(it) },
+                            updateSelectedInStock = { filterViewModel.updateSelectedInStock(it) },
+                            updateSelectedOutOfStock = { filterViewModel.updateSelectedOutOfStock(it) },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp),
                         )
@@ -952,11 +977,12 @@ fun FilterBottomSheet(
                         FlowFilterSection(
                             label = "Subgenre",
                             nothingLabel = "No subgenres assigned to any blends.",
-                            filterViewModel = filterViewModel,
                             displayData = subgenreData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedSubgenre(string, boolean) },
+                            overflowCheck = { selected, avail, int ->
+                                filterViewModel.overflowCheck(selected, avail, int) },
                             noneField = "(Unassigned)",
-                            clearAll = { filterViewModel.clearAllSelectedFlow("Subgenre") },
+                            clearAll = { filterViewModel.clearAllSelected("Subgenre") },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
@@ -974,11 +1000,12 @@ fun FilterBottomSheet(
                         FlowFilterSection(
                             label = "Cut",
                             nothingLabel = "No cuts assigned to any blends.",
-                            filterViewModel = filterViewModel,
                             displayData = cutData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedCut(string, boolean) },
+                            overflowCheck = { selected, avail, int ->
+                                filterViewModel.overflowCheck(selected, avail, int) },
                             noneField = "(Unassigned)",
-                            clearAll = { filterViewModel.clearAllSelectedFlow("Cut") },
+                            clearAll = { filterViewModel.clearAllSelected("Cut") },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
                                 .border(
@@ -996,9 +1023,10 @@ fun FilterBottomSheet(
                         FlowFilterSection(
                             label = "Components",
                             nothingLabel = "No components assigned to any blends.",
-                            filterViewModel = filterViewModel,
                             displayData = componentData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedComponent(string, boolean) },
+                            overflowCheck = { selected, avail, int ->
+                                filterViewModel.overflowCheck(selected, avail, int) },
                             noneField = "(None Assigned)",
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -1012,16 +1040,17 @@ fun FilterBottomSheet(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
-                            clearAll = { filterViewModel.clearAllSelectedFlow("Components") },
+                            clearAll = { filterViewModel.clearAllSelected("Components") },
                             onMatchOptionChange = { filterViewModel.updateCompMatching(it) },
                         )
 
                         FlowFilterSection(
                             label = "Flavorings",
                             nothingLabel = "No flavorings assigned to any blends.",
-                            filterViewModel = filterViewModel,
                             displayData = flavoringData,
                             updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedFlavoring(string, boolean) },
+                            overflowCheck = { selected, avail, int ->
+                                filterViewModel.overflowCheck(selected, avail, int) },
                             noneField = "(None Assigned)",
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -1035,7 +1064,7 @@ fun FilterBottomSheet(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 5.dp),
-                            clearAll = { filterViewModel.clearAllSelectedFlow("Flavorings") },
+                            clearAll = { filterViewModel.clearAllSelected("Flavorings") },
                             onMatchOptionChange = { filterViewModel.updateFlavorMatching(it) },
                         )
                     }
@@ -1051,8 +1080,10 @@ fun FilterBottomSheet(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         TinsFilterSection(
-                            filterViewModel = filterViewModel,
+                            tinsFilterData = tinsFilterData,
+                            hasContainer = hasContainer,
                             tins = tins,
+                            updateSelectedTins = { string, boolean -> updateSelectedTins(string, boolean) },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp)
                         )
@@ -1061,13 +1092,14 @@ fun FilterBottomSheet(
                             FlowFilterSection(
                                 label = "Tin Containers",
                                 nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
-                                filterViewModel = filterViewModel,
                                 displayData = containerData,
                                 updateSelectedOptions = { string, boolean ->
                                     filterViewModel.updateSelectedContainer(string, boolean)
                                 },
+                                overflowCheck = { selected, avail, int ->
+                                    filterViewModel.overflowCheck(selected, avail, int) },
                                 noneField = "(Unassigned)",
-                                clearAll = { filterViewModel.clearAllSelectedFlow("Container") },
+                                clearAll = { filterViewModel.clearAllSelected("Container") },
                                 modifier = Modifier
                                     .padding(horizontal = 6.dp, vertical = 0.dp)
                                     .border(
@@ -1133,17 +1165,17 @@ fun FilterBottomSheet(
                         ) {
                             CheckboxWithLabel(
                                 text = "In Production",
-                                checked = inProduction,
+                                checked = productionData.production,
                                 onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
                                 modifier = Modifier,
-                                enabled = inProductionEnabled
+                                enabled = productionData.productionEnabled
                             )
                             CheckboxWithLabel(
                                 text = "Discontinued",
-                                checked = outOfProduction,
+                                checked = productionData.outOfProduction,
                                 onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
                                 modifier = Modifier,
-                                enabled = outOfProductionEnabled
+                                enabled = productionData.outOfProductionEnabled
                             )
                         }
 
@@ -1181,20 +1213,24 @@ fun FilterBottomSheet(
 }
 
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BrandFilterSection(
-    filterViewModel: FilterViewModel,
+    brandsData: BrandsSectionData,
+    brandSwitch: (Boolean) -> Unit,
+    reorderChips: (List<String>, Map<String, Boolean>) -> List<String>,
+    updateSelectedBrands: (String, Boolean) -> Unit,
+    updateSelectedExcludedBrands: (String, Boolean) -> Unit,
+    clearAll: () -> Unit,
     innerScrolling: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val selectedBrands by filterViewModel.sheetSelectedBrands.collectAsState()
-    val selectedExcludedBrands by filterViewModel.sheetSelectedExcludeBrands.collectAsState()
-    val excluded by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
-    val allBrands by filterViewModel.availableBrands.collectAsState()
+    val selectedBrands by remember(brandsData) { mutableStateOf(brandsData.selectedBrands) }
+    val selectedExcludedBrands by remember(brandsData) { mutableStateOf(brandsData.excludeBrands) }
+    val excluded by remember(brandsData) { mutableStateOf(brandsData.excludeBrandSwitch) }
+    val allBrands by remember(brandsData) { mutableStateOf(brandsData.allBrands) }
+    val includeEnabled by remember(brandsData) { mutableStateOf(brandsData.includeBrandsEnabled) }
+    val excludeEnabled by remember(brandsData) { mutableStateOf(brandsData.excludeBrandsEnabled) }
 
-    val includeEnabled by filterViewModel.brandsEnabled.collectAsState()
-    val excludeEnabled by filterViewModel.excludeBrandsEnabled.collectAsState()
     val brandEnabled = if (excluded) excludeEnabled else includeEnabled
 
     var brandSearchText by remember { mutableStateOf("") }
@@ -1263,7 +1299,7 @@ fun BrandFilterSection(
                     .padding(horizontal = 8.dp)
                     .combinedClickable(
                         onClick = {
-                            filterViewModel.updateSelectedExcludeBrandsSwitch(isSelected = !excluded)
+                            brandSwitch(!excluded)
                         },
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
@@ -1302,7 +1338,7 @@ fun BrandFilterSection(
             if (!excluded) { selectedBrands.contains(it) }
             else { selectedExcludedBrands.contains(it) }
         }
-        val unselectedBrands = filterViewModel.reorderChips(preSortUnselected, brandEnabled)
+        val unselectedBrands = reorderChips(preSortUnselected, brandEnabled)
 
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
@@ -1336,9 +1372,9 @@ fun BrandFilterSection(
                     TextButton(
                         onClick = {
                             if (excluded) {
-                                filterViewModel.updateSelectedExcludedBrands(brand, true)
+                                updateSelectedExcludedBrands(brand, true)
                             } else {
-                                filterViewModel.updateSelectedBrands(brand, true)
+                                updateSelectedBrands(brand, true)
                             }
                             brandSearchText = ""
                             filteredBrands = allBrands
@@ -1400,9 +1436,9 @@ fun BrandFilterSection(
                                 onChipClicked = { },
                                 onChipRemoved = {
                                     if (excluded) {
-                                        filterViewModel.updateSelectedExcludedBrands(brand, false)
+                                        updateSelectedExcludedBrands(brand, false)
                                     } else {
-                                        filterViewModel.updateSelectedBrands(brand, false)
+                                        updateSelectedBrands(brand, false)
                                     }
                                 },
                                 trailingIcon = true,
@@ -1500,9 +1536,9 @@ fun BrandFilterSection(
                                                 onChipClicked = { },
                                                 onChipRemoved = {
                                                     if (excluded) {
-                                                        filterViewModel.updateSelectedExcludedBrands(brand, false)
+                                                        updateSelectedExcludedBrands(brand, false)
                                                     } else {
-                                                        filterViewModel.updateSelectedBrands(brand, false)
+                                                        updateSelectedBrands(brand, false)
                                                     }
                                                 },
                                                 colors = AssistChipDefaults.assistChipColors(
@@ -1524,7 +1560,7 @@ fun BrandFilterSection(
                                 ) {
                                     TextButton(
                                         onClick = {
-                                            filterViewModel.clearAllSelectedBrands()
+                                            clearAll()
                                             showOverflowPopup = false
                                         },
                                         modifier = Modifier
@@ -1562,15 +1598,16 @@ fun BrandFilterSection(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+
 @Composable
 fun TypeFilterSection(
-    filterViewModel: FilterViewModel,
+    typeData: FilterSectionData,
+    updateSelectedTypes: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
-    val availableTypes by filterViewModel.availableTypes.collectAsState()
-    val enabledTypes by filterViewModel.typesEnabled.collectAsState()
+    val selectedTypes = typeData.selected
+    val availableTypes = typeData.available
+    val enabledTypes = typeData.enabled
 
     Column(
         modifier = modifier
@@ -1584,7 +1621,7 @@ fun TypeFilterSection(
             availableTypes.forEach {
                 FilterChip(
                     selected = selectedTypes.contains(it),
-                    onClick = { filterViewModel.updateSelectedTypes(it, !selectedTypes.contains(it)) },
+                    onClick = { updateSelectedTypes(it, !selectedTypes.contains(it)) },
                     label = { Text(it, fontSize = 14.sp) },
                     modifier = Modifier
                         .padding(0.dp),
@@ -1601,52 +1638,62 @@ fun TypeFilterSection(
 
 @Composable
 fun OtherFiltersSection(
-    filterViewModel: FilterViewModel,
+    otherData: OtherSectionData,
+    updateSelectedFavorites: (Boolean) -> Unit,
+    updateSelectedExcludeFavorites: (Boolean) -> Unit,
+    updateSelectedDislikeds: (Boolean) -> Unit,
+    updateSelectedExcludeDislikeds: (Boolean) -> Unit,
+    updateSelectedRated: (Boolean) -> Unit,
+    updateSelectedUnrated: (Boolean) -> Unit,
+    updateSelectedInStock: (Boolean) -> Unit,
+    updateSelectedOutOfStock: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val favorites by filterViewModel.sheetSelectedFavorites.collectAsState()
-    val excludeFavorites by filterViewModel.sheetSelectedExcludeFavorites.collectAsState()
+    val favorites by remember(otherData) { mutableStateOf(otherData.favorites) }
+    val excludeFavorites by remember(otherData) { mutableStateOf(otherData.excludeFavorites) }
     val favoritesSelection =
         if (favorites) ToggleableState.On
         else if (excludeFavorites) ToggleableState.Indeterminate
         else ToggleableState.Off
-    val favoritesEnabled by filterViewModel.favoritesEnabled.collectAsState()
-    val favoritesExcludeEnabled by filterViewModel.excludeFavoritesEnabled.collectAsState()
+
+    val favoritesEnabled by remember(otherData) { mutableStateOf(otherData.favoritesEnabled) }
+    val favoritesExcludeEnabled by remember(otherData) { mutableStateOf(otherData.excludeFavoritesEnabled) }
     val favoritesEnabledTristate = when (favoritesSelection) {
         ToggleableState.Off -> favoritesEnabled
         ToggleableState.On -> favoritesExcludeEnabled
         ToggleableState.Indeterminate -> true
     }
 
-    val dislikeds by filterViewModel.sheetSelectedDislikeds.collectAsState()
-    val excludeDislikes by filterViewModel.sheetSelectedExcludeDislikeds.collectAsState()
+    val dislikeds by remember(otherData) { mutableStateOf(otherData.dislikeds) }
+    val excludeDislikeds by remember(otherData) { mutableStateOf(otherData.excludeDislikeds) }
     val dislikedsSelection =
         if (dislikeds) ToggleableState.On
-        else if (excludeDislikes) ToggleableState.Indeterminate
+        else if (excludeDislikeds) ToggleableState.Indeterminate
         else ToggleableState.Off
-    val dislikedsEnabled by filterViewModel.dislikedsEnabled.collectAsState()
-    val excludeDislikesEnabled by filterViewModel.excludeDislikesEnabled.collectAsState()
+
+    val dislikedsEnabled by remember(otherData) { mutableStateOf(otherData.dislikedsEnabled) }
+    val excludeDislikedsEnabled by remember(otherData) { mutableStateOf(otherData.excludeDislikedsEnabled) }
     val dislikedsEnabledTristate = when (dislikedsSelection) {
         ToggleableState.Off -> dislikedsEnabled
-        ToggleableState.On -> excludeDislikesEnabled
+        ToggleableState.On -> excludeDislikedsEnabled
         ToggleableState.Indeterminate -> true
     }
 
     // state for monitoring neutral/nonNeutral filters //
-    val neutral by filterViewModel.sheetSelectedUnrated.collectAsState()
-    val neutralEnabled by filterViewModel.unratedEnabled.collectAsState()
-    val nonNeutral by filterViewModel.sheetSelectedRated.collectAsState()
-    val nonNeutralEnabled by filterViewModel.ratedEnabled.collectAsState()
+    val rated by remember(otherData) { mutableStateOf(otherData.rated) }
+    val ratedEnabled by remember(otherData) { mutableStateOf(otherData.ratedEnabled) }
+    val unrated by remember(otherData) { mutableStateOf(otherData.unrated) }
+    val unratedEnabled by remember(otherData) { mutableStateOf(otherData.unratedEnabled) }
     val dualSelectionIndicatorState =
-        if (nonNeutral) ToggleableState.On
-        else if (neutral) ToggleableState.Indeterminate
+        if (rated) ToggleableState.On
+        else if (unrated) ToggleableState.Indeterminate
         else ToggleableState.Off
 
-    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
-    val inStockEnabled by filterViewModel.inStockEnabled.collectAsState()
+    val inStock by remember(otherData) { mutableStateOf(otherData.inStock) }
+    val inStockEnabled by remember(otherData) { mutableStateOf(otherData.inStockEnabled) }
 
-    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
-    val outOfStockEnabled by filterViewModel.outOfStockEnabled.collectAsState()
+    val outOfStock by remember(otherData) { mutableStateOf(otherData.outOfStock) }
+    val outOfStockEnabled by remember(otherData) { mutableStateOf(otherData.outOfStockEnabled) }
 
     Row(
         modifier = modifier
@@ -1684,12 +1731,12 @@ fun OtherFiltersSection(
                             onClick = { },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
-                                    if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                    else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                    if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                                     else Color.Transparent,
                                 checkmarkColor =
-                                    if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                    else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                     else Color.Transparent,
                                 uncheckedColor = Color.Transparent,
                                 disabledUncheckedColor = Color.Transparent
@@ -1700,11 +1747,11 @@ fun OtherFiltersSection(
                             state = favoritesSelection,
                             onClick = {
                                 when (favoritesSelection) {
-                                    ToggleableState.Off -> filterViewModel.updateSelectedFavorites(true)
-                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeFavorites(true)
+                                    ToggleableState.Off -> updateSelectedFavorites(true)
+                                    ToggleableState.On -> updateSelectedExcludeFavorites(true)
                                     ToggleableState.Indeterminate -> {
-                                        filterViewModel.updateSelectedFavorites(false)
-                                        filterViewModel.updateSelectedExcludeFavorites(false)
+                                        updateSelectedFavorites(false)
+                                        updateSelectedExcludeFavorites(false)
                                     }
                                 }
                             },
@@ -1719,10 +1766,10 @@ fun OtherFiltersSection(
                     }
                     CheckboxWithLabel(
                         text = "Rated",
-                        checked = nonNeutral,
-                        onCheckedChange = { filterViewModel.updateSelectedRated(it) },
+                        checked = rated,
+                        onCheckedChange = { updateSelectedRated(it) },
                         modifier = Modifier,
-                        enabled = nonNeutralEnabled
+                        enabled = ratedEnabled
                     )
                 }
                 Column(
@@ -1737,12 +1784,12 @@ fun OtherFiltersSection(
                             onClick = { },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
-                                    if (nonNeutral) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                    else if (neutral) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                    if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                                     else Color.Transparent,
                                 checkmarkColor =
-                                    if (nonNeutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                    else if (neutral) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                    else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                                     else Color.Transparent,
                                 uncheckedColor = Color.Transparent,
                                 disabledUncheckedColor = Color.Transparent
@@ -1753,18 +1800,18 @@ fun OtherFiltersSection(
                             state = dislikedsSelection,
                             onClick = {
                                 when (dislikedsSelection) {
-                                    ToggleableState.Off -> filterViewModel.updateSelectedDislikeds(true)
-                                    ToggleableState.On -> filterViewModel.updateSelectedExcludeDislikes(true)
+                                    ToggleableState.Off -> updateSelectedDislikeds(true)
+                                    ToggleableState.On -> updateSelectedExcludeDislikeds(true)
                                     ToggleableState.Indeterminate -> {
-                                        filterViewModel.updateSelectedDislikeds(false)
-                                        filterViewModel.updateSelectedExcludeDislikes(false)
+                                        updateSelectedDislikeds(false)
+                                        updateSelectedExcludeDislikeds(false)
                                     }
                                 }
                             },
                             colors = CheckboxDefaults.colors(
                                 checkedColor =
                                     if (dislikeds) MaterialTheme.colorScheme.primary
-                                    else if (excludeDislikes) MaterialTheme.colorScheme.error
+                                    else if (excludeDislikeds) MaterialTheme.colorScheme.error
                                     else Color.Transparent,
                             ),
                             enabled = dislikedsEnabledTristate
@@ -1772,10 +1819,10 @@ fun OtherFiltersSection(
                     }
                     CheckboxWithLabel(
                         text = "Unrated",
-                        checked = neutral,
-                        onCheckedChange = { filterViewModel.updateSelectedUnrated(it) },
+                        checked = unrated,
+                        onCheckedChange = { updateSelectedUnrated(it) },
                         modifier = Modifier,
-                        enabled = neutralEnabled
+                        enabled = unratedEnabled
                     )
                 }
             }
@@ -1799,14 +1846,14 @@ fun OtherFiltersSection(
             CheckboxWithLabel(
                 text = "In-stock",
                 checked = inStock,
-                onCheckedChange = { filterViewModel.updateSelectedInStock(it) },
+                onCheckedChange = { updateSelectedInStock(it) },
                 modifier = Modifier,
                 enabled = inStockEnabled
             )
             CheckboxWithLabel(
                 text = "Out",
                 checked = outOfStock,
-                onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) },
+                onCheckedChange = { updateSelectedOutOfStock(it) },
                 modifier = Modifier,
                 enabled = outOfStockEnabled
             )
@@ -1814,14 +1861,13 @@ fun OtherFiltersSection(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun FlowFilterSection(
-    filterViewModel: FilterViewModel,
     label: String,
     nothingLabel: String,
     displayData: FilterSectionData,
     updateSelectedOptions: (String, Boolean) -> Unit,
+    overflowCheck: (List<String>, List<String>, Int) -> Boolean,
     noneField: String,
     modifier: Modifier = Modifier,
     clearAll: () -> Unit = {},
@@ -2003,8 +2049,7 @@ fun FlowFilterSection(
                 },
                 enabledAtIndex = { displayData.enabled[displayData.available[it]] ?: true },
                 overflowIndicator = { overflowCount, enabledCount, overflowEnabled ->
-                    val overflowedSelected =
-                        filterViewModel.overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
+                    val overflowedSelected = overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
 
                     val labelColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
@@ -2277,8 +2322,10 @@ fun FlowFilterSection(
 
 @Composable
 fun TinsFilterSection(
-    filterViewModel: FilterViewModel,
+    tinsFilterData: TinsFilterData,
+    hasContainer: Boolean,
     tins: Boolean,
+    updateSelectedTins: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -2302,23 +2349,7 @@ fun TinsFilterSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-                val hasEnabled by filterViewModel.hasTinsEnabled.collectAsState()
-                val hasNone by filterViewModel.sheetSelectedNoTins.collectAsState()
-                val noneEnabled by filterViewModel.noTinsEnabled.collectAsState()
-
-                val isOpened by filterViewModel.sheetSelectedOpened.collectAsState()
-                val openEnabled by filterViewModel.openedEnabled.collectAsState()
-                val isUnopened by filterViewModel.sheetSelectedUnopened.collectAsState()
-                val unopenedEnabled by filterViewModel.unopenedEnabled.collectAsState()
-                val container by filterViewModel.sheetSelectedContainer.collectAsState()
-
-                val isFinished by filterViewModel.sheetSelectedFinished.collectAsState()
-                val finishedEnabled by filterViewModel.finishedEnabled.collectAsState()
-                val unfinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
-                val unfinishedEnabled by filterViewModel.unfinishedEnabled.collectAsState()
-
-                val implicitHas = !hasTins && (isOpened || isUnopened || isFinished || unfinished || container.isNotEmpty())
+                val implicitHas = !tinsFilterData.hasTins && (tinsFilterData.opened || tinsFilterData.unopened || tinsFilterData.finished || tinsFilterData.unfinished || hasContainer)
 
                 // Has Tins
                 Column(
@@ -2341,19 +2372,19 @@ fun TinsFilterSection(
                         )
                         CheckboxWithLabel(
                             text = "Has tins",
-                            checked = hasTins,
-                            onCheckedChange = { filterViewModel.updateSelectedHasTins(it) },
+                            checked = tinsFilterData.hasTins,
+                            onCheckedChange = { updateSelectedTins("has", it) },
                             modifier = Modifier,
-                            enabled = tins && hasEnabled,  // (tins && !dateScreen) && hasEnabled
-                            fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current, //if (dateScreen || !tins)
+                            enabled = tins && tinsFilterData.hasEnabled,
+                            fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
                         )
                     }
                     CheckboxWithLabel(
                         text = "No tins",
-                        checked = hasNone,
-                        onCheckedChange = { filterViewModel.updateSelectedNoTins(it) },
+                        checked = tinsFilterData.noTins,
+                        onCheckedChange = { updateSelectedTins("no", it) },
                         modifier = Modifier,
-                        enabled = tins && noneEnabled, //(tins && !dateScreen) && noneEnabled
+                        enabled = tins && tinsFilterData.noEnabled,
                         fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
@@ -2366,18 +2397,18 @@ fun TinsFilterSection(
                 ) {
                     CheckboxWithLabel(
                         text = "Opened",
-                        checked = isOpened,
-                        onCheckedChange = { filterViewModel.updateSelectedOpened(it) },
+                        checked = tinsFilterData.opened,
+                        onCheckedChange = { updateSelectedTins("opened", it) },
                         modifier = Modifier,
-                        enabled = tins && openEnabled,
+                        enabled = tins && tinsFilterData.openedEnabled,
                         fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unopened",
-                        checked = isUnopened,
-                        onCheckedChange = { filterViewModel.updateSelectedUnopened(it) },
+                        checked = tinsFilterData.unopened,
+                        onCheckedChange = { updateSelectedTins("unopened", it) },
                         modifier = Modifier,
-                        enabled = tins && unopenedEnabled,
+                        enabled = tins && tinsFilterData.unopenedEnabled,
                         fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
@@ -2390,23 +2421,23 @@ fun TinsFilterSection(
                 ) {
                     CheckboxWithLabel(
                         text = "Finished",
-                        checked = isFinished,
-                        onCheckedChange = { filterViewModel.updateSelectedFinished(it) },
+                        checked = tinsFilterData.finished,
+                        onCheckedChange = { updateSelectedTins("finished", it) },
                         modifier = Modifier,
-                        enabled = tins && finishedEnabled,
+                        enabled = tins && tinsFilterData.finishedEnabled,
                         fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unfinished",
-                        checked = unfinished,
-                        onCheckedChange = { filterViewModel.updateSelectedUnfinished(it) },
+                        checked = tinsFilterData.unfinished,
+                        onCheckedChange = { updateSelectedTins("unfinished", it) },
                         modifier = Modifier,
-                        enabled = tins && unfinishedEnabled,
+                        enabled = tins && tinsFilterData.unfinishedEnabled,
                         fontColor = if (!tins) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
             }
-            if (!tins) { // !tins && !dateScreen
+            if (!tins) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
