@@ -298,6 +298,16 @@ fun CsvImportBody(
                                 fontSize = 17.sp,
                             )
                         }
+                        Text(
+                            text = "* To see help, select a CSV file to start\n(import isn't automatic)",
+                            modifier = Modifier
+                                .padding(top = 12.dp)
+                                .fillMaxWidth(.66f)
+                                .align(Alignment.CenterHorizontally),
+                            fontSize = 12.sp,
+                            color = LocalContentColor.current.copy(alpha = .5f),
+                            textAlign = TextAlign.Center,
+                        )
                         Spacer(
                             modifier = Modifier
                                 .weight(2.5f)
@@ -336,7 +346,6 @@ fun CsvImportBody(
                                         disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .5f),
                                         disabledContentColor = MaterialTheme.colorScheme.onPrimary
                                     )
-
                                 ) {
                                     Text(
                                         text = stringResource(R.string.select_csv),
