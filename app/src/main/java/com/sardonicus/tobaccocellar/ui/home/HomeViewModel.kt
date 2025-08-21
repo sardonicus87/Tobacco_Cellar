@@ -73,44 +73,53 @@ class HomeViewModel(
     }
 
     /** States and Flows **/
+//    @Suppress("UNCHECKED_CAST")
+//    val homeUiState =
+//        combine(
+//            preferencesRepo.isTableView,
+//            snapshotFlow { tableSorting.value },
+//            preferencesRepo.listSorting,
+//            preferencesRepo.tinOzConversionRate,
+//            preferencesRepo.tinGramsConversionRate
+//        ) {
+//            val isTableView = it[0] as Boolean
+//            val tableSorting = it[1] as TableSorting
+//            val listSorting = it[2] as String
+//
+//            HomeUiState(
+//                isTableView = isTableView,
+//                sorting = if (isTableView) tableSorting else listSorting,
+//                isLoading = false
+//            )
+//        }
+//            .stateIn(
+//                scope = viewModelScope,
+//                started = SharingStarted.WhileSubscribed(5_000L),
+//                initialValue = HomeUiState(isLoading = true)
+//            )
+
     @Suppress("UNCHECKED_CAST")
-    val homeUiState =
-        combine(
-            preferencesRepo.isTableView,
-            snapshotFlow { tableSorting.value },
-            preferencesRepo.listSorting,
-            preferencesRepo.tinOzConversionRate,
-            preferencesRepo.tinGramsConversionRate
-        ) {
-            val isTableView = it[0] as Boolean
-            val tableSorting = it[1] as TableSorting
-            val listSorting = it[2] as String
+    val homeUiState = combine(
+        filterViewModel.homeScreenFilteredItems,
+        filterViewModel.homeScreenFilteredTins,
+        preferencesRepo.quantityOption,
+        preferencesRepo.isTableView,
+        snapshotFlow { tableSorting.value },
+        preferencesRepo.listSorting,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate,
+    ) {
+        val filteredItems = it[0] as List<ItemsComponentsAndTins>
+        val filteredTins = it[1] as List<Tins>
+        val quantityOption = it[2] as QuantityOption
+        val isTableView = it[3] as Boolean
+        val tableSorting = it[4] as TableSorting
+        val listSorting = it[5] as String
+        val ozRate = it[6] as Double
+        val gramsRate = it[7] as Double
 
-            HomeUiState(
-                isTableView = isTableView,
-                sorting = if (isTableView) tableSorting else listSorting,
-                isLoading = false
-            )
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = HomeUiState(isLoading = true)
-            )
-
-
-    fun generateSortedList(
-        filteredItems: List<ItemsComponentsAndTins>,
-        filteredTins: List<Tins>,
-        quantityOption: QuantityOption,
-        ounceRate: Double,
-        gramsRate: Double,
-        isTableView: Boolean,
-        tableSorting: TableSorting,
-        listSorting: String
-    ): Pair<List<ItemsComponentsAndTins>, Map<Int, String>> {
         val sortQuantity = filteredItems.associate {
-            it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption, ounceRate, gramsRate)
+            it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption, ozRate, gramsRate)
         }
 
         val sortedItems = if (filteredItems.isNotEmpty()) {
@@ -137,15 +146,79 @@ class HomeViewModel(
         } else emptyList()
 
         val formattedQuantities = sortedItems.associate {
-            val totalQuantity = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ounceRate, gramsRate) // !it.finished &&
+            val totalQuantity = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate) // !it.finished &&
             val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { it in filteredTins }) // !it.finished &&
             it.items.id to formattedQuantity
         }
 
         if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
 
-        return sortedItems to formattedQuantities
+        HomeUiState(
+            sortedItems = sortedItems,
+            filteredTins = filteredTins,
+            formattedQuantities = formattedQuantities,
+            isTableView = isTableView,
+            tableSorting = tableSorting,
+            listSorting = listSorting,
+            isLoading = false
+        )
     }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = HomeUiState(isLoading = true)
+        )
+
+
+//    fun generateSortedList(
+//        filteredItems: List<ItemsComponentsAndTins>,
+//        filteredTins: List<Tins>,
+//        quantityOption: QuantityOption,
+//        ounceRate: Double,
+//        gramsRate: Double,
+//        isTableView: Boolean,
+//        tableSorting: TableSorting,
+//        listSorting: String
+//    ): Pair<List<ItemsComponentsAndTins>, Map<Int, String>> {
+//        val sortQuantity = filteredItems.associate {
+//            it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption, ounceRate, gramsRate)
+//        }
+//
+//        val sortedItems = if (filteredItems.isNotEmpty()) {
+//            if (isTableView) {
+//                when (tableSorting.columnIndex) {
+//                    0 -> filteredItems.sortedBy { it.items.blend }
+//                    1 -> filteredItems.sortedBy { it.items.brand }
+//                    2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+//                    5 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+//                    else -> filteredItems
+//                }.let {
+//                    if (tableSorting.sortAscending) it else it.reversed()
+//                }
+//            } else {
+//                when (listSorting) {
+//                    "Default" -> filteredItems.sortedBy { it.items.id }
+//                    "Blend" -> filteredItems.sortedBy { it.items.blend }
+//                    "Brand" -> filteredItems.sortedBy { it.items.brand }
+//                    "Type" -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+//                    "Quantity" -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+//                    else -> filteredItems
+//                }
+//            }
+//        } else emptyList()
+//
+//        val formattedQuantities = sortedItems.associate {
+//            val totalQuantity = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ounceRate, gramsRate) // !it.finished &&
+//            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { it in filteredTins }) // !it.finished &&
+//            it.items.id to formattedQuantity
+//        }
+//
+//        if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
+//
+//        return sortedItems to formattedQuantities
+//    }
+
+
 
 
     /** List View item menu overlay and expand details **/
@@ -173,7 +246,7 @@ class HomeViewModel(
             filterViewModel.searchPerformed,
             filterViewModel.isFilterApplied,
             filterViewModel.emptyDatabase,
-            filterViewModel.unifiedFilteredItems
+            filterViewModel.homeScreenFilteredItems
         ) { searchText, searchPerformed, filteringApplied, emptyDatabase, filteredItems ->
             val emptyList = filteredItems.isEmpty()
             if (!emptyList) { "" }
@@ -370,9 +443,23 @@ class HomeViewModel(
 
 }
 
+//data class HomeUiState(
+//    val isTableView: Boolean = false,
+//    val sorting: Any = if (isTableView) TableSorting() else ListSorting.DEFAULT.value,
+//    val toggleContentDescription: Int =
+//        if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
+//    val toggleIcon: Int =
+//        if (isTableView) R.drawable.table_view else R.drawable.list_view,
+//    val isLoading: Boolean = false
+//)
+
 data class HomeUiState(
+    val sortedItems: List<ItemsComponentsAndTins> = emptyList(),
+    val filteredTins: List<Tins> = emptyList(),
+    val formattedQuantities: Map<Int, String> = emptyMap(),
     val isTableView: Boolean = false,
-    val sorting: Any = if (isTableView) TableSorting() else ListSorting.DEFAULT.value,
+    val tableSorting: TableSorting = TableSorting(),
+    val listSorting: String = ListSorting.DEFAULT.value,
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
     val toggleIcon: Int =
