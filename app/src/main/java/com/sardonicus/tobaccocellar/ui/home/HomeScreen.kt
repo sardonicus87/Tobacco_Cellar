@@ -70,6 +70,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,8 +104,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
@@ -124,6 +123,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 object HomeDestination : NavigationDestination {
@@ -136,7 +136,6 @@ enum class ScrollDirection { UP, DOWN }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    navController: NavController,
     navigateToStats: () -> Unit,
     navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
@@ -162,17 +161,8 @@ fun HomeScreen(
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val isTinSearch by filterViewModel.isTinSearch.collectAsState()
     val searchText by filterViewModel.searchTextDisplay.collectAsState()
-    val searchValue by filterViewModel.searchValue.collectAsState()
+    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
 
-    val preFilteredItems by filterViewModel.unifiedFilteredItems.collectAsState()
-    val filteredTins by filterViewModel.unifiedFilteredTins.collectAsState()
-    val quantityOption by viewmodel.quantityOption.collectAsState()
-    val ozRate by preferencesRepo.tinOzConversionRate.collectAsState(initial = 1.75)
-    val gramsRate by preferencesRepo.tinGramsConversionRate.collectAsState(initial = 50.0)
-
-    val homeUiState by viewmodel.homeUiState.collectAsState()
-    val tableSorting by remember { viewmodel.tableSorting }
-    val listSorting by preferencesRepo.listSorting.collectAsState(initial = ListSorting.DEFAULT.value)
     val resetLoading by viewmodel.resetLoading.collectAsState()
     val activeMenuId by remember { viewmodel.activeMenuId }
     val isMenuShown by remember { viewmodel.isMenuShown }
@@ -180,32 +170,7 @@ fun HomeScreen(
     val showTins by filterViewModel.showTins.collectAsState()
     val columnState = rememberLazyListState()
 
-    val (filteredItemsLive, formattedQuantities) = remember(
-        preFilteredItems,
-        filteredTins,
-        quantityOption,
-        ozRate,
-        gramsRate,
-        homeUiState.isTableView,
-        tableSorting,
-        listSorting
-    ) {
-        if (preFilteredItems.isNotEmpty()) {
-            viewmodel.generateSortedList(
-                preFilteredItems,
-                filteredTins,
-                quantityOption,
-                ozRate,
-                gramsRate,
-                homeUiState.isTableView,
-                tableSorting,
-                listSorting
-            )
-        }
-        else {
-            emptyList<ItemsComponentsAndTins>() to emptyMap()
-        }
-    }
+    val homeUiState by viewmodel.homeUiState.collectAsState()
 
     val showSnackbar by viewmodel.showSnackbar.collectAsState()
     if (showSnackbar) {
@@ -254,33 +219,6 @@ fun HomeScreen(
         }
     }
 
-
-    // Flash list fix on navigation from search
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    var cellarSnapshot by remember { mutableStateOf<List<ItemsComponentsAndTins>?>(null) }
-    val filteredItems = remember(currentRoute, filteredItemsLive, cellarSnapshot) {
-        if (currentRoute != HomeDestination.route && cellarSnapshot != null) {
-            cellarSnapshot!!
-        } else {
-            if (currentRoute == HomeDestination.route) {
-                cellarSnapshot = null
-            }
-            filteredItemsLive
-        }
-    }
-    val wrappedStatsNav = {
-        if (currentRoute == HomeDestination.route && (searchValue.isNotBlank() || showTins)) {
-            cellarSnapshot = filteredItemsLive
-        }
-        navigateToStats()
-    }
-    val wrappedDatesNav = {
-        if (currentRoute == HomeDestination.route && (searchValue.isNotBlank() || showTins)) {
-            cellarSnapshot = filteredItemsLive
-        }
-        navigateToDates()
-    }
 
     // Important Alert stuff
     val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
@@ -486,6 +424,7 @@ fun HomeScreen(
         )
     }
 
+
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -510,8 +449,8 @@ fun HomeScreen(
         bottomBar = {
             CellarBottomAppBar(
                 modifier = Modifier,
-                navigateToDates = wrappedDatesNav,
-                navigateToStats = wrappedStatsNav,
+                navigateToDates = navigateToDates,
+                navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
             )
@@ -546,8 +485,8 @@ fun HomeScreen(
                 filterViewModel = filterViewModel,
                 searchText = searchText,
                 saveListSorting = viewmodel::saveListSorting,
-                listSorting = listSorting,
-                filteredItems = filteredItems,
+                listSorting = homeUiState.listSorting,
+                filteredItems = homeUiState.sortedItems,
             )
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
@@ -556,15 +495,15 @@ fun HomeScreen(
                 HomeBody(
                     isLoading = homeUiState.isLoading,
                     resetLoading = resetLoading,
+                    emptyDb = emptyDatabase,
                     isTableView = homeUiState.isTableView,
                     emptyMessage = emptyMessage,
                     columnState = columnState,
-                    sortedItems = filteredItems,
-                    tins = filteredTins,
-                    formattedQuantity = formattedQuantities,
+                    sortedItems = homeUiState.sortedItems,
+                    tins = homeUiState.filteredTins,
+                    formattedQuantity = homeUiState.formattedQuantities,
                     coroutineScope = coroutineScope,
                     showTins = showTins,
-                    sorting = homeUiState.sorting,
                     filterViewModel = filterViewModel,
                     onDetailsClick = { if (lastClickedItemId != it) lastClickedItemId = it },
                     onEditClick = navigateToEditEntry,
@@ -576,7 +515,8 @@ fun HomeScreen(
                     searchFocused = searchFocused,
                     searchPerformed = searchPerformed,
                     isTinSearch = isTinSearch,
-                    tableSorting = tableSorting,
+                    tableSorting = homeUiState.tableSorting,
+                    listSorting = homeUiState.listSorting,
                     updateSorting = viewmodel::updateSorting,
                     modifier = modifier
                         .fillMaxWidth()
@@ -965,6 +905,7 @@ private fun CustomBlendSearch(
 private fun HomeBody(
     isLoading: Boolean,
     resetLoading: Boolean,
+    emptyDb: Boolean,
     isTableView: Boolean,
     emptyMessage: String,
     columnState: LazyListState,
@@ -973,7 +914,6 @@ private fun HomeBody(
     formattedQuantity: Map<Int, String>,
     coroutineScope: CoroutineScope,
     showTins: Boolean,
-    sorting: Any,
     filterViewModel: FilterViewModel,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
@@ -986,6 +926,7 @@ private fun HomeBody(
     searchPerformed: Boolean,
     isTinSearch: Boolean,
     tableSorting: TableSorting,
+    listSorting: String,
     updateSorting: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -994,15 +935,25 @@ private fun HomeBody(
 
     val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
 
-    var listRendering by remember { mutableStateOf(true) }
-    LaunchedEffect(sortedItems.size, columnState) {
-        if (sortedItems.isNotEmpty()) {
-            if (columnState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
-                listRendering = false
+    var showLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isLoading, resetLoading, emptyDb, emptyMessage, sortedItems) {
+        if (isLoading || resetLoading) {
+            showLoading = true
+        } else {
+            if (!emptyDb && sortedItems.isNotEmpty()) {
+                snapshotFlow { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() }.first { it }
+                showLoading = false
+            } else {
+                if (emptyDb) {
+                    showLoading = false
+                } else {
+                    snapshotFlow { emptyMessage.isNotBlank() }.first { it }
+                    showLoading = false
+                }
             }
         }
     }
-
 
     Box {
         Column(
@@ -1088,7 +1039,7 @@ private fun HomeBody(
             }
         }
 
-        if (isLoading || resetLoading || listRendering) { LoadingIndicator() }
+        if (showLoading) { LoadingIndicator() }
 
 
         // jump to button
@@ -1122,6 +1073,7 @@ private fun HomeBody(
         val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val getPosition by filterViewModel.getPosition.collectAsState()
+        val sorting = if (isTableView) tableSorting else listSorting
 
         // Scroll to Positions //
         LaunchedEffect(currentItemsList) {
