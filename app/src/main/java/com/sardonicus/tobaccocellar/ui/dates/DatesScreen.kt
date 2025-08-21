@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -144,7 +148,8 @@ fun DatesBody(
         } else {
             Column(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
@@ -158,7 +163,7 @@ fun DatesBody(
                     color = LocalContentColor.current.copy(alpha= .75f),
                 )
 
-                // Aging ready
+                // Aging Tracker
                 Box {
                     val separatorColor = colorScheme.secondary
                     Row(
@@ -286,13 +291,18 @@ fun DatesBody(
                     )
                 } else {
                     val offset = with(LocalDensity.current) { Dp.Hairline.toPx() / 2 }
-                    HorizontalDivider(Modifier.fillMaxWidth(), Dp.Hairline, colorScheme.secondary)
+                    HorizontalDivider(
+                        Modifier.fillMaxWidth(),
+                        Dp.Hairline,
+                        colorScheme.secondary
+                    )
                     HorizontalDivider(
                         Modifier
                             .fillMaxWidth()
                             .offset(y = -offset.dp),
                         Dp.Hairline,
-                        LocalCustomColors.current.backgroundVariant)
+                        LocalCustomColors.current.backgroundVariant
+                    )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = "No date information found within filtered entries.",
@@ -317,8 +327,7 @@ fun DateInfo(
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -379,6 +388,7 @@ fun DateInfo(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(IntrinsicSize.Min)
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
@@ -422,37 +432,102 @@ fun DateInfo(
                         Column(
                             modifier = Modifier
                                 .weight(1f)
+                                .fillMaxHeight()
                                 .padding(end = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                             horizontalAlignment = Alignment.Start
                         ) {
                             if (datesUiState.averageAgeManufacture.isNotBlank()) {
-                                Text(
-                                    text = datesUiState.averageAgeManufacture,
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+
+                                ) {
+                                    BasicText(
+                                        text = datesUiState.averageAgeManufacture,
+                                        modifier = Modifier,
+                                        maxLines = 1,
+                                        style = LocalTextStyle.current.copy(
+                                            color = LocalContentColor.current
+                                        ),
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 13.sp,
+                                            maxFontSize = 15.sp,
+                                            stepSize = .25.sp
+                                        )
+                                    )
+                                }
                             }
                             if (datesUiState.averageAgeCellar.isNotBlank()) {
-                                Text(
-                                    text = datesUiState.averageAgeCellar,
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+
+                                ) {
+                                    BasicText(
+                                        text = datesUiState.averageAgeCellar,
+                                        modifier = Modifier,
+                                        maxLines = 1,
+                                        style = LocalTextStyle.current.copy(
+                                            color = LocalContentColor.current
+                                        ),
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 13.sp,
+                                            maxFontSize = 15.sp,
+                                            stepSize = .25.sp
+                                        )
+                                    )
+                                }
                             }
                             if (datesUiState.averageAgeOpen.isNotBlank()) {
-                                Text(
-                                    text = datesUiState.averageAgeOpen,
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+
+                                ) {
+                                    BasicText(
+                                        text = datesUiState.averageAgeOpen,
+                                        modifier = Modifier,
+                                        maxLines = 1,
+                                        style = LocalTextStyle.current.copy(
+                                            color = LocalContentColor.current
+                                        ),
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 13.sp,
+                                            maxFontSize = 15.sp,
+                                            stepSize = .25.sp
+                                        )
+                                    )
+                                }
                             }
                             if (datesUiState.averageWaitTime.isNotBlank()) {
-                                Text(
-                                    text = datesUiState.averageWaitTime,
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+
+                                ) {
+                                    BasicText(
+                                        text = datesUiState.averageWaitTime,
+                                        modifier = Modifier,
+                                        maxLines = 1,
+                                        style = LocalTextStyle.current.copy(
+                                            color = LocalContentColor.current
+                                        ),
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 13.sp,
+                                            maxFontSize = 15.sp,
+                                            stepSize = .25.sp
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
