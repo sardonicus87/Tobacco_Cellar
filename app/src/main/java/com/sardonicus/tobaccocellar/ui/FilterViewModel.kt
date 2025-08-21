@@ -573,20 +573,16 @@ class FilterViewModel (
 
 
     /** Single Source Filtering **/
-    private val _activeScreen = MutableStateFlow(ActiveScreen.HOME)
-    val activeScreen: StateFlow<ActiveScreen> = _activeScreen.asStateFlow()
-
-    fun setActiveScreen(screen: ActiveScreen) { _activeScreen.value = screen }
+//    private val _activeScreen = MutableStateFlow(ActiveScreen.HOME)
+//    val activeScreen: StateFlow<ActiveScreen> = _activeScreen.asStateFlow()
+//
+//    fun setActiveScreen(screen: ActiveScreen) { _activeScreen.value = screen }
 
     // Filtering function //
     @Suppress("UNCHECKED_CAST")
     val unifiedFilteredItems: StateFlow<List<ItemsComponentsAndTins>> =
         combine(
             everythingFlow,
-            activeScreen,
-            searchValue,
-            preferencesRepo.searchSetting,
-
             selectedBrands,
             selectedExcludeBrands,
             selectedTypes,
@@ -615,47 +611,40 @@ class FilterViewModel (
             selectedUnfinished
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
-            val currentScreen = values[1] as ActiveScreen
-            val currentSearchValue = values[2] as String
-            val currentSearchSetting = values[3] as SearchSetting
+            val brands = values[1] as List<String>
+            val excludeBrands = values[2] as List<String>
+            val types = values[3] as List<String>
+            val favorites = values[4] as Boolean
+            val excludeLikes = values[5] as Boolean
+            val dislikeds = values[6] as Boolean
+            val excludeDislikes = values[7] as Boolean
+            val unrated = values[8] as Boolean
+            val rated = values[9] as Boolean
+            val inStock = values[10] as Boolean
+            val outOfStock = values[11] as Boolean
+            val subgenres = values[12] as List<String>
+            val cuts = values[13] as List<String>
+            val components = values[14] as List<String>
+            val compMatching = values[15] as String
+            val flavoring = values[16] as List<String>
+            val flavorMatching = values[17] as String
+            val production = values[18] as Boolean
+            val outOfProduction = values[19] as Boolean
+            val hasTins = values[20] as Boolean
+            val noTins = values[21] as Boolean
+            val container = values[22] as List<String>
+            val opened = values[23] as Boolean
+            val unopened = values[24] as Boolean
+            val finished = values[25] as Boolean
+            val unfinished = values[26] as Boolean
 
-            val brands = values[4] as List<String>
-            val excludeBrands = values[5] as List<String>
-            val types = values[6] as List<String>
-            val favorites = values[7] as Boolean
-            val excludeLikes = values[8] as Boolean
-            val dislikeds = values[9] as Boolean
-            val excludeDislikes = values[10] as Boolean
-            val neutral = values[11] as Boolean
-            val nonNeutral = values[12] as Boolean
-            val inStock = values[13] as Boolean
-            val outOfStock = values[14] as Boolean
-            val subgenres = values[15] as List<String>
-            val cuts = values[16] as List<String>
-            val components = values[17] as List<String>
-            val compMatching = values[18] as String
-            val flavoring = values[19] as List<String>
-            val flavorMatching = values[20] as String
-            val production = values[21] as Boolean
-            val outOfProduction = values[22] as Boolean
-            val hasTins = values[23] as Boolean
-            val noTins = values[24] as Boolean
-            val container = values[25] as List<String>
-            val opened = values[26] as Boolean
-            val unopened = values[27] as Boolean
-            val finished = values[28] as Boolean
-            val unfinished = values[29] as Boolean
-
-            val applySearch = currentScreen == ActiveScreen.HOME
-            val applyTin = true // currentScreen != ActiveScreen.DATES
+            val applyTin = true
 
             generateFilteredItemsList(
-                allItems, if (applySearch) currentSearchValue else "",
-                if (applySearch) currentSearchSetting else SearchSetting.Blend, brands,
-                excludeBrands, types, favorites, dislikeds, excludeLikes, excludeDislikes, neutral,
-                nonNeutral, inStock, outOfStock, subgenres, cuts, components, compMatching,
+                allItems, brands, excludeBrands, types, favorites, dislikeds, excludeLikes,
+                excludeDislikes, unrated, rated, inStock, outOfStock, subgenres, cuts, components, compMatching,
                 flavoring, flavorMatching, production, outOfProduction, hasTins, noTins, container,
-                opened, unopened, finished, unfinished, applySearch, applyTin
+                opened, unopened, finished, unfinished, applyTin
             )
         }
             .stateIn(
@@ -665,41 +654,37 @@ class FilterViewModel (
             )
 
     @Suppress("UNCHECKED_CAST")
-    val unifiedFilteredTins: StateFlow<List<Tins>> =
+    val homeScreenFilteredItems: StateFlow<List<ItemsComponentsAndTins>> =
         combine(
             everythingFlow,
+            unifiedFilteredItems,
             searchValue,
-            preferencesRepo.searchSetting,
-            selectedContainer,
-            selectedOpened,
-            selectedUnopened,
-            selectedFinished,
-            selectedUnfinished
+            preferencesRepo.searchSetting
         ) { values ->
-            val items = values[0] as List<ItemsComponentsAndTins>
-            val searchValue = values[1] as String
-            val searchSetting = values[2] as SearchSetting
+            val allItems = values[0] as List<ItemsComponentsAndTins>
+            val filteredItems = values[1] as List<ItemsComponentsAndTins>
+            val currentSearchValue = values[2] as String
+            val currentSearchSetting = values[3] as SearchSetting
 
-            val container = values[3] as List<String>
-            val opened = values[4] as Boolean
-            val unopened = values[5] as Boolean
-            val finished = values[6] as Boolean
-            val unfinished = values[7] as Boolean
-
-            generateFilteredTinsList(
-                items, searchValue, searchSetting, container, opened, unopened, finished, unfinished
-            )
-
+            if (currentSearchValue.isNotBlank()) {
+                allItems.filter {
+                    when (currentSearchSetting) {
+                        SearchSetting.Blend -> it.items.blend.contains(currentSearchValue, true)
+                        SearchSetting.Notes -> it.items.notes.contains(currentSearchValue, true)
+                        SearchSetting.TinLabel -> it.tins.any { it.tinLabel.contains(currentSearchValue, true) }
+                    }
+                }
+            }
+            else filteredItems
         }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000L),
-                initialValue = listOf()
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
             )
 
     private fun generateFilteredItemsList(
-        allItems: List<ItemsComponentsAndTins>, currentSearchValue: String,
-        currentSearchSetting: SearchSetting,
+        allItems: List<ItemsComponentsAndTins>,
 
         brands: List<String>, excludeBrands: List<String>, types: List<String>, favorites: Boolean,
         dislikeds: Boolean, excludeFavorites: Boolean,
@@ -709,18 +694,8 @@ class FilterViewModel (
         outOfProduction: Boolean, hasTins: Boolean, noTins: Boolean, container: List<String>,
         opened: Boolean, unopened: Boolean, finished: Boolean, unfinished: Boolean,
 
-        applySearchFilter: Boolean, applyTinFilter: Boolean
+        applyTinFilter: Boolean
     ): List<ItemsComponentsAndTins> {
-        if (applySearchFilter && currentSearchValue.isNotBlank()) {
-            return allItems.filter {
-                when (currentSearchSetting) {
-                    SearchSetting.Blend -> it.items.blend.contains(currentSearchValue, true)
-                    SearchSetting.Notes -> it.items.notes.contains(currentSearchValue, true)
-                    SearchSetting.TinLabel -> it.tins.any { it.tinLabel.contains(currentSearchValue, true) }
-                }
-            }
-        }
-
         return allItems.filter { items ->
             val compMatch = when (compMatching) {
                 "All" -> (components.isEmpty() || (components == listOf("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.containsAll(components))
@@ -777,28 +752,72 @@ class FilterViewModel (
         }
     }
 
-    private fun generateFilteredTinsList(
-        allItems: List<ItemsComponentsAndTins>, currentSearchValue: String,
-        currentSearchSetting: SearchSetting,
+    @Suppress("UNCHECKED_CAST")
+    val unifiedFilteredTins: StateFlow<List<Tins>> =
+        combine(
+            everythingFlow,
+            selectedContainer,
+            selectedOpened,
+            selectedUnopened,
+            selectedFinished,
+            selectedUnfinished,
+        ) { values ->
+            val items = values[0] as List<ItemsComponentsAndTins>
+            val container = values[1] as List<String>
+            val opened = values[2] as Boolean
+            val unopened = values[3] as Boolean
+            val finished = values[4] as Boolean
+            val unfinished = values[5] as Boolean
 
-        container: List<String>, opened: Boolean, unopened: Boolean, finished: Boolean, unfinished: Boolean
-    ): List<Tins> {
-        if (currentSearchValue.isBlank()) {
-            return allItems.flatMap { it.tins }.filter {
-                ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && it.container.isBlank())) || container.contains(it.container)) &&
-                        (!opened || (it.openDate != null && it.openDate < System.currentTimeMillis())) &&
-                        (!unopened || (!it.finished && (it.openDate == null || it.openDate >= System.currentTimeMillis()))) &&
-                        (!finished || it.finished) &&
-                        (!unfinished || !it.finished)
-            }
-        } else {
-            return if (currentSearchSetting == SearchSetting.TinLabel) {
-                allItems.flatMap { it.tins }.filter {
-                    it.tinLabel.contains(currentSearchValue, ignoreCase = true)
-                }
+            generateFilteredTinsList(items, container, opened, unopened, finished, unfinished)
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = listOf()
+            )
+
+    @Suppress("UNCHECKED_CAST")
+    val homeScreenFilteredTins: StateFlow<List<Tins>> =
+        combine(
+            everythingFlow,
+            unifiedFilteredTins,
+            searchValue,
+            preferencesRepo.searchSetting
+        ) { values ->
+            val allItems = values[0] as List<ItemsComponentsAndTins>
+            val filteredTins = values[1] as List<Tins>
+            val currentSearchValue = values[2] as String
+            val currentSearchSetting = values[3] as SearchSetting
+
+            if (currentSearchValue.isBlank()) {
+                filteredTins
             } else {
-                emptyList()
+                if (currentSearchSetting == SearchSetting.TinLabel) {
+                    allItems.flatMap { it.tins }.filter {
+                        it.tinLabel.contains(currentSearchValue, true)
+                    }
+                } else {
+                    emptyList()
+                }
             }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = listOf()
+            )
+
+    private fun generateFilteredTinsList(
+        allItems: List<ItemsComponentsAndTins>, container: List<String>, opened: Boolean,
+        unopened: Boolean, finished: Boolean, unfinished: Boolean,
+    ): List<Tins> {
+        return allItems.flatMap { it.tins }.filter {
+            ((container.isEmpty() && !container.contains("(Unassigned)")) || ((container.contains("(Unassigned)") && it.container.isBlank())) || container.contains(it.container)) &&
+                    (!opened || (it.openDate != null && it.openDate < System.currentTimeMillis())) &&
+                    (!unopened || (!it.finished && (it.openDate == null || it.openDate >= System.currentTimeMillis()))) &&
+                    (!finished || it.finished) &&
+                    (!unfinished || !it.finished)
         }
     }
 
@@ -2002,7 +2021,7 @@ class FilterViewModel (
 
 enum class BottomSheetState { OPENED, CLOSED }
 
-enum class ActiveScreen { HOME, STATS, DATES }
+//enum class ActiveScreen { HOME, STATS, DATES, Other }
 
 enum class FilterCategory {
     BRAND, EXCLUDE_BRAND, TYPE, FAVORITE, EXCLUDE_FAVORITE, DISLIKED, EXCLUDE_DISLIKED, RATED, UNRATED,
