@@ -127,10 +127,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
-import com.sardonicus.tobaccocellar.ui.ActiveScreen
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.BrandsSectionData
 import com.sardonicus.tobaccocellar.ui.FilterSectionData
@@ -160,21 +158,21 @@ fun CellarApp(
     navController: NavHostController = rememberNavController()
 ) {
     CellarNavHost(navController = navController)
-    val currentBackStack by navController.currentBackStackEntryAsState()
-    val currentRoute = currentBackStack?.destination?.route
+//    val currentBackStack by navController.currentBackStackEntryAsState()
+//    val currentRoute = currentBackStack?.destination?.route
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
 
-    LaunchedEffect(currentRoute) {
-        val screen = when (currentRoute) {
-            HomeDestination.route -> ActiveScreen.HOME
-            StatsDestination.route -> ActiveScreen.STATS
-            DatesDestination.route -> ActiveScreen.DATES
-            else -> ActiveScreen.HOME
-        }
-        filterViewModel.setActiveScreen(screen)
-    }
+//    LaunchedEffect(currentRoute) {
+//        val screen = when (currentRoute) {
+//            HomeDestination.route -> ActiveScreen.HOME
+//            StatsDestination.route -> ActiveScreen.STATS
+//            DatesDestination.route -> ActiveScreen.DATES
+//            else -> ActiveScreen.Other
+//        }
+//        filterViewModel.setActiveScreen(screen)
+//    }
 
     val pagerState = rememberPagerState(pageCount = { 3 })
 
