@@ -37,7 +37,8 @@ class DatesViewModel(
             filterViewModel.everythingFlow
         ) { filteredItems, filteredTins, allItems ->
 
-            val tinDates = filteredTins.mapNotNull { it.manufactureDate } + filteredTins.mapNotNull { it.cellarDate } + filteredTins.mapNotNull { it.openDate }
+            val filteredItemTins = filteredItems.flatMap { it.tins }.filter { it in filteredTins }
+            val tinDates = filteredItemTins.mapNotNull { it.manufactureDate } + filteredItemTins.mapNotNull { it.cellarDate } + filteredItemTins.mapNotNull { it.openDate }
 
             DatesUiState(
                 items = filteredItems,
@@ -46,10 +47,10 @@ class DatesViewModel(
                 agedDueThisWeek = agingDue(allItems).first,
                 agedDueThisMonth = agingDue(allItems).second,
 
-                averageAgeManufacture = calculateAverageDate(filteredTins, DatePeriod.PAST) { it.manufactureDate },
-                averageAgeCellar = calculateAverageDate(filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
-                averageAgeOpen = calculateAverageDate(filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
-                averageWaitTime = calculateAverageDate(filteredTins, DatePeriod.FUTURE) { it.openDate },
+                averageAgeManufacture = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { it.manufactureDate },
+                averageAgeCellar = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
+                averageAgeOpen = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
+                averageWaitTime = calculateAverageDate(filteredItemTins, DatePeriod.FUTURE) { it.openDate },
 
                 pastManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.manufactureDate },
                 pastCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
