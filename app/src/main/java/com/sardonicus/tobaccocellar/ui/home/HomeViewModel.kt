@@ -125,8 +125,8 @@ class HomeViewModel(
         val sortedItems = if (filteredItems.isNotEmpty()) {
             if (isTableView) {
                 when (tableSorting.columnIndex) {
-                    0 -> filteredItems.sortedBy { it.items.blend }
-                    1 -> filteredItems.sortedBy { it.items.brand }
+                    0 -> filteredItems.sortedBy { it.items.brand }
+                    1 -> filteredItems.sortedBy { it.items.blend }
                     2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                     5 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
