@@ -10,15 +10,91 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.2.0",
+        buildDate = "22 Aug, 2025",
+        changes = listOf(
+            "Major behind-the-scenes changes to how filtering and items are returned (single " +
+                    "source as opposed to per-screen) lead to performance gains, stability, and " +
+                    "other new enhancements, though the user-side won't notice any direct change " +
+                    "in behavior (beyond some improvements in responsiveness).",
+            "Filter options now become disabled as others are applied if a given filter option " +
+                    "is not found in the currently filtered items (one of the new enhancements " +
+                    "afforded by the aforementioned \"behind-the-scenes\" change). Also, for chip" +
+                    "-based filters, the overflow chip's count is the total of enabled chips in " +
+                    "the overflow. Tapping this even when it says +0 will still open the overflow " +
+                    "dialog and show all possible chips (though disabled).",
+            "Filter options (selectable brands, and chip based fields other than types) re-order " +
+                    "dynamically to be enabled first, then disabled.",
+            "Quantity display has changed for Ounces/Pounds and Grams (\"Cellar Quantity Display\" " +
+                    "option in settings). Previously, if an entry had no tins, it showed the " +
+                    "default \"No. of Tins\" value. Now, the \"No. of Tins\" field is converted " +
+                    "(using the conversion rates set in Settings) to display an estimated " +
+                    "quantity (denoted by an asterisk). Estimations are also made when all of the " +
+                    "unfinished tins for an item don't have a quantity.",
+            "Filtering Component and Flavor matching options corrected/updated. \"(None Assigned)" +
+                    "\" is now selectable regardless of match option and no longer mutually-" +
+                    "exclusive in match option \"Any\".",
+            "Tins filtering: opened status and finished status are no longer mutually-exclusive " +
+                    "to one another. The tin filter checkboxes are still mutually-exclusive to " +
+                    "each one's opposite (eg: has tins vs no tins), but now all three sets can be " +
+                    "combined. Item (and tin sub-list) filtering based on tins filters has also " +
+                    "been brought more in-line with the rest of filtering.",
+            "Dates screen, tins filtering no longer disabled (could result in no returned info)." +
+                    "The only exception is the aging tracker, which is always based on all entries " +
+                    "regardless of the chosen filters.",
+            "Cellar Screen sorting: table view now supports sorting by type column, while both " +
+                    "list and table views now support sorting by quantity. Note, the sort order " +
+                    "may differ between quantity display option \"No. of Tins\" and either grams " +
+                    "or ounces/pounds due to calculations if you don't consistently use the " +
+                    "quantity field on tins or sync the the \"No. of Tins\" with tins.",
+        ),
+        improvements = listOf(
+            "Cellar screen quick jump-to-top/bottom button now shows when there's at least 75 " +
+                    "items (previously only showed when there was at least 99).",
+            "Filter sheet, page indicator area now swipe/flick-able to switch pages. The page dots " +
+                    "can also still be tapped to jump pages, and you can still swipe/flick on the " +
+                    "filter area itself.",
+            "Filter sheet, Type filtering now dynamically shows only types that are actually used " +
+                    "(similar to other chip-based filter fields).",
+            "Filter button is reactivated on Stats and Dates screens when navigated to while " +
+                    "a search is still active on the Cellar screen.",
+            "Filter chip sections with overflows now have \"Clear All\" buttons in the overflow.",
+            "Stats screen, Quick Stats more accurate total weight estimate.",
+            "CSV Export: exporting as Tins now also exports the \"No. of Tins\" field and columns " +
+                    "rearranged slightly to match the normal export column order.",
+            "Stability and performance improvements.",
+            "Minor UI tweaks/improvements, including stats screen, if there are too many thin " +
+                    "slices at the top of chart (more than 4), percentages are now vertically " +
+                    "stacked instead of alternating (helps for smaller phones).",
+        ),
+        bugFixes = listOf(
+            "Fixed a potential bug with regard to focus states on some devices.",
+            "Fixed bug in filter sheet where current filter page was lost when closing. Now, when " +
+                    "the sheet is dismissed and re-opened, it will reopen to the last page it " +
+                    "was on.",
+            "Fixed search bugs: possibility of performing a blank search, switching the search to " +
+                    "the \"Tin Label\" option was showing tins before searching (should only show " +
+                    "after).",
+            "Blend Details Screen, tins marked as \"Finished\" were being counted in the total " +
+                    "tins quantity.",
+            "CSV Import, there was a bug that would cause a temporary/partial error on import " +
+                    "when a CSV contained duplicate brand/blend records.",
+            "Fixed some other minor UI bugs."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.1.10",
         buildDate = "30 July, 2025",
         changes = listOf(
             "Table view blend details and edit navigation now behaves like list view (tap entry " +
-                    "anywhere on row to go to details, long-press for menu to edit."
+                    "anywhere on row to go to details, long-press for menu to edit)."
         ),
         improvements = listOf(
             "Dates screen, much more accurate average time calculations in Quick Date Stats, as " +
                     "well as improving the layout of the Quick Date Stats text layout.",
+            "Cellar screen Table view mode, table is now centered on screens that are wider than " +
+                    "the table.",
             "Add/Edit Entry screens date selection, added a \"clear\" button to the date-picker " +
                     "to clear selected date on the calendar picker, eliminating the need to " +
                     "switch to input mode to erase a date. After tapping clear, tap confirm to " +
