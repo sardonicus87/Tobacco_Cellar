@@ -43,8 +43,8 @@ class CsvHelper {
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Components", "Flavoring", "No. of Tins", "Favorite",
-                "Disliked", "Production Status", "Notes"
+                "Brand", "Blend", "Type", "Subgenre", "Cut", "Components", "Flavoring", "No. of Tins",
+                "Favorite", "Disliked", "Production Status", "Notes"
             )
             .get()
 
@@ -80,9 +80,9 @@ class CsvHelper {
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                "Brand", "Blend", "Type", "Sub-Genre", "Cut", "Favorite", "Disliked",
-                "Production Status", "Notes", "Components", "Flavoring", "Container", "Quantity",
-                "Manufacture Date", "Cellar Date", "Open Date", "Finished"
+                "Brand", "Blend", "Type", "Subgenre", "Cut", "Components", "Flavoring",
+                "No. of Tins", "Favorite", "Disliked", "Production Status", "Notes", "Container",
+                "Quantity", "Manufacture Date", "Cellar Date", "Open Date", "Finished"
             )
             .get()
 
@@ -95,14 +95,15 @@ class CsvHelper {
                 tinData.type,
                 tinData.subGenre,
                 tinData.cut,
+                tinData.components,
+                tinData.flavoring,
+                tinData.quantity,
                 tinData.favorite,
                 tinData.disliked,
                 tinData.inProduction,
                 tinData.notes,
-                tinData.components,
-                tinData.flavoring,
                 tinData.container,
-                tinData.quantity,
+                tinData.tinQuantity,
                 tinData.manufactureDate,
                 tinData.cellarDate,
                 tinData.openDate,
