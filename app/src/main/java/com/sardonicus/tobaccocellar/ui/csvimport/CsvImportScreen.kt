@@ -33,6 +33,7 @@ import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -265,7 +266,9 @@ fun CsvImportBody(
                 ImportError(
                     onTryAgain = { coroutineScope.launch { viewModel.resetImportState() } },
                     navigateToHome = { navigateToHome() },
-                    modifier = Modifier,
+                    exception = (importStatus as ImportStatus.Error).exception,
+                    modifier = Modifier
+                        .fillMaxSize(),
                 )
             }
             is ImportStatus.Success -> {}
@@ -1435,10 +1438,12 @@ fun CsvHelpBody(
 fun ImportError(
     onTryAgain: () -> Unit,
     navigateToHome: () -> Unit,
+    exception: Throwable,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -1451,7 +1456,7 @@ fun ImportError(
             modifier = Modifier
                 .padding(bottom = 16.dp),
             fontWeight = FontWeight.Bold,
-            fontSize = 34.sp
+            fontSize = 30.sp
         )
         Text(
             text = "Please try again or return to cellar.",
@@ -1459,6 +1464,21 @@ fun ImportError(
                 .padding(bottom = 16.dp),
             fontSize = 18.sp,
         )
+        Text(
+            text = "Error for reporting:",
+            fontSize = 14.sp
+        )
+        SelectionContainer {
+            Text(
+                text = "Exception: ${exception.message ?: " unknown error"},\nCause: ${exception.cause?.message ?: " unknown cause"}",
+                fontSize = 14.sp,
+                softWrap = true,
+                modifier = Modifier
+                    .fillMaxWidth(.75f)
+                    .padding(bottom = 16.dp),
+                textAlign = TextAlign.Center
+            )
+        }
         TextButton(
             onClick = { onTryAgain() },
             modifier = Modifier,
@@ -1479,10 +1499,7 @@ fun ImportError(
                 fontSize = 18.sp,
             )
         }
-        Spacer(
-            modifier = Modifier
-                .weight(2f)
-        )
+        Spacer(modifier = Modifier.weight(2f))
     }
 }
 
