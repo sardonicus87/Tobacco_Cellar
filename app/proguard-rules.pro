@@ -24,6 +24,9 @@
 -keep class com.sardonicus.tobaccocellar.ui.settings.SettingsViewModelKt { *; }
 -keep class com.sardonicus.tobaccocellar.data.TobaccoDatabaseKt { *; }
 -keep class com.sardonicus.tobaccocellar.data.PreferencesRepo { *; }
+-dontwarn edu.umd.cs.findbugs.annotations.SuppressFBWarnings
+#-keep class edu.umd.cs.findbugs.annotations.** { *; }
+#-keep interface edu.umd.cs.findbugs.annotations.** { *; }
 
 #-keep public class com.sardonicus.tobaccocellar.ui.settings.** { public *; }
 #-keep public class com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel { public *; }
