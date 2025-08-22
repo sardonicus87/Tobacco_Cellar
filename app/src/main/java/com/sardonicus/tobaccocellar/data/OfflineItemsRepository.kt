@@ -35,9 +35,9 @@ class OfflineItemsRepository(
     override suspend fun deleteItem(item: Items) = itemsDao.delete(item)
 
     override suspend fun deleteAllItems() {
+        itemsDao.deleteAllItems()
         itemsDao.deleteOrphanedComponents()
         itemsDao.deleteOrphanedFlavoring()
-        itemsDao.deleteAllItems()
     }
 
     override suspend fun optimizeDatabase() {
@@ -146,14 +146,15 @@ class OfflineItemsRepository(
                         type = item.type,
                         subGenre = item.subGenre,
                         cut = item.cut,
+                        components = components,
+                        flavoring = flavoring,
+                        quantity = item.quantity,
                         favorite = item.favorite,
                         disliked = item.disliked,
                         inProduction = item.inProduction,
                         notes = item.notes,
-                        components = components,
-                        flavoring = flavoring,
                         container = tin.container,
-                        quantity = if (tin.unit.isNotBlank()) "$quantity ${tin.unit}" else "",
+                        tinQuantity = if (tin.unit.isNotBlank()) "$quantity ${tin.unit}" else "",
                         manufactureDate = formatMediumDate(tin.manufactureDate),
                         cellarDate = formatMediumDate(tin.cellarDate),
                         openDate = formatMediumDate(tin.openDate),
@@ -168,14 +169,15 @@ class OfflineItemsRepository(
                     type = item.type,
                     subGenre = item.subGenre,
                     cut = item.cut,
+                    components = components,
+                    flavoring = flavoring,
+                    quantity = item.quantity,
                     favorite = item.favorite,
                     disliked = item.disliked,
                     inProduction = item.inProduction,
                     notes = item.notes,
-                    components = components,
-                    flavoring = flavoring,
                     container = "",
-                    quantity = "",
+                    tinQuantity = "",
                     manufactureDate = "",
                     cellarDate = "",
                     openDate = "",
