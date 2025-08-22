@@ -53,7 +53,8 @@ class CsvImportViewModel(
         }
 
         _csvImportState.value = CsvImportState(
-            header = updatedHeader.toList(),
+            header = header.toList(),
+            testHeader = updatedHeader.toList(),
             firstFullRecord = updatedFirstFullRecord.toList(),
             allRecords = allRecords.toList(),
             recordCount = recordCount
@@ -877,7 +878,9 @@ class CsvImportViewModel(
                         if (componentId == null) {
                             componentId = itemsRepository.insertComponent(it).toInt()
                         }
-                        itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = itemId, componentId = componentId))
+                        if (insertedIds[index] != -1L) {
+                            itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = itemId, componentId = componentId))
+                        }
                     }
 
                     val flavor = if (
@@ -892,18 +895,22 @@ class CsvImportViewModel(
                         if (flavoringId == null) {
                             flavoringId = itemsRepository.insertFlavoring(it).toInt()
                         }
-                        itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = itemId, flavoringId = flavoringId))
+                        if (insertedIds[index] != -1L) {
+                            itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = itemId, flavoringId = flavoringId))
+                        }
                     }
 
                     if (itemId != -1) { insertions++ }
                     val brandBlendKey = Pair(items.brand, items.blend)
                     val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
 
-                    if (collateTins) {
-                        insertTins(itemId, tinDataList)
-                        tinDataList.forEach { _ -> addedTins++ }
-                        if (syncTins) {
-                            preferencesRepo.setItemSyncState(itemId, true)
+                    if (insertedIds[index] != -1L) {
+                        if (collateTins) {
+                            insertTins(itemId, tinDataList)
+                            tinDataList.forEach { _ -> addedTins++ }
+                            if (syncTins) {
+                                preferencesRepo.setItemSyncState(itemId, true)
+                            }
                         }
                     }
                 }
@@ -912,7 +919,7 @@ class CsvImportViewModel(
             _importStatus.value = ImportStatus.Error(e)
         } finally {
             val successfulConversions = itemsToImport.size + updatedConversions
-            val successfulInsertions = insertions // insertedIds.count { it != -1L }
+            val successfulInsertions = insertions
             val successfulUpdates = updatedCount
             val successfulTins = addedTins
             val updateFlag = updatedFlagSet
@@ -990,6 +997,7 @@ class CsvImportViewModel(
 
 data class CsvImportState(
     val header: List<String> = emptyList(),
+    val testHeader: List<String> = emptyList(),
     val firstFullRecord: List<String> = emptyList(),
     val allRecords: List<List<String>> = emptyList(),
     val recordCount: Int = 0,
