@@ -542,6 +542,7 @@ private fun HomeHeader(
 ) {
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
+    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
 
     Row(
         modifier = modifier
@@ -638,10 +639,23 @@ private fun HomeHeader(
                         }
                     }
 
+                    val blendSearch = SearchSetting.Blend
+                    val notesSearch = if (notesExist) SearchSetting.Notes else null
+                    val tinsSearch = if (tinsExist) SearchSetting.TinLabel else null
+                    val settingList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
+                    val enabled = settingList.size > 1
+
+                    LaunchedEffect(enabled) {
+                        if (!enabled) {
+                            filterViewModel.saveSearchSetting(blendSearch.value)
+                        }
+                    }
+
                     Box(
                         modifier = Modifier
                             .padding(0.dp)
                             .clickable(
+                                enabled = enabled && !emptyDatabase,
                                 indication = LocalIndication.current,
                                 interactionSource = null
                             ) { expanded = !expanded }
@@ -662,7 +676,7 @@ private fun HomeHeader(
                                 .offset(x = 7.dp, y = 0.dp)
                                 .padding(0.dp)
                                 .size(16.dp),
-                            tint = LocalContentColor.current.copy(alpha = iconAlpha)
+                            tint = if (enabled && !emptyDatabase) LocalContentColor.current.copy(alpha = iconAlpha) else Color.Transparent
                         )
                     }
                     DropdownMenu(
@@ -672,7 +686,7 @@ private fun HomeHeader(
                         containerColor = LocalCustomColors.current.textField,
                         offset = DpOffset((-2).dp, 2.dp)
                     ) {
-                        listOf(SearchSetting.Blend, SearchSetting.Notes, SearchSetting.TinLabel).forEach {
+                        settingList.forEach {
                             DropdownMenuItem(
                                 text = { Text(text = it.value) },
                                 onClick = {
@@ -681,11 +695,7 @@ private fun HomeHeader(
                                 },
                                 modifier = Modifier
                                     .padding(0.dp),
-                                enabled = when (it) {
-                                    SearchSetting.Blend -> true
-                                    SearchSetting.Notes -> notesExist
-                                    SearchSetting.TinLabel -> tinsExist
-                                },
+                                enabled = true,
                             )
                         }
                     }
