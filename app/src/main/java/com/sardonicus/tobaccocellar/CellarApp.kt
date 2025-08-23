@@ -187,6 +187,7 @@ fun CellarApp(
     val containerData by filterViewModel.containerData.collectAsState()
     val productionData by filterViewModel.productionData.collectAsState()
 
+    val ratingsExist by filterViewModel.ratingsExist.collectAsState()
     val tins by filterViewModel.tinsExist.collectAsState()
     val hasContainer = remember(containerData) { containerData.selected.isNotEmpty() }
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
@@ -211,6 +212,7 @@ fun CellarApp(
                     brandsData = brandsData,
                     typeData = typeData,
                     otherData = otherData,
+                    ratingsExist = ratingsExist,
                     subgenreData = subgenreData,
                     cutData = cutData,
                     componentData = componentData,
@@ -477,6 +479,7 @@ fun CellarBottomAppBar(
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
     val datesExist by filterViewModel.datesExist.collectAsState()
+    val databaseEmpty by filterViewModel.emptyDatabase.collectAsState()
 
     val tinsReady by filterViewModel.tinsReady.collectAsState()
 
@@ -707,7 +710,7 @@ fun CellarBottomAppBar(
                         onClick = { filterViewModel.openBottomSheet() },
                         modifier = Modifier
                             .padding(0.dp),
-                        enabled = if (currentDestination == HomeDestination) !searchPerformed else true
+                        enabled = if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.filter_24),
@@ -737,7 +740,7 @@ fun CellarBottomAppBar(
                         color = if (sheetOpen) {
                             onPrimaryLight
                         } else {
-                            if (searchPerformed && currentDestination == HomeDestination) {
+                            if ((searchPerformed && currentDestination == HomeDestination) || !databaseEmpty) {
                                 LocalContentColor.current.copy(alpha = 0.5f)
                             } else LocalContentColor.current
                         }
@@ -808,6 +811,7 @@ fun FilterBottomSheet(
     brandsData: BrandsSectionData,
     typeData: FilterSectionData,
     otherData: OtherSectionData,
+    ratingsExist: Boolean,
     subgenreData: FilterSectionData,
     cutData: FilterSectionData,
     componentData: FilterSectionData,
@@ -949,6 +953,7 @@ fun FilterBottomSheet(
                         )
                         OtherFiltersSection(
                             otherData = otherData,
+                            ratingsExist = ratingsExist,
                             updateSelectedFavorites = { filterViewModel.updateSelectedFavorites(it) },
                             updateSelectedExcludeFavorites = { filterViewModel.updateSelectedExcludeFavorites(it) },
                             updateSelectedDislikeds = { filterViewModel.updateSelectedDislikeds(it) },
@@ -1085,65 +1090,30 @@ fun FilterBottomSheet(
                             modifier = Modifier
                                 .padding(horizontal = 6.dp)
                         )
-
-                        Box {
-                            FlowFilterSection(
-                                label = "Tin Containers",
-                                nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
-                                displayData = containerData,
-                                updateSelectedOptions = { string, boolean ->
-                                    filterViewModel.updateSelectedContainer(string, boolean)
-                                },
-                                overflowCheck = { selected, avail, int ->
-                                    filterViewModel.overflowCheck(selected, avail, int) },
-                                noneField = "(Unassigned)",
-                                clearAll = { filterViewModel.clearAllSelected("Container") },
-                                modifier = Modifier
-                                    .padding(horizontal = 6.dp, vertical = 0.dp)
-                                    .border(
-                                        width = Dp.Hairline,
-                                        color = LocalCustomColors.current.sheetBoxBorder,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .background(
-                                        LocalCustomColors.current.sheetBox,
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 5.dp),
-                            )
-                            if (!tins) {
-                                Box(
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .border(
-                                            Dp.Hairline,
-                                            LocalCustomColors.current.sheetBoxBorder,
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .background(
-                                            LocalCustomColors.current.sheetBox.copy(alpha = .85f),
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .fillMaxWidth(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "No tins assigned to any blends.",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            textAlign = TextAlign.Center,
-                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        FlowFilterSection(
+                            label = "Tin Containers",
+                            nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
+                            displayData = containerData,
+                            updateSelectedOptions = { string, boolean ->
+                                filterViewModel.updateSelectedContainer(string, boolean)
+                            },
+                            overflowCheck = { selected, avail, int ->
+                                filterViewModel.overflowCheck(selected, avail, int) },
+                            noneField = "(Unassigned)",
+                            clearAll = { filterViewModel.clearAllSelected("Container") },
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp, vertical = 0.dp)
+                                .border(
+                                    width = Dp.Hairline,
+                                    color = LocalCustomColors.current.sheetBoxBorder,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(
+                                    LocalCustomColors.current.sheetBox,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                        )
 
                         // Production
                         Row(
@@ -1606,29 +1576,59 @@ fun TypeFilterSection(
     val selectedTypes = typeData.selected
     val availableTypes = typeData.available
     val enabledTypes = typeData.enabled
+    val nothingAssigned = !typeData.available.any { it != "(Unassigned)"}
 
     Column(
         modifier = modifier
+            .height(96.dp)
     ) {
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-        ) {
-            availableTypes.forEach {
-                FilterChip(
-                    selected = selectedTypes.contains(it),
-                    onClick = { updateSelectedTypes(it, !selectedTypes.contains(it)) },
-                    label = { Text(it, fontSize = 14.sp) },
+        if (nothingAssigned) {
+            Row(
+                modifier = Modifier
+                    .border(
+                        Dp.Hairline,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "No types assigned to any blends.",
                     modifier = Modifier
                         .padding(0.dp),
-                    shape = MaterialTheme.shapes.small,
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                    ),
-                    enabled = enabledTypes[it] ?: false
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = LocalContentColor.current.copy(alpha = 0.6f)
                 )
+            }
+        } else {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(96.dp),
+                horizontalArrangement = Arrangement.spacedBy(
+                    space = 6.dp,
+                    alignment = Alignment.CenterHorizontally
+                ),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+            ) {
+                availableTypes.forEach {
+                    FilterChip(
+                        selected = selectedTypes.contains(it),
+                        onClick = { updateSelectedTypes(it, !selectedTypes.contains(it)) },
+                        label = { Text(it, fontSize = 14.sp) },
+                        modifier = Modifier
+                            .padding(0.dp),
+                        shape = MaterialTheme.shapes.small,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                        ),
+                        enabled = enabledTypes[it] ?: false
+                    )
+                }
             }
         }
     }
@@ -1637,6 +1637,7 @@ fun TypeFilterSection(
 @Composable
 fun OtherFiltersSection(
     otherData: OtherSectionData,
+    ratingsExist: Boolean,
     updateSelectedFavorites: (Boolean) -> Unit,
     updateSelectedExcludeFavorites: (Boolean) -> Unit,
     updateSelectedDislikeds: (Boolean) -> Unit,
@@ -1700,127 +1701,154 @@ fun OtherFiltersSection(
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .padding(vertical = 3.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Row {
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Box {
-                        TriStateCheckWithLabel(
-                            text = "",
-                            state = dualSelectionIndicatorState,
-                            onClick = { },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                    if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                    else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                    else Color.Transparent,
-                                checkmarkColor =
-                                    if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                    else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                    else Color.Transparent,
-                                uncheckedColor = Color.Transparent,
-                                disabledUncheckedColor = Color.Transparent
-                            )
-                        )
-                        TriStateCheckWithLabel(
-                            text = "Favorites",
-                            state = favoritesSelection,
-                            onClick = {
-                                when (favoritesSelection) {
-                                    ToggleableState.Off -> updateSelectedFavorites(true)
-                                    ToggleableState.On -> updateSelectedExcludeFavorites(true)
-                                    ToggleableState.Indeterminate -> {
-                                        updateSelectedFavorites(false)
-                                        updateSelectedExcludeFavorites(false)
-                                    }
-                                }
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                    if (favorites) MaterialTheme.colorScheme.primary
-                                    else if (excludeFavorites) MaterialTheme.colorScheme.error
-                                    else Color.Transparent,
-                            ),
-                            enabled = favoritesEnabledTristate
-                        )
-                    }
-                    CheckboxWithLabel(
-                        text = "Rated",
-                        checked = rated,
-                        onCheckedChange = { updateSelectedRated(it) },
-                        modifier = Modifier,
-                        enabled = ratedEnabled
+        Box {
+            Column(
+                modifier = Modifier
+                    .border(
+                        width = Dp.Hairline,
+                        color = LocalCustomColors.current.sheetBoxBorder,
+                        shape = RoundedCornerShape(8.dp)
                     )
-                }
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Box {
-                        TriStateCheckWithLabel(
-                            text = "",
-                            state = dualSelectionIndicatorState,
-                            onClick = { },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                    if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                    else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                    else Color.Transparent,
-                                checkmarkColor =
-                                    if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                    else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                    else Color.Transparent,
-                                uncheckedColor = Color.Transparent,
-                                disabledUncheckedColor = Color.Transparent
+                    .background(
+                        LocalCustomColors.current.sheetBox,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .width(intrinsicSize = IntrinsicSize.Max)
+                    .padding(vertical = 3.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row {
+                    Column(
+                        modifier = Modifier,
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Box {
+                            TriStateCheckWithLabel(
+                                text = "",
+                                state = dualSelectionIndicatorState,
+                                onClick = { },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor =
+                                        if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                        else Color.Transparent,
+                                    checkmarkColor =
+                                        if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                        else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                        else Color.Transparent,
+                                    uncheckedColor = Color.Transparent,
+                                    disabledUncheckedColor = Color.Transparent
+                                )
                             )
-                        )
-                        TriStateCheckWithLabel(
-                            text = "Dislikes",
-                            state = dislikedsSelection,
-                            onClick = {
-                                when (dislikedsSelection) {
-                                    ToggleableState.Off -> updateSelectedDislikeds(true)
-                                    ToggleableState.On -> updateSelectedExcludeDislikeds(true)
-                                    ToggleableState.Indeterminate -> {
-                                        updateSelectedDislikeds(false)
-                                        updateSelectedExcludeDislikeds(false)
+                            TriStateCheckWithLabel(
+                                text = "Favorites",
+                                state = favoritesSelection,
+                                onClick = {
+                                    when (favoritesSelection) {
+                                        ToggleableState.Off -> updateSelectedFavorites(true)
+                                        ToggleableState.On -> updateSelectedExcludeFavorites(true)
+                                        ToggleableState.Indeterminate -> {
+                                            updateSelectedFavorites(false)
+                                            updateSelectedExcludeFavorites(false)
+                                        }
                                     }
-                                }
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                    if (dislikeds) MaterialTheme.colorScheme.primary
-                                    else if (excludeDislikeds) MaterialTheme.colorScheme.error
-                                    else Color.Transparent,
-                            ),
-                            enabled = dislikedsEnabledTristate
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor =
+                                        if (favorites) MaterialTheme.colorScheme.primary
+                                        else if (excludeFavorites) MaterialTheme.colorScheme.error
+                                        else Color.Transparent,
+                                ),
+                                enabled = favoritesEnabledTristate && ratingsExist
+                            )
+                        }
+                        CheckboxWithLabel(
+                            text = "Rated",
+                            checked = rated,
+                            onCheckedChange = { updateSelectedRated(it) },
+                            modifier = Modifier,
+                            enabled = ratedEnabled && ratingsExist
                         )
                     }
-                    CheckboxWithLabel(
-                        text = "Unrated",
-                        checked = unrated,
-                        onCheckedChange = { updateSelectedUnrated(it) },
+                    Column(
                         modifier = Modifier,
-                        enabled = unratedEnabled
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Box {
+                            TriStateCheckWithLabel(
+                                text = "",
+                                state = dualSelectionIndicatorState,
+                                onClick = { },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor =
+                                        if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                        else Color.Transparent,
+                                    checkmarkColor =
+                                        if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                        else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
+                                        else Color.Transparent,
+                                    uncheckedColor = Color.Transparent,
+                                    disabledUncheckedColor = Color.Transparent
+                                )
+                            )
+                            TriStateCheckWithLabel(
+                                text = "Dislikes",
+                                state = dislikedsSelection,
+                                onClick = {
+                                    when (dislikedsSelection) {
+                                        ToggleableState.Off -> updateSelectedDislikeds(true)
+                                        ToggleableState.On -> updateSelectedExcludeDislikeds(true)
+                                        ToggleableState.Indeterminate -> {
+                                            updateSelectedDislikeds(false)
+                                            updateSelectedExcludeDislikeds(false)
+                                        }
+                                    }
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor =
+                                        if (dislikeds) MaterialTheme.colorScheme.primary
+                                        else if (excludeDislikeds) MaterialTheme.colorScheme.error
+                                        else Color.Transparent,
+                                ),
+                                enabled = dislikedsEnabledTristate && ratingsExist
+                            )
+                        }
+                        CheckboxWithLabel(
+                            text = "Unrated",
+                            checked = unrated,
+                            onCheckedChange = { updateSelectedUnrated(it) },
+                            modifier = Modifier,
+                            enabled = unratedEnabled && ratingsExist
+                        )
+                    }
+                }
+            }
+            if (!ratingsExist) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .border(
+                            Dp.Hairline,
+                            LocalCustomColors.current.sheetBoxBorder,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No ratings assigned.",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     )
                 }
             }
@@ -1871,14 +1899,15 @@ fun FlowFilterSection(
     clearAll: () -> Unit = {},
     onMatchOptionChange: (String) -> Unit = {},
 ) {
+    var showOverflowPopup by remember { mutableStateOf(false) }
+    val enableMatchOption = !displayData.matching.isNullOrBlank()
+    val nothingAssigned = !displayData.available.any { it != noneField }
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
-        var showOverflowPopup by remember { mutableStateOf(false) }
-        val enableMatchOption = !displayData.matching.isNullOrBlank()
-        val nothingAssigned = !displayData.available.any { it != noneField }
 
         // Header and Match options
         Row(
@@ -1893,7 +1922,7 @@ fun FlowFilterSection(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier,
-                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
             )
             if (enableMatchOption) {
                 Row(
@@ -1907,7 +1936,7 @@ fun FlowFilterSection(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
                         modifier = Modifier,
-                        color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                        color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
                     )
                     Box(
                         modifier = Modifier
@@ -2018,7 +2047,7 @@ fun FlowFilterSection(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                 )
             }
         } else {
