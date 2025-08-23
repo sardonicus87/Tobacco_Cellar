@@ -372,6 +372,9 @@ class FilterViewModel (
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
     val availableContainers: StateFlow<List<String>> = _availableContainers
 
+    private val _ratingsExist = MutableStateFlow(false)
+    val ratingsExist: StateFlow<Boolean> = _ratingsExist
+
     private val _tinsExist = MutableStateFlow(false)
     val tinsExist: StateFlow<Boolean> = _tinsExist
 
@@ -456,6 +459,7 @@ class FilterViewModel (
                     compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                         .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                 )
+                _ratingsExist.value = it.any { it.items.favorite || it.items.disliked }
                 _tinsExist.value = it.any { it.tins.isNotEmpty() }
                 _notesExist.value = it.any { it.items.notes.isNotBlank() }
                 _datesExist.value = it.flatMap { it.tins }.any {
