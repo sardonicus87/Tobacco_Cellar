@@ -1266,9 +1266,7 @@ private fun DrawScope.drawLabels(
             if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
                 if (totalThinPercent > 4) {
                     val right = (totalThinPercent - thinCount)
-                    (percentageX - (percentageWidth * xOffsetFactor)) - ((right * percentageHeight) * cos(
-                        Math.toRadians(midpointAngle.toDouble())
-                    ).toFloat())
+                    (percentageX - (percentageWidth * xOffsetFactor)) - ((right * (percentageHeight * 1.15f)) * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
                 } else {
                     // alternating
                     val additionalOffset = if (outsideLabelCount % 2 == 0) {
@@ -1293,7 +1291,7 @@ private fun DrawScope.drawLabels(
                 // very thin slices at the top of the chart
                 if (totalThinPercent > 4) {
                     val down = (totalThinPercent - thinCount)
-                    (percentageY - percentageHeight) + (down * percentageHeight)
+                    ((centerY - radius) - percentageHeight) + (down * (percentageHeight * 1.15f)) //  (percentageY - percentageHeight) + (down * percentageHeight)
                 }
                 else {
                     // alternating
