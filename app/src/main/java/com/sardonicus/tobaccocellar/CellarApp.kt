@@ -564,7 +564,8 @@ fun CellarBottomAppBar(
                             navigateToStats()
                         },
                         modifier = Modifier
-                            .padding(0.dp)
+                            .padding(0.dp),
+                        enabled = !databaseEmpty
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.bar_chart),
@@ -576,7 +577,9 @@ fun CellarBottomAppBar(
                             if (currentDestination == StatsDestination && !clickToAdd) {
                                 onPrimaryLight
                             } else {
-                                LocalContentColor.current
+                                if (databaseEmpty) {
+                                    LocalContentColor.current.copy(alpha = 0.5f)
+                                } else LocalContentColor.current
                             },
                         )
                     }
@@ -595,7 +598,9 @@ fun CellarBottomAppBar(
                         if (currentDestination == StatsDestination && !clickToAdd) {
                             onPrimaryLight
                         } else {
-                            LocalContentColor.current
+                            if (databaseEmpty) {
+                                LocalContentColor.current.copy(alpha = 0.5f)
+                            } else LocalContentColor.current
                         },
                     )
                 }
