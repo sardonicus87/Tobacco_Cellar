@@ -740,7 +740,7 @@ fun CellarBottomAppBar(
                         color = if (sheetOpen) {
                             onPrimaryLight
                         } else {
-                            if ((searchPerformed && currentDestination == HomeDestination) || !databaseEmpty) {
+                            if ((searchPerformed && currentDestination == HomeDestination) || databaseEmpty) {
                                 LocalContentColor.current.copy(alpha = 0.5f)
                             } else LocalContentColor.current
                         }
