@@ -806,15 +806,17 @@ private fun ChartsSection(
                 label = "Brands by Number of Entries",
                 chartData = filteredStats.brandsByEntries
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                thickness = 1.dp,
-            )
-            ChartsFormat(
-                label = "Brands by \"No. of Tins\"",
-                chartData = filteredStats.brandsByQuantity
-            )
+            if (filteredStats.brandsByQuantity.count() > 1) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Brands by \"No. of Tins\"",
+                    chartData = filteredStats.brandsByQuantity
+                )
+            }
             if (filteredStats.typesByEntries.count() > 1) {
                 HorizontalDivider(
                     modifier = Modifier
@@ -825,6 +827,8 @@ private fun ChartsSection(
                     label = "Types by Entries",
                     chartData = filteredStats.typesByEntries
                 )
+            }
+            if (filteredStats.typesByQuantity.count() > 1) {
                 HorizontalDivider(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
@@ -856,6 +860,8 @@ private fun ChartsSection(
                     label = "Subgenres by Entries",
                     chartData = filteredStats.subgenresByEntries
                 )
+            }
+            if (filteredStats.subgenresByQuantity.count() > 1) {
                 HorizontalDivider(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
@@ -875,6 +881,8 @@ private fun ChartsSection(
                     label = "Cuts by Entries",
                     chartData = filteredStats.cutsByEntries
                 )
+            }
+            if (filteredStats.cutsByQuantity.count() > 1) {
                 HorizontalDivider(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
