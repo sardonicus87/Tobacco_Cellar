@@ -10,6 +10,26 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.2.1",
+        buildDate = "28 Aug, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Filter sheet, types and ratings sections now display a text if these fields are unused.",
+            "Cellar Screen quick search, search icon dropdown arrow hidden and clickability is " +
+                    "disabled when neither tins nor notes are used, selectable search options " +
+                    "now only show available options based on database data.",
+            "Other minor UI tweaks and improvements."
+        ),
+        bugFixes = listOf(
+            "Filter sheet, fixed a bug where the redundant/duplicate overlay was applied to \"Tin " +
+                    "Containers\" filter section when containers weren't used.",
+            "Fixed a list/table scroll return bug introduced in the last update where the return " +
+                    "position wasn't working right (scroll to new item on add, return to position " +
+                    "on return, etc)."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.2.0",
         buildDate = "22 Aug, 2025",
         changes = listOf(
