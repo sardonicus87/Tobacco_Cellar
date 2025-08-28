@@ -308,6 +308,10 @@ class FilterViewModel (
         _shouldReturn.value = true
     }
 
+    fun shouldScrollUp() {
+        _shouldScrollUp.value = true
+    }
+
     fun resetScroll() {
         _shouldScrollUp.value = false
         _shouldReturn.value = false
@@ -317,6 +321,9 @@ class FilterViewModel (
         _savedItemId.value = -1
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
     }
+
+    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
+    private val refresh = _refresh.asSharedFlow()
 
 
     /** Events from EventBus **/
@@ -342,6 +349,7 @@ class FilterViewModel (
                 }
                 if (it is DatabaseRestoreEvent) {
                     resetFilter()
+                    _refresh.emit(Unit)
                     _shouldScrollUp.value = true
                 }
             }
@@ -390,20 +398,7 @@ class FilterViewModel (
     private val _emptyDatabase = MutableStateFlow(false)
     val emptyDatabase: StateFlow<Boolean> = _emptyDatabase
 
-    private val _refresh = MutableSharedFlow<Unit>(replay = 0)
-    private val refresh = _refresh.asSharedFlow()
-
     // database refresh on restore
-    init {
-        viewModelScope.launch {
-            EventBus.events.collect {
-                if (it is DatabaseRestoreEvent) {
-                    _refresh.emit(Unit)
-                }
-            }
-        }
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
     val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
