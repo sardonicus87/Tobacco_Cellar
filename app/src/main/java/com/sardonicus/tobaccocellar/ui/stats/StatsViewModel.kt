@@ -303,21 +303,6 @@ class StatsViewModel(
                             it.associate { it.key to it.value }
                         }
                     },
-                brandsByFavorites = filteredItems
-                    .filter{ it.items.favorite }
-                    .groupingBy { it.items.brand }
-                    .eachCount()
-                    .entries
-                    .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
-                            topNine + ("(Other)" to otherCount)
-                        } else {
-                            it.associate { it.key to it.value }
-                        }
-                    },
                 typesByEntries = filteredItems.groupingBy {
                     it.items.type.ifBlank { "Unassigned" } }
                     .eachCount()
@@ -535,7 +520,6 @@ data class FilteredStats(
 
     val brandsByEntries: Map<String, Int> = emptyMap(),
     val brandsByQuantity: Map<String, Int> = emptyMap(),
-    val brandsByFavorites: Map<String, Int> = emptyMap(),
     val typesByEntries: Map<String, Int> = emptyMap(),
     val typesByQuantity: Map<String, Int> = emptyMap(),
     val ratingsByEntries: Map<String, Int> = emptyMap(),
