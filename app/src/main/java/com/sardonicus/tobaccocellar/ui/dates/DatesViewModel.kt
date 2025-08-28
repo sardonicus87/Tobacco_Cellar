@@ -208,12 +208,12 @@ class DatesViewModel(
         return Triple(datePeriod.years, datePeriod.months, datePeriod.days)
     }
 
-    fun agingDue(filteredItems: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
+    fun agingDue(items: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
         val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val oneWeek = LocalDate.now().plusDays(7).atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
         val endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
 
-        val itemsWithDate: List<Pair<DateInfoItem, Long>> = filteredItems.flatMap{ item ->
+        val itemsWithDate: List<Pair<DateInfoItem, Long>> = items.flatMap{ item ->
             item.tins
                 .filter { !it.finished && it.openDate != null }
                 .map {
