@@ -516,8 +516,8 @@ fun HomeScreen(
                     searchPerformed = searchPerformed,
                     isTinSearch = isTinSearch,
                     tableSorting = homeUiState.tableSorting,
-                    listSorting = homeUiState.listSorting,
                     updateSorting = viewmodel::updateSorting,
+                    shouldScrollUp = filterViewModel::shouldScrollUp,
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(0.dp),
@@ -790,6 +790,7 @@ private fun HomeHeader(
                         },
                         onClick = {
                             saveListSorting(it.value)
+                            filterViewModel.shouldScrollUp()
                             sortingMenu = false
                         },
                         modifier = Modifier
@@ -936,8 +937,8 @@ private fun HomeBody(
     searchPerformed: Boolean,
     isTinSearch: Boolean,
     tableSorting: TableSorting,
-    listSorting: String,
     updateSorting: (Int) -> Unit,
+    shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var displayedMessage by remember { mutableStateOf(emptyMessage) }
@@ -1020,6 +1021,7 @@ private fun HomeBody(
                         isMenuShown = isMenuShown,
                         sorting = tableSorting,
                         updateSorting = updateSorting,
+                        shouldScrollUp = shouldScrollUp,
                         modifier = Modifier
                             .padding(0.dp)
                             .fillMaxWidth()
@@ -1083,11 +1085,10 @@ private fun HomeBody(
         val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
         val shouldReturn by filterViewModel.shouldReturn.collectAsState()
         val getPosition by filterViewModel.getPosition.collectAsState()
-        val sorting = if (isTableView) tableSorting else listSorting
 
         // Scroll to Positions //
         LaunchedEffect(currentItemsList) {
-            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) { delay(5) }
+            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) { delay(2) }
             if (savedItemIndex != -1) {
                 withFrameNanos {
                     coroutineScope.launch {
@@ -1118,15 +1119,6 @@ private fun HomeBody(
                     }
                     filterViewModel.resetScroll()
                 }
-            }
-        }
-
-        LaunchedEffect(sorting) {
-            if (!searchPerformed) {
-                filterViewModel.resetScroll()
-                columnState.scrollToItem(0)
-            } else {
-                columnState.scrollToItem(0)
             }
         }
 
@@ -1647,6 +1639,7 @@ fun TableViewMode(
     onDismissMenu: () -> Unit,
     sorting: TableSorting,
     updateSorting: (Int) -> Unit,
+    shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
@@ -1721,6 +1714,7 @@ fun TableViewMode(
                         }
                         val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
                             updateSorting(newSortColumn)
+                            shouldScrollUp()
                         }
                         when (columnIndex) {
                             0, 1, 2, 5 -> {
