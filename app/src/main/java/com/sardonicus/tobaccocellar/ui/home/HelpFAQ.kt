@@ -228,6 +228,8 @@ private fun CellarScreen(
         )
         Text(
             text = "Items can be sorted in list mode by tapping the sort button in the header. " +
+                    "Tapping an option sorts ascending, tapping it again switches to descending. " +
+                    "Tap the sort icon again to close the list view sorting menu." +
                     "In Table View, sorting is done by tapping the \"Brand\", \"Blend\", \"Type\"" +
                     ", or \"Qty\" column headers. Default sorting is the order the items were " +
                     "entered into the database. The first tap will sort the column ascending, the " +
