@@ -308,9 +308,7 @@ class FilterViewModel (
         _shouldReturn.value = true
     }
 
-    fun shouldScrollUp() {
-        _shouldScrollUp.value = true
-    }
+    fun shouldScrollUp() { _shouldScrollUp.value = true }
 
     fun resetScroll() {
         _shouldScrollUp.value = false
@@ -379,6 +377,9 @@ class FilterViewModel (
 
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
     val availableContainers: StateFlow<List<String>> = _availableContainers
+
+    private val _typesExist = MutableStateFlow(false)
+    val typesExist: StateFlow<Boolean> = _typesExist
 
     private val _ratingsExist = MutableStateFlow(false)
     val ratingsExist: StateFlow<Boolean> = _ratingsExist
@@ -454,6 +455,7 @@ class FilterViewModel (
                     compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                         .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                 )
+                _typesExist.value = it.any { it.items.type.isNotBlank() }
                 _ratingsExist.value = it.any { it.items.favorite || it.items.disliked }
                 _tinsExist.value = it.any { it.tins.isNotEmpty() }
                 _notesExist.value = it.any { it.items.notes.isNotBlank() }
@@ -1272,7 +1274,8 @@ class FilterViewModel (
                 brandsEnabled,
                 excludeBrandsEnabled
             )
-    }.stateIn(
+    }
+        .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(500L),
             initialValue = BrandsSectionData()
@@ -1336,7 +1339,8 @@ class FilterViewModel (
             inStockEnabled,
             outOfStockEnabled
         )
-    }.stateIn(
+    }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(500L),
         initialValue = OtherSectionData()
@@ -1409,7 +1413,8 @@ class FilterViewModel (
             finishedEnabled,
             unfinishedEnabled
         )
-    }.stateIn(
+    }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(500L),
         initialValue = TinsFilterData()
@@ -1426,7 +1431,8 @@ class FilterViewModel (
             productionEnabled,
             outOfProductionEnabled
         )
-    }.stateIn(
+    }
+        .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(500L),
             initialValue = ProductionSectionData()
