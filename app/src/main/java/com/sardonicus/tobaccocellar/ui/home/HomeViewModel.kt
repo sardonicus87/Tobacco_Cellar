@@ -41,8 +41,8 @@ class HomeViewModel(
     private val _tableTableSorting = mutableStateOf(TableSorting())
     val tableSorting: State<TableSorting> = _tableTableSorting
 
-    private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
-    val quantityOption = _quantityOption.asStateFlow()
+    private val _listSorting = mutableStateOf(ListSorting())
+    val listSorting: State<ListSorting> = _listSorting
 
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
@@ -59,8 +59,13 @@ class HomeViewModel(
             }
         }
         viewModelScope.launch {
-            preferencesRepo.quantityOption.collect {
-                _quantityOption.value = it
+            combine(
+                preferencesRepo.listSorting,
+                preferencesRepo.listAscending
+            ) { value, ascending ->
+                ListSorting(value, ascending)
+            }.collect {
+                _listSorting.value = it
             }
         }
         viewModelScope.launch {
@@ -80,7 +85,7 @@ class HomeViewModel(
         preferencesRepo.quantityOption,
         preferencesRepo.isTableView,
         snapshotFlow { tableSorting.value },
-        preferencesRepo.listSorting,
+        snapshotFlow { listSorting.value },
         preferencesRepo.tinOzConversionRate,
         preferencesRepo.tinGramsConversionRate,
     ) {
@@ -89,12 +94,12 @@ class HomeViewModel(
         val quantityOption = it[2] as QuantityOption
         val isTableView = it[3] as Boolean
         val tableSorting = it[4] as TableSorting
-        val listSorting = it[5] as String
+        val listSorting = it[5] as ListSorting
         val ozRate = it[6] as Double
         val gramsRate = it[7] as Double
 
         val sortQuantity = filteredItems.associate {
-            it.items.id to calculateTotalQuantity(it, it.tins.filter { !it.finished && it in filteredTins }, quantityOption, ozRate, gramsRate)
+            it.items.id to calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
         }
 
         val sortedItems = if (filteredItems.isNotEmpty()) {
@@ -109,13 +114,15 @@ class HomeViewModel(
                     if (tableSorting.sortAscending) it else it.reversed()
                 }
             } else {
-                when (listSorting) {
+                when (listSorting.value) {
                     "Default" -> filteredItems.sortedBy { it.items.id }
                     "Blend" -> filteredItems.sortedBy { it.items.blend }
                     "Brand" -> filteredItems.sortedBy { it.items.brand }
                     "Type" -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                     "Quantity" -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
+                }.let {
+                    if (listSorting.listAscending) it else it.reversed()
                 }
             }
         } else emptyList()
@@ -202,8 +209,18 @@ class HomeViewModel(
     }
 
     fun saveListSorting(value: String) {
+        val currentSorting = _listSorting.value
+        val newListSorting =
+            if (currentSorting.value == value) {
+                ListSorting(value, !currentSorting.listAscending)
+            } else {
+                ListSorting(value)
+            }
+
+        _listSorting.value = newListSorting
+
         viewModelScope.launch {
-            preferencesRepo.saveListSorting(value)
+            preferencesRepo.saveListSorting(newListSorting.value, newListSorting.listAscending)
         }
     }
 
@@ -220,6 +237,7 @@ class HomeViewModel(
             }
 
         _tableTableSorting.value = newTableSorting
+
         viewModelScope.launch {
             preferencesRepo.saveTableSortingPreferences(
                 newTableSorting.columnIndex, newTableSorting.sortAscending
@@ -375,7 +393,7 @@ data class HomeUiState(
     val formattedQuantities: Map<Int, String> = emptyMap(),
     val isTableView: Boolean = false,
     val tableSorting: TableSorting = TableSorting(),
-    val listSorting: String = ListSorting.DEFAULT.value,
+    val listSorting: ListSorting = ListSorting(),
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
     val toggleIcon: Int =
@@ -391,7 +409,10 @@ data class TableSorting(
 )
 
 data class ListSorting(
-    val value: String = "Default"
+    val value: String = "Default",
+    val listAscending: Boolean = true,
+    val listIcon: Int =
+        if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
 ) {
     companion object {
         val DEFAULT = ListSorting("Default")

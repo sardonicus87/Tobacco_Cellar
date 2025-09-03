@@ -32,6 +32,7 @@ class PreferencesRepo(
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
         val LIST_SORTING = stringPreferencesKey("list_sorting")
+        val LIST_ASCENDING = booleanPreferencesKey("list_ascending")
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
@@ -131,9 +132,22 @@ class PreferencesRepo(
             it[LIST_SORTING] ?: ListSorting.DEFAULT.value
         }
 
-    suspend fun saveListSorting(listSorting: String) {
+    val listAscending: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading list sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[LIST_ASCENDING] ?: true
+        }
+
+    suspend fun saveListSorting(listSorting: String, ascending: Boolean) {
         dataStore.edit {
             it[LIST_SORTING] = listSorting
+            it[LIST_ASCENDING] = ascending
         }
     }
 

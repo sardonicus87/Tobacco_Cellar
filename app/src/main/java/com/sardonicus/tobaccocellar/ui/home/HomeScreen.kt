@@ -74,7 +74,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -537,9 +536,10 @@ private fun HomeHeader(
     filterViewModel: FilterViewModel,
     searchText: String,
     saveListSorting: (String) -> Unit,
-    listSorting: String,
+    listSorting: ListSorting,
     filteredItems: List<ItemsComponentsAndTins>
 ) {
+    val typesExist by filterViewModel.typesExist.collectAsState()
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
     val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
@@ -763,7 +763,13 @@ private fun HomeHeader(
                     .width(94.dp),
                 containerColor = LocalCustomColors.current.textField,
             ) {
-                listOf(ListSorting.DEFAULT, ListSorting.BLEND, ListSorting.BRAND, ListSorting.TYPE, ListSorting.QUANTITY).forEach {
+                val default = ListSorting.DEFAULT
+                val blend = ListSorting.BLEND
+                val brand = ListSorting.BRAND
+                val type = if (typesExist) ListSorting.TYPE else null
+                val quantity = ListSorting.QUANTITY
+                val sortingList = listOfNotNull(default, blend, brand, type, quantity)
+                sortingList.forEach {
                     DropdownMenuItem(
                         text = {
                             Row(
@@ -777,21 +783,27 @@ private fun HomeHeader(
                                     modifier = Modifier
                                         .padding(end = 2.dp)
                                 )
-                                if (listSorting == it.value) {
+                                if (listSorting.value == it.value) {
+                                    val icon = listSorting.listIcon
                                     Box(
                                         modifier = Modifier
-                                            .padding(start = 8.dp)
-                                            .size(5.dp)
-                                            .clip(CircleShape)
-                                            .background(LocalContentColor.current)
-                                    )
+                                    ) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Image(
+                                            painter = painterResource(id = icon),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .padding(0.dp),
+                                            colorFilter = ColorFilter.tint(LocalContentColor.current)
+                                        )
+                                    }
                                 }
                             }
                         },
                         onClick = {
                             saveListSorting(it.value)
                             filterViewModel.shouldScrollUp()
-                            sortingMenu = false
                         },
                         modifier = Modifier
                             .padding(0.dp),
@@ -2079,9 +2091,7 @@ fun HeaderCell(
         modifier = modifier
             .clickable(
                 enabled = onClick != null,
-                onClick = {
-                    onClick?.invoke()
-                },
+                onClick = { onClick?.invoke() },
                 indication = LocalIndication.current,
                 interactionSource = null
             )
