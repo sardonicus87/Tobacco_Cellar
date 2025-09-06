@@ -259,6 +259,7 @@ fun CellarTopAppBar(
     navigateToCsvImport: () -> Unit = {},
     navigateToSettings: () -> Unit = {},
     navigateToHelp: () -> Unit = {},
+    navigateToPlaintext: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
@@ -376,6 +377,16 @@ fun CellarTopAppBar(
                                         horizontal = 12.dp,
                                         vertical = 0.dp
                                     ),
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(text = "Plaintext") },
+                                    onClick = {
+                                        expanded = false
+                                        navigateToPlaintext()
+                                    },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    enabled = currentDestination == HomeDestination,
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = stringResource(R.string.help_faq)) },
