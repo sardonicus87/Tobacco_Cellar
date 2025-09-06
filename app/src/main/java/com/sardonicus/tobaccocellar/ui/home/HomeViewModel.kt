@@ -246,97 +246,6 @@ class HomeViewModel(
     }
 
 
-    /** helper functions for quantity display **/
-    private fun calculateTotalQuantity(
-        items: ItemsComponentsAndTins,
-        tins: List<Tins>,
-        quantityOption: QuantityOption,
-        ounceRate: Double,
-        gramRate: Double
-    ): Double {
-        val tinQuantities = tins.map {
-            when (it.finished) {
-                true -> 0.0
-                false -> it.tinQuantity
-            }
-        }
-        val tinsRemap = tins.mapIndexed { index, it ->
-            it.copy(tinQuantity = tinQuantities[index])
-        }
-
-        return if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
-            when (quantityOption) {
-                QuantityOption.TINS -> items.items.quantity.toDouble()
-                QuantityOption.OUNCES -> items.items.quantity.toDouble() * ounceRate
-                QuantityOption.GRAMS -> items.items.quantity.toDouble() * gramRate
-                else -> 0.0
-            }
-        } else {
-            when (quantityOption) {
-                QuantityOption.TINS -> items.items.quantity.toDouble()
-                QuantityOption.OUNCES -> calculateOunces(tinsRemap)
-                QuantityOption.GRAMS -> calculateGrams(tinsRemap)
-                else -> 0.0
-            }
-        }
-    }
-
-    private fun calculateOunces(tins: List<Tins>): Double {
-        return tins.sumOf {
-            if (it.tinQuantity > 0.0) {
-                when (it.unit) {
-                    "oz" -> it.tinQuantity
-                    "lbs" -> it.tinQuantity * 16
-                    "grams" -> it.tinQuantity / 28.3495
-                    else -> 0.0
-                }
-            } else 0.0
-        }
-    }
-
-    private fun calculateGrams(tins: List<Tins>): Double {
-        return tins.sumOf {
-            if (it.tinQuantity > 0.0) {
-                when (it.unit) {
-                    "oz" -> it.tinQuantity * 28.3495
-                    "lbs" -> it.tinQuantity * 453.592
-                    "grams" -> it.tinQuantity
-                    else -> 0.0
-                }
-            } else 0.0
-        }
-    }
-
-    private fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>): String {
-        return when (quantityOption) {
-            QuantityOption.TINS -> "x${quantity.toInt()}"
-            QuantityOption.OUNCES -> {
-                val pounds = quantity / 16
-                if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                    if (quantity >= 16) {
-                        formatDecimal(pounds) + " lbs"
-                    } else {
-                        formatDecimal(quantity) + " oz"
-                    }
-                } else {
-                    if (quantity >= 16) {
-                       "${formatDecimal(pounds)}* lbs"
-                    } else
-                        "${formatDecimal(quantity)}* oz"
-                }
-            }
-            QuantityOption.GRAMS -> {
-                if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                    formatDecimal(quantity) + " g"
-                } else {
-                    "${formatDecimal(quantity)}* g"
-                }
-            }
-            else -> { "--" }
-        }
-    }
-
-
     /** csvExport for TopAppBar **/
     private val _showSnackbar = MutableStateFlow(false)
     val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()
@@ -427,4 +336,94 @@ sealed class SearchSetting(val value: String) {
     data object Blend: SearchSetting("Blend")
     data object Notes: SearchSetting("Notes")
     data object TinLabel: SearchSetting("Tin Label")
+}
+
+/** helper functions for quantity display **/
+fun calculateTotalQuantity(
+    items: ItemsComponentsAndTins,
+    tins: List<Tins>,
+    quantityOption: QuantityOption,
+    ounceRate: Double,
+    gramRate: Double
+): Double {
+    val tinQuantities = tins.map {
+        when (it.finished) {
+            true -> 0.0
+            false -> it.tinQuantity
+        }
+    }
+    val tinsRemap = tins.mapIndexed { index, it ->
+        it.copy(tinQuantity = tinQuantities[index])
+    }
+
+    return if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
+        when (quantityOption) {
+            QuantityOption.TINS -> items.items.quantity.toDouble()
+            QuantityOption.OUNCES -> items.items.quantity.toDouble() * ounceRate
+            QuantityOption.GRAMS -> items.items.quantity.toDouble() * gramRate
+            else -> 0.0
+        }
+    } else {
+        when (quantityOption) {
+            QuantityOption.TINS -> items.items.quantity.toDouble()
+            QuantityOption.OUNCES -> calculateOunces(tinsRemap)
+            QuantityOption.GRAMS -> calculateGrams(tinsRemap)
+            else -> 0.0
+        }
+    }
+}
+
+fun calculateOunces(tins: List<Tins>): Double {
+    return tins.sumOf {
+        if (it.tinQuantity > 0.0) {
+            when (it.unit) {
+                "oz" -> it.tinQuantity
+                "lbs" -> it.tinQuantity * 16
+                "grams" -> it.tinQuantity / 28.3495
+                else -> 0.0
+            }
+        } else 0.0
+    }
+}
+
+fun calculateGrams(tins: List<Tins>): Double {
+    return tins.sumOf {
+        if (it.tinQuantity > 0.0) {
+            when (it.unit) {
+                "oz" -> it.tinQuantity * 28.3495
+                "lbs" -> it.tinQuantity * 453.592
+                "grams" -> it.tinQuantity
+                else -> 0.0
+            }
+        } else 0.0
+    }
+}
+
+fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>): String {
+    return when (quantityOption) {
+        QuantityOption.TINS -> "x${quantity.toInt()}"
+        QuantityOption.OUNCES -> {
+            val pounds = quantity / 16
+            if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
+                if (quantity >= 16) {
+                    formatDecimal(pounds) + " lbs"
+                } else {
+                    formatDecimal(quantity) + " oz"
+                }
+            } else {
+                if (quantity >= 16) {
+                    "${formatDecimal(pounds)}* lbs"
+                } else
+                    "${formatDecimal(quantity)}* oz"
+            }
+        }
+        QuantityOption.GRAMS -> {
+            if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
+                formatDecimal(quantity) + " g"
+            } else {
+                "${formatDecimal(quantity)}* g"
+            }
+        }
+        else -> { "--" }
+    }
 }
