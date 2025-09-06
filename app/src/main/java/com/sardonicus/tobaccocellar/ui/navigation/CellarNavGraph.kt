@@ -22,6 +22,8 @@ import com.sardonicus.tobaccocellar.ui.home.HelpDestination
 import com.sardonicus.tobaccocellar.ui.home.HelpScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeScreen
+import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextDestination
+import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextScreen
 import com.sardonicus.tobaccocellar.ui.items.AddEntryDestination
 import com.sardonicus.tobaccocellar.ui.items.AddEntryScreen
 import com.sardonicus.tobaccocellar.ui.items.BulkEditDestination
@@ -76,6 +78,9 @@ fun CellarNavHost(
                     launchSingleTop = true
                 } },
                 navigateToHelp = { navController.navigate(HelpDestination.route) {
+                    launchSingleTop = true
+                } },
+                navigateToPlaintext = { navController.navigate(PlaintextDestination.route) {
                     launchSingleTop = true
                 } },
             )
@@ -133,6 +138,13 @@ fun CellarNavHost(
 
         composable(route = HelpDestination.route) {
             HelpScreen(
+                navigateBack = { navController.popBackStack() },
+                onNavigateUp = { navController.navigateUp() },
+            )
+        }
+
+        composable(route = PlaintextDestination.route) {
+            PlaintextScreen(
                 navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
