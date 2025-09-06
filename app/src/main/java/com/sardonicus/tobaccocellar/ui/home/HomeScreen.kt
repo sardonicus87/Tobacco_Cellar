@@ -144,6 +144,7 @@ fun HomeScreen(
     navigateToCsvImport: () -> Unit,
     navigateToSettings: () -> Unit,
     navigateToHelp: () -> Unit,
+    navigateToPlaintext: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
@@ -440,6 +441,7 @@ fun HomeScreen(
                 navigateToCsvImport = navigateToCsvImport,
                 navigateToSettings = navigateToSettings,
                 navigateToHelp = navigateToHelp,
+                navigateToPlaintext = navigateToPlaintext,
                 showMenu = true,
                 currentDestination = HomeDestination,
                 exportCsvHandler = viewmodel,
@@ -956,7 +958,7 @@ private fun HomeBody(
     var displayedMessage by remember { mutableStateOf(emptyMessage) }
     var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
 
-    val (isVisible, scrollDirection) = rememberJumpToState(columnState, sortedItems.size)
+    val (isVisible, scrollDirection) = rememberJumpToState(columnState)
 
     var showLoading by remember { mutableStateOf(false) }
 
@@ -1182,8 +1184,7 @@ fun JumpToButton(
 
 @Composable
 fun rememberJumpToState(
-    lazyListState: LazyListState,
-    listSize: Int
+    lazyListState: LazyListState
 ): Pair<Boolean, ScrollDirection> {
     var previousIndex by remember { mutableIntStateOf(0) }
     var scrollJob by remember { mutableStateOf<Job?>(null) }
@@ -1191,8 +1192,8 @@ fun rememberJumpToState(
     var scrollDirection by remember { mutableStateOf(ScrollDirection.UP) }
     val firstItemIndex by remember { derivedStateOf { lazyListState.firstVisibleItemIndex } }
 
-    val atTop by remember { derivedStateOf { lazyListState.firstVisibleItemIndex == 0 } }
-    val atBottom by remember { derivedStateOf { lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index == listSize - 1 } }
+    val atTop by remember { derivedStateOf { !lazyListState.canScrollBackward } }
+    val atBottom by remember { derivedStateOf { !lazyListState.canScrollForward } }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -2076,6 +2077,7 @@ fun TableViewMode(
 }
 
 
+@Stable
 @Composable
 fun HeaderCell(
     modifier: Modifier = Modifier,
@@ -2148,6 +2150,7 @@ fun HeaderCell(
     }
 }
 
+@Stable
 @Composable
 fun TableCell(
     value: Any?,
