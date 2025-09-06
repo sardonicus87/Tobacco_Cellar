@@ -10,6 +10,7 @@ import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportViewModel
 import com.sardonicus.tobaccocellar.ui.dates.DatesViewModel
 import com.sardonicus.tobaccocellar.ui.home.BlendDetailsViewModel
 import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
+import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextViewModel
 import com.sardonicus.tobaccocellar.ui.items.AddEntryViewModel
 import com.sardonicus.tobaccocellar.ui.items.BulkEditViewModel
 import com.sardonicus.tobaccocellar.ui.items.EditEntryViewModel
@@ -47,6 +48,13 @@ object AppViewModelProvider {
             BlendDetailsViewModel(
                 this.createSavedStateHandle(),
                 cellarApplication().container.itemsRepository,
+                cellarApplication().preferencesRepo
+            )
+        }
+
+        initializer {
+            PlaintextViewModel(
+                cellarApplication().filterViewModel,
                 cellarApplication().preferencesRepo
             )
         }
