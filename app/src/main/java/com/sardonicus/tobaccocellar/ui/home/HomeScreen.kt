@@ -743,74 +743,76 @@ private fun HomeHeader(
             horizontalArrangement = Arrangement.End,
         ) {
             var sortingMenu by rememberSaveable { mutableStateOf(false) }
-            IconButton(
-                onClick = { sortingMenu = !sortingMenu },
-                modifier = Modifier
-                    .padding(4.dp)
-                    .size(22.dp),
-                enabled = !isTableView,
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.sort_bars),
-                    contentDescription = "List sorting",
+            Box {
+                IconButton(
+                    onClick = { sortingMenu = !sortingMenu },
                     modifier = Modifier
-                        .size(20.dp)
-                        .padding(0.dp),
-                )
-            }
-            DropdownMenu(
-                expanded = sortingMenu,
-                onDismissRequest = { sortingMenu = false },
-                modifier = Modifier
-                    .width(94.dp),
-                containerColor = LocalCustomColors.current.textField,
-            ) {
-                val default = ListSorting.DEFAULT
-                val blend = ListSorting.BLEND
-                val brand = ListSorting.BRAND
-                val type = if (typesExist) ListSorting.TYPE else null
-                val quantity = ListSorting.QUANTITY
-                val sortingList = listOfNotNull(default, blend, brand, type, quantity)
-                sortingList.forEach {
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                modifier = Modifier,
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Start,
-                            ) {
-                                Text(
-                                    text = it.value,
-                                    fontWeight = FontWeight.Normal,
-                                    modifier = Modifier
-                                        .padding(end = 2.dp)
-                                )
-                                if (listSorting.value == it.value) {
-                                    val icon = listSorting.listIcon
-                                    Box(
+                        .padding(4.dp)
+                        .size(22.dp),
+                    enabled = !isTableView,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.sort_bars),
+                        contentDescription = "List sorting",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(0.dp),
+                    )
+                }
+                DropdownMenu(
+                    expanded = sortingMenu,
+                    onDismissRequest = { sortingMenu = false },
+                    modifier = Modifier
+                        .width(94.dp),
+                    containerColor = LocalCustomColors.current.textField,
+                ) {
+                    val default = ListSorting.DEFAULT
+                    val blend = ListSorting.BLEND
+                    val brand = ListSorting.BRAND
+                    val type = if (typesExist) ListSorting.TYPE else null
+                    val quantity = ListSorting.QUANTITY
+                    val sortingList = listOfNotNull(default, blend, brand, type, quantity)
+                    sortingList.forEach {
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    modifier = Modifier,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start,
+                                ) {
+                                    Text(
+                                        text = it.value,
+                                        fontWeight = FontWeight.Normal,
                                         modifier = Modifier
-                                    ) {
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Image(
-                                            painter = painterResource(id = icon),
-                                            contentDescription = null,
+                                            .padding(end = 2.dp)
+                                    )
+                                    if (listSorting.value == it.value) {
+                                        val icon = listSorting.listIcon
+                                        Box(
                                             modifier = Modifier
-                                                .size(20.dp)
-                                                .padding(0.dp),
-                                            colorFilter = ColorFilter.tint(LocalContentColor.current)
-                                        )
+                                        ) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Image(
+                                                painter = painterResource(id = icon),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .padding(0.dp),
+                                                colorFilter = ColorFilter.tint(LocalContentColor.current)
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        onClick = {
-                            saveListSorting(it.value)
-                            filterViewModel.shouldScrollUp()
-                        },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = true,
-                    )
+                            },
+                            onClick = {
+                                saveListSorting(it.value)
+                                filterViewModel.shouldScrollUp()
+                            },
+                            modifier = Modifier
+                                .padding(0.dp),
+                            enabled = true,
+                        )
+                    }
                 }
             }
 
