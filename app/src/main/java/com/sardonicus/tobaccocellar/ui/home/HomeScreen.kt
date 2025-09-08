@@ -1664,23 +1664,25 @@ fun TableViewMode(
         180.dp, // Brand
         300.dp, // Blend
         108.dp, // Type
+        120.dp, // Subgenre
         64.dp, // Fav/Dis
         64.dp, // Note
-        98.dp // Tins
+        98.dp // Qty
     )
     val columnMapping = listOf(
         { item: Items -> item.brand }, // 0
         { item: Items -> item.blend }, // 1
         { item: Items -> item.type }, // 2
-        { item: Items -> // 3
+        { item: Items -> item.subGenre }, // 3
+        { item: Items -> // 4
             when {
                 item.favorite -> 1
                 item.disliked -> 2
                 else -> 0
             }
         },
-        { item: Items -> item.notes }, // 4
-        { item: Items -> item.id }, // 5
+        { item: Items -> item.notes }, // 5
+        { item: Items -> item.id }, // 6
     )
 
     Box(
@@ -1713,18 +1715,20 @@ fun TableViewMode(
                             0 -> Alignment.CenterStart // brand
                             1 -> Alignment.CenterStart // blend
                             2 -> Alignment.Center // type
-                            3 -> Alignment.Center // fav/dis
-                            4 -> Alignment.Center // notes
-                            5 -> Alignment.Center // quantity
+                            3 -> Alignment.Center // subgenre
+                            4 -> Alignment.Center // fav/dis
+                            5 -> Alignment.Center // notes
+                            6 -> Alignment.Center // quantity
                             else -> Alignment.CenterStart
                         }
                         val headerText = when (columnIndex) {
                             0 -> "Brand"
                             1 -> "Blend"
                             2 -> "Type"
-                            3 -> ""
-                            4 -> "Note"
-                            5 -> "Qty"
+                            3 -> "Subgenre"
+                            4 -> ""
+                            5 -> "Note"
+                            6 -> "Qty"
                             else -> ""
                         }
                         val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
@@ -1732,7 +1736,7 @@ fun TableViewMode(
                             shouldScrollUp()
                         }
                         when (columnIndex) {
-                            0, 1, 2, 5 -> {
+                            0, 1, 2, 3, 6 -> {
                                 HeaderCell(
                                     text = headerText,
                                     onClick = { onSortChange(columnIndex) },
@@ -1753,9 +1757,9 @@ fun TableViewMode(
                                     modifier = Modifier
                                         .padding(0.dp)
                                         .align(alignment),
-                                    icon1 = if (columnIndex == 3)
+                                    icon1 = if (columnIndex == 4)
                                         painterResource(id = R.drawable.heart_filled_24) else null,
-                                    icon2 = if (columnIndex == 3)
+                                    icon2 = if (columnIndex == 4)
                                         painterResource(id = R.drawable.question_mark_24) else null,
                                     contentAlignment = alignment
                                 )
@@ -1836,13 +1840,14 @@ fun TableViewMode(
                                             0 -> Alignment.CenterStart // brand
                                             1 -> Alignment.CenterStart // blend
                                             2 -> Alignment.Center // type
-                                            3 -> Alignment.Center // fav/dis
-                                            4 -> Alignment.Center // notes
-                                            5 -> Alignment.Center // quantity
+                                            3 -> Alignment.Center // subgenre
+                                            4 -> Alignment.Center // fav/dis
+                                            5 -> Alignment.Center // notes
+                                            6 -> Alignment.Center // quantity
                                             else -> Alignment.CenterStart
                                         }
                                         when (columnIndex) {
-                                            0, 1, 2 -> { // brand, blend, type
+                                            0, 1, 2, 3 -> { // brand, blend, type
                                                 TableCell(
                                                     value = cellValue,
                                                     modifier = Modifier
@@ -1850,7 +1855,7 @@ fun TableViewMode(
                                                     contentAlignment = alignment,
                                                 )
                                             } // brand, blend, type
-                                            3 -> { // fav/disliked
+                                            4 -> { // fav/disliked
                                                 val favDisValue = cellValue as Int
                                                 val icon = when (favDisValue) {
                                                     1 -> painterResource(id = R.drawable.heart_filled_24)
@@ -1878,7 +1883,7 @@ fun TableViewMode(
                                                     )
                                                 }
                                             } // fav/disliked
-                                            4 -> { // notes
+                                            5 -> { // notes
                                                 if (cellValue != "") {
                                                     Image(
                                                         painter = painterResource(id = R.drawable.notes_24),
@@ -1897,7 +1902,7 @@ fun TableViewMode(
                                                     )
                                                 }
                                             } // notes
-                                            5 -> { // quantity
+                                            6 -> { // quantity
                                                 val formattedQuantity =
                                                     formattedQty[item.items.id] ?: "--"
                                                 val outOfStock =

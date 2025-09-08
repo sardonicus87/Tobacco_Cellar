@@ -108,7 +108,8 @@ class HomeViewModel(
                     0 -> filteredItems.sortedBy { it.items.brand }
                     1 -> filteredItems.sortedBy { it.items.blend }
                     2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
-                    5 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                    3 -> filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
+                    6 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
                 }.let {
                     if (tableSorting.sortAscending) it else it.reversed()
