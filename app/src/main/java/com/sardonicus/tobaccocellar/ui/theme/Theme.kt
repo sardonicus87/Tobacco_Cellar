@@ -221,6 +221,7 @@ data class CustomColorScheme(
     val sheetBox: Color = Color.Unspecified,
     val sheetBoxBorder: Color = Color.Unspecified,
     val indicatorBorderCorrection: Color = Color.Unspecified,
+    val whiteBlack: Color = Color.Unspecified,
 
     // pie chart colors
     val pieOne: Color = Color.Unspecified,
@@ -256,6 +257,7 @@ private val customLight = CustomColorScheme(
     sheetBox = sheetBoxLight,
     sheetBoxBorder = sheetBoxBorderLight,
     indicatorBorderCorrection = indicatorBorderCorrectionLight,
+    whiteBlack = whiteBlackLight,
 
     // pie chart colors
     pieOne = pieOneLight,
@@ -289,6 +291,7 @@ private val customDark = CustomColorScheme(
     sheetBox = sheetBoxDark,
     sheetBoxBorder = sheetBoxBorderDark,
     indicatorBorderCorrection = indicatorBorderCorrectionDark,
+    whiteBlack = whiteBlackDark,
 
     // pie chart colors
     pieOne = pieOneDark,
