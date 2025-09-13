@@ -426,13 +426,13 @@ fun CustomTextField(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoCompleteText(
-    modifier: Modifier = Modifier,
     value: String,
-    placeholder: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null,
     onValueChange: ((String) -> Unit)?,
     allItems: List<String>,
     onOptionSelected: ((String) -> Unit)?,
+    modifier: Modifier = Modifier,
+    placeholder: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     label: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = false,
