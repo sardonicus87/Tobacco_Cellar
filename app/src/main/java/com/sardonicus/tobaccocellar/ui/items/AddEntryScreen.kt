@@ -340,7 +340,7 @@ fun ItemExistsDialog(
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
+        onDismissRequest = { },
         title = { Text(stringResource(R.string.attention)) },
         text = { Text(stringResource(R.string.item_exists)) },
         modifier = modifier,
@@ -365,7 +365,7 @@ fun ItemExistsEditDialog(
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
+        onDismissRequest = { },
         title = { Text(stringResource(R.string.attention)) },
         text = {
             Text(
