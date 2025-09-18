@@ -15,7 +15,6 @@ lifecycleRuntimeKtx = "2.9.3"
 material = "1.13.0"
 navigationCompose = "2.9.4"
 roomRuntime = "2.8.0"
-uiTextGoogleFonts = "1.9.1"
 viewpager2 = "1.1.0"
 
 [libraries]
@@ -31,7 +30,7 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
+androidx-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
