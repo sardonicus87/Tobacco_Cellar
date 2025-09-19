@@ -224,7 +224,7 @@ class PlaintextViewModel (
             "Escape char" to "'",
             "If any" to "[...]",
             "Tin sublist" to "{...}",
-            "Sublist delim." to "~~"
+            "Sublist delim." to "~"
         )
 
         val previewItems = listOf(
@@ -612,6 +612,11 @@ class PlaintextViewModel (
         val tinSublistReplacements = mutableMapOf<String, String>()
         var tempId = 0
         var lineWithoutTins = processedLine
+        val hasTinSublistPattern = processedLine.contains("{")
+                && processedLine.contains("}")
+                && listOf(
+            "@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished"
+        ).any { processedLine.contains(it) }
 
         lineWithoutTins = tinSublist.replace(lineWithoutTins) {
             val original = it.value
@@ -620,7 +625,7 @@ class PlaintextViewModel (
             placeholder
         }
 
-        var conditionalsProcessed = conditionalProcessing(lineWithoutTins, itemData, tinData, formattedQuantities)
+        var conditionalsProcessed = conditionalProcessing(lineWithoutTins, itemData, tinData, formattedQuantities, hasTinSublistPattern)
 
         tinSublistReplacements.forEach { (placeholder, original) ->
             conditionalsProcessed = conditionalsProcessed.replace(placeholder, original)
@@ -628,132 +633,22 @@ class PlaintextViewModel (
 
         processedLine = conditionalsProcessed
 
-//        do {
-//            doCount++
-//            lineBeforeThisPass = processedLine
-//            processedLine = nestedConditional.replace(processedLine) {
-//                val innerContent = it.groupValues[1]
-//                val placeholderScan = Regex("""@\w+(?!\w)""")
-//
-//                val allPlaceholders = placeholderScan.findAll(innerContent).toList()
-//                Log.d("lineBeforeThisPass", "pass: $doCount $lineBeforeThisPass")
-//                Log.d("innerContent", "pass: $doCount innerContent: $innerContent")
-//                Log.d("placeholders", "pass: $doCount ${itemData?.items?.blend} ${allPlaceholders.joinToString { it.value }}")
-//
-//
-//                if (allPlaceholders.isNotEmpty()) {
-//                    var content = innerContent
-//                    var anyResolved = false
-//
-//                    allPlaceholders.forEach {
-//                        val placeholder = it.value
-//                        val resolved =
-//                            resolveSinglePlace(placeholder, itemData, tinData, formattedQuantities)
-//
-//                        if (resolved.isNotBlank() && resolved != placeholder) {
-//                            anyResolved = true
-//                        }
-//                        content = content.replace(placeholder, resolved)
-//                    }
-//                    if (anyResolved) {
-//                        content
-//                    } else { "" }
-//                } else { "" }
-//            }
-//        } while (processedLine != lineBeforeThisPass)
-
-
-//        var lineBeforeThisPass: String
-//        do {
-//            val conditionalBlock = Regex("""\[(.*?)]""")
-//            processedLine = conditionalBlock.replace(processedLine) {
-//                val innerContent = it.groupValues[1]
-//                var content = innerContent
-//                var shouldRender = false
-//                val placeholderScan = Regex("""@\w+(?!\w)""")
-//
-//                val hasTinSublistPattern = innerContent.contains("{")
-//                        && innerContent.contains("}")
-//                        && listOf(
-//                    "@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished"
-//                ).any { innerContent.contains(it) }
-//
-//                if (hasTinSublistPattern) {
-//                    if (itemData != null && itemData.tins.isNotEmpty()) {
-//                        shouldRender = true
-//                    }
-//                } else {
-//                    var modifiedDirectly = content
-//                    var foundAndResolved = false
-//
-//                    placeholderScan.findAll(innerContent).forEach { placeholderMatch ->
-//                        val placeholder = placeholderMatch.value
-//                        val resolved = resolveSinglePlace(placeholder, itemData, tinData, formattedQuantities)
-//                        if (resolved.isNotBlank() && resolved != placeholder) {
-//                            shouldRender = true
-//                            foundAndResolved = true
-//                            modifiedDirectly = modifiedDirectly.replace(placeholder, resolved)
-//                        } else if (resolved.isBlank() && modifiedDirectly.contains(placeholder)) {
-//                            modifiedDirectly = modifiedDirectly.replace(placeholder, "")
-//                        }
-//                    }
-//                    if (foundAndResolved) content = modifiedDirectly
-//                }
-//                if (shouldRender) content else ""
-//            }
-//        } while (processedLine.contains(Regex("""\[(.*?)]""")))
-
-//        val conditionalBlock = Regex("""\[(.*?)]""")
-//        processedLine = conditionalBlock.replace(processedLine) {
-//            val innerContent = it.groupValues[1]
-//            var content = innerContent
-//            var shouldRender = false
-//            val placeholderScan = Regex("""@\w+(?!\w)""")
-//
-//            val hasTinSublistPattern = innerContent.contains("{")
-//                    && innerContent.contains("}")
-//                    && listOf(
-//                "@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished"
-//            ).any { innerContent.contains(it) }
-//
-//            if (hasTinSublistPattern) {
-//                if (itemData != null && itemData.tins.isNotEmpty()) {
-//                    shouldRender = true
-//                }
-//            } else {
-//                var modifiedDirectly = content
-//                var foundAndResolved = false
-//
-//                placeholderScan.findAll(innerContent).forEach { placeholderMatch ->
-//                    val placeholder = placeholderMatch.value
-//                    val resolved = resolveSinglePlace(placeholder, itemData, tinData, formattedQuantities)
-//                    if (resolved.isNotBlank() && resolved != placeholder) {
-//                        shouldRender = true
-//                        foundAndResolved = true
-//                        modifiedDirectly = modifiedDirectly.replace(placeholder, resolved)
-//                    } else if (resolved.isBlank() && modifiedDirectly.contains(placeholder)) {
-//                        modifiedDirectly = modifiedDirectly.replace(placeholder, "")
-//                    }
-//                }
-//                if (foundAndResolved) content = modifiedDirectly
-//            }
-//            if (shouldRender) content else ""
-//        }
-
 
         // Tins as sublist processing
         // val tinSublist = Regex("""\{(.*?)\}""")
         processedLine = tinSublist.replace(processedLine) {
             val sublistTemplate = it.groupValues[1]
             val sublistOut = StringBuilder()
+            val sublistDelimiter = sublistTemplate.substringAfterLast("~", "").substringBeforeLast("}", "")
+
             val tinsToProcess = itemData?.tins?.filter { it in filteredTins }
 
             if (tinsToProcess.isNullOrEmpty()) { return@replace "" }
 
             tinsToProcess.forEachIndexed { index, tin ->
-                if (index > 0) { sublistOut.append("_n_") } // determine and replace with delimiter
+                var tinLine = sublistTemplate.substringBeforeLast("~")
 
-                var tinLine = sublistTemplate
+                if (index > 0 && sublistDelimiter.isNotBlank()) { sublistOut.append(sublistDelimiter) }
 
                 tinLine = conditionalProcessing(tinLine, itemData, tin, formattedQuantities)
 
@@ -767,6 +662,10 @@ class PlaintextViewModel (
 
                 sublistOut.append(tinLine)
             }
+            if (sublistDelimiter.isNotBlank() && sublistOut.endsWith(sublistDelimiter)) {
+                sublistOut.removeSuffix(sublistDelimiter)
+            }
+
             sublistOut.toString()
         }
 
@@ -826,11 +725,13 @@ class PlaintextViewModel (
         inputLine: String,
         itemData: ItemsComponentsAndTins?,
         tinData: Tins?,
-        formattedQuantities: Map<Int, String>
+        formattedQuantities: Map<Int, String>,
+        hasTinSublist: Boolean = false,
     ): String {
         var processedLine = inputLine
         var lineBeforeThisPass: String
         val nestedConditional = Regex("""\[([^\[\]]*)]""")
+
         do {
             lineBeforeThisPass = processedLine
             processedLine = nestedConditional.replace(processedLine) {
@@ -839,24 +740,35 @@ class PlaintextViewModel (
 
                 val allPlaceholders = placeholderScan.findAll(innerContent).toList()
 
-                if (allPlaceholders.isNotEmpty()) {
-                    var content = innerContent
-                    var anyResolved = false
-
-                    allPlaceholders.forEach {
-                        val placeholder = it.value
-                        val resolved =
-                            resolveSinglePlace(placeholder, itemData, tinData, formattedQuantities)
-
-                        if (resolved.isNotBlank() && resolved != placeholder) {
-                            anyResolved = true
-                        }
-                        content = content.replace(placeholder, resolved)
-                    }
-                    if (anyResolved) {
-                        content
+                if (hasTinSublist) {
+                    if (itemData != null && itemData.tins.isNotEmpty()) {
+                        innerContent
                     } else { "" }
-                } else { "" }
+                } else {
+                    if (allPlaceholders.isNotEmpty()) {
+                        var content = innerContent
+                        var anyResolved = false
+
+                        allPlaceholders.forEach {
+                            val placeholder = it.value
+                            val resolved =
+                                resolveSinglePlace(
+                                    placeholder,
+                                    itemData,
+                                    tinData,
+                                    formattedQuantities
+                                )
+
+                            if (resolved.isNotBlank() && resolved != placeholder) {
+                                anyResolved = true
+                            }
+                            content = content.replace(placeholder, resolved)
+                        }
+                        if (anyResolved) {
+                            content
+                        } else { "" }
+                    } else { "" }
+                }
             }
         } while (processedLine != lineBeforeThisPass)
         return processedLine
