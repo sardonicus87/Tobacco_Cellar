@@ -899,13 +899,21 @@ fun PlaintextFormatting(
                 .padding(bottom = 8.dp),
         )
         Text(
+            text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
+                    "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
+                    "just before the desired delimiter, followed by delimiter. For example, to " +
+                    "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
             text = "A more advanced example might be to pass the list of tins only if tins exist " +
                     "for that blend and passing the quantity in brackets. For example, entering...",
             modifier = Modifier
                 .padding(bottom = 8.dp),
         )
         Text(
-            text = "@brand - \"@blend\"[{    - @label '[@T_qty']}]",
+            text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
             modifier = Modifier
                 .padding(bottom = 8.dp, start = 16.dp),
             fontSize = 14.sp
