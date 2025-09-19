@@ -7,10 +7,12 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSorting
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
+import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextSortOption
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +38,13 @@ class PreferencesRepo(
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
+        val PLAINTEXT_FORMAT_STRING = stringPreferencesKey("plaintext_format_string")
+        val PLAINTEXT_DELIMITER = stringPreferencesKey("plaintext_delimiter")
+        val PLAINTEXT_SORTING = stringPreferencesKey("plaintext_sorting")
+        val PLAINTEXT_SORT_ASCENDING = booleanPreferencesKey("plaintext_sort_ascending")
+        val PLAINTEXT_SUBSORTING = stringPreferencesKey("plaintext_subsorting")
+        val PLAINTEXT_PRINT_FONT = floatPreferencesKey("plaintext_print_font")
+        val PLAINTEXT_PRINT_MARGIN = doublePreferencesKey("plaintext_print_margin")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -51,8 +60,7 @@ class PreferencesRepo(
             } else {
                 throw it
             }
-        }
-        .map { preferences ->
+        }.map { preferences ->
             preferences[IS_TABLE_VIEW] ?: false
         }
 
@@ -300,6 +308,124 @@ class PreferencesRepo(
     suspend fun setDatesSeen(seen: String) {
         dataStore.edit {
             it[DATES_SEEN_LIST] = seen
+        }
+    }
+
+
+    /** Plaintext options **/
+    val plaintextFormatString: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_FORMAT_STRING] ?: ""
+        }
+
+    val plaintextDelimiter: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_DELIMITER] ?: "_n_"
+        }
+
+    val plaintextSorting: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_SORTING] ?: PlaintextSortOption.DEFAULT.value
+        }
+
+    val plaintextSortAscending: Flow<Boolean> = dataStore.data
+        .catch{
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_SORT_ASCENDING] ?: true
+        }
+
+    val plaintextSubSorting: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_SUBSORTING] ?: ""
+        }
+
+    val plaintextPrintFontSize: Flow<Float> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_PRINT_FONT] ?: 12f
+        }
+
+    val plaintextPrintMargin: Flow<Double> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_PRINT_MARGIN] ?: 1.0
+        }
+
+    suspend fun setPlaintextFormatString(format: String) {
+        dataStore.edit {
+            it[PLAINTEXT_FORMAT_STRING] = format
+        }
+    }
+
+    suspend fun setPlaintextDelimiter(delimiter: String) {
+        dataStore.edit {
+            it[PLAINTEXT_DELIMITER] = delimiter
+        }
+    }
+
+    suspend fun setPlaintextSorting(sorting: String, ascending: Boolean) {
+        dataStore.edit {
+            it[PLAINTEXT_SORTING] = sorting
+            it[PLAINTEXT_SORT_ASCENDING] = ascending
+        }
+    }
+
+    suspend fun setPlaintextSubSorting(subSorting: String) {
+        dataStore.edit {
+            it[PLAINTEXT_SUBSORTING] = subSorting
+        }
+    }
+
+    suspend fun setPlaintextPrintOptions(font: Float, margin: Double) {
+        dataStore.edit {
+            it[PLAINTEXT_PRINT_FONT] = font
+            it[PLAINTEXT_PRINT_MARGIN] = margin
         }
     }
 
