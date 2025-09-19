@@ -1,0 +1,1116 @@
+package com.sardonicus.tobaccocellar.ui.home.plaintext
+
+import android.content.Context
+import android.print.PrintManager
+import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sardonicus.tobaccocellar.CellarTopAppBar
+import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.data.PrintHelper
+import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
+import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
+import java.text.ParseException
+import java.util.Locale
+import kotlin.math.roundToInt
+
+object PlaintextDestination : NavigationDestination {
+    override val route = "plaintext"
+    override val titleRes = R.string.plaintext_title
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlaintextScreen(
+    navigateBack: () -> Unit,
+    onNavigateUp: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewmodel: PlaintextViewModel = viewModel(factory = AppViewModelProvider.Factory)
+) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val focusManager = LocalFocusManager.current
+    val plaintextState by viewmodel.uiState.collectAsState()
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
+    val templateView by viewmodel.setTemplateView.collectAsState()
+    val formatString by viewmodel.formatStringEntry.collectAsState()
+    val delimiter by viewmodel.delimiter.collectAsState()
+    val printOptions by viewmodel.printOptions.collectAsState()
+
+    Scaffold(
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
+        topBar = {
+            CellarTopAppBar(
+                title = stringResource(PlaintextDestination.titleRes),
+                scrollBehavior = scrollBehavior,
+                canNavigateBack = true,
+                navigateUp = onNavigateUp,
+                showMenu = false,
+                modifier = Modifier,
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            PlaintextBody(
+                plaintextState = plaintextState,
+                formatString = formatString,
+                delimiter = delimiter,
+                printOptions = printOptions,
+                filterViewModel = filterViewModel,
+                saveFormatString = viewmodel::saveFormatString,
+                updateSorting = viewmodel::updateSorting,
+                updateSubSorting = viewmodel::updateSubSorting,
+                setTemplateView = viewmodel::setTemplateView,
+                savePrintOptions = viewmodel::savePrintOptions,
+                templateView = templateView,
+                modifier = Modifier
+                    .fillMaxSize()
+
+            )
+        }
+    }
+}
+
+@Composable
+fun PlaintextBody(
+    plaintextState: PlaintextUiState,
+    formatString: String,
+    delimiter: String,
+    printOptions: PrintOptions,
+    filterViewModel: FilterViewModel,
+    saveFormatString: (String, String) -> Unit,
+    updateSorting: (String, Boolean) -> Unit,
+    updateSubSorting: (String) -> Unit,
+    setTemplateView: (Boolean) -> Unit,
+    savePrintOptions: (Float, Double) -> Unit,
+    templateView: Boolean,
+    modifier: Modifier = Modifier
+){
+    val context = LocalContext.current
+    val printList = plaintextState.plainList
+
+    val setTemplateText = if (templateView) "See Text" else "Set Format"
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp - 96.dp
+
+    var sortingMenu by rememberSaveable { mutableStateOf(false) }
+    var subMenu by rememberSaveable { mutableStateOf(false) }
+    var printDialog by rememberSaveable { mutableStateOf(false) }
+
+    BackHandler(sortingMenu || subMenu) {
+        if (sortingMenu) {
+            sortingMenu = false
+            subMenu = false
+        }
+        if (subMenu) {
+            subMenu = false
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+    ){
+        // Header
+        Row(
+            modifier = Modifier
+                .padding(bottom = 12.dp)
+                .background(LocalCustomColors.current.homeHeaderBg)
+                .padding(horizontal = 12.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Set format/view list switch
+            Box {
+                TextButton(
+                    onClick = { setTemplateView(!templateView) },
+                    modifier = Modifier
+                        .heightIn(40.dp, 40.dp),
+                    contentPadding = PaddingValues(8.dp, 2.dp),
+                ) {
+                    Box(
+                        modifier = Modifier,
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Set Format", color = Color.Transparent)
+                        Text(setTemplateText)
+                    }
+                }
+            }
+
+            // Open filter sheet
+            Box {
+                TextButton(
+                    onClick = { filterViewModel.openBottomSheet() },
+                    modifier = Modifier
+                        .heightIn(40.dp, 40.dp),
+                    contentPadding = PaddingValues(8.dp, 2.dp),
+                ) { Text("Filtering") }
+            }
+
+            // Sorting
+            Box {
+                var mainSelection by remember { mutableStateOf("") }
+                var subSelection by remember { mutableStateOf("") }
+                var reverse: Boolean
+
+                val hasSubOptions = listOf(
+                    PlaintextSortOption.TIN_LABEL.value,
+                    PlaintextSortOption.TIN_CONTAINER.value,
+                    PlaintextSortOption.TIN_QUANTITY.value
+                )
+                val subOptionsList = listOf(
+                    PlaintextSortOption.DEFAULT.value,
+                    PlaintextSortOption.TIN_DEFAULT.value,
+                    PlaintextSortOption.BRAND.value,
+                    PlaintextSortOption.BLEND.value
+                )
+
+                val density = LocalDensity.current
+                var yPositions by remember { mutableStateOf(mapOf<String, Dp>()) }
+                var mainWidth by remember { mutableStateOf(0.dp) }
+                var mainPosition by remember { mutableStateOf(0.dp) }
+                val alteredColor = Color.Black.copy(alpha = .1f).compositeOver(LocalCustomColors.current.textField)
+                val color = if (subMenu) alteredColor else LocalCustomColors.current.textField
+
+                TextButton(
+                    onClick = { sortingMenu = !sortingMenu },
+                    enabled = plaintextState.sortOptions.isNotEmpty(),
+                    modifier = Modifier
+                        .heightIn(40.dp, 40.dp),
+                    contentPadding = PaddingValues(8.dp, 2.dp),
+                ) { Text("Sorting") }
+
+                // Main options
+                DropdownMenu(
+                    expanded = sortingMenu,
+                    onDismissRequest = { sortingMenu = false },
+                    modifier = Modifier
+                        .onGloballyPositioned {
+                            mainWidth = with(density) { it.size.width.toDp() }
+                            mainPosition = with(density) { it.positionOnScreen().x.toDp() }
+                        },
+                    containerColor = color,
+                ) {
+                    plaintextState.sortOptions.forEach { option ->
+                        var yPosition by remember { mutableStateOf(0.dp) }
+
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    modifier = Modifier,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start,
+                                ) {
+                                    Text(
+                                        text = option.value,
+                                        modifier = Modifier
+                                            .padding(end = 2.dp),
+                                        color = LocalContentColor.current.copy(alpha = if (subMenu) 0.85f else 1.0f)
+                                    )
+                                    // Sort indicator and/or submenu
+                                    if (plaintextState.sortState.value == option.value) {
+                                        Box {
+                                            Image(
+                                                painter = painterResource(id = plaintextState.sortState.icon),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .padding(0.dp),
+                                                colorFilter = ColorFilter.tint(
+                                                    LocalContentColor.current
+                                                )
+                                            )
+                                        }
+                                    } else {
+                                        if (option.value in hasSubOptions) {
+                                            Box {
+                                                Image(
+                                                    imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .size(20.dp),
+                                                    colorFilter = ColorFilter.tint(
+                                                        LocalContentColor.current.copy(alpha = 0.5f)
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            onClick = {
+                                when (option.value) {
+                                    PlaintextSortOption.TIN_LABEL.value -> {
+                                        mainSelection = option.value
+                                        subMenu = true
+                                    }
+                                    PlaintextSortOption.TIN_CONTAINER.value -> {
+                                        mainSelection = option.value
+                                        subMenu = true
+                                    }
+                                    PlaintextSortOption.TIN_QUANTITY.value -> {
+                                        mainSelection = option.value
+                                        subMenu = true
+                                    }
+                                    else -> { updateSorting(option.value, true) }
+                                }
+                            },
+                            modifier = Modifier
+                                .onGloballyPositioned {
+                                    yPosition = with(density) { (it.positionInParent().y).toDp() }
+                                }
+                        )
+
+                        yPositions = yPositions + (option.value to yPosition)
+
+                    }
+                }
+
+                // Sub sorting menu
+                var subWidth by remember { mutableStateOf(0.dp) }
+                var subPosition by remember { mutableStateOf(0.dp) }
+                val yOffset = yPositions[mainSelection]
+                val mainRightEdge = mainPosition + mainWidth
+                val xOffset = if (subPosition >= (mainRightEdge * .8f)) mainWidth else -subWidth
+
+                DropdownMenu(
+                    expanded = subMenu,
+                    onDismissRequest = { subMenu = false },
+                    containerColor = LocalCustomColors.current.textField,
+                    modifier = Modifier
+                        .onGloballyPositioned{
+                            subPosition = with(density) { it.positionOnScreen().x.toDp() }
+                            subWidth = with(density) { it.size.width.toDp() }
+                        },
+                    offset = DpOffset(xOffset, yOffset ?: 0.dp)
+                ) {
+                    subOptionsList.forEach {
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    modifier = Modifier,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start,
+                                ) {
+                                    Text(
+                                        text = it,
+                                        modifier = Modifier
+                                            .padding(end = 8.dp)
+                                    )
+                                    val color = if (subSelection == it && plaintextState.sortState.value == mainSelection) {
+                                            LocalContentColor.current } else Color.Transparent
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(color)
+                                    )
+                                }
+                            },
+                            onClick = {
+                                reverse = subSelection == it && plaintextState.sortState.value == mainSelection
+                                subSelection = it
+                                updateSorting(mainSelection, reverse)
+                                updateSubSorting(it)
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Print
+            IconButton(
+                onClick = { printDialog = true },
+                modifier = Modifier
+                    .padding(0.dp)
+                    .size(40.dp),
+                enabled = plaintextState.plainList.isNotBlank(),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.print_icon),
+                    contentDescription = "Print",
+                    modifier = Modifier
+                        .padding(0.dp),
+                )
+            }
+        }
+
+        // Main body
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (plaintextState.loading) {
+                LoadingIndicator(modifier = Modifier.height(screenHeight))
+            } else {
+                if (templateView) {
+                    PlaintextFormatting(
+                        plaintextState = plaintextState,
+                        formatString = formatString,
+                        delimiter = delimiter,
+                        saveFormatString = saveFormatString,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                } else {
+                    PlaintextList(
+                        plaintextState = plaintextState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+
+    if (printDialog) {
+        PrintDialog(
+            savedFontSize = printOptions.font,
+            savedMargin = printOptions.margin,
+            onPrintConfirm = { font, margin ->
+                printDialog = false
+
+                val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
+                val jobName = "Plaintext Output"
+
+                printManager?.print(jobName, PrintHelper(context, jobName, printList, font, margin), null)
+                savePrintOptions(font, margin)
+            },
+            onPrintCancel = { printDialog = false },
+        )
+    }
+
+}
+
+
+@Composable
+fun PlaintextList(
+    plaintextState: PlaintextUiState,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+        Spacer(Modifier.height(12.dp))
+        if (plaintextState.formatString.isBlank()) {
+            Spacer(Modifier.height(32.dp))
+            Text(
+                text = "Please set a format string.",
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+        } else {
+            SelectionContainer {
+                Text(plaintextState.plainList)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun PlaintextFormatting(
+    plaintextState: PlaintextUiState,
+    formatString: String,
+    delimiter: String,
+    saveFormatString: (String, String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Top,
+    ) {
+        // Format
+        Text(
+            text = "Format Output:",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+            fontWeight = FontWeight.SemiBold
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .padding(bottom = 12.dp, start = 8.dp, end = 8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(IntrinsicSize.Min)
+            ) {
+                Box (
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "String:",
+                        modifier = Modifier
+                            .padding(end = 12.dp),
+                        maxLines = 1
+                    )
+                }
+                Box (
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "Delimiter:",
+                        modifier = Modifier
+                            .padding(end = 12.dp),
+                        maxLines = 1
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f),
+                verticalArrangement = Arrangement.Top,
+            ) {
+                // String
+                TextField(
+                    value = formatString,
+                    onValueChange = { saveFormatString(it, delimiter) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp, start = 8.dp),
+                    placeholder = {
+                        Text(
+                            text = "Format String",
+                            modifier = Modifier,
+                            color = LocalContentColor.current.copy(alpha = 0.5f)
+                        )
+                    },
+                    singleLine = true,
+                    trailingIcon = {
+                        if (formatString.length > 4) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                contentDescription = "Clear",
+                                modifier = Modifier
+                                    .clickable(
+                                        indication = LocalIndication.current,
+                                        interactionSource = null
+                                    ) {
+                                        saveFormatString("", delimiter)
+                                    }
+                                    .alpha(0.66f)
+                                    .size(20.dp)
+                                    .focusable(false)
+                            )
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done,
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedContainerColor = LocalCustomColors.current.textField,
+                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                        disabledContainerColor = LocalCustomColors.current.textField,
+                    ),
+                    shape = MaterialTheme.shapes.extraSmall
+                )
+
+                // Delimiter
+                TextField (
+                    value = delimiter,
+                    onValueChange = { saveFormatString(formatString, it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done,
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedContainerColor = LocalCustomColors.current.textField,
+                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                        disabledContainerColor = LocalCustomColors.current.textField,
+                    ),
+                    shape = MaterialTheme.shapes.extraSmall
+                )
+            }
+        }
+
+        // Preview
+        Text(
+            text = "Preview:",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+            fontWeight = FontWeight.SemiBold
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp, start = 8.dp, end = 8.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.whiteBlack.copy(alpha = .5f),
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(vertical = 8.dp, horizontal = 12.dp)
+        ) {
+            Text(
+                text = plaintextState.preview,
+                modifier = Modifier,
+                minLines = 3,
+                maxLines = 5
+            )
+        }
+
+        // Formatting Guide
+        Text(
+            text = "Formatting Guide",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "Anything typed in the format string will show in the text. To reference " +
+                    "specific fields, use the placeholders below. Sorting options are generated " +
+                    "based on the format string placeholders (set format string before sorting). " +
+                    "Also note, the delimiter field can take one or more \"_n_\" to delimit by " +
+                    "new line(s).",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "Note: sorting by \"Item Default\" or \"Tin Default\" will sort by the order " +
+                    "in which these things were added to the database.",
+            modifier = Modifier
+                .padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+            fontSize = 12.sp
+        )
+        Text(
+            text = "\"Number\" is a special tag that counts each record in the given sort order " +
+                    "(use multiple # to include leading 0's). For advanced formatting, see below.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+        )
+        SelectionContainer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Top
+            ) {
+                val firstHalf = plaintextState.formatGuide.entries.take((plaintextState.formatGuide.size / 2.0).roundToInt())
+                val secondHalf = plaintextState.formatGuide.entries.drop(firstHalf.size)
+                val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
+
+                // first half
+                Column(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalArrangement = Arrangement.Top,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(IntrinsicSize.Min)
+                                .padding(end = 8.dp),
+                        ) {
+                            firstHalf.forEach {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(height),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicText(
+                                        text = "${it.key}:",
+                                        modifier = Modifier,
+                                        style = TextStyle(
+                                            color = LocalContentColor.current,
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        maxLines = 1,
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 10.sp,
+                                            maxFontSize = 14.sp,
+                                            stepSize = 0.25.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        Column(
+                            modifier = Modifier,
+                        ) {
+                            firstHalf.forEach {
+                                Box(
+                                    modifier = Modifier
+                                        .height(height),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicText(
+                                        text = it.value,
+                                        modifier = Modifier,
+                                        style = TextStyle(
+                                            color = LocalContentColor.current,
+                                        ),
+                                        maxLines = 1,
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 10.sp,
+                                            maxFontSize = 14.sp,
+                                            stepSize = 0.25.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(36.dp))
+
+                // second half
+                Column(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalArrangement = Arrangement.Top,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(IntrinsicSize.Min)
+                                .padding(end = 8.dp),
+                        ) {
+                            secondHalf.forEach {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(height),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicText(
+                                        text = "${it.key}:",
+                                        modifier = Modifier,
+                                        style = TextStyle(
+                                            color = LocalContentColor.current,
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        maxLines = 1,
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 10.sp,
+                                            maxFontSize = 14.sp,
+                                            stepSize = 0.25.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        Column(
+                            modifier = Modifier,
+                        ) {
+                            secondHalf.forEach {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(height),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicText(
+                                        text = it.value,
+                                        modifier = Modifier,
+                                        style = TextStyle(
+                                            color = LocalContentColor.current,
+                                        ),
+                                        maxLines = 1,
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 10.sp,
+                                            maxFontSize = 14.sp,
+                                            stepSize = 0.25.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = "In order to output raw text rather than special characters, escape the " +
+                    "special character with the escape character. For example, to output # in the " +
+                    "string, enter: '#. Likewise for example, to output brackets around a field, " +
+                    "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
+                    "need to be escaped unless you're trying to use it before an escapable " +
+                    "character (e.g to render: '01' you would need to input ''##').",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "Use the square brackets ([ ]) when you only want the text to appear if one or " +
+                    "more placeholders are found for an item. For instance, if you want the type " +
+                    "shown on a new line, but don't want an extra line for a blank type, enter: " +
+                    "[_n_@type].",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "When sorting by items, if you want the tins organized as a sublist per each " +
+                    "item, wrap the tin placeholders with curly brackets (e.g. {@label}). Any " +
+                    "formatting you want per line of the tin sublist must be inside the curly " +
+                    "braces (such as bullets or spaces). The sub list will automatically start " +
+                    "on a new line and separate each tin to a new line.",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "A more advanced example might be to pass the list of tins only if tins exist " +
+                    "for that blend and passing the quantity in brackets. For example, entering...",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "@brand - \"@blend\"[{    - @label '[@T_qty']}]",
+            modifier = Modifier
+                .padding(bottom = 8.dp, start = 16.dp),
+            fontSize = 14.sp
+        )
+        Text(
+            text = "... would result in:",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Box (Modifier.padding(start = 16.dp)) {
+            Text(
+                text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+
+@Composable
+fun PrintDialog(
+    savedFontSize: Float,
+    savedMargin: Double,
+    onPrintConfirm: (Float, Double) -> Unit,
+    onPrintCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var fontSize by rememberSaveable { mutableFloatStateOf(savedFontSize) }
+    var margins by rememberSaveable { mutableDoubleStateOf(savedMargin) }
+
+    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val decimalSeparator = symbols.decimalSeparator.toString()
+
+    AlertDialog(
+        onDismissRequest = { onPrintCancel() },
+        confirmButton = {
+            TextButton(
+                onClick = { onPrintConfirm(fontSize, margins) },
+            ) {
+                Text(text = "Print")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onPrintCancel() },
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        title = { Text(text = "Print Settings") },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Font size is the same as standard point-font size. Margin value is a " +
+                            "multiplier, so 0 will be no margins, 1 is default margins (1 inch), " +
+                            "0.5 is half size, etc.",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .height(IntrinsicSize.Min)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Spacer(Modifier.weight(.35f))
+                    Column(
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
+                            .fillMaxHeight()
+                            .padding(end = 12.dp),
+                        verticalArrangement = Arrangement.Top,
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text("Font Size:")
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text("Margins:")
+                        }
+                    }
+                    Column(
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max),
+                        verticalArrangement = Arrangement.Top,
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        val fontPattern = remember { Regex("^(\\s*|\\d+)$") }
+                        val marginPattern = remember(decimalSeparator) {
+                            val ds = Regex.escape(decimalSeparator)
+                            Regex("^(\\s*|(\\d?)?($ds\\d{0,2})?)$")
+                        }
+
+                        var fontSizeString by rememberSaveable { mutableStateOf(fontSize.toInt().toString()) }
+                        var marginsString by rememberSaveable { mutableStateOf(formatDecimal(margins)) }
+
+
+                        CustomTextField(
+                            value = fontSizeString,
+                            onValueChange = {
+                                if (it.matches(fontPattern) && it.length <= 2) {
+                                    fontSizeString = it
+                                    fontSize =
+                                        if (it.isNotBlank()) { it.toFloatOrNull() ?: fontSize }
+                                        else { 12f }
+                                }
+                            },
+                            modifier = Modifier
+                                .width(56.dp)
+                                .padding(bottom = 8.dp),
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = TextAlign.End,
+                                color = LocalContentColor.current
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField.copy(
+                                    alpha = 0.66f
+                                ),
+                                disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
+                            ),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                        )
+                        CustomTextField(
+                            value = marginsString,
+                            onValueChange = {
+                                if (it.matches(marginPattern)) {
+                                    marginsString = it
+                                    try {
+                                        var parsedDouble: Double?
+
+                                        if (it.isNotBlank()) {
+                                            val preNumber = if (it.startsWith(decimalSeparator)) { "0$it" } else it
+                                            val number = numberFormat.parse(preNumber)
+
+                                            parsedDouble = number?.toDouble() ?: 1.0
+                                        } else { parsedDouble = 1.0 }
+
+                                        margins = parsedDouble
+                                    } catch (e: ParseException) {
+                                        Log.e("Print dialog", "Input: $it", e)
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .width(56.dp),
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = TextAlign.End,
+                                color = LocalContentColor.current
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField.copy(
+                                    alpha = 0.66f
+                                ),
+                                disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
+                            ),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                        )
+                    }
+                    Spacer(Modifier.weight(.65f))
+                }
+            }
+        },
+    )
+}
