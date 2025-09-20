@@ -49,6 +49,7 @@ class PlaintextViewModel (
     private val _printOptions = MutableStateFlow(PrintOptions())
     val printOptions: StateFlow<PrintOptions> = _printOptions.asStateFlow()
 
+
     init {
         viewModelScope.launch {
             combine(
@@ -93,7 +94,8 @@ class PlaintextViewModel (
         preferencesRepo.plaintextFormatString,
         preferencesRepo.plaintextDelimiter,
         sortState,
-        subSortOption
+        subSortOption,
+        preferencesRepo.plaintextPresetsFlow
     ) {
         val filteredItems = it[0] as List<ItemsComponentsAndTins>
         val filteredTins = it[1] as List<Tins>
@@ -102,6 +104,7 @@ class PlaintextViewModel (
         val delimiter = it[4] as String
         val sortState = it[5] as PlaintextSortOption
         val subSortOption = it[6] as String
+        val presets = it[7] as List<PlaintextPreset>
 
         val ozRate = preferencesRepo.tinOzConversionRate.first()
         val gramsRate = preferencesRepo.tinGramsConversionRate.first()
@@ -385,6 +388,7 @@ class PlaintextViewModel (
             sortState = sortState,
             sortOptions = sortOptions,
             formatGuide = formatGuide,
+            presets = presets,
             loading = false,
         )
     }
@@ -436,6 +440,12 @@ class PlaintextViewModel (
         viewModelScope.launch {
             preferencesRepo.setPlaintextFormatString(format)
             preferencesRepo.setPlaintextDelimiter(delimiter)
+        }
+    }
+
+    fun savePreset(slot: Int, format: String, delimiter: String) {
+        viewModelScope.launch {
+            preferencesRepo.savePlaintextPreset(slot, format, delimiter)
         }
     }
 
@@ -819,7 +829,14 @@ data class PlaintextUiState(
     val sortState: PlaintextSortOption = PlaintextSortOption(),
     val sortOptions: List<PlaintextSortOption> = emptyList(),
     val formatGuide: Map<String, String> = emptyMap(),
+    val presets: List<PlaintextPreset> = emptyList(),
     val loading: Boolean = false,
+)
+
+data class PlaintextPreset(
+    val slot: Int = 0,
+    val formatString: String = "",
+    val delimiter: String = "",
 )
 
 data class PrintOptions(

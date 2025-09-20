@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSorting
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
+import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextSortOption
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
@@ -38,6 +39,7 @@ class PreferencesRepo(
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
+
         val PLAINTEXT_FORMAT_STRING = stringPreferencesKey("plaintext_format_string")
         val PLAINTEXT_DELIMITER = stringPreferencesKey("plaintext_delimiter")
         val PLAINTEXT_SORTING = stringPreferencesKey("plaintext_sorting")
@@ -45,6 +47,17 @@ class PreferencesRepo(
         val PLAINTEXT_SUBSORTING = stringPreferencesKey("plaintext_subsorting")
         val PLAINTEXT_PRINT_FONT = floatPreferencesKey("plaintext_print_font")
         val PLAINTEXT_PRINT_MARGIN = doublePreferencesKey("plaintext_print_margin")
+        val PLAINTEXT_PRESET_FORMAT1 = stringPreferencesKey("plaintext_preset_format1")
+        val PLAINTEXT_PRESET_DELIMITER1 = stringPreferencesKey("plaintext_preset_delimiter1")
+        val PLAINTEXT_PRESET_FORMAT2 = stringPreferencesKey("plaintext_preset_format2")
+        val PLAINTEXT_PRESET_DELIMITER2 = stringPreferencesKey("plaintext_preset_delimiter2")
+        val PLAINTEXT_PRESET_FORMAT3 = stringPreferencesKey("plaintext_preset_format3")
+        val PLAINTEXT_PRESET_DELIMITER3 = stringPreferencesKey("plaintext_preset_delimiter3")
+        val PLAINTEXT_PRESET_FORMAT4 = stringPreferencesKey("plaintext_preset_format4")
+        val PLAINTEXT_PRESET_DELIMITER4 = stringPreferencesKey("plaintext_preset_delimiter4")
+        val PLAINTEXT_PRESET_FORMAT5 = stringPreferencesKey("plaintext_preset_format5")
+        val PLAINTEXT_PRESET_DELIMITER5 = stringPreferencesKey("plaintext_preset_delimiter5")
+
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -426,6 +439,55 @@ class PreferencesRepo(
         dataStore.edit {
             it[PLAINTEXT_PRINT_FONT] = font
             it[PLAINTEXT_PRINT_MARGIN] = margin
+        }
+    }
+
+    val plaintextPresetsFlow: Flow<List<PlaintextPreset>> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            (0..4).map {
+                val format = preferences[plaintextPresetFormatKey(it)] ?: ""
+                val delimiter = preferences[plaintextPresetDelimiterKey(it)] ?: ""
+                PlaintextPreset(
+                    slot = it,
+                    formatString = format,
+                    delimiter = delimiter
+                )
+            }
+        }
+
+    suspend fun savePlaintextPreset(slot: Int, format: String, delimiter: String) {
+        dataStore.edit {
+            it[plaintextPresetFormatKey(slot)] = format
+            it[plaintextPresetDelimiterKey(slot)] = delimiter
+        }
+    }
+
+    private fun plaintextPresetFormatKey(slot: Int): Preferences.Key<String> {
+        return when (slot) {
+            0 -> PLAINTEXT_PRESET_FORMAT1
+            1 -> PLAINTEXT_PRESET_FORMAT2
+            2 -> PLAINTEXT_PRESET_FORMAT3
+            3 -> PLAINTEXT_PRESET_FORMAT4
+            4 -> PLAINTEXT_PRESET_FORMAT5
+            else -> throw IllegalArgumentException("Invalid slot: $slot")
+        }
+    }
+
+    private fun plaintextPresetDelimiterKey(slot: Int): Preferences.Key<String> {
+        return when (slot) {
+            0 -> PLAINTEXT_PRESET_DELIMITER1
+            1 -> PLAINTEXT_PRESET_DELIMITER2
+            2 -> PLAINTEXT_PRESET_DELIMITER3
+            3 -> PLAINTEXT_PRESET_DELIMITER4
+            4 -> PLAINTEXT_PRESET_DELIMITER5
+            else -> throw IllegalArgumentException("Invalid slot: $slot")
         }
     }
 

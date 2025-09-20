@@ -4,6 +4,12 @@ import android.content.Context
 import android.print.PrintManager
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -56,6 +62,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -85,10 +92,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
@@ -162,6 +171,7 @@ fun PlaintextScreen(
                 updateSubSorting = viewmodel::updateSubSorting,
                 setTemplateView = viewmodel::setTemplateView,
                 savePrintOptions = viewmodel::savePrintOptions,
+                savePreset = viewmodel::savePreset,
                 templateView = templateView,
                 modifier = Modifier
                     .fillMaxSize()
@@ -183,6 +193,7 @@ fun PlaintextBody(
     updateSubSorting: (String) -> Unit,
     setTemplateView: (Boolean) -> Unit,
     savePrintOptions: (Float, Double) -> Unit,
+    savePreset: (Int, String, String) -> Unit,
     templateView: Boolean,
     modifier: Modifier = Modifier
 ){
@@ -428,6 +439,7 @@ fun PlaintextBody(
                 enabled = plaintextState.plainList.isNotBlank(),
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
+                    disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
                 )
             ) {
                 Icon(
@@ -457,6 +469,7 @@ fun PlaintextBody(
                         formatString = formatString,
                         delimiter = delimiter,
                         saveFormatString = saveFormatString,
+                        savePreset = savePreset,
                         modifier = Modifier
                             .fillMaxWidth()
                     )
@@ -526,8 +539,13 @@ fun PlaintextFormatting(
     formatString: String,
     delimiter: String,
     saveFormatString: (String, String) -> Unit,
+    savePreset: (Int, String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var saveDialog by rememberSaveable { mutableStateOf(false) }
+    var loadDialog by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.Top,
@@ -543,7 +561,7 @@ fun PlaintextFormatting(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .padding(bottom = 12.dp, start = 8.dp, end = 8.dp),
+                .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.Top
         ) {
             Column(
@@ -588,6 +606,7 @@ fun PlaintextFormatting(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp, start = 8.dp),
+                    singleLine = true,
                     placeholder = {
                         Text(
                             text = "Format String",
@@ -595,7 +614,6 @@ fun PlaintextFormatting(
                             color = LocalContentColor.current.copy(alpha = 0.5f)
                         )
                     },
-                    singleLine = true,
                     trailingIcon = {
                         if (formatString.length > 4) {
                             Icon(
@@ -656,6 +674,44 @@ fun PlaintextFormatting(
             }
         }
 
+        // Load/save presets
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Spacer(Modifier.weight(.2f))
+            TextButton(
+                onClick = { saveDialog = true },
+                enabled = plaintextState.formatString.isNotBlank(),
+                modifier = Modifier
+                    .heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(8.dp, 2.dp),
+            ) {
+                Text(
+                    text = "Save Preset",
+                    modifier = Modifier
+                )
+            }
+            Spacer(Modifier.weight(.2f))
+            TextButton(
+                onClick = { loadDialog = true },
+                modifier = Modifier
+                    .heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(8.dp, 2.dp),
+            ) {
+                Text(
+                    text = "Load Preset",
+                    modifier = Modifier
+                )
+            }
+            Spacer(Modifier.weight(.2f))
+        }
+
+        Spacer(Modifier.height(16.dp))
+
         // Preview
         Text(
             text = "Preview:",
@@ -666,7 +722,7 @@ fun PlaintextFormatting(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 24.dp, start = 8.dp, end = 8.dp)
+                .padding(horizontal = 8.dp)
                 .border(
                     1.dp,
                     MaterialTheme.colorScheme.secondaryContainer,
@@ -681,10 +737,13 @@ fun PlaintextFormatting(
             Text(
                 text = plaintextState.preview,
                 modifier = Modifier,
-                minLines = 3,
-                maxLines = 5
+                minLines = 6,
+                maxLines = 6,
+                fontSize = 14.sp
             )
         }
+
+        Spacer(Modifier.height(30.dp))
 
         // Formatting Guide
         Text(
@@ -866,72 +925,129 @@ fun PlaintextFormatting(
                         }
                     }
                 }
-
             }
-        }
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = "In order to output raw text rather than special characters, escape the " +
-                    "special character with the escape character. For example, to output # in the " +
-                    "string, enter: '#. Likewise for example, to output brackets around a field, " +
-                    "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
-                    "need to be escaped unless you're trying to use it before an escapable " +
-                    "character (e.g to render: '01' you would need to input ''##').",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "Use the square brackets ([ ]) when you only want the text to appear if one or " +
-                    "more placeholders are found for an item. For instance, if you want the type " +
-                    "shown on a new line, but don't want an extra line for a blank type, enter: " +
-                    "[_n_@type].",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "When sorting by items, if you want the tins organized as a sublist per each " +
-                    "item, wrap the tin placeholders with curly brackets (e.g. {@label}). Any " +
-                    "formatting you want per line of the tin sublist must be inside the curly " +
-                    "braces (such as bullets or spaces). The sub list will automatically start " +
-                    "on a new line and separate each tin to a new line.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
-                    "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
-                    "just before the desired delimiter, followed by delimiter. For example, to " +
-                    "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "A more advanced example might be to pass the list of tins only if tins exist " +
-                    "for that blend and passing the quantity in brackets. For example, entering...",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
-            modifier = Modifier
-                .padding(bottom = 8.dp, start = 16.dp),
-            fontSize = 14.sp
-        )
-        Text(
-            text = "... would result in:",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Box (Modifier.padding(start = 16.dp)) {
-            Text(
-                text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
         }
 
         Spacer(Modifier.height(24.dp))
+
+        // Advanced help
+        val text = if (expanded) "Hide Advanced Help" else "Show Advanced Help"
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { expanded = !expanded }
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        AnimatedVisibility(
+            visible = expanded,
+            modifier = Modifier,
+            enter = expandVertically(
+                animationSpec = tween(durationMillis = 200),
+                expandFrom = Alignment.Bottom) + fadeIn(animationSpec = tween(durationMillis = 200)),
+            exit = shrinkVertically(
+                animationSpec = tween(durationMillis = 200),
+                shrinkTowards = Alignment.Bottom) + fadeOut(animationSpec = tween(durationMillis = 200))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "In order to output raw text rather than special characters, escape the " +
+                            "special character with the escape character. For example, to output # in the " +
+                            "string, enter: '#. Likewise for example, to output brackets around a field, " +
+                            "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
+                            "need to be escaped unless you're trying to use it before an escapable " +
+                            "character (e.g to render: '01' you would need to input ''##').",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Text(
+                    text = "Use the square brackets ([ ]) when you only want the text to appear if one or " +
+                            "more placeholders are found for an item. For instance, if you want the type " +
+                            "shown on a new line, but don't want an extra line for a blank type, enter: " +
+                            "[_n_@type].",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Text(
+                    text = "When sorting by items, if you want the tins organized as a sublist per each " +
+                            "item, wrap the tin placeholders with curly brackets (e.g. {@label}). Any " +
+                            "formatting you want per line of the tin sublist must be inside the curly " +
+                            "braces (such as bullets or spaces). The sub list will automatically start " +
+                            "on a new line and separate each tin to a new line.",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Text(
+                    text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
+                            "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
+                            "just before the desired delimiter, followed by delimiter. For example, to " +
+                            "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Text(
+                    text = "A more advanced example might be to pass the list of tins only if tins exist " +
+                            "for that blend and passing the quantity in brackets. For example, entering...",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Text(
+                    text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp, start = 16.dp),
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "... would result in:",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                )
+                Box(Modifier.padding(start = 16.dp)) {
+                    Text(
+                        text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        if (saveDialog) {
+            SaveDialog(
+                savedPresets = plaintextState.presets,
+                formatString = formatString,
+                delimiter = delimiter,
+                onSaveConfirm = { slot, formatString, delimiter ->
+                    savePreset(slot, formatString, delimiter)
+                },
+                onSaveCancel = { saveDialog = false },
+            )
+        }
+        if (loadDialog) {
+            LoadDialog(
+                savedPresets = plaintextState.presets,
+                onLoadConfirm = { string, delimiter ->
+                    saveFormatString(string, delimiter)
+                },
+                onLoadCancel = { loadDialog = false },
+            )
+        }
     }
 }
 
@@ -1117,6 +1233,220 @@ fun PrintDialog(
                         )
                     }
                     Spacer(Modifier.weight(.65f))
+                }
+            }
+        },
+    )
+}
+
+
+@Composable
+fun SaveDialog(
+    savedPresets: List<PlaintextPreset>,
+    formatString: String,
+    delimiter: String,
+    onSaveConfirm: (Int, String, String) -> Unit,
+    onSaveCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var selectedSlot by rememberSaveable { mutableIntStateOf(-1) }
+
+    AlertDialog(
+        onDismissRequest = { onSaveCancel() },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSaveConfirm(selectedSlot, formatString, delimiter)
+                    onSaveCancel()
+                },
+                enabled = selectedSlot != -1
+            ) {
+                Text(text = "Save")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onSaveCancel() },
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        title = { Text(text = "Save Preset") },
+        modifier = modifier
+            .fillMaxWidth(.9f),
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
+        ),
+        shape = MaterialTheme.shapes.small,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                (0..4).forEach {
+                    val preset = savedPresets[it]
+                    val isSelected = selectedSlot == it
+                    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .05f).compositeOver(LocalCustomColors.current.darkNeutral)
+
+                    Row (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .border(
+                                width = 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .background(
+                                if (isSelected) selectedColor else
+                                    LocalCustomColors.current.darkNeutral,
+                                RoundedCornerShape(4.dp)
+                            )
+                            .clickable(
+                                indication = null,
+                                interactionSource = null
+                            ) { selectedSlot = it }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Box (
+                            modifier = Modifier
+                                .weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Row {
+                                Text(
+                                    text = "Slot ${it + 1}:",
+                                    modifier = Modifier
+                                        .padding(end = 8.dp),
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                )
+                                Text(
+                                    text = preset.formatString,
+                                    modifier = Modifier,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (isSelected && preset.formatString.isNotBlank()) LocalContentColor.current.copy(
+                                        alpha = .2f
+                                    ) else LocalContentColor.current
+                                )
+                            }
+                            if (isSelected && preset.formatString.isNotBlank()) {
+                                Text(
+                                    text = "Overwrite?",
+                                    modifier = Modifier
+                                        .matchParentSize(),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    )
+}
+
+
+@Composable
+fun LoadDialog(
+    savedPresets: List<PlaintextPreset>,
+    onLoadConfirm: (String, String) -> Unit,
+    onLoadCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var selectedSlot by rememberSaveable { mutableIntStateOf(-1) }
+
+    AlertDialog(
+        onDismissRequest = { onLoadCancel() },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onLoadConfirm(savedPresets[selectedSlot].formatString, savedPresets[selectedSlot].delimiter)
+                    onLoadCancel()
+                }
+            ) {
+                Text(text = "Load")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onLoadCancel() },
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        title = { Text(text = "Load Preset") },
+        modifier = modifier
+            .fillMaxWidth(.9f),
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
+        ),
+        shape = MaterialTheme.shapes.small,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                (0..4).forEach {
+                    val preset = savedPresets[it]
+                    val isSelected = selectedSlot == it
+                    val disabled = preset.formatString.isBlank()
+                    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .05f).compositeOver(LocalCustomColors.current.darkNeutral)
+
+                    Row (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .border(
+                                width = Dp.Hairline,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .background(
+                                if (isSelected) selectedColor
+                                else if (disabled) LocalCustomColors.current.darkNeutral.copy(alpha = .38f)
+                                else LocalCustomColors.current.darkNeutral,
+                                RoundedCornerShape(4.dp)
+                            )
+                            .clickable(
+                                enabled = preset.formatString.isNotBlank(),
+                                indication = null,
+                                interactionSource = null
+                            ) { selectedSlot = it }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            text = "Slot ${it + 1}:",
+                            modifier = Modifier
+                                .padding(end = 8.dp),
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (disabled) LocalContentColor.current.copy(alpha = .38f) else LocalContentColor.current
+                        )
+                        Text(
+                            text = preset.formatString,
+                            modifier = Modifier
+                                .weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = LocalContentColor.current
+                        )
+                    }
                 }
             }
         },
