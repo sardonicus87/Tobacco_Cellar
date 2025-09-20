@@ -639,7 +639,7 @@ class PlaintextViewModel (
         processedLine = tinSublist.replace(processedLine) {
             val sublistTemplate = it.groupValues[1]
             val sublistOut = StringBuilder()
-            val sublistDelimiter = sublistTemplate.substringAfterLast("~", "").substringBeforeLast("}", "")
+            val sublistDelimiter = sublistTemplate.substringAfterLast("~", "").substringBeforeLast("}")
 
             val tinsToProcess = itemData?.tins?.filter { it in filteredTins }
 
