@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 class PlaintextViewModel (
     filterViewModel: FilterViewModel,
@@ -833,6 +834,7 @@ data class PlaintextUiState(
     val loading: Boolean = false,
 )
 
+@Serializable
 data class PlaintextPreset(
     val slot: Int = 0,
     val formatString: String = "",
