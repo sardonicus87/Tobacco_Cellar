@@ -14,6 +14,7 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
 import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -719,12 +721,18 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val themeSetting = preferencesRepo.themeSetting.first()
     val tinOzConversionRate = preferencesRepo.tinOzConversionRate.first().toString()
     val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first().toString()
+    val plaintextFormatString = preferencesRepo.plaintextFormatString.first()
+    val plaintextDelimiter = preferencesRepo.plaintextDelimiter.first()
+    val plaintextPresets = Json.encodeToString(preferencesRepo.plaintextPresetsFlow.first())
 
     return """
             quantityOption=$quantityOption
             themeSetting=$themeSetting
             tinOzConversionRate=$tinOzConversionRate
             tinGramsConversionRate=$tinGramsConversionRate
+            plaintextFormatString=$plaintextFormatString
+            plaintextDelimiter=$plaintextDelimiter
+            plaintextPresets=$plaintextPresets
         """.trimIndent()
 }
 
@@ -763,6 +771,14 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                 "themeSetting" -> preferencesRepo.saveThemeSetting(value)
                 "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
                 "tinGramsConversionRate" -> preferencesRepo.setTinGramsConversionRate(value.toDouble())
+                "plaintextFormatString" -> preferencesRepo.setPlaintextFormatString(value)
+                "plaintextDelimiter" -> preferencesRepo.setPlaintextDelimiter(value)
+                "plaintextPresets" -> {
+                    val presets = Json.decodeFromString<List<PlaintextPreset>>(value)
+                    presets.forEach {
+                        preferencesRepo.savePlaintextPreset(it.slot, it.formatString, it.delimiter)
+                    }
+                }
             }
         }
     }
