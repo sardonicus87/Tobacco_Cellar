@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -278,6 +279,16 @@ class SettingsViewModel(
                 message = "Backup complete."
             } catch (e: Exception) {
                 println("Exception: $e")
+                try {
+                    val deleted = DocumentsContract.deleteDocument(context.contentResolver, uri)
+                    if (deleted) {
+                        println("$uri deleted successfully.")
+                    } else {
+                        println("Failed to delete $uri.")
+                    }
+                } catch (e: Exception) {
+                    println("Exception: $e")
+                }
                 message = "Backup failed."
             } finally {
                 deleteTempFile(tempDbZip)
