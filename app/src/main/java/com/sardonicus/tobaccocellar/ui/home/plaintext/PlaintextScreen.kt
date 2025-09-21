@@ -1,8 +1,10 @@
 package com.sardonicus.tobaccocellar.ui.home.plaintext
 
+import android.content.ClipData
 import android.content.Context
 import android.print.PrintManager
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -65,6 +67,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,6 +82,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -106,10 +111,14 @@ import com.sardonicus.tobaccocellar.data.PrintHelper
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
@@ -198,6 +207,8 @@ fun PlaintextBody(
     modifier: Modifier = Modifier
 ){
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val clipboard = LocalClipboard.current
     val printList = plaintextState.plainList
 
     val setTemplateText = if (templateView) "See Text" else "Set Format"
@@ -224,7 +235,6 @@ fun PlaintextBody(
         // Header
         Row(
             modifier = Modifier
-                .padding(bottom = 12.dp)
                 .background(LocalCustomColors.current.homeHeaderBg)
                 .padding(horizontal = 12.dp)
                 .fillMaxWidth(),
@@ -333,20 +343,20 @@ fun PlaintextBody(
                                                 )
                                             )
                                         }
-                                    } else {
-                                        if (option.value in hasSubOptions) {
-                                            Box {
-                                                Image(
-                                                    imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(20.dp),
-                                                    colorFilter = ColorFilter.tint(
-                                                        LocalContentColor.current.copy(alpha = 0.5f)
-                                                    )
+                                    } else if (option.value in hasSubOptions) {
+                                        Box {
+                                            Image(
+                                                imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .size(20.dp),
+                                                colorFilter = ColorFilter.tint(
+                                                    LocalContentColor.current.copy(alpha = 0.5f)
                                                 )
-                                            }
+                                            )
                                         }
+                                    } else {
+                                        Spacer(Modifier.width(20.dp))
                                     }
                                 }
                             },
@@ -430,13 +440,39 @@ fun PlaintextBody(
                 }
             }
 
+            // Copy
+            IconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plaintextState.plainList)))
+
+                        Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier
+                    .padding(0.dp)
+                    .size(40.dp),
+                enabled = plaintextState.plainList.isNotBlank() && !templateView,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
+                )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.copy_icon),
+                    contentDescription = "Copy",
+                    modifier = Modifier
+                        .padding(0.dp),
+                )
+            }
+
             // Print
             IconButton(
                 onClick = { printDialog = true },
                 modifier = Modifier
                     .padding(0.dp)
                     .size(40.dp),
-                enabled = plaintextState.plainList.isNotBlank(),
+                enabled = plaintextState.plainList.isNotBlank() && !templateView,
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                     disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
@@ -452,33 +488,39 @@ fun PlaintextBody(
         }
 
         // Main body
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+        GlowBox(
+            color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+            size = GlowSize(top = 3.dp)
         ) {
-            if (plaintextState.loading) {
-                LoadingIndicator(modifier = Modifier.height(screenHeight))
-            } else {
-                if (templateView) {
-                    PlaintextFormatting(
-                        plaintextState = plaintextState,
-                        formatString = formatString,
-                        delimiter = delimiter,
-                        saveFormatString = saveFormatString,
-                        savePreset = savePreset,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+                if (plaintextState.loading) {
+                    LoadingIndicator(modifier = Modifier.height(screenHeight))
                 } else {
-                    PlaintextList(
-                        plaintextState = plaintextState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
+                    if (templateView) {
+                        PlaintextFormatting(
+                            plaintextState = plaintextState,
+                            formatString = formatString,
+                            delimiter = delimiter,
+                            saveFormatString = saveFormatString,
+                            savePreset = savePreset,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        )
+                    } else {
+                        PlaintextList(
+                            plaintextState = plaintextState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
@@ -514,19 +556,21 @@ fun PlaintextList(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        Spacer(Modifier.height(12.dp))
         if (plaintextState.formatString.isBlank()) {
-            Spacer(Modifier.height(32.dp))
             Text(
                 text = "Please set a format string.",
                 fontSize = 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(top = 32.dp)
             )
         } else {
             SelectionContainer {
-                Text(plaintextState.plainList)
+                Text(
+                    text = plaintextState.plainList,
+                    fontSize = 15.sp,
+                )
             }
         }
     }
@@ -681,7 +725,7 @@ fun PlaintextFormatting(
                 .padding(top = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             Spacer(Modifier.weight(.2f))
             TextButton(
                 onClick = { saveDialog = true },
@@ -729,7 +773,7 @@ fun PlaintextFormatting(
                     RoundedCornerShape(8.dp)
                 )
                 .background(
-                    LocalCustomColors.current.whiteBlack.copy(alpha = .5f),
+                    LocalCustomColors.current.whiteBlack.copy(alpha = .2f),
                     RoundedCornerShape(8.dp)
                 )
                 .padding(vertical = 8.dp, horizontal = 12.dp)
@@ -1008,15 +1052,15 @@ fun PlaintextFormatting(
                 Text(
                     text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
                     modifier = Modifier
-                        .padding(bottom = 8.dp, start = 16.dp),
-                    fontSize = 14.sp
+                        .padding(bottom = 8.dp),
+                    fontSize = 14.sp,
                 )
                 Text(
                     text = "... would result in:",
                     modifier = Modifier
                         .padding(bottom = 8.dp),
                 )
-                Box(Modifier.padding(start = 16.dp)) {
+                Box {
                     Text(
                         text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
                         modifier = Modifier,
@@ -1292,7 +1336,7 @@ fun SaveDialog(
                 (0..4).forEach {
                     val preset = savedPresets[it]
                     val isSelected = selectedSlot == it
-                    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .05f).compositeOver(LocalCustomColors.current.darkNeutral)
+                    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .07f).compositeOver(LocalCustomColors.current.darkNeutral)
 
                     Row (
                         modifier = Modifier
@@ -1405,7 +1449,7 @@ fun LoadDialog(
                     val preset = savedPresets[it]
                     val isSelected = selectedSlot == it
                     val disabled = preset.formatString.isBlank()
-                    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .05f).compositeOver(LocalCustomColors.current.darkNeutral)
+                    val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .07f).compositeOver(LocalCustomColors.current.darkNeutral)
 
                     Row (
                         modifier = Modifier
