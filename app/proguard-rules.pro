@@ -25,6 +25,15 @@
 -keep class com.sardonicus.tobaccocellar.data.TobaccoDatabaseKt { *; }
 -keep class com.sardonicus.tobaccocellar.data.PreferencesRepo { *; }
 -dontwarn edu.umd.cs.findbugs.annotations.SuppressFBWarnings
+#-keepnames class kotlinx.serialization.SerializersKt
+#-keep class *$$serializer { *; }
+#-keep class * { @kotlinx.serialization.Serializable <fields>; }
+#-keepclassmembers class * { @kotlinx.serialization.Serializable <fields>; }
+
+#-keepclassmembers class ** {
+#    @kotlinx.serialization.descriptors.SerialDescriptor Companion;
+#}
+
 #-keep class edu.umd.cs.findbugs.annotations.** { *; }
 #-keep interface edu.umd.cs.findbugs.annotations.** { *; }
 
