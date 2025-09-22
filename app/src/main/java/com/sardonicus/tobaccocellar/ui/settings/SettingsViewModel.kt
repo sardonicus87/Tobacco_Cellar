@@ -490,7 +490,7 @@ class SettingsViewModel(
         }
     }
 
-    fun getMigrations(): List<Migration> {
+    private fun getMigrations(): List<Migration> {
         val migrations = mutableListOf<Migration>()
         migrations.add(MIGRATION_1_2)
         migrations.add(MIGRATION_2_3)
