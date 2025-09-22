@@ -10,6 +10,31 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.3.0",
+        buildDate = "22 Sept, 2025",
+        changes = listOf(
+            "New Plaintext option in the top bar menu on the cellar screen. This will present " +
+                    "the currently filtered list/table (not search) as a plain text with your " +
+                    "chosen output formatting where you can select/copy the list or print it out."
+        ),
+        improvements = listOf(
+            "List view, added switchable ascending/descending to sorting (default is ascending, " +
+                    "tap the selected option again to switch to descending). Tapping an option " +
+                    "doesn't automatically close the menu anymore, just tap the sort menu icon " +
+                    "again or elsewhere on screen to dismiss.",
+            "Table view added subgenre column to (column is also sortable).",
+            "Manual backup minor improvement, should it fail, the process no longer creates an " +
+                    "empty/blank backup file.",
+            "Reliability and performance enhancements."
+        ),
+        bugFixes = listOf(
+            "Cellar screen quick jump button intermittent bug, was sometimes not recognizing " +
+                    "being at the bottom of the list and clearing like it should, and would " +
+                    "re-appear if attempting to scroll down when already at the bottom.",
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.2.1",
         buildDate = "28 Aug, 2025",
         changes = listOf(),
