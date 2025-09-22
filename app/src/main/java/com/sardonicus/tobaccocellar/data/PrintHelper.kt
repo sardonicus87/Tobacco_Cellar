@@ -42,6 +42,9 @@ class PrintHelper(
     private var pageLineRanges = mutableListOf<PageLineRange>()
     private var calculatedTotalPages: Int = 0
 
+    private var overflowingLineHeight = -1
+    private val additionalPageClipping = mutableMapOf<Int, Int>()
+
     override fun onLayout(
         oldAttributes: PrintAttributes?,
         newAttributes: PrintAttributes,
@@ -75,14 +78,34 @@ class PrintHelper(
         if (staticLayout == null || staticLayout!!.lineCount == 0) {
             calculatedTotalPages = 1
             pageLineRanges.clear()
+            additionalPageClipping.clear()
             pageLineRanges.add(PageLineRange(0, -1))
         } else {
             pageLineRanges.clear()
+            additionalPageClipping.clear()
             var currentLine = 0
             calculatedTotalPages = 0
 
             while (currentLine < staticLayout!!.lineCount) {
                 calculatedTotalPages++
+                var effectiveStartLine = currentLine
+                while (effectiveStartLine < staticLayout!!.lineCount) {
+                    val startOffset = staticLayout!!.getLineStart(effectiveStartLine)
+                    val endOffset = staticLayout!!.getLineEnd(effectiveStartLine)
+                    val lineText = if (startOffset < endOffset) content.substring(startOffset, endOffset) else ""
+                    if (lineText.isBlank()) {
+                        effectiveStartLine++
+                    } else {
+                        break
+                    }
+                }
+
+                if (effectiveStartLine >= staticLayout!!.lineCount) {
+                    currentLine = effectiveStartLine
+                    break
+                }
+                currentLine = effectiveStartLine
+
                 val pageStartLine = currentLine
                 val firstLineTop = staticLayout!!.getLineTop(pageStartLine)
                 val heightOfFirst = staticLayout!!.getLineBottom(pageStartLine) - firstLineTop
@@ -94,17 +117,27 @@ class PrintHelper(
                 }
 
                 var pageEndLine = pageStartLine
+                overflowingLineHeight = -1
 
                 for (lineIndex in pageStartLine until staticLayout!!.lineCount) {
                     val currentLineBottom = staticLayout!!.getLineBottom(lineIndex) - firstLineTop
                     if (currentLineBottom <= this.pageContentHeight) {
                         pageEndLine = lineIndex
                     } else {
+                        val overflowingLine = staticLayout!!.getLineTop(lineIndex) - firstLineTop
+                        overflowingLineHeight = if (overflowingLine < this.pageContentHeight) {
+                            this.pageContentHeight - overflowingLine } else { 0 }
+
                         break
                     }
                 }
 
                 pageLineRanges.add(PageLineRange(pageStartLine, pageEndLine))
+
+                if (overflowingLineHeight > 0) {
+                    additionalPageClipping[calculatedTotalPages - 1] = overflowingLineHeight
+                } else { additionalPageClipping[calculatedTotalPages - 1] = 0 }
+
                 currentLine = pageEndLine + 1
 
             }
@@ -115,6 +148,9 @@ class PrintHelper(
                     pageLineRanges.add(PageLineRange(0, staticLayout!!.lineCount - 1))
                 } else {
                     pageLineRanges.add(PageLineRange(0, -1))
+                }
+                if (!additionalPageClipping.containsKey(0) && calculatedTotalPages == 1) {
+                    additionalPageClipping[0] = 0
                 }
             }
         }
@@ -155,14 +191,17 @@ class PrintHelper(
                     val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageIndex + 1).create()
                     val page = pdfDocument.startPage(pageInfo)
                     val canvas = page.canvas
-
                     val currentRange = pageLineRanges[pageIndex]
 
                     if (currentRange.startLine <= currentRange.endLine) {
                         val topOfContent = staticLayout!!.getLineTop(currentRange.startLine)
 
+                        val extraClipBottom = additionalPageClipping.getOrDefault(pageIndex, 0)
+                        val adjustedContentHeight = (pageContentHeight - extraClipBottom).toFloat()
+                        val finalHeight = if (adjustedContentHeight < 0f) 0f else adjustedContentHeight
+
                         canvas.withTranslation(margin.toFloat(), margin.toFloat()) {
-                            withClip(0f, 0f, pageContentWidth.toFloat(), pageContentHeight.toFloat()) {
+                            withClip(0f, 0f, pageContentWidth.toFloat(), finalHeight) {
                                 withTranslation(y = -topOfContent.toFloat()) {
                                     staticLayout!!.draw(this)
                                 }
