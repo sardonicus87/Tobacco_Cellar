@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -452,7 +453,7 @@ fun PlaintextBody(
                 modifier = Modifier
                     .padding(0.dp)
                     .size(40.dp),
-                enabled = plaintextState.plainList.isNotBlank() && !templateView,
+                enabled = plaintextState.plainList.isNotBlank(),
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                     disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
@@ -472,7 +473,7 @@ fun PlaintextBody(
                 modifier = Modifier
                     .padding(0.dp)
                     .size(40.dp),
-                enabled = plaintextState.plainList.isNotBlank() && !templateView,
+                enabled = plaintextState.plainList.isNotBlank(),
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                     disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
@@ -742,6 +743,7 @@ fun PlaintextFormatting(
             Spacer(Modifier.weight(.2f))
             TextButton(
                 onClick = { loadDialog = true },
+                enabled = plaintextState.presets.any { it.formatString.isNotBlank() },
                 modifier = Modifier
                     .heightIn(40.dp, 40.dp),
                 contentPadding = PaddingValues(8.dp, 2.dp),
@@ -1141,8 +1143,8 @@ fun PrintDialog(
             ) {
                 Text(
                     text = "Font size is the same as standard point-font size. Margin value is a " +
-                            "multiplier, so 0 will be no margins, 1 is default margins (1 inch), " +
-                            "0.5 is half size, etc.",
+                            "multiplier of 1 inch, so 0 will be no margins, 0.5 would be half an " +
+                            "inch, 2 would be 2 inches, etc.",
                     modifier = Modifier
                         .padding(bottom = 8.dp),
                 )
@@ -1153,7 +1155,8 @@ fun PrintDialog(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.Top
                 ) {
-                    Spacer(Modifier.weight(.35f))
+                    Spacer(Modifier.weight(.5f))
+                    // Labels
                     Column(
                         modifier = Modifier
                             .width(IntrinsicSize.Max)
@@ -1177,6 +1180,8 @@ fun PrintDialog(
                             Text("Margins:")
                         }
                     }
+
+                    // Text fields
                     Column(
                         modifier = Modifier
                             .width(IntrinsicSize.Max),
@@ -1188,95 +1193,251 @@ fun PrintDialog(
                             val ds = Regex.escape(decimalSeparator)
                             Regex("^(\\s*|(\\d?)?($ds\\d{0,2})?)$")
                         }
-
                         var fontSizeString by rememberSaveable { mutableStateOf(fontSize.toInt().toString()) }
                         var marginsString by rememberSaveable { mutableStateOf(formatDecimal(margins)) }
 
-
-                        CustomTextField(
-                            value = fontSizeString,
-                            onValueChange = {
-                                if (it.matches(fontPattern) && it.length <= 2) {
-                                    fontSizeString = it
-                                    fontSize =
-                                        if (it.isNotBlank()) { it.toFloatOrNull() ?: fontSize }
-                                        else { 12f }
-                                }
-                            },
+                        // font
+                        Row(
                             modifier = Modifier
-                                .width(56.dp)
-                                .padding(bottom = 8.dp),
-                            singleLine = true,
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.End,
-                                color = LocalContentColor.current
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                                focusedContainerColor = LocalCustomColors.current.textField,
-                                unfocusedContainerColor = LocalCustomColors.current.textField,
-                                disabledContainerColor = LocalCustomColors.current.textField.copy(
-                                    alpha = 0.66f
-                                ),
-                                disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
-                            ),
-                            shape = MaterialTheme.shapes.extraSmall,
-                            contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
-                        )
-                        CustomTextField(
-                            value = marginsString,
-                            onValueChange = {
-                                if (it.matches(marginPattern)) {
-                                    marginsString = it
-                                    try {
-                                        var parsedDouble: Double?
-
-                                        if (it.isNotBlank()) {
-                                            val preNumber = if (it.startsWith(decimalSeparator)) { "0$it" } else it
-                                            val number = numberFormat.parse(preNumber)
-
-                                            parsedDouble = number?.toDouble() ?: 1.0
-                                        } else { parsedDouble = 1.0 }
-
-                                        margins = parsedDouble
-                                    } catch (e: ParseException) {
-                                        Log.e("Print dialog", "Input: $it", e)
+                                .height(IntrinsicSize.Min)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CustomTextField(
+                                value = fontSizeString,
+                                onValueChange = {
+                                    if (it.matches(fontPattern) && it.length <= 2) {
+                                        fontSizeString = it
+                                        fontSize =
+                                            if (it.isNotBlank()) {
+                                                it.toFloatOrNull() ?: fontSize
+                                            } else {
+                                                12f
+                                            }
                                     }
-                                }
-                            },
-                            modifier = Modifier
-                                .width(56.dp),
-                            singleLine = true,
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.End,
-                                color = LocalContentColor.current
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                                focusedContainerColor = LocalCustomColors.current.textField,
-                                unfocusedContainerColor = LocalCustomColors.current.textField,
-                                disabledContainerColor = LocalCustomColors.current.textField.copy(
-                                    alpha = 0.66f
+                                },
+                                modifier = Modifier
+                                    .width(56.dp)
+                                    .padding(vertical = 4.dp),
+                                singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(
+                                    textAlign = TextAlign.End,
+                                    color = LocalContentColor.current
                                 ),
-                                disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
-                            ),
-                            shape = MaterialTheme.shapes.extraSmall,
-                            contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
-                        )
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField.copy(
+                                        alpha = 0.66f
+                                    ),
+                                    disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
+                                ),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                            )
+
+                            // increase/decrease font buttons
+                            Row(
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .fillMaxHeight(),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.triangle_arrow_up),
+                                    contentDescription = "Increase Font",
+                                    modifier = Modifier
+                                        .align(Alignment.Top)
+                                        .clickable(
+                                            indication = LocalIndication.current,
+                                            interactionSource = null
+                                        ) {
+                                            if (fontSizeString.isEmpty()) {
+                                                fontSize = 1f
+                                                fontSizeString = "1"
+                                            } else {
+                                                if (fontSize < 99f) {
+                                                    fontSize += 1
+                                                    fontSizeString = fontSize.toInt().toString()
+                                                } else {
+                                                    fontSize = 99f
+                                                    fontSizeString = "99"
+                                                }
+                                            }
+                                        }
+                                        .padding(
+                                            start = 8.dp,
+                                            end = 2.dp,
+                                            top = 4.dp,
+                                            bottom = 4.dp
+                                        )
+                                        .offset(x = 1.dp, y = 2.dp)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.triangle_arrow_down),
+                                    contentDescription = "Decrease Quantity",
+                                    modifier = Modifier
+                                        .align(Alignment.Bottom)
+                                        .clickable(
+                                            indication = LocalIndication.current,
+                                            interactionSource = null
+                                        ) {
+                                            if (fontSizeString.isEmpty()) {
+                                                fontSize = 6f
+                                                fontSizeString = "6"
+                                            } else {
+                                                if (fontSize > 1f) {
+                                                    fontSize -= 1
+                                                    fontSizeString = fontSize.toInt().toString()
+                                                } else if (fontSize <= 1f) {
+                                                    fontSize = 1f
+                                                    fontSizeString = "1"
+                                                }
+                                            }
+                                        }
+                                        .padding(
+                                            start = 2.dp,
+                                            end = 8.dp,
+                                            top = 4.dp,
+                                            bottom = 4.dp
+                                        )
+                                        .offset(x = (-1).dp, y = (-2).dp)
+                                )
+                            }
+                        }
+
+                        // margins
+                        Row(
+                            modifier = Modifier
+                                .height(IntrinsicSize.Min)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CustomTextField(
+                                value = marginsString,
+                                onValueChange = {
+                                    if (it.matches(marginPattern)) {
+                                        marginsString = it
+                                        try {
+                                            var parsedDouble: Double?
+
+                                            if (it.isNotBlank()) {
+                                                val preNumber =
+                                                    if (it.startsWith(decimalSeparator)) {
+                                                        "0$it"
+                                                    } else it
+                                                val number = numberFormat.parse(preNumber)
+
+                                                parsedDouble = number?.toDouble() ?: 1.0
+                                            } else {
+                                                parsedDouble = 1.0
+                                            }
+
+                                            margins = if (parsedDouble < 10.0) parsedDouble else 10.0
+                                        } catch (e: ParseException) {
+                                            Log.e("Print dialog", "Input: $it", e)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(56.dp)
+                                    .padding(vertical = 4.dp),
+                                singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(
+                                    textAlign = TextAlign.End,
+                                    color = LocalContentColor.current
+                                ),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField.copy(
+                                        alpha = 0.66f
+                                    ),
+                                    disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
+                                ),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                            )
+
+                            // increase/decrease margin buttons
+                            Row(
+                                modifier = Modifier
+                                    .padding(0.dp)
+                                    .fillMaxHeight(),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.triangle_arrow_up),
+                                    contentDescription = "Increase Font",
+                                    modifier = Modifier
+                                        .align(Alignment.Top)
+                                        .clickable(
+                                            indication = LocalIndication.current,
+                                            interactionSource = null
+                                        ) {
+                                            if (marginsString.isEmpty()) {
+                                                margins = 1.0
+                                                marginsString = "1"
+                                            } else {
+                                                if (margins < 10.0) {
+                                                    margins += 0.25
+                                                    marginsString = formatDecimal(margins)
+                                                } else {
+                                                    margins = 10.0
+                                                    marginsString = "10"
+                                                }
+                                            }
+                                        }
+                                        .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
+                                        .offset(x = 1.dp, y = 2.dp)
+                                )
+                                Icon(
+                                    painter = painterResource(id = R.drawable.triangle_arrow_down),
+                                    contentDescription = "Decrease Quantity",
+                                    modifier = Modifier
+                                        .align(Alignment.Bottom)
+                                        .clickable(
+                                            indication = LocalIndication.current,
+                                            interactionSource = null
+                                        ) {
+                                            if (marginsString.isEmpty()) {
+                                                margins = 0.0
+                                                marginsString = formatDecimal(margins)
+                                            } else {
+                                                if (margins > 0.25) {
+                                                    margins -= 0.25
+                                                    marginsString = formatDecimal(margins)
+                                                } else if (margins <= 0.0) {
+                                                    margins = 0.0
+                                                    marginsString = formatDecimal(margins)
+                                                }
+                                            }
+                                        }
+                                        .padding(start = 2.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                                        .offset(x = (-1).dp, y = (-2).dp)
+                                )
+                            }
+                        }
                     }
-                    Spacer(Modifier.weight(.65f))
+                    Spacer(Modifier.weight(.5f))
                 }
             }
         },
