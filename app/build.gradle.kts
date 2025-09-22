@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.org.jetbrains.kotlin.serialization)
 }
 
 ksp {
@@ -16,8 +17,8 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 31
-        versionName = "3.2.1"
+        versionCode = 32
+        versionName = "3.3.0"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -86,6 +87,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.kotlinx.serialization.json)
 
 
 
