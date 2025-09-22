@@ -212,7 +212,7 @@ fun PlaintextBody(
     val clipboard = LocalClipboard.current
     val printList = plaintextState.plainList
 
-    val setTemplateText = if (templateView) "See Text" else "Set Format"
+    val setTemplateText = if (templateView) "See List" else "Set Format"
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp - 96.dp
 
     var sortingMenu by rememberSaveable { mutableStateOf(false) }
@@ -802,8 +802,18 @@ fun PlaintextFormatting(
             text = "Anything typed in the format string will show in the text. To reference " +
                     "specific fields, use the placeholders below. Sorting options are generated " +
                     "based on the format string placeholders (set format string before sorting). " +
-                    "Also note, the delimiter field can take one or more \"_n_\" to delimit by " +
-                    "new line(s).",
+                    "Using the delimiter field will automatically remove the delimiter from the " +
+                    "last line.",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "Use the delimiter line for how to separate records in the generated string. " +
+                    "Anything typed here will show up in-between each record. So, to separate " +
+                    "each record by a blank line, you would need to enter \"_n__n_\". When tins " +
+                    "are passed as a sublist, mark the start of the tins sublist delimiter with " +
+                    "a tilde (~) at the end of the tins-sublist formatting, inside the closing " +
+                    "tins as sublist bracket (e.g.: {@label~, } or {@label~_n_}.",
             modifier = Modifier
                 .padding(bottom = 8.dp),
         )
