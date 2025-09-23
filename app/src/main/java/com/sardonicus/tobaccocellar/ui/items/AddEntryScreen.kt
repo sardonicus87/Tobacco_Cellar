@@ -121,6 +121,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
+import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
@@ -1025,92 +1026,64 @@ fun DetailsEntry(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Increase/Decrease Buttons //
-                    Row(
+                    IncreaseDecrease(
+                        increaseClick = {
+                            if (itemDetails.quantityString.isEmpty()) {
+                                onValueChange(
+                                    itemDetails.copy(
+                                        quantityString = "1",
+                                        quantity = 1
+                                    )
+                                )
+                            } else {
+                                if (itemDetails.quantityString.toInt() < 99) {
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            quantityString = (itemDetails.quantityString.toInt() + 1).toString(),
+                                            quantity = itemDetails.quantityString.toInt() + 1
+                                        )
+                                    )
+                                } else {
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            quantityString = "99",
+                                            quantity = 99
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                        decreaseClick = {
+                            if (itemDetails.quantityString.isEmpty()) {
+                                onValueChange(
+                                    itemDetails.copy(
+                                        quantityString = "0",
+                                        quantity = 0
+                                    )
+                                )
+                            } else {
+                                if (itemDetails.quantityString.toInt() > 0) {
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            quantityString = (itemDetails.quantityString.toInt() - 1).toString(),
+                                            quantity = itemDetails.quantity - 1
+                                        )
+                                    )
+                                } else if (itemDetails.quantityString.toInt() == 0) {
+                                    onValueChange(
+                                        itemDetails.copy(
+                                            quantityString = "0",
+                                            quantity = 0
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                        increaseEnabled = !itemDetails.isSynced,
+                        decreaseEnabled = !itemDetails.isSynced,
                         modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxHeight(),
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.triangle_arrow_up),
-                            contentDescription = "Increase Quantity",
-                            modifier = Modifier
-                                .align(Alignment.Top)
-                                .clickable(
-                                    enabled = !itemDetails.isSynced,
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) {
-                                    if (itemDetails.quantityString.isEmpty()) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                quantityString = "1",
-                                                quantity = 1
-                                            )
-                                        )
-                                    } else {
-                                        if (itemDetails.quantityString.toInt() < 99) {
-                                            onValueChange(
-                                                itemDetails.copy(
-                                                    quantityString = (itemDetails.quantityString.toInt() + 1).toString(),
-                                                    quantity = itemDetails.quantityString.toInt() + 1
-                                                )
-                                            )
-                                        } else {
-                                            onValueChange(
-                                                itemDetails.copy(
-                                                    quantityString = "99",
-                                                    quantity = 99
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                                .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
-                                .offset(x = 1.dp, y = 2.dp)
-                                .alpha(if (itemDetails.isSynced) 0.5f else 1f)
-                        )
-                        Icon(
-                            painter = painterResource(id = R.drawable.triangle_arrow_down),
-                            contentDescription = "Decrease Quantity",
-                            modifier = Modifier
-                                .align(Alignment.Bottom)
-                                .clickable(
-                                    enabled = !itemDetails.isSynced,
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) {
-                                    if (itemDetails.quantityString.isEmpty()) {
-                                        onValueChange(
-                                            itemDetails.copy(
-                                                quantityString = "0",
-                                                quantity = 0
-                                            )
-                                        )
-                                    } else {
-                                        if (itemDetails.quantityString.toInt() > 0) {
-                                            onValueChange(
-                                                itemDetails.copy(
-                                                    quantityString = (itemDetails.quantityString.toInt() - 1).toString(),
-                                                    quantity = itemDetails.quantity - 1
-                                                )
-                                            )
-                                        } else if (itemDetails.quantityString.toInt() == 0) {
-                                            onValueChange(
-                                                itemDetails.copy(
-                                                    quantityString = "0",
-                                                    quantity = 0
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                                .padding(start = 2.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
-                                .offset(x = (-1).dp, y = (-2).dp)
-                                .alpha(if (itemDetails.isSynced) 0.5f else 1f)
-                        )
-                    }
+                            .fillMaxHeight()
+                    )
 
                     // Sync Tins? //
                     Row(
@@ -1568,7 +1541,7 @@ fun IndividualTin(
                     contentAlignment = Alignment.TopEnd
                 ) {
                     Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.remove_circle_outline),
+                        imageVector = ImageVector.vectorResource(id = R.drawable.remove_outline),
                         contentDescription = "Close",
                         modifier = Modifier
                             .clickable(
