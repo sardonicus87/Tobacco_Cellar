@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -75,6 +74,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.compositeOver
@@ -115,6 +115,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
+import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
@@ -540,7 +541,10 @@ fun PlaintextBody(
                 printManager?.print(jobName, PrintHelper(context, jobName, printList, font, margin), null)
                 savePrintOptions(font, margin)
             },
-            onPrintCancel = { printDialog = false },
+            onPrintCancel = { font, margin ->
+                printDialog = false
+                savePrintOptions(font, margin)
+            },
         )
     }
 
@@ -652,13 +656,6 @@ fun PlaintextFormatting(
                         .fillMaxWidth()
                         .padding(bottom = 8.dp, start = 8.dp),
                     singleLine = true,
-                    placeholder = {
-                        Text(
-                            text = "Format String",
-                            modifier = Modifier,
-                            color = LocalContentColor.current.copy(alpha = 0.5f)
-                        )
-                    },
                     trailingIcon = {
                         if (formatString.length > 4) {
                             Icon(
@@ -1031,19 +1028,19 @@ fun PlaintextFormatting(
                         .padding(bottom = 8.dp),
                 )
                 Text(
-                    text = "Use the square brackets ([ ]) when you only want the text to appear if one or " +
-                            "more placeholders are found for an item. For instance, if you want the type " +
-                            "shown on a new line, but don't want an extra line for a blank type, enter: " +
-                            "[_n_@type].",
+                    text = "Use the square brackets ([ ]) when you only want the text within them " +
+                            "to appear if one or more placeholders (also inside the brackets) are " +
+                            "found. For instance, if you want the type shown on a new line, but " +
+                            "don't want an extra line for a blank type, enter: [_n_@type]. These " +
+                            "conditional brackets can also be nested.",
                     modifier = Modifier
                         .padding(bottom = 8.dp),
                 )
                 Text(
-                    text = "When sorting by items, if you want the tins organized as a sublist per each " +
-                            "item, wrap the tin placeholders with curly brackets (e.g. {@label}). Any " +
-                            "formatting you want per line of the tin sublist must be inside the curly " +
-                            "braces (such as bullets or spaces). The sub list will automatically start " +
-                            "on a new line and separate each tin to a new line.",
+                    text = "When sorting by items, if you want the tins organized as a sublist " +
+                            "per each item, use the curly braces around the formatting you want for " +
+                            "tins (e.g. {@label (@T_qty)}). Conditional brackets can also be used " +
+                            "inside the curly braces.",
                     modifier = Modifier
                         .padding(bottom = 8.dp),
                 )
@@ -1113,7 +1110,7 @@ fun PrintDialog(
     savedFontSize: Float,
     savedMargin: Double,
     onPrintConfirm: (Float, Double) -> Unit,
-    onPrintCancel: () -> Unit,
+    onPrintCancel: (Float, Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var fontSize by rememberSaveable { mutableFloatStateOf(savedFontSize) }
@@ -1124,7 +1121,7 @@ fun PrintDialog(
     val decimalSeparator = symbols.decimalSeparator.toString()
 
     AlertDialog(
-        onDismissRequest = { onPrintCancel() },
+        onDismissRequest = { onPrintCancel(fontSize, margins) },
         confirmButton = {
             TextButton(
                 onClick = { onPrintConfirm(fontSize, margins) },
@@ -1134,7 +1131,7 @@ fun PrintDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = { onPrintCancel() },
+                onClick = { onPrintCancel(fontSize, margins) },
             ) {
                 Text(text = "Cancel")
             }
@@ -1152,9 +1149,8 @@ fun PrintDialog(
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = "Font size is the same as standard point-font size. Margin value is a " +
-                            "multiplier of 1 inch, so 0 will be no margins, 0.5 would be half an " +
-                            "inch, 2 would be 2 inches, etc.",
+                    text = "Font size is standard point-font size. Margin value is a multiplier " +
+                            "of 1 inch with a range of 0-3 (including decimals, for example 0.5).",
                     modifier = Modifier
                         .padding(bottom = 8.dp),
                 )
@@ -1198,7 +1194,7 @@ fun PrintDialog(
                         verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.Start
                     ) {
-                        val fontPattern = remember { Regex("^(\\s*|\\d+)$") }
+                        val fontPattern = remember { Regex("^(\\s*|\\d{0,2})$") }
                         val marginPattern = remember(decimalSeparator) {
                             val ds = Regex.escape(decimalSeparator)
                             Regex("^(\\s*|(\\d?)?($ds\\d{0,2})?)$")
@@ -1217,7 +1213,7 @@ fun PrintDialog(
                             CustomTextField(
                                 value = fontSizeString,
                                 onValueChange = {
-                                    if (it.matches(fontPattern) && it.length <= 2) {
+                                    if (it.matches(fontPattern)) {
                                         fontSizeString = it
                                         fontSize =
                                             if (it.isNotBlank()) {
@@ -1227,8 +1223,17 @@ fun PrintDialog(
                                             }
                                     }
                                 },
+                                suffix = {
+                                    Text(
+                                        "pt",
+                                        fontSize = 14.sp,
+                                        modifier = Modifier
+                                            .padding(0.75.dp),
+                                        color = LocalContentColor.current.copy(alpha = .8f)
+                                    )
+                                },
                                 modifier = Modifier
-                                    .width(56.dp)
+                                    .width(68.dp)
                                     .padding(vertical = 4.dp),
                                 singleLine = true,
                                 textStyle = LocalTextStyle.current.copy(
@@ -1255,74 +1260,38 @@ fun PrintDialog(
                             )
 
                             // increase/decrease font buttons
-                            Row(
+                            IncreaseDecrease(
+                                increaseClick = {
+                                    if (fontSizeString.isEmpty()) {
+                                        fontSize = 1f
+                                        fontSizeString = "1"
+                                    } else {
+                                        if (fontSize < 99f) {
+                                            fontSize += 1
+                                            fontSizeString = fontSize.toInt().toString()
+                                        } else {
+                                            fontSize = 99f
+                                            fontSizeString = "99"
+                                        }
+                                    }
+                                },
+                                decreaseClick = {
+                                    if (fontSizeString.isEmpty()) {
+                                        fontSize = 6f
+                                        fontSizeString = "6"
+                                    } else {
+                                        if (fontSize > 1f) {
+                                            fontSize -= 1
+                                            fontSizeString = fontSize.toInt().toString()
+                                        } else if (fontSize <= 1f) {
+                                            fontSize = 1f
+                                            fontSizeString = "1"
+                                        }
+                                    }
+                                },
                                 modifier = Modifier
-                                    .padding(0.dp)
                                     .fillMaxHeight(),
-                                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.triangle_arrow_up),
-                                    contentDescription = "Increase Font",
-                                    modifier = Modifier
-                                        .align(Alignment.Top)
-                                        .clickable(
-                                            indication = LocalIndication.current,
-                                            interactionSource = null
-                                        ) {
-                                            if (fontSizeString.isEmpty()) {
-                                                fontSize = 1f
-                                                fontSizeString = "1"
-                                            } else {
-                                                if (fontSize < 99f) {
-                                                    fontSize += 1
-                                                    fontSizeString = fontSize.toInt().toString()
-                                                } else {
-                                                    fontSize = 99f
-                                                    fontSizeString = "99"
-                                                }
-                                            }
-                                        }
-                                        .padding(
-                                            start = 8.dp,
-                                            end = 2.dp,
-                                            top = 4.dp,
-                                            bottom = 4.dp
-                                        )
-                                        .offset(x = 1.dp, y = 2.dp)
-                                )
-                                Icon(
-                                    painter = painterResource(id = R.drawable.triangle_arrow_down),
-                                    contentDescription = "Decrease Quantity",
-                                    modifier = Modifier
-                                        .align(Alignment.Bottom)
-                                        .clickable(
-                                            indication = LocalIndication.current,
-                                            interactionSource = null
-                                        ) {
-                                            if (fontSizeString.isEmpty()) {
-                                                fontSize = 6f
-                                                fontSizeString = "6"
-                                            } else {
-                                                if (fontSize > 1f) {
-                                                    fontSize -= 1
-                                                    fontSizeString = fontSize.toInt().toString()
-                                                } else if (fontSize <= 1f) {
-                                                    fontSize = 1f
-                                                    fontSizeString = "1"
-                                                }
-                                            }
-                                        }
-                                        .padding(
-                                            start = 2.dp,
-                                            end = 8.dp,
-                                            top = 4.dp,
-                                            bottom = 4.dp
-                                        )
-                                        .offset(x = (-1).dp, y = (-2).dp)
-                                )
-                            }
+                            )
                         }
 
                         // margins
@@ -1353,16 +1322,26 @@ fun PrintDialog(
                                                 parsedDouble = 1.0
                                             }
 
-                                            margins = if (parsedDouble < 10.0) parsedDouble else 10.0
+                                            margins = if (parsedDouble <= 3.0) parsedDouble else 3.0
                                         } catch (e: ParseException) {
                                             Log.e("Print dialog", "Input: $it", e)
                                         }
                                     }
                                 },
                                 modifier = Modifier
-                                    .width(56.dp)
-                                    .padding(vertical = 4.dp),
+                                    .width(68.dp)
+                                    .padding(vertical = 4.dp)
+                                    .onFocusChanged { if (!it.hasFocus) marginsString = formatDecimal(margins) },
                                 singleLine = true,
+                                suffix = {
+                                    Text(
+                                        text = "x",
+                                        fontSize = 14.sp,
+                                        modifier = Modifier
+                                            .padding(start = 0.75.dp),
+                                        color = LocalContentColor.current.copy(alpha = .8f)
+                                    )
+                                         },
                                 textStyle = LocalTextStyle.current.copy(
                                     textAlign = TextAlign.End,
                                     color = LocalContentColor.current
@@ -1387,64 +1366,38 @@ fun PrintDialog(
                             )
 
                             // increase/decrease margin buttons
-                            Row(
+                            IncreaseDecrease(
+                                increaseClick = {
+                                    if (marginsString.isEmpty()) {
+                                        margins = 0.25
+                                        marginsString = "0.25"
+                                    } else {
+                                        if (margins < 3.0) {
+                                            margins += 0.25
+                                            marginsString = formatDecimal(margins)
+                                        } else {
+                                            margins = 3.0
+                                            marginsString = "3"
+                                        }
+                                    }
+                                },
+                                decreaseClick = {
+                                    if (marginsString.isEmpty()) {
+                                        margins = 0.0
+                                        marginsString = formatDecimal(margins)
+                                    } else {
+                                        if (margins > 0.25) {
+                                            margins -= 0.25
+                                            marginsString = formatDecimal(margins)
+                                        } else if (margins <= 0.0) {
+                                            margins = 0.0
+                                            marginsString = formatDecimal(margins)
+                                        }
+                                    }
+                                },
                                 modifier = Modifier
-                                    .padding(0.dp)
                                     .fillMaxHeight(),
-                                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.triangle_arrow_up),
-                                    contentDescription = "Increase Font",
-                                    modifier = Modifier
-                                        .align(Alignment.Top)
-                                        .clickable(
-                                            indication = LocalIndication.current,
-                                            interactionSource = null
-                                        ) {
-                                            if (marginsString.isEmpty()) {
-                                                margins = 1.0
-                                                marginsString = "1"
-                                            } else {
-                                                if (margins < 10.0) {
-                                                    margins += 0.25
-                                                    marginsString = formatDecimal(margins)
-                                                } else {
-                                                    margins = 10.0
-                                                    marginsString = "10"
-                                                }
-                                            }
-                                        }
-                                        .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
-                                        .offset(x = 1.dp, y = 2.dp)
-                                )
-                                Icon(
-                                    painter = painterResource(id = R.drawable.triangle_arrow_down),
-                                    contentDescription = "Decrease Quantity",
-                                    modifier = Modifier
-                                        .align(Alignment.Bottom)
-                                        .clickable(
-                                            indication = LocalIndication.current,
-                                            interactionSource = null
-                                        ) {
-                                            if (marginsString.isEmpty()) {
-                                                margins = 0.0
-                                                marginsString = formatDecimal(margins)
-                                            } else {
-                                                if (margins > 0.25) {
-                                                    margins -= 0.25
-                                                    marginsString = formatDecimal(margins)
-                                                } else if (margins <= 0.0) {
-                                                    margins = 0.0
-                                                    marginsString = formatDecimal(margins)
-                                                }
-                                            }
-                                        }
-                                        .padding(start = 2.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
-                                        .offset(x = (-1).dp, y = (-2).dp)
-                                )
-                            }
+                            )
                         }
                     }
                     Spacer(Modifier.weight(.5f))
