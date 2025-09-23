@@ -677,7 +677,7 @@ fun BulkEditing(
                             trailingIcon = {
                                 if (editingState.compsSelected) {
                                     val addIcon =
-                                        if (editingState.compsAdd) R.drawable.add else R.drawable.remove_circle
+                                        if (editingState.compsAdd) R.drawable.add_circle else R.drawable.remove_circle
                                     Icon(
                                         imageVector = ImageVector.vectorResource(id = addIcon),
                                         contentDescription = "Add or remove",
@@ -778,7 +778,7 @@ fun BulkEditing(
                             trailingIcon = {
                                 if (editingState.flavorSelected) {
                                     val addIcon =
-                                        if (editingState.flavorAdd) R.drawable.add else R.drawable.remove_circle
+                                        if (editingState.flavorAdd) R.drawable.add_circle else R.drawable.remove_circle
                                     Icon(
                                         imageVector = ImageVector.vectorResource(id = addIcon),
                                         contentDescription = "Add or remove",
