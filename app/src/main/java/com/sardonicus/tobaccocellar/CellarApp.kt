@@ -780,7 +780,7 @@ fun CellarBottomAppBar(
                             .padding(0.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.add),
+                            painter = painterResource(id = R.drawable.add_circle),
                             contentDescription = stringResource(R.string.add),
                             modifier = Modifier
                                 .size(26.dp)
