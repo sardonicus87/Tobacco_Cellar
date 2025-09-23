@@ -69,6 +69,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -80,6 +81,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -357,6 +359,53 @@ fun LoadingIndicator(
 }
 
 
+/** Increase/decrease buttons */
+@Composable
+fun IncreaseDecrease(
+    increaseClick: () -> Unit,
+    decreaseClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    increaseEnabled: Boolean = true,
+    decreaseEnabled: Boolean = true,
+    tint: Color = LocalContentColor.current
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.triangle_arrow_up),
+            contentDescription = "Increase",
+            modifier = Modifier
+                .align(Alignment.Top)
+                .clickable(
+                    enabled = increaseEnabled,
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { increaseClick() }
+                .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp)
+                .offset(x = 1.dp, y = 2.dp),
+            tint = tint.copy(alpha = if (increaseEnabled) 1f else 0.38f)
+        )
+        Icon(
+            painter = painterResource(id = R.drawable.triangle_arrow_down),
+            contentDescription = "Decrease",
+            modifier = Modifier
+                .align(Alignment.Bottom)
+                .clickable(
+                    enabled = decreaseEnabled,
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { decreaseClick() }
+                .padding(start = 2.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                .offset(x = (-1).dp, y = (-2).dp),
+            tint = tint.copy(alpha = if (decreaseEnabled) 1f else 0.38f)
+        )
+    }
+}
+
+
 /** TextField with inner-padding access */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -369,6 +418,8 @@ fun CustomTextField(
     isError: Boolean = false,
     textStyle: TextStyle = LocalTextStyle.current,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     singleLine: Boolean = false,
@@ -413,9 +464,11 @@ fun CustomTextField(
             ),
             shape = shape,
             contentPadding = contentPadding,
-            leadingIcon = leadingIcon,
             placeholder = placeholder,
+            leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
+            prefix = prefix,
+            suffix = suffix,
             supportingText = supportingText,
         )
     }
