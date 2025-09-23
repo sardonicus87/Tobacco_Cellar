@@ -347,7 +347,7 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[PLAINTEXT_DELIMITER] ?: "_n_"
+            it[PLAINTEXT_DELIMITER] ?: ""
         }
 
     val plaintextSorting: Flow<String> = dataStore.data
