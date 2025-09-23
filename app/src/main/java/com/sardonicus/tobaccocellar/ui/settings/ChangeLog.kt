@@ -10,6 +10,17 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.3.1",
+        buildDate = "23 Sept, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Corrected some of the instructions on the Plaintext Output screen, tweaked some of " +
+                    "the UI (print dialog mainly), corrected some other minor UI errors.",
+        ),
+        bugFixes = listOf(),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.3.0",
         buildDate = "22 Sept, 2025",
         changes = listOf(
