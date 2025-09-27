@@ -34,10 +34,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -1440,12 +1436,9 @@ fun IndividualTin(
                         .weight(0.5f),
                     contentAlignment = Alignment.TopStart
                 ) {
+                    val icon = if (tinDetails.detailsExpanded) R.drawable.arrow_up else R.drawable.arrow_down
                     Icon(
-                        imageVector = if (tinDetails.detailsExpanded) {
-                            Icons.Default.KeyboardArrowUp
-                        } else {
-                            Icons.Default.KeyboardArrowDown
-                        },
+                        painter = painterResource(id = icon),
                         contentDescription = "Expand/contract details",
                         modifier = Modifier
                             .clickable(
@@ -1756,7 +1749,7 @@ fun IndividualTin(
                                 },
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.DateRange,
+                                    painter = painterResource(id = R.drawable.calendar_month),
                                     contentDescription = "Select manufacture date",
                                     tint = LocalContentColor.current
                                 )
@@ -1826,7 +1819,7 @@ fun IndividualTin(
                                 showPicker("Cellared")
                             }) {
                                 Icon(
-                                    imageVector = Icons.Default.DateRange,
+                                    painter = painterResource(id = R.drawable.calendar_month),
                                     contentDescription = "Select cellared date",
                                     tint = LocalContentColor.current
                                 )
@@ -1889,7 +1882,7 @@ fun IndividualTin(
                                 showPicker("Opened")
                             }) {
                                 Icon(
-                                    imageVector = Icons.Default.DateRange,
+                                    painter = painterResource(id = R.drawable.calendar_month),
                                     contentDescription = "Select open date",
                                     tint = LocalContentColor.current
                                 )

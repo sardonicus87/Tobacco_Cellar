@@ -58,12 +58,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -303,7 +297,7 @@ fun CellarTopAppBar(
             if (canNavigateBack) {
                 IconButton(onClick = navigateUp) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        painter = painterResource(id = R.drawable.arrow_back),
                         contentDescription = null
                     )
                 }
@@ -320,7 +314,7 @@ fun CellarTopAppBar(
                         .size(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MoreVert,
+                        painter = painterResource(id = R.drawable.more_vert),
                         contentDescription = null,
                         modifier = Modifier
                             .size(24.dp)
@@ -360,7 +354,7 @@ fun CellarTopAppBar(
                                         ) {
                                             Text(text = "Export CSV ")
                                             Icon(
-                                                Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                                painterResource(R.drawable.arrow_right),
                                                 "Export Options",
                                             modifier = Modifier.size(20.dp),
                                             tint = LocalContentColor.current.copy(alpha = 0.75f))
@@ -414,7 +408,7 @@ fun CellarTopAppBar(
                                 DropdownMenuItem(
                                     text = {
                                         Icon(
-                                            Icons.AutoMirrored.Default.KeyboardArrowLeft,
+                                            painterResource(R.drawable.arrow_left),
                                             "Back",
                                             modifier = Modifier.size(20.dp),
                                             tint = LocalContentColor.current.copy(alpha = 0.75f)
@@ -880,7 +874,7 @@ fun FilterBottomSheet(
                 verticalArrangement = Arrangement.Top
             ) {
                 Icon(
-                    imageVector = Icons.Default.Close,
+                    painter = painterResource(id = R.drawable.close),
                     contentDescription = "Close",
                     modifier = Modifier
                         .size(30.dp)
@@ -1177,7 +1171,7 @@ fun FilterBottomSheet(
             enabled = filtersApplied,
         ) {
             Icon(
-                imageVector = Icons.Default.Close,
+                painter = painterResource(R.drawable.close),
                 contentDescription = "",
                 modifier = Modifier
                     .padding(end = 3.dp)
@@ -1551,7 +1545,7 @@ fun BrandFilterSection(
                                             .offset(x = (-4).dp),
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Close,
+                                            painter = painterResource(R.drawable.close),
                                             contentDescription = "",
                                             modifier = Modifier
                                                 .padding(end = 3.dp)
@@ -2333,7 +2327,7 @@ fun FlowFilterSection(
                                     enabled = displayData.selected.isNotEmpty()
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Close,
+                                        painter = painterResource(id = R.drawable.close),
                                         contentDescription = "",
                                         modifier = Modifier
                                             .padding(end = 3.dp)
@@ -2733,7 +2727,7 @@ fun Chip(
         trailingIcon = {
             if (trailingIcon) {
                 Icon(
-                    imageVector = Icons.Filled.Close,
+                    painter = painterResource(id = R.drawable.close),
                     contentDescription = "Remove Chip",
                     modifier = Modifier
                         .clickable(
