@@ -29,7 +29,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
@@ -502,7 +501,7 @@ fun BulkEditing(
                                     }
                                 )
                             }
-                            BasicText(
+                            Text(
                                 text = "Sub-genre: ",
                                 style = TextStyle(
                                     color = if (!editingState.genreSelected) LocalContentColor.current.copy(
@@ -641,7 +640,7 @@ fun BulkEditing(
                                     }
                                 )
                             }
-                            BasicText(
+                            Text(
                                 text = "Components: ",
                                 style = TextStyle(
                                     color = if (!editingState.compsSelected) LocalContentColor.current.copy(
@@ -743,7 +742,7 @@ fun BulkEditing(
                                     }
                                 )
                             }
-                            BasicText(
+                            Text(
                                 text = "Flavoring: ",
                                 style = TextStyle(
                                     color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
@@ -962,7 +961,7 @@ fun BulkEditing(
                                     }
                                 )
                             }
-                            BasicText(
+                            Text(
                                 text = "Production Status:",
                                 style = TextStyle(
                                     color = if (!editingState.productionSelected) LocalContentColor.current.copy(
@@ -1036,7 +1035,7 @@ fun BulkEditing(
                                     }
                                 )
                             }
-                            BasicText(
+                            Text(
                                 text = "Sync entry/\ntin quantity:",
                                 style = TextStyle(
                                     color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(

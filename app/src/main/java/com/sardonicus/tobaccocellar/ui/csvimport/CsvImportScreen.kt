@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -555,12 +554,10 @@ fun CsvImportBody(
                                                     horizontalAlignment = Alignment.End,
                                                     verticalArrangement = Arrangement.Center,
                                                 ) {
-                                                    BasicText(
+                                                    Text(
                                                         text = if (mappingOptions.collateTins && importOption == ImportOption.OVERWRITE) {
                                                             "Warning: Overwrite will erase existing tins."
-                                                        } else {
-                                                            ""
-                                                        },
+                                                        } else { "" },
                                                         style = TextStyle(
                                                             color = MaterialTheme.colorScheme.error,
                                                             textAlign = TextAlign.End
@@ -689,7 +686,7 @@ fun CsvImportBody(
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
-                                                BasicText(
+                                                Text(
                                                     text = "Database Field",
                                                     style = LocalTextStyle.current.copy(
                                                         color = MaterialTheme.colorScheme.onBackground,
@@ -707,14 +704,12 @@ fun CsvImportBody(
                                                     )
                                                 )
                                                 Spacer(Modifier.weight(1.1f))
-                                                BasicText(
+                                                Text(
                                                     text = "CSV Column",
-                                                    style = LocalTextStyle.current.copy(
-                                                        color = MaterialTheme.colorScheme.onBackground,
-                                                        lineBreak = LineBreak.Paragraph,
-                                                        fontWeight = FontWeight.Medium,
-                                                        textAlign = TextAlign.Center
-                                                    ),
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.Center,
+                                                    style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
                                                     maxLines = 2,
                                                     modifier = Modifier
                                                         .weight(1f),
@@ -725,14 +720,12 @@ fun CsvImportBody(
                                                     )
                                                 )
                                                 Spacer(Modifier.weight(.9f))
-                                                BasicText(
+                                                Text(
                                                     text = "Overwrite Allowed",
-                                                    style = LocalTextStyle.current.copy(
-                                                        color = MaterialTheme.colorScheme.onBackground,
-                                                        lineBreak = LineBreak.Paragraph,
-                                                        fontWeight = FontWeight.Medium,
-                                                        textAlign = TextAlign.End
-                                                    ),
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.End,
+                                                    style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
                                                     maxLines = 2,
                                                     modifier = Modifier
                                                         .alpha(if (importOption == ImportOption.OVERWRITE) 1f else 0.5f)
@@ -1746,7 +1739,7 @@ fun MappingField(
                     .width(90.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                BasicText(
+                Text(
                     text = label,
                     style = TextStyle(
                         color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),

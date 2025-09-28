@@ -53,7 +53,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
@@ -2548,7 +2547,7 @@ fun CheckboxWithLabel(
                 .padding(end = 6.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            BasicText(
+            Text(
                 text = text,
                 style = LocalTextStyle.current.copy(
                     color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
@@ -2699,7 +2698,7 @@ fun Chip(
                         .width(25.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    BasicText(
+                    Text(
                         text = text,
                         maxLines = 1,
                         modifier = Modifier,

@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
@@ -812,7 +811,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BasicText(
+            Text(
                 text = "Components: ",
                 style = TextStyle(
                     color = LocalContentColor.current
@@ -879,7 +878,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BasicText(
+            Text(
                 text = "Flavoring: ",
                 style = TextStyle(
                     color = LocalContentColor.current
@@ -947,7 +946,7 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            BasicText(
+            Text(
                 text = "No. of\nTins:",
                 style = TextStyle(
                     color = LocalContentColor.current

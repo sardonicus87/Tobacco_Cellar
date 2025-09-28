@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -443,7 +442,7 @@ fun DateInfo(
                                     verticalAlignment = Alignment.CenterVertically
 
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = datesUiState.averageAgeManufacture,
                                         modifier = Modifier,
                                         maxLines = 1,
@@ -466,7 +465,7 @@ fun DateInfo(
                                     verticalAlignment = Alignment.CenterVertically
 
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = datesUiState.averageAgeCellar,
                                         modifier = Modifier,
                                         maxLines = 1,
@@ -489,7 +488,7 @@ fun DateInfo(
                                     verticalAlignment = Alignment.CenterVertically
 
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = datesUiState.averageAgeOpen,
                                         modifier = Modifier,
                                         maxLines = 1,
@@ -512,7 +511,7 @@ fun DateInfo(
                                     verticalAlignment = Alignment.CenterVertically
 
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = datesUiState.averageWaitTime,
                                         modifier = Modifier,
                                         maxLines = 1,
