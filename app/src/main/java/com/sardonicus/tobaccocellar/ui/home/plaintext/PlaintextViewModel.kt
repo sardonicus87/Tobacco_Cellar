@@ -226,7 +226,7 @@ class PlaintextViewModel (
             "New Line" to "_n_",
             "Number" to "#",
             "Escape char" to "'",
-            "If any" to "[...]",
+            "Conditional" to "[...]",
             "Tin sublist" to "{...}",
             "Sublist delim." to "~"
         )
