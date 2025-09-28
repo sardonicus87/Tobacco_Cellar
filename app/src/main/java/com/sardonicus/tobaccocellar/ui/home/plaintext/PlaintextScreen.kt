@@ -17,6 +17,7 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +37,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -57,6 +57,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -91,6 +92,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -862,7 +864,7 @@ fun PlaintextFormatting(
                                         .height(height),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = "${it.key}:",
                                         modifier = Modifier,
                                         style = TextStyle(
@@ -888,7 +890,7 @@ fun PlaintextFormatting(
                                         .height(height),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = it.value,
                                         modifier = Modifier,
                                         style = TextStyle(
@@ -931,7 +933,7 @@ fun PlaintextFormatting(
                                         .height(height),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = "${it.key}:",
                                         modifier = Modifier,
                                         style = TextStyle(
@@ -958,7 +960,7 @@ fun PlaintextFormatting(
                                         .height(height),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    BasicText(
+                                    Text(
                                         text = it.value,
                                         modifier = Modifier,
                                         style = TextStyle(
@@ -1087,6 +1089,7 @@ fun PlaintextFormatting(
                 onSaveConfirm = { slot, formatString, delimiter ->
                     savePreset(slot, formatString, delimiter)
                 },
+                onDeleteConfirm = { savePreset(it, "", "") },
                 onSaveCancel = { saveDialog = false },
             )
         }
@@ -1096,6 +1099,7 @@ fun PlaintextFormatting(
                 onLoadConfirm = { string, delimiter ->
                     saveFormatString(string, delimiter)
                 },
+                onDeleteConfirm = { savePreset(it, "", "") },
                 onLoadCancel = { loadDialog = false },
             )
         }
@@ -1412,10 +1416,12 @@ fun SaveDialog(
     formatString: String,
     delimiter: String,
     onSaveConfirm: (Int, String, String) -> Unit,
+    onDeleteConfirm: (Int) -> Unit,
     onSaveCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedSlot by rememberSaveable { mutableIntStateOf(-1) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { onSaveCancel() },
@@ -1475,10 +1481,15 @@ fun SaveDialog(
                                     LocalCustomColors.current.darkNeutral,
                                 RoundedCornerShape(4.dp)
                             )
-                            .clickable(
+                            .combinedClickable(
                                 indication = null,
-                                interactionSource = null
-                            ) { selectedSlot = it }
+                                interactionSource = null,
+                                onClick = { selectedSlot = it },
+                                onLongClick = {
+                                    selectedSlot = it
+                                    confirmDelete = true
+                                }
+                            )
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         Box (
@@ -1486,22 +1497,49 @@ fun SaveDialog(
                                 .weight(1f),
                             contentAlignment = Alignment.CenterStart
                         ) {
-                            Row {
+                            Row (
+                                modifier = Modifier
+                                    .height(IntrinsicSize.Min)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                val color = if (isSelected) LocalContentColor.current.copy(alpha = .2f) else LocalContentColor.current
+                                val color2 = if (isSelected) LocalContentColor.current.copy(alpha = .2f) else LocalContentColor.current.copy(alpha = .5f)
                                 Text(
-                                    text = "Slot ${it + 1}:",
+                                    text = "${it + 1}:",
                                     modifier = Modifier
+                                        .width(IntrinsicSize.Max)
                                         .padding(end = 8.dp),
+                                    maxLines = 1,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 )
                                 Text(
                                     text = preset.formatString,
-                                    modifier = Modifier,
+                                    modifier = Modifier
+                                        .weight(1f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = if (isSelected && preset.formatString.isNotBlank()) LocalContentColor.current.copy(
-                                        alpha = .2f
-                                    ) else LocalContentColor.current
+                                    color = color
                                 )
+                                if (preset.formatString.isNotBlank()) {
+                                    VerticalDivider(
+                                        modifier = Modifier
+                                            .padding(horizontal = 6.dp)
+                                            .fillMaxHeight(),
+                                        color = color,
+                                        thickness = 1.5.dp
+                                    )
+                                    Text(
+                                        text = preset.delimiter.ifBlank{ "n/a" },
+                                        modifier = Modifier
+                                            .width(44.dp)
+                                            .padding(start = 2.dp),
+                                        color = if (preset.delimiter.isBlank()) color2 else color,
+                                        maxLines = 1,
+                                        fontStyle = if (preset.delimiter.isBlank()) FontStyle.Italic else FontStyle.Normal,
+                                        textAlign = if (preset.delimiter.isBlank()) TextAlign.Center else TextAlign.Start,
+                                    )
+                                }
                             }
                             if (isSelected && preset.formatString.isNotBlank()) {
                                 Text(
@@ -1519,6 +1557,33 @@ fun SaveDialog(
             }
         },
     )
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteConfirm(selectedSlot)
+                        selectedSlot = -1
+                        confirmDelete = false
+                    },
+                ) {
+                    Text(text = "Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { confirmDelete = false },
+                ) {
+                    Text(text = "Cancel")
+                }
+            },
+            title = { Text(text = "Delete Preset") },
+            shape = MaterialTheme.shapes.small,
+            containerColor = MaterialTheme.colorScheme.background,
+            textContentColor = MaterialTheme.colorScheme.onBackground,
+        )
+    }
 }
 
 
@@ -1527,9 +1592,11 @@ fun LoadDialog(
     savedPresets: List<PlaintextPreset>,
     onLoadConfirm: (String, String) -> Unit,
     onLoadCancel: () -> Unit,
+    onDeleteConfirm: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedSlot by rememberSaveable { mutableIntStateOf(-1) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { onLoadCancel() },
@@ -1576,6 +1643,7 @@ fun LoadDialog(
                     Row (
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(IntrinsicSize.Min)
                             .padding(vertical = 4.dp, horizontal = 8.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .border(
@@ -1589,15 +1657,20 @@ fun LoadDialog(
                                 else LocalCustomColors.current.darkNeutral,
                                 RoundedCornerShape(4.dp)
                             )
-                            .clickable(
+                            .combinedClickable(
                                 enabled = preset.formatString.isNotBlank(),
                                 indication = null,
-                                interactionSource = null
-                            ) { selectedSlot = it }
+                                interactionSource = null,
+                                onClick = { selectedSlot = it },
+                                onLongClick = {
+                                    selectedSlot = it
+                                    confirmDelete = true
+                                }
+                            )
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         Text(
-                            text = "Slot ${it + 1}:",
+                            text = "${it + 1}:",
                             modifier = Modifier
                                 .padding(end = 8.dp),
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -1609,12 +1682,59 @@ fun LoadDialog(
                                 .weight(1f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = FontWeight.Normal,
                             color = LocalContentColor.current
                         )
+                        if (preset.formatString.isNotBlank()) {
+                            VerticalDivider(
+                                modifier = Modifier
+                                    .padding(horizontal = 6.dp)
+                                    .fillMaxHeight(),
+                                color = LocalContentColor.current,
+                                thickness = 1.5.dp
+                            )
+                            Text(
+                                text = preset.delimiter.ifBlank{ "n/a" },
+                                modifier = Modifier
+                                    .width(44.dp)
+                                    .padding(start = 2.dp),
+                                color = if (preset.delimiter.isBlank()) LocalContentColor.current.copy(alpha = .5f) else LocalContentColor.current,
+                                maxLines = 1,
+                                fontStyle = if (preset.delimiter.isBlank()) FontStyle.Italic else FontStyle.Normal,
+                                textAlign = if (preset.delimiter.isBlank()) TextAlign.Center else TextAlign.Start,
+                            )
+                        }
                     }
                 }
             }
         },
     )
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteConfirm(selectedSlot)
+                        selectedSlot = -1
+                        confirmDelete = false
+                    },
+                ) {
+                    Text(text = "Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { confirmDelete = false },
+                ) {
+                    Text(text = "Cancel")
+                }
+            },
+            title = { Text(text = "Delete Preset") },
+            shape = MaterialTheme.shapes.small,
+            containerColor = MaterialTheme.colorScheme.background,
+            textContentColor = MaterialTheme.colorScheme.onBackground,
+        )
+    }
 }
