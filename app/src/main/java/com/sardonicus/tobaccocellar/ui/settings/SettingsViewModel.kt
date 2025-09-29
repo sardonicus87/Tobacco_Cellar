@@ -735,6 +735,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val plaintextFormatString = preferencesRepo.plaintextFormatString.first()
     val plaintextDelimiter = preferencesRepo.plaintextDelimiter.first()
     val plaintextPresets = Json.encodeToString(preferencesRepo.plaintextPresetsFlow.first())
+    val plaintextPrintOptions = "${preferencesRepo.plaintextPrintFontSize.first()}, ${preferencesRepo.plaintextPrintMargin.first()}"
+
 
     return """
             quantityOption=$quantityOption
@@ -744,6 +746,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             plaintextFormatString=$plaintextFormatString
             plaintextDelimiter=$plaintextDelimiter
             plaintextPresets=$plaintextPresets
+            plaintextPrintOptions=$plaintextPrintOptions
         """.trimIndent()
 }
 
@@ -789,6 +792,12 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     presets.forEach {
                         preferencesRepo.savePlaintextPreset(it.slot, it.formatString, it.delimiter)
                     }
+                }
+                "plaintextPrintOptions" -> {
+                    val options = value.split(", ")
+                    val font = options.first().toFloat()
+                    val margin = options.last().toDouble()
+                    preferencesRepo.setPlaintextPrintOptions(font, margin)
                 }
             }
         }
