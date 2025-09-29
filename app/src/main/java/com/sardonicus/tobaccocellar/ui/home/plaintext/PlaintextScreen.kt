@@ -1220,9 +1220,7 @@ fun PrintDialog(
                                         fontSize =
                                             if (it.isNotBlank()) {
                                                 it.toFloatOrNull() ?: fontSize
-                                            } else {
-                                                12f
-                                            }
+                                            } else { 12f }
                                     }
                                 },
                                 suffix = {
@@ -1333,7 +1331,9 @@ fun PrintDialog(
                                 modifier = Modifier
                                     .width(68.dp)
                                     .padding(vertical = 4.dp)
-                                    .onFocusChanged { if (!it.hasFocus) marginsString = formatDecimal(margins) },
+                                    .onFocusChanged {
+                                        if (!it.hasFocus) marginsString = formatDecimal(margins)
+                                    },
                                 singleLine = true,
                                 suffix = {
                                     Text(
@@ -1432,25 +1432,23 @@ fun SaveDialog(
                     onSaveCancel()
                 },
                 enabled = selectedSlot != -1
-            ) {
-                Text(text = "Save")
-            }
+            ) { Text(text = "Save") }
         },
         dismissButton = {
             TextButton(
                 onClick = { onSaveCancel() },
-            ) {
-                Text(text = "Cancel")
-            }
+            ) { Text(text = "Cancel") }
         },
         title = { Text(text = "Save Preset") },
         modifier = modifier
-            .fillMaxWidth(.9f),
+            .fillMaxWidth(.9f)
+            .clickable(
+                indication = null,
+                interactionSource = null
+            ) { selectedSlot = -1 },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
         shape = MaterialTheme.shapes.small,
         text = {
             Column(
@@ -1484,10 +1482,12 @@ fun SaveDialog(
                             .combinedClickable(
                                 indication = null,
                                 interactionSource = null,
-                                onClick = { selectedSlot = it },
+                                onClick = { selectedSlot = if (isSelected) -1 else it },
                                 onLongClick = {
-                                    selectedSlot = it
-                                    confirmDelete = true
+                                    if (preset.formatString.isNotBlank()) {
+                                        selectedSlot = it
+                                        confirmDelete = true
+                                    }
                                 }
                             )
                             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -1579,6 +1579,7 @@ fun SaveDialog(
                 }
             },
             title = { Text(text = "Delete Preset") },
+            text = { Text(text = "Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
             textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -1605,24 +1606,23 @@ fun LoadDialog(
                 onClick = {
                     onLoadConfirm(savedPresets[selectedSlot].formatString, savedPresets[selectedSlot].delimiter)
                     onLoadCancel()
-                }
-            ) {
-                Text(text = "Load")
-            }
+                },
+                enabled = selectedSlot != -1
+            ) { Text(text = "Load") }
         },
         dismissButton = {
             TextButton(
                 onClick = { onLoadCancel() },
-            ) {
-                Text(text = "Cancel")
-            }
+            ) { Text(text = "Cancel") }
         },
         title = { Text(text = "Load Preset") },
         modifier = modifier
-            .fillMaxWidth(.9f),
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+            .fillMaxWidth(.9f)
+            .clickable(
+                indication = null,
+                interactionSource = null
+            ) { selectedSlot = -1 },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
         shape = MaterialTheme.shapes.small,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -1661,7 +1661,7 @@ fun LoadDialog(
                                 enabled = preset.formatString.isNotBlank(),
                                 indication = null,
                                 interactionSource = null,
-                                onClick = { selectedSlot = it },
+                                onClick = { selectedSlot = if (isSelected) -1 else it },
                                 onLongClick = {
                                     selectedSlot = it
                                     confirmDelete = true
@@ -1709,7 +1709,6 @@ fun LoadDialog(
             }
         },
     )
-
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -1732,6 +1731,7 @@ fun LoadDialog(
                 }
             },
             title = { Text(text = "Delete Preset") },
+            text = { Text(text = "Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
             textContentColor = MaterialTheme.colorScheme.onBackground,
