@@ -41,8 +41,10 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -53,16 +55,14 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -90,6 +90,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -438,16 +439,16 @@ fun ItemInputForm(
             .fillMaxWidth(),
         verticalArrangement = Arrangement.Top
     ) {
-        TabRow(
+        SecondaryTabRow(
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier
                 .padding(bottom = 1.dp),
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = LocalContentColor.current,
-            indicator = { tabPositions ->
+            indicator = {
                 SecondaryIndicator(
                     modifier = Modifier
-                        .tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        .tabIndicatorOffset(selectedTabIndex),
                     color = MaterialTheme.colorScheme.inversePrimary
                 )
             },
@@ -2347,6 +2348,8 @@ fun CustomDropDown(
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    var width by remember { mutableStateOf(0.dp) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -2359,7 +2362,10 @@ fun CustomDropDown(
             onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled),
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
+                .onGloballyPositioned {
+                    width = with(density) { it.size.width.toDp() }
+                },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -2371,11 +2377,11 @@ fun CustomDropDown(
             isError = isError,
             enabled = enabled
         )
-        ExposedDropdownMenu(
+        DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier,
-            matchTextFieldWidth = true,
+            modifier = Modifier
+                .width(width),
             containerColor = LocalCustomColors.current.textField,
         ) {
             options.forEach {

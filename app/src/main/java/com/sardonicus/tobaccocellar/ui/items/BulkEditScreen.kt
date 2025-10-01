@@ -45,14 +45,13 @@ import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -226,16 +225,16 @@ fun BulkEditBody(
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.Start
                 ) {
-                    TabRow(
+                    SecondaryTabRow(
                         selectedTabIndex = tabIndex,
                         modifier = Modifier
                             .padding(bottom = 1.dp),
                         containerColor = MaterialTheme.colorScheme.background,
                         contentColor = LocalContentColor.current,
-                        indicator = { tabPositions ->
+                        indicator = {
                             SecondaryIndicator(
                                 modifier = Modifier
-                                    .tabIndicatorOffset(tabPositions[tabIndex]),
+                                    .tabIndicatorOffset(tabIndex),
                                 color = MaterialTheme.colorScheme.inversePrimary
                             )
                         },
