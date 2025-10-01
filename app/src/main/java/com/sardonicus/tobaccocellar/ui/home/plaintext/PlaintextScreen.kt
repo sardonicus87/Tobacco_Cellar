@@ -142,7 +142,7 @@ fun PlaintextScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
-    val plaintextState by viewmodel.uiState.collectAsState()
+    val plaintextState by viewmodel.listState.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val templateView by viewmodel.setTemplateView.collectAsState()
     val formatString by viewmodel.formatStringEntry.collectAsState()
@@ -178,6 +178,8 @@ fun PlaintextScreen(
                 printOptions = printOptions,
                 filterViewModel = filterViewModel,
                 saveFormatString = viewmodel::saveFormatString,
+                sortMenuState = viewmodel.sortMenuState,
+                updateSortMenuState = viewmodel::updateSortMenuState,
                 updateSorting = viewmodel::updateSorting,
                 updateSubSorting = viewmodel::updateSubSorting,
                 setTemplateView = viewmodel::setTemplateView,
@@ -194,12 +196,14 @@ fun PlaintextScreen(
 
 @Composable
 fun PlaintextBody(
-    plaintextState: PlaintextUiState,
+    plaintextState: PlaintextListState,
     formatString: String,
     delimiter: String,
     printOptions: PrintOptions,
     filterViewModel: FilterViewModel,
     saveFormatString: (String, String) -> Unit,
+    sortMenuState: SortMenuState,
+    updateSortMenuState: (SortMenuState) -> Unit,
     updateSorting: (String, Boolean) -> Unit,
     updateSubSorting: (String) -> Unit,
     setTemplateView: (Boolean) -> Unit,
@@ -215,18 +219,16 @@ fun PlaintextBody(
 
     val setTemplateText = if (templateView) "See List" else "Set Format"
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp - 96.dp
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
-    var sortingMenu by rememberSaveable { mutableStateOf(false) }
-    var subMenu by rememberSaveable { mutableStateOf(false) }
     var printDialog by rememberSaveable { mutableStateOf(false) }
 
-    BackHandler(sortingMenu || subMenu) {
-        if (sortingMenu) {
-            sortingMenu = false
-            subMenu = false
+    BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
+        if (sortMenuState.mainMenu) {
+            updateSortMenuState(sortMenuState.copy(mainMenu = false))
         }
-        if (subMenu) {
-            subMenu = false
+        if (sortMenuState.subMenu) {
+            updateSortMenuState(sortMenuState.copy(subMenu = false))
         }
     }
 
@@ -243,7 +245,7 @@ fun PlaintextBody(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Set format/view list switch
+            // Set templateView switch
             Box {
                 TextButton(
                     onClick = { setTemplateView(!templateView) },
@@ -273,8 +275,6 @@ fun PlaintextBody(
 
             // Sorting
             Box {
-                var mainSelection by remember { mutableStateOf("") }
-                var subSelection by remember { mutableStateOf("") }
                 var reverse: Boolean
 
                 val hasSubOptions = listOf(
@@ -294,10 +294,10 @@ fun PlaintextBody(
                 var mainWidth by remember { mutableStateOf(0.dp) }
                 var mainPosition by remember { mutableStateOf(0.dp) }
                 val alteredColor = Color.Black.copy(alpha = .1f).compositeOver(LocalCustomColors.current.textField)
-                val color = if (subMenu) alteredColor else LocalCustomColors.current.textField
+                val color = if (sortMenuState.subMenu) alteredColor else LocalCustomColors.current.textField
 
                 TextButton(
-                    onClick = { sortingMenu = !sortingMenu },
+                    onClick = { updateSortMenuState(sortMenuState.copy(mainMenu = !sortMenuState.mainMenu)) },
                     enabled = plaintextState.sortOptions.isNotEmpty(),
                     modifier = Modifier
                         .heightIn(40.dp, 40.dp),
@@ -306,8 +306,8 @@ fun PlaintextBody(
 
                 // Main options
                 DropdownMenu(
-                    expanded = sortingMenu,
-                    onDismissRequest = { sortingMenu = false },
+                    expanded = sortMenuState.mainMenu,
+                    onDismissRequest = { updateSortMenuState(sortMenuState.copy(mainMenu = false)) },
                     modifier = Modifier
                         .onGloballyPositioned {
                             mainWidth = with(density) { it.size.width.toDp() }
@@ -329,7 +329,7 @@ fun PlaintextBody(
                                         text = option.value,
                                         modifier = Modifier
                                             .padding(end = 2.dp),
-                                        color = LocalContentColor.current.copy(alpha = if (subMenu) 0.85f else 1.0f)
+                                        color = LocalContentColor.current.copy(alpha = if (sortMenuState.subMenu) 0.85f else 1.0f)
                                     )
                                     // Sort indicator and/or submenu
                                     if (plaintextState.sortState.value == option.value) {
@@ -363,21 +363,15 @@ fun PlaintextBody(
                                 }
                             },
                             onClick = {
-                                when (option.value) {
-                                    PlaintextSortOption.TIN_LABEL.value -> {
-                                        mainSelection = option.value
-                                        subMenu = true
-                                    }
-                                    PlaintextSortOption.TIN_CONTAINER.value -> {
-                                        mainSelection = option.value
-                                        subMenu = true
-                                    }
-                                    PlaintextSortOption.TIN_QUANTITY.value -> {
-                                        mainSelection = option.value
-                                        subMenu = true
-                                    }
-                                    else -> { updateSorting(option.value, true) }
+                                if (option.value in hasSubOptions) {
+                                    updateSortMenuState(
+                                        sortMenuState.copy(
+                                            subMenu = true,
+                                            mainSelection = option.value,
+                                        )
+                                    )
                                 }
+                                else { updateSorting(option.value, true) }
                             },
                             modifier = Modifier
                                 .onGloballyPositioned {
@@ -392,18 +386,17 @@ fun PlaintextBody(
 
                 // Sub sorting menu
                 var subWidth by remember { mutableStateOf(0.dp) }
-                var subPosition by remember { mutableStateOf(0.dp) }
-                val yOffset = yPositions[mainSelection]
+                val yOffset = yPositions[sortMenuState.mainSelection]
                 val mainRightEdge = mainPosition + mainWidth
-                val xOffset = if (subPosition >= (mainRightEdge * .8f)) mainWidth else -subWidth
+                val remainingSpace = screenWidth - mainRightEdge
+                val xOffset = if (subWidth < (remainingSpace * 1.05f)) mainWidth else -(subWidth)
 
                 DropdownMenu(
-                    expanded = subMenu,
-                    onDismissRequest = { subMenu = false },
+                    expanded = sortMenuState.subMenu,
+                    onDismissRequest = { updateSortMenuState(sortMenuState.copy(subMenu = false)) },
                     containerColor = LocalCustomColors.current.textField,
                     modifier = Modifier
                         .onGloballyPositioned{
-                            subPosition = with(density) { it.positionOnScreen().x.toDp() }
                             subWidth = with(density) { it.size.width.toDp() }
                         },
                     offset = DpOffset(xOffset, yOffset ?: 0.dp)
@@ -421,7 +414,7 @@ fun PlaintextBody(
                                         modifier = Modifier
                                             .padding(end = 8.dp)
                                     )
-                                    val color = if (subSelection == it && plaintextState.sortState.value == mainSelection) {
+                                    val color = if (sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection) {
                                             LocalContentColor.current } else Color.Transparent
                                     Box(
                                         modifier = Modifier
@@ -432,9 +425,9 @@ fun PlaintextBody(
                                 }
                             },
                             onClick = {
-                                reverse = subSelection == it && plaintextState.sortState.value == mainSelection
-                                subSelection = it
-                                updateSorting(mainSelection, reverse)
+                                reverse = sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection
+                                updateSortMenuState(sortMenuState.copy(subSelection = it))
+                                updateSorting(sortMenuState.mainSelection, reverse)
                                 updateSubSorting(it)
                             }
                         )
@@ -553,7 +546,7 @@ fun PlaintextBody(
 
 @Composable
 fun PlaintextList(
-    plaintextState: PlaintextUiState,
+    plaintextState: PlaintextListState,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -584,7 +577,7 @@ fun PlaintextList(
 
 @Composable
 fun PlaintextFormatting(
-    plaintextState: PlaintextUiState,
+    plaintextState: PlaintextListState,
     formatString: String,
     delimiter: String,
     saveFormatString: (String, String) -> Unit,
