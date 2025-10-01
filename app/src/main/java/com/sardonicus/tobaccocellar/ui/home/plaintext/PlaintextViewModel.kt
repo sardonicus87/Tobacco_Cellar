@@ -1,5 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.home.plaintext
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
@@ -32,23 +35,25 @@ class PlaintextViewModel (
     val preferencesRepo: PreferencesRepo
 ) : ViewModel() {
 
-    private val _sortState = MutableStateFlow(PlaintextSortOption())
-    val sortState: StateFlow<PlaintextSortOption> = _sortState.asStateFlow()
-
     private val _setTemplateView = MutableStateFlow(false)
     val setTemplateView: StateFlow<Boolean> = _setTemplateView.asStateFlow()
 
-    private val _formatStringEntry = MutableStateFlow("")
-    val formatStringEntry: StateFlow<String> = _formatStringEntry.asStateFlow()
+    var sortMenuState by mutableStateOf(SortMenuState())
 
-    private val _delimiter = MutableStateFlow("")
-    val delimiter: StateFlow<String> = _delimiter.asStateFlow()
+    private val _sortState = MutableStateFlow(PlaintextSortOption())
+    val sortState: StateFlow<PlaintextSortOption> = _sortState.asStateFlow()
 
     private val _subSortOption = MutableStateFlow("")
     val subSortOption: StateFlow<String> = _subSortOption.asStateFlow()
 
     private val _printOptions = MutableStateFlow(PrintOptions())
     val printOptions: StateFlow<PrintOptions> = _printOptions.asStateFlow()
+
+    private val _formatStringEntry = MutableStateFlow("")
+    val formatStringEntry: StateFlow<String> = _formatStringEntry.asStateFlow()
+
+    private val _delimiter = MutableStateFlow("")
+    val delimiter: StateFlow<String> = _delimiter.asStateFlow()
 
 
     init {
@@ -88,7 +93,7 @@ class PlaintextViewModel (
     }
 
     @Suppress("UNCHECKED_CAST")
-    val uiState = combine(
+    val listState = combine(
         filterViewModel.unifiedFilteredItems,
         filterViewModel.unifiedFilteredTins,
         preferencesRepo.quantityOption,
@@ -96,7 +101,9 @@ class PlaintextViewModel (
         preferencesRepo.plaintextDelimiter,
         sortState,
         subSortOption,
-        preferencesRepo.plaintextPresetsFlow
+        preferencesRepo.plaintextPresetsFlow,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate
     ) {
         val filteredItems = it[0] as List<ItemsComponentsAndTins>
         val filteredTins = it[1] as List<Tins>
@@ -106,9 +113,8 @@ class PlaintextViewModel (
         val sortState = it[5] as PlaintextSortOption
         val subSortOption = it[6] as String
         val presets = it[7] as List<PlaintextPreset>
-
-        val ozRate = preferencesRepo.tinOzConversionRate.first()
-        val gramsRate = preferencesRepo.tinGramsConversionRate.first()
+        val ozRate = it[8] as Double
+        val gramsRate = it[9] as Double
 
         val sortQuantity = filteredItems.associate {
             it.items.id to calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
@@ -380,7 +386,7 @@ class PlaintextViewModel (
         val listString = generateListString(sortedItems, sortedTins, sortState, formattedQuantities, formatString, delimiter)
         val formatPreview = generateListString(previewData, previewTins, sortState, previewFormattedQuantities, formatString, delimiter)
 
-        PlaintextUiState(
+        PlaintextListState(
             formatString = formatString,
             delimiter = delimiter,
             preview = formatPreview,
@@ -396,7 +402,7 @@ class PlaintextViewModel (
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = PlaintextUiState(loading = true)
+            initialValue = PlaintextListState(loading = true)
         )
 
     private fun tinNormalizedWeight(tin: Tins): Double {
@@ -412,6 +418,17 @@ class PlaintextViewModel (
     }
 
     fun setTemplateView(set: Boolean) { _setTemplateView.value = set }
+
+    fun updateSortMenuState(sortMenu: SortMenuState) {
+        val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
+
+        sortMenuState = SortMenuState(
+            mainMenu = sortMenu.mainMenu,
+            subMenu = subMenuOverride,
+            mainSelection = sortMenu.mainSelection,
+            subSelection = sortMenu.subSelection
+        )
+    }
 
     fun updateSorting(option: String, reverseSwitch: Boolean) {
         viewModelScope.launch {
@@ -821,7 +838,7 @@ class PlaintextViewModel (
 
 }
 
-data class PlaintextUiState(
+data class PlaintextListState(
     val formatString: String = "",
     val delimiter: String = "",
     val preview: String = "",
@@ -867,3 +884,10 @@ data class PlaintextSortOption(
         val TIN_QUANTITY = PlaintextSortOption("Tin Quantity")
     }
 }
+
+data class SortMenuState(
+    val mainMenu: Boolean = false,
+    val subMenu: Boolean = false,
+    val mainSelection: String = "",
+    val subSelection: String = ""
+)
