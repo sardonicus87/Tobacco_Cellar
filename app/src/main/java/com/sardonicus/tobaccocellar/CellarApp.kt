@@ -2080,28 +2080,29 @@ fun FlowFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background
                         ),
-                        enabled = displayData.enabled[option] ?: false
+                        enabled = displayData.enabled[option] ?: false,
                     )
                 },
                 enabledAtIndex = { displayData.enabled[displayData.available[it]] ?: true },
-                overflowIndicator = { overflowCount, enabledCount, overflowEnabled ->
+                overflowIndicator = { overflowCount, enabledCount, overflowEnabled -> // overflowEnabled means count > 0
                     val overflowedSelected = overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
 
                     val labelColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
-                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = .75f)
-                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .75f)
+                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     val containerColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f)
-                        else if (!overflowEnabled) MaterialTheme.colorScheme.background.copy(alpha = .75f)
+                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
+                        else if (!overflowEnabled) MaterialTheme.colorScheme.background
                         else MaterialTheme.colorScheme.background
                     val borderColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f)
-                        else if (!overflowEnabled) MaterialTheme.colorScheme.outline.copy(alpha = .75f)
-                        else MaterialTheme.colorScheme.outline
+                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
+                        else if (!overflowEnabled) MaterialTheme.colorScheme.outlineVariant
+                        else MaterialTheme.colorScheme.outlineVariant
+
 
                     Chip(
                         text = "+$enabledCount",  // "+$overflowCount"
