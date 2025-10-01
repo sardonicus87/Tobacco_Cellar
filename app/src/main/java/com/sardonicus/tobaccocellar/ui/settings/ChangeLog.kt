@@ -10,6 +10,25 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "3.3.2",
+        buildDate = "1 Oct, 2025",
+        changes = listOf(),
+        improvements = listOf(
+            "Plaintext screen presets, included the saved delimiter in the save/load preset " +
+                    "boxes and added a long-press to delete a preset. Also, tapping on the " +
+                    "selected preset a second time or tapping the dialog box now deselects the " +
+                    "preset.",
+            "Plaintext screen print settings also added to manual backup (initial introduction " +
+                    "of Plaintext already saved format string presets in manual backups).",
+            "Minor UI tweaks, stability and performance improvements.",
+        ),
+        bugFixes = listOf(
+            "Plaintext screen, tapping to load a preset when one is not selected would cause a " +
+                    "crash, the button is now disabled unless a preset is selected."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.3.1",
         buildDate = "23 Sept, 2025",
         changes = listOf(),
@@ -26,7 +45,8 @@ val changelogEntries = listOf(
         changes = listOf(
             "New Plaintext option in the top bar menu on the cellar screen. This will present " +
                     "the currently filtered list/table (not search) as a plain text with your " +
-                    "chosen output formatting where you can select/copy the list or print it out."
+                    "chosen output formatting where you can select/copy the list or print it out. " +
+                    "Format string presets also get saved in manual backups."
         ),
         improvements = listOf(
             "List view, added switchable ascending/descending to sorting (default is ascending, " +
