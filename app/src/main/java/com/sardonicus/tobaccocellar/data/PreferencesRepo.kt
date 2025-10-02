@@ -16,15 +16,20 @@ import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextSortOption
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import java.io.IOException
 
 @Suppress("NullableBooleanElvis")
 class PreferencesRepo(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    applicationScope: CoroutineScope
 ) {
     private companion object {
         val IS_TABLE_VIEW = booleanPreferencesKey("is_table_view")
@@ -174,17 +179,21 @@ class PreferencesRepo(
 
 
     /** Setting theme options **/
-    val themeSetting: Flow<String> = dataStore.data
-        .catch {
+    val themeSetting: StateFlow<String> = dataStore.data
+        .map {
+            it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
+        }.catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading theme preferences.", it)
-                emit(emptyPreferences())
+                emit(ThemeSetting.SYSTEM.value)
             } else {
                 throw it
             }
-        }.map { preferences ->
-            preferences[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
-        }
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = ThemeSetting.SYSTEM.value
+        )
 
     suspend fun saveThemeSetting(themeSetting: String) {
         dataStore.edit { preferences ->

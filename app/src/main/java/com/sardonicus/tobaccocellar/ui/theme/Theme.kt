@@ -322,25 +322,14 @@ val unspecified_scheme = ColorFamily(
 )
 
 
-
 @Composable
 fun TobaccoCellarTheme(
-//    darkTheme: Boolean = isSystemInDarkTheme(),
-//    dynamicColor: Boolean = false,
     preferencesRepo: PreferencesRepo,
     content: @Composable () -> Unit
 ) {
-    val userThemeSetting by preferencesRepo.themeSetting.collectAsState(
-        initial = ThemeSetting.SYSTEM.value
-    )
+    val userThemeSetting by preferencesRepo.themeSetting.collectAsState()
 
     val colorScheme = when (userThemeSetting) {
-//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && userThemeSetting == ThemeSetting.SYSTEM.value -> {
-//            val context = LocalContext.current
-//            if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
-//                    dynamicLightColorScheme(context)
-//            }
-
         ThemeSetting.DARK.value -> darkScheme
         ThemeSetting.LIGHT.value -> lightScheme
         ThemeSetting.SYSTEM.value -> { if (isSystemInDarkTheme()) darkScheme else lightScheme }
@@ -352,13 +341,6 @@ fun TobaccoCellarTheme(
         ThemeSetting.LIGHT.value -> customLight
         ThemeSetting.SYSTEM.value -> { if (isSystemInDarkTheme()) customDark else customLight }
         else -> customLight
-//        userThemeSetting == ThemeSetting.DARK.value -> customDark
-//        userThemeSetting == ThemeSetting.LIGHT.value -> customLight
-//        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
-//            if (isSystemInDarkTheme()) customDark else customLight
-//        } else {
-//            customLight
-//        }
     }
 
     CompositionLocalProvider(LocalCustomColors provides customColors) {
@@ -369,64 +351,3 @@ fun TobaccoCellarTheme(
         )
     }
 }
-
-//@Composable
-//fun TobaccoCellarTheme(
-//    // Dynamic color is available on Android 12+
-//    dynamicColor: Boolean = true,
-//    currentTheme: ColorScheme,
-//    content: @Composable () -> Unit
-//) {
-//    val configuration = LocalConfiguration.current
-//    val darkTheme = configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-//
-//    val colorScheme = when {
-//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-//            val context = LocalContext.current
-//            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-//        }
-//
-//        darkTheme -> darkScheme
-//        else -> lightScheme
-//    }
-//
-//    MaterialTheme(
-//        colorScheme = currentTheme,
-//        typography = Typography,
-//        content = content
-//    )
-//}
-
-//val colorScheme = when {
-//    dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-//        val context = LocalContext.current
-//        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-//    }
-//    darkTheme -> darkScheme
-//    else -> lightScheme
-//}
-
-////    darkTheme: Boolean = isSystemInDarkTheme(),
-////    dynamicColor: Boolean = false,
-//preferencesRepo: PreferencesRepo,
-//content: @Composable () -> Unit
-//) {
-//    val userThemeSetting by preferencesRepo.themeSetting.collectAsState(
-//        initial = ThemeSetting.SYSTEM.value
-//    )
-//
-//    val colorScheme = when {
-////        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && userThemeSetting == ThemeSetting.SYSTEM.value -> {
-////            val context = LocalContext.current
-////            if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else
-////                    dynamicLightColorScheme(context)
-////            }
-//
-//        userThemeSetting == ThemeSetting.DARK.value -> darkScheme
-//        userThemeSetting == ThemeSetting.LIGHT.value -> lightScheme
-//        else -> if (userThemeSetting == ThemeSetting.SYSTEM.value) {
-//            if (isSystemInDarkTheme()) darkScheme else lightScheme
-//        } else {
-//            lightScheme
-//        }
-//    }

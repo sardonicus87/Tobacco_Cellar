@@ -10,6 +10,9 @@ import com.sardonicus.tobaccocellar.data.AppDataContainer
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
@@ -24,10 +27,12 @@ class CellarApplication : Application() {
         FilterViewModel(container.itemsRepository, preferencesRepo)
     }
 
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
         container = AppDataContainer(this)
-        preferencesRepo = PreferencesRepo(dataStore)
+        preferencesRepo = PreferencesRepo(dataStore, applicationScope)
         csvHelper = CsvHelper()
     }
 }
