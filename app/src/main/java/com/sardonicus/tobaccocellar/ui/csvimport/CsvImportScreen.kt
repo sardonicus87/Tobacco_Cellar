@@ -74,7 +74,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
@@ -1720,6 +1722,9 @@ fun MappingField(
     maxLines: Int = 1
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp }
+    val maxHeight by remember { mutableStateOf(screenHeight * .67f) }
 
     Column(
         modifier = modifier
@@ -1792,6 +1797,8 @@ fun MappingField(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         containerColor = LocalCustomColors.current.textField,
+                        modifier = Modifier
+                            .heightIn(max = maxHeight)
                     ) {
                         DropdownMenuItem(
                             text = {
