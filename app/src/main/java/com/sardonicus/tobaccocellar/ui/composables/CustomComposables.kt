@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -95,15 +96,16 @@ fun GlowBox(
     size: GlowSize,
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
-    content: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
-        modifier = modifier,
+        modifier = Modifier,
         contentAlignment = contentAlignment
     ) {
-        Column {
-            content.invoke()
-        }
+        Column (
+            modifier = modifier,
+            content = content
+        )
         Box(
             modifier = Modifier
                 .matchParentSize()
