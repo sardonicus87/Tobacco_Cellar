@@ -90,7 +90,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -2348,8 +2347,6 @@ fun CustomDropDown(
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val density = LocalDensity.current
-    var width by remember { mutableStateOf(0.dp) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -2362,10 +2359,7 @@ fun CustomDropDown(
             onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
-                .onGloballyPositioned {
-                    width = with(density) { it.size.width.toDp() }
-                },
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -2381,7 +2375,7 @@ fun CustomDropDown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .width(width),
+                .exposedDropdownSize(true),
             containerColor = LocalCustomColors.current.textField,
         ) {
             options.forEach {
