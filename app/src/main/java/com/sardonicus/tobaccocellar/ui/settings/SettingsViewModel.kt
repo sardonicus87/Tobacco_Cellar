@@ -13,6 +13,7 @@ import androidx.room.migration.Migration
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
 import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
+import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
@@ -494,6 +495,7 @@ class SettingsViewModel(
         val migrations = mutableListOf<Migration>()
         migrations.add(MIGRATION_1_2)
         migrations.add(MIGRATION_2_3)
+        migrations.add(MIGRATION_3_4)
         return migrations
     }
 
@@ -507,9 +509,7 @@ class SettingsViewModel(
                 .createFromFile(unzippedDb)
                 .addMigrations(*migrations.toTypedArray())
                 .build()
-                .apply {
-                    openHelper.writableDatabase
-                }
+                .apply { openHelper.writableDatabase }
         } catch (e: Exception) {
             throw e
         }
