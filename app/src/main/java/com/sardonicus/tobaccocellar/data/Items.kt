@@ -21,6 +21,7 @@ data class Items(
     val quantity: Int,
     val favorite: Boolean,
     val disliked: Boolean,
+    val rating: Double?,
     val notes: String,
     val subGenre: String,
     val cut: String,
