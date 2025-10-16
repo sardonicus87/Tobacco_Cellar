@@ -115,9 +115,15 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'rating' REAL")
+    }
+}
+
 @Database(
     entities = [Items::class, Tins::class, Components::class, ItemsComponentsCrossRef::class, Flavoring::class, ItemsFlavoringCrossRef::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class TobaccoDatabase : RoomDatabase() {
@@ -133,6 +139,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
                 Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database")
                     .addMigrations(MIGRATION_1_2)
                     .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_3_4)
                     .build()
                     .also { Instance = it }
             }
