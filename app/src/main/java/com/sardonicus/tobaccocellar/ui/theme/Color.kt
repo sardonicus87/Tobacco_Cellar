@@ -82,7 +82,7 @@ val deleteButtonLight = Color(0xFF93000A)
 val favHeartLight = Color(0xFFBB0000)
 val disHeartLight = Color(0xFF03B1FF)
 val textFieldLight = Color(0xFFE9F2E9)  // original 0xFFE3ECE3
-val darkNeutralLight = Color(0xFFE6EBE6) // original 0xFFCDD2CD
+val darkNeutralLight = Color(0xFFE8EDE8) // original 0xFFE6EBE6
 val homeHeaderBgLight = Color(0xFFECFFEC)
 val backgroundVariantLight = Color(0xFFCEF2CE) // normal 0xFFF5FBF5 0xFFECFFEC
 val backgroundUnselectedLight = Color(0xFFECF1EC)
@@ -94,6 +94,7 @@ val sheetBoxLight = Color(0xFFE6F0E6)
 val sheetBoxBorderLight = Color(0xFFB5BDB5)
 val indicatorBorderCorrectionLight = Color(0xFF59AD86)
 val whiteBlackLight = Color(0xFFFFFFFF)
+val starRatingLight = Color(0xFFE6C017) // original 0xFFFDD835
 
 val listMenuScrimDark = Color(0xBF000000)
 val deleteButtonDark = Color(0xFF990000)
@@ -112,6 +113,7 @@ val sheetBoxDark = Color(0xFF19241E) // original 0xFF17201B
 val sheetBoxBorderDark = Color(0xFF364B40)
 val indicatorBorderCorrectionDark = Color(0xFF59A081)
 val whiteBlackDark = Color(0xFF000000)
+val starRatingDark = Color(0xFFFDD835)
 
 // pie charts light
 val pieOneLight = Color(0xFF03B1FF)
