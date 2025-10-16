@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -83,10 +86,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -117,6 +122,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
+import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
@@ -321,8 +327,6 @@ fun AddEntryBody(
                         .padding(0.dp)
                 )
             }
-        } else {
-            // do nothing //
         }
     }
 }
@@ -466,9 +470,7 @@ fun ItemInputForm(
                     else -> MaterialTheme.colorScheme.outline
                 }
 
-                LaunchedEffect(index){
-                    onValueChange(itemUiState.itemDetails)
-                }
+                LaunchedEffect(index){ onValueChange(itemUiState.itemDetails) }
 
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
@@ -504,8 +506,7 @@ fun ItemInputForm(
                     .verticalScroll(rememberScrollState()),
             ) {
                 when (selectedTabIndex) {
-                    0 ->
-                        DetailsEntry(
+                    0 -> DetailsEntry(
                             itemDetails = itemDetails,
                             itemUiState = itemUiState,
                             syncedTins = syncedTins,
@@ -517,14 +518,14 @@ fun ItemInputForm(
                             onFlavoringChange = onFlavoringChange,
                             modifier = Modifier,
                         )
-                    1 ->
-                        NotesEntry(
+
+                    1 -> NotesEntry(
                             itemDetails = itemDetails,
                             onValueChange = onValueChange,
                             modifier = Modifier
                         )
-                    2 ->
-                        TinsEntry(
+
+                    2 -> TinsEntry(
                             tinDetails = tinDetails,
                             tinDetailsList = tinDetailsList,
                             onTinValueChange = onTinValueChange,
@@ -536,6 +537,7 @@ fun ItemInputForm(
                             validateDates = validateDates,
                             modifier = Modifier
                         )
+
                     else -> throw IllegalArgumentException("Invalid tab position")
                 }
             }
@@ -557,6 +559,8 @@ fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showRatingPop by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1107,11 +1111,45 @@ fun DetailsEntry(
             }
         }
 
+        // Rating //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Rating:",
+                modifier = Modifier
+                    .width(80.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = null,
+                        onClick = { showRatingPop = true }
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val emptyColor = if (itemDetails.rating == null) LocalContentColor.current else LocalCustomColors.current.starRating
+                RatingRow(
+                    rating = itemDetails.rating,
+                    showEmpty = true,
+                    starSize = 24.dp,
+                    emptyColor = emptyColor,
+                )
+            }
+        }
+
         // Favorite or Disliked? //
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 2.dp, start = 12.dp, end = 12.dp),
+                .padding(top = 10.dp, bottom = 2.dp, start = 12.dp, end = 12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1209,6 +1247,18 @@ fun DetailsEntry(
             )
         }
     }
+
+    if (showRatingPop) {
+        RatingPopup(
+            currentRating = itemDetails.rating,
+            onDismiss = { showRatingPop = false },
+            onRatingSelected = {
+                onValueChange(itemDetails.copy(rating = it))
+                showRatingPop = false
+            }
+        )
+    }
+
 }
 
 
@@ -2325,6 +2375,126 @@ fun CustomDatePickerDialog(
             }
         }
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RatingPopup(
+    onDismiss: () -> Unit,
+    onRatingSelected: (Double?) -> Unit,
+    modifier: Modifier = Modifier,
+    currentRating: Double? = null,
+) {
+    val ratings = listOf(0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)
+    var selectedRating by remember { mutableStateOf(currentRating) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .wrapContentHeight()
+            .clickable(
+                indication = null,
+                interactionSource = null
+            ) { selectedRating = null },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+        ),
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.small,
+        title = {
+            Text(
+                text = "Rating",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                modifier = Modifier
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Select a rating:",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    userScrollEnabled = true,
+                    contentPadding = PaddingValues(bottom = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(ratings) {
+                        val isSelected = it == selectedRating
+                        val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .07f).compositeOver(LocalCustomColors.current.darkNeutral)
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .background(
+                                    if (isSelected) selectedColor else
+                                        LocalCustomColors.current.darkNeutral,
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = null
+                                ) { selectedRating = if (isSelected) null else it }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .height(IntrinsicSize.Min)
+                            ) {
+                                Text(
+                                    text = it.toString(),
+                                    fontSize = 15.sp,
+                                    textAlign = TextAlign.Start,
+                                    modifier = Modifier
+                                        .width(30.dp),
+                                )
+                                RatingRow(
+                                    rating = it,
+                                    showEmpty = true,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onRatingSelected(selectedRating) },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Save")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Cancel")
+            }
+        }
+    )
 }
 
 
