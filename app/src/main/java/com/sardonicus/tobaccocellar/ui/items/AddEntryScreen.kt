@@ -1696,7 +1696,6 @@ fun IndividualTin(
                                     Log.e("Add/Edit Entry", "Input: $it", e)
                                 }
                             }
-
                         },
                         modifier = Modifier
                             .weight(1f),
