@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
@@ -61,13 +63,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -572,7 +578,11 @@ fun AutoCompleteText(
                 .fillMaxWidth()
                 .padding(0.dp)
                 .focusRequester(focusRequester)
-                .onFocusChanged { if (!it.isFocused) { expandedState = false } }
+                .onFocusChanged {
+                    if (!it.isFocused) {
+                        expandedState = false
+                    }
+                }
                 .onGloballyPositioned { fieldY = it.positionOnScreen().y },
             enabled = enabled,
             trailingIcon = trailingIcon,
@@ -832,6 +842,163 @@ fun PagerIndicator(
                         interactionSource = null
                     ) { animationScope.launch { pagerState.animateScrollToPage(it) } }
             )
+        }
+    }
+}
+
+
+/** Rating Row */
+@Composable
+fun RatingRow(
+    rating: Double?,
+    modifier: Modifier = Modifier,
+    starSize: Dp = Dp.Unspecified,
+    starColor: Color = LocalCustomColors.current.starRating,
+    emptyColor: Color = LocalCustomColors.current.starRating,
+    showEmpty: Boolean = false,
+    emptyAlpha: Float = 0.38f,
+) {
+    var dynamicSize by remember { mutableStateOf(starSize) }
+    val density = LocalDensity.current
+
+    if (dynamicSize == Dp.Unspecified) {
+        if (rating != null) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .onSizeChanged {
+                        val height = with(density) { it.height.toDp() }
+                        val width = with(density) { it.width.toDp() }
+                        if (height > 0.dp) {
+                            dynamicSize = if (showEmpty) {
+                                if ((height * 5) <= width) { height } else { width / 5 }
+                            } else {
+                                if ((height * rating.toFloat()) <= width) { height } else { width / rating.toFloat() }
+                            }
+                        }
+                    }
+            )
+        }
+    } else {
+        RatingRowImpl(
+            rating = rating,
+            modifier = modifier,
+            starSize = dynamicSize,
+            starColor = starColor,
+            emptyColor = emptyColor,
+            showEmpty = showEmpty,
+            emptyAlpha = emptyAlpha
+        )
+    }
+}
+
+@Composable
+private fun RatingRowImpl(
+    rating: Double?,
+    modifier: Modifier = Modifier,
+    starSize: Dp,
+    starColor: Color,
+    emptyColor: Color,
+    showEmpty: Boolean,
+    emptyAlpha: Float
+) {
+    val contentScale = ContentScale.FillHeight
+
+    Row(
+        modifier = modifier
+            .height(starSize),
+        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (rating != null) {
+            val whole = rating.toInt()
+            val remainder = rating - whole
+            val empty = (5.0 - rating).toInt()
+
+            repeat(whole) {
+                Image(
+                    painter = painterResource(id = R.drawable.star_filled),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(starColor),
+                    modifier = Modifier
+                        .height(starSize),
+                    alignment = Alignment.CenterStart,
+                    contentScale = contentScale,
+                    alpha = 1f,
+                )
+            }
+            if (remainder > 0.0) {
+                val startWidth = starSize * remainder.toFloat()
+                val endWidth = starSize * (1.0 - remainder).toFloat()
+
+                Box(
+                    modifier = Modifier
+                        .height(starSize)
+                        .width(startWidth)
+                        .clip(RectangleShape),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.star_filled),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(starColor),
+                        alignment = Alignment.CenterStart,
+                        contentScale = contentScale,
+                        modifier = Modifier
+                            .height(starSize),
+                        alpha = 1f,
+                    )
+                }
+                if (showEmpty) {
+                    Box(
+                        modifier = Modifier
+                            .height(starSize)
+                            .width(endWidth)
+                            .clip(RectangleShape),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.star_filled),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(emptyColor),
+                            alignment = Alignment.CenterEnd,
+                            contentScale = contentScale,
+                            modifier = Modifier
+                                .height(starSize),
+                            alpha = emptyAlpha,
+                        )
+                    }
+                }
+            }
+            if (showEmpty && empty > 0) {
+                repeat(empty) {
+                    Image(
+                        painter = painterResource(id = R.drawable.star_filled),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(emptyColor),
+                        modifier = Modifier
+                            .height(starSize),
+                        alignment = Alignment.CenterStart,
+                        contentScale = contentScale,
+                        alpha = emptyAlpha,
+                    )
+                }
+            }
+        } else {
+            if (showEmpty) {
+                repeat(5) {
+                    Image(
+                        painter = painterResource(id = R.drawable.star_filled),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(emptyColor),
+                        modifier = Modifier
+                            .height(starSize),
+                        alignment = Alignment.CenterStart,
+                        contentScale = contentScale,
+                        alpha = emptyAlpha,
+                    )
+                }
+            }
         }
     }
 }
