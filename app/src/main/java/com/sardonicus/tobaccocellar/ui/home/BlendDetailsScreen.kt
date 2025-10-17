@@ -54,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
+import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -123,7 +124,7 @@ fun BlendDetailsBody(
 ) {
     fun buildString(title: String, value: String): AnnotatedString {
         val string = buildAnnotatedString {
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Medium, fontSize = 14.sp)) { append(title) }
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp)) { append(title) }
             withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp)) { append(value) }
         }
         return string
@@ -326,6 +327,31 @@ fun BlendDetailsBody(
                         ),
                         modifier = Modifier,
                     )
+                    if (blendDetails.rating != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                        ) {
+                            Text(
+                                text = "Rating: ",
+                                modifier = Modifier,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                            )
+                            RatingRow(
+                                rating = blendDetails.rating,
+                                modifier = Modifier,
+                                starSize = 17.dp
+                            )
+                            Text(
+                                text = "(${formatDecimal(blendDetails.rating)})",
+                                modifier = Modifier
+                                    .padding(start = 6.dp),
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
                 }
             }
         }
