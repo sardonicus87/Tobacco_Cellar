@@ -129,6 +129,7 @@ class OfflineItemsRepository(
         for (item in items) {
             val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
             val flavoring = itemsDao.getFlavoringForItemStream(item.id).first().joinToString(", ") { it.flavoringName }
+            val ratingString = item.rating?.let { "$it / 5" } ?: ""
             val tins = itemsDao.getTinsForItemStream(item.id).first()
 
 
@@ -149,6 +150,7 @@ class OfflineItemsRepository(
                         components = components,
                         flavoring = flavoring,
                         quantity = item.quantity,
+                        rating = ratingString,
                         favorite = item.favorite,
                         disliked = item.disliked,
                         inProduction = item.inProduction,
@@ -172,6 +174,7 @@ class OfflineItemsRepository(
                     components = components,
                     flavoring = flavoring,
                     quantity = item.quantity,
+                    rating = ratingString,
                     favorite = item.favorite,
                     disliked = item.disliked,
                     inProduction = item.inProduction,

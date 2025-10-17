@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -62,7 +63,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,6 +82,8 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,6 +100,9 @@ import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
+import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
+import java.util.Locale
 
 object CsvImportDestination : NavigationDestination {
     override val route = "csv_import"
@@ -145,13 +150,11 @@ fun CsvImportScreen(
                 csvImportState = csvImportState,
                 viewModel = viewModel,
                 csvUiState = csvUiState,
-            //    updateMappingFields = { viewModel::updateFieldMapping },
                 mappingOptions = mappingOptions,
                 importOption = importOption,
                 onHeaderChange = { viewModel.updateHeaderOption(it) },
                 updateCollateTinsOption = { viewModel.updateCollateTinsOption(it) },
                 updateSyncTinsOption = { viewModel.updateSyncTinsOption(it) },
-            //    updateDateFormat = { viewModel.updateDateFormat(it) },
                 navigateToImportResults = navigateToImportResults,
                 navigateToHome = navigateToHome,
                 modifier = modifier
@@ -167,11 +170,9 @@ fun CsvImportScreen(
 fun CsvImportBody(
     navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
     navigateToHome: () -> Unit,
- //   updateMappingFields: (MappingOptions) -> Unit,
     onHeaderChange: (isChecked: Boolean) -> Unit,
     updateCollateTinsOption: (isChecked: Boolean) -> Unit,
     updateSyncTinsOption: (Boolean) -> Unit,
- //   updateDateFormat: (dateFormat: String) -> Unit,
     csvImportState: CsvImportState,
     csvUiState: CsvUiState,
     mappingOptions: MappingOptions,
@@ -876,6 +877,57 @@ fun CsvImportBody(
                                                 enabled = !mappingOptions.syncTins
                                             )
                                             MappingField(
+                                                label = "Rating:",
+                                                selectedColumn = mappingOptions.ratingColumn,
+                                                csvColumns = csvUiState.columns,
+                                                onColumnSelected = { selectedColumn ->
+                                                    viewModel.updateFieldMapping(
+                                                        CsvImportViewModel.CsvField.Rating,
+                                                        selectedColumn
+                                                    )
+                                                },
+                                                overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Rating] ?: false,
+                                                onOverwrite = {
+                                                    viewModel.updateOverwriteSelection(
+                                                        CsvImportViewModel.CsvField.Rating,
+                                                        it
+                                                    )
+                                                }
+                                            )
+                                            
+                                            val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+                                            val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                                            val decimalSeparator = symbols.decimalSeparator.toString()
+                                            val pattern = remember(decimalSeparator) {
+                                                val ds = Regex.escape(decimalSeparator)
+                                                Regex("^(\\s*|(\\d*)?($ds\\d{0,2})?)$")
+                                            }
+
+                                            MaxValueField(
+                                                label = "Max Possible\nCSV Rating:",
+                                                maxValue = mappingOptions.maxValueString,
+                                                onMaxValueChange = {
+                                                    if (it.matches(pattern)) {
+                                                        var parsedDouble: Double?
+
+                                                        if (it.isNotBlank()) {
+                                                            val preNumber = if (it.startsWith(decimalSeparator)) {
+                                                                "0$it"
+                                                            } else it
+
+                                                            val number = numberFormat.parse(preNumber)
+                                                            parsedDouble = number?.toDouble()
+                                                        } else { parsedDouble = null }
+
+                                                        val maxValueDouble = parsedDouble?.takeIf { it > 0.0 }
+
+                                                        viewModel.updateMaxValue(it, maxValueDouble)
+                                                    }
+                                                },
+                                                enabled = mappingOptions.ratingColumn.isNotBlank(),
+                                                error = mappingOptions.ratingColumn.isNotBlank() && mappingOptions.maxValue == null,
+                                            )
+                                            MappingField(
                                                 label = "Favorite:",
                                                 selectedColumn = mappingOptions.favoriteColumn,
                                                 csvColumns = csvUiState.columns,
@@ -1354,6 +1406,13 @@ fun CsvHelpBody(
             modifier = modifier,
             softWrap = true,
         )
+        Text(
+            text = "For the rating, select the column that contains the rating and in the \"Max " +
+                    "Value\" field, enter the highest possible rating you could give (used for " +
+                    "re-scaling your rating system to the one used in the app).",
+            modifier = modifier,
+            softWrap = true,
+        )
 
 
         // Tins mapping //
@@ -1568,15 +1627,6 @@ fun DateFormatField(
     placeholder: String = "",
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var fontSize by remember { mutableStateOf(16.sp) }
-    val minFontSize = 11.sp
-    var fontMultiplier by remember { mutableFloatStateOf(1f) }
-    fun updateFontSize(multiplier: Float) {
-        val newSize = fontSize * multiplier
-        if (newSize > minFontSize) {
-            fontMultiplier = multiplier
-        }
-    }
 
     val formats = listOf(
         "01/24 or 01/2024 (MM/YY)",
@@ -1609,20 +1659,15 @@ fun DateFormatField(
                 Text(
                     text = label,
                     modifier = Modifier,
-                    textAlign = TextAlign.Start,
+                    style = TextStyle(
+                        color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Start,
+                        lineBreak = LineBreak.Paragraph
+                    ),
                     softWrap = false,
                     maxLines = 2,
                     overflow = TextOverflow.Visible,
-                    style = LocalTextStyle.current.copy(
-                        lineHeight = LocalTextStyle.current.lineHeight * fontMultiplier,
-                        fontSize = LocalTextStyle.current.fontSize * fontMultiplier,
-                    ),
-                    onTextLayout = {
-                        if (it.hasVisualOverflow) {
-                            updateFontSize(fontMultiplier * 0.99f)
-                        }
-                    },
-                    color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f)
+                    autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 16.sp, stepSize = .02.sp),
                 )
             }
             Box(
@@ -1685,6 +1730,112 @@ fun DateFormatField(
                 }
             }
 
+            Column(
+                modifier = Modifier
+                    .width(54.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                if (showCheckbox) {
+                    Checkbox(
+                        checked = overwriteSelected,
+                        onCheckedChange = onOverwrite,
+                        modifier = Modifier
+                            .offset(x = 6.dp),
+                        enabled = importOption == ImportOption.OVERWRITE && enabled,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MaxValueField(
+    label: String,
+    maxValue: String,
+    onMaxValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    error: Boolean = false,
+    enabled: Boolean = true,
+    showCheckbox: Boolean = false,
+    overwriteSelected: Boolean = false,
+    onOverwrite: (Boolean) -> Unit = {},
+    importOption: ImportOption = ImportOption.SKIP,
+) {
+    Column(
+        modifier = modifier
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .height(42.dp)
+                    .width(90.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier,
+                    softWrap = true,
+                    maxLines = 2,
+                    style = TextStyle(
+                        color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Start,
+                        lineBreak = LineBreak.Paragraph
+                    ),
+                    overflow = TextOverflow.Visible,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 8.sp,
+                        maxFontSize = 16.sp,
+                        stepSize = .02.sp
+                    )
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .weight(1f)
+            ) {
+                OutlinedTextField(
+                    value = maxValue,
+                    onValueChange = {
+                        onMaxValueChange(it)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    singleLine = true,
+                    enabled = enabled,
+                    isError = error,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+                        disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
+                        focusedContainerColor = LocalCustomColors.current.textField,
+                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                        errorContainerColor = LocalCustomColors.current.textField,
+                        disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.38f),
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    placeholder = {
+                        Text(
+                            text = "Required for scaling",
+                            color = if (enabled) LocalContentColor.current.copy(alpha = 0.5f) else Color.Transparent,
+                            fontSize = 14.sp
+                        )
+                    }
+                )
+            }
             Column(
                 modifier = Modifier
                     .width(54.dp),

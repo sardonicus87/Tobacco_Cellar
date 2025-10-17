@@ -23,9 +23,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.round
 import kotlin.math.roundToInt
 
 class CsvImportViewModel(
@@ -99,8 +101,17 @@ class CsvImportViewModel(
         mappingOptions = mappingOptions.copy(dateFormat = dateFormat)
     }
 
+    fun updateMaxValue(maxValue: String, maxValueDouble: Double?) {
+        mappingOptions = mappingOptions.copy(
+            maxValue = maxValueDouble,
+            maxValueString = maxValue
+        )
+        csvUiState = csvUiState.copy(isFormValid = validateForm())
+    }
+
+
     enum class CsvField {
-        Brand, Blend, Type, Quantity, Favorite, Disliked, Notes, SubGenre, Cut, Production,
+        Brand, Blend, Type, Quantity, Rating, Favorite, Disliked, Notes, SubGenre, Cut, Production,
         Components, Flavoring, Container, TinQuantity, ManufactureDate, CellarDate, OpenDate, Finished
     }
 
@@ -110,6 +121,7 @@ class CsvImportViewModel(
             CsvField.Blend -> mappingOptions.copy(blendColumn = selectedColumn.ifBlank { "" })
             CsvField.Type -> mappingOptions.copy(typeColumn = selectedColumn.ifBlank { "" })
             CsvField.Quantity -> mappingOptions.copy(quantityColumn = selectedColumn.ifBlank { "" })
+            CsvField.Rating -> mappingOptions.copy(ratingColumn = selectedColumn.ifBlank { "" })
             CsvField.Favorite -> mappingOptions.copy(favoriteColumn = selectedColumn.ifBlank { "" })
             CsvField.Disliked -> mappingOptions.copy(dislikedColumn = selectedColumn.ifBlank { "" })
             CsvField.Notes -> mappingOptions.copy(notesColumn = selectedColumn.ifBlank { "" })
@@ -160,6 +172,34 @@ class CsvImportViewModel(
     }
 
 
+    // rating handling //
+    private fun parseRating(rating: String, maxValue: Double?): Double? {
+        if (rating.isBlank()) return null
+
+        val symbols = DecimalFormatSymbols.getInstance(Locale.getDefault())
+        val decimalSeparator = symbols.decimalSeparator.toString()
+        val ds = Regex.escape(decimalSeparator)
+        val ratingRegex = Regex("(\\d*$ds?\\d+)")
+        val result = ratingRegex.find(rating)
+
+        return if (result != null && maxValue != null) {
+            val (value) = result.destructured
+            val scaling = 5.0 / maxValue
+            val originalNumber = value.toDoubleOrNull()
+
+            if (originalNumber == null || originalNumber == 0.0) return null
+
+            val scaledNumber = originalNumber.times(scaling)
+            val roundedNumber = round(scaledNumber * 2).div(2.0)
+
+            roundedNumber.takeIf { it <= 5.0 } ?: 5.0
+
+        } else {
+            null
+        }
+    }
+
+
     // tin collation handling //
     private fun generateTinLabels(numTins: Int, startingLabelNumber: Int = 1): List<String> {
         return (startingLabelNumber until startingLabelNumber + numTins).map { "Lot $it" }
@@ -185,7 +225,7 @@ class CsvImportViewModel(
             val preQuantity5 = preQuantity4.toDoubleOrNull() ?: 0.0
 
             val quantity = if (preQuantity5 != 0.0) {
-                (kotlin.math.round(preQuantity5 * 100.0)) / 100.0
+                (round(preQuantity5 * 100.0)) / 100.0
             } else {
                 0.0
             }
@@ -369,7 +409,8 @@ class CsvImportViewModel(
 
     private fun validateForm (csvUiState: MappingOptions = mappingOptions): Boolean {
         return with(csvUiState) {
-            brandColumn.isNotBlank() && blendColumn.isNotBlank()
+            brandColumn.isNotBlank() && blendColumn.isNotBlank() &&
+                    if (ratingColumn.isNotBlank()) { maxValue != null } else { true }
         }
     }
 
@@ -552,6 +593,13 @@ class CsvImportViewModel(
                                 quantity = if (collateTins)
                                     calculateSyncTinsQuantity(tinDataList)
                                 else existingItem.quantity,
+                                rating = if (existingItem.rating == null &&
+                                    columnIndices[CsvField.Rating] != null &&
+                                    mappingOptions.maxValue != null &&
+                                    columnIndices[CsvField.Rating]!! in record.indices
+                                )
+                                    parseRating(record[columnIndices[CsvField.Rating]!!], mappingOptions.maxValue)
+                                else existingItem.rating,
                                 favorite = if (existingItem.favorite == false &&
                                     existingItem.disliked == false &&
                                     columnIndices[CsvField.Favorite] != null &&
@@ -682,6 +730,13 @@ class CsvImportViewModel(
                                     calculateSyncTinsQuantity(tinDataList)
                                 }
                                 else existingItem.quantity,
+                                rating = if (overwriteFields.contains(CsvField.Rating) &&
+                                    columnIndices[CsvField.Rating] != null &&
+                                    mappingOptions.maxValue != null &&
+                                    columnIndices[CsvField.Rating]!! in record.indices
+                                )
+                                    parseRating(record[columnIndices[CsvField.Rating]!!], mappingOptions.maxValue)
+                                else existingItem.rating,
                                 favorite = if (overwriteFields.contains(CsvField.Favorite) &&
                                     columnIndices[CsvField.Favorite] != null &&
                                     columnIndices[CsvField.Favorite]!! in record.indices
@@ -832,6 +887,12 @@ class CsvImportViewModel(
                         } else if (collateTins) {
                             calculateSyncTinsQuantity(tinDataList)
                         } else 1,
+                        rating = if (columnIndices[CsvField.Rating] != null &&
+                            columnIndices[CsvField.Rating]!! >= 0 &&
+                            mappingOptions.maxValue != null &&
+                            columnIndices[CsvField.Rating]!! < record.size
+                        )
+                            parseRating(record[columnIndices[CsvField.Rating]!!], mappingOptions.maxValue) else null,
                         favorite = if (columnIndices[CsvField.Favorite] != null &&
                             columnIndices[CsvField.Favorite]!! >= 0 &&
                             columnIndices[CsvField.Favorite]!! < record.size
@@ -965,6 +1026,7 @@ class CsvImportViewModel(
             CsvField.Blend to header.indexOf(mappingOptions.blendColumn),
             CsvField.Type to header.indexOf(mappingOptions.typeColumn),
             CsvField.Quantity to header.indexOf(mappingOptions.quantityColumn),
+            CsvField.Rating to header.indexOf(mappingOptions.ratingColumn),
             CsvField.Favorite to header.indexOf(mappingOptions.favoriteColumn),
             CsvField.Disliked to header.indexOf(mappingOptions.dislikedColumn),
             CsvField.Notes to header.indexOf(mappingOptions.notesColumn),
@@ -1017,6 +1079,9 @@ data class MappingOptions(
     val blendColumn: String = "",
     val typeColumn: String = "",
     val quantityColumn: String = "",
+    val ratingColumn: String = "",
+    val maxValue: Double? = null,
+    val maxValueString: String = "",
     val favoriteColumn: String = "",
     val dislikedColumn: String = "",
     val notesColumn: String = "",

@@ -44,7 +44,7 @@ class CsvHelper {
             .setEscape('"')
             .setHeader(
                 "Brand", "Blend", "Type", "Subgenre", "Cut", "Components", "Flavoring", "No. of Tins",
-                "Favorite", "Disliked", "Production Status", "Notes"
+                "Rating", "Favorite", "Disliked", "Production Status", "Notes"
             )
             .get()
 
@@ -53,6 +53,7 @@ class CsvHelper {
         for (itemWithComponents in data) {
             val componentsString = itemWithComponents.components.joinToString(", ") { it.componentName }
             val flavoringString = itemWithComponents.flavoring.joinToString(", ") { it.flavoringName }
+            val ratingString = itemWithComponents.item.rating?.let { "$it / 5" } ?: ""
 
             csvPrinter.printRecord(
                 itemWithComponents.item.brand,
@@ -63,6 +64,7 @@ class CsvHelper {
                 componentsString,
                 flavoringString,
                 itemWithComponents.item.quantity,
+                ratingString,
                 itemWithComponents.item.favorite,
                 itemWithComponents.item.disliked,
                 itemWithComponents.item.inProduction,
@@ -81,7 +83,7 @@ class CsvHelper {
             .setEscape('"')
             .setHeader(
                 "Brand", "Blend", "Type", "Subgenre", "Cut", "Components", "Flavoring",
-                "No. of Tins", "Favorite", "Disliked", "Production Status", "Notes", "Container",
+                "No. of Tins", "Rating", "Favorite", "Disliked", "Production Status", "Notes", "Container",
                 "Quantity", "Manufacture Date", "Cellar Date", "Open Date", "Finished"
             )
             .get()
@@ -98,6 +100,7 @@ class CsvHelper {
                 tinData.components,
                 tinData.flavoring,
                 tinData.quantity,
+                tinData.rating,
                 tinData.favorite,
                 tinData.disliked,
                 tinData.inProduction,

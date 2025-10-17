@@ -163,6 +163,7 @@ data class TinExportData(
     val type: String,
     val subGenre: String,
     val cut: String,
+    val rating: String,
     val favorite: Boolean,
     val disliked: Boolean,
     val components: String,
