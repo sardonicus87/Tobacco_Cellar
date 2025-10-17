@@ -326,18 +326,15 @@ fun LoadingIndicator(
     center: Boolean = false,
 ) {
     var topWeight: Float
-    var middleWeight: Float
     var bottomWeight: Float
 
     when (center) {
         true -> {
             topWeight = 1f
-            middleWeight = 1f
             bottomWeight = 1f
         }
         false -> {
             topWeight = 1.5f
-            middleWeight = 0.5f
             bottomWeight = 2f
         }
     }
@@ -356,8 +353,7 @@ fun LoadingIndicator(
         CircularProgressIndicator(
             modifier = Modifier
                 .padding(0.dp)
-                .size(48.dp)
-                .weight(middleWeight),
+                .size(48.dp),
         )
         Spacer(
             modifier = Modifier
