@@ -62,6 +62,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,6 +96,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
+import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -403,6 +405,7 @@ fun BulkEditing(
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
     val selectedItems = editingState.selectedItems
+    var showRatingPop by rememberSaveable { mutableStateOf(false) }
 
     Column {
         GlowBox(
@@ -851,6 +854,73 @@ fun BulkEditing(
                             )
                         }
                         Row(
+                            modifier = Modifier
+                                .weight(.7f),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val emptyColor =
+                                if (!editingState.ratingSelected) LocalContentColor.current.copy(alpha = .5f)
+                                else { if (editingState.rating == null) LocalContentColor.current else LocalCustomColors.current.starRating }
+                            RatingRow(
+                                rating = editingState.rating,
+                                showEmpty = true,
+                                starSize = 24.dp,
+                                emptyColor = emptyColor,
+                                modifier = Modifier
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = null,
+                                        onClick = { showRatingPop = true }
+                                    )
+                            )
+                        }
+                    }
+
+                    // Favorite/Dislike //
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .weight(.3f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(42.dp)
+                            ) {
+                                Checkbox(
+                                    checked = editingState.favoriteDisSelected,
+                                    onCheckedChange = {
+                                        onValueChange(editingState.copy(favoriteDisSelected = it))
+                                    }
+                                )
+                            }
+                            Text(
+                                text = "Fav/Dis?:",
+                                style = TextStyle(
+                                    color = if (!editingState.productionSelected) LocalContentColor.current.copy(
+                                        alpha = 0.50f
+                                    ) else LocalContentColor.current,
+                                    lineBreak = LineBreak.Paragraph
+                                ),
+                                modifier = Modifier
+                                    .heightIn(max = 36.dp)
+                                    .wrapContentHeight()
+                                    .align(Alignment.CenterVertically),
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 8.sp,
+                                    maxFontSize = 16.sp,
+                                    stepSize = .02.sp,
+                                ),
+                                maxLines = 1,
+                            )
+                        }
+                        Row(
                             modifier = modifier
                                 .weight(.7f),
                             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -867,7 +937,7 @@ fun BulkEditing(
                                     text = "Favorite?",
                                     modifier = Modifier
                                         .offset(x = 0.dp, y = 1.dp),
-                                    color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
+                                    color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
                                 )
@@ -892,7 +962,7 @@ fun BulkEditing(
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.favHeart,
                                     ),
-                                    enabled = editingState.ratingSelected
+                                    enabled = editingState.favoriteDisSelected
                                 )
                             }
                             // Disliked
@@ -906,7 +976,7 @@ fun BulkEditing(
                                     text = "Disliked?",
                                     modifier = Modifier
                                         .offset(x = 0.dp, y = 1.dp),
-                                    color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
+                                    color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
                                 )
@@ -931,7 +1001,7 @@ fun BulkEditing(
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.disHeart,
                                     ),
-                                    enabled = editingState.ratingSelected
+                                    enabled = editingState.favoriteDisSelected
                                 )
                             }
                         }
@@ -1114,6 +1184,17 @@ fun BulkEditing(
                     batchEdit()
                 },
                 onEditCancel = { confirmEdit = false }
+            )
+        }
+
+        if (showRatingPop) {
+            RatingPopup(
+                currentRating = editingState.rating,
+                onDismiss = { showRatingPop = false },
+                onRatingSelected = {
+                    onValueChange(editingState.copy(rating = it))
+                    showRatingPop = false
+                }
             )
         }
     }
