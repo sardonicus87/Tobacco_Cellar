@@ -92,6 +92,7 @@ class PlaintextViewModel (
         }
     }
 
+
     @Suppress("UNCHECKED_CAST")
     val listState = combine(
         filterViewModel.unifiedFilteredItems,
@@ -156,6 +157,7 @@ class PlaintextViewModel (
                 PlaintextSortOption.SUBGENRE.value -> filteredItems.sortedBy { it.items.subGenre }
                 PlaintextSortOption.CUT.value -> filteredItems.sortedBy { it.items.cut }
                 PlaintextSortOption.QUANTITY.value -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                PlaintextSortOption.RATING.value -> filteredItems.sortedByDescending { it.items.rating.let { it ?: 0.0 } }
                 else -> filteredItems.sortedBy { it.items.id }
             }.let{
                 if (sortState.ascending) { it } else { it.reversed() }
@@ -186,7 +188,8 @@ class PlaintextViewModel (
                 "@type" to PlaintextSortOption.TYPE,
                 "@subgenre" to PlaintextSortOption.SUBGENRE,
                 "@cut" to PlaintextSortOption.CUT,
-                "@qty" to PlaintextSortOption.QUANTITY
+                "@qty" to PlaintextSortOption.QUANTITY,
+                "@rating" to PlaintextSortOption.RATING
             )
             val tinOptionMap = mapOf(
                 "@label" to PlaintextSortOption.TIN_LABEL,
@@ -221,6 +224,7 @@ class PlaintextViewModel (
             "Components" to "@comps",
             "Flavoring" to "@flavors",
             "Quantity" to "@qty",
+            "Rating" to "@rating",
             "Production" to "@prod",
             "Tin Label" to "@label",
             "Tin Container" to "@container",
@@ -249,6 +253,7 @@ class PlaintextViewModel (
                 quantity = 2,
                 favorite = false,
                 disliked = false,
+                rating = 4.5,
                 notes = "",
             ),
             Items(
@@ -262,6 +267,7 @@ class PlaintextViewModel (
                 quantity = 1,
                 favorite = true,
                 disliked = false,
+                rating = null,
                 notes = "",
             ),
             Items(
@@ -275,6 +281,7 @@ class PlaintextViewModel (
                 quantity = 1,
                 favorite = false,
                 disliked = false,
+                rating = 1.0,
                 notes = "note",
             )
         )
@@ -717,9 +724,10 @@ class PlaintextViewModel (
             processedLine = processedLine.replace("@comps", itemData.components.joinToString(", ") { it.componentName })
             processedLine = processedLine.replace("@flavors", itemData.flavoring.joinToString(", ") { it.flavoringName })
             processedLine = processedLine.replace("@qty", formattedQuantities[itemData.items.id] ?: "")
+            processedLine = processedLine.replace("@rating", itemData.items.rating?.let { "$it / 5" } ?: "")
             processedLine = processedLine.replace("@prod", if (itemData.items.inProduction) "In Production" else "Discontinued")
         } else {
-            listOf("@brand", "@blend", "@type", "@subgenre", "@cut", "@comps", "@flavors", "@qty", "@prod").forEach{
+            listOf("@brand", "@blend", "@type", "@subgenre", "@cut", "@comps", "@flavors", "@qty", "@rating", "@prod").forEach {
                 processedLine = processedLine.replace(it, "")
             }
         }
@@ -818,6 +826,7 @@ class PlaintextViewModel (
                 "@comps" -> return itemData.components.joinToString(", ") { it.componentName }
                 "@flavors" -> return itemData.flavoring.joinToString(", ") { it.flavoringName }
                 "@qty" -> return formattedQuantities[itemData.items.id] ?: ""
+                "@rating" -> return itemData.items.rating?.let { "$it / 5" } ?: ""
                 "@prod" -> return if (itemData.items.inProduction) "In Production" else "Discontinued"
             }
         }
@@ -878,6 +887,7 @@ data class PlaintextSortOption(
         val SUBGENRE = PlaintextSortOption("Subgenre")
         val CUT = PlaintextSortOption("Cut")
         val QUANTITY = PlaintextSortOption("Quantity")
+        val RATING = PlaintextSortOption("Rating")
         val TIN_DEFAULT = PlaintextSortOption("Tin Default")
         val TIN_LABEL = PlaintextSortOption("Tin Label")
         val TIN_CONTAINER = PlaintextSortOption("Tin Container")
