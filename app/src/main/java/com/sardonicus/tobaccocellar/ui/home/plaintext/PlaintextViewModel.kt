@@ -873,7 +873,7 @@ data class PrintOptions(
 )
 
 data class PlaintextSortOption(
-    val value: String = "Default",
+    val value: String = "Item Default",
     val ascending: Boolean = true,
     val subSort: String = "",
     val icon: Int =
