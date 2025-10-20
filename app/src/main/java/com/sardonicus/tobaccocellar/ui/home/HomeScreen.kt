@@ -1517,11 +1517,8 @@ private fun CellarListItem(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.End
                     ) {
-                        val outOfStock = formattedQuantity == "x0" ||
-                                formattedQuantity == "0 oz" ||
-                                formattedQuantity == "0 oz*" ||
-                                formattedQuantity == "0 g" ||
-                                formattedQuantity == "0 g*"
+                        val zeroQuantity = Regex("[1-9]")
+                        val outOfStock = !formattedQuantity.contains(zeroQuantity)
 
                         Text(
                             text = formattedQuantity,
@@ -1965,14 +1962,9 @@ fun TableViewMode(
                                                 }
                                             } // notes
                                             7 -> { // quantity
-                                                val formattedQuantity =
-                                                    formattedQty[item.items.id] ?: "--"
-                                                val outOfStock =
-                                                    formattedQuantity == "x0" ||
-                                                            formattedQuantity == "0 oz" ||
-                                                            formattedQuantity == "0 oz*" ||
-                                                            formattedQuantity == "0 g" ||
-                                                            formattedQuantity == "0 g*"
+                                                val formattedQuantity = formattedQty[item.items.id] ?: "--"
+                                                val zeroQuantity = Regex("[1-9]")
+                                                val outOfStock = !formattedQuantity.contains(zeroQuantity)
 
                                                 TableCell(
                                                     value = formattedQuantity,

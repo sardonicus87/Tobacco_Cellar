@@ -470,16 +470,16 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
                 }
             } else {
                 if (quantity >= 16) {
-                    "${formatDecimal(pounds)} lbs*"
+                    "*${formatDecimal(pounds)} lbs"
                 } else
-                    "${formatDecimal(quantity)} oz*"
+                    "*${formatDecimal(quantity)} oz"
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                 "${formatDecimal(quantity)} g"
             } else {
-                "${formatDecimal(quantity)} g*"
+                "*${formatDecimal(quantity)} g"
             }
         }
     }
