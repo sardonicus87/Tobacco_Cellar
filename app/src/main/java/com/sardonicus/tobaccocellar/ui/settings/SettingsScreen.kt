@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,13 +39,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -52,11 +54,15 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,6 +74,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -98,6 +105,7 @@ import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
@@ -130,6 +138,7 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
     val ozRate by viewmodel.tinOzConversionRate.collectAsState()
     val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
+    val exportRating by viewmodel.exportRating.collectAsState()
     val snackbarState = viewmodel.snackbarState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val loading by viewmodel.loading.collectAsState()
@@ -181,19 +190,16 @@ fun SettingsScreen(
             Box {
                 SettingsBody(
                     viewmodel = viewmodel,
+                    preferencesRepo = viewmodel.preferencesRepo,
+
+                    tinOzConversionRate = ozRate,
+                    tinGramsConversionRate = gramsRate,
+                    exportRating = exportRating,
+                    optimizeDatabase = { viewmodel.optimizeDatabase() },
                     onDeleteAllClick = {
                         coroutineScope.launch {
                             viewmodel.deleteAllItems()
                         }
-                    },
-                    optimizeDatabase = { viewmodel.optimizeDatabase() },
-                    saveTheme = { viewmodel.saveThemeSetting(it) },
-                    saveQuantity = { viewmodel.saveQuantityOption(it) },
-                    preferencesRepo = viewmodel.preferencesRepo,
-                    tinOzConversionRate = ozRate,
-                    tinGramsConversionRate = gramsRate,
-                    onSetTinConversionRates = { ozRate, gramsRate ->
-                        viewmodel.setTinConversionRates(ozRate, gramsRate)
                     },
                     modifier = modifier
                         .fillMaxSize(),
@@ -212,22 +218,25 @@ fun SettingsScreen(
 @Composable
 private fun SettingsBody(
     viewmodel: SettingsViewModel,
-    onDeleteAllClick: () -> Unit,
-    optimizeDatabase: () -> Unit,
-    saveTheme: (String) -> Unit,
-    saveQuantity: (String) -> Unit,
+    preferencesRepo: PreferencesRepo,
     tinOzConversionRate: Double,
     tinGramsConversionRate: Double,
-    onSetTinConversionRates: (Double, Double) -> Unit,
+    exportRating: ExportRating,
+    optimizeDatabase: () -> Unit,
+    onDeleteAllClick: () -> Unit,
     modifier: Modifier = Modifier,
-    preferencesRepo: PreferencesRepo,
 ) {
-    var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
     var showThemeDialog by rememberSaveable { mutableStateOf(false) }
-    var showTinRates by rememberSaveable { mutableStateOf(false) }
+    var showRatingsDialog by rememberSaveable { mutableStateOf(false) }
+    var showTypeGenreDialog by rememberSaveable { mutableStateOf(false) }
     var showQuantityDialog by rememberSaveable { mutableStateOf(false) }
+
+    var showTinRates by rememberSaveable { mutableStateOf(false) }
+    var showCsvScaling by rememberSaveable { mutableStateOf(false) }
     var backup by rememberSaveable { mutableStateOf(false) }
     var restore by rememberSaveable { mutableStateOf(false) }
+    var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
+
     var showChangelog by rememberSaveable { mutableStateOf(false) }
 
     var isDragging by remember { mutableStateOf(false) }
@@ -298,6 +307,8 @@ private fun SettingsBody(
 
             DisplaySettings(
                 showThemeDialog = { showThemeDialog = it },
+                showRatingsDialog = { showRatingsDialog = it },
+                showTypeGenreDialog = { showTypeGenreDialog = it },
                 showQuantityDialog = { showQuantityDialog = it },
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 10.dp)
@@ -315,10 +326,11 @@ private fun SettingsBody(
 
             DatabaseSettings(
                 showTinRates = { showTinRates = it },
-                deleteAllConfirm = { deleteAllConfirm = it },
+                showCsvScaling = { showCsvScaling = it },
+                optimizeDatabase = optimizeDatabase,
                 showBackup = { backup = it },
                 showRestore = { restore = it },
-                optimizeDatabase = optimizeDatabase,
+                deleteAllConfirm = { deleteAllConfirm = it },
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
@@ -352,11 +364,25 @@ private fun SettingsBody(
             // Popup settings dialogs
             if (showThemeDialog) {
                 ThemeDialog(
-                    onThemeSelected = { newTheme ->
-                        saveTheme(newTheme)
-                    },
+                    onThemeSelected = { viewmodel.saveThemeSetting(it) },
                     preferencesRepo = preferencesRepo,
                     onClose = { showThemeDialog = false }
+                )
+            }
+            if (showRatingsDialog) {
+                RatingsDialog(
+                    onDismiss = { showRatingsDialog = false },
+                    preferencesRepo = preferencesRepo,
+                    modifier = Modifier,
+                    onRatingsOption = { viewmodel.saveShowRatingOption(it) }
+                )
+            }
+            if (showTypeGenreDialog) {
+                TypeGenreDialog(
+                    onDismiss = { showTypeGenreDialog = false },
+                    preferencesRepo = preferencesRepo,
+                    modifier = Modifier,
+                    onTypeGenreOption = { viewmodel.saveTypeGenreOption(it) }
                 )
             }
             if (showQuantityDialog) {
@@ -364,30 +390,31 @@ private fun SettingsBody(
                     onDismiss = { showQuantityDialog = false },
                     preferencesRepo = preferencesRepo,
                     modifier = Modifier,
-                    onQuantityOption = { saveQuantity(it) }
+                    onQuantityOption = { viewmodel.saveQuantityOption(it) }
                 )
             }
+
+
             if (showTinRates) {
                 TinRatesDialog(
                     onDismiss = { showTinRates = false },
                     ozRate = tinOzConversionRate,
                     gramsRate = tinGramsConversionRate,
-                    onSet = { ozRate, gramsRate ->
-                        onSetTinConversionRates(ozRate, gramsRate)
+                    onSave = { ozRate, gramsRate ->
+                        viewmodel.setTinConversionRates(ozRate, gramsRate)
                         showTinRates = false
                     },
                     modifier = Modifier
                 )
             }
-            if (deleteAllConfirm) {
-                DeleteAllDialog(
-                    onDeleteConfirm = {
-                        deleteAllConfirm = false
-                        onDeleteAllClick()
+            if (showCsvScaling) {
+                CsvScalingDialog(
+                    onDismiss = { showCsvScaling = false },
+                    onSave = { max, rounding ->
+                        viewmodel.saveMaxRating(max, rounding)
                     },
-                    onDeleteCancel = { deleteAllConfirm = false },
+                    exportRating = exportRating,
                     modifier = Modifier
-                        .padding(0.dp)
                 )
             }
             if (backup) {
@@ -410,6 +437,17 @@ private fun SettingsBody(
                     },
                     viewmodel = viewmodel,
                     modifier = Modifier
+                )
+            }
+            if (deleteAllConfirm) {
+                DeleteAllDialog(
+                    onDeleteConfirm = {
+                        deleteAllConfirm = false
+                        onDeleteAllClick()
+                    },
+                    onDeleteCancel = { deleteAllConfirm = false },
+                    modifier = Modifier
+                        .padding(0.dp)
                 )
             }
 
@@ -465,8 +503,13 @@ private fun SettingsBody(
 fun DisplaySettings(
     showThemeDialog: (Boolean) -> Unit,
     showQuantityDialog: (Boolean) -> Unit,
+    showRatingsDialog: (Boolean) -> Unit,
+    showTypeGenreDialog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
+    val ratingsExist by filterViewModel.ratingsExist.collectAsState()
+
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -493,6 +536,31 @@ fun DisplaySettings(
             )
         }
         TextButton(
+            onClick = { showRatingsDialog(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
+            enabled = ratingsExist,
+            modifier = Modifier
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Cellar Ratings Visibility",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
+            onClick = { showTypeGenreDialog(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
+            modifier = Modifier
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Cellar Type/Subgenre Display",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
             onClick = { showQuantityDialog(true) },
             contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
@@ -510,10 +578,11 @@ fun DisplaySettings(
 @Composable
 fun DatabaseSettings(
     showTinRates: (Boolean) -> Unit,
-    deleteAllConfirm: (Boolean) -> Unit,
+    showCsvScaling: (Boolean) -> Unit,
+    optimizeDatabase: () -> Unit,
     showBackup: (Boolean) -> Unit,
     showRestore: (Boolean) -> Unit,
-    optimizeDatabase: () -> Unit,
+    deleteAllConfirm: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -537,6 +606,18 @@ fun DatabaseSettings(
         ){
             Text(
                 text = "Tin Conversion Rates",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
+            onClick = { showCsvScaling(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
+            modifier = Modifier
+                .heightIn(28.dp, 28.dp)
+        ){
+            Text(
+                text = "CSV Export Scaling",
                 modifier = Modifier,
                 fontSize = 14.sp,
             )
@@ -730,6 +811,8 @@ fun AboutSection(
     }
 }
 
+
+/** Changelog stuff **/
 @Composable
 fun ChangelogDialog(
     changelogEntries: List<ChangelogEntryData>,
@@ -976,7 +1059,7 @@ fun ChangeLogEntryLayout(
 }
 
 
-/** Dialogs **/
+/** Display Settings Dialogs **/
 @Composable
 fun ThemeDialog(
     onThemeSelected: (String) -> Unit,
@@ -992,29 +1075,29 @@ fun ThemeDialog(
             .padding(0.dp),
         text = {
             Column (
-                modifier = modifier
+                modifier = Modifier
                     .padding(bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                listOf(ThemeSetting.LIGHT, ThemeSetting.DARK, ThemeSetting.SYSTEM).forEach { theme ->
+                ThemeSetting.entries.forEach {
                     Row(
                         modifier = Modifier
                             .clickable(
                                 indication = LocalIndication.current,
                                 interactionSource = null
-                            ) { onThemeSelected(theme.value) }
+                            ) { onThemeSelected(it.value) }
                             .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
                         RadioButton(
-                            selected = currentTheme == theme.value,
+                            selected = currentTheme == it.value,
                             onClick = null,
                             modifier = Modifier
                                 .size(36.dp)
                         )
                         Text(
-                            text = theme.value,
+                            text = it.value,
                             modifier = Modifier,
                             fontSize = 15.sp,
                         )
@@ -1028,13 +1111,140 @@ fun ThemeDialog(
                 modifier = Modifier
                     .padding(0.dp)
             ) {
-                Text(stringResource(R.string.save))
+                Text("Done")
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
     )
 }
+
+@Composable
+fun RatingsDialog(
+    onDismiss: () -> Unit,
+    onRatingsOption: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    preferencesRepo: PreferencesRepo
+) {
+    val currentShowRating by preferencesRepo.showRating.collectAsState(initial = false)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Row(
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Display ratings on cellar screen:",
+                    modifier = Modifier,
+                    fontSize = 16.sp,
+                    color = LocalContentColor.current
+                )
+                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                    Switch(
+                        checked = currentShowRating,
+                        onCheckedChange = { onRatingsOption(it) },
+                        modifier = Modifier
+                            .requiredHeight(20.dp)
+                            .scale(.7f)
+                            .padding(start = 10.dp),
+                        colors = SwitchDefaults.colors(
+                        )
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+fun TypeGenreDialog(
+    onDismiss: () -> Unit,
+    onTypeGenreOption: (String) -> Unit,
+    preferencesRepo: PreferencesRepo,
+    modifier: Modifier = Modifier
+) {
+    val currentTypeGenre by preferencesRepo.typeGenreOption.collectAsState(initial = TypeGenreOption.TYPE)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column(
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                Text(
+                    text = "This option sets the display of Type, Subgenre or both in list view " +
+                            "on the Cellar screen. Fallback options allow you to select one or " +
+                            "the other, but if that field is unused for an entry, try to fallback " +
+                            "to the other field.",
+                    modifier = Modifier
+                        .padding(bottom = 12.dp),
+                    fontSize = 14.sp,
+                    color = LocalContentColor.current
+                )
+                TypeGenreOption.entries.forEach {
+                    Row(
+                        modifier = Modifier
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { onTypeGenreOption(it.value) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
+                    ) {
+                        RadioButton(
+                            selected = currentTypeGenre == it,
+                            onClick = null,
+                            modifier = Modifier
+                                .size(36.dp)
+                        )
+                        Text(
+                            text = it.value,
+                            modifier = Modifier
+                                .padding(end = 8.dp),
+                            fontSize = 15.sp,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
 
 @Composable
 fun QuantityDialog(
@@ -1062,9 +1272,9 @@ fun QuantityDialog(
                     modifier = Modifier
                         .padding(bottom = 12.dp),
                     fontSize = 14.sp,
-                    color = LocalContentColor.current.copy(alpha = 0.75f)
+                    color = LocalContentColor.current
                 )
-                listOf(QuantityOption.TINS, QuantityOption.OUNCES, QuantityOption.GRAMS).forEach {
+                QuantityOption.entries.forEach {
                     Row(
                         modifier = Modifier
                             .clickable(
@@ -1096,58 +1306,54 @@ fun QuantityDialog(
                 modifier = Modifier
                     .padding(0.dp)
             ) {
-                Text(stringResource(R.string.save))
+                Text("Done")
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
     )
 }
 
+
+/** App/Database Settings Dialogs **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TinRatesDialog(
     onDismiss: () -> Unit,
     ozRate: Double,
     gramsRate: Double,
-    onSet: (Double, Double) -> Unit,
+    onSave: (Double, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var tinOzRate by rememberSaveable { mutableStateOf(ozRate.toString()) }
     var tinGramsRate by rememberSaveable { mutableStateOf(gramsRate.toString()) }
 
-    BasicAlertDialog(
-        onDismissRequest = onDismiss,
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
         modifier = modifier
-    ) {
-        Card(
-            modifier = Modifier,
-            shape = MaterialTheme.shapes.extraLarge
-        ) {
+            .padding(0.dp),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        ),
+        text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(
-                    text = "Tin Conversion Rates",
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(bottom = 16.dp),
-                    fontSize = 18.sp,
-                    softWrap = false,
-                    color = Color.Transparent
-                )
                 Row(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .offset(x = (-8).dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
-                ){
+                ) {
                     Text(
                         text = "One Tin = ",
                         modifier = Modifier
@@ -1245,67 +1451,159 @@ fun TinRatesDialog(
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        onClick = { onDismiss() },
-                        modifier = Modifier
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            modifier = Modifier
-                                .padding(0.dp)
-                        )
-                    }
-                    TextButton(
-                        onClick = {
-                            onSet(
-                                tinOzRate.toDoubleOrNull() ?: 1.75,
-                                tinGramsRate.toDoubleOrNull() ?: 50.0
-                            )
-                        },
-                        modifier = Modifier
-                    ) {
-                        Text(
-                            text = "Save",
-                            modifier = Modifier
-                                .padding(0.dp)
-                        )
-                    }
-                }
             }
-        }
-    }
-}
-
-@Composable
-private fun DeleteAllDialog(
-    onDeleteConfirm: () -> Unit,
-    onDeleteCancel: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
-        title = { Text(stringResource(R.string.delete_all)) },
-        text = { Text(stringResource(R.string.delete_all_question)) },
-        modifier = modifier,
+        },
         dismissButton = {
-            TextButton(onClick = onDeleteCancel) {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
                 Text(stringResource(R.string.cancel))
             }
         },
         confirmButton = {
-            TextButton(onClick = onDeleteConfirm) {
-                Text(stringResource(R.string.yes))
+            TextButton(
+                onClick = {
+                    onSave(
+                        tinOzRate.toDoubleOrNull() ?: 1.75,
+                        tinGramsRate.toDoubleOrNull() ?: 50.0
+                    )
+                },
+                modifier = Modifier
+            ) {
+                Text(stringResource(R.string.save))
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+fun CsvScalingDialog(
+    onDismiss: () -> Unit,
+    exportRating: ExportRating,
+    onSave: (Int, Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var currentMaxString by rememberSaveable { mutableStateOf(exportRating.maxRating.toString()) }
+    val allowedPattern = remember { Regex("^(\\s*|\\d{0,3})$") }
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        ),
+        text = {
+            Column (
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                Text(
+                    text = "Enter the maximum rating for scaling the in-app ratings (5 star max " +
+                            "with half-steps) to the maximum rating where the CSV file will be " +
+                            "imported. Also select a rounding option (for rating systems that " +
+                            "don't allow fractional ratings).",
+                    modifier = Modifier
+                        .padding(bottom = 12.dp),
+                    fontSize = 15.sp,
+                    color = LocalContentColor.current
+                )
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .align(Alignment.CenterHorizontally),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            text = "Maximum Rating:",
+                            modifier = Modifier
+                                .width(140.dp),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        TextField(
+                            value = currentMaxString,
+                            onValueChange = {
+                                if (it.matches(allowedPattern)) {
+                                    currentMaxString = it
+                                    onSave(it.toIntOrNull() ?: 5, exportRating.rounding)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = TextAlign.End,
+                            ),
+                            modifier = Modifier
+                                .width(60.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            text = "Round ratings?",
+                            modifier = Modifier
+                                .width(132.dp),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        Checkbox(
+                            checked = exportRating.rounding,
+                            onCheckedChange = {
+                                onSave(currentMaxString.toIntOrNull() ?: 5, it)
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = true
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
     )
 }
 
@@ -1340,7 +1638,7 @@ private fun BackupDialog(
                     modifier = Modifier
                         .padding(bottom = 12.dp),
                     fontSize = 15.sp,
-                    color = LocalContentColor.current.copy(alpha = 0.75f)
+                    color = LocalContentColor.current
                 )
                 CheckboxWithLabel(
                     text = "Database",
@@ -1390,6 +1688,7 @@ private fun BackupDialog(
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
     )
 }
 
@@ -1424,7 +1723,7 @@ private fun RestoreDialog(
                     modifier = Modifier
                         .padding(bottom = 12.dp),
                     fontSize = 15.sp,
-                    color = LocalContentColor.current.copy(alpha = 0.75f)
+                    color = LocalContentColor.current
                 )
                 CheckboxWithLabel(
                     text = "Database",
@@ -1473,5 +1772,33 @@ private fun RestoreDialog(
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+private fun DeleteAllDialog(
+    onDeleteConfirm: () -> Unit,
+    onDeleteCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.delete_all)) },
+        text = { Text(stringResource(R.string.delete_all_question)) },
+        modifier = modifier,
+        dismissButton = {
+            TextButton(onClick = onDeleteCancel) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDeleteConfirm) {
+                Text(stringResource(R.string.yes))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
     )
 }
