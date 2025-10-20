@@ -20,6 +20,7 @@ import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -224,7 +225,7 @@ class PlaintextViewModel (
             "Components" to "@comps",
             "Flavoring" to "@flavors",
             "Quantity" to "@qty",
-            "Rating" to "@rating",
+            "Rating" to "@rating_0r",
             "Production" to "@prod",
             "Tin Label" to "@label",
             "Tin Container" to "@container",
@@ -707,7 +708,6 @@ class PlaintextViewModel (
 
         // Number count processing
         if (processedLine.contains("#")) {
-          //  val numberFormat = currentLineNumber.toString().padStart(numHashCt, '0')
             processedLine = numPlaceholderRegex.replace(processedLine) {
                 currentLineNumber.toString().padStart(it.value.length, '0')
             }
@@ -716,6 +716,14 @@ class PlaintextViewModel (
 
         // Main item processing
         if (itemData != null) {
+            val ratingRegex = Regex("@rating_(\\d+)(r)?")
+            processedLine = ratingRegex.replace(processedLine) {
+                val max = it.groupValues[1].toIntOrNull() ?: 5
+                val rounding = it.groupValues[2].isNotBlank()
+
+                exportRatingString(itemData.items.rating, max, rounding)
+            }
+
             processedLine = processedLine.replace("@brand", itemData.items.brand)
             processedLine = processedLine.replace("@blend", itemData.items.blend)
             processedLine = processedLine.replace("@type", itemData.items.type)
@@ -724,7 +732,6 @@ class PlaintextViewModel (
             processedLine = processedLine.replace("@comps", itemData.components.joinToString(", ") { it.componentName })
             processedLine = processedLine.replace("@flavors", itemData.flavoring.joinToString(", ") { it.flavoringName })
             processedLine = processedLine.replace("@qty", formattedQuantities[itemData.items.id] ?: "")
-            processedLine = processedLine.replace("@rating", itemData.items.rating?.let { "$it / 5" } ?: "")
             processedLine = processedLine.replace("@prod", if (itemData.items.inProduction) "In Production" else "Discontinued")
         } else {
             listOf("@brand", "@blend", "@type", "@subgenre", "@cut", "@comps", "@flavors", "@qty", "@rating", "@prod").forEach {
@@ -741,7 +748,7 @@ class PlaintextViewModel (
             processedLine = processedLine.replace("@open", formatMediumDate(tinData.openDate))
             processedLine = processedLine.replace("@finished", if (tinData.finished) "(Finished)" else "")
         } else {
-            listOf("@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished").forEach{
+            listOf("@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished").forEach {
                 processedLine = processedLine.replace(it, "")
             }
         }
@@ -773,7 +780,6 @@ class PlaintextViewModel (
             processedLine = nestedConditional.replace(processedLine) {
                 val innerContent = it.groupValues[1]
                 val placeholderScan = Regex("""@\w+(?!\w)""")
-
                 val allPlaceholders = placeholderScan.findAll(innerContent).toList()
 
                 if (hasTinSublist) {
@@ -817,6 +823,18 @@ class PlaintextViewModel (
         formattedQuantities: Map<Int, String>
     ): String {
         if (itemData != null) {
+            if (placeholder.startsWith("@rating_")) {
+                val ratingRegex = Regex("@rating_(\\d+)(r)?")
+                val matchResult = ratingRegex.find(placeholder)
+
+                if (matchResult != null) {
+                    val max = matchResult.groupValues[1].toIntOrNull() ?: 5
+                    val rounding = matchResult.groupValues[2].isNotBlank()
+
+                    return exportRatingString(itemData.items.rating, max, rounding)
+                }
+            }
+
             when (placeholder) {
                 "@brand" -> return itemData.items.brand
                 "@blend" -> return itemData.items.blend
@@ -826,7 +844,6 @@ class PlaintextViewModel (
                 "@comps" -> return itemData.components.joinToString(", ") { it.componentName }
                 "@flavors" -> return itemData.flavoring.joinToString(", ") { it.flavoringName }
                 "@qty" -> return formattedQuantities[itemData.items.id] ?: ""
-                "@rating" -> return itemData.items.rating?.let { "$it / 5" } ?: ""
                 "@prod" -> return if (itemData.items.inProduction) "In Production" else "Discontinued"
             }
         }

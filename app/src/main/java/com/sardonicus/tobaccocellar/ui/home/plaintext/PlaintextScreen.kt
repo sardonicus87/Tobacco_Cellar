@@ -6,12 +6,6 @@ import android.print.PrintManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -807,23 +801,13 @@ fun PlaintextFormatting(
             modifier = Modifier
                 .padding(bottom = 8.dp),
         )
-        Text(
-            text = "Note: sorting by \"Item Default\" or \"Tin Default\" will sort by the order " +
-                    "in which these things were added to the database.",
-            modifier = Modifier
-                .padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
-            fontSize = 12.sp
-        )
-        Text(
-            text = "\"Number\" is a special tag that counts each record in the given sort order " +
-                    "(use multiple # to include leading 0's). For advanced formatting, see below.",
-            modifier = Modifier
-                .padding(bottom = 12.dp),
-        )
+
+        // Formatting Options
         SelectionContainer(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
+                .padding(bottom = 16.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -974,102 +958,80 @@ fun PlaintextFormatting(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-
-        // Advanced help
-        val text = if (expanded) "Hide Advanced Help" else "Show Advanced Help"
-        Row(
+        Text(
+            text = "The \"@rating_0r\" tag is to be used in a specific way. The zero should be " +
+                    "replaced with the max rating (for scaling). If you want the scaled rating " +
+                    "to be rounded, also add the \"r\" at the end, otherwise add nothing else. " +
+                    "For example, to pass the rating on a scale of 1-4 with rounding, enter " +
+                    "\"@rating_4r\" into the formatting. A more advanced example might be: \n" +
+                    "\"[@rating_10 stars]\" or \"[@rating_4r/4]\"",
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    indication = LocalIndication.current,
-                    interactionSource = null
-                ) { expanded = !expanded }
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "\"Number\" is a special tag that counts each record in the given sort order " +
+                    "(use multiple # to include leading 0's).",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "In order to output raw text rather than special characters, escape the " +
+                    "special character with the escape character. For example, to output # in the " +
+                    "string, enter: '#. Likewise for example, to output brackets around a field, " +
+                    "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
+                    "need to be escaped unless you're trying to use it before an escapable " +
+                    "character (e.g to render: '01' you would need to input ''##').",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "Use the square brackets ([ ]) when you only want the text within them " +
+                    "to appear if one or more placeholders (also inside the brackets) are " +
+                    "found. For instance, if you want the type shown on a new line, but " +
+                    "don't want an extra line for a blank type, enter: [_n_@type]. These " +
+                    "conditional brackets can also be nested.",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "When sorting by items, if you want the tins organized as a sublist " +
+                    "per each item, use the curly braces around the formatting you want for " +
+                    "tins (e.g. {@label (@T_qty)}). Conditional brackets can also be used " +
+                    "inside the curly braces.",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
+                    "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
+                    "just before the desired delimiter, followed by delimiter. For example, to " +
+                    "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "A more advanced example might be to pass the list of tins only if tins exist " +
+                    "for that blend and passing the quantity in brackets. For example, entering...",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Text(
+            text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+            fontSize = 14.sp,
+        )
+        Text(
+            text = "... would result in:",
+            modifier = Modifier
+                .padding(bottom = 8.dp),
+        )
+        Box {
             Text(
-                text = text,
-                fontWeight = FontWeight.SemiBold,
+                text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
+                modifier = Modifier,
+                fontSize = 14.sp,
             )
-        }
-        AnimatedVisibility(
-            visible = expanded,
-            modifier = Modifier,
-            enter = expandVertically(
-                animationSpec = tween(durationMillis = 200),
-                expandFrom = Alignment.Bottom) + fadeIn(animationSpec = tween(durationMillis = 200)),
-            exit = shrinkVertically(
-                animationSpec = tween(durationMillis = 200),
-                shrinkTowards = Alignment.Bottom) + fadeOut(animationSpec = tween(durationMillis = 200))
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "In order to output raw text rather than special characters, escape the " +
-                            "special character with the escape character. For example, to output # in the " +
-                            "string, enter: '#. Likewise for example, to output brackets around a field, " +
-                            "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
-                            "need to be escaped unless you're trying to use it before an escapable " +
-                            "character (e.g to render: '01' you would need to input ''##').",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "Use the square brackets ([ ]) when you only want the text within them " +
-                            "to appear if one or more placeholders (also inside the brackets) are " +
-                            "found. For instance, if you want the type shown on a new line, but " +
-                            "don't want an extra line for a blank type, enter: [_n_@type]. These " +
-                            "conditional brackets can also be nested.",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "When sorting by items, if you want the tins organized as a sublist " +
-                            "per each item, use the curly braces around the formatting you want for " +
-                            "tins (e.g. {@label (@T_qty)}). Conditional brackets can also be used " +
-                            "inside the curly braces.",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
-                            "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
-                            "just before the desired delimiter, followed by delimiter. For example, to " +
-                            "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "A more advanced example might be to pass the list of tins only if tins exist " +
-                            "for that blend and passing the quantity in brackets. For example, entering...",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                )
-                Text(
-                    text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                    fontSize = 14.sp,
-                )
-                Text(
-                    text = "... would result in:",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                )
-                Box {
-                    Text(
-                        text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
-                        modifier = Modifier,
-                        fontSize = 14.sp,
-                    )
-                }
-            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -1100,6 +1062,7 @@ fun PlaintextFormatting(
 }
 
 
+/** Dialogs **/
 @Composable
 fun PrintDialog(
     savedFontSize: Float,
@@ -1108,6 +1071,7 @@ fun PrintDialog(
     onPrintCancel: (Float, Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     var fontSize by rememberSaveable { mutableFloatStateOf(savedFontSize) }
     var margins by rememberSaveable { mutableDoubleStateOf(savedMargin) }
 
@@ -1132,9 +1096,11 @@ fun PrintDialog(
             }
         },
         title = { Text(text = "Print Settings") },
-        modifier = modifier,
+        modifier = modifier
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
         text = {
             Column(
                 modifier = Modifier
