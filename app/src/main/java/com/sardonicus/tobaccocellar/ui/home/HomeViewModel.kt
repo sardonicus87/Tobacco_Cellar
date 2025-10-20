@@ -17,6 +17,7 @@ import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -63,7 +65,8 @@ class HomeViewModel(
                 preferencesRepo.listSorting,
                 preferencesRepo.listAscending
             ) { value, ascending ->
-                ListSorting(value, ascending)
+                val option = ListSortOption.entries.firstOrNull { it.value == value } ?: ListSortOption.DEFAULT
+                ListSorting(option, ascending)
             }.collect {
                 _listSorting.value = it
             }
@@ -88,6 +91,11 @@ class HomeViewModel(
         snapshotFlow { listSorting.value },
         preferencesRepo.tinOzConversionRate,
         preferencesRepo.tinGramsConversionRate,
+        preferencesRepo.showRating,
+        preferencesRepo.typeGenreOption,
+        filterViewModel.typesExist,
+        filterViewModel.subgenresExist,
+        filterViewModel.ratingsExist
     ) {
         val filteredItems = it[0] as List<ItemsComponentsAndTins>
         val filteredTins = it[1] as List<Tins>
@@ -97,6 +105,12 @@ class HomeViewModel(
         val listSorting = it[5] as ListSorting
         val ozRate = it[6] as Double
         val gramsRate = it[7] as Double
+        val showRating = it[8] as Boolean
+        val typeGenreOption = it[9] as TypeGenreOption
+        val typesExist = it[10] as Boolean
+        val subgenresExist = it[11] as Boolean
+        val ratingsExist = it[12] as Boolean
+
 
         val sortQuantity = filteredItems.associate {
             it.items.id to calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
@@ -109,17 +123,30 @@ class HomeViewModel(
                     1 -> filteredItems.sortedBy { it.items.blend }
                     2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                     3 -> filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                    6 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                    4 -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
+                    7 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
                 }.let {
                     if (tableSorting.sortAscending) it else it.reversed()
                 }
             } else {
-                when (listSorting.value) {
+                when (listSorting.option.value) {
                     "Default" -> filteredItems.sortedBy { it.items.id }
                     "Blend" -> filteredItems.sortedBy { it.items.blend }
                     "Brand" -> filteredItems.sortedBy { it.items.brand }
-                    "Type" -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                    "Type" -> {
+                        if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
+                            filteredItems.sortedBy { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                        }
+                        else filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                    }
+                    "Subgenre" -> {
+                        if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
+                            filteredItems.sortedBy { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
+                        }
+                        else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
+                    }
+                    "Rating" -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
                     "Quantity" -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
                 }.let {
@@ -134,11 +161,31 @@ class HomeViewModel(
             it.items.id to formattedQuantity
         }
 
+        val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY)
+        val subgenreOption = when (typeGenreOption) {
+            TypeGenreOption.SUBGENRE -> true
+            TypeGenreOption.BOTH -> true
+            TypeGenreOption.SUB_FALLBACK -> true
+            else -> false
+        }
+        val sortingOptions = ListSortOption.entries.filter {
+            when (it) {
+                in alwaysOptions -> true
+                ListSortOption.TYPE -> typesExist
+                ListSortOption.SUBGENRE -> subgenreOption && subgenresExist
+                ListSortOption.RATING -> ratingsExist && showRating
+                else -> false
+            }
+        }
+
         if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
 
         HomeUiState(
             sortedItems = sortedItems,
             filteredTins = filteredTins,
+            showRating = showRating,
+            sortingOptions = sortingOptions,
+            typeGenreOption = typeGenreOption,
             formattedQuantities = formattedQuantities,
             isTableView = isTableView,
             tableSorting = tableSorting,
@@ -151,8 +198,6 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = HomeUiState(isLoading = true)
         )
-
-
 
 
     /** List View item menu overlay and expand details **/
@@ -209,10 +254,10 @@ class HomeViewModel(
         }
     }
 
-    fun saveListSorting(value: String) {
+    fun saveListSorting(value: ListSortOption) {
         val currentSorting = _listSorting.value
         val newListSorting =
-            if (currentSorting.value == value) {
+            if (currentSorting.option == value) {
                 ListSorting(value, !currentSorting.listAscending)
             } else {
                 ListSorting(value)
@@ -221,7 +266,7 @@ class HomeViewModel(
         _listSorting.value = newListSorting
 
         viewModelScope.launch {
-            preferencesRepo.saveListSorting(newListSorting.value, newListSorting.listAscending)
+            preferencesRepo.saveListSorting(newListSorting.option.value, newListSorting.listAscending)
         }
     }
 
@@ -257,7 +302,10 @@ class HomeViewModel(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val itemsWithComponentsAndFlavoring = itemsRepository.getAllItemsWithComponentsAndFlavoring()
-                val csvData = csvHelper.exportToCsv(itemsWithComponentsAndFlavoring)
+                val exportRating = preferencesRepo.exportRating.first()
+                val maxRating = exportRating.maxRating
+                val rounding = exportRating.rounding
+                val csvData = csvHelper.exportToCsv(itemsWithComponentsAndFlavoring, maxRating, rounding)
                 if (uri != null) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
                             outputStream ->
@@ -277,7 +325,11 @@ class HomeViewModel(
     override fun onTinsExportCsvClick(uri: Uri?) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val tinExportData = itemsRepository.getTinExportData()
+                val exportRating = preferencesRepo.exportRating.first()
+                val maxRating = exportRating.maxRating
+                val rounding = exportRating.rounding
+
+                val tinExportData = itemsRepository.getTinExportData(maxRating, rounding)
                 val tinCsvData = csvHelper.exportTinsToCsv(tinExportData)
                 if (uri != null) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
@@ -300,6 +352,9 @@ class HomeViewModel(
 data class HomeUiState(
     val sortedItems: List<ItemsComponentsAndTins> = emptyList(),
     val filteredTins: List<Tins> = emptyList(),
+    val showRating: Boolean = false,
+    val sortingOptions: List<ListSortOption> = emptyList(),
+    val typeGenreOption: TypeGenreOption = TypeGenreOption.TYPE,
     val formattedQuantities: Map<Int, String> = emptyMap(),
     val isTableView: Boolean = false,
     val tableSorting: TableSorting = TableSorting(),
@@ -319,19 +374,23 @@ data class TableSorting(
 )
 
 data class ListSorting(
-    val value: String = "Default",
+    val option: ListSortOption = ListSortOption.DEFAULT,
     val listAscending: Boolean = true,
     val listIcon: Int =
         if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
-) {
-    companion object {
-        val DEFAULT = ListSorting("Default")
-        val BLEND = ListSorting("Blend")
-        val BRAND = ListSorting("Brand")
-        val TYPE = ListSorting("Type")
-        val QUANTITY = ListSorting("Quantity")
-    }
+)
+
+enum class ListSortOption(val value: String) {
+    DEFAULT("Default"),
+    BLEND("Blend"),
+    BRAND("Brand"),
+    TYPE("Type"),
+    SUBGENRE("Subgenre"),
+    RATING("Rating"),
+    QUANTITY("Quantity")
 }
+
+
 
 sealed class SearchSetting(val value: String) {
     data object Blend: SearchSetting("Blend")
@@ -362,14 +421,12 @@ fun calculateTotalQuantity(
             QuantityOption.TINS -> items.items.quantity.toDouble()
             QuantityOption.OUNCES -> items.items.quantity.toDouble() * ounceRate
             QuantityOption.GRAMS -> items.items.quantity.toDouble() * gramRate
-            else -> 0.0
         }
     } else {
         when (quantityOption) {
             QuantityOption.TINS -> items.items.quantity.toDouble()
             QuantityOption.OUNCES -> calculateOunces(tinsRemap)
             QuantityOption.GRAMS -> calculateGrams(tinsRemap)
-            else -> 0.0
         }
     }
 }
@@ -407,24 +464,23 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
             val pounds = quantity / 16
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                 if (quantity >= 16) {
-                    formatDecimal(pounds) + " lbs"
+                    "${formatDecimal(pounds)} lbs"
                 } else {
-                    formatDecimal(quantity) + " oz"
+                    "${formatDecimal(quantity)} oz"
                 }
             } else {
                 if (quantity >= 16) {
-                    "${formatDecimal(pounds)}* lbs"
+                    "${formatDecimal(pounds)} lbs*"
                 } else
-                    "${formatDecimal(quantity)}* oz"
+                    "${formatDecimal(quantity)} oz*"
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                formatDecimal(quantity) + " g"
+                "${formatDecimal(quantity)} g"
             } else {
-                "${formatDecimal(quantity)}* g"
+                "${formatDecimal(quantity)} g*"
             }
         }
-        else -> { "--" }
     }
 }

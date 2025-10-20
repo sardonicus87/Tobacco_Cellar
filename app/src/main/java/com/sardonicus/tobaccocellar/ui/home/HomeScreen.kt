@@ -117,6 +117,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.CoroutineScope
@@ -498,6 +499,8 @@ fun HomeScreen(
                     resetLoading = resetLoading,
                     emptyDb = emptyDatabase,
                     isTableView = homeUiState.isTableView,
+                    showRating = homeUiState.showRating,
+                    typeGenreOption = homeUiState.typeGenreOption,
                     emptyMessage = emptyMessage,
                     columnState = columnState,
                     sortedItems = homeUiState.sortedItems,
@@ -537,11 +540,10 @@ private fun HomeHeader(
     selectView: (Boolean) -> Unit,
     filterViewModel: FilterViewModel,
     searchText: String,
-    saveListSorting: (String) -> Unit,
+    saveListSorting: (ListSortOption) -> Unit,
     listSorting: ListSorting,
     filteredItems: List<ItemsComponentsAndTins>
 ) {
-    val typesExist by filterViewModel.typesExist.collectAsState()
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
     val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
@@ -766,13 +768,7 @@ private fun HomeHeader(
                         .width(94.dp),
                     containerColor = LocalCustomColors.current.textField,
                 ) {
-                    val default = ListSorting.DEFAULT
-                    val blend = ListSorting.BLEND
-                    val brand = ListSorting.BRAND
-                    val type = if (typesExist) ListSorting.TYPE else null
-                    val quantity = ListSorting.QUANTITY
-                    val sortingList = listOfNotNull(default, blend, brand, type, quantity)
-                    sortingList.forEach {
+                    homeUiState.sortingOptions.forEach {
                         DropdownMenuItem(
                             text = {
                                 Row(
@@ -786,7 +782,7 @@ private fun HomeHeader(
                                         modifier = Modifier
                                             .padding(end = 2.dp)
                                     )
-                                    if (listSorting.value == it.value) {
+                                    if (listSorting.option.value == it.value) {
                                         val icon = listSorting.listIcon
                                         Box(
                                             modifier = Modifier
@@ -805,7 +801,7 @@ private fun HomeHeader(
                                 }
                             },
                             onClick = {
-                                saveListSorting(it.value)
+                                saveListSorting(it)
                                 filterViewModel.shouldScrollUp()
                             },
                             modifier = Modifier
@@ -818,9 +814,8 @@ private fun HomeHeader(
 
             Spacer(Modifier.width(6.dp))
 
-            Box (
-                contentAlignment = Alignment.CenterEnd
-            ) {
+            // Total Items //
+            Box (contentAlignment = Alignment.CenterEnd) {
                 Text(
                     text = "999",
                     modifier = Modifier,
@@ -934,6 +929,8 @@ private fun HomeBody(
     resetLoading: Boolean,
     emptyDb: Boolean,
     isTableView: Boolean,
+    showRating: Boolean,
+    typeGenreOption: TypeGenreOption,
     emptyMessage: String,
     columnState: LazyListState,
     sortedItems: List<ItemsComponentsAndTins>,
@@ -1046,6 +1043,8 @@ private fun HomeBody(
                     ListViewMode(
                         sortedItems = sortedItems,
                         columnState = columnState,
+                        showRating = showRating,
+                        typeGenreOption = typeGenreOption,
                         showTins = showTins,
                         tinsList = tins,
                         formattedQuantity = formattedQuantity,
@@ -1242,6 +1241,8 @@ fun rememberJumpToState(
 fun ListViewMode(
     sortedItems: List<ItemsComponentsAndTins>,
     columnState: LazyListState,
+    showRating: Boolean,
+    typeGenreOption: TypeGenreOption,
     showTins: Boolean,
     tinsList: List<Tins>,
     formattedQuantity: Map<Int, String>,
@@ -1276,6 +1277,8 @@ fun ListViewMode(
 
                 CellarListItem(
                     item = item,
+                    showRating = showRating,
+                    typeGenreOption = typeGenreOption,
                     showTins = showTins,
                     filteredTins = tinsList,
                     formattedQuantity = formattedQuantity[item.items.id] ?: "--",
@@ -1328,6 +1331,8 @@ fun ListViewMode(
 private fun CellarListItem(
     modifier: Modifier = Modifier,
     item: ItemsComponentsAndTins,
+    showRating: Boolean,
+    typeGenreOption: TypeGenreOption,
     showTins: Boolean,
     searchPerformed: Boolean,
     isTinSearch: Boolean,
@@ -1421,7 +1426,7 @@ private fun CellarListItem(
                                     )
                                 }
                             }
-                            // brand and type
+                            // brand & type and/or subgenre
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1445,17 +1450,62 @@ private fun CellarListItem(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 11.sp
                                 )
-                                // Other Info //
-                                Text(
-                                    text = item.items.type,
-                                    modifier = Modifier,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        textDecoration = TextDecoration.None
-                                    ),
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 11.sp,
-                                )
+                                // Type and/or Subgenre //
+                                val text = when (typeGenreOption) {
+                                    TypeGenreOption.TYPE -> item.items.type
+                                    TypeGenreOption.SUBGENRE -> item.items.subGenre
+                                    TypeGenreOption.BOTH -> {
+                                        item.items.type +
+                                        if (item.items.type.isNotEmpty() && item.items.subGenre.isNotEmpty()) { " - " } else { "" } +
+                                        item.items.subGenre
+                                    }
+                                    TypeGenreOption.TYPE_FALLBACK -> item.items.type.ifBlank { item.items.subGenre }
+                                    TypeGenreOption.SUB_FALLBACK -> item.items.subGenre.ifBlank { item.items.type }
+                                }
+                                val shown = when (typeGenreOption) {
+                                    TypeGenreOption.TYPE -> item.items.type.isNotEmpty()
+                                    TypeGenreOption.SUBGENRE -> item.items.subGenre.isNotEmpty()
+                                    TypeGenreOption.BOTH -> item.items.type.isNotEmpty() || item.items.subGenre.isNotEmpty()
+                                    TypeGenreOption.TYPE_FALLBACK -> item.items.type.isNotEmpty() || item.items.subGenre.isNotEmpty()
+                                    TypeGenreOption.SUB_FALLBACK -> item.items.subGenre.isNotEmpty() || item.items.type.isNotEmpty()
+                                }
+
+                                if (shown) {
+                                    Text(
+                                        text = text,
+                                        modifier = Modifier,
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            textDecoration = TextDecoration.None
+                                        ),
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 11.sp,
+                                    )
+                                }
+
+                                if (showRating && item.items.rating != null) {
+                                    Row (
+                                        modifier = Modifier,
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = item.items.rating.toString(),
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.Normal,
+                                            fontSize = 11.sp,
+                                        )
+                                        Image(
+                                            painter = painterResource(id = R.drawable.star_filled),
+                                            contentDescription = null,
+                                            colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
+                                            alignment = Alignment.Center,
+                                            modifier = Modifier
+                                                .padding(start = 2.dp)
+                                                .size(12.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -1469,9 +1519,9 @@ private fun CellarListItem(
                     ) {
                         val outOfStock = formattedQuantity == "x0" ||
                                 formattedQuantity == "0 oz" ||
-                                formattedQuantity == "0* oz" ||
+                                formattedQuantity == "0 oz*" ||
                                 formattedQuantity == "0 g" ||
-                                formattedQuantity == "0* g"
+                                formattedQuantity == "0 g*"
 
                         Text(
                             text = formattedQuantity,
@@ -1661,28 +1711,30 @@ fun TableViewMode(
     val horizontalScroll = rememberScrollState()
 
     val columnMinWidths = listOf(
-        180.dp, // Brand
-        300.dp, // Blend
-        108.dp, // Type
-        120.dp, // Subgenre
-        64.dp, // Fav/Dis
-        64.dp, // Note
-        98.dp // Qty
+        180.dp, // 0 Brand
+        300.dp, // 1 Blend
+        108.dp, // 2 Type
+        120.dp, // 3 Subgenre
+        64.dp, // 4 Rating
+        64.dp, // 5 Fav/Dis
+        64.dp, // 6 Note
+        98.dp // 7 Qty
     )
     val columnMapping = listOf(
         { item: Items -> item.brand }, // 0
         { item: Items -> item.blend }, // 1
         { item: Items -> item.type }, // 2
         { item: Items -> item.subGenre }, // 3
-        { item: Items -> // 4
+        { item: Items -> item.rating }, // 4
+        { item: Items -> // 5
             when {
                 item.favorite -> 1
                 item.disliked -> 2
                 else -> 0
             }
         },
-        { item: Items -> item.notes }, // 5
-        { item: Items -> item.id }, // 6
+        { item: Items -> item.notes }, // 6
+        { item: Items -> item.id }, // 7
     )
 
     Box(
@@ -1716,9 +1768,10 @@ fun TableViewMode(
                             1 -> Alignment.CenterStart // blend
                             2 -> Alignment.Center // type
                             3 -> Alignment.Center // subgenre
-                            4 -> Alignment.Center // fav/dis
-                            5 -> Alignment.Center // notes
-                            6 -> Alignment.Center // quantity
+                            4 -> Alignment.Center // rating
+                            5 -> Alignment.Center // fav/dis
+                            6 -> Alignment.Center // notes
+                            7 -> Alignment.Center // quantity
                             else -> Alignment.CenterStart
                         }
                         val headerText = when (columnIndex) {
@@ -1726,9 +1779,10 @@ fun TableViewMode(
                             1 -> "Blend"
                             2 -> "Type"
                             3 -> "Subgenre"
-                            4 -> ""
-                            5 -> "Note"
-                            6 -> "Qty"
+                            4 -> "" // rating
+                            5 -> "" // favorite/dislike
+                            6 -> "Note"
+                            7 -> "Qty"
                             else -> ""
                         }
                         val onSortChange: (Int) -> Unit = { newSortColumn: Int ->
@@ -1736,12 +1790,15 @@ fun TableViewMode(
                             shouldScrollUp()
                         }
                         when (columnIndex) {
-                            0, 1, 2, 3, 6 -> {
+                            0, 1, 2, 3, 4, 7 -> { // sortable columns
                                 HeaderCell(
                                     text = headerText,
                                     onClick = { onSortChange(columnIndex) },
                                     primarySort = sorting.columnIndex == columnIndex,
                                     sorting = sorting,
+                                    icon1 = if (columnIndex == 4)
+                                        painterResource(id = R.drawable.star_filled) else null,
+                                    color1 = LocalCustomColors.current.starRating,
                                     modifier = Modifier
                                         .padding(0.dp)
                                         .matchParentSize()
@@ -1749,7 +1806,7 @@ fun TableViewMode(
                                     contentAlignment = alignment
                                 )
                             }
-                            else -> {
+                            else -> { // not sortable
                                 HeaderCell(
                                     text = headerText,
                                     primarySort = sorting.columnIndex == columnIndex,
@@ -1757,10 +1814,14 @@ fun TableViewMode(
                                     modifier = Modifier
                                         .padding(0.dp)
                                         .align(alignment),
-                                    icon1 = if (columnIndex == 4)
+                                    icon1 = if (columnIndex == 5)
                                         painterResource(id = R.drawable.heart_filled_24) else null,
-                                    icon2 = if (columnIndex == 4)
+                                    color1 = LocalCustomColors.current.favHeart,
+                                    size1 = 20.dp,
+                                    icon2 = if (columnIndex == 5)
                                         painterResource(id = R.drawable.question_mark_24) else null,
+                                    color2 = Color.Black,
+                                    size2 = 12.dp,
                                     contentAlignment = alignment
                                 )
                             }
@@ -1841,21 +1902,22 @@ fun TableViewMode(
                                             1 -> Alignment.CenterStart // blend
                                             2 -> Alignment.Center // type
                                             3 -> Alignment.Center // subgenre
-                                            4 -> Alignment.Center // fav/dis
-                                            5 -> Alignment.Center // notes
-                                            6 -> Alignment.Center // quantity
+                                            4 -> Alignment.Center // rating
+                                            5 -> Alignment.Center // fav/dis
+                                            6 -> Alignment.Center // notes
+                                            7 -> Alignment.Center // quantity
                                             else -> Alignment.CenterStart
                                         }
                                         when (columnIndex) {
-                                            0, 1, 2, 3 -> { // brand, blend, type
+                                            0, 1, 2, 3, 4 -> { // brand, blend, type, rating
                                                 TableCell(
                                                     value = cellValue,
                                                     modifier = Modifier
                                                         .align(alignment),
                                                     contentAlignment = alignment,
                                                 )
-                                            } // brand, blend, type
-                                            4 -> { // fav/disliked
+                                            } // brand, blend, type, rating
+                                            5 -> { // fav/disliked
                                                 val favDisValue = cellValue as Int
                                                 val icon = when (favDisValue) {
                                                     1 -> painterResource(id = R.drawable.heart_filled_24)
@@ -1883,7 +1945,7 @@ fun TableViewMode(
                                                     )
                                                 }
                                             } // fav/disliked
-                                            5 -> { // notes
+                                            6 -> { // notes
                                                 if (cellValue != "") {
                                                     Image(
                                                         painter = painterResource(id = R.drawable.notes_24),
@@ -1902,15 +1964,15 @@ fun TableViewMode(
                                                     )
                                                 }
                                             } // notes
-                                            6 -> { // quantity
+                                            7 -> { // quantity
                                                 val formattedQuantity =
                                                     formattedQty[item.items.id] ?: "--"
                                                 val outOfStock =
                                                     formattedQuantity == "x0" ||
                                                             formattedQuantity == "0 oz" ||
-                                                            formattedQuantity == "0* oz" ||
+                                                            formattedQuantity == "0 oz*" ||
                                                             formattedQuantity == "0 g" ||
-                                                            formattedQuantity == "0* g"
+                                                            formattedQuantity == "0 g*"
 
                                                 TableCell(
                                                     value = formattedQuantity,
@@ -2087,12 +2149,16 @@ fun TableViewMode(
 @Stable
 @Composable
 fun HeaderCell(
+    sorting: TableSorting,
+    primarySort: Boolean,
     modifier: Modifier = Modifier,
     text: String? = null,
     icon1: Painter? = null,
+    color1: Color = LocalContentColor.current,
+    size1: Dp = 20.dp,
     icon2: Painter? = null,
-    sorting: TableSorting,
-    primarySort: Boolean,
+    color2: Color = LocalContentColor.current,
+    size2: Dp = 20.dp,
     onClick: (() -> Unit)? = null,
     contentAlignment: Alignment = Alignment.Center,
 ) {
@@ -2114,6 +2180,15 @@ fun HeaderCell(
                         text = text,
                         modifier = Modifier,
                         fontWeight = FontWeight.Bold,
+                    )
+                }
+                if (icon1 != null) {
+                    Image(
+                        painter = icon1,
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(color1),
+                        modifier = Modifier
+                            .size(size1)
                     )
                 }
                 Image(
@@ -2138,18 +2213,18 @@ fun HeaderCell(
                 Image(
                     painter = icon1,
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(LocalCustomColors.current.favHeart),
+                    colorFilter = ColorFilter.tint(color1),
                     modifier = Modifier
-                        .size(20.dp)
+                        .size(size1)
                 )
             }
             if (icon2 != null) {
                 Image(
                     painter = icon2,
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color(0xFF000000)),
+                    colorFilter = ColorFilter.tint(color2),
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(size2)
                         .offset(x = 0.dp, y = 0.dp)
                 )
             }
