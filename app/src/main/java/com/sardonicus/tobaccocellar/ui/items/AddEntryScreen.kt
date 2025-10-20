@@ -346,6 +346,7 @@ fun ItemExistsDialog(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
         dismissButton = {
             TextButton(onClick = onItemExistsCancel) {
                 Text(stringResource(R.string.cancel))
@@ -376,6 +377,7 @@ fun ItemExistsEditDialog(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
         confirmButton = {
             TextButton(onClick = onItemExistsConfirm) {
                 Text(stringResource(R.string.ok))
@@ -397,6 +399,7 @@ private fun DeleteConfirmationDialog(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
         dismissButton = {
             TextButton(onClick = onDeleteCancel) {
                 Text(stringResource(R.string.cancel))
