@@ -16,6 +16,7 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.math.round
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -46,6 +48,8 @@ class SettingsViewModel(
 
     /** Theme Settings */
     private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM.value)
+    private val _showRatingsOption = MutableStateFlow(false)
+    private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
 
     private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
@@ -54,23 +58,20 @@ class SettingsViewModel(
     private val _tinGramsConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.gramsRate)
     val tinGramsConversionRate: StateFlow<Double> = _tinGramsConversionRate.asStateFlow()
 
+    private val _exportRating = MutableStateFlow(ExportRating())
+    val exportRating: StateFlow<ExportRating> = _exportRating.asStateFlow()
+
     private val _snackbarState = MutableStateFlow(SnackbarState())
     val snackbarState: StateFlow<SnackbarState> = _snackbarState.asStateFlow()
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    fun showSnackbar(message: String) {
-        _snackbarState.value = SnackbarState(true, message)
-    }
+    fun showSnackbar(message: String) { _snackbarState.value = SnackbarState(true, message) }
 
-    fun snackbarShown() {
-        _snackbarState.value = SnackbarState()
-    }
+    fun snackbarShown() { _snackbarState.value = SnackbarState() }
 
-    fun setLoadingState(loading: Boolean) {
-        _loading.value = loading
-    }
+    fun setLoadingState(loading: Boolean) { _loading.value = loading }
 
     // option initializations //
     init {
@@ -114,6 +115,36 @@ class SettingsViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.typeGenreOption.first().let {
+                    _typeGenreOption.value = it
+                    if (it == TypeGenreOption.TYPE) {
+                        preferencesRepo.saveTypeGenreOption(TypeGenreOption.TYPE.value)
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.showRating.first().let {
+                    _showRatingsOption.value = it
+                    if (it) {
+                        preferencesRepo.saveShowRatingOption(true)
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.exportRating.first().let {
+                    _exportRating.value = it
+                    if (it.maxRating == 5 && !it.rounding) {
+                        preferencesRepo.saveExportRating(5, false)
+                    }
+                }
+            }
+        }
     }
 
 
@@ -129,6 +160,19 @@ class SettingsViewModel(
         }
     }
 
+    fun saveShowRatingOption(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveShowRatingOption(option)
+        }
+    }
+
+    fun saveTypeGenreOption(option: String) {
+        viewModelScope.launch {
+            preferencesRepo.saveTypeGenreOption(option)
+        }
+    }
+
+
     /** Database Settings */
     suspend fun deleteAllItems() {
         itemsRepository.deleteAllItems()
@@ -140,6 +184,13 @@ class SettingsViewModel(
             preferencesRepo.setTinGramsConversionRate(gramsRate)
             _tinOzConversionRate.value = ozRate
             _tinGramsConversionRate.value = gramsRate
+        }
+    }
+
+    fun saveMaxRating(rating: Int, rounding: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveExportRating(rating, rounding)
+            _exportRating.value = ExportRating(rating, rounding)
         }
     }
 
@@ -581,24 +632,24 @@ class SettingsViewModel(
 }
 
 
-data class ThemeSetting(
-    val value: String
-) {
-    companion object {
-        val LIGHT = ThemeSetting("Light")
-        val DARK = ThemeSetting("Dark")
-        val SYSTEM = ThemeSetting("System")
-    }
+enum class ThemeSetting(val value: String) {
+    LIGHT("Light"),
+    DARK("Dark"),
+    SYSTEM("System")
 }
 
-data class QuantityOption(
-    val value: String
-) {
-    companion object {
-        val TINS = QuantityOption("\"No. of Tins\" (default)")
-        val OUNCES = QuantityOption("Ounces/Pounds")
-        val GRAMS = QuantityOption("Grams")
-    }
+enum class QuantityOption(val value: String) {
+    TINS("\"No. of Tins\" (default)"),
+    OUNCES("Ounces/Pounds"),
+    GRAMS("Grams")
+}
+
+enum class TypeGenreOption(val value: String) {
+    TYPE("Type"),
+    SUBGENRE("Subgenre"),
+    BOTH("Both"),
+    TYPE_FALLBACK("Type (fallback)"),
+    SUB_FALLBACK("Subgenre (fallback)")
 }
 
 data class TinConversionRates(
@@ -609,6 +660,11 @@ data class TinConversionRates(
         val DEFAULT = TinConversionRates(1.75, 50.0)
     }
 }
+
+data class ExportRating(
+    val maxRating: Int = 5,
+    val rounding: Boolean = false
+)
 
 data class BackupState(
     val databaseChecked: Boolean = false,
@@ -736,6 +792,9 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val plaintextDelimiter = preferencesRepo.plaintextDelimiter.first()
     val plaintextPresets = Json.encodeToString(preferencesRepo.plaintextPresetsFlow.first())
     val plaintextPrintOptions = "${preferencesRepo.plaintextPrintFontSize.first()}, ${preferencesRepo.plaintextPrintMargin.first()}"
+    val showRatingOption = preferencesRepo.showRating.first().toString()
+    val typeGenreOption = preferencesRepo.typeGenreOption.first().value
+    val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
 
 
     return """
@@ -747,6 +806,9 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             plaintextDelimiter=$plaintextDelimiter
             plaintextPresets=$plaintextPresets
             plaintextPrintOptions=$plaintextPrintOptions
+            showRatingOption=$showRatingOption
+            typeGenreOption=$typeGenreOption
+            exportRating=$exportRating
         """.trimIndent()
 }
 
@@ -799,7 +861,26 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     val margin = options.last().toDouble()
                     preferencesRepo.setPlaintextPrintOptions(font, margin)
                 }
+                "showRatingOption" -> preferencesRepo.saveShowRatingOption(value.toBoolean())
+                "typeGenreOption" -> preferencesRepo.saveTypeGenreOption(value)
+                "exportRating" -> {
+                    val options = Json.decodeFromString<ExportRating>(value)
+                    preferencesRepo.saveExportRating(options.maxRating, options.rounding)
+                }
             }
         }
     }
+}
+
+fun exportRatingString(rating: Double?, maxRating: Int, rounding: Boolean): String {
+    val scaling = maxRating / 5.0
+
+    if (rating == null) { return "" }
+
+    val scaledRating = (rating * scaling)
+    val roundedRating = round(scaledRating)
+
+    val number = if (rounding) formatDecimal(roundedRating) else formatDecimal(scaledRating)
+
+    return number
 }
