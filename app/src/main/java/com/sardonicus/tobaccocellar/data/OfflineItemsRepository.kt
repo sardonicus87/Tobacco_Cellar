@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.data
 
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
+import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
@@ -120,7 +121,7 @@ class OfflineItemsRepository(
         itemsDao.deleteAllTinsForItem(itemId)
     }
 
-    override suspend fun getTinExportData(): List<TinExportData> {
+    override suspend fun getTinExportData(maxRating: Int, rounding: Boolean): List<TinExportData> {
         val items = itemsDao.getAllItemsExport()
         val tinExportData = mutableListOf<TinExportData>()
         val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -129,7 +130,8 @@ class OfflineItemsRepository(
         for (item in items) {
             val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
             val flavoring = itemsDao.getFlavoringForItemStream(item.id).first().joinToString(", ") { it.flavoringName }
-            val ratingString = item.rating?.let { "$it / 5" } ?: ""
+            val ratingString = exportRatingString(item.rating, maxRating, rounding)
+
             val tins = itemsDao.getTinsForItemStream(item.id).first()
 
 

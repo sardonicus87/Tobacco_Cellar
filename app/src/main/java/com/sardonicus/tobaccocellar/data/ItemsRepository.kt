@@ -59,7 +59,7 @@ interface ItemsRepository {
 
     suspend fun deleteAllTinsForItem(itemId: Int)
 
-    suspend fun getTinExportData(): List<TinExportData>
+    suspend fun getTinExportData(maxRating: Int, rounding: Boolean): List<TinExportData>
 
 
     /** Get all items **/

@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.data
 
+import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
@@ -37,7 +38,7 @@ class CsvHelper {
         }
     }
 
-    fun exportToCsv(data: List<ItemsWithComponentsAndFlavoring>): String {
+    fun exportToCsv(data: List<ItemsWithComponentsAndFlavoring>, maxRating: Int, rounding: Boolean): String {
         val csvWriter = StringWriter()
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
@@ -53,7 +54,7 @@ class CsvHelper {
         for (itemWithComponents in data) {
             val componentsString = itemWithComponents.components.joinToString(", ") { it.componentName }
             val flavoringString = itemWithComponents.flavoring.joinToString(", ") { it.flavoringName }
-            val ratingString = itemWithComponents.item.rating?.let { "$it / 5" } ?: ""
+            val ratingString = exportRatingString(itemWithComponents.item.rating, maxRating, rounding)
 
             csvPrinter.printRecord(
                 itemWithComponents.item.brand,
