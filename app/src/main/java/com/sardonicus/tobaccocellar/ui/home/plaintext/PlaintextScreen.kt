@@ -578,7 +578,6 @@ fun PlaintextFormatting(
     savePreset: (Int, String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     var saveDialog by rememberSaveable { mutableStateOf(false) }
     var loadDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -1071,7 +1070,6 @@ fun PrintDialog(
     onPrintCancel: (Float, Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val focusManager = LocalFocusManager.current
     var fontSize by rememberSaveable { mutableFloatStateOf(savedFontSize) }
     var margins by rememberSaveable { mutableDoubleStateOf(savedMargin) }
 
@@ -1096,8 +1094,7 @@ fun PrintDialog(
             }
         },
         title = { Text(text = "Print Settings") },
-        modifier = modifier
-            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
+        modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
