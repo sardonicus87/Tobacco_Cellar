@@ -925,7 +925,7 @@ private fun RatingRowImpl(
             }
             if (remainder > 0.0) {
                 val startWidth = starSize * remainder.toFloat()
-                val endWidth = starSize * (1.0 - remainder).toFloat()
+                val endWidth = starSize - startWidth
 
                 Box(
                     modifier = Modifier
