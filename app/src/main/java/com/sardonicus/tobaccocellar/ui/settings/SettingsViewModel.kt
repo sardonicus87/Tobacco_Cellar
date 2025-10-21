@@ -39,7 +39,6 @@ import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-import kotlin.math.round
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -878,9 +877,7 @@ fun exportRatingString(rating: Double?, maxRating: Int, rounding: Boolean): Stri
     if (rating == null) { return "" }
 
     val scaledRating = (rating * scaling)
-    val roundedRating = round(scaledRating)
+    val places = if (rounding) 0 else 2
 
-    val number = if (rounding) formatDecimal(roundedRating) else formatDecimal(scaledRating)
-
-    return number
+    return formatDecimal(scaledRating, places)
 }
