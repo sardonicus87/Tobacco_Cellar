@@ -212,7 +212,9 @@ fun isMetricLocale(): Boolean {
     }
 }
 
-fun formatDecimal(number: Double, places: Int = 2): String {
+fun formatDecimal(number: Double?, places: Int = 2): String {
+    if (number == null) return ""
+
     val multiplier = 10.0.pow(places)
     val rounded = round(number * multiplier) / multiplier
     val formatted = NumberFormat.getNumberInstance(Locale.getDefault())
