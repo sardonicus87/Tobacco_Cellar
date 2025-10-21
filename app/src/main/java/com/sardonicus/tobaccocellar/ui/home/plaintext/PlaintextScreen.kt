@@ -205,7 +205,7 @@ fun PlaintextBody(
     savePreset: (Int, String, String) -> Unit,
     templateView: Boolean,
     modifier: Modifier = Modifier
-){
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val clipboard = LocalClipboard.current
