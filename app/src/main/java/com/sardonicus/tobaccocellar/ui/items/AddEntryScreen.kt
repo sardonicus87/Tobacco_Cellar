@@ -28,10 +28,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
@@ -91,7 +89,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -123,6 +120,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
@@ -1145,6 +1143,14 @@ fun DetailsEntry(
                     starSize = 24.dp,
                     emptyColor = emptyColor,
                 )
+                if (itemDetails.rating != null) {
+                    Text(
+                        text = "(${formatDecimal(itemDetails.rating)})",
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .alpha(0.75f)
+                    )
+                }
             }
         }
 
@@ -1427,8 +1433,6 @@ fun TinsEntry(
     }
 }
 
-
-/** custom composables */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IndividualTin(
@@ -2244,6 +2248,7 @@ fun IndividualTin(
 }
 
 
+/** custom composables */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomDatePickerDialog(
@@ -2388,17 +2393,13 @@ fun RatingPopup(
     modifier: Modifier = Modifier,
     currentRating: Double? = null,
 ) {
-    val ratings = listOf(0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)
-    var selectedRating by remember { mutableStateOf(currentRating) }
+    var currentRatingString by rememberSaveable { mutableStateOf(formatDecimal(currentRating)) }
+    var parsedDouble: Double? = null
 
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier
-            .wrapContentHeight()
-            .clickable(
-                indication = null,
-                interactionSource = null
-            ) { selectedRating = null },
+            .wrapContentHeight(),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -2410,80 +2411,107 @@ fun RatingPopup(
             Text(
                 text = "Rating",
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 modifier = Modifier
             )
         },
         text = {
             Column {
+                val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+                val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                val decimalSeparator = symbols.decimalSeparator.toString()
+                val allowedPattern = remember(decimalSeparator) {
+                    val ds = Regex.escape(decimalSeparator)
+                    Regex("^(\\s*|(\\d)?($ds\\d?)?)$")
+                }
                 Text(
-                    text = "Select a rating:",
+                    text = "Set a rating (maximum 5). To make an item unrated, make the field " +
+                            "blank. Supports fractional ratings (up to 1 decimal places).",
+                    fontSize = 15.sp,
                     modifier = Modifier
-                        .padding(bottom = 8.dp)
+                        .padding(bottom = 16.dp)
                 )
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    userScrollEnabled = true,
-                    contentPadding = PaddingValues(bottom = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .align(Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(ratings) {
-                        val isSelected = it == selectedRating
-                        val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .07f).compositeOver(LocalCustomColors.current.darkNeutral)
+                    Spacer(Modifier.width(6.dp))
+                    TextField(
+                        value = currentRatingString,
+                        onValueChange = {
+                            if (it.matches(allowedPattern)) {
+                                currentRatingString = it
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    shape = RoundedCornerShape(4.dp)
-                                )
-                                .background(
-                                    if (isSelected) selectedColor else
-                                        LocalCustomColors.current.darkNeutral,
-                                    RoundedCornerShape(4.dp)
-                                )
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = null
-                                ) { selectedRating = if (isSelected) null else it }
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .height(IntrinsicSize.Min)
-                            ) {
-                                Text(
-                                    text = it.toString(),
-                                    fontSize = 15.sp,
-                                    textAlign = TextAlign.Start,
-                                    modifier = Modifier
-                                        .width(30.dp),
-                                )
-                                RatingRow(
-                                    rating = it,
-                                    showEmpty = true,
-                                )
+                                try {
+                                    if (it.isNotBlank()) {
+                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+                                            "0$it"
+                                        } else it
+                                        val number = numberFormat.parse(preNumber)
+                                        parsedDouble = number?.toDouble() ?: 0.0
+                                        if (parsedDouble!! > 5.0) {
+                                            parsedDouble = 5.0
+                                        }
+                                    } else {
+                                        parsedDouble = null
+                                    }
+
+                                } catch (e: ParseException) {
+                                    Log.e("Rating", "Input: $it", e)
+                                }
                             }
-                        }
-                    }
+                        },
+                        modifier = Modifier
+                            .width(80.dp)
+                            .padding(end = 8.dp),
+                        enabled = true,
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+                    val alpha = if (currentRatingString.isNotBlank()) .66f else 0.38f
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = "Clear",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null,
+                                enabled = currentRatingString.isNotBlank()
+                            ) {
+                                currentRatingString = ""
+                                parsedDouble = null
+                            }
+                            .padding(4.dp)
+                            .size(20.dp)
+                            .alpha(alpha)
+                    )
                 }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onRatingSelected(selectedRating) },
+                onClick = { onRatingSelected(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier
                     .heightIn(32.dp, 32.dp)
             ) {
-                Text(text = "Save")
+                Text(text = "Done")
             }
         },
         dismissButton = {

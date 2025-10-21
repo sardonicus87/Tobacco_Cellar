@@ -187,10 +187,10 @@ class CsvImportViewModel(
             val scaling = 5.0 / maxValue
             val originalNumber = value.toDoubleOrNull()
 
-            if (originalNumber == null || originalNumber == 0.0) return null
+            if (originalNumber == null) return null
 
             val scaledNumber = originalNumber.times(scaling)
-            val roundedNumber = round(scaledNumber * 2).div(2.0)
+            val roundedNumber = round(scaledNumber * 10) / 10
 
             roundedNumber.takeIf { it <= 5.0 } ?: 5.0
 
