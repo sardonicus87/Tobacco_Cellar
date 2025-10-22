@@ -65,6 +65,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -121,7 +122,6 @@ import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -424,7 +424,6 @@ fun HomeScreen(
             }
         )
     }
-
 
     Scaffold(
         modifier = modifier
@@ -957,8 +956,6 @@ private fun HomeBody(
     var displayedMessage by remember { mutableStateOf(emptyMessage) }
     var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
 
-    val (isVisible, scrollDirection) = rememberJumpToState(columnState)
-
     var showLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLoading, resetLoading, emptyDb, emptyMessage, sortedItems) {
@@ -1070,28 +1067,20 @@ private fun HomeBody(
 
 
         // jump to button
-        AnimatedVisibility(
-            visible = isVisible && (sortedItems.size > 75),
-            enter = fadeIn(animationSpec = tween(150)),
-            exit = fadeOut(animationSpec = tween(150)),
+        JumpToButton(
+            columnState = columnState,
+            itemCount = sortedItems.size,
+            coroutineScope = coroutineScope,
+            onScrollToTop = {
+                coroutineScope.launch { columnState.scrollToItem(0) }
+            },
+            onScrollToBottom = {
+                coroutineScope.launch { columnState.scrollToItem(sortedItems.lastIndex) }
+            },
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(16.dp)
-        ) {
-            JumpToButton(
-                jumpTo = {
-                    coroutineScope.launch {
-                        if (scrollDirection == ScrollDirection.DOWN) {
-                            columnState.scrollToItem(sortedItems.lastIndex)
-                        } else {
-                            columnState.scrollToItem(0)
-                        }
-                    }
-                },
-                scrollDirection = scrollDirection,
-                modifier = Modifier
-            )
-        }
+        )
 
         val currentItemsList by rememberUpdatedState(sortedItems)
         val currentPosition by filterViewModel.currentPosition.collectAsState()
@@ -1151,31 +1140,52 @@ private fun HomeBody(
     }
 }
 
+
+/** JumpTo Button **/
+@Stable
 @Composable
-fun JumpToButton(
-    jumpTo: () -> Unit,
-    scrollDirection: ScrollDirection,
+private fun JumpToButton(
+    columnState: LazyListState,
+    itemCount: Int,
+    coroutineScope: CoroutineScope,
+    onScrollToTop: () -> Unit,
+    onScrollToBottom: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FloatingActionButton(
-        onClick = jumpTo,
-        shape = CircleShape,
-        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(0.dp),
-        containerColor = Color.Black.copy(alpha = 0.4f),
-        contentColor = Color.White.copy(alpha = 0.4f),
+    val (isVisibleState, scrollDirectionState) = rememberJumpToState(columnState)
+
+    val isVisible by isVisibleState
+    val scrollDirection by remember { scrollDirectionState }
+    val icon = if (scrollDirection == ScrollDirection.DOWN) R.drawable.double_down else R.drawable.double_up
+    val direction = if (scrollDirection == ScrollDirection.DOWN) "bottom" else "top"
+
+
+    AnimatedVisibility(
+        visible = isVisible && (itemCount > 75),
+        enter = fadeIn(animationSpec = tween(150)),
+        exit = fadeOut(animationSpec = tween(150)),
         modifier = modifier
     ) {
-        if (scrollDirection == ScrollDirection.DOWN) {
+        FloatingActionButton(
+            onClick = {
+                coroutineScope.launch {
+                    if (scrollDirection == ScrollDirection.DOWN) {
+                        onScrollToBottom()
+                    } else {
+                        onScrollToTop()
+                    }
+                }
+            },
+            shape = CircleShape,
+            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(0.dp),
+            containerColor = LocalCustomColors.current.whiteBlack.copy(alpha = 0.4f),
+            contentColor = LocalCustomColors.current.whiteBlackInverted.copy(alpha = 0.4f),
+            modifier = modifier
+                .border(Dp.Hairline, LocalCustomColors.current.whiteBlackInverted.copy(alpha = 0.3f), CircleShape)
+        ) {
             Icon(
-                painter = painterResource(id = R.drawable.double_down),
-                contentDescription = "Scroll to bottom",
-                modifier = Modifier
-                    .size(36.dp),
-            )
-        } else {
-            Icon(
-                painter = painterResource(id = R.drawable.double_up),
-                contentDescription = "Scroll to top",
+                painter = painterResource(id = icon),
+                contentDescription = "Scroll to $direction",
                 modifier = Modifier
                     .size(36.dp),
             )
@@ -1186,52 +1196,43 @@ fun JumpToButton(
 @Composable
 fun rememberJumpToState(
     lazyListState: LazyListState
-): Pair<Boolean, ScrollDirection> {
-    var previousIndex by remember { mutableIntStateOf(0) }
-    var scrollJob by remember { mutableStateOf<Job?>(null) }
-    var scrolling by remember { mutableStateOf(false) }
-    var scrollDirection by remember { mutableStateOf(ScrollDirection.UP) }
-    val firstItemIndex by remember { derivedStateOf { lazyListState.firstVisibleItemIndex } }
-
-    val atTop by remember { derivedStateOf { !lazyListState.canScrollBackward } }
-    val atBottom by remember { derivedStateOf { !lazyListState.canScrollForward } }
-
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(firstItemIndex, lazyListState.isScrollInProgress) {
-        scrollJob?.cancel()
-
-        scrollJob = coroutineScope.launch {
-            val currentIndex = firstItemIndex
-            if (currentIndex > previousIndex) {
-                scrollDirection = ScrollDirection.DOWN
-            } else if (currentIndex < previousIndex) {
-                scrollDirection = ScrollDirection.UP
-            }
-            previousIndex = currentIndex
-
-            val overScroll = (atTop && scrollDirection == ScrollDirection.UP) ||
-                    (atBottom && scrollDirection == ScrollDirection.DOWN)
-
-            if (lazyListState.isScrollInProgress && !overScroll) {
-                if (!scrolling) {
-                    delay(25)
-                    scrolling = true
+): Pair<androidx.compose.runtime.State<Boolean>, androidx.compose.runtime.State<ScrollDirection>> {
+    val scrollDirection = produceState(initialValue = ScrollDirection.UP, key1 = lazyListState) {
+        var previousIndex = 0
+        snapshotFlow { lazyListState.firstVisibleItemIndex }
+            .collect { currentIndex ->
+                if (currentIndex > previousIndex) {
+                    value = ScrollDirection.DOWN
+                } else if (currentIndex < previousIndex) {
+                    value = ScrollDirection.UP
                 }
-            } else {
-                if (scrolling) {
-                    if (atTop || atBottom) {
-                        delay(50)
-                        scrolling = false
-                    } else {
-                        delay(1500)
-                        scrolling = false
+                previousIndex = currentIndex
+            }
+    }
+
+    val isVisible = produceState(initialValue = false, key1 = lazyListState, key2 = scrollDirection.value) {
+        snapshotFlow { lazyListState.isScrollInProgress }
+            .collect { isScrolling ->
+                val atTop = !lazyListState.canScrollBackward
+                val atBottom = !lazyListState.canScrollForward
+                val overScroll = (atTop && scrollDirection.value == ScrollDirection.UP) ||
+                        (atBottom && scrollDirection.value == ScrollDirection.DOWN)
+                val delayMillis = if (atTop || atBottom) 50L else 1500L
+
+                if (isScrolling && !overScroll) {
+                    if (!value) {
+                        delay(25)
+                        value = true
+                    }
+                } else {
+                    if (value) {
+                        delay(delayMillis)
+                        value = false
                     }
                 }
             }
-        }
     }
-    return Pair(scrolling, scrollDirection)
+    return Pair(isVisible, scrollDirection)
 }
 
 
