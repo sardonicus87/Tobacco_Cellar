@@ -94,6 +94,7 @@ val sheetBoxLight = Color(0xFFE6F0E6)
 val sheetBoxBorderLight = Color(0xFFB5BDB5)
 val indicatorBorderCorrectionLight = Color(0xFF59AD86)
 val whiteBlackLight = Color(0xFFFFFFFF)
+val whiteBlackInvertedLight = Color(0xFF000000)
 val starRatingLight = Color(0xFFE6C017) // original 0xFFFDD835
 
 val listMenuScrimDark = Color(0xBF000000)
@@ -113,6 +114,7 @@ val sheetBoxDark = Color(0xFF19241E) // original 0xFF17201B
 val sheetBoxBorderDark = Color(0xFF364B40)
 val indicatorBorderCorrectionDark = Color(0xFF59A081)
 val whiteBlackDark = Color(0xFF000000)
+val whiteBlackInvertedDark = Color(0xFFFFFFFF)
 val starRatingDark = Color(0xFFFDD835)
 
 // pie charts light
