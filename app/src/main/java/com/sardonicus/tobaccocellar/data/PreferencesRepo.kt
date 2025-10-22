@@ -10,12 +10,14 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.sardonicus.tobaccocellar.ui.home.ListSorting
+import com.sardonicus.tobaccocellar.ui.home.ListSortOption
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextSortOption
+import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
+import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,9 +38,13 @@ class PreferencesRepo(
         val THEME_SETTING = stringPreferencesKey("theme_setting")
         val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
+        val MAX_RATING = intPreferencesKey("max_rating")
+        val RATING_ROUNDING = booleanPreferencesKey("rating_rounding")
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
+        val SHOW_RATING = booleanPreferencesKey("show_rating")
+        val TYPE_GENRE_OPTION = stringPreferencesKey("type_genre_option")
         val LIST_SORTING = stringPreferencesKey("list_sorting")
         val LIST_ASCENDING = booleanPreferencesKey("list_ascending")
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
@@ -113,6 +119,44 @@ class PreferencesRepo(
         }
     }
 
+    // Other display options (ratings, genre/subgenre) //
+    val showRating: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading rating preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[SHOW_RATING] ?: false
+        }
+
+    suspend fun saveShowRatingOption(showRating: Boolean) {
+        dataStore.edit {
+            it[SHOW_RATING] = showRating
+        }
+    }
+
+    val typeGenreOption: Flow<TypeGenreOption> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading genre preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            val savedValue = it[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
+            TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
+        }
+
+    suspend fun saveTypeGenreOption(option: String) {
+        dataStore.edit {
+            it[TYPE_GENRE_OPTION] = option
+        }
+    }
+
     // setting table sort options //
     val sortColumnIndex: Flow<Int> = dataStore.data
         .catch {
@@ -155,7 +199,7 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[LIST_SORTING] ?: ListSorting.DEFAULT.value
+            it[LIST_SORTING] ?: ListSortOption.DEFAULT.value
         }
 
     val listAscending: Flow<Boolean> = dataStore.data
@@ -189,7 +233,8 @@ class PreferencesRepo(
             } else {
                 throw it
             }
-        }.stateIn(
+        }
+        .stateIn(
             scope = applicationScope,
             started = SharingStarted.Eagerly,
             initialValue = ThemeSetting.SYSTEM.value
@@ -202,7 +247,7 @@ class PreferencesRepo(
     }
 
 
-    /** Setting Tin Converter rates **/
+    /** Setting Data preferences **/
     val tinOzConversionRate: Flow<Double> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -236,6 +281,28 @@ class PreferencesRepo(
     suspend fun setTinGramsConversionRate(rate: Double) {
         dataStore.edit { preferences ->
             preferences[TIN_GRAMS_CONVERSION_RATE] = rate
+        }
+    }
+
+    val exportRating: Flow<ExportRating> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading rating preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            val maxRating = it[MAX_RATING] ?: 5
+            val rounding = it[RATING_ROUNDING] ?: false
+            ExportRating(maxRating, rounding)
+        }
+
+    suspend fun saveExportRating(rating: Int, rounding: Boolean) {
+        dataStore.edit { it ->
+            it[MAX_RATING] = rating
+            it[RATING_ROUNDING] = rounding
+            ExportRating(rating, rounding)
         }
     }
 
