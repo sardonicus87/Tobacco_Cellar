@@ -2468,7 +2468,6 @@ fun RatingPopup(
                             .padding(end = 8.dp),
                         enabled = true,
                         singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
