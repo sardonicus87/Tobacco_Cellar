@@ -2394,7 +2394,7 @@ fun RatingPopup(
     currentRating: Double? = null,
 ) {
     var currentRatingString by rememberSaveable { mutableStateOf(formatDecimal(currentRating)) }
-    var parsedDouble: Double? = null
+    var parsedDouble by rememberSaveable { mutableStateOf<Double?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2422,7 +2422,7 @@ fun RatingPopup(
                 val decimalSeparator = symbols.decimalSeparator.toString()
                 val allowedPattern = remember(decimalSeparator) {
                     val ds = Regex.escape(decimalSeparator)
-                    Regex("^(\\s*|(\\d)?($ds\\d?)?)$")
+                    Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
                 }
                 Text(
                     text = "Set a rating (maximum 5). To make an item unrated, make the field " +
@@ -2482,7 +2482,7 @@ fun RatingPopup(
                         ),
                         shape = MaterialTheme.shapes.extraSmall
                     )
-                    val alpha = if (currentRatingString.isNotBlank()) .66f else 0.38f
+                    val alpha = if (currentRatingString.isNotBlank()) .75f else 0.38f
                     Icon(
                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                         contentDescription = "Clear",
