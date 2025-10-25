@@ -32,109 +32,113 @@ class StatsViewModel(
             filterViewModel.everythingFlow,
             preferencesRepo.quantityOption
         ) { it, quantityOption ->
-                RawStats(
-                    itemsCount = it.size,
-                    brandsCount = it.groupingBy { it.items.brand }.eachCount().size,
-                    favoriteCount = it.count { it.items.favorite },
-                    dislikedCount = it.count { it.items.disliked },
-                    totalByBrand = it.groupingBy { it.items.brand }.eachCount(),
-                    totalQuantity = it.sumOf { it.items.quantity },
-                    estimatedWeight = calculateTotal(it, it.flatMap { it.tins.filter { !it.finished } }, quantityOption),
-                    totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
-                        else it.flatMap { it.tins }.count { it.openDate != null && !it.finished },
-                    totalZeroQuantity = it.count { it.items.quantity == 0 },
+            val ratingsExist = it.any { it.items.rating != null }
+            val averageRating = if (ratingsExist) { (it.sumOf { it.items.rating ?: 0.0 }) / (it.count { it.items.rating != null }) } else null
+
+            RawStats(
+                itemsCount = it.size,
+                brandsCount = it.groupingBy { it.items.brand }.eachCount().size,
+                averageRating = if (averageRating != null) formatDecimal(averageRating) else "",
+                favoriteCount = it.count { it.items.favorite },
+                dislikedCount = it.count { it.items.disliked },
+                totalByBrand = it.groupingBy { it.items.brand }.eachCount(),
+                totalQuantity = it.sumOf { it.items.quantity },
+                estimatedWeight = calculateTotal(it, it.flatMap { it.tins.filter { !it.finished } }, quantityOption),
+                totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
+                    else it.flatMap { it.tins }.count { it.openDate != null && !it.finished },
+                totalZeroQuantity = it.count { it.items.quantity == 0 },
 
 
-                    totalByType = it.groupingBy { it.items.type.ifBlank { "Unassigned" } }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .associate { it.key to it.value }
-                        .let{
-                            val mutableMap = it.toMutableMap()
-                            val unassignedEntry = mutableMap.remove("Unassigned")
-                            if (unassignedEntry != null) {
-                                mutableMap["Unassigned"] = unassignedEntry
-                            }
-                            mutableMap.toMap()
-                        },
-                    totalBySubgenre = it.groupingBy {
-                        it.items.subGenre.ifBlank { "Unassigned" } }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .associate { it.key to it.value }
-                        .let{
-                            val mutableMap = it.toMutableMap()
-                            val unassignedEntry = mutableMap.remove("Unassigned")
-                            if (unassignedEntry != null) {
-                                mutableMap["Unassigned"] = unassignedEntry
-                            }
-                            mutableMap.toMap()
-                        },
-                    totalByCut = it.groupingBy {
-                        it.items.cut.ifBlank { "Unassigned" } }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .associate { it.key to it.value }
-                        .let {
-                            val mutableMap = it.toMutableMap()
-                            val unassignedEntry = mutableMap.remove("Unassigned")
-                            if (unassignedEntry != null) {
-                                mutableMap["Unassigned"] = unassignedEntry
-                            }
-                            mutableMap.toMap()
-                        },
-                    totalByComponent = it.flatMap { it.components
-                        .ifEmpty { listOf(Components(componentName = "None Assigned")) } }
-                        .groupingBy { it.componentName }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .associate { it.key to it.value }
-                        .let {
-                            val mutableMap = it.toMutableMap()
-                            val noComps = mutableMap.remove("None Assigned")
-                            if (noComps != null) {
-                                mutableMap["None Assigned"] = noComps
-                            }
-                            mutableMap.toMap()
-                        },
-                    totalByFlavoring = it.flatMap { it.flavoring
-                        .ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
-                        .groupingBy { it.flavoringName }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .associate { it.key to it.value }
-                        .let {
-                            val mutableMap = it.toMutableMap()
-                            val noFlavor = mutableMap.remove("None Assigned")
-                            if (noFlavor != null) {
-                                mutableMap["None Assigned"] = noFlavor
-                            }
-                            mutableMap.toMap()
-                        },
-                    totalByContainer = it.flatMap { it.tins }
-                        .filter { !it.finished }
-                        .groupingBy { it.container.ifBlank { "Unassigned" } }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .associate { it.key to it.value }
-                        .let {
-                            val mutableMap = it.toMutableMap()
-                            val unassignedEntry = mutableMap.remove("Unassigned")
-                            if (unassignedEntry != null) {
-                                mutableMap["Unassigned"] = unassignedEntry
-                            }
-                            mutableMap.toMap()
-                        },
+                totalByType = it.groupingBy { it.items.type.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value }
+                    .let{
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
+                totalBySubgenre = it.groupingBy {
+                    it.items.subGenre.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value }
+                    .let{
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByCut = it.groupingBy {
+                    it.items.cut.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByComponent = it.flatMap { it.components
+                    .ifEmpty { listOf(Components(componentName = "None Assigned")) } }
+                    .groupingBy { it.componentName }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val noComps = mutableMap.remove("None Assigned")
+                        if (noComps != null) {
+                            mutableMap["None Assigned"] = noComps
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByFlavoring = it.flatMap { it.flavoring
+                    .ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
+                    .groupingBy { it.flavoringName }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val noFlavor = mutableMap.remove("None Assigned")
+                        if (noFlavor != null) {
+                            mutableMap["None Assigned"] = noFlavor
+                        }
+                        mutableMap.toMap()
+                    },
+                totalByContainer = it.flatMap { it.tins }
+                    .filter { !it.finished }
+                    .groupingBy { it.container.ifBlank { "Unassigned" } }
+                    .eachCount()
+                    .entries
+                    .sortedByDescending { it.value }
+                    .associate { it.key to it.value }
+                    .let {
+                        val mutableMap = it.toMutableMap()
+                        val unassignedEntry = mutableMap.remove("Unassigned")
+                        if (unassignedEntry != null) {
+                            mutableMap["Unassigned"] = unassignedEntry
+                        }
+                        mutableMap.toMap()
+                    },
 
-                    rawLoading = false
-                )
-            }
+                rawLoading = false
+            )
+        }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(),
@@ -153,11 +157,19 @@ class StatsViewModel(
         ) { allItems, filteredItems, filteredTins, quantityOption ->
 
             val tinIds = filteredTins.map { it.tinId }
-            val relevantTins = filteredItems.flatMap { it.tins }.filter { it.tinId in tinIds }
+            val relevantTins = filteredItems.flatMap { it.tins }.filter { it.tinId in tinIds && !it.finished }
+
+            val ratingsExist = allItems.any { it.items.rating != null }
+            val filteredRatingsExist = filteredItems.any { it.items.rating != null }
+            val averageRating =
+                if (ratingsExist && filteredRatingsExist) { (filteredItems.sumOf { it.items.rating ?: 0.0 }) / (filteredItems.count { it.items.rating != null }) }
+                else if (!filteredRatingsExist) 0.0
+                else null
 
             FilteredStats(
                 itemsCount = filteredItems.size,
                 brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
+                averageRating = if (averageRating != null) formatDecimal(averageRating) else "",
                 favoriteCount = filteredItems.count { it.items.favorite },
                 dislikedCount = filteredItems.count { it.items.disliked },
                 unassignedCount = filteredItems.count { it.items.type.isBlank() },
@@ -225,11 +237,13 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        val mutableMap = it.associate { it.key to (filteredItems.flatMap {
+                    .associate {
+                        it.key to (filteredItems.flatMap {
                             it.components.ifEmpty { listOf(Components(componentName = "None Assigned")) } }
-                            .groupingBy { it.componentName }.eachCount()[it.key] ?: 0) }
-                            .toMutableMap()
+                            .groupingBy { it.componentName }.eachCount()[it.key] ?: 0)
+                    }
+                    .let {
+                        val mutableMap = it.toMutableMap()
                         val noComps = mutableMap.remove("None Assigned")
                         if (noComps != null) {
                             mutableMap["None Assigned"] = noComps
@@ -242,11 +256,13 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        val mutableMap = it.associate { it.key to (filteredItems.flatMap {
+                    .associate {
+                        it.key to (filteredItems.flatMap {
                             it.flavoring.ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
-                            .groupingBy { it.flavoringName }.eachCount()[it.key] ?: 0) }
-                            .toMutableMap()
+                            .groupingBy { it.flavoringName }.eachCount()[it.key] ?: 0)
+                    }
+                    .let {
+                        val mutableMap = it.toMutableMap()
                         val noFlavor = mutableMap.remove("None Assigned")
                         if (noFlavor != null) {
                             mutableMap["None Assigned"] = noFlavor
@@ -259,10 +275,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate { entry ->
-                        entry.key to (relevantTins.groupingBy {
+                    .associate {
+                        it.key to (relevantTins.groupingBy {
                             it.container.ifBlank { "Unassigned" }
-                        }.eachCount()[entry.key] ?: 0)
+                        }.eachCount()[it.key] ?: 0)
                     }
                     .let {
                         val mutableMap = it.toMutableMap()
@@ -482,6 +498,7 @@ data class RawStats(
 
     val itemsCount: Int = 0,
     val brandsCount: Int = 0,
+    val averageRating: String = "",
     val favoriteCount: Int = 0,
     val dislikedCount: Int = 0,
     val totalByBrand: Map<String, Int> = emptyMap(),
@@ -503,6 +520,7 @@ data class FilteredStats(
 
     val itemsCount: Int = 0,
     val brandsCount: Int = 0,
+    val averageRating: String = "",
     val favoriteCount: Int = 0,
     val dislikedCount: Int = 0,
     val unassignedCount: Int = 0,

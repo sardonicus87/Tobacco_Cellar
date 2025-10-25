@@ -356,6 +356,7 @@ fun QuickStatsSection(
             ) {
                 Text(
                     text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
+                            if (rawStats.averageRating.isNotBlank()) { "${rawStats.averageRating} average rating\n" } else { "" } +
                             "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
                             "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
                             "${rawStats.estimatedWeight} (estimated)\n" +
@@ -379,6 +380,7 @@ fun QuickStatsSection(
             ) {
                 Text(
                     text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
+                            if (rawStats.averageRating.isNotBlank()) { "${filteredStats.averageRating} average rating\n" } else { "" } +
                             "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
                             "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
                             "${filteredStats.estimatedWeight} (estimated)\n" +
@@ -746,12 +748,13 @@ private fun StatSubSection(
                                 horizontalAlignment = Alignment.Start,
                                 verticalArrangement = Arrangement.Center,
                             ) {
+                                val bottom = with(LocalDensity.current) { 13.5.sp.toDp() }
                                 Text(
                                     text = "nothing found",
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .alpha(.6f)
-                                        .padding(start = 12.dp),
+                                        .padding(start = 12.dp, bottom = bottom),
                                     textAlign = TextAlign.Start,
                                     fontSize = 15.sp,
                                 )
