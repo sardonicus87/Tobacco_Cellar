@@ -92,6 +92,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 
 /** Fade effect boxes. If you want a set height and scrolling effect, add scroll modifier to
  * the content itself. Use spacers in the content to inset/pad from the edges (glow extends
@@ -880,10 +881,63 @@ fun RatingRow(
             rating = rating,
             modifier = modifier,
             starSize = dynamicSize,
-            starColor = starColor,
+            maxColor = starColor,
+            minColor = starColor,
             emptyColor = emptyColor,
             showEmpty = showEmpty,
-            emptyAlpha = emptyAlpha
+            maxAlpha = 1f,
+            minAlpha = 1f,
+            emptyAlpha = emptyAlpha,
+            range = Pair(null, null),
+            showRating = true,
+            showRange = false
+        )
+    }
+}
+
+// Range //
+@Composable
+fun RatingRow(
+    range: Pair<Double?, Double?>,
+    modifier: Modifier = Modifier,
+    starSize: Dp = Dp.Unspecified,
+    minColor: Color = LocalCustomColors.current.starRating,
+    maxColor: Color = LocalCustomColors.current.starRating,
+    emptyColor: Color = LocalContentColor.current,
+    minAlpha: Float = 1f,
+    maxAlpha: Float = 1f,
+    emptyAlpha: Float = 0.38f,
+) {
+    var dynamicSize by remember { mutableStateOf(starSize) }
+    val density = LocalDensity.current
+
+    if (dynamicSize == Dp.Unspecified) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .onSizeChanged {
+                    val height = with(density) { it.height.toDp() }
+                    val width = with(density) { it.width.toDp() }
+                    if (height > 0.dp) {
+                        dynamicSize = if ((height * 5) <= width) { height } else { width / 5 }
+                    }
+                }
+        )
+    } else {
+        RatingRowImpl(
+            rating = 5.0,
+            modifier = modifier,
+            starSize = dynamicSize,
+            maxColor = maxColor,
+            minColor = minColor,
+            emptyColor = emptyColor,
+            showEmpty = true,
+            maxAlpha = maxAlpha,
+            minAlpha = minAlpha,
+            emptyAlpha = emptyAlpha,
+            range = range,
+            showRating = false,
+            showRange = true
         )
     }
 }
@@ -893,12 +947,60 @@ private fun RatingRowImpl(
     rating: Double?,
     modifier: Modifier = Modifier,
     starSize: Dp,
-    starColor: Color,
+    maxColor: Color,
+    minColor: Color,
     emptyColor: Color,
     showEmpty: Boolean,
-    emptyAlpha: Float
+    maxAlpha: Float,
+    minAlpha: Float,
+    emptyAlpha: Float,
+    range: Pair<Double?, Double?>,
+    showRating: Boolean,
+    showRange: Boolean,
 ) {
-    val contentScale = ContentScale.FillHeight
+    @Composable
+    fun star(color: Color, alignment: Alignment = Alignment.CenterStart, alpha: Float = 1f) {
+        Image(
+            painter = painterResource(id = R.drawable.star_filled),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(color),
+            modifier = Modifier
+                .height(starSize),
+            alignment = alignment,
+            contentScale = ContentScale.FillHeight,
+            alpha = alpha,
+        )
+    }
+
+    @Composable
+    fun fractionalStar(
+        fractional: Double,
+        startColor: Color = maxColor,
+        endColor: Color = emptyColor,
+        startAlpha: Float = 1f,
+        endAlpha: Float = 1f
+    ) {
+        val startWidth = starSize * fractional.toFloat()
+        val endWidth = starSize - startWidth
+        Box(
+            modifier = Modifier
+                .height(starSize)
+                .width(startWidth)
+                .clip(RectangleShape),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            star(startColor, alpha = startAlpha)
+        }
+        Box(
+            modifier = Modifier
+                .height(starSize)
+                .width(endWidth)
+                .clip(RectangleShape),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            star(endColor, Alignment.CenterEnd, endAlpha)
+        }
+    }
 
     Row(
         modifier = modifier
@@ -906,93 +1008,83 @@ private fun RatingRowImpl(
         horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (rating != null) {
-            val whole = rating.toInt()
-            val remainder = rating - whole
-            val empty = (5.0 - rating).toInt()
+        if (showRange) {
+            val nullRange = range.first == null && range.second == null
 
-            repeat(whole) {
-                Image(
-                    painter = painterResource(id = R.drawable.star_filled),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(starColor),
-                    modifier = Modifier
-                        .height(starSize),
-                    alignment = Alignment.CenterStart,
-                    contentScale = contentScale,
-                    alpha = 1f,
-                )
-            }
-            if (remainder > 0.0) {
-                val startWidth = starSize * remainder.toFloat()
-                val endWidth = starSize - startWidth
+            if (nullRange) {
+                repeat(5) {
+                    star(emptyColor, alpha = emptyAlpha)
+                }
+            } else {
+                val min = range.first ?: 0.0
+                val max = range.second ?: range.first ?: 5.0
+                val minWhole = (0.0 + min).toInt()
+                val fractionalMin = min - minWhole
+                val wholeMin = ceil(minWhole + fractionalMin).toInt()
+                val maxWhole = (max - min).toInt()
+                val fractionalMax = (max - wholeMin - maxWhole)
+                val emptyEnd = (5.0 - max).toInt()
 
-                Box(
-                    modifier = Modifier
-                        .height(starSize)
-                        .width(startWidth)
-                        .clip(RectangleShape),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.star_filled),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(starColor),
-                        alignment = Alignment.CenterStart,
-                        contentScale = contentScale,
-                        modifier = Modifier
-                            .height(starSize),
-                        alpha = 1f,
+                val fractionalMinAlphaRemap = if (range.second == null || range.second == range.first) emptyAlpha else maxAlpha
+                val fractionalMinColorRemap = if (range.second == null || range.second == range.first) emptyColor else maxColor
+
+                repeat(minWhole) {
+                    star(minColor, alpha = minAlpha)
+                }
+                if (fractionalMin > 0.0) {
+                    fractionalStar(
+                        fractionalMin,
+                        minColor,
+                        fractionalMinColorRemap,
+                        minAlpha,
+                        fractionalMinAlphaRemap
                     )
                 }
-                if (showEmpty) {
-                    Box(
-                        modifier = Modifier
-                            .height(starSize)
-                            .width(endWidth)
-                            .clip(RectangleShape),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.star_filled),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(emptyColor),
-                            alignment = Alignment.CenterEnd,
-                            contentScale = contentScale,
-                            modifier = Modifier
-                                .height(starSize),
-                            alpha = emptyAlpha,
-                        )
+                repeat(maxWhole) {
+                    star(maxColor, alpha = maxAlpha)
+                }
+                if (fractionalMax > 0.0) {
+                    fractionalStar(
+                        fractionalMax,
+                        maxColor,
+                        emptyColor,
+                        maxAlpha,
+                        emptyAlpha
+                    )
+                }
+                repeat(emptyEnd) {
+                    star(emptyColor, alpha = emptyAlpha)
+                }
+            }
+        }
+        if (showRating) {
+            if (rating != null) {
+                val whole = rating.toInt()
+                val remainder = rating - whole
+                val empty = (5.0 - rating).toInt()
+
+                repeat(whole) {
+                    star(maxColor)
+                }
+                if (remainder > 0.0) {
+                    fractionalStar(
+                        remainder,
+                        maxColor,
+                        emptyColor,
+                        1f,
+                        emptyAlpha
+                    )
+                }
+                if (showEmpty && empty > 0) {
+                    repeat(empty) {
+                        star(emptyColor, alpha = emptyAlpha)
                     }
                 }
-            }
-            if (showEmpty && empty > 0) {
-                repeat(empty) {
-                    Image(
-                        painter = painterResource(id = R.drawable.star_filled),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(emptyColor),
-                        modifier = Modifier
-                            .height(starSize),
-                        alignment = Alignment.CenterStart,
-                        contentScale = contentScale,
-                        alpha = emptyAlpha,
-                    )
-                }
-            }
-        } else {
-            if (showEmpty) {
-                repeat(5) {
-                    Image(
-                        painter = painterResource(id = R.drawable.star_filled),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(emptyColor),
-                        modifier = Modifier
-                            .height(starSize),
-                        alignment = Alignment.CenterStart,
-                        contentScale = contentScale,
-                        alpha = emptyAlpha,
-                    )
+            } else {
+                if (showEmpty) {
+                    repeat(5) {
+                        star(emptyColor, alpha = emptyAlpha)
+                    }
                 }
             }
         }
