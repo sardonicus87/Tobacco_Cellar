@@ -1136,12 +1136,11 @@ fun DetailsEntry(
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val emptyColor = if (itemDetails.rating == null) LocalContentColor.current else LocalCustomColors.current.starRating
                 RatingRow(
                     rating = itemDetails.rating,
                     showEmpty = true,
                     starSize = 24.dp,
-                    emptyColor = emptyColor,
+                    emptyColor = LocalContentColor.current,
                 )
                 if (itemDetails.rating != null) {
                     Text(
