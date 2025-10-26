@@ -60,6 +60,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -122,6 +123,7 @@ import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -1071,12 +1073,8 @@ private fun HomeBody(
             columnState = columnState,
             itemCount = sortedItems.size,
             coroutineScope = coroutineScope,
-            onScrollToTop = {
-                coroutineScope.launch { columnState.scrollToItem(0) }
-            },
-            onScrollToBottom = {
-                coroutineScope.launch { columnState.scrollToItem(sortedItems.lastIndex) }
-            },
+            onScrollToTop = { coroutineScope.launch { columnState.scrollToItem(0) } },
+            onScrollToBottom = { coroutineScope.launch { columnState.scrollToItem(sortedItems.lastIndex) } },
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(16.dp)
@@ -1154,11 +1152,11 @@ private fun JumpToButton(
 ) {
     val (isVisibleState, scrollDirectionState) = rememberJumpToState(columnState)
 
-    val isVisible by isVisibleState
+    val isVisible by remember { isVisibleState }
     val scrollDirection by remember { scrollDirectionState }
+
     val icon = if (scrollDirection == ScrollDirection.DOWN) R.drawable.double_down else R.drawable.double_up
     val direction = if (scrollDirection == ScrollDirection.DOWN) "bottom" else "top"
-
 
     AnimatedVisibility(
         visible = isVisible && (itemCount > 75),
@@ -1177,9 +1175,9 @@ private fun JumpToButton(
                 }
             },
             shape = CircleShape,
-            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(0.dp),
-            containerColor = LocalCustomColors.current.whiteBlack.copy(alpha = 0.4f),
-            contentColor = LocalCustomColors.current.whiteBlackInverted.copy(alpha = 0.4f),
+            elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
+            containerColor = LocalCustomColors.current.whiteBlack.copy(alpha = 0.45f),
+            contentColor = LocalCustomColors.current.whiteBlackInverted.copy(alpha = 0.45f),
             modifier = modifier
                 .border(Dp.Hairline, LocalCustomColors.current.whiteBlackInverted.copy(alpha = 0.3f), CircleShape)
         ) {
@@ -1195,8 +1193,8 @@ private fun JumpToButton(
 
 @Composable
 fun rememberJumpToState(
-    lazyListState: LazyListState
-): Pair<androidx.compose.runtime.State<Boolean>, androidx.compose.runtime.State<ScrollDirection>> {
+    lazyListState: LazyListState,
+): Pair<State<Boolean>, State<ScrollDirection>> {
     val scrollDirection = produceState(initialValue = ScrollDirection.UP, key1 = lazyListState) {
         var previousIndex = 0
         snapshotFlow { lazyListState.firstVisibleItemIndex }
@@ -1211,26 +1209,31 @@ fun rememberJumpToState(
     }
 
     val isVisible = produceState(initialValue = false, key1 = lazyListState, key2 = scrollDirection.value) {
-        snapshotFlow { lazyListState.isScrollInProgress }
-            .collect { isScrolling ->
-                val atTop = !lazyListState.canScrollBackward
-                val atBottom = !lazyListState.canScrollForward
-                val overScroll = (atTop && scrollDirection.value == ScrollDirection.UP) ||
-                        (atBottom && scrollDirection.value == ScrollDirection.DOWN)
-                val delayMillis = if (atTop || atBottom) 50L else 1500L
+        var delayJob: Job? = null
 
-                if (isScrolling && !overScroll) {
-                    if (!value) {
-                        delay(25)
-                        value = true
-                    }
-                } else {
-                    if (value) {
-                        delay(delayMillis)
-                        value = false
-                    }
+        snapshotFlow { Triple(
+            lazyListState.isScrollInProgress,
+            !lazyListState.canScrollBackward,
+            !lazyListState.canScrollForward
+        ) }.collect { (isScrolling, atTop, atBottom) ->
+            delayJob?.cancel()
+
+            val overScroll = (atTop && scrollDirection.value == ScrollDirection.UP) ||
+                    (atBottom && scrollDirection.value == ScrollDirection.DOWN)
+
+            if (isScrolling && !overScroll) {
+                if (!value) {
+                    delay(25)
+                    value = true
+                }
+            } else {
+                delayJob = launch {
+                    val delayMillis = if (atTop || atBottom) 0 else 1500L
+                    delay(delayMillis)
+                    value = false
                 }
             }
+        }
     }
     return Pair(isVisible, scrollDirection)
 }
