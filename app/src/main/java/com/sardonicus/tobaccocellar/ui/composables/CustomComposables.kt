@@ -1020,9 +1020,9 @@ private fun RatingRowImpl(
                 val max = range.second ?: range.first ?: 5.0
                 val minWhole = (0.0 + min).toInt()
                 val fractionalMin = min - minWhole
-                val wholeMin = ceil(minWhole + fractionalMin).toInt()
-                val maxWhole = (max - min).toInt()
-                val fractionalMax = (max - wholeMin - maxWhole)
+                val entireMin = ceil(minWhole + fractionalMin).toInt()
+                val maxWhole = (max - entireMin).toInt()
+                val fractionalMax = if (max != min) (max - (maxWhole + entireMin)) else 0.0
                 val emptyEnd = (5.0 - max).toInt()
 
                 val fractionalMinAlphaRemap = if (range.second == null || range.second == range.first) emptyAlpha else maxAlpha
