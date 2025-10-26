@@ -44,6 +44,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -850,9 +851,9 @@ fun RatingRow(
     rating: Double?,
     modifier: Modifier = Modifier,
     starSize: Dp = Dp.Unspecified,
+    showEmpty: Boolean = false,
     starColor: Color = LocalCustomColors.current.starRating,
     emptyColor: Color = LocalCustomColors.current.starRating,
-    showEmpty: Boolean = false,
     emptyAlpha: Float = 0.38f,
 ) {
     var dynamicSize by remember { mutableStateOf(starSize) }
@@ -868,9 +869,17 @@ fun RatingRow(
                         val width = with(density) { it.width.toDp() }
                         if (height > 0.dp) {
                             dynamicSize = if (showEmpty) {
-                                if ((height * 5) <= width) { height } else { width / 5 }
+                                if ((height * 5) <= width) {
+                                    height
+                                } else {
+                                    width / 5
+                                }
                             } else {
-                                if ((height * rating.toFloat()) <= width) { height } else { width / rating.toFloat() }
+                                if ((height * rating.toFloat()) <= width) {
+                                    height
+                                } else {
+                                    width / rating.toFloat()
+                                }
                             }
                         }
                     }
@@ -885,6 +894,8 @@ fun RatingRow(
             minColor = starColor,
             emptyColor = emptyColor,
             showEmpty = showEmpty,
+            showDivider = false,
+            dividerColor = Color.Transparent,
             maxAlpha = 1f,
             minAlpha = 1f,
             emptyAlpha = emptyAlpha,
@@ -901,6 +912,8 @@ fun RatingRow(
     range: Pair<Double?, Double?>,
     modifier: Modifier = Modifier,
     starSize: Dp = Dp.Unspecified,
+    showDivider: Boolean = false,
+    dividerColor: Color = MaterialTheme.colorScheme.onBackground,
     minColor: Color = LocalCustomColors.current.starRating,
     maxColor: Color = LocalCustomColors.current.starRating,
     emptyColor: Color = LocalContentColor.current,
@@ -919,7 +932,11 @@ fun RatingRow(
                     val height = with(density) { it.height.toDp() }
                     val width = with(density) { it.width.toDp() }
                     if (height > 0.dp) {
-                        dynamicSize = if ((height * 5) <= width) { height } else { width / 5 }
+                        dynamicSize = if ((height * 5) <= width) {
+                            height
+                        } else {
+                            width / 5
+                        }
                     }
                 }
         )
@@ -932,6 +949,8 @@ fun RatingRow(
             minColor = minColor,
             emptyColor = emptyColor,
             showEmpty = true,
+            showDivider = showDivider,
+            dividerColor = dividerColor,
             maxAlpha = maxAlpha,
             minAlpha = minAlpha,
             emptyAlpha = emptyAlpha,
@@ -947,10 +966,12 @@ private fun RatingRowImpl(
     rating: Double?,
     modifier: Modifier = Modifier,
     starSize: Dp,
+    showEmpty: Boolean,
+    showDivider: Boolean,
+    dividerColor: Color,
     maxColor: Color,
     minColor: Color,
     emptyColor: Color,
-    showEmpty: Boolean,
     maxAlpha: Float,
     minAlpha: Float,
     emptyAlpha: Float,
@@ -1028,32 +1049,54 @@ private fun RatingRowImpl(
                 val fractionalMinAlphaRemap = if (range.second == null || range.second == range.first) emptyAlpha else maxAlpha
                 val fractionalMinColorRemap = if (range.second == null || range.second == range.first) emptyColor else maxColor
 
-                repeat(minWhole) {
-                    star(minColor, alpha = minAlpha)
-                }
-                if (fractionalMin > 0.0) {
-                    fractionalStar(
-                        fractionalMin,
-                        minColor,
-                        fractionalMinColorRemap,
-                        minAlpha,
-                        fractionalMinAlphaRemap
-                    )
-                }
-                repeat(maxWhole) {
-                    star(maxColor, alpha = maxAlpha)
-                }
-                if (fractionalMax > 0.0) {
-                    fractionalStar(
-                        fractionalMax,
-                        maxColor,
-                        emptyColor,
-                        maxAlpha,
-                        emptyAlpha
-                    )
-                }
-                repeat(emptyEnd) {
-                    star(emptyColor, alpha = emptyAlpha)
+                Box {
+                    Row {
+                        repeat(minWhole) {
+                            star(minColor, alpha = minAlpha)
+                        }
+                        if (fractionalMin > 0.0) {
+                            fractionalStar(
+                                fractionalMin,
+                                minColor,
+                                fractionalMinColorRemap,
+                                minAlpha,
+                                fractionalMinAlphaRemap
+                            )
+                        }
+                        repeat(maxWhole) {
+                            star(maxColor, alpha = maxAlpha)
+                        }
+                        if (fractionalMax > 0.0) {
+                            fractionalStar(
+                                fractionalMax,
+                                maxColor,
+                                emptyColor,
+                                maxAlpha,
+                                emptyAlpha
+                            )
+                        }
+                        repeat(emptyEnd) {
+                            star(emptyColor, alpha = emptyAlpha)
+                        }
+                    }
+                    if (showDivider) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            range.toList().forEach {
+                                if (it != null && (it != 0.0 && it != 5.0)) {
+                                    val padding: Dp = starSize * it.toFloat()
+
+                                    Row {
+                                        Spacer(modifier = Modifier.width(padding))
+                                        VerticalDivider(thickness = 1.5.dp, color = dividerColor)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
