@@ -733,11 +733,8 @@ class FilterViewModel (
                 "Only" -> (flavorings.isEmpty() || (flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavorings) && items.flavoring.size == flavorings.size))
                 else -> (flavorings.isEmpty() || ((flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { flavorings.contains(it) }))
             }
-            val ratingRange = (
-                ((ratingLow != null && ratingHigh != null) && (items.items.rating != null && (items.items.rating >= ratingLow && items.items.rating <= ratingHigh))) ||
-                ((ratingLow != null && ratingHigh == null) && (items.items.rating != null && (items.items.rating >= ratingLow))) ||
-                ((ratingLow == null && ratingHigh != null) && (items.items.rating != null && (items.items.rating <= ratingHigh)))
-            )
+            val ratingRangeLow = (ratingLow != null && (items.items.rating != null && (items.items.rating >= ratingLow)))
+            val ratingRangeHigh = (ratingHigh != null && (items.items.rating != null && (items.items.rating <= ratingHigh)))
 
             val baseFilters =
                 (brands.isEmpty() || brands.contains(items.items.brand)) &&
@@ -755,8 +752,9 @@ class FilterViewModel (
                         (cuts.isEmpty() || cuts.contains(items.items.cut.ifBlank { "(Unassigned)" })) &&
                         (!production || items.items.inProduction) &&
                         (!outOfProduction || !items.items.inProduction) &&
-                        (!unrated || items.items.rating == null) &&
-                        (ratingLow == null && ratingHigh == null) || (if (unrated) (items.items.rating == null || ratingRange) else ratingRange)
+                        (!unrated || (items.items.rating == null || ratingRangeLow || ratingRangeHigh)) &&
+                        (ratingLow == null || (if (unrated) (items.items.rating == null || ratingRangeLow) else ratingRangeLow)) &&
+                        (ratingHigh == null || (if (unrated) (items.items.rating == null || ratingRangeHigh) else ratingRangeHigh))
 
             var tinsFilterResult = true
 
@@ -1382,7 +1380,7 @@ class FilterViewModel (
         sheetSelectedRatingHigh,
         ratingHighEnabled,
         ratingsExist
-    ) {
+    ) { // it: Array<*> ->
         val favorites = it[0] as Boolean
         val favoritesEnabled = it[1] as Boolean
         val excludeFavorites = it[2] as Boolean
