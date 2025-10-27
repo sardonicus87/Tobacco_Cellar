@@ -1012,14 +1012,16 @@ private fun RatingRowImpl(
         ) {
             star(startColor, alpha = startAlpha)
         }
-        Box(
-            modifier = Modifier
-                .height(starSize)
-                .width(endWidth)
-                .clip(RectangleShape),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            star(endColor, Alignment.CenterEnd, endAlpha)
+        if (showEmpty) {
+            Box(
+                modifier = Modifier
+                    .height(starSize)
+                    .width(endWidth)
+                    .clip(RectangleShape),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                star(endColor, Alignment.CenterEnd, endAlpha)
+            }
         }
     }
 
