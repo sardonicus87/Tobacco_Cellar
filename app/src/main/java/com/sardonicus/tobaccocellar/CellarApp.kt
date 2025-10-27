@@ -5,6 +5,7 @@ package com.sardonicus.tobaccocellar
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -54,6 +55,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
@@ -80,6 +82,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -96,17 +100,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -135,8 +142,10 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IndicatorSizes
 import com.sardonicus.tobaccocellar.ui.composables.OverflowRow
 import com.sardonicus.tobaccocellar.ui.composables.PagerIndicator
+import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.dates.DatesDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
@@ -144,6 +153,10 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.launch
+import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
+import java.text.ParseException
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -180,7 +193,7 @@ fun CellarApp(
     val containerData by filterViewModel.containerData.collectAsState()
     val productionData by filterViewModel.productionData.collectAsState()
 
-    val ratingsExist by filterViewModel.ratingsExist.collectAsState()
+    val favDisExist by filterViewModel.favDisExist.collectAsState()
     val tins by filterViewModel.tinsExist.collectAsState()
     val hasContainer = remember(containerData) { containerData.selected.isNotEmpty() }
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
@@ -205,7 +218,7 @@ fun CellarApp(
                     brandsData = brandsData,
                     typeData = typeData,
                     otherData = otherData,
-                    ratingsExist = ratingsExist,
+                    favDisExist = favDisExist,
                     subgenreData = subgenreData,
                     cutData = cutData,
                     componentData = componentData,
@@ -820,7 +833,7 @@ fun FilterBottomSheet(
     brandsData: BrandsSectionData,
     typeData: FilterSectionData,
     otherData: OtherSectionData,
-    ratingsExist: Boolean,
+    favDisExist: Boolean,
     subgenreData: FilterSectionData,
     cutData: FilterSectionData,
     componentData: FilterSectionData,
@@ -962,15 +975,15 @@ fun FilterBottomSheet(
                         )
                         OtherFiltersSection(
                             otherData = otherData,
-                            ratingsExist = ratingsExist,
+                            favDisExist = favDisExist,
                             updateSelectedFavorites = { filterViewModel.updateSelectedFavorites(it) },
                             updateSelectedExcludeFavorites = { filterViewModel.updateSelectedExcludeFavorites(it) },
                             updateSelectedDislikeds = { filterViewModel.updateSelectedDislikeds(it) },
                             updateSelectedExcludeDislikeds = { filterViewModel.updateSelectedExcludeDislikeds(it) },
-                            updateSelectedRated = { filterViewModel.updateSelectedRated(it) },
-                            updateSelectedUnrated = { filterViewModel.updateSelectedUnrated(it) },
                             updateSelectedInStock = { filterViewModel.updateSelectedInStock(it) },
                             updateSelectedOutOfStock = { filterViewModel.updateSelectedOutOfStock(it) },
+                            updateSelectedUnrated = { filterViewModel.updateSelectedUnrated(it) },
+                            updateSelectedRatingRange = { (min, max) -> filterViewModel.updateSelectedRatingRange(min, max) },
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 0.dp),
                         )
@@ -1646,15 +1659,15 @@ fun TypeFilterSection(
 @Composable
 fun OtherFiltersSection(
     otherData: OtherSectionData,
-    ratingsExist: Boolean,
+    favDisExist: Boolean,
     updateSelectedFavorites: (Boolean) -> Unit,
     updateSelectedExcludeFavorites: (Boolean) -> Unit,
     updateSelectedDislikeds: (Boolean) -> Unit,
     updateSelectedExcludeDislikeds: (Boolean) -> Unit,
-    updateSelectedRated: (Boolean) -> Unit,
-    updateSelectedUnrated: (Boolean) -> Unit,
     updateSelectedInStock: (Boolean) -> Unit,
     updateSelectedOutOfStock: (Boolean) -> Unit,
+    updateSelectedUnrated: (Boolean) -> Unit,
+    updateSelectedRatingRange: (Pair<Double?, Double?>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val favorites by remember(otherData) { mutableStateOf(otherData.favorites) }
@@ -1667,8 +1680,8 @@ fun OtherFiltersSection(
     val favoritesEnabled by remember(otherData) { mutableStateOf(otherData.favoritesEnabled) }
     val favoritesExcludeEnabled by remember(otherData) { mutableStateOf(otherData.excludeFavoritesEnabled) }
     val favoritesEnabledTristate = when (favoritesSelection) {
-        ToggleableState.Off -> favoritesEnabled
-        ToggleableState.On -> favoritesExcludeEnabled
+        ToggleableState.Off -> favoritesEnabled || favoritesExcludeEnabled
+        ToggleableState.On -> true
         ToggleableState.Indeterminate -> true
     }
 
@@ -1680,29 +1693,21 @@ fun OtherFiltersSection(
         else ToggleableState.Off
 
     val dislikedsEnabled by remember(otherData) { mutableStateOf(otherData.dislikedsEnabled) }
-    val excludeDislikedsEnabled by remember(otherData) { mutableStateOf(otherData.excludeDislikedsEnabled) }
+    val dislikedsExcludeEnabled by remember(otherData) { mutableStateOf(otherData.excludeDislikedsEnabled) }
     val dislikedsEnabledTristate = when (dislikedsSelection) {
-        ToggleableState.Off -> dislikedsEnabled
-        ToggleableState.On -> excludeDislikedsEnabled
+        ToggleableState.Off -> dislikedsEnabled || dislikedsExcludeEnabled
+        ToggleableState.On -> true
         ToggleableState.Indeterminate -> true
     }
 
-    // state for monitoring neutral/nonNeutral filters //
-    val rated by remember(otherData) { mutableStateOf(otherData.rated) }
-    val ratedEnabled by remember(otherData) { mutableStateOf(otherData.ratedEnabled) }
-    val unrated by remember(otherData) { mutableStateOf(otherData.unrated) }
-    val unratedEnabled by remember(otherData) { mutableStateOf(otherData.unratedEnabled) }
-    val dualSelectionIndicatorState =
-        if (rated) ToggleableState.On
-        else if (unrated) ToggleableState.Indeterminate
-        else ToggleableState.Off
+    var showRatingPop by rememberSaveable { mutableStateOf(false) }
 
     val inStock by remember(otherData) { mutableStateOf(otherData.inStock) }
     val inStockEnabled by remember(otherData) { mutableStateOf(otherData.inStockEnabled) }
-
     val outOfStock by remember(otherData) { mutableStateOf(otherData.outOfStock) }
     val outOfStockEnabled by remember(otherData) { mutableStateOf(otherData.outOfStockEnabled) }
 
+    // Overall ratings and stock filters //
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -1711,6 +1716,7 @@ fun OtherFiltersSection(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box {
+            // Ratings //
             Column(
                 modifier = Modifier
                     .border(
@@ -1727,116 +1733,209 @@ fun OtherFiltersSection(
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                Row {
-                    Column(
-                        modifier = Modifier,
-                        verticalArrangement = Arrangement.spacedBy(0.dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Box {
-                            TriStateCheckWithLabel(
-                                text = "",
-                                state = dualSelectionIndicatorState,
-                                onClick = { },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor =
-                                        if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                        else Color.Transparent,
-                                    checkmarkColor =
-                                        if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                        else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                        else Color.Transparent,
-                                    uncheckedColor = Color.Transparent,
-                                    disabledUncheckedColor = Color.Transparent
-                                )
-                            )
-                            TriStateCheckWithLabel(
-                                text = "Favorites",
-                                state = favoritesSelection,
-                                onClick = {
-                                    when (favoritesSelection) {
-                                        ToggleableState.Off -> updateSelectedFavorites(true)
-                                        ToggleableState.On -> updateSelectedExcludeFavorites(true)
-                                        ToggleableState.Indeterminate -> {
+                // Fav/Dis //
+                Box {
+                    Row {
+                        TriStateCheckWithLabel(
+                            text = "Favorites",
+                            state = favoritesSelection,
+                            onClick = {
+                                when (favoritesSelection) {
+                                    ToggleableState.Off -> {
+                                        if (favoritesEnabled) updateSelectedFavorites(true)
+                                        else if (favoritesExcludeEnabled) updateSelectedExcludeFavorites(true)
+                                        else {
                                             updateSelectedFavorites(false)
                                             updateSelectedExcludeFavorites(false)
                                         }
                                     }
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor =
-                                        if (favorites) MaterialTheme.colorScheme.primary
-                                        else if (excludeFavorites) MaterialTheme.colorScheme.error
-                                        else Color.Transparent,
-                                ),
-                                enabled = favoritesEnabledTristate && ratingsExist
-                            )
-                        }
-                        CheckboxWithLabel(
-                            text = "Rated",
-                            checked = rated,
-                            onCheckedChange = { updateSelectedRated(it) },
-                            modifier = Modifier,
-                            enabled = ratedEnabled && ratingsExist
+                                    ToggleableState.On ->
+                                        if (favoritesExcludeEnabled) updateSelectedExcludeFavorites(true)
+                                        else updateSelectedFavorites(false)
+                                    ToggleableState.Indeterminate -> {
+                                        updateSelectedFavorites(false)
+                                        updateSelectedExcludeFavorites(false)
+                                    }
+                                }
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor =
+                                    if (favorites) MaterialTheme.colorScheme.primary
+                                    else if (excludeFavorites) MaterialTheme.colorScheme.error
+                                    else Color.Transparent,
+                            ),
+                            enabled = favoritesEnabledTristate && favDisExist,
+                            maxLines = 1
                         )
-                    }
-                    Column(
-                        modifier = Modifier,
-                        verticalArrangement = Arrangement.spacedBy(0.dp),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Box {
-                            TriStateCheckWithLabel(
-                                text = "",
-                                state = dualSelectionIndicatorState,
-                                onClick = { },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor =
-                                        if (rated) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        else if (unrated) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                        else Color.Transparent,
-                                    checkmarkColor =
-                                        if (rated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                        else if (unrated) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
-                                        else Color.Transparent,
-                                    uncheckedColor = Color.Transparent,
-                                    disabledUncheckedColor = Color.Transparent
-                                )
-                            )
-                            TriStateCheckWithLabel(
-                                text = "Dislikes",
-                                state = dislikedsSelection,
-                                onClick = {
-                                    when (dislikedsSelection) {
-                                        ToggleableState.Off -> updateSelectedDislikeds(true)
-                                        ToggleableState.On -> updateSelectedExcludeDislikeds(true)
-                                        ToggleableState.Indeterminate -> {
+
+                        TriStateCheckWithLabel(
+                            text = "Dislikes",
+                            state = dislikedsSelection,
+                            onClick = {
+                                when (dislikedsSelection) {
+                                    ToggleableState.Off -> {
+                                        if (dislikedsEnabled) updateSelectedDislikeds(true)
+                                        else if (dislikedsExcludeEnabled) updateSelectedExcludeDislikeds(true)
+                                        else {
                                             updateSelectedDislikeds(false)
                                             updateSelectedExcludeDislikeds(false)
                                         }
                                     }
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor =
-                                        if (dislikeds) MaterialTheme.colorScheme.primary
-                                        else if (excludeDislikeds) MaterialTheme.colorScheme.error
-                                        else Color.Transparent,
-                                ),
-                                enabled = dislikedsEnabledTristate && ratingsExist
+                                    ToggleableState.On -> {
+                                        if (dislikedsExcludeEnabled) updateSelectedExcludeDislikeds(true)
+                                        else {
+                                            updateSelectedDislikeds(false)
+                                            updateSelectedExcludeDislikeds(true)
+                                        }
+                                    }
+                                    ToggleableState.Indeterminate -> {
+                                        updateSelectedDislikeds(false)
+                                        updateSelectedExcludeDislikeds(false)
+                                    }
+                                }
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor =
+                                    if (dislikeds) MaterialTheme.colorScheme.primary
+                                    else if (excludeDislikeds) MaterialTheme.colorScheme.error
+                                    else Color.Transparent,
+                            ),
+                            enabled = dislikedsEnabledTristate && favDisExist,
+                            maxLines = 1
+                        )
+                    }
+                    if (!favDisExist && otherData.ratingsExist) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .border(
+                                    Dp.Hairline,
+                                    LocalCustomColors.current.sheetBoxBorder,
+                                    RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
+                                )
+                                .background(
+                                    LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                                    RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
+                                )
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No favorites/dislikes assigned.",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Normal,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                             )
                         }
-                        CheckboxWithLabel(
-                            text = "Unrated",
-                            checked = unrated,
-                            onCheckedChange = { updateSelectedUnrated(it) },
-                            modifier = Modifier,
-                            enabled = unratedEnabled && ratingsExist
+                    }
+                }
+
+                // Star Rating //
+                Box {
+                    val rangeEnabled = otherData.ratingLowEnabled != null && otherData.ratingHighEnabled != null
+                    Row(
+                        modifier = Modifier
+                            .height(36.dp)
+                            .width(229.dp)
+                            .padding(horizontal = 12.dp)
+                            .alpha(if (!rangeEnabled) .38f else 1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Rating:",
+                            modifier = Modifier
+                                .padding(end = 8.dp),
+                            fontSize = 15.sp
                         )
+                        Row(
+                            modifier = Modifier
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = null,
+                                    enabled = rangeEnabled,
+                                ) { showRatingPop = true },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
+                        ) {
+                            val low = otherData.ratingLow
+                            val high = otherData.ratingHigh
+                            val unchosen = low == null && high == null
+                            val emptyColor = if (unchosen || (low != null && high == null)) LocalCustomColors.current.starRating else LocalContentColor.current
+                            val emptyAlpha = if (unchosen || (low != null && high == null)) 1f else .38f
+                            val lowTextAlpha = if (unchosen || low == null) .7f else 1f
+                            val highTextAlpha = if (unchosen || high == null) .7f else 1f
+                            Box (contentAlignment = Alignment.CenterEnd) {
+                                Text(
+                                    text = "4.5",
+                                    modifier = Modifier,
+                                    fontSize = 13.sp,
+                                    color = Color.Transparent
+                                )
+                                Text(
+                                    text = formatDecimal(otherData.ratingLow, 1).ifBlank { "0" },
+                                    modifier = Modifier,
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    color = LocalContentColor.current.copy(alpha = lowTextAlpha)
+                                )
+                            }
+                            RatingRow(
+                                range = Pair(otherData.ratingLow, otherData.ratingHigh),
+                                modifier = Modifier
+                                    .padding(horizontal = 4.dp),
+                                starSize = 18.dp,
+                                showDivider = true,
+                                minColor = LocalContentColor.current,
+                                minAlpha = .38f,
+                                emptyColor = emptyColor,
+                                emptyAlpha = emptyAlpha
+                            )
+                            Box (contentAlignment = Alignment.CenterStart) {
+                                Text(
+                                    text = "4.5",
+                                    modifier = Modifier,
+                                    fontSize = 13.sp,
+                                    color = Color.Transparent
+                                )
+                                Text(
+                                    text = formatDecimal(otherData.ratingHigh, 1).ifBlank { "5" },
+                                    modifier = Modifier,
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    color = LocalContentColor.current.copy(alpha = highTextAlpha)
+                                )
+                            }
+                        }
+                    }
+                    if (favDisExist && !otherData.ratingsExist) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .border(
+                                    Dp.Hairline,
+                                    LocalCustomColors.current.sheetBoxBorder,
+                                    RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
+                                )
+                                .background(
+                                    LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                                    RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
+                                )
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No ratings assigned.",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Normal,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            )
+                        }
                     }
                 }
             }
-            if (!ratingsExist) {
+            if (!favDisExist && !otherData.ratingsExist) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -1862,6 +1961,21 @@ fun OtherFiltersSection(
                 }
             }
         }
+
+        if (showRatingPop) {
+            RatingRangePop(
+                unrated = otherData.unrated,
+                unratedEnabled = otherData.unratedEnabled,
+                selectedRange = Pair(otherData.ratingLow, otherData.ratingHigh),
+                ratingRangeEnabled = Pair(otherData.ratingLowEnabled, otherData.ratingHighEnabled),
+                updateSelectedUnrated = updateSelectedUnrated,
+                updateSelectedRatingRange = { updateSelectedRatingRange(it) },
+                onDismiss = { showRatingPop = false },
+                modifier = Modifier,
+            )
+        }
+
+        // In Stock
         Column(
             modifier = Modifier
                 .background(
@@ -2513,6 +2627,339 @@ fun TinsFilterSection(
 
 /** Custom composables for sheet **/
 @Composable
+fun RatingRangePop(
+    unrated: Boolean,
+    unratedEnabled: Boolean,
+    selectedRange: Pair<Double?, Double?>,
+    ratingRangeEnabled: Pair<Double?, Double?>,
+    updateSelectedUnrated: (Boolean) -> Unit,
+    updateSelectedRatingRange: (Pair<Double?, Double?>) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var ratingLowString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.first)) }
+    var selectedLow by rememberSaveable { mutableStateOf(selectedRange.first) }
+    val minRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.first) }
+
+    var ratingHighString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.second)) }
+    var selectedHigh by rememberSaveable { mutableStateOf(selectedRange.second) }
+    val maxRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.second) }
+
+    val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
+    val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
+
+    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val decimalSeparator = symbols.decimalSeparator.toString()
+    val allowedPattern = remember(decimalSeparator) {
+        val ds = Regex.escape(decimalSeparator)
+        Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .wrapContentHeight(),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+        ),
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.small,
+        title = {
+            Text(
+                text = "Rating",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                modifier = Modifier
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
+            ) {
+                CheckboxWithLabel(
+                    text = "Unrated",
+                    checked = unrated,
+                    onCheckedChange = {
+                        updateSelectedUnrated(it)
+                        updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                      },
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                    enabled = unratedEnabled,
+                    fontColor = if (!unratedEnabled) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
+                )
+                // Rating Range //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Low Rating //
+                    TextField(
+                        value = ratingLowString,
+                        onValueChange = {
+                            if (it.matches(allowedPattern)) {
+                                ratingLowString = it
+
+                                try {
+                                    if (it.isNotBlank()) {
+                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+                                            "0$it"
+                                        } else it
+                                        val number = numberFormat.parse(preNumber)?.toDouble()
+
+                                        selectedLow = when {
+                                            number == null -> null
+                                            number < (minRating ?: 0.0) -> (minRating ?: 0.0)
+                                            number > compMax -> compMax
+                                            else -> number
+                                        }
+                                    } else {
+                                        selectedLow = null
+                                    }
+
+                                } catch (e: ParseException) {
+                                    Log.e("Rating filter low", "Input: $it", e)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(70.dp)
+                            .padding(end = 8.dp)
+                            .onFocusChanged {
+                                if (!it.isFocused) {
+                                    if (ratingLowString != formatDecimal(selectedLow))
+                                        ratingLowString = formatDecimal(selectedLow)
+                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                }
+                            },
+                        enabled = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+
+                    // Selected Range Display //
+                    val lowField = ratingLowString.toDoubleOrNull()?.coerceIn(0.0, compMax)
+                    val highField = ratingHighString.toDoubleOrNull()?.coerceIn(compMin, 5.0)
+
+                    val emptyColor = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
+                    val emptyAlpha = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) 1f else .5f
+
+                    RatingRow(
+                        range = Pair(lowField, highField),
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp),
+                        starSize = 20.dp,
+                        showDivider = true,
+                        minColor = LocalContentColor.current,
+                        maxColor = LocalCustomColors.current.starRating,
+                        emptyColor = emptyColor,
+                        minAlpha = .5f,
+                        maxAlpha = 1f,
+                        emptyAlpha = emptyAlpha
+                    )
+
+                    // High Rating //
+                    TextField(
+                        value = ratingHighString,
+                        onValueChange = {
+                            if (it.matches(allowedPattern)) {
+                                ratingHighString = it
+
+                                try {
+                                    if (it.isNotBlank()) {
+                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+                                            "0$it"
+                                        } else it
+                                        val number = numberFormat.parse(preNumber)?.toDouble()
+
+                                        selectedHigh = when {
+                                            number == null -> null
+                                            number < compMin -> compMin
+                                            number > (maxRating ?: 5.0) -> (maxRating ?: 5.0)
+                                            else -> number
+                                        }
+                                    } else {
+                                        selectedHigh = null
+                                    }
+
+                                } catch (e: ParseException) {
+                                    Log.e("Rating filter high", "Input: $it", e)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(70.dp)
+                            .padding(start = 8.dp)
+                            .onFocusChanged {
+                                if (!it.isFocused) {
+                                    if (ratingHighString != formatDecimal(selectedHigh))
+                                        ratingHighString = formatDecimal(selectedHigh)
+                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                }
+                            },
+                        enabled = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                            }
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+                }
+
+                // Clear buttons and available range //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 29.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val lowAlpha = if (ratingLowString.isNotBlank()) .75f else 0.38f
+                    val highAlpha = if (ratingHighString.isNotBlank()) .75f else 0.38f
+
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = "Clear",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null,
+                                enabled = ratingLowString.isNotBlank()
+                            ) {
+                                ratingLowString = ""
+                                selectedLow = null
+                                updateSelectedRatingRange(Pair(null, selectedHigh))
+                            }
+                            .padding(4.dp)
+                            .size(20.dp)
+                            .alpha(lowAlpha)
+                    )
+                    Text(
+                        text = "(Limits: ${formatDecimal(minRating).ifBlank { "0.0" }} - ${formatDecimal(maxRating).ifBlank { "5.0" }})",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        modifier = Modifier,
+                        color = LocalContentColor.current.copy(alpha = 0.5f)
+                    )
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = "Clear",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null,
+                                enabled = ratingHighString.isNotBlank()
+                            ) {
+                                ratingHighString = ""
+                                selectedHigh = null
+                                updateSelectedRatingRange(Pair(selectedLow, null))
+                            }
+                            .padding(4.dp)
+                            .size(20.dp)
+                            .alpha(highAlpha)
+                    )
+                }
+
+                // Clear all button //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = {
+                            ratingLowString = ""
+                            selectedLow = null
+                            ratingHighString = ""
+                            selectedHigh = null
+                            updateSelectedUnrated(false)
+                            updateSelectedRatingRange(Pair(null, null))
+                        },
+                        enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated,
+                        modifier = Modifier
+                            .offset(x = (-4).dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.close),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .padding(end = 3.dp)
+                                .size(20.dp)
+                        )
+                        Text(
+                            text = "Clear All",
+                            modifier = Modifier,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                    onDismiss()
+                },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Done")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun CheckboxWithLabel(
     text: String,
     checked: Boolean,
@@ -2574,6 +3021,7 @@ fun TriStateCheckWithLabel(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
+    maxLines: Int = Int.MAX_VALUE,
     colors: CheckboxColors = CheckboxDefaults.colors()
 ) {
     Row(
@@ -2602,6 +3050,7 @@ fun TriStateCheckWithLabel(
                 .padding(end = 6.dp),
             color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
             fontSize = 15.sp,
+            maxLines = maxLines,
         )
     }
 }
