@@ -1184,7 +1184,7 @@ class FilterViewModel (
     )
     val ratingLowEnabled: StateFlow<Double?> = createEnabledDoubleFlow(
         FilterCategory.RATING_LOW
-    ) { it.minOrNull() } // minOfOrNull()
+    ) { it.minOrNull() }
     val ratingHighEnabled: StateFlow<Double?> = createEnabledDoubleFlow(
         FilterCategory.RATING_HIGH
     ) { it.maxOrNull() }
