@@ -1,15 +1,10 @@
 package com.sardonicus.tobaccocellar.data
 
 import androidx.sqlite.db.SimpleSQLiteQuery
-import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
-import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.stats.BrandCount
 import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import java.text.NumberFormat
-import java.util.Locale
-import kotlin.math.floor
 
 class OfflineItemsRepository(
     private var itemsDao: ItemsDao,
@@ -119,79 +114,6 @@ class OfflineItemsRepository(
 
     override suspend fun deleteAllTinsForItem(itemId: Int) {
         itemsDao.deleteAllTinsForItem(itemId)
-    }
-
-    override suspend fun getTinExportData(maxRating: Int, rounding: Boolean): List<TinExportData> {
-        val items = itemsDao.getAllItemsExport()
-        val tinExportData = mutableListOf<TinExportData>()
-        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
-        val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())
-
-        for (item in items) {
-            val components = itemsDao.getComponentsForItemStream(item.id).first().joinToString(", ") { it.componentName }
-            val flavoring = itemsDao.getFlavoringForItemStream(item.id).first().joinToString(", ") { it.flavoringName }
-            val ratingString = exportRatingString(item.rating, maxRating, rounding)
-
-            val tins = itemsDao.getTinsForItemStream(item.id).first()
-
-
-            if (tins.isNotEmpty()) {
-                for (tin in tins) {
-                    val quantity = if (tin.tinQuantity == floor(tin.tinQuantity)) {
-                        integerFormat.format(tin.tinQuantity.toLong())
-                    } else {
-                        numberFormat.format(tin.tinQuantity)
-                    }
-
-                    val tinExport = TinExportData(
-                        brand = item.brand,
-                        blend = item.blend,
-                        type = item.type,
-                        subGenre = item.subGenre,
-                        cut = item.cut,
-                        components = components,
-                        flavoring = flavoring,
-                        quantity = item.quantity,
-                        rating = ratingString,
-                        favorite = item.favorite,
-                        disliked = item.disliked,
-                        inProduction = item.inProduction,
-                        notes = item.notes,
-                        container = tin.container,
-                        tinQuantity = if (tin.unit.isNotBlank()) "$quantity ${tin.unit}" else "",
-                        manufactureDate = formatMediumDate(tin.manufactureDate),
-                        cellarDate = formatMediumDate(tin.cellarDate),
-                        openDate = formatMediumDate(tin.openDate),
-                        finished = tin.finished
-                    )
-                    tinExportData.add(tinExport)
-                }
-            } else {
-                val tinExport = TinExportData(
-                    brand = item.brand,
-                    blend = item.blend,
-                    type = item.type,
-                    subGenre = item.subGenre,
-                    cut = item.cut,
-                    components = components,
-                    flavoring = flavoring,
-                    quantity = item.quantity,
-                    rating = ratingString,
-                    favorite = item.favorite,
-                    disliked = item.disliked,
-                    inProduction = item.inProduction,
-                    notes = item.notes,
-                    container = "",
-                    tinQuantity = "",
-                    manufactureDate = "",
-                    cellarDate = "",
-                    openDate = "",
-                    finished = false
-                )
-                tinExportData.add(tinExport)
-            }
-        }
-        return tinExportData
     }
 
 
