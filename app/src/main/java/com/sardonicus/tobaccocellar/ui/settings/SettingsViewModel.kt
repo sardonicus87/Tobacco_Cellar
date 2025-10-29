@@ -57,9 +57,6 @@ class SettingsViewModel(
     private val _tinGramsConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.gramsRate)
     val tinGramsConversionRate: StateFlow<Double> = _tinGramsConversionRate.asStateFlow()
 
-    private val _exportRating = MutableStateFlow(ExportRating())
-    val exportRating: StateFlow<ExportRating> = _exportRating.asStateFlow()
-
     private val _snackbarState = MutableStateFlow(SnackbarState())
     val snackbarState: StateFlow<SnackbarState> = _snackbarState.asStateFlow()
 
@@ -134,16 +131,6 @@ class SettingsViewModel(
                 }
             }
         }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.exportRating.first().let {
-                    _exportRating.value = it
-                    if (it.maxRating == 5 && !it.rounding) {
-                        preferencesRepo.saveExportRating(5, false)
-                    }
-                }
-            }
-        }
     }
 
 
@@ -183,13 +170,6 @@ class SettingsViewModel(
             preferencesRepo.setTinGramsConversionRate(gramsRate)
             _tinOzConversionRate.value = ozRate
             _tinGramsConversionRate.value = gramsRate
-        }
-    }
-
-    fun saveMaxRating(rating: Int, rounding: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveExportRating(rating, rounding)
-            _exportRating.value = ExportRating(rating, rounding)
         }
     }
 
@@ -794,7 +774,6 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val showRatingOption = preferencesRepo.showRating.first().toString()
     val typeGenreOption = preferencesRepo.typeGenreOption.first().value
     val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
-
 
     return """
             quantityOption=$quantityOption

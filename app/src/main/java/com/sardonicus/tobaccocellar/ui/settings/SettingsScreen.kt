@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +38,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -58,7 +56,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -138,7 +135,6 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
     val ozRate by viewmodel.tinOzConversionRate.collectAsState()
     val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
-    val exportRating by viewmodel.exportRating.collectAsState()
     val snackbarState = viewmodel.snackbarState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val loading by viewmodel.loading.collectAsState()
@@ -194,7 +190,6 @@ fun SettingsScreen(
 
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
-                    exportRating = exportRating,
                     optimizeDatabase = { viewmodel.optimizeDatabase() },
                     onDeleteAllClick = {
                         coroutineScope.launch {
@@ -221,7 +216,6 @@ private fun SettingsBody(
     preferencesRepo: PreferencesRepo,
     tinOzConversionRate: Double,
     tinGramsConversionRate: Double,
-    exportRating: ExportRating,
     optimizeDatabase: () -> Unit,
     onDeleteAllClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -232,7 +226,6 @@ private fun SettingsBody(
     var showQuantityDialog by rememberSaveable { mutableStateOf(false) }
 
     var showTinRates by rememberSaveable { mutableStateOf(false) }
-    var showCsvScaling by rememberSaveable { mutableStateOf(false) }
     var backup by rememberSaveable { mutableStateOf(false) }
     var restore by rememberSaveable { mutableStateOf(false) }
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
@@ -326,7 +319,6 @@ private fun SettingsBody(
 
             DatabaseSettings(
                 showTinRates = { showTinRates = it },
-                showCsvScaling = { showCsvScaling = it },
                 optimizeDatabase = optimizeDatabase,
                 showBackup = { backup = it },
                 showRestore = { restore = it },
@@ -404,16 +396,6 @@ private fun SettingsBody(
                         viewmodel.setTinConversionRates(ozRate, gramsRate)
                         showTinRates = false
                     },
-                    modifier = Modifier
-                )
-            }
-            if (showCsvScaling) {
-                CsvScalingDialog(
-                    onDismiss = { showCsvScaling = false },
-                    onSave = { max, rounding ->
-                        viewmodel.saveMaxRating(max, rounding)
-                    },
-                    exportRating = exportRating,
                     modifier = Modifier
                 )
             }
@@ -578,7 +560,6 @@ fun DisplaySettings(
 @Composable
 fun DatabaseSettings(
     showTinRates: (Boolean) -> Unit,
-    showCsvScaling: (Boolean) -> Unit,
     optimizeDatabase: () -> Unit,
     showBackup: (Boolean) -> Unit,
     showRestore: (Boolean) -> Unit,
@@ -606,18 +587,6 @@ fun DatabaseSettings(
         ){
             Text(
                 text = "Tin Conversion Rates",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showCsvScaling(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ){
-            Text(
-                text = "CSV Export Scaling",
                 modifier = Modifier,
                 fontSize = 14.sp,
             )
@@ -1473,132 +1442,6 @@ fun TinRatesDialog(
                 modifier = Modifier
             ) {
                 Text(stringResource(R.string.save))
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large
-    )
-}
-
-@Composable
-fun CsvScalingDialog(
-    onDismiss: () -> Unit,
-    exportRating: ExportRating,
-    onSave: (Int, Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var currentMaxString by rememberSaveable { mutableStateOf(exportRating.maxRating.toString()) }
-    val allowedPattern = remember { Regex("^(\\s*|\\d{0,3})$") }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        modifier = modifier
-            .padding(0.dp),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        ),
-        text = {
-            Column (
-                modifier = modifier
-                    .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                Text(
-                    text = "Enter the maximum rating for scaling the in-app ratings (5 star max " +
-                            "with half-steps) to the maximum rating where the CSV file will be " +
-                            "imported. Also select a rounding option (for rating systems that " +
-                            "don't allow fractional ratings).",
-                    modifier = Modifier
-                        .padding(bottom = 12.dp),
-                    fontSize = 15.sp,
-                    color = LocalContentColor.current
-                )
-                Column(
-                    modifier = Modifier
-                        .width(IntrinsicSize.Min)
-                        .align(Alignment.CenterHorizontally),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            text = "Maximum Rating:",
-                            modifier = Modifier
-                                .width(140.dp),
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                        TextField(
-                            value = currentMaxString,
-                            onValueChange = {
-                                if (it.matches(allowedPattern)) {
-                                    currentMaxString = it
-                                    onSave(it.toIntOrNull() ?: 5, exportRating.rounding)
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.End,
-                            ),
-                            modifier = Modifier
-                                .width(60.dp),
-                            shape = MaterialTheme.shapes.extraSmall,
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                                focusedContainerColor = LocalCustomColors.current.textField,
-                                unfocusedContainerColor = LocalCustomColors.current.textField,
-                                disabledContainerColor = LocalCustomColors.current.textField,
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            text = "Round ratings?",
-                            modifier = Modifier
-                                .width(132.dp),
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                        Checkbox(
-                            checked = exportRating.rounding,
-                            onCheckedChange = {
-                                onSave(currentMaxString.toIntOrNull() ?: 5, it)
-                            }
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onDismiss() },
-                modifier = Modifier
-                    .padding(0.dp),
-                enabled = true
-            ) {
-                Text("Done")
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
