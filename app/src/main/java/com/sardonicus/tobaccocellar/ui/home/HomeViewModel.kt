@@ -13,11 +13,15 @@ import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.TinExportData
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
+import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
+import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
@@ -26,11 +30,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.NumberFormat
+import java.util.Locale
+import kotlin.math.floor
 
 class HomeViewModel(
     private val itemsRepository: ItemsRepository,
@@ -48,6 +54,8 @@ class HomeViewModel(
 
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
+
+    private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
 
     init {
         viewModelScope.launch {
@@ -76,6 +84,11 @@ class HomeViewModel(
                 if (it is DatabaseRestoreEvent) {
                     _resetLoading.value = true
                 }
+            }
+        }
+        viewModelScope.launch {
+            filterViewModel.everythingFlow.collect {
+                _allItems.value = it
             }
         }
     }
@@ -298,14 +311,15 @@ class HomeViewModel(
 
     fun snackbarShown() { _showSnackbar.value = false }
 
-    override fun onExportCsvClick(uri: Uri?) {
+    override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val itemsWithComponentsAndFlavoring = itemsRepository.getAllItemsWithComponentsAndFlavoring()
-                val exportRating = preferencesRepo.exportRating.first()
+                val data = if (allItems) _allItems.value else homeUiState.value.sortedItems
                 val maxRating = exportRating.maxRating
                 val rounding = exportRating.rounding
-                val csvData = csvHelper.exportToCsv(itemsWithComponentsAndFlavoring, maxRating, rounding)
+
+                val csvData = csvHelper.exportToCsv(data, maxRating, rounding)
+
                 if (uri != null) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
                             outputStream ->
@@ -322,15 +336,19 @@ class HomeViewModel(
         }
     }
 
-    override fun onTinsExportCsvClick(uri: Uri?) {
+    override fun onTinsExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val exportRating = preferencesRepo.exportRating.first()
                 val maxRating = exportRating.maxRating
                 val rounding = exportRating.rounding
+                val data: List<TinExportData> = if (allItems) {
+                    createTinExportData(_allItems.value, maxRating, rounding)
+                } else {
+                    createTinExportData(homeUiState.value.sortedItems, maxRating, rounding)
+                }
 
-                val tinExportData = itemsRepository.getTinExportData(maxRating, rounding)
-                val tinCsvData = csvHelper.exportTinsToCsv(tinExportData)
+                val tinCsvData = csvHelper.exportTinsToCsv(data)
+
                 if (uri != null) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
                             outputStream ->
@@ -345,6 +363,78 @@ class HomeViewModel(
                 }
             }
         }
+    }
+
+    private fun createTinExportData(items: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Boolean): List<TinExportData> {
+        val tinExportData = mutableListOf<TinExportData>()
+        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
+        val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())
+
+        for (item in items) {
+            val components = item.components.joinToString(", ") { it.componentName }
+            val flavoring = item.flavoring.joinToString(", ") { it.flavoringName }
+            val ratingString = exportRatingString(item.items.rating, maxRating, rounding)
+
+            val tins = item.tins
+
+
+            if (tins.isNotEmpty()) {
+                for (tin in tins) {
+                    val quantity = if (tin.tinQuantity == floor(tin.tinQuantity)) {
+                        integerFormat.format(tin.tinQuantity.toLong())
+                    } else {
+                        numberFormat.format(tin.tinQuantity)
+                    }
+
+                    val tinExport = TinExportData(
+                        brand = item.items.brand,
+                        blend = item.items.blend,
+                        type = item.items.type,
+                        subGenre = item.items.subGenre,
+                        cut = item.items.cut,
+                        components = components,
+                        flavoring = flavoring,
+                        quantity = item.items.quantity,
+                        rating = ratingString,
+                        favorite = item.items.favorite,
+                        disliked = item.items.disliked,
+                        inProduction = item.items.inProduction,
+                        notes = item.items.notes,
+                        container = tin.container,
+                        tinQuantity = if (tin.unit.isNotBlank()) "$quantity ${tin.unit}" else "",
+                        manufactureDate = formatMediumDate(tin.manufactureDate),
+                        cellarDate = formatMediumDate(tin.cellarDate),
+                        openDate = formatMediumDate(tin.openDate),
+                        finished = tin.finished
+                    )
+                    tinExportData.add(tinExport)
+                }
+            } else {
+                val tinExport = TinExportData(
+                    brand = item.items.brand,
+                    blend = item.items.blend,
+                    type = item.items.type,
+                    subGenre = item.items.subGenre,
+                    cut = item.items.cut,
+                    components = components,
+                    flavoring = flavoring,
+                    quantity = item.items.quantity,
+                    rating = ratingString,
+                    favorite = item.items.favorite,
+                    disliked = item.items.disliked,
+                    inProduction = item.items.inProduction,
+                    notes = item.items.notes,
+                    container = "",
+                    tinQuantity = "",
+                    manufactureDate = "",
+                    cellarDate = "",
+                    openDate = "",
+                    finished = false
+                )
+                tinExportData.add(tinExport)
+            }
+        }
+        return tinExportData
     }
 
 }
