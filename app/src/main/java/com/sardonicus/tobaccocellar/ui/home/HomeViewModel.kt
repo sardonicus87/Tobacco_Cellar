@@ -365,7 +365,7 @@ class HomeViewModel(
         }
     }
 
-    private fun createTinExportData(items: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Boolean): List<TinExportData> {
+    private fun createTinExportData(items: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Int): List<TinExportData> {
         val tinExportData = mutableListOf<TinExportData>()
         val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
         val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())

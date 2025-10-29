@@ -39,7 +39,7 @@ class PreferencesRepo(
         val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
         val MAX_RATING = intPreferencesKey("max_rating")
-        val RATING_ROUNDING = booleanPreferencesKey("rating_rounding")
+        val RATING_ROUND = intPreferencesKey("rating_round")
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
@@ -294,14 +294,14 @@ class PreferencesRepo(
             }
         }.map {
             val maxRating = it[MAX_RATING] ?: 5
-            val rounding = it[RATING_ROUNDING] ?: false
+            val rounding = it[RATING_ROUND] ?: 2
             ExportRating(maxRating, rounding)
         }
 
-    suspend fun saveExportRating(rating: Int, rounding: Boolean) {
+    suspend fun saveExportRating(rating: Int, rounding: Int) {
         dataStore.edit { it ->
             it[MAX_RATING] = rating
-            it[RATING_ROUNDING] = rounding
+            it[RATING_ROUND] = rounding
             ExportRating(rating, rounding)
         }
     }

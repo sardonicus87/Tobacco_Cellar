@@ -225,7 +225,7 @@ class PlaintextViewModel (
             "Components" to "@comps",
             "Flavoring" to "@flavors",
             "Quantity" to "@qty",
-            "Rating" to "@rating_0r",
+            "Rating" to "@rating_0_0",
             "Production" to "@prod",
             "Tin Label" to "@label",
             "Tin Container" to "@container",
@@ -716,10 +716,10 @@ class PlaintextViewModel (
 
         // Main item processing
         if (itemData != null) {
-            val ratingRegex = Regex("@rating_(\\d+)(r)?")
+            val ratingRegex = Regex("@rating_(\\d+)_(\\d)")
             processedLine = ratingRegex.replace(processedLine) {
                 val max = it.groupValues[1].toIntOrNull() ?: 5
-                val rounding = it.groupValues[2].isNotBlank()
+                val rounding = it.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
 
                 exportRatingString(itemData.items.rating, max, rounding)
             }
@@ -824,12 +824,12 @@ class PlaintextViewModel (
     ): String {
         if (itemData != null) {
             if (placeholder.startsWith("@rating_")) {
-                val ratingRegex = Regex("@rating_(\\d+)(r)?")
+                val ratingRegex = Regex("@rating_(\\d+)_(\\d)")
                 val matchResult = ratingRegex.find(placeholder)
 
                 if (matchResult != null) {
                     val max = matchResult.groupValues[1].toIntOrNull() ?: 5
-                    val rounding = matchResult.groupValues[2].isNotBlank()
+                    val rounding = matchResult.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
 
                     return exportRatingString(itemData.items.rating, max, rounding)
                 }

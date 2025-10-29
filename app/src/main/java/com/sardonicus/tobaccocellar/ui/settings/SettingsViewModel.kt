@@ -642,7 +642,7 @@ data class TinConversionRates(
 
 data class ExportRating(
     val maxRating: Int = 5,
-    val rounding: Boolean = false
+    val rounding: Int = 2
 )
 
 data class BackupState(
@@ -850,13 +850,13 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
     }
 }
 
-fun exportRatingString(rating: Double?, maxRating: Int, rounding: Boolean): String {
+fun exportRatingString(rating: Double?, maxRating: Int, rounding: Int): String {
     val scaling = maxRating / 5.0
 
     if (rating == null) { return "" }
 
     val scaledRating = (rating * scaling)
-    val places = if (rounding) 0 else 2
+    val places = rounding.takeIf { it <= 2 } ?: 1
 
     return formatDecimal(scaledRating, places)
 }
