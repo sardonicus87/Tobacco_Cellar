@@ -231,9 +231,9 @@ private fun CellarScreen(
                     "Tapping an option sorts ascending, tapping it again switches to descending. " +
                     "Tap the sort icon again to close the list view sorting menu." +
                     "In Table View, sorting is done by tapping the \"Brand\", \"Blend\", \"Type\"" +
-                    ", or \"Qty\" column headers. Default sorting is the order the items were " +
-                    "entered into the database. The first tap will sort the column ascending, the " +
-                    "second descending, and the third returns to the default sort order.",
+                    ", \"Rating\", or \"Qty\" column headers. Default sorting is the order the " +
+                    "entries were entered into the database. The first tap will sort the column " +
+                    "ascending, the second descending, and the third returns to the default sort order.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -428,11 +428,24 @@ private fun Filtering(
             softWrap = true,
         )
         Text(
-            text = "Filter ratings by tapping one of the four check boxes. Tapping \"Favorites\" " +
-                    "or \"Dislikes\" once returns only entries that match the rating, tapping " +
-                    "again excludes blends with that rating, and tapping again removes that " +
-                    "filter. If you would like to see only blends that are rated or unrated, " +
-                    "use the appropriate checkboxes below.",
+            text = "Filter \"Favorites\" or \"Dislikes\" by tapping the check boxes. Unchecked, " +
+                    "is no filtering by these, the first tap will return only those marked as " +
+                    "favorites or dislikes, tapping again will return all entries that are not in " +
+                    "that category. Check both to see only entries that are either favorite or " +
+                    "disliked or to exclude all favorites and dislikes.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "Below this is the rating range filter, tapping the range display opens a " +
+                    "popup for the range options. Unrated will return all entries that haven't " +
+                    "been rated. Entering a value in the left field will return all entries that " +
+                    "are rated at that amount or more, entering in the right field returns all  " +
+                    "entries that are rated at that value and below, while entering both fields " +
+                    "returns all entries that are rated between those values. The rating range is " +
+                    "not mutually exclusive with unrated (to see all items that are unrated and " +
+                    "that are rated below a certain level, tap both the unrated box and enter the " +
+                    "maximum rating in the right box).",
             modifier = Modifier,
             softWrap = true,
         )
@@ -513,6 +526,14 @@ private fun AddingItems(
             modifier = Modifier,
             softWrap = true,
         )
+        Text(
+            text = "Tapping the rating bar opens a popup with a text field for entering a rating. " +
+                    "The range is 0-5 and does allow fractional numbers (up to 2 decimal places). " +
+                    "Clear the text field in order to leave an item unrated.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+
         Text(
             text = "When adding components or flavorings, please separate each with a comma and a " +
                     "space. For example: \"virginia, burley, perique\".",
