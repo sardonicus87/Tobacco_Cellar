@@ -38,7 +38,7 @@ class CsvHelper {
         }
     }
 
-    fun exportToCsv(data: List<ItemsWithComponentsAndFlavoring>, maxRating: Int, rounding: Boolean): String {
+    fun exportToCsv(data: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Boolean): String {
         val csvWriter = StringWriter()
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
@@ -51,25 +51,25 @@ class CsvHelper {
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
-        for (itemWithComponents in data) {
-            val componentsString = itemWithComponents.components.joinToString(", ") { it.componentName }
-            val flavoringString = itemWithComponents.flavoring.joinToString(", ") { it.flavoringName }
-            val ratingString = exportRatingString(itemWithComponents.item.rating, maxRating, rounding)
+        for (item in data) {
+            val componentsString = item.components.joinToString(", ") { it.componentName }
+            val flavoringString = item.flavoring.joinToString(", ") { it.flavoringName }
+            val ratingString = exportRatingString(item.items.rating, maxRating, rounding)
 
             csvPrinter.printRecord(
-                itemWithComponents.item.brand,
-                itemWithComponents.item.blend,
-                itemWithComponents.item.type,
-                itemWithComponents.item.subGenre,
-                itemWithComponents.item.cut,
+                item.items.brand,
+                item.items.blend,
+                item.items.type,
+                item.items.subGenre,
+                item.items.cut,
                 componentsString,
                 flavoringString,
-                itemWithComponents.item.quantity,
+                item.items.quantity,
                 ratingString,
-                itemWithComponents.item.favorite,
-                itemWithComponents.item.disliked,
-                itemWithComponents.item.inProduction,
-                itemWithComponents.item.notes,
+                item.items.favorite,
+                item.items.disliked,
+                item.items.inProduction,
+                item.items.notes,
             )
         }
 
@@ -91,27 +91,27 @@ class CsvHelper {
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
-        for (tinData in data) {
+        for (tin in data) {
             csvPrinter.printRecord(
-                tinData.brand,
-                tinData.blend,
-                tinData.type,
-                tinData.subGenre,
-                tinData.cut,
-                tinData.components,
-                tinData.flavoring,
-                tinData.quantity,
-                tinData.rating,
-                tinData.favorite,
-                tinData.disliked,
-                tinData.inProduction,
-                tinData.notes,
-                tinData.container,
-                tinData.tinQuantity,
-                tinData.manufactureDate,
-                tinData.cellarDate,
-                tinData.openDate,
-                tinData.finished
+                tin.brand,
+                tin.blend,
+                tin.type,
+                tin.subGenre,
+                tin.cut,
+                tin.components,
+                tin.flavoring,
+                tin.quantity,
+                tin.rating,
+                tin.favorite,
+                tin.disliked,
+                tin.inProduction,
+                tin.notes,
+                tin.container,
+                tin.tinQuantity,
+                tin.manufactureDate,
+                tin.cellarDate,
+                tin.openDate,
+                tin.finished
             )
         }
 
