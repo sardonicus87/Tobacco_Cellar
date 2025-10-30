@@ -212,8 +212,8 @@ fun PlaintextBody(
     val printList = plaintextState.plainList
 
     val setTemplateText = if (templateView) "See List" else "Set Format"
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp - 96.dp
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val screenHeight = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp }.dp - 96.dp
+    val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }.dp
 
     var printDialog by rememberSaveable { mutableStateOf(false) }
 
