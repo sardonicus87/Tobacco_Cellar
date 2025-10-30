@@ -195,8 +195,8 @@ private fun CellarScreen(
         Text(
             text = "The header at the top of the screen contains a view mode switch for changing " +
                     "between list and table modes, a \"Quick Search\" with a search field option, " +
-                    "a sort button (only for list view), and a count of the current entries based " +
-                    "on chosen filtering or searching.",
+                    "a button to change sorting (list view) or table column visibility (table " +
+                    "view), and a count of the current entries based on chosen filtering or searching.",
             modifier = Modifier,
             softWrap = true,
         )
