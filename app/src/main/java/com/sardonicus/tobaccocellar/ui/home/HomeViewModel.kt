@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -212,21 +214,43 @@ class HomeViewModel(
             initialValue = HomeUiState(isLoading = true)
         )
 
+    val tableColumnVisibility: StateFlow<Map<TableColumn, Boolean>> =
+        preferencesRepo.tableColumnsHidden.map {
+            TableColumn.entries.associateWith { column ->
+                column.name !in it
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = TableColumn.entries.associateWith { true }
+        )
 
-    /** List View item menu overlay and expand details **/
-    private val _isMenuShown = mutableStateOf(false)
-    val isMenuShown: State<Boolean> = _isMenuShown
+    fun updateColumnVisibility(column: TableColumn, visible: Boolean) {
+        viewModelScope.launch {
+            val currentHidden = preferencesRepo.tableColumnsHidden.first()
+            val newHidden = if (visible) {
+                currentHidden - column.name
+            } else {
+                currentHidden + column.name
+            }
+            preferencesRepo.saveTableColumnsHidden(newHidden)
+        }
+    }
+
+    /** Item menu overlay and expand details **/
+    private val _itemMenuShown = mutableStateOf(false)
+    val itemMenuShown: State<Boolean> = _itemMenuShown
 
     private val _activeMenuId = mutableStateOf<Int?>(null)
     val activeMenuId: State<Int?> = _activeMenuId
 
     fun onShowMenu(itemId: Int) {
-        _isMenuShown.value = true
+        _itemMenuShown.value = true
         _activeMenuId.value = itemId
     }
 
     fun onDismissMenu() {
-        _isMenuShown.value = false
+        _itemMenuShown.value = false
         _activeMenuId.value = null
     }
 

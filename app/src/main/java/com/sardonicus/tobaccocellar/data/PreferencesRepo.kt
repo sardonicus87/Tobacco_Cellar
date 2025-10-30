@@ -35,6 +35,7 @@ class PreferencesRepo(
 ) {
     private companion object {
         val IS_TABLE_VIEW = booleanPreferencesKey("is_table_view")
+        val TABLE_COLUMNS_HIDDEN = stringPreferencesKey("table_columns_hidden")
         val THEME_SETTING = stringPreferencesKey("theme_setting")
         val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
@@ -157,7 +158,7 @@ class PreferencesRepo(
         }
     }
 
-    // setting table sort options //
+    // setting table options //
     val sortColumnIndex: Flow<Int> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -186,6 +187,24 @@ class PreferencesRepo(
         dataStore.edit { preferences ->
             preferences[SORT_COLUMN_INDEX] = columnIndex
             preferences[SORT_ASCENDING] = ascending
+        }
+    }
+
+    val tableColumnsHidden: Flow<Set<String>> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading table sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet()
+        }
+
+    suspend fun saveTableColumnsHidden(columnsHidden: Set<String>) {
+        dataStore.edit {
+            it[TABLE_COLUMNS_HIDDEN] = columnsHidden.joinToString(",")
         }
     }
 

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,6 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -107,6 +111,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
+import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -168,12 +173,13 @@ fun HomeScreen(
 
     val resetLoading by viewmodel.resetLoading.collectAsState()
     val activeMenuId by remember { viewmodel.activeMenuId }
-    val isMenuShown by remember { viewmodel.isMenuShown }
+    val isMenuShown by remember { viewmodel.itemMenuShown }
     val emptyMessage by viewmodel.emptyMessage.collectAsState()
     val showTins by filterViewModel.showTins.collectAsState()
     val columnState = rememberLazyListState()
 
     val homeUiState by viewmodel.homeUiState.collectAsState()
+    val columnVisibility by viewmodel.tableColumnVisibility.collectAsState()
 
     val showSnackbar by viewmodel.showSnackbar.collectAsState()
     if (showSnackbar) {
@@ -427,6 +433,8 @@ fun HomeScreen(
         )
     }
 
+    var showColumnPop by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -480,10 +488,12 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val glowSize = if (homeUiState.isTableView) 0.dp else 3.dp
             HomeHeader(
                 modifier = Modifier,
                 homeUiState = homeUiState,
                 isTableView = homeUiState.isTableView,
+                onShowColumnPop = { showColumnPop = true },
                 selectView = viewmodel::selectView,
                 filterViewModel = filterViewModel,
                 searchText = searchText,
@@ -493,7 +503,7 @@ fun HomeScreen(
             )
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
-                size = GlowSize(top = 3.dp)
+                size = GlowSize(top = glowSize)
             ) {
                 HomeBody(
                     isLoading = homeUiState.isLoading,
@@ -522,6 +532,10 @@ fun HomeScreen(
                     isTinSearch = isTinSearch,
                     tableSorting = homeUiState.tableSorting,
                     updateSorting = viewmodel::updateSorting,
+                    showColumnPop = showColumnPop,
+                    hideColumnPop = { showColumnPop = false },
+                    columnVisibility = columnVisibility,
+                    onVisibilityChange = viewmodel::updateColumnVisibility,
                     shouldScrollUp = filterViewModel::shouldScrollUp,
                     modifier = modifier
                         .fillMaxWidth()
@@ -538,6 +552,7 @@ private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
     isTableView: Boolean,
+    onShowColumnPop: () -> Unit,
     selectView: (Boolean) -> Unit,
     filterViewModel: FilterViewModel,
     searchText: String,
@@ -737,7 +752,7 @@ private fun HomeHeader(
 
         Spacer(Modifier.width(8.dp))
 
-        // total items & list sorting
+        // total items & list sorting or column hiding
         Row(
             modifier = Modifier
                 .padding(0.dp)
@@ -746,68 +761,85 @@ private fun HomeHeader(
             horizontalArrangement = Arrangement.End,
         ) {
             var sortingMenu by rememberSaveable { mutableStateOf(false) }
+
             Box {
-                IconButton(
-                    onClick = { sortingMenu = !sortingMenu },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .size(22.dp),
-                    enabled = !isTableView,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.sort_bars),
-                        contentDescription = "List sorting",
+                if (!isTableView) {
+                    IconButton(
+                        onClick = { sortingMenu = !sortingMenu },
                         modifier = Modifier
-                            .size(20.dp)
-                            .padding(0.dp),
-                    )
-                }
-                DropdownMenu(
-                    expanded = sortingMenu,
-                    onDismissRequest = { sortingMenu = false },
-                    modifier = Modifier
-                        .width(94.dp),
-                    containerColor = LocalCustomColors.current.textField,
-                ) {
-                    homeUiState.sortingOptions.forEach {
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Start,
-                                ) {
-                                    Text(
-                                        text = it.value,
-                                        fontWeight = FontWeight.Normal,
-                                        modifier = Modifier
-                                            .padding(end = 2.dp)
-                                    )
-                                    if (listSorting.option.value == it.value) {
-                                        val icon = listSorting.listIcon
-                                        Box(
+                            .padding(4.dp)
+                            .size(22.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.sort_bars),
+                            contentDescription = "List sorting",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(0.dp),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = sortingMenu,
+                        onDismissRequest = { sortingMenu = false },
+                        modifier = Modifier
+                            .width(94.dp),
+                        containerColor = LocalCustomColors.current.textField,
+                    ) {
+                        homeUiState.sortingOptions.forEach {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Start,
+                                    ) {
+                                        Text(
+                                            text = it.value,
+                                            fontWeight = FontWeight.Normal,
                                             modifier = Modifier
-                                        ) {
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Image(
-                                                painter = painterResource(id = icon),
-                                                contentDescription = null,
+                                                .padding(end = 2.dp)
+                                        )
+                                        if (listSorting.option.value == it.value) {
+                                            val icon = listSorting.listIcon
+                                            Box(
                                                 modifier = Modifier
-                                                    .size(20.dp)
-                                                    .padding(0.dp),
-                                                colorFilter = ColorFilter.tint(LocalContentColor.current)
-                                            )
+                                            ) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Image(
+                                                    painter = painterResource(id = icon),
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .size(20.dp)
+                                                        .padding(0.dp),
+                                                    colorFilter = ColorFilter.tint(LocalContentColor.current)
+                                                )
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            onClick = {
-                                saveListSorting(it)
-                                filterViewModel.shouldScrollUp()
-                            },
+                                },
+                                onClick = {
+                                    saveListSorting(it)
+                                    filterViewModel.shouldScrollUp()
+                                },
+                                modifier = Modifier
+                                    .padding(0.dp),
+                                enabled = true,
+                            )
+                        }
+                    }
+                } else {
+                    IconButton(
+                        onClick = { onShowColumnPop() },
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(22.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.table_edit),
+                            contentDescription = "Column Visibility",
                             modifier = Modifier
+                                .size(20.dp)
                                 .padding(0.dp),
-                            enabled = true,
                         )
                     }
                 }
@@ -952,6 +984,10 @@ private fun HomeBody(
     isTinSearch: Boolean,
     tableSorting: TableSorting,
     updateSorting: (Int) -> Unit,
+    showColumnPop: Boolean,
+    hideColumnPop: () -> Unit,
+    columnVisibility: Map<TableColumn, Boolean>,
+    onVisibilityChange: (TableColumn, Boolean) -> Unit,
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1018,6 +1054,7 @@ private fun HomeBody(
                     TableViewMode(
                         sortedItems = sortedItems,
                         columnState = columnState,
+                        typeGenreOption = typeGenreOption,
                         showTins = showTins,
                         filteredTins = tins,
                         formattedQty = formattedQuantity,
@@ -1033,6 +1070,7 @@ private fun HomeBody(
                         isMenuShown = isMenuShown,
                         sorting = tableSorting,
                         updateSorting = updateSorting,
+                        columnVisibility = columnVisibility,
                         shouldScrollUp = shouldScrollUp,
                         modifier = Modifier
                             .padding(0.dp)
@@ -1066,6 +1104,16 @@ private fun HomeBody(
         }
 
         if (showLoading) { LoadingIndicator() }
+
+        if (showColumnPop) {
+            ColumnVisibilityPopup(
+                visibilityMap = columnVisibility,
+                onVisibilityChange = { column, visibility ->
+                    onVisibilityChange(column, visibility)
+                },
+                onDismiss = { hideColumnPop() }
+            )
+        }
 
 
         // jump to button
@@ -1136,6 +1184,60 @@ private fun HomeBody(
             }
         }
     }
+}
+
+@Composable
+fun ColumnVisibilityPopup(
+    visibilityMap: Map<TableColumn, Boolean>,
+    onVisibilityChange: (TableColumn, Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        text = {
+            LazyVerticalGrid (
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                items(TableColumn.entries) { column ->
+                    Row (
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                    ) {
+                        CheckboxWithLabel(
+                            text = column.title,
+                            checked = visibilityMap[column] ?: true,
+                            onCheckedChange = {
+                                val visible = visibilityMap[column] ?: true
+                                onVisibilityChange(column, !visible)
+                            },
+                            modifier = Modifier
+                        )
+                    }
+                }
+            }
+        },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        confirmButton = {
+            TextButton(onClick = { onDismiss() }
+            ) {
+                Text(
+                    text = "Done"
+                )
+            }
+        }
+    )
 }
 
 
@@ -1686,10 +1788,22 @@ private fun CellarListItem(
 
 
 /** Table View Mode **/
+enum class TableColumn(val title: String) {
+    BRAND("Brand"),
+    BLEND("Blend"),
+    TYPE("Type"),
+    SUBGENRE("Subgenre"),
+    RATING("Rating"),
+    FAV_DIS("Fav/Dis"),
+    NOTE("Notes"),
+    QTY("Quantity")
+}
+
 @Composable
 fun TableViewMode(
     sortedItems: List<ItemsComponentsAndTins>,
     columnState: LazyListState,
+    typeGenreOption: TypeGenreOption,
     showTins: Boolean,
     filteredTins: List<Tins>,
     formattedQty: Map<Int, String>,
@@ -1705,27 +1819,71 @@ fun TableViewMode(
     onDismissMenu: () -> Unit,
     sorting: TableSorting,
     updateSorting: (Int) -> Unit,
+    columnVisibility: Map<TableColumn, Boolean>,
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
     val horizontalScroll = rememberScrollState()
 
-    val columnMinWidths = listOf(
+    val showType = when (typeGenreOption) {
+        TypeGenreOption.TYPE, TypeGenreOption.TYPE_FALLBACK, TypeGenreOption.BOTH -> true
+        else -> false
+    }
+    val showGenre = when (typeGenreOption) {
+        TypeGenreOption.SUBGENRE, TypeGenreOption.SUB_FALLBACK, TypeGenreOption.BOTH -> true
+        else -> false
+    }
+    val showRating = true
+
+    val columnOrder = listOf(
+        TableColumn.BRAND,
+        TableColumn.BLEND,
+        TableColumn.TYPE,
+        TableColumn.SUBGENRE,
+        TableColumn.RATING,
+        TableColumn.FAV_DIS,
+        TableColumn.NOTE,
+        TableColumn.QTY
+    )
+
+    val columnMinWidths = columnOrder.map {
+        val visible = columnVisibility[it] ?: true
+        if (visible) {
+            when (it) {
+                TableColumn.BRAND -> 180.dp
+                TableColumn.BLEND -> 300.dp
+                TableColumn.TYPE -> 108.dp
+                TableColumn.SUBGENRE -> 120.dp
+                TableColumn.RATING -> 64.dp
+                TableColumn.FAV_DIS -> 64.dp
+                TableColumn.NOTE -> 64.dp
+                TableColumn.QTY -> 98.dp
+            }
+        } else {
+            0.dp
+        }
+    }
+
+    val columnMinWidthsOld = listOf(
         180.dp, // 0 Brand
         300.dp, // 1 Blend
-        108.dp, // 2 Type
-        120.dp, // 3 Subgenre
-        64.dp, // 4 Rating
+        if (showType) 108.dp else 0.dp, // 2 Type
+        if (showGenre) 120.dp else 0.dp, // 3 Subgenre
+        if (showRating) 64.dp else 0.dp, // 4 Rating
         64.dp, // 5 Fav/Dis
         64.dp, // 6 Note
         98.dp // 7 Qty
     )
-    val columnMapping = listOf(
+
+    val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
+    val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
+
+    val columnMappingOld = listOf(
         { item: Items -> item.brand }, // 0
         { item: Items -> item.blend }, // 1
-        { item: Items -> item.type }, // 2
-        { item: Items -> item.subGenre }, // 3
+        { item: Items -> item.type.ifBlank { if (fallbackType) item.subGenre else item.type } }, // 2
+        { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) item.type else item.subGenre } }, // 3
         { item: Items -> item.rating }, // 4
         { item: Items -> // 5
             when {
@@ -1737,6 +1895,26 @@ fun TableViewMode(
         { item: Items -> item.notes }, // 6
         { item: Items -> item.id }, // 7
     )
+
+    val columnMapping = columnOrder.map {
+        when (it) {
+            TableColumn.BRAND -> { item: Items -> item.brand }
+            TableColumn.BLEND -> { item: Items -> item.blend }
+            TableColumn.TYPE -> { item: Items -> item.type.ifBlank { if (fallbackType) item.subGenre else "" } }
+            TableColumn.SUBGENRE -> { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) item.type else "" } }
+            TableColumn.RATING -> { item: Items -> item.rating }
+            TableColumn.FAV_DIS -> { item: Items ->
+                when {
+                    item.favorite -> 1
+                    item.disliked -> 2
+                    else -> 0
+                }
+            }
+
+            TableColumn.NOTE -> { item: Items -> item.notes }
+            TableColumn.QTY -> { item: Items -> item.id }
+        }
+    }
 
     Box(
         modifier = Modifier
