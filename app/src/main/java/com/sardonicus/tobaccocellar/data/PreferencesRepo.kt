@@ -130,7 +130,7 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[SHOW_RATING] ?: false
+            it[SHOW_RATING] ?: true
         }
 
     suspend fun saveShowRatingOption(showRating: Boolean) {
