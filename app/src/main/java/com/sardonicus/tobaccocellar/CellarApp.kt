@@ -80,6 +80,9 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -129,6 +132,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.BrandsSectionData
 import com.sardonicus.tobaccocellar.ui.FilterSectionData
@@ -146,8 +150,10 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.dates.DatesDestination
 import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.home.formatDecimal
+import com.sardonicus.tobaccocellar.ui.items.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
@@ -267,18 +273,26 @@ fun CellarTopAppBar(
     navigateToHelp: () -> Unit = {},
     navigateToPlaintext: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
+    preferencesRepo: PreferencesRepo = LocalCellarApplication.current.preferencesRepo,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var menuState by rememberSaveable { mutableStateOf(MenuState.MAIN) }
 
+    var exportCsvPopup by rememberSaveable { mutableStateOf(false) }
+    var exportType by remember { mutableStateOf<ExportType?>(null) }
+    val previouslySavedExportRating by preferencesRepo.exportRating.collectAsState(ExportRating())
+
+    var allItems by rememberSaveable { mutableStateOf(true) }
+    var exportRating by remember { mutableStateOf(previouslySavedExportRating) }
+
     val exportCsvLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
-            exportCsvHandler?.onExportCsvClick(uri)
+            exportCsvHandler?.onExportCsvClick(uri, allItems, exportRating)
         }
     }
     val exportCsvIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
@@ -292,7 +306,7 @@ fun CellarTopAppBar(
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
-            exportCsvHandler?.onTinsExportCsvClick(uri)
+            exportCsvHandler?.onTinsExportCsvClick(uri, allItems, exportRating)
         }
     }
     val exportAsTinsIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
@@ -429,11 +443,12 @@ fun CellarTopAppBar(
                                     onClick = { menuState = MenuState.MAIN }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Normal Export") },
+                                    text = { Text(text = "Normal") },
                                     onClick = {
+                                        exportType = ExportType.ITEMS
+                                        exportCsvPopup = true
                                         expanded = false
                                         menuState = MenuState.MAIN
-                                        exportCsvLauncher.launch(exportCsvIntent)
                                     },
                                     modifier = Modifier
                                         .padding(0.dp),
@@ -445,11 +460,12 @@ fun CellarTopAppBar(
                                     ),
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(text = "Export as Tins") },
+                                    text = { Text(text = "As Tins") },
                                     onClick = {
+                                        exportType = ExportType.TINS
+                                        exportCsvPopup = true
                                         expanded = false
                                         menuState = MenuState.MAIN
-                                        exportAsTinsLauncher.launch(exportAsTinsIntent)
                                     },
                                     modifier = Modifier
                                         .padding(0.dp),
@@ -476,9 +492,167 @@ fun CellarTopAppBar(
         ),
         scrollBehavior = scrollBehavior,
     )
+
+    val coroutineScope = rememberCoroutineScope()
+
+    if (exportCsvPopup) {
+        val options = listOf("All", "Filtered")
+        val selectedIndex = if (allItems) 0 else 1
+
+        var currentMaxString by rememberSaveable { mutableStateOf(exportRating.maxRating.toString()) }
+        var currentRoundingString by rememberSaveable { mutableStateOf(exportRating.rounding.toString()) }
+        val allowedMax = remember { Regex("^(\\s*|\\d{0,3})$") }
+
+        AlertDialog(
+            onDismissRequest = { exportCsvPopup = false },
+            title = {
+                Text(
+                    text = "Export CSV Options"
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                ) {
+                    // Items option //
+                    Text(
+                        text = "Choose which entries to export (all or currently filtered) and " +
+                                "scaling options for ratings.",
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                    )
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 16.dp)
+                    ) {
+                        options.forEachIndexed { index, label ->
+                            SegmentedButton(
+                                selected = index == selectedIndex,
+                                onClick = { allItems = (index == 0) },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                contentPadding = PaddingValues(8.dp, 4.dp),
+                                icon = { null }
+                            ) {
+                                Text(label)
+                            }
+                        }
+                    }
+
+                    // Export Rating options //
+                    Column(
+                        modifier = Modifier
+                            .width(IntrinsicSize.Min)
+                            .align(Alignment.CenterHorizontally),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Text(
+                                text = "Max Rating:",
+                                modifier = Modifier
+                                    .width(95.dp),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 15.sp,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                            TextField(
+                                value = currentMaxString,
+                                onValueChange = {
+                                    if (it.matches(allowedMax)) {
+                                        currentMaxString = it
+                                        exportRating =
+                                            exportRating.copy(maxRating = it.toIntOrNull() ?: 5)
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
+                                ),
+                                modifier = Modifier
+                                    .width(80.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = LocalCustomColors.current.textField,
+                                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                                    disabledContainerColor = LocalCustomColors.current.textField,
+                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Text(
+                                text = "Decimal Places: ",
+                                modifier = Modifier
+                                    .width(95.dp),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 15.sp,
+                                maxLines = 2,
+                            )
+                            CustomDropDown(
+                                selectedValue = currentRoundingString,
+                                onValueChange = {
+                                    currentRoundingString = it
+                                    exportRating = exportRating.copy(rounding = it.toIntOrNull() ?: 2)
+                                },
+                                options = listOf("0", "1", "2"),
+                                modifier = Modifier
+                                    .width(80.dp),
+                            )
+                        }
+                    }
+                }
+            },
+            modifier = modifier,
+            containerColor = MaterialTheme.colorScheme.background,
+            textContentColor = MaterialTheme.colorScheme.onBackground,
+            shape = MaterialTheme.shapes.large,
+            dismissButton = {
+                TextButton(onClick = { exportCsvPopup = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        preferencesRepo.saveExportRating(exportRating.maxRating, exportRating.rounding)
+                    }
+                    when (exportType) {
+                        ExportType.ITEMS -> exportCsvLauncher.launch(exportCsvIntent)
+                        ExportType.TINS -> exportAsTinsLauncher.launch(exportAsTinsIntent)
+                        null -> { }
+                    }
+                    exportCsvPopup = false
+                }
+                ) {
+                    Text(
+                        text = "Confirm"
+                    )
+                }
+            }
+        )
+    }
 }
 
 enum class MenuState { MAIN, EXPORT_CSV }
+enum class ExportType { ITEMS, TINS }
 
 
 @Composable
