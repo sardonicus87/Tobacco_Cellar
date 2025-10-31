@@ -433,8 +433,6 @@ fun HomeScreen(
         )
     }
 
-    var showColumnPop by rememberSaveable { mutableStateOf(false) }
-
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -493,7 +491,7 @@ fun HomeScreen(
                 modifier = Modifier,
                 homeUiState = homeUiState,
                 isTableView = homeUiState.isTableView,
-                onShowColumnPop = { showColumnPop = true },
+                onShowColumnPop = viewmodel::showColumnMenuToggle,
                 selectView = viewmodel::selectView,
                 filterViewModel = filterViewModel,
                 searchText = searchText,
@@ -532,8 +530,8 @@ fun HomeScreen(
                     isTinSearch = isTinSearch,
                     tableSorting = homeUiState.tableSorting,
                     updateSorting = viewmodel::updateSorting,
-                    showColumnPop = showColumnPop,
-                    hideColumnPop = { showColumnPop = false },
+                    showColumnPop = viewmodel.showColumnMenu.value,
+                    hideColumnPop = viewmodel::showColumnMenuToggle,
                     columnVisibility = columnVisibility,
                     onVisibilityChange = viewmodel::updateColumnVisibility,
                     shouldScrollUp = filterViewModel::shouldScrollUp,
@@ -763,6 +761,7 @@ private fun HomeHeader(
             var sortingMenu by rememberSaveable { mutableStateOf(false) }
 
             Box {
+                // List Sorting
                 if (!isTableView) {
                     IconButton(
                         onClick = { sortingMenu = !sortingMenu },
@@ -842,7 +841,7 @@ private fun HomeHeader(
                                 .padding(0.dp),
                         )
                     }
-                }
+                } // column popup button
             }
 
             Spacer(Modifier.width(6.dp))
@@ -1826,16 +1825,6 @@ fun TableViewMode(
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
     val horizontalScroll = rememberScrollState()
 
-    val showType = when (typeGenreOption) {
-        TypeGenreOption.TYPE, TypeGenreOption.TYPE_FALLBACK, TypeGenreOption.BOTH -> true
-        else -> false
-    }
-    val showGenre = when (typeGenreOption) {
-        TypeGenreOption.SUBGENRE, TypeGenreOption.SUB_FALLBACK, TypeGenreOption.BOTH -> true
-        else -> false
-    }
-    val showRating = true
-
     val columnOrder = listOf(
         TableColumn.BRAND,
         TableColumn.BLEND,
@@ -1865,36 +1854,9 @@ fun TableViewMode(
         }
     }
 
-    val columnMinWidthsOld = listOf(
-        180.dp, // 0 Brand
-        300.dp, // 1 Blend
-        if (showType) 108.dp else 0.dp, // 2 Type
-        if (showGenre) 120.dp else 0.dp, // 3 Subgenre
-        if (showRating) 64.dp else 0.dp, // 4 Rating
-        64.dp, // 5 Fav/Dis
-        64.dp, // 6 Note
-        98.dp // 7 Qty
-    )
-
     val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
     val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
 
-    val columnMappingOld = listOf(
-        { item: Items -> item.brand }, // 0
-        { item: Items -> item.blend }, // 1
-        { item: Items -> item.type.ifBlank { if (fallbackType) item.subGenre else item.type } }, // 2
-        { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) item.type else item.subGenre } }, // 3
-        { item: Items -> item.rating }, // 4
-        { item: Items -> // 5
-            when {
-                item.favorite -> 1
-                item.disliked -> 2
-                else -> 0
-            }
-        },
-        { item: Items -> item.notes }, // 6
-        { item: Items -> item.id }, // 7
-    )
 
     val columnMapping = columnOrder.map {
         when (it) {
@@ -1915,6 +1877,8 @@ fun TableViewMode(
             TableColumn.QTY -> { item: Items -> item.id }
         }
     }
+
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = Modifier
@@ -1972,7 +1936,17 @@ fun TableViewMode(
                             0, 1, 2, 3, 4, 7 -> { // sortable columns
                                 HeaderCell(
                                     text = headerText,
-                                    onClick = { onSortChange(columnIndex) },
+                                    onClick = {
+                                        if (searchFocused) {
+                                            focusManager.clearFocus()
+                                        } else {
+                                            if (isMenuShown && activeMenuId != null) {
+                                                onDismissMenu()
+                                            } else {
+                                                onSortChange(columnIndex)
+                                            }
+                                        }
+                                    },
                                     primarySort = sorting.columnIndex == columnIndex,
                                     sorting = sorting,
                                     icon1 = if (columnIndex == 4)
@@ -1984,7 +1958,7 @@ fun TableViewMode(
                                         .align(alignment),
                                     contentAlignment = alignment
                                 )
-                            }
+                            } // sortable columns
                             else -> { // not sortable
                                 HeaderCell(
                                     text = headerText,
@@ -2003,7 +1977,7 @@ fun TableViewMode(
                                     size2 = 12.dp,
                                     contentAlignment = alignment
                                 )
-                            }
+                            } // not sortable
                         }
                     }
                 }
@@ -2011,7 +1985,7 @@ fun TableViewMode(
 
             // Items
             val haptics = LocalHapticFeedback.current
-            val focusManager = LocalFocusManager.current
+
 
             LazyColumn(
                 modifier = Modifier
@@ -2095,7 +2069,7 @@ fun TableViewMode(
                                                         .align(alignment),
                                                     contentAlignment = alignment,
                                                 )
-                                            } // brand, blend, type, rating
+                                            } // brand, blend, type, subgenre, rating
                                             5 -> { // fav/disliked
                                                 val favDisValue = cellValue as Int
                                                 val icon = when (favDisValue) {
@@ -2341,7 +2315,7 @@ fun HeaderCell(
             .clickable(
                 enabled = onClick != null,
                 onClick = { onClick?.invoke() },
-                indication = LocalIndication.current,
+                indication = null, // LocalIndication.current
                 interactionSource = null
             )
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),

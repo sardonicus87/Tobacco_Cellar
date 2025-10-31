@@ -214,28 +214,6 @@ class HomeViewModel(
             initialValue = HomeUiState(isLoading = true)
         )
 
-    val tableColumnVisibility: StateFlow<Map<TableColumn, Boolean>> =
-        preferencesRepo.tableColumnsHidden.map {
-            TableColumn.entries.associateWith { column ->
-                column.name !in it
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = TableColumn.entries.associateWith { true }
-        )
-
-    fun updateColumnVisibility(column: TableColumn, visible: Boolean) {
-        viewModelScope.launch {
-            val currentHidden = preferencesRepo.tableColumnsHidden.first()
-            val newHidden = if (visible) {
-                currentHidden - column.name
-            } else {
-                currentHidden + column.name
-            }
-            preferencesRepo.saveTableColumnsHidden(newHidden)
-        }
-    }
 
     /** Item menu overlay and expand details **/
     private val _itemMenuShown = mutableStateOf(false)
@@ -325,6 +303,36 @@ class HomeViewModel(
             preferencesRepo.saveTableSortingPreferences(
                 newTableSorting.columnIndex, newTableSorting.sortAscending
             )
+        }
+    }
+
+    private val _showColumnMenu = mutableStateOf(false)
+    val showColumnMenu: State<Boolean> = _showColumnMenu
+
+    fun showColumnMenuToggle() {
+        _showColumnMenu.value = !_showColumnMenu.value
+    }
+
+    val tableColumnVisibility: StateFlow<Map<TableColumn, Boolean>> =
+        preferencesRepo.tableColumnsHidden.map {
+            TableColumn.entries.associateWith { column ->
+                column.name !in it
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = TableColumn.entries.associateWith { true }
+        )
+
+    fun updateColumnVisibility(column: TableColumn, visible: Boolean) {
+        viewModelScope.launch {
+            val currentHidden = preferencesRepo.tableColumnsHidden.first()
+            val newHidden = if (visible) {
+                currentHidden - column.name
+            } else {
+                currentHidden + column.name
+            }
+            preferencesRepo.saveTableColumnsHidden(newHidden)
         }
     }
 
