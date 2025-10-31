@@ -56,8 +56,7 @@ class BlendDetailsViewModel(
                 .filterNotNull()
                 .first()
                 .toBlendDetails()
-            val quantityOption = preferencesRepo.quantityOption.first()
-            val quantityRemap = when (quantityOption) {
+            val quantityRemap = when (val quantityOption = preferencesRepo.quantityOption.first()) {
                 QuantityOption.TINS -> {
                     val isMetric = isMetricLocale()
                     if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES

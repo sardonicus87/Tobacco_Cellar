@@ -110,7 +110,7 @@ class PrintHelper(
                 val firstLineTop = staticLayout!!.getLineTop(pageStartLine)
                 val heightOfFirst = staticLayout!!.getLineBottom(pageStartLine) - firstLineTop
 
-                if (heightOfFirst > this.pageContentHeight && this.pageContentHeight > 0) {
+                if (this.pageContentHeight in 1..<heightOfFirst) {
                     pageLineRanges.add(PageLineRange(pageStartLine, pageStartLine - 1))
                     currentLine++
                     continue

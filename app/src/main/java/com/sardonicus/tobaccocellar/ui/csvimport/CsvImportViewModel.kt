@@ -151,7 +151,7 @@ class CsvImportViewModel(
     val overwriteSelections = _overwriteSelections.asStateFlow()
 
     fun updateOverwriteSelection(field: CsvField, overwrite: Boolean) {
-        _overwriteSelections.value = _overwriteSelections.value + (field to overwrite)
+        _overwriteSelections.value += (field to overwrite)
     }
 
 
@@ -185,9 +185,7 @@ class CsvImportViewModel(
         return if (result != null && maxValue != null) {
             val (value) = result.destructured
             val scaling = 5.0 / maxValue
-            val originalNumber = value.toDoubleOrNull()
-
-            if (originalNumber == null) return null
+            val originalNumber = value.toDoubleOrNull() ?: return null
 
             val scaledNumber = originalNumber.times(scaling)
             val roundedNumber = round(scaledNumber * 10) / 10
@@ -218,7 +216,7 @@ class CsvImportViewModel(
             val preQuantity3c = preQuantity3b.replace(" ", "")
             val lastDot = preQuantity3c.lastIndexOf('.')
             val preQuantity4 = if (lastDot != -1) {
-                val integer = preQuantity3c.substring(0, lastDot)
+                val integer = preQuantity3c.take(lastDot)
                 val fractional = preQuantity3c.substring(lastDot)
                 val cleaned = integer.replace(".", "")
                 cleaned + fractional } else { preQuantity3c }

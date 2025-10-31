@@ -248,7 +248,7 @@ class DatesViewModel(
     }
 
     fun tinTimeInPeriod(tinTime: Long, start: Long, end: Long): Boolean {
-        return tinTime >= start && tinTime <= end
+        return tinTime in start..end
     }
 
 }

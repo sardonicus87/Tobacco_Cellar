@@ -567,7 +567,7 @@ fun AutoCompleteText(
                         else { listOf(input) }
                     val selected = allItems.filter {
                         if (componentField) { selectedInput.contains(it) }
-                        else { it.equals(input, ignoreCase = false) } }
+                        else { it.equals(input, ignoreCase = false) } }.toSet()
 
                     suggestionsState = (startsWith + otherWordsStartsWith + contains) - selected
                 }
