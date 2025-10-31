@@ -763,6 +763,8 @@ fun backupDatabase(context: Context, backupFile: File) {
 }
 
 suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
+    val tableView = preferencesRepo.isTableView.toString()
+    val tableColumnsHidden = Json.encodeToString(preferencesRepo.tableColumnsHidden)
     val quantityOption = preferencesRepo.quantityOption.first().value
     val themeSetting = preferencesRepo.themeSetting.first()
     val tinOzConversionRate = preferencesRepo.tinOzConversionRate.first().toString()
@@ -776,6 +778,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
 
     return """
+            tableView=$tableView
+            tableColumnsHidden=$tableColumnsHidden
             quantityOption=$quantityOption
             themeSetting=$themeSetting
             tinOzConversionRate=$tinOzConversionRate
@@ -821,6 +825,8 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             val value = parts[1].trim()
 
             when (key) {
+                "tableView" -> preferencesRepo.saveViewPreference(value.toBoolean())
+                "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(Json.decodeFromString(value))
                 "quantityOption" -> preferencesRepo.saveQuantityPreference(value)
                 "themeSetting" -> preferencesRepo.saveThemeSetting(value)
                 "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
