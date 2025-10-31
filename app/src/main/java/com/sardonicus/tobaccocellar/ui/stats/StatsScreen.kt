@@ -841,15 +841,15 @@ private fun ChartsSection(
                     chartData = filteredStats.typesByQuantity
                 )
             }
-            if (filteredStats.ratingsByEntries.count() > 1) {
+            if (filteredStats.favDisByEntries.count() > 1) {
                 HorizontalDivider(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
                     thickness = 1.dp,
                 )
                 ChartsFormat(
-                    label = "Ratings by Entries",
-                    chartData = filteredStats.ratingsByEntries
+                    label = "Fav/Dislike by Entries",
+                    chartData = filteredStats.favDisByEntries
                 )
             }
             if (filteredStats.subgenresByEntries.count() > 1) {

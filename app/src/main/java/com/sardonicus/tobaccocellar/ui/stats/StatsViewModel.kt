@@ -332,7 +332,7 @@ class StatsViewModel(
                     .entries
                     .sortedByDescending { it.value }
                     .associate { it.key to it.value },
-                ratingsByEntries = filteredItems
+                favDisByEntries = filteredItems
                     .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
                     .eachCount()
                     .entries
@@ -540,7 +540,7 @@ data class FilteredStats(
     val brandsByQuantity: Map<String, Int> = emptyMap(),
     val typesByEntries: Map<String, Int> = emptyMap(),
     val typesByQuantity: Map<String, Int> = emptyMap(),
-    val ratingsByEntries: Map<String, Int> = emptyMap(),
+    val favDisByEntries: Map<String, Int> = emptyMap(),
     val subgenresByEntries: Map<String, Int> = emptyMap(),
     val subgenresByQuantity: Map<String, Int> = emptyMap(),
     val cutsByEntries: Map<String, Int> = emptyMap(),
