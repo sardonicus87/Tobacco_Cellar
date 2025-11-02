@@ -87,6 +87,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onLayoutRectChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -123,6 +124,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -1431,6 +1433,44 @@ fun ListViewMode(
 }
 
 
+@Composable
+private fun ItemMenu(
+    searchPerformed: Boolean,
+    getPositionTrigger: () -> Unit,
+    item: ItemsComponentsAndTins,
+    onEditClick: (Items) -> Unit,
+    onMenuDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .background(LocalCustomColors.current.listMenuScrim),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextButton(
+            onClick = {
+                if (!searchPerformed) {
+                    getPositionTrigger()
+                }
+                onEditClick(item.items)
+                onMenuDismiss()
+            },
+            modifier = Modifier,
+        ) {
+            Text(
+                text = "Edit Item",
+                modifier = Modifier,
+                color = LocalContentColor.current,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+
 @Stable
 @Composable
 private fun CellarListItem(
@@ -1747,33 +1787,42 @@ private fun CellarListItem(
                         .matchParentSize()
                         .padding(0.dp)
                 ) {
-                    Row(
+                    ItemMenu(
+                        searchPerformed = searchPerformed,
+                        getPositionTrigger = { getPositionTrigger() },
+                        item = item,
+                        onMenuDismiss = { onMenuDismiss() },
+                        onEditClick = { onEditClick(it) },
                         modifier = Modifier
-                            .fillMaxWidth()
                             .height(54.dp)
-                            .background(LocalCustomColors.current.listMenuScrim),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = {
-                                if (!searchPerformed) {
-                                    getPositionTrigger()
-                                }
-                                onEditClick(item.items)
-                                onMenuDismiss()
-                            },
-                            modifier = Modifier,
-                        ) {
-                            Text(
-                                text = "Edit Item",
-                                modifier = Modifier,
-                                color = LocalContentColor.current,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
+                    )
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .height(54.dp)
+//                            .background(LocalCustomColors.current.listMenuScrim),
+//                        horizontalArrangement = Arrangement.Center,
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        TextButton(
+//                            onClick = {
+//                                if (!searchPerformed) {
+//                                    getPositionTrigger()
+//                                }
+//                                onEditClick(item.items)
+//                                onMenuDismiss()
+//                            },
+//                            modifier = Modifier,
+//                        ) {
+//                            Text(
+//                                text = "Edit Item",
+//                                modifier = Modifier,
+//                                color = LocalContentColor.current,
+//                                fontWeight = FontWeight.SemiBold,
+//                                fontSize = 14.sp
+//                            )
+//                        }
+//                    }
                 }
             }
         }
@@ -1879,6 +1928,7 @@ fun TableViewMode(
     }
 
     val focusManager = LocalFocusManager.current
+    var tableWidth by remember { mutableStateOf(0.dp) }
 
     Box(
         modifier = Modifier
@@ -1887,7 +1937,10 @@ fun TableViewMode(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .horizontalScroll(horizontalScroll),
+                .horizontalScroll(horizontalScroll)
+                .onLayoutRectChanged{
+                    tableWidth = it.width.dp
+                },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
@@ -1932,10 +1985,11 @@ fun TableViewMode(
                             updateSorting(newSortColumn)
                             shouldScrollUp()
                         }
+                        val headerOverride = if (columnMinWidths[columnIndex] == 0.dp) { "" } else { headerText }
                         when (columnIndex) {
                             0, 1, 2, 3, 4, 7 -> { // sortable columns
                                 HeaderCell(
-                                    text = headerText,
+                                    text = headerOverride,
                                     onClick = {
                                         if (searchFocused) {
                                             focusManager.clearFocus()
@@ -1959,9 +2013,9 @@ fun TableViewMode(
                                     contentAlignment = alignment
                                 )
                             } // sortable columns
-                            else -> { // not sortable
+                            else -> { // not sortable 5-6
                                 HeaderCell(
-                                    text = headerText,
+                                    text = headerOverride,
                                     primarySort = sorting.columnIndex == columnIndex,
                                     sorting = sorting,
                                     modifier = Modifier
@@ -1985,7 +2039,6 @@ fun TableViewMode(
 
             // Items
             val haptics = LocalHapticFeedback.current
-
 
             LazyColumn(
                 modifier = Modifier
@@ -2151,14 +2204,14 @@ fun TableViewMode(
                                 ) {
                                     Row(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(LocalCustomColors.current.listMenuScrim),
+                                            .fillMaxWidth(),
+                                       //     .background(LocalCustomColors.current.listMenuScrim),
                                         horizontalArrangement = Arrangement.Start,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         val currentScrollOffset = horizontalScroll.value
-                                        val switch = screenWidth.dp >= 814.dp
-                                        val width = if (switch) 814.dp else screenWidth.dp
+                                        val switch = screenWidth.dp >= tableWidth
+                                        val width = if (switch) tableWidth else screenWidth.dp
 
                                         Box (
                                             modifier = Modifier
@@ -2172,22 +2225,30 @@ fun TableViewMode(
                                                 },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            TextButton(
-                                                onClick = {
-                                                    if (!searchPerformed) { getPositionTrigger() }
-                                                    onEditClick(item.items)
-                                                    onDismissMenu()
-                                                },
+                                            ItemMenu(
+                                                searchPerformed = searchPerformed,
+                                                getPositionTrigger = { getPositionTrigger() },
+                                                item = item,
+                                                onMenuDismiss = { onDismissMenu() },
+                                                onEditClick = { onEditClick(it) },
                                                 modifier = Modifier
-                                            ) {
-                                                Text(
-                                                    text = "Edit Item",
-                                                    modifier = Modifier,
-                                                    color = LocalContentColor.current,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    fontSize = 14.sp
-                                                )
-                                            }
+                                            )
+//                                            TextButton(
+//                                                onClick = {
+//                                                    if (!searchPerformed) { getPositionTrigger() }
+//                                                    onEditClick(item.items)
+//                                                    onDismissMenu()
+//                                                },
+//                                                modifier = Modifier
+//                                            ) {
+//                                                Text(
+//                                                    text = "Edit Item",
+//                                                    modifier = Modifier,
+//                                                    color = LocalContentColor.current,
+//                                                    fontWeight = FontWeight.SemiBold,
+//                                                    fontSize = 14.sp
+//                                                )
+//                                            }
                                         }
                                     }
                                 }
