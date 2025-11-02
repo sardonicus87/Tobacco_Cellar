@@ -11,8 +11,8 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.home.formatDecimal
-import com.sardonicus.tobaccocellar.ui.home.isMetricLocale
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
+import com.sardonicus.tobaccocellar.ui.details.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted

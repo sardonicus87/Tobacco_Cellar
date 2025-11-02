@@ -12,8 +12,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSortOption
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
-import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
-import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextSortOption
+import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
+import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextSortOption
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting

@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.home
+package com.sardonicus.tobaccocellar.ui.details
 
 import android.content.res.Configuration
 import android.content.res.Resources

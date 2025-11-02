@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.home
+package com.sardonicus.tobaccocellar.ui.details
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background

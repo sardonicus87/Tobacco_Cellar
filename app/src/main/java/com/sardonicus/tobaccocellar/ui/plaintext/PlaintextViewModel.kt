@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.home.plaintext
+package com.sardonicus.tobaccocellar.ui.plaintext
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,7 +16,7 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
-import com.sardonicus.tobaccocellar.ui.home.formatDecimal
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption

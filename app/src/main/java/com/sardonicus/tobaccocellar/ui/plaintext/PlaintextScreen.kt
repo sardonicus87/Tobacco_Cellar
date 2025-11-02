@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.home.plaintext
+package com.sardonicus.tobaccocellar.ui.plaintext
 
 import android.content.ClipData
 import android.content.Context
@@ -111,7 +111,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
-import com.sardonicus.tobaccocellar.ui.home.formatDecimal
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch

@@ -16,8 +16,8 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
-import com.sardonicus.tobaccocellar.ui.home.formatDecimal
-import com.sardonicus.tobaccocellar.ui.home.plaintext.PlaintextPreset
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
+import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
