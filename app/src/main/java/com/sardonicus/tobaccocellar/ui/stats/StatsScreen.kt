@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +35,7 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,12 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -73,6 +77,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
+import com.sardonicus.tobaccocellar.ui.home.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
@@ -841,6 +846,20 @@ private fun ChartsSection(
                     chartData = filteredStats.typesByQuantity
                 )
             }
+
+            if (filteredStats.ratingsDistribution.distribution.count() > 1) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Ratings Distribution",
+                    histogramData = filteredStats.ratingsDistribution,
+                    showHistogram = true
+                )
+            }
+
             if (filteredStats.favDisByEntries.count() > 1) {
                 HorizontalDivider(
                     modifier = Modifier
@@ -896,10 +915,7 @@ private fun ChartsSection(
                 )
             }
 
-            Spacer(
-                modifier = Modifier
-                    .height(16.dp)
-            )
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -907,9 +923,11 @@ private fun ChartsSection(
 @Composable
 private fun ChartsFormat(
     label: String,
-    chartData: Map<String, Int>,
+    chartData: Map<String, Int> = mapOf(),
+    histogramData: RatingsDistribution = RatingsDistribution(),
+    showHistogram: Boolean = false
 ) {
-    val countVal = chartData.values.sum()
+    val countVal = if (!showHistogram) chartData.values.sum() else histogramData.distribution.values.sum()
     val showValue = remember { mutableStateOf(false) }
 
     Column(
@@ -926,7 +944,8 @@ private fun ChartsFormat(
             textAlign = TextAlign.Center
         )
         Row(
-            modifier = Modifier,
+            modifier = Modifier
+                .padding(bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
@@ -956,22 +975,32 @@ private fun ChartsFormat(
                 textAlign = TextAlign.Start
             )
         }
-        PieChart(
-            data = chartData,
-            showLabels = true,
-            showPercentages = true,
-            showValues = showValue.value,
-            modifier = Modifier
-                .padding(top = 28.dp, bottom = 44.dp)
-                .fillMaxWidth(fraction = 0.7f),
-            onSliceLabelPosition = 0.6f,
-            outsideSliceLabelPosition = 0.6f,
-            outsideLabelThreshold = 25f,
-            rotationOffset = 270f,
-            textColor = Color.Black,
-            labelBackground = Color.White.copy(alpha = 0.55f),
-            sortData = false
-        )
+        if (!showHistogram) {
+            PieChart(
+                data = chartData,
+                showLabels = true,
+                showPercentages = true,
+                showValues = showValue.value,
+                modifier = Modifier
+                    .padding(top = 28.dp, bottom = 44.dp)
+                    .fillMaxWidth(fraction = 0.7f),
+                onSliceLabelPosition = 0.6f,
+                outsideSliceLabelPosition = 0.6f,
+                outsideLabelThreshold = 25f,
+                rotationOffset = 270f,
+                textColor = Color.Black,
+                labelBackground = Color.White.copy(alpha = 0.55f),
+                sortData = false
+            )
+        } else {
+            HistogramChart(
+                data = histogramData,
+                showValues = showValue.value,
+                modifier = Modifier
+                    .padding(top = 28.dp, bottom = 44.dp)
+                    .fillMaxWidth(fraction = 0.7f)
+            )
+        }
     }
 }
 
@@ -1345,3 +1374,220 @@ private fun DrawScope.drawLabels(
     }
 }
 
+
+@Composable
+private fun HistogramChart(
+    data: RatingsDistribution,
+    modifier: Modifier = Modifier,
+    showValues: Boolean = false,
+) {
+    val distribution = data.distribution
+    val unratedCount = data.unratedCount
+
+    val maxCount = (distribution.values.maxOrNull() ?: 0).coerceAtLeast(1)
+
+    val density = LocalDensity.current
+    var currentWidth by remember { mutableStateOf(0.dp) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .onGloballyPositioned {
+                currentWidth = with(density) { it.size.width.toDp() }
+            }
+    ) {
+        val width: Dp = (currentWidth) / 11
+        val ratingSteps = List(11) { it / 2.0 }
+
+        // chart
+        Box(
+            modifier = Modifier
+        ) {
+            // chart
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.2f)
+                    .padding(bottom = 16.dp)
+            ) {
+                ratingSteps.forEach {
+                    val count = distribution.getOrDefault(it, 0)
+                    val barHeight = count.toFloat() / maxCount
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(width)
+                                .weight(1f),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            if (showValues && count == 0) {
+                                Text(
+                                    text = "(0)",
+                                    color = LocalContentColor.current,
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    autoSize = TextAutoSize.StepBased(
+                                        minFontSize = 9.sp,
+                                        maxFontSize = 12.sp,
+                                        stepSize = .02.sp
+                                    ),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .padding(start = 4.dp, end = 4.dp, bottom = 1.dp)
+                                )
+                            }
+                            // actual bar
+                            val borderColor = colorScheme.background
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 2.dp)
+                                    .fillMaxHeight(barHeight)
+                                    .background(LocalCustomColors.current.pieOne)  //  .background(barColor[ratingSteps.indexOf(it) % barColor.size])
+                                    .drawBehind {
+                                        val strokeWidth = Dp.Hairline.toPx()
+                                        val xOffset = size.width - strokeWidth / 2
+
+                                        drawLine(
+                                            color = borderColor,
+                                            start = Offset((strokeWidth / 2), 0f),
+                                            end = Offset((strokeWidth / 2), size.height),
+                                            strokeWidth = strokeWidth
+                                        )
+
+                                        drawLine(
+                                            color = borderColor,
+                                            start = Offset(xOffset, 0f),
+                                            end = Offset(xOffset, size.height),
+                                            strokeWidth = strokeWidth
+                                        )
+                                    },
+                                contentAlignment = Alignment.TopCenter
+                            ) {
+                                val offset = with(density) { 6.sp.toDp() }
+                                if (showValues) {
+                                    Text(
+                                        text = "$count",
+                                        color = LocalContentColor.current,
+                                        fontSize = 12.sp,
+                                        lineHeight = 12.sp,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier
+                                            .offset(y = -offset)
+                                            .background(colorScheme.background.copy(alpha = 0.75f))
+                                            .padding(start = 4.dp, end = 4.dp, bottom = 1.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // null count
+            Text(
+                text = "(Unrated: $unratedCount)",
+                color = LocalContentColor.current,
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 16.dp)
+            )
+            // count label
+            Text(
+                text = "Count",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .rotate(-90f)
+                    .align(Alignment.CenterStart)
+                    .offset(24.dp, -(width + 24.dp))
+            )
+        }
+        // x-axis
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 2.dp)
+                .height(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                HorizontalDivider(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = (width / 2)),
+                    color = colorScheme.outline,
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    repeat(11) {
+                        Box(
+                            modifier = Modifier
+                                .width(width),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            val fraction = if (it % 2 == 0) 1f else 0.5f
+                            val thickness = if (it % 2 == 0) 2.dp else 0.75.dp
+                            VerticalDivider(Modifier.fillMaxHeight(fraction), thickness, colorScheme.outline)
+                        }
+                    }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.Top
+        ) {
+            ratingSteps.forEachIndexed { index, it ->
+                if (index % 2 == 0) {
+                    Text(
+                        text = formatDecimal(it, 0),
+                        modifier = Modifier
+                            .width(width),
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                } else {
+                    //Spacer(Modifier.width(width))
+                    val offset = with(density) { 9.sp.toDp() }
+                    Text(
+                        text = formatDecimal(it, 1),
+                        modifier = Modifier
+                            .width(width)
+                            .offset(y = -offset),
+                        textAlign = TextAlign.Center,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Rating (rounded ranges)",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+
+}

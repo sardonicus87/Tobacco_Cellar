@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlin.math.roundToInt
 
 class StatsViewModel(
     filterViewModel: FilterViewModel,
@@ -332,6 +333,15 @@ class StatsViewModel(
                     .entries
                     .sortedByDescending { it.value }
                     .associate { it.key to it.value },
+
+                ratingsDistribution = RatingsDistribution(
+                    distribution = filteredItems.mapNotNull { it.items.rating }
+                        .map { (it * 2).roundToInt() / 2.0 }
+                        .groupingBy { it }
+                        .eachCount(),
+                    unratedCount = filteredItems.map { it.items.rating }.count { it == null }
+                ),
+
                 favDisByEntries = filteredItems
                     .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
                     .eachCount()
@@ -540,9 +550,15 @@ data class FilteredStats(
     val brandsByQuantity: Map<String, Int> = emptyMap(),
     val typesByEntries: Map<String, Int> = emptyMap(),
     val typesByQuantity: Map<String, Int> = emptyMap(),
+    val ratingsDistribution: RatingsDistribution = RatingsDistribution(),
     val favDisByEntries: Map<String, Int> = emptyMap(),
     val subgenresByEntries: Map<String, Int> = emptyMap(),
     val subgenresByQuantity: Map<String, Int> = emptyMap(),
     val cutsByEntries: Map<String, Int> = emptyMap(),
     val cutsByQuantity: Map<String, Int> = emptyMap(),
+)
+
+data class RatingsDistribution(
+    val distribution: Map<Double, Int> = emptyMap(),
+    val unratedCount: Int = 0
 )
