@@ -1,7 +1,5 @@
 package com.sardonicus.tobaccocellar.data
 
-import com.sardonicus.tobaccocellar.ui.stats.BrandCount
-import com.sardonicus.tobaccocellar.ui.stats.TypeCount
 import kotlinx.coroutines.flow.Flow
 
 interface ItemsRepository {
@@ -31,9 +29,6 @@ interface ItemsRepository {
 
     suspend fun deleteComponentsCrossRefByItemId(itemId: Int)
 
-    suspend fun insertMultipleComponents(components: List<Components>): List<Long>
-
-    suspend fun insertMultipleComponentsCrossRef(crossRefs: List<ItemsComponentsCrossRef>)
 
     // Flavoring //
     suspend fun insertFlavoring(flavoring: Flavoring): Long
@@ -44,9 +39,6 @@ interface ItemsRepository {
 
     suspend fun deleteFlavoringCrossRefByItemId(itemId: Int)
 
-    suspend fun insertMultipleFlavoring(flavoring: List<Flavoring>): List<Long>
-
-    suspend fun insertMultipleFlavoringCrossRef(crossRefs: List<ItemsFlavoringCrossRef>)
 
     // Tins //
     suspend fun insertTin(tin: Tins): Long
@@ -61,21 +53,11 @@ interface ItemsRepository {
 
 
     /** Get all items **/
-    fun getAllItemsStream(): Flow<List<Items>>
-
     fun getAllItemIds(): List<Int>
-
-    fun getAllItemsExport(): List<Items>
-
-    suspend fun getAllItemsWithComponentsAndFlavoring(): List<ItemsWithComponentsAndFlavoring>
 
     fun getAllComponentsStream(): Flow<List<Components>>
 
     fun getAllFlavoringStream(): Flow<List<Flavoring>>
-
-    fun getAllTinsStream(): Flow<List<Tins>>
-
-    fun getAllItemsComponentsCrossRefStream(): Flow<List<ItemsComponentsCrossRef>>
 
     fun getEverythingStream(): Flow<List<ItemsComponentsAndTins>>
 
@@ -102,67 +84,7 @@ interface ItemsRepository {
     suspend fun exists(brand: String, blend: String): Boolean
 
 
-    /** Get all column/value functions **/
-    fun getAllBrandsStream(): Flow<List<String>>
-
-    fun getAllBlendsStream(): Flow<List<String>>
-
-    fun getAllTypesStream(): Flow<List<String>>
-
-    fun getAllSubGenresStream(): Flow<List<String>>
-
-    fun getAllCutsStream(): Flow<List<String>>
-
-    fun getAllFavoritesStream(): Flow<List<Boolean>>
-
-    fun getAllDislikeStream(): Flow<List<Boolean>>
-
-    fun getAllZeroQuantityStream(): Flow<List<Boolean>>
-
-    fun getAllCompNamesStream(): Flow<List<String>>
-
-    fun getAllTinContainersStream(): Flow<List<String>>
-
-    fun getAllSubgenresStream(): Flow<List<String>>
-
-
-    /** Get counts **/
-    fun getItemsCount(): Flow<Int>
-
-    fun getBrandsCount(): Flow<Int>
-
-    fun getTotalByBrand(): Flow<List<BrandCount>>
-
-    fun getTotalByType(): Flow<List<TypeCount>>
-
-    fun getTotalFavorite(): Flow<Int>
-
-    fun getTotalDislike(): Flow<Int>
-
-    fun getTotalQuantity(): Flow<Int>
-
-    fun getTotalZeroQuantity(): Flow<Int>
-
-
     /** Get any by value **/
-    fun getItemsByBrand(brand: String): Flow<List<Items>>
-
-    fun getItemsByBlend(blend: String): Flow<List<Items>>
-
-    fun getItemsByType(type: String): Flow<List<Items>>
-
-    fun getItemsByQuantity(): Flow<List<Items>>
-
-    fun getItemsByFavorite(): Flow<List<Items>>
-
-    fun getItemsByDisliked(): Flow<List<Items>>
-
-    fun getItemsByZeroQuantity(): Flow<List<Items>>
-
     fun getItemByIndex(brand: String, blend: String): Items?
-
-    fun getComponentsByName(components: List<String>): Flow<List<Components>>
-
-    fun getFlavoringByName(flavoring: List<String>): Flow<List<Flavoring>>
 
 }
