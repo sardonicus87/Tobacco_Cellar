@@ -15,8 +15,8 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
+import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
@@ -591,7 +591,7 @@ class PlaintextViewModel (
         val processedString = resultBuilder.toString()
         val processedDelimiter = delimiter.replace("_n_", "\n")
 
-        return if (processedDelimiter.isNotBlank() && processedString.endsWith(processedDelimiter)) {
+        return if (processedDelimiter.isNotEmpty() && processedString.endsWith(processedDelimiter)) {
             processedString.removeSuffix(processedDelimiter)
         } else { processedString }
     }
@@ -671,7 +671,6 @@ class PlaintextViewModel (
 
 
         // Tins as sublist processing
-        // val tinSublist = Regex("""\{(.*?)\}""")
         processedLine = tinSublist.replace(processedLine) {
             val sublistTemplate = it.groupValues[1]
             val sublistOut = StringBuilder()
