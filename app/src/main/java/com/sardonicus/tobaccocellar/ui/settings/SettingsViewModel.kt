@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileInputStream
@@ -640,6 +641,7 @@ data class TinConversionRates(
     }
 }
 
+@Serializable
 data class ExportRating(
     val maxRating: Int = 5,
     val rounding: Int = 2
@@ -764,7 +766,7 @@ fun backupDatabase(context: Context, backupFile: File) {
 
 suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val tableView = preferencesRepo.isTableView.toString()
-    val tableColumnsHidden = Json.encodeToString(preferencesRepo.tableColumnsHidden)
+    val tableColumnsHidden = Json.encodeToString(preferencesRepo.tableColumnsHidden.first())
     val quantityOption = preferencesRepo.quantityOption.first().value
     val themeSetting = preferencesRepo.themeSetting.first()
     val tinOzConversionRate = preferencesRepo.tinOzConversionRate.first().toString()
@@ -826,7 +828,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
 
             when (key) {
                 "tableView" -> preferencesRepo.saveViewPreference(value.toBoolean())
-                "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(Json.decodeFromString(value))
+                "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(Json.decodeFromString<Set<String>>(value))
                 "quantityOption" -> preferencesRepo.saveQuantityPreference(value)
                 "themeSetting" -> preferencesRepo.saveThemeSetting(value)
                 "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
