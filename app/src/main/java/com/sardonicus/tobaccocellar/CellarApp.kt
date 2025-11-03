@@ -1343,7 +1343,7 @@ fun FilterBottomSheet(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
                     }
                 }
             }
@@ -1369,10 +1369,7 @@ fun FilterBottomSheet(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        Spacer(
-            modifier = Modifier
-                .height(12.dp)
-        )
+        Spacer(Modifier.height(12.dp))
     }
 }
 
