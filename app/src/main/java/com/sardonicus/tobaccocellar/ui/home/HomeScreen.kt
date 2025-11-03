@@ -1880,7 +1880,6 @@ fun TableViewMode(
     val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
     val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
 
-
     val columnMapping = columnOrder.map {
         when (it) {
             TableColumn.BRAND -> { item: Items -> item.brand }
