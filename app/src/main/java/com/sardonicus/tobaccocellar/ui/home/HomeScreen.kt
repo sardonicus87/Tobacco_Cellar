@@ -1187,60 +1187,6 @@ private fun HomeBody(
     }
 }
 
-@Composable
-fun ColumnVisibilityPopup(
-    visibilityMap: Map<TableColumn, Boolean>,
-    onVisibilityChange: (TableColumn, Boolean) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        text = {
-            LazyVerticalGrid (
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                items(TableColumn.entries) { column ->
-                    Row (
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                    ) {
-                        CheckboxWithLabel(
-                            text = column.title,
-                            checked = visibilityMap[column] ?: true,
-                            onCheckedChange = {
-                                val visible = visibilityMap[column] ?: true
-                                onVisibilityChange(column, !visible)
-                            },
-                            modifier = Modifier
-                        )
-                    }
-                }
-            }
-        },
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large,
-        confirmButton = {
-            TextButton(onClick = { onDismiss() }
-            ) {
-                Text(
-                    text = "Done"
-                )
-            }
-        }
-    )
-}
-
 
 /** JumpTo Button **/
 @Stable
@@ -1342,6 +1288,45 @@ fun rememberJumpToState(
 }
 
 
+/** Item Menu **/
+@Composable
+private fun ItemMenu(
+    searchPerformed: Boolean,
+    getPositionTrigger: () -> Unit,
+    item: ItemsComponentsAndTins,
+    onEditClick: (Items) -> Unit,
+    onMenuDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .background(LocalCustomColors.current.listMenuScrim),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextButton(
+            onClick = {
+                if (!searchPerformed) {
+                    getPositionTrigger()
+                }
+                onEditClick(item.items)
+                onMenuDismiss()
+            },
+            modifier = Modifier,
+        ) {
+            Text(
+                text = "Edit Item",
+                modifier = Modifier,
+                color = LocalContentColor.current,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+
 /** List View Mode **/
 @Stable
 @Composable
@@ -1428,44 +1413,6 @@ fun ListViewMode(
                     showMenu = isMenuShown && activeMenuId == item.items.id
                 )
             }
-        }
-    }
-}
-
-
-@Composable
-private fun ItemMenu(
-    searchPerformed: Boolean,
-    getPositionTrigger: () -> Unit,
-    item: ItemsComponentsAndTins,
-    onEditClick: (Items) -> Unit,
-    onMenuDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxSize()
-            .background(LocalCustomColors.current.listMenuScrim),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TextButton(
-            onClick = {
-                if (!searchPerformed) {
-                    getPositionTrigger()
-                }
-                onEditClick(item.items)
-                onMenuDismiss()
-            },
-            modifier = Modifier,
-        ) {
-            Text(
-                text = "Edit Item",
-                modifier = Modifier,
-                color = LocalContentColor.current,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp
-            )
         }
     }
 }
@@ -1796,33 +1743,6 @@ private fun CellarListItem(
                         modifier = Modifier
                             .height(54.dp)
                     )
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .height(54.dp)
-//                            .background(LocalCustomColors.current.listMenuScrim),
-//                        horizontalArrangement = Arrangement.Center,
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        TextButton(
-//                            onClick = {
-//                                if (!searchPerformed) {
-//                                    getPositionTrigger()
-//                                }
-//                                onEditClick(item.items)
-//                                onMenuDismiss()
-//                            },
-//                            modifier = Modifier,
-//                        ) {
-//                            Text(
-//                                text = "Edit Item",
-//                                modifier = Modifier,
-//                                color = LocalContentColor.current,
-//                                fontWeight = FontWeight.SemiBold,
-//                                fontSize = 14.sp
-//                            )
-//                        }
-//                    }
                 }
             }
         }
@@ -1845,6 +1765,60 @@ enum class TableColumn(val title: String) {
     FAV_DIS("Fav/Dis"),
     NOTE("Notes"),
     QTY("Quantity")
+}
+
+@Composable
+fun ColumnVisibilityPopup(
+    visibilityMap: Map<TableColumn, Boolean>,
+    onVisibilityChange: (TableColumn, Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        text = {
+            LazyVerticalGrid (
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                items(TableColumn.entries) { column ->
+                    Row (
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                    ) {
+                        CheckboxWithLabel(
+                            text = column.title,
+                            checked = visibilityMap[column] ?: true,
+                            onCheckedChange = {
+                                val visible = visibilityMap[column] ?: true
+                                onVisibilityChange(column, !visible)
+                            },
+                            modifier = Modifier
+                        )
+                    }
+                }
+            }
+        },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        confirmButton = {
+            TextButton(onClick = { onDismiss() }
+            ) {
+                Text(
+                    text = "Done"
+                )
+            }
+        }
+    )
 }
 
 @Composable
@@ -2233,22 +2207,6 @@ fun TableViewMode(
                                                 onEditClick = { onEditClick(it) },
                                                 modifier = Modifier
                                             )
-//                                            TextButton(
-//                                                onClick = {
-//                                                    if (!searchPerformed) { getPositionTrigger() }
-//                                                    onEditClick(item.items)
-//                                                    onDismissMenu()
-//                                                },
-//                                                modifier = Modifier
-//                                            ) {
-//                                                Text(
-//                                                    text = "Edit Item",
-//                                                    modifier = Modifier,
-//                                                    color = LocalContentColor.current,
-//                                                    fontWeight = FontWeight.SemiBold,
-//                                                    fontSize = 14.sp
-//                                                )
-//                                            }
                                         }
                                     }
                                 }
@@ -2440,6 +2398,7 @@ fun HeaderCell(
         }
     }
 }
+
 
 @Stable
 @Composable
