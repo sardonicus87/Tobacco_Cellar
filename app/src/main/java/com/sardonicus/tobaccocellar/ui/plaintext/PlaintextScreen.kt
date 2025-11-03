@@ -562,6 +562,8 @@ fun PlaintextList(
                 Text(
                     text = plaintextState.plainList,
                     fontSize = 15.sp,
+                    modifier = Modifier
+                        .padding(bottom = 32.dp)
                 )
             }
         }
