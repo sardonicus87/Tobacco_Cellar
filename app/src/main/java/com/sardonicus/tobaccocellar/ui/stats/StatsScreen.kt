@@ -983,7 +983,7 @@ private fun ChartsFormat(
                 showValues = showValue.value,
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
-                    .fillMaxWidth(fraction = 0.7f),
+                    .fillMaxWidth(0.7f),
                 onSliceLabelPosition = 0.6f,
                 outsideSliceLabelPosition = 0.6f,
                 outsideLabelThreshold = 25f,
@@ -998,7 +998,7 @@ private fun ChartsFormat(
                 showValues = showValue.value,
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
-                    .fillMaxWidth(fraction = 0.7f)
+                    .fillMaxWidth(0.7f)
             )
         }
     }
@@ -1399,7 +1399,6 @@ private fun HistogramChart(
         val width: Dp = (currentWidth) / 11
         val ratingSteps = List(11) { it / 2.0 }
 
-        // chart
         Box(
             modifier = Modifier
         ) {
@@ -1407,7 +1406,7 @@ private fun HistogramChart(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1.2f)
+                    .aspectRatio(1.25f)
                     .padding(bottom = 16.dp)
             ) {
                 ratingSteps.forEach {
@@ -1448,7 +1447,7 @@ private fun HistogramChart(
                                     .fillMaxWidth()
                                     .heightIn(min = 2.dp)
                                     .fillMaxHeight(barHeight)
-                                    .background(LocalCustomColors.current.pieOne)  //  .background(barColor[ratingSteps.indexOf(it) % barColor.size])
+                                    .background(LocalCustomColors.current.pieOne)
                                     .drawBehind {
                                         val strokeWidth = Dp.Hairline.toPx()
                                         val xOffset = size.width - strokeWidth / 2
@@ -1470,7 +1469,7 @@ private fun HistogramChart(
                                 contentAlignment = Alignment.TopCenter
                             ) {
                                 val offset = with(density) { 6.sp.toDp() }
-                                if (showValues) {
+                                if (showValues && count > 0) {
                                     Text(
                                         text = "$count",
                                         color = LocalContentColor.current,
@@ -1480,7 +1479,7 @@ private fun HistogramChart(
                                         modifier = Modifier
                                             .offset(y = -offset)
                                             .background(colorScheme.background.copy(alpha = 0.75f))
-                                            .padding(start = 4.dp, end = 4.dp, bottom = 1.dp)
+                                            .padding(start = 4.dp, end = 4.dp, bottom = 0.5.dp)
                                     )
                                 }
                             }
@@ -1488,6 +1487,7 @@ private fun HistogramChart(
                     }
                 }
             }
+
             // null count
             Text(
                 text = "(Unrated: $unratedCount)",
@@ -1495,17 +1495,17 @@ private fun HistogramChart(
                 fontSize = 12.sp,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(top = 16.dp)
+                    .padding(top = 8.dp)
             )
             // count label
             Text(
-                text = "Count",
+                text = "Frequency",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .rotate(-90f)
                     .align(Alignment.CenterStart)
-                    .offset(24.dp, -(width + 24.dp))
+                    .offset(24.dp, -(width + 32.dp))
             )
         }
         // x-axis
@@ -1519,12 +1519,11 @@ private fun HistogramChart(
             Box(
                 modifier = Modifier
                     .fillMaxSize(),
-                contentAlignment = Alignment.CenterStart
+                contentAlignment = Alignment.TopStart
             ) {
                 HorizontalDivider(
                     Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = (width / 2)),
+                        .fillMaxWidth(),
                     color = colorScheme.outline,
                 )
                 Row(
@@ -1535,7 +1534,7 @@ private fun HistogramChart(
                         Box(
                             modifier = Modifier
                                 .width(width),
-                            contentAlignment = Alignment.TopCenter
+                            contentAlignment = Alignment.TopStart
                         ) {
                             val fraction = if (it % 2 == 0) 1f else 0.5f
                             val thickness = if (it % 2 == 0) 2.dp else 0.75.dp
@@ -1547,7 +1546,8 @@ private fun HistogramChart(
         }
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .offset(x = -(width / 2)),
             verticalAlignment = Alignment.Top
         ) {
             ratingSteps.forEachIndexed { index, it ->
@@ -1561,7 +1561,6 @@ private fun HistogramChart(
                         fontWeight = FontWeight.Medium
                     )
                 } else {
-                    //Spacer(Modifier.width(width))
                     val offset = with(density) { 9.sp.toDp() }
                     Text(
                         text = formatDecimal(it, 1),
@@ -1583,7 +1582,7 @@ private fun HistogramChart(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Rating (rounded ranges)",
+                text = "Rating",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )

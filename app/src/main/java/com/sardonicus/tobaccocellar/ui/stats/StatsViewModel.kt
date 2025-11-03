@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
-import kotlin.math.roundToInt
+import kotlin.math.floor
 
 class StatsViewModel(
     filterViewModel: FilterViewModel,
@@ -336,8 +336,12 @@ class StatsViewModel(
 
                 ratingsDistribution = RatingsDistribution(
                     distribution = filteredItems.mapNotNull { it.items.rating }
-                        .map { (it * 2).roundToInt() / 2.0 }
-                        .groupingBy { it }
+                        .groupingBy {
+                            when {
+                                it < 5.0 -> floor(it * 2) / 2.0
+                                else -> 5.0
+                            }
+                        }
                         .eachCount(),
                     unratedCount = filteredItems.map { it.items.rating }.count { it == null }
                 ),
