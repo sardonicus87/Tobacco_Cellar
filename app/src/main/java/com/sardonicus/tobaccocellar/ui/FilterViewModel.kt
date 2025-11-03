@@ -1371,7 +1371,7 @@ class FilterViewModel (
         sheetSelectedRatingHigh,
         ratingHighEnabled,
         ratingsExist
-    ) { // it: Array<*> ->
+    ) { it: Array<Any?> ->
         val favorites = it[0] as Boolean
         val favoritesEnabled = it[1] as Boolean
         val excludeFavorites = it[2] as Boolean
