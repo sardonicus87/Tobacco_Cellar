@@ -318,7 +318,7 @@ class PreferencesRepo(
         }
 
     suspend fun saveExportRating(rating: Int, rounding: Int) {
-        dataStore.edit { it ->
+        dataStore.edit {
             it[MAX_RATING] = rating
             it[RATING_ROUND] = rounding
             ExportRating(rating, rounding)

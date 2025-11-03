@@ -11,7 +11,6 @@ import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
-import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TinExportData
 import com.sardonicus.tobaccocellar.data.Tins
@@ -42,7 +41,6 @@ import java.util.Locale
 import kotlin.math.floor
 
 class HomeViewModel(
-    private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
     filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
@@ -514,12 +512,12 @@ enum class ListSortOption(val value: String) {
 }
 
 
-
 sealed class SearchSetting(val value: String) {
     data object Blend: SearchSetting("Blend")
     data object Notes: SearchSetting("Notes")
     data object TinLabel: SearchSetting("Tin Label")
 }
+
 
 /** helper functions for quantity display **/
 fun calculateTotalQuantity(

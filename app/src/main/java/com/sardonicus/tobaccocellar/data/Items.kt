@@ -150,13 +150,6 @@ data class ItemsComponentsAndTins(
 )
 
 
-data class ItemsWithComponentsAndFlavoring(
-    val item: Items,
-    val components: List<Components> = emptyList(),
-    val flavoring: List<Flavoring> = emptyList(),
-)
-
-
 data class TinExportData(
     val brand: String,
     val blend: String,

@@ -534,7 +534,7 @@ fun CellarTopAppBar(
                                 onClick = { allItems = (index == 0) },
                                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                                 contentPadding = PaddingValues(8.dp, 4.dp),
-                                icon = { null }
+                                icon = { }
                             ) {
                                 Text(label)
                             }

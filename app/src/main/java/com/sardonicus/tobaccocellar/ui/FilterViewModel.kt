@@ -375,9 +375,6 @@ class FilterViewModel (
     private val _availableCuts = MutableStateFlow<List<String>>(emptyList())
     val availableCuts: StateFlow<List<String>> = _availableCuts
 
-    private val _availableRatings = MutableStateFlow<List<Double?>>(emptyList())
-    val availableRatings: StateFlow<List<Double?>> = _availableRatings
-
     private val _availableComponents = MutableStateFlow<List<String>>(emptyList())
     val availableComponents: StateFlow<List<String>> = _availableComponents
 
@@ -447,12 +444,6 @@ class FilterViewModel (
                 }.distinct().sortedWith(
                     compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                         .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
-                )
-                _availableRatings.value = it.map {
-                    it.items.rating
-                }.distinct().sortedWith(
-                    compareBy<Double?>{ if (it == null) 1 else 0 }
-                        .thenBy { it ?: 0.0 }
                 )
                 _availableComponents.value = it.flatMap {
                     it.components.ifEmpty {

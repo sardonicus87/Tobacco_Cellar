@@ -1157,8 +1157,8 @@ fun CustomCheckBox(
     ) {
         Icon(
             imageVector = if (checked) {
-                ImageVector.Companion.vectorResource(id = checkedIcon)
-            } else ImageVector.Companion.vectorResource(id = uncheckedIcon),
+                ImageVector.vectorResource(id = checkedIcon)
+            } else ImageVector.vectorResource(id = uncheckedIcon),
             contentDescription = null,
             modifier = Modifier.Companion
         )

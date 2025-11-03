@@ -493,16 +493,6 @@ class StatsViewModel(
 }
 
 
-data class BrandCount(
-    val brand: String,
-    val brandCount: Int
-)
-
-data class TypeCount(
-    val type: String,
-    val typeCount: Int
-)
-
 data class RawStats(
     val rawLoading: Boolean = false,
 
