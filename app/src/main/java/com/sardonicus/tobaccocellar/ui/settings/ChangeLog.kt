@@ -10,6 +10,61 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "4.0.0",
+        buildDate = "4 Nov, 2025",
+        changes = listOf(
+            "Star Ratings added. Can be added via Add/Edit, CSV Import and Bulk Edit. Is also a " +
+                    "sortable (if displayed) and filterable field. Can always ben seen on Blend " +
+                    "Details screens. Also exports to CSV (set scaling and rounding options at " +
+                    "the moment of exporting).",
+            "New Display Settings for the Cellar screen: Ratings Visibility and Type/Genre List " +
+                    "Display. These options will also affect available sorting options.",
+            "Ratings column (sortable) added to Table View.",
+            "Table View, it's now possible to hide or show different columns. The control for " +
+                    "this is next to the search bar, the same place as for list sorting.",
+            "Export CSV changes: export to CSV now allows for exporting all entries, or only the " +
+                    "currently filtered/sorted items. A popup now appears when clicking export to " +
+                    "select this option (as well as ratings export scaling/rounding options).",
+            "Plaintext Export, new placeholder for ratings, which includes scaling and rounding " +
+                    "(set the max value and rounding option in the placeholder call).",
+            "Filtering, \"Favorites\" and \"Dislikes\" no longer mutually exclusive, set both " +
+                    "boxes to checked to show everything that is either favorite or disliked (" +
+                    "same for exclusionary states)."
+        ),
+        improvements = listOf(
+            "Minor UI tweaks: more consistent shaping for dialog popups, improved Cellar screen " +
+                    "\"Quick Jump\" button color for light theme (inverted colors used in " +
+                    "dark mode).",
+            "Cellar Screen and Quick Jump button performance improved, quick jump now has more " +
+                    "consistent and efficient behavior.",
+            "Filter sheet, \"Favorites\" and \"Dislikes\" check boxes now skip over states that " +
+                    "aren't available when clicking.",
+            "Backup/Restore minor improvement, selecting both restore options of database and " +
+                    "settings will now allow you to restore one or the other if the backup file " +
+                    "only contains one or the other (previously would fail if the file was a db " +
+                    "or settings only file). It will restore the part that is there.",
+            "Stability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "\"Jump to\" quick scroll button, if the button was tapped while the list wasn't " +
+                    "actively scrolling, it wasn't immediately disappearing once the top/bottom " +
+                    "was reached.",
+            "Filtering, fixed a bug related to the tri-state of \"Favorites\" and \"Dislikes\" " +
+                    "checkboxes could end up disabled in some circumstances when clicked while " +
+                    "other filters applied.",
+            "App Theme, fixed a bug where the app theme might briefly show the wrong one in some " +
+                    "instances, especially on slower devices, when the chosen app theme differs " +
+                    "from the device system theme (e.g.: setting the app to Dark theme while the " +
+                    "device system is in light mode).",
+            "Stats Screen, corrected minor miscalculation in Quick Stats filtered tin containers.",
+            "Cellar Screen Table View, ensured column headers don't sort columns if item menu is " +
+                    "open or search field focused (clears focus or menu instead, if they're open).",
+            "Plaintext Output, minor bug where the delimiter wasn't being removed from the last " +
+                    "line if it was just blank spaces/lines."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "3.3.2",
         buildDate = "1 Oct, 2025",
         changes = listOf(),
@@ -20,7 +75,10 @@ val changelogEntries = listOf(
                     "preset.",
             "Plaintext screen print settings also added to manual backup (initial introduction " +
                     "of Plaintext already saved format string presets in manual backups).",
-            "Minor UI tweaks, stability and performance improvements.",
+            "Minor UI fixes: filter sheet overflow chips were using wrong border color, and " +
+                    "plaintext screen submenu when sorting by tin parameters wasn't displaying to " +
+                    "the right of the main menu when there was room.",
+            "Stability and performance improvements."
         ),
         bugFixes = listOf(
             "Plaintext screen, tapping to load a preset when one is not selected would cause a " +
