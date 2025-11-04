@@ -333,7 +333,6 @@ class StatsViewModel(
                     .entries
                     .sortedByDescending { it.value }
                     .associate { it.key to it.value },
-
                 ratingsDistribution = RatingsDistribution(
                     distribution = filteredItems.mapNotNull { it.items.rating }
                         .groupingBy {
@@ -345,7 +344,6 @@ class StatsViewModel(
                         .eachCount(),
                     unratedCount = filteredItems.map { it.items.rating }.count { it == null }
                 ),
-
                 favDisByEntries = filteredItems
                     .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
                     .eachCount()

@@ -1406,7 +1406,7 @@ private fun HistogramChart(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1.25f)
+                    .aspectRatio(1.33f)
                     .padding(bottom = 16.dp)
             ) {
                 ratingSteps.forEach {
@@ -1489,14 +1489,17 @@ private fun HistogramChart(
             }
 
             // null count
-            Text(
-                text = "(Unrated: $unratedCount)",
-                color = LocalContentColor.current,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 8.dp)
-            )
+            if (unratedCount > 0) {
+                Text(
+                    text = "(Unrated: $unratedCount)",
+                    color = LocalContentColor.current,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .background(colorScheme.background.copy(alpha = 0.75f))
+                        .padding(horizontal = 2.dp, vertical = 1.dp)
+                )
+            }
             // count label
             Text(
                 text = "Frequency",
@@ -1513,7 +1516,7 @@ private fun HistogramChart(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 2.dp)
-                .height(12.dp),
+                .height(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -1522,7 +1525,7 @@ private fun HistogramChart(
                 contentAlignment = Alignment.TopStart
             ) {
                 HorizontalDivider(
-                    Modifier
+                    modifier = Modifier
                         .fillMaxWidth(),
                     color = colorScheme.outline,
                 )
@@ -1557,7 +1560,7 @@ private fun HistogramChart(
                         modifier = Modifier
                             .width(width),
                         textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
                 } else {
@@ -1582,11 +1585,10 @@ private fun HistogramChart(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Rating",
+                text = "Rating (ranges)",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
     }
-
 }
