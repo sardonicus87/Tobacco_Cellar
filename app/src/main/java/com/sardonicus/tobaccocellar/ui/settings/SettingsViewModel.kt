@@ -372,15 +372,32 @@ class SettingsViewModel(
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {
                                 println("Exception: $e")
-                                restoreSettings(settingsBytes)
-                                message = "Error restoring database, settings successfully restored."
+                                message = "Restore failed. Error: ${e.message}."
                             }
                         } else {
-                            message = if (!fileContentState.databasePresent) {
-                                "Restore failed: file missing database data."
+                            if (!fileContentState.databasePresent) {
+                                try {
+                                    restoreSettings(settingsBytes)
+                                    message = "File missing database data, settings restored."
+                                } catch (e: Exception) {
+                                    println("Exception: $e")
+                                    message = "Restore failed."
+                                }
                             } else {
-                                "Restore failed: file missing settings data."
+                                try {
+                                    restoreDatabase(context, databaseBytes)
+                                    restoreItemSyncState(itemSyncStateBytes)
+                                    message = "File missing settings data, database restored."
+                                } catch (e: Exception) {
+                                    println("Exception: $e")
+                                    message = "Restore failed."
+                                }
                             }
+//                            message = if (!fileContentState.databasePresent) {
+//                                "Restore failed: file missing database data."
+//                            } else {
+//                                "Restore failed: file missing settings data."
+//                            }
                         }
                     }
                     else if (restoreState.databaseChecked) {
