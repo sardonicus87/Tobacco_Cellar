@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -128,6 +129,15 @@ class AddEntryViewModel(
                 detailsExpanded = tinDetails.detailsExpanded,
                 labelIsNotValid = labelInvalid.value
             )
+    }
+
+
+    /** Popup and menu control **/
+    private val _showRatingPop = mutableStateOf(false)
+    val showRatingPop: State<Boolean> = _showRatingPop
+
+    fun onShowRatingPop(show: Boolean) {
+        _showRatingPop.value = show
     }
 
 

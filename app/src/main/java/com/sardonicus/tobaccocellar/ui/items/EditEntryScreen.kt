@@ -87,6 +87,8 @@ fun EditEntryScreen(
                     onFlavoringChange = viewModel::updateFlavoringList,
                     addTin = viewModel::addTin,
                     removeTin = viewModel::removeTin,
+                    showRatingPop = viewModel.showRatingPop.value,
+                    onShowRatingPop = viewModel::onShowRatingPop,
                     isTinLabelValid = viewModel::isTinLabelValid,
                     onSaveClick = {
                         coroutineScope.launch {

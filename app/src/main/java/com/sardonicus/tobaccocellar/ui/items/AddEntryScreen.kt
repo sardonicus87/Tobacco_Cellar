@@ -197,6 +197,8 @@ fun AddEntryScreen(
                 onFlavoringChange = viewModel::updateFlavoringList,
                 addTin = viewModel::addTin,
                 removeTin = viewModel::removeTin,
+                showRatingPop = viewModel.showRatingPop.value,
+                onShowRatingPop = viewModel::onShowRatingPop,
                 isTinLabelValid = viewModel::isTinLabelValid,
                 onSaveClick = {
                     coroutineScope.launch {
@@ -239,6 +241,8 @@ fun AddEntryBody(
     onFlavoringChange: (String) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
+    showRatingPop: Boolean,
+    onShowRatingPop: (Boolean) -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
@@ -272,6 +276,8 @@ fun AddEntryBody(
             onFlavoringChange = onFlavoringChange,
             addTin = addTin,
             removeTin = removeTin,
+            showRatingPop = showRatingPop,
+            onShowRatingPop = onShowRatingPop,
             isEditEntry = isEditEntry,
             validateDates = validateDates,
             modifier = Modifier
@@ -433,6 +439,8 @@ fun ItemInputForm(
     onFlavoringChange: (String) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
+    showRatingPop: Boolean,
+    onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -517,6 +525,8 @@ fun ItemInputForm(
                             onComponentChange = onComponentChange,
                             flavoringList = flavoringUiState,
                             onFlavoringChange = onFlavoringChange,
+                            showRatingPop = showRatingPop,
+                            onShowRatingPop = onShowRatingPop,
                             modifier = Modifier,
                         )
 
@@ -558,9 +568,10 @@ fun DetailsEntry(
     flavoringList: FlavoringList,
     onFlavoringChange: (String) -> Unit,
     onValueChange: (ItemDetails) -> Unit,
+    showRatingPop: Boolean,
+    onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showRatingPop by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -1131,7 +1142,7 @@ fun DetailsEntry(
                     .clickable(
                         indication = null,
                         interactionSource = null,
-                        onClick = { showRatingPop = true }
+                        onClick = { onShowRatingPop(true) }
                     ),
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1259,10 +1270,10 @@ fun DetailsEntry(
     if (showRatingPop) {
         RatingPopup(
             currentRating = itemDetails.rating,
-            onDismiss = { showRatingPop = false },
+            onDismiss = { onShowRatingPop(false) },
             onRatingSelected = {
                 onValueChange(itemDetails.copy(rating = it))
-                showRatingPop = false
+                onShowRatingPop(false)
             }
         )
     }
@@ -2548,7 +2559,7 @@ fun CustomDropDown(
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+        onExpandedChange = { !expanded },
         modifier = modifier
     ) {
         TextField(
