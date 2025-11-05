@@ -2083,11 +2083,6 @@ fun OtherFiltersSection(
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .border(
-                                    Dp.Hairline,
-                                    LocalCustomColors.current.sheetBoxBorder,
-                                    RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
-                                )
                                 .background(
                                     LocalCustomColors.current.sheetBox.copy(alpha = .85f),
                                     RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
