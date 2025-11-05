@@ -190,7 +190,7 @@ class PlaintextViewModel (
                 "@subgenre" to PlaintextSortOption.SUBGENRE,
                 "@cut" to PlaintextSortOption.CUT,
                 "@qty" to PlaintextSortOption.QUANTITY,
-                "@rating" to PlaintextSortOption.RATING
+                "@rating_" to PlaintextSortOption.RATING
             )
             val tinOptionMap = mapOf(
                 "@label" to PlaintextSortOption.TIN_LABEL,
@@ -715,7 +715,7 @@ class PlaintextViewModel (
 
         // Main item processing
         if (itemData != null) {
-            val ratingRegex = Regex("@rating_(\\d+)_(\\d)")
+            val ratingRegex = Regex("@rating_(\\d+)(?:_(\\d))?")
             processedLine = ratingRegex.replace(processedLine) {
                 val max = it.groupValues[1].toIntOrNull() ?: 5
                 val rounding = it.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
@@ -823,7 +823,7 @@ class PlaintextViewModel (
     ): String {
         if (itemData != null) {
             if (placeholder.startsWith("@rating_")) {
-                val ratingRegex = Regex("@rating_(\\d+)_(\\d)")
+                val ratingRegex = Regex("@rating_(\\d+)(?:_(\\d))?")
                 val matchResult = ratingRegex.find(placeholder)
 
                 if (matchResult != null) {

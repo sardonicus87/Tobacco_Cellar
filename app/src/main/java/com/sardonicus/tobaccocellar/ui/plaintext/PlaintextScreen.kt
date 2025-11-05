@@ -961,11 +961,13 @@ fun PlaintextFormatting(
 
         Text(
             text = "The \"@rating_0_0\" tag is to be used in a specific way. The first zero should " +
-                    "be replaced with the max rating (for scaling) and the second with the number " +
-                    "of decimal places to be rounded to (enter 0 to round to the nearest whole " +
-                    "number). For example, to pass the rating on a scale of 1-4 with whole number " +
-                    "rounding, enter \"@rating_4_0\" into the formatting. A more advanced example " +
-                    "might be: \n \"[@rating_10_0 stars]\" or \"[@rating_4_2/4]\"",
+                    "be replaced with the desired max rating (for scaling). The second \"_0\" is " +
+                    "optional for the number of decimal places to be rounded to (max of 2, enter " +
+                    "0 to round to the nearest whole number). For example, to pass the rating on " +
+                    "a scale of 1-4 with whole number rounding, enter \"@rating_4_0\" into the " +
+                    "formatting. More advanced examples might be:\n" +
+                    "\"[@rating_10_0 stars]\" (of 10, whole number) or \"[@rating_4_2/4]\" (of 4, " +
+                    "two places)",
             modifier = Modifier
                 .padding(bottom = 8.dp),
         )
