@@ -216,6 +216,7 @@ fun PlaintextBody(
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }.dp
 
     var printDialog by rememberSaveable { mutableStateOf(false) }
+    val showPrintDialog: (Boolean) -> Unit = { printDialog = it }
 
     BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
         if (sortMenuState.mainMenu) {
@@ -520,17 +521,16 @@ fun PlaintextBody(
             savedFontSize = printOptions.font,
             savedMargin = printOptions.margin,
             onPrintConfirm = { font, margin ->
-                printDialog = false
-
                 val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
                 val jobName = "Plaintext Output"
 
                 printManager?.print(jobName, PrintHelper(context, jobName, printList, font, margin), null)
                 savePrintOptions(font, margin)
+                showPrintDialog(false)
             },
             onPrintCancel = { font, margin ->
-                printDialog = false
                 savePrintOptions(font, margin)
+                showPrintDialog(false)
             },
         )
     }
@@ -1382,6 +1382,7 @@ fun SaveDialog(
 ) {
     var selectedSlot by rememberSaveable { mutableIntStateOf(-1) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    val onConfirm: (Boolean) -> Unit = { confirmDelete = it }
 
     AlertDialog(
         onDismissRequest = { onSaveCancel() },
@@ -1446,7 +1447,7 @@ fun SaveDialog(
                                 onLongClick = {
                                     if (preset.formatString.isNotBlank()) {
                                         selectedSlot = it
-                                        confirmDelete = true
+                                        onConfirm(true)
                                     }
                                 }
                             )
@@ -1519,13 +1520,13 @@ fun SaveDialog(
     )
     if (confirmDelete) {
         AlertDialog(
-            onDismissRequest = { confirmDelete = false },
+            onDismissRequest = { onConfirm(false) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         onDeleteConfirm(selectedSlot)
                         selectedSlot = -1
-                        confirmDelete = false
+                        onConfirm(false)
                     },
                 ) {
                     Text(text = "Delete")
@@ -1533,7 +1534,7 @@ fun SaveDialog(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { confirmDelete = false },
+                    onClick = { onConfirm(false) },
                 ) {
                     Text(text = "Cancel")
                 }
@@ -1558,6 +1559,7 @@ fun LoadDialog(
 ) {
     var selectedSlot by rememberSaveable { mutableIntStateOf(-1) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    val onConfirm: (Boolean) -> Unit = { confirmDelete = it }
 
     AlertDialog(
         onDismissRequest = { onLoadCancel() },
@@ -1624,7 +1626,7 @@ fun LoadDialog(
                                 onClick = { selectedSlot = if (isSelected) -1 else it },
                                 onLongClick = {
                                     selectedSlot = it
-                                    confirmDelete = true
+                                    onConfirm(true)
                                 }
                             )
                             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -1671,13 +1673,13 @@ fun LoadDialog(
     )
     if (confirmDelete) {
         AlertDialog(
-            onDismissRequest = { confirmDelete = false },
+            onDismissRequest = { onConfirm(false) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         onDeleteConfirm(selectedSlot)
                         selectedSlot = -1
-                        confirmDelete = false
+                        onConfirm(false)
                     },
                 ) {
                     Text(text = "Delete")
@@ -1685,7 +1687,7 @@ fun LoadDialog(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { confirmDelete = false },
+                    onClick = { onConfirm(false) },
                 ) {
                     Text(text = "Cancel")
                 }

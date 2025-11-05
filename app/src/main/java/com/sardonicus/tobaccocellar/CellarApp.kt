@@ -277,7 +277,7 @@ fun CellarTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var menuState by rememberSaveable { mutableStateOf(MenuState.MAIN) }
 
     var exportCsvPopup by rememberSaveable { mutableStateOf(false) }
@@ -315,6 +315,11 @@ fun CellarTopAppBar(
         putExtra(Intent.EXTRA_TITLE, "tobacco_cellar_as_tins.csv")
     }
 
+    val coroutineScope = rememberCoroutineScope()
+    val expanded: (Boolean) -> Unit = { menuExpanded = it }
+    val changeMenuState: (MenuState) -> Unit = { menuState = it }
+    val showExportCsv: (Boolean) -> Unit = { exportCsvPopup = it }
+
 
     TopAppBar(
         title = { Text(title) },
@@ -333,7 +338,7 @@ fun CellarTopAppBar(
             if (showMenu) {
                 IconButton(
                     onClick = {
-                        expanded = !expanded
+                        expanded(!menuExpanded)
                         filterViewModel.getPositionTrigger()
                     },
                     modifier = Modifier
@@ -346,8 +351,8 @@ fun CellarTopAppBar(
                             .size(24.dp)
                     )
                     DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
+                        expanded = menuExpanded,
+                        onDismissRequest = { expanded(false) },
                         modifier = Modifier,
                         containerColor = LocalCustomColors.current.textField,
                     ) {
@@ -356,7 +361,7 @@ fun CellarTopAppBar(
                                 DropdownMenuItem(
                                     text = { Text(text = stringResource(R.string.bulk_edit_title)) },
                                     onClick = {
-                                        expanded = false
+                                        expanded(false)
                                         navigateToBulkEdit()
                                     },
                                     modifier = Modifier
@@ -366,7 +371,7 @@ fun CellarTopAppBar(
                                 DropdownMenuItem(
                                     text = { Text(text = stringResource(R.string.import_csv)) },
                                     onClick = {
-                                        expanded = false
+                                        expanded(false)
                                         navigateToCsvImport()
                                     },
                                     modifier = Modifier
@@ -387,7 +392,7 @@ fun CellarTopAppBar(
                                         }
                                     },
                                     onClick = {
-                                        menuState = MenuState.EXPORT_CSV
+                                        changeMenuState(MenuState.EXPORT_CSV)
                                     },
                                     modifier = Modifier
                                         .padding(0.dp),
@@ -401,7 +406,7 @@ fun CellarTopAppBar(
                                 DropdownMenuItem(
                                     text = { Text(text = "Plaintext") },
                                     onClick = {
-                                        expanded = false
+                                        expanded(false)
                                         navigateToPlaintext()
                                     },
                                     modifier = Modifier
@@ -411,7 +416,7 @@ fun CellarTopAppBar(
                                 DropdownMenuItem(
                                     text = { Text(text = stringResource(R.string.help_faq)) },
                                     onClick = {
-                                        expanded = false
+                                        expanded(false)
                                         navigateToHelp()
                                     },
                                     modifier = Modifier
@@ -422,7 +427,7 @@ fun CellarTopAppBar(
                                 DropdownMenuItem(
                                     text = { Text(text = stringResource(R.string.settings)) },
                                     onClick = {
-                                        expanded = false
+                                        expanded(false)
                                         navigateToSettings()
                                     },
                                     modifier = Modifier
@@ -440,15 +445,15 @@ fun CellarTopAppBar(
                                             tint = LocalContentColor.current.copy(alpha = 0.75f)
                                         )
                                     },
-                                    onClick = { menuState = MenuState.MAIN }
+                                    onClick = { changeMenuState(MenuState.MAIN) }
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Normal") },
                                     onClick = {
                                         exportType = ExportType.ITEMS
-                                        exportCsvPopup = true
-                                        expanded = false
-                                        menuState = MenuState.MAIN
+                                        showExportCsv(true)
+                                        expanded(false)
+                                        changeMenuState(MenuState.MAIN)
                                     },
                                     modifier = Modifier
                                         .padding(0.dp),
@@ -463,9 +468,9 @@ fun CellarTopAppBar(
                                     text = { Text(text = "As Tins") },
                                     onClick = {
                                         exportType = ExportType.TINS
-                                        exportCsvPopup = true
-                                        expanded = false
-                                        menuState = MenuState.MAIN
+                                        showExportCsv(true)
+                                        expanded(false)
+                                        changeMenuState(MenuState.MAIN)
                                     },
                                     modifier = Modifier
                                         .padding(0.dp),
@@ -493,8 +498,6 @@ fun CellarTopAppBar(
         scrollBehavior = scrollBehavior,
     )
 
-    val coroutineScope = rememberCoroutineScope()
-
     if (exportCsvPopup) {
         val options = listOf("All", "Filtered")
         val selectedIndex = if (allItems) 0 else 1
@@ -504,7 +507,7 @@ fun CellarTopAppBar(
         val allowedMax = remember { Regex("^(\\s*|\\d{0,3})$") }
 
         AlertDialog(
-            onDismissRequest = { exportCsvPopup = false },
+            onDismissRequest = { showExportCsv(false) },
             title = {
                 Text(
                     text = "Export CSV Options"
@@ -625,7 +628,7 @@ fun CellarTopAppBar(
             textContentColor = MaterialTheme.colorScheme.onBackground,
             shape = MaterialTheme.shapes.large,
             dismissButton = {
-                TextButton(onClick = { exportCsvPopup = false }) {
+                TextButton(onClick = { showExportCsv(false) }) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -639,7 +642,7 @@ fun CellarTopAppBar(
                         ExportType.TINS -> exportAsTinsLauncher.launch(exportAsTinsIntent)
                         null -> { }
                     }
-                    exportCsvPopup = false
+                    showExportCsv(false)
                 }
                 ) {
                     Text(
@@ -1979,11 +1982,6 @@ fun OtherFiltersSection(
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .border(
-                                    Dp.Hairline,
-                                    LocalCustomColors.current.sheetBoxBorder,
-                                    RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
-                                )
                                 .background(
                                     LocalCustomColors.current.sheetBox.copy(alpha = .85f),
                                     RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)

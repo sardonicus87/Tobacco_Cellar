@@ -234,6 +234,7 @@ fun HomeScreen(
     // Important Alert stuff
     val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
     var showImportantAlert by remember { mutableStateOf(false) }
+    val onShowImportant: (Boolean) -> Unit = { showImportantAlert = it }
     var currentAlert: OneTimeAlert? by remember { mutableStateOf(null) }
     var unseenPastAlerts by remember { mutableStateOf(listOf<OneTimeAlert>()) }
     var pastAlertIndex by remember { mutableIntStateOf(0) }
@@ -286,6 +287,7 @@ fun HomeScreen(
         }
         var countdown by remember { mutableIntStateOf(5) }
         var canScroll by remember { mutableStateOf(false) }
+        val updateScroll: (Boolean) -> Unit = { canScroll = it }
 
         AlertDialog(
             onDismissRequest = { /* Not dismissible */ },
@@ -380,7 +382,7 @@ fun HomeScreen(
                         }
                         enabled = true
                     } else {
-                        canScroll = true
+                        updateScroll(true)
                     }
                 }
                 LaunchedEffect(isScrollable, atBottom, currentPastAlertId) {
@@ -409,12 +411,12 @@ fun HomeScreen(
                         coroutineScope.launch {
                             if (remainingUnseen > 0) {
                                 enabled = false
-                                canScroll = false
+                                updateScroll(false)
                                 countdown = 5
                                 preferencesRepo.saveAlertShown(currentPastAlertId)
                             } else {
                                 preferencesRepo.saveAlertShown(alert.id)
-                                showImportantAlert = false
+                                onShowImportant(false)
                                 currentAlert = null
                             }
                         }
@@ -1246,6 +1248,7 @@ fun rememberJumpToState(
 ): Pair<State<Boolean>, State<ScrollDirection>> {
     val scrollDirection = produceState(initialValue = ScrollDirection.UP, key1 = lazyListState) {
         var previousIndex = 0
+        val updatePrevious: (Int) -> Unit = { previousIndex = it }
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .collect { currentIndex ->
                 if (currentIndex > previousIndex) {
@@ -1253,12 +1256,13 @@ fun rememberJumpToState(
                 } else if (currentIndex < previousIndex) {
                     value = ScrollDirection.UP
                 }
-                previousIndex = currentIndex
+                updatePrevious(currentIndex)
             }
     }
 
     val isVisible = produceState(initialValue = false, key1 = lazyListState, key2 = scrollDirection.value) {
         var delayJob: Job? = null
+        val updateJob: (Job) -> Unit = { delayJob = it }
 
         snapshotFlow { Triple(
             lazyListState.isScrollInProgress,
@@ -1276,11 +1280,13 @@ fun rememberJumpToState(
                     value = true
                 }
             } else {
-                delayJob = launch {
-                    val delayMillis = if (atTop || atBottom) 0 else 1500L
-                    delay(delayMillis)
-                    value = false
-                }
+                updateJob(
+                    launch {
+                        val delayMillis = if (atTop || atBottom) 0 else 1500L
+                        delay(delayMillis)
+                        value = false
+                    }
+                )
             }
         }
     }
