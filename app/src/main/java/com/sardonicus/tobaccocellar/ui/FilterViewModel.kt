@@ -1623,49 +1623,49 @@ class FilterViewModel (
     }
 
     fun updateSelectedFavorites(isSelected: Boolean) {
-        sheetSelectedFavorites.value = isSelected
-        _selectedFavorites.value = isSelected
-
         if (isSelected) {
             sheetSelectedExcludeFavorites.value = false
             _selectedExcludeFavorites.value = false
         }
 
+        sheetSelectedFavorites.value = isSelected
+        _selectedFavorites.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedExcludeFavorites(isSelected: Boolean) {
-        sheetSelectedExcludeFavorites.value = isSelected
-        _selectedExcludeFavorites.value = isSelected
-
         if (isSelected) {
             sheetSelectedFavorites.value = false
             _selectedFavorites.value = false
         }
 
+        sheetSelectedExcludeFavorites.value = isSelected
+        _selectedExcludeFavorites.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedDislikeds(isSelected: Boolean) {
-        sheetSelectedDislikeds.value = isSelected
-        _selectedDislikeds.value = isSelected
-
         if (isSelected) {
             sheetSelectedExcludeDislikeds.value = false
             _selectedExcludeDislikeds.value = false
         }
 
+        sheetSelectedDislikeds.value = isSelected
+        _selectedDislikeds.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedExcludeDislikeds(isSelected: Boolean) {
-        sheetSelectedExcludeDislikeds.value = isSelected
-        _selectedExcludeDislikeds.value = isSelected
-
         if (isSelected) {
             sheetSelectedDislikeds.value = false
             _selectedDislikeds.value = false
         }
+
+        sheetSelectedExcludeDislikeds.value = isSelected
+        _selectedExcludeDislikeds.value = isSelected
 
         _shouldScrollUp.value = true
     }
@@ -1688,24 +1688,25 @@ class FilterViewModel (
     }
 
     fun updateSelectedInStock(isSelected: Boolean) {
-        sheetSelectedInStock.value = isSelected
-        _selectedInStock.value = isSelected
-
         if (isSelected) {
             sheetSelectedOutOfStock.value = false
             _selectedOutOfStock.value = false
         }
+
+        sheetSelectedInStock.value = isSelected
+        _selectedInStock.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedOutOfStock(isSelected: Boolean) {
-        sheetSelectedOutOfStock.value = isSelected
-        _selectedOutOfStock.value = isSelected
-
         if (isSelected) {
             sheetSelectedInStock.value = false
             _selectedInStock.value = false
         }
+
+        sheetSelectedOutOfStock.value = isSelected
+        _selectedOutOfStock.value = isSelected
 
         _shouldScrollUp.value = true
     }
@@ -1786,25 +1787,25 @@ class FilterViewModel (
     }
 
     fun updateSelectedProduction(isSelected: Boolean) {
-        sheetSelectedProduction.value = isSelected
-        _selectedProduction.value = isSelected
-
         if (isSelected) {
             sheetSelectedOutOfProduction.value = false
             _selectedOutOfProduction.value = false
         }
 
+        sheetSelectedProduction.value = isSelected
+        _selectedProduction.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedOutOfProduction(isSelected: Boolean) {
-        sheetSelectedOutOfProduction.value = isSelected
-        _selectedOutOfProduction.value = isSelected
-
         if (isSelected) {
             sheetSelectedProduction.value = false
             _selectedProduction.value = false
         }
+
+        sheetSelectedOutOfProduction.value = isSelected
+        _selectedOutOfProduction.value = isSelected
 
         _shouldScrollUp.value = true
     }
@@ -1823,21 +1824,18 @@ class FilterViewModel (
     }
 
     fun updateSelectedHasTins(isSelected: Boolean) {
-        sheetSelectedHasTins.value = isSelected
-        _selectedHasTins.value = isSelected
-
         if (isSelected) {
             sheetSelectedNoTins.value = false
             _selectedNoTins.value = false
         }
 
+        sheetSelectedHasTins.value = isSelected
+        _selectedHasTins.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedNoTins(isSelected: Boolean) {
-        sheetSelectedNoTins.value = isSelected
-        _selectedNoTins.value = isSelected
-
         if (isSelected) {
             sheetSelectedHasTins.value = false
             _selectedHasTins.value = false
@@ -1852,13 +1850,13 @@ class FilterViewModel (
             _selectedUnfinished.value = false
         }
 
+        sheetSelectedNoTins.value = isSelected
+        _selectedNoTins.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedOpened(isSelected: Boolean) {
-        sheetSelectedOpened.value = isSelected
-        _selectedOpened.value = isSelected
-
         if (isSelected) {
             sheetSelectedUnopened.value = false
             _selectedUnopened.value = false
@@ -1867,13 +1865,13 @@ class FilterViewModel (
             _selectedNoTins.value = false
         }
 
+        sheetSelectedOpened.value = isSelected
+        _selectedOpened.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedUnopened(isSelected: Boolean) {
-        sheetSelectedUnopened.value = isSelected
-        _selectedUnopened.value = isSelected
-
         if (isSelected) {
             sheetSelectedOpened.value = false
             _selectedOpened.value = false
@@ -1882,13 +1880,13 @@ class FilterViewModel (
             _selectedNoTins.value = false
         }
 
+        sheetSelectedUnopened.value = isSelected
+        _selectedUnopened.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedFinished(isSelected: Boolean) {
-        sheetSelectedFinished.value = isSelected
-        _selectedFinished.value = isSelected
-
         if (isSelected) {
             sheetSelectedUnfinished.value = false
             _selectedUnfinished.value = false
@@ -1897,13 +1895,13 @@ class FilterViewModel (
             _selectedNoTins.value = false
         }
 
+        sheetSelectedFinished.value = isSelected
+        _selectedFinished.value = isSelected
+
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedUnfinished(isSelected: Boolean) {
-        sheetSelectedUnfinished.value = isSelected
-        _selectedUnfinished.value = isSelected
-
         if (isSelected) {
             sheetSelectedFinished.value = false
             _selectedFinished.value = false
@@ -1911,6 +1909,9 @@ class FilterViewModel (
             sheetSelectedNoTins.value = false
             _selectedNoTins.value = false
         }
+
+        sheetSelectedUnfinished.value = isSelected
+        _selectedUnfinished.value = isSelected
 
         _shouldScrollUp.value = true
     }
