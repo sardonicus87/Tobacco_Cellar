@@ -164,7 +164,6 @@ fun CsvImportScreen(
     }
 }
 
-@Suppress("NullableBooleanElvis")
 @Composable
 fun CsvImportBody(
     navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,

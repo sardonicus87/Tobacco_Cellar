@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.io.IOException
 
-@Suppress("NullableBooleanElvis")
 class PreferencesRepo(
     private val dataStore: DataStore<Preferences>,
     applicationScope: CoroutineScope

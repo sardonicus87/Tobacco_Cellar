@@ -35,7 +35,6 @@ import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 
-@Suppress("NullableBooleanElvis")
 @Composable
 fun CellarNavHost(
     modifier: Modifier = Modifier,

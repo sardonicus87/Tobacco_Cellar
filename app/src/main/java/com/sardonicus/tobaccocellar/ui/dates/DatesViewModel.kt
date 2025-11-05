@@ -85,7 +85,6 @@ class DatesViewModel(
     }
 
 
-    @Suppress("NullableBooleanElvis")
     fun findDatedTins(
         items: List<ItemsComponentsAndTins>,
         tins: List<Tins>,
