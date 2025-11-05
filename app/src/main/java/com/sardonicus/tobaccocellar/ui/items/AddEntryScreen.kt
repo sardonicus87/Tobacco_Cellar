@@ -2425,7 +2425,7 @@ fun RatingPopup(
                 }
                 Text(
                     text = "Set a rating (maximum 5). To make an item unrated, make the field " +
-                            "blank. Supports fractional ratings (up to 1 decimal places).",
+                            "blank. Supports fractional ratings (up to 2 decimal places).",
                     fontSize = 15.sp,
                     modifier = Modifier
                         .padding(bottom = 16.dp)
