@@ -881,7 +881,7 @@ fun exportRatingString(rating: Double?, maxRating: Int, rounding: Int): String {
     if (rating == null) { return "" }
 
     val scaledRating = (rating * scaling)
-    val places = rounding.takeIf { it <= 2 } ?: 1
+    val places = rounding.takeIf { it <= 2 } ?: 2
 
     return formatDecimal(scaledRating, places)
 }
