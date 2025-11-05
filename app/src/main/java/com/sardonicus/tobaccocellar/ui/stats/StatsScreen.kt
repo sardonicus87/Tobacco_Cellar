@@ -37,11 +37,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +81,7 @@ import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -161,18 +162,17 @@ private fun StatsBody(
 ) {
     val separatorColor = colorScheme.secondary
     val scrollState = rememberScrollState()
-    var contracted by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val expanded = viewmodel.expanded
 
-    LaunchedEffect(contracted) {
-        if (contracted) {
+    val contract = {
+        scope.launch {
             scrollState.scrollTo(0)
             while (scrollState.value > 0) {
                 delay(5)
             }
             viewmodel.updateExpanded(false)
             delay(10)
-            contracted = false
         }
     }
 
@@ -238,7 +238,7 @@ private fun StatsBody(
         QuickStatsSection(
             rawStats = rawStats,
             filteredStats = filteredStats,
-            contracted = { contracted = it },
+            contracted = { if (it) contract() },
             expanded = expanded,
             updateExpanded = { viewmodel.updateExpanded(it) },
             modifier = Modifier
@@ -480,12 +480,12 @@ fun QuickStatsSection(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(24.dp)
+                        .padding(end = 24.dp)
                         .clickable(
                             indication = LocalIndication.current,
                             interactionSource = null
                         ) { contracted(true) }
-                        .height(24.dp)
-                        .padding(end = 24.dp)
                 ) {
                     HorizontalDivider(
                         modifier = Modifier
@@ -512,12 +512,12 @@ fun QuickStatsSection(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(24.dp)
+                        .padding(end = 24.dp)
                         .clickable(
                             indication = LocalIndication.current,
                             interactionSource = null
                         ) { updateExpanded(true) }
-                        .height(24.dp)
-                        .padding(end = 24.dp)
                 ) {
                     HorizontalDivider(
                         modifier = Modifier
