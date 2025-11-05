@@ -9,6 +9,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -74,7 +75,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import com.sardonicus.tobaccocellar.R
@@ -856,40 +857,11 @@ fun RatingRow(
     emptyColor: Color = LocalCustomColors.current.starRating,
     emptyAlpha: Float = 0.38f,
 ) {
-    var dynamicSize by remember { mutableStateOf(starSize) }
-    val density = LocalDensity.current
-
-    if (dynamicSize == Dp.Unspecified) {
-        if (rating != null) {
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .onSizeChanged {
-                        val height = with(density) { it.height.toDp() }
-                        val width = with(density) { it.width.toDp() }
-                        if (height > 0.dp) {
-                            dynamicSize = if (showEmpty) {
-                                if ((height * 5) <= width) {
-                                    height
-                                } else {
-                                    width / 5
-                                }
-                            } else {
-                                if ((height * rating.toFloat()) <= width) {
-                                    height
-                                } else {
-                                    width / rating.toFloat()
-                                }
-                            }
-                        }
-                    }
-            )
-        }
-    } else {
+    if (starSize != Dp.Unspecified) {
         RatingRowImpl(
             rating = rating,
             modifier = modifier,
-            starSize = dynamicSize,
+            starSize = starSize,
             maxColor = starColor,
             minColor = starColor,
             emptyColor = emptyColor,
@@ -903,6 +875,37 @@ fun RatingRow(
             showRating = true,
             showRange = false
         )
+    } else if (rating != null) {
+        BoxWithConstraints(modifier = modifier) {
+            val dynamicSize = if (maxHeight > 0.dp && maxWidth > 0.dp) {
+                if (showEmpty) {
+                    min(maxHeight, maxWidth / 5)
+                } else {
+                    min(maxHeight, maxWidth * rating.toFloat())
+                }
+            } else {
+                0.dp
+            }
+            if (dynamicSize > 0.dp) {
+                RatingRowImpl(
+                    rating = rating,
+                    modifier = modifier,
+                    starSize = dynamicSize,
+                    maxColor = starColor,
+                    minColor = starColor,
+                    emptyColor = emptyColor,
+                    showEmpty = showEmpty,
+                    showDivider = false,
+                    dividerColor = Color.Transparent,
+                    maxAlpha = 1f,
+                    minAlpha = 1f,
+                    emptyAlpha = emptyAlpha,
+                    range = Pair(null, null),
+                    showRating = true,
+                    showRange = false
+                )
+            }
+        }
     }
 }
 
@@ -921,30 +924,11 @@ fun RatingRow(
     maxAlpha: Float = 1f,
     emptyAlpha: Float = 0.38f,
 ) {
-    var dynamicSize by remember { mutableStateOf(starSize) }
-    val density = LocalDensity.current
-
-    if (dynamicSize == Dp.Unspecified) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .onSizeChanged {
-                    val height = with(density) { it.height.toDp() }
-                    val width = with(density) { it.width.toDp() }
-                    if (height > 0.dp) {
-                        dynamicSize = if ((height * 5) <= width) {
-                            height
-                        } else {
-                            width / 5
-                        }
-                    }
-                }
-        )
-    } else {
+    if (starSize != Dp.Unspecified) {
         RatingRowImpl(
             rating = 5.0,
             modifier = modifier,
-            starSize = dynamicSize,
+            starSize = starSize,
             maxColor = maxColor,
             minColor = minColor,
             emptyColor = emptyColor,
@@ -958,6 +942,33 @@ fun RatingRow(
             showRating = false,
             showRange = true
         )
+    } else {
+        BoxWithConstraints(modifier = modifier) {
+            val dynamicSize = if (maxHeight > 0.dp && maxWidth > 0.dp) {
+                min(maxHeight, maxWidth / 5)
+            } else {
+                0.dp
+            }
+            if (dynamicSize > 0.dp) {
+                RatingRowImpl(
+                    rating = 5.0,
+                    modifier = modifier,
+                    starSize = dynamicSize,
+                    maxColor = maxColor,
+                    minColor = minColor,
+                    emptyColor = emptyColor,
+                    showEmpty = true,
+                    showDivider = showDivider,
+                    dividerColor = dividerColor,
+                    maxAlpha = maxAlpha,
+                    minAlpha = minAlpha,
+                    emptyAlpha = emptyAlpha,
+                    range = range,
+                    showRating = false,
+                    showRange = true
+                )
+            }
+        }
     }
 }
 
