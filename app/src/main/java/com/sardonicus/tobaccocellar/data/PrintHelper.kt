@@ -100,11 +100,10 @@ class PrintHelper(
                     }
                 }
 
-                if (effectiveStartLine >= staticLayout!!.lineCount) {
-                    currentLine = effectiveStartLine
+                currentLine = effectiveStartLine
+                if (currentLine >= staticLayout!!.lineCount) {
                     break
                 }
-                currentLine = effectiveStartLine
 
                 val pageStartLine = currentLine
                 val firstLineTop = staticLayout!!.getLineTop(pageStartLine)
