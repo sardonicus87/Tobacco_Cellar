@@ -82,9 +82,7 @@ class FilterViewModel (
     init {
         viewModelScope.launch {
             preferencesRepo.searchSetting.collect {
-                if (it == SearchSetting.TinLabel) {
-                    _isTinSearch.value = true
-                } else false
+                _isTinSearch.value = (it == SearchSetting.TinLabel)
             }
         }
     }
