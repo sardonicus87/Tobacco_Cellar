@@ -2556,10 +2556,11 @@ fun CustomDropDown(
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val onExpandChange: (Boolean) -> Unit = { expanded = it }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { !expanded },
+        onExpandedChange = { onExpandChange(!expanded) },
         modifier = modifier
     ) {
         TextField(
@@ -2582,7 +2583,7 @@ fun CustomDropDown(
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
+            onDismissRequest = { onExpandChange(false) },
             modifier = Modifier
                 .exposedDropdownSize(true),
             containerColor = LocalCustomColors.current.textField,
@@ -2596,7 +2597,7 @@ fun CustomDropDown(
                         )
                     },
                     onClick = {
-                        expanded = false
+                        onExpandChange(false)
                         onValueChange(it)
                     }
                 )
