@@ -571,11 +571,11 @@ fun formatMediumDate(millis: Long?): String {
     } else { "" }
 }
 
-fun formatLongDate(millis: Long?): String {
-    return if (millis != null) {
-        val instant = Instant.ofEpochMilli(millis)
-        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-        formatter.format(localDate)
-    } else { "" }
-}
+//fun formatLongDate(millis: Long?): String {
+//    return if (millis != null) {
+//        val instant = Instant.ofEpochMilli(millis)
+//        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+//        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+//        formatter.format(localDate)
+//    } else { "" }
+//}
