@@ -646,7 +646,7 @@ class PlaintextViewModel (
         // Conditional block processing
         val tinSublist = Regex("""\{(.*?)\}""")
         val tinSublistReplacements = mutableMapOf<String, String>()
-        var tempId = 0
+        var tempId = -1
         var lineWithoutTins = processedLine
         val hasTinSublistPattern = processedLine.contains("{")
                 && processedLine.contains("}")
@@ -656,7 +656,8 @@ class PlaintextViewModel (
 
         lineWithoutTins = tinSublist.replace(lineWithoutTins) {
             val original = it.value
-            val placeholder = "%%TIN${tempId++}%%"
+            tempId++
+            val placeholder = "%%TIN${tempId}%%"
             tinSublistReplacements[placeholder] = original
             placeholder
         }
