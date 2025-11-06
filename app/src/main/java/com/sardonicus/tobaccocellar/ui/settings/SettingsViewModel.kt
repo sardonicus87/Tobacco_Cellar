@@ -1,7 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
 import android.content.Context
-import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -213,25 +212,6 @@ class SettingsViewModel(
         )
     }
 
-    fun saveBackup(context: Context) {
-        viewModelScope.launch {
-            val backupState = _backupState.value
-            val suggestedFilename = _backupState.value.suggestedFilename
-
-            if (suggestedFilename.isBlank()) {
-                return@launch
-            }
-
-            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/octet-stream"
-                putExtra(Intent.EXTRA_TITLE, suggestedFilename)
-            }
-
-            context.startActivity(intent)
-        }
-    }
-
     private fun updateSuggestedFilename() {
         val databaseChecked = _backupState.value.databaseChecked
         val settingsChecked = _backupState.value.settingsChecked
@@ -269,8 +249,6 @@ class SettingsViewModel(
                 if (backupState.value.databaseChecked) {
                     backupDatabase(context, tempDbZip)
                 }
-
-                // val dbVersion = TobaccoDatabase.getDatabaseVersion(context).toString().toByteArray()
 
                 val databaseBytes = if (backupState.value.databaseChecked) {
                     tempDbZip.readBytes()
@@ -393,11 +371,6 @@ class SettingsViewModel(
                                     message = "Restore failed."
                                 }
                             }
-//                            message = if (!fileContentState.databasePresent) {
-//                                "Restore failed: file missing database data."
-//                            } else {
-//                                "Restore failed: file missing settings data."
-//                            }
                         }
                     }
                     else if (restoreState.databaseChecked) {
