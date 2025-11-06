@@ -10,6 +10,24 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "4.0.1",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Plaintext Output, made rating rounding optional. Not adding rounding will return the " +
+                    "existing rating with up to 2 decimal places.",
+            "Stability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "Minor UI corrections: ratings popup incorrectly stated 1 decimal place when 2 are " +
+                    "allowed; overlay when star ratings or favorite/dislike unused incorrectly " +
+                    "had border applied.",
+            "Fixed minor blank list flash when switching between include/exclude states of some " +
+                    "filters."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "4.0.0",
         buildDate = "4 Nov, 2025",
         changes = listOf(
