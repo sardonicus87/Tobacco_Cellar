@@ -180,6 +180,7 @@ fun CsvImportBody(
 ) {
     val coroutineScope = rememberCoroutineScope()
     var showErrorDialog by rememberSaveable { mutableStateOf(false) }
+    val onShowError: (Boolean) -> Unit = { showErrorDialog = it }
     var showHelp by rememberSaveable { mutableStateOf(false) }
     val importStatus by viewModel.importStatus.collectAsState()
     val overwriteSelections by viewModel.overwriteSelections.collectAsState()
@@ -213,11 +214,11 @@ fun CsvImportBody(
                             }
 
                             is CsvResult.Error -> {
-                                showErrorDialog = true
+                                onShowError(true)
                             }
 
                             is CsvResult.Empty -> {
-                                showErrorDialog = true
+                                onShowError(true)
                             }
                         }
 
@@ -225,7 +226,7 @@ fun CsvImportBody(
                 }
             } catch (e: Exception) {
                 println("Exception: $e")
-                showErrorDialog = true
+                onShowError(true)
             }
         }
     }
@@ -233,7 +234,7 @@ fun CsvImportBody(
     if (showErrorDialog) {
         LoadErrorDialog(
             modifier = Modifier,
-            confirmError = { showErrorDialog = false }
+            confirmError = { onShowError(false) }
         )
     }
 
