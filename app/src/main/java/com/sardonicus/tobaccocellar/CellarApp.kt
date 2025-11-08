@@ -20,7 +20,6 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -112,6 +111,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -285,6 +285,7 @@ fun CellarTopAppBar(
     val previouslySavedExportRating by preferencesRepo.exportRating.collectAsState(ExportRating())
 
     var allItems by rememberSaveable { mutableStateOf(true) }
+    val selectAll: (Boolean) -> Unit = { allItems = it }
     var exportRating by remember { mutableStateOf(previouslySavedExportRating) }
 
     val exportCsvLauncher = rememberLauncherForActivityResult(
@@ -534,7 +535,7 @@ fun CellarTopAppBar(
                         options.forEachIndexed { index, label ->
                             SegmentedButton(
                                 selected = index == selectedIndex,
-                                onClick = { allItems = (index == 0) },
+                                onClick = { selectAll(index == 0) },
                                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                                 contentPadding = PaddingValues(8.dp, 4.dp),
                                 icon = { }
@@ -1561,8 +1562,13 @@ fun BrandFilterSection(
         }
 
         // Selected brands chip box //
-        BoxWithConstraints {
-            val maxWidth = (this.maxWidth * 0.32f) - 4.dp
+        var chipBoxWidth by remember { mutableStateOf(0.dp) }
+        val density = LocalDensity.current
+        Box (
+            modifier = Modifier
+                .onGloballyPositioned { chipBoxWidth = with(density) { it.size.width.toDp() } }
+        ) {
+            val maxWidth = (chipBoxWidth * 0.32f) - 4.dp
             val chipCountToShow = 5
             val overflowCount =
                 if (excluded) { selectedExcludedBrands.size - chipCountToShow }
@@ -1571,6 +1577,7 @@ fun BrandFilterSection(
 
             Column(
                 modifier = Modifier
+                    .fillMaxWidth()
             ) {
                 Box(
                     modifier = Modifier,
@@ -1589,9 +1596,7 @@ fun BrandFilterSection(
                                 RoundedCornerShape(8.dp)
                             )
                             .height(96.dp),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            space = 6.dp, alignment = Alignment.CenterHorizontally
-                        ),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                     ) {
                         chips.take(chipCountToShow).forEach { brand ->
