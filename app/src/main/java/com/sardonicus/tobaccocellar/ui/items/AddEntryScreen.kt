@@ -10,7 +10,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -92,6 +91,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -124,6 +124,7 @@ import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.DecimalFormatSymbols
@@ -1483,12 +1484,17 @@ fun IndividualTin(
     ) {
 
         // Header Row //
-        BoxWithConstraints(
+        var headerWidth by remember { mutableStateOf(0.dp) }
+        val density = LocalDensity.current
+
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .onGloballyPositioned {
+                    headerWidth = with(density) { it.size.width.toDp() }
+                }
         ) {
-            val maxWidth = this.maxWidth
-            val textFieldMax = maxWidth - 72.dp
+            val textFieldMax = headerWidth - 72.dp
 
             Row(
                 modifier = Modifier
@@ -1502,7 +1508,8 @@ fun IndividualTin(
                         .weight(0.5f),
                     contentAlignment = Alignment.TopStart
                 ) {
-                    val icon = if (tinDetails.detailsExpanded) R.drawable.arrow_up else R.drawable.arrow_down
+                    val icon =
+                        if (tinDetails.detailsExpanded) R.drawable.arrow_up else R.drawable.arrow_down
                     Icon(
                         painter = painterResource(id = icon),
                         contentDescription = "Expand/contract details",
@@ -1778,6 +1785,7 @@ fun IndividualTin(
                         showDatePicker = true
                     }
 
+                    val coroutineScope = rememberCoroutineScope()
                     val manuFocusRequester = remember { FocusRequester() }
                     val cellaredFocusRequester = remember { FocusRequester() }
                     val openedFocusRequester = remember { FocusRequester() }
@@ -1809,8 +1817,11 @@ fun IndividualTin(
                         trailingIcon = {
                             IconButton(
                                 onClick = {
-                                    manuFocusRequester.requestFocus()
                                     showPicker("Manufacture")
+                                    coroutineScope.launch {
+                                        delay(50)
+                                        manuFocusRequester.requestFocus()
+                                    }
                                 },
                             ) {
                                 Icon(
@@ -1879,10 +1890,15 @@ fun IndividualTin(
                         readOnly = true,
                         singleLine = true,
                         trailingIcon = {
-                            IconButton(onClick = {
-                                cellaredFocusRequester.requestFocus()
-                                showPicker("Cellared")
-                            }) {
+                            IconButton(
+                                onClick = {
+                                    showPicker("Cellared")
+                                    coroutineScope.launch {
+                                        delay(50)
+                                        cellaredFocusRequester.requestFocus()
+                                    }
+                                }
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.calendar_month),
                                     contentDescription = "Select cellared date",
@@ -1942,10 +1958,15 @@ fun IndividualTin(
                         readOnly = true,
                         singleLine = true,
                         trailingIcon = {
-                            IconButton(onClick = {
-                                openedFocusRequester.requestFocus()
-                                showPicker("Opened")
-                            }) {
+                            IconButton(
+                                onClick = {
+                                    showPicker("Opened")
+                                    coroutineScope.launch {
+                                        delay(50)
+                                        openedFocusRequester.requestFocus()
+                                    }
+                                }
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.calendar_month),
                                     contentDescription = "Select open date",
