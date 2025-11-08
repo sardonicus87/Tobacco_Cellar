@@ -58,8 +58,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -506,7 +504,6 @@ fun AutoCompleteText(
 ) {
     var suggestionsState by remember { mutableStateOf<List<String>>(emptyList()) }
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
-    val focusRequester = remember { FocusRequester() }
     var override by remember { mutableStateOf(false) }
     var expandedState by remember { mutableStateOf(false) }
 
@@ -576,7 +573,6 @@ fun AutoCompleteText(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
-                .focusRequester(focusRequester)
                 .onFocusChanged {
                     if (!it.isFocused) {
                         expandedState = false
