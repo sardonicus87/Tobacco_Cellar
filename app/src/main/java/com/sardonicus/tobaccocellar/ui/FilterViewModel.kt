@@ -11,9 +11,11 @@ import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
+import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
+import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -622,7 +624,10 @@ class FilterViewModel (
             selectedUnfinished,
             selectedUnrated,
             selectedRatingLow,
-            selectedRatingHigh
+            selectedRatingHigh,
+            preferencesRepo.quantityOption,
+            preferencesRepo.tinOzConversionRate,
+            preferencesRepo.tinGramsConversionRate
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val brands = values[1] as List<String>
@@ -652,6 +657,9 @@ class FilterViewModel (
             val unrated = values[25] as Boolean
             val ratingLow = values[26] as Double?
             val ratingHigh = values[27] as Double?
+            val quantityOption = values[28] as QuantityOption
+            val ozRate = values[29] as Double
+            val gramsRate = values[30] as Double
 
             val applyTin = true
 
@@ -659,7 +667,8 @@ class FilterViewModel (
                 allItems, brands, excludeBrands, types, favorites, dislikeds, excludeLikes,
                 excludeDislikes, inStock, outOfStock, subgenres, cuts, components, compMatching,
                 flavoring, flavorMatching, production, outOfProduction, hasTins, noTins, container,
-                opened, unopened, finished, unfinished, unrated, ratingLow, ratingHigh, applyTin
+                opened, unopened, finished, unfinished, unrated, ratingLow, ratingHigh, quantityOption,
+                ozRate, gramsRate, applyTin
             )
         }
             .stateIn(
@@ -707,11 +716,20 @@ class FilterViewModel (
         compMatching: String, flavorings: List<String>, flavorMatching: String, production: Boolean,
         outOfProduction: Boolean, hasTins: Boolean, noTins: Boolean, container: List<String>,
         opened: Boolean, unopened: Boolean, finished: Boolean, unfinished: Boolean, unrated: Boolean,
-        ratingLow: Double?, ratingHigh: Double?,
+        ratingLow: Double?, ratingHigh: Double?, quantityOption: QuantityOption, ozRate: Double,
+        gramsRate: Double,
 
         applyTinFilter: Boolean
     ): List<ItemsComponentsAndTins> {
         return allItems.filter { items ->
+            val tinFiltering = allItems.flatMap { it.tins }.filter {
+                (!opened || it.openDate != null && it.openDate < System.currentTimeMillis()) &&
+                        (!unopened || ((it.openDate == null || it.openDate >= System.currentTimeMillis()) && !it.finished)) &&
+                        (!finished || it.finished) &&
+                        (!unfinished || !it.finished) &&
+                        (container.isEmpty() || container.contains(it.container.ifBlank { "(Unassigned)" }))
+            }
+
             val compMatch = when (compMatching) {
                 "All" -> (components.isEmpty() || (components == listOf("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.containsAll(components))
                 "Only" -> (components.isEmpty() || (components == listOf("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
@@ -722,6 +740,12 @@ class FilterViewModel (
                 "Only" -> (flavorings.isEmpty() || (flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavorings) && items.flavoring.size == flavorings.size))
                 else -> (flavorings.isEmpty() || ((flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { flavorings.contains(it) }))
             }
+
+            val quantityRemap = allItems.associate {
+                it.items.id to calculateTotalQuantity(it, it.tins.filter { it in tinFiltering }, quantityOption, ozRate, gramsRate)
+            }
+            val isInStock = quantityRemap[items.items.id] != null && quantityRemap[items.items.id]!! > 0.0
+
             val ratingRangeLow = (ratingLow != null && (items.items.rating != null && (items.items.rating >= ratingLow)))
             val ratingRangeHigh = (ratingHigh != null && (items.items.rating != null && (items.items.rating <= ratingHigh)))
 
@@ -733,8 +757,8 @@ class FilterViewModel (
                         (!excludeFavorites || !items.items.favorite) &&
                         (!dislikeds || if (favorites) (items.items.favorite || items.items.disliked) else items.items.disliked) &&
                         (!excludeDislikeds || !items.items.disliked) &&
-                        (!inStock || items.items.quantity > 0) &&
-                        (!outOfStock || items.items.quantity == 0) &&
+                        (!inStock || isInStock) &&
+                        (!outOfStock || !isInStock) &&
                         compMatch &&
                         flavorMatch &&
                         (subgenres.isEmpty() || subgenres.contains(items.items.subGenre.ifBlank { "(Unassigned)" })) &&
@@ -746,14 +770,6 @@ class FilterViewModel (
                         (ratingHigh == null || (if (unrated) (items.items.rating == null || ratingRangeHigh) else ratingRangeHigh))
 
             var tinsFilterResult = true
-
-            val tinFiltering = allItems.flatMap { it.tins }.filter {
-                (!opened || it.openDate != null && it.openDate < System.currentTimeMillis()) &&
-                        (!unopened || ((it.openDate == null || it.openDate >= System.currentTimeMillis()) && !it.finished)) &&
-                        (!finished || it.finished) &&
-                        (!unfinished || !it.finished) &&
-                        (container.isEmpty() || container.contains(it.container.ifBlank { "(Unassigned)" }))
-            }
 
             if (applyTinFilter) {
                 tinsFilterResult =
@@ -1177,16 +1193,62 @@ class FilterViewModel (
     val ratingHighEnabled: StateFlow<Double?> = createEnabledDoubleFlow(
         FilterCategory.RATING_HIGH
     ) { it.maxOrNull() }
-    val inStockEnabled: StateFlow<Boolean> = createEnabledFlow(
-        { it.items.quantity > 0 },
-        FilterCategory.IN_STOCK,
-        { it.inStock }
-    )
-    val outOfStockEnabled: StateFlow<Boolean> = createEnabledFlow(
-        { it.items.quantity == 0 },
-        FilterCategory.OUT_OF_STOCK,
-        { it.outOfStock }
-    )
+    @Suppress("UNCHECKED_CAST")
+    val inStockEnabled: StateFlow<Boolean> =
+        combine(
+            everythingFlow, sheetSelectionsFlow, preferencesRepo.quantityOption,
+            preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
+            unifiedFilteredTins
+        ) {
+            val allItems = it[0] as List<ItemsComponentsAndTins>
+            val selections = it[1] as SheetSelections
+            val quantityOption = it[2] as QuantityOption
+            val ozRate = it[3] as Double
+            val gramsRate = it[4] as Double
+            val filteredTins = it[5] as List<Tins>
+
+            val relevantItems: List<ItemsComponentsAndTins> = allItems.filter {
+                contextFilterForEnable(it, selections, FilterCategory.IN_STOCK)
+            }
+
+            relevantItems.any {
+                val quantityRemap = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+                quantityRemap > 0.0
+            }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = false
+            )
+    @Suppress("UNCHECKED_CAST")
+    val outOfStockEnabled: StateFlow<Boolean> =
+        combine(
+            everythingFlow, sheetSelectionsFlow, preferencesRepo.quantityOption,
+            preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
+            unifiedFilteredTins
+        ) {
+            val allItems = it[0] as List<ItemsComponentsAndTins>
+            val selections = it[1] as SheetSelections
+            val quantityOption = it[2] as QuantityOption
+            val ozRate = it[3] as Double
+            val gramsRate = it[4] as Double
+            val filteredTins = it[5] as List<Tins>
+
+            val relevantItems: List<ItemsComponentsAndTins> = allItems.filter {
+                contextFilterForEnable(it, selections, FilterCategory.OUT_OF_STOCK)
+            }
+
+            relevantItems.any {
+                val quantityRemap = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+                quantityRemap == 0.0
+            }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = false
+            )
     val subgenresEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableSubgenres,
         { name -> { it.items.subGenre.ifBlank { "(Unassigned)" } == name } },
