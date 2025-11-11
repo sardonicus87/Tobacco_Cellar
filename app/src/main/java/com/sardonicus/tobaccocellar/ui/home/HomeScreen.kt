@@ -495,6 +495,8 @@ fun HomeScreen(
                 modifier = Modifier,
                 homeUiState = homeUiState,
                 isTableView = homeUiState.isTableView,
+                emptyDatabase = emptyDatabase,
+                searchPerformed = searchPerformed,
                 onShowColumnPop = viewmodel::showColumnMenuToggle,
                 selectView = viewmodel::selectView,
                 filterViewModel = filterViewModel,
@@ -554,9 +556,11 @@ private fun HomeHeader(
     modifier: Modifier = Modifier,
     homeUiState: HomeUiState,
     isTableView: Boolean,
+    emptyDatabase: Boolean,
     onShowColumnPop: () -> Unit,
     selectView: (Boolean) -> Unit,
     filterViewModel: FilterViewModel,
+    searchPerformed: Boolean,
     searchText: String,
     saveListSorting: (ListSortOption) -> Unit,
     listSorting: ListSorting,
@@ -564,7 +568,6 @@ private fun HomeHeader(
 ) {
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val notesExist by filterViewModel.notesExist.collectAsState()
-    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
 
     Row(
         modifier = modifier
@@ -617,7 +620,6 @@ private fun HomeHeader(
                 .weight(1f, false),
         ) {
             val coroutineScope = rememberCoroutineScope()
-            val searchPerformed by filterViewModel.searchPerformed.collectAsState()
             val currentSetting by LocalCellarApplication.current.preferencesRepo.searchSetting.collectAsState(initial = SearchSetting.Blend)
 
             CustomBlendSearch(
