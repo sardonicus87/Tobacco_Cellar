@@ -602,8 +602,10 @@ fun DetailsEntry(
                     .fillMaxWidth(),
                 placeholder = {
                     if (isEditEntry) {
+                        val text = if (itemDetails.originalBrand.isNotEmpty()) {
+                            "(" + itemDetails.originalBrand + ")" } else ""
                         Text(
-                            text = "(" + itemDetails.originalBrand + ")",
+                            text = text,
                             modifier = Modifier
                                 .alpha(0.66f),
                             fontSize = 14.sp,
@@ -663,8 +665,10 @@ fun DetailsEntry(
                 singleLine = true,
                 placeholder = {
                     if (isEditEntry) {
+                        val text = if (itemDetails.originalBlend.isNotEmpty()) {
+                            "(" + itemDetails.originalBlend + ")" } else ""
                         Text(
-                            text = "(" + itemDetails.originalBlend + ")",
+                            text = text,
                             modifier = Modifier
                                 .alpha(0.66f),
                             fontSize = 14.sp,
