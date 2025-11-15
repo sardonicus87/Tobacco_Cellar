@@ -122,72 +122,34 @@ class EditEntryViewModel(
 
     init {
         loading = true
-        var detailsLoaded by mutableStateOf(false)
-        var componentsLoaded by mutableStateOf(false)
-        var flavoringLoaded by mutableStateOf(false)
-        var tinsLoaded by mutableStateOf(false)
 
-        @Suppress("KotlinConstantConditions")
         viewModelScope.launch {
-            launch {
-                itemsRepository.getItemStream(itemsId)
-                    .filterNotNull()
-                    .collectLatest {
-                        val itemDetails = it.toItemUiState(true)
-                            .also { copyOriginalDetails(it.itemDetails) }
-                        val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
-                        val updatedDetails = itemDetails.copy(itemDetails = itemDetails.itemDetails.copy(isSynced = savedSynced))
-                        itemUiState = updatedDetails
+            val initialDetails = itemsRepository.getItemDetailsStream(itemsId)
+                .filterNotNull()
+                .first()
 
-                        detailsLoaded = true
-                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
-                    }
+            val itemDetails = initialDetails.items.toItemDetails()
+                .also { copyOriginalDetails(it) }
+            val components = initialDetails.components.toComponentList()
+            val flavoring = initialDetails.flavoring.toFlavoringList()
+            val tins = initialDetails.tins.mapIndexed { index, it ->
+                it.toTinDetails().copy(tempTinId = index + 1)
             }
+            val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
 
-            launch {
-                itemsRepository.getComponentsForItemStream(itemsId)
-                    .filterNotNull()
-                    .collectLatest {
-                        val components = it.toComponentList()
-                        componentList = components
+            componentList = components
+            flavoringList = flavoring
+            tinDetailsList = tins
 
-                        componentsLoaded = true
-                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
-                    }
-            }
+            val updatedDetails = itemDetails.copy(isSynced = savedSynced, tinDetailsList = tins)
 
-            launch {
-                itemsRepository.getFlavoringForItemStream(itemsId)
-                    .filterNotNull()
-                    .collectLatest {
-                        val flavoring = it.toFlavoringList()
-                        flavoringList = flavoring
+            itemUiState = itemUiState.copy(
+                itemDetails = updatedDetails,
+                isEntryValid = validateInput(updatedDetails),
+            )
 
-                        flavoringLoaded = true
-                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
-                    }
-            }
-
-            launch {
-                itemsRepository.getTinsForItemStream(itemsId)
-                    .filterNotNull()
-                    .collectLatest {
-                        val tins = it.mapIndexed { index, it ->
-                            it.toTinDetails().copy(tempTinId = index + 1)
-                        }
-                        tinDetailsList = tins
-                        val updatedDetails = itemUiState.itemDetails.copy(tinDetailsList = tins)
-                        itemUiState = itemUiState.copy(itemDetails = updatedDetails, isEntryValid = validateInput(updatedDetails))
-
-                        tinsLoaded = true
-                        checkLoading(detailsLoaded, componentsLoaded, flavoringLoaded, tinsLoaded)
-                    }
-            }
+            loading = false
         }
-    }
-
-    private fun checkLoading(itemDetails: Boolean, components: Boolean, flavoring: Boolean, tins: Boolean) {
-        loading = !(itemDetails && components && flavoring && tins)
     }
 
     /** Popup and menu control **/
@@ -505,9 +467,7 @@ class EditEntryViewModel(
         }
     }
 
-    suspend fun deleteItem() {
-        itemsRepository.deleteItem(itemUiState.itemDetails.toItem())
-    }
+    suspend fun deleteItem() { itemsRepository.deleteItem(itemUiState.itemDetails.toItem()) }
 
 }
 

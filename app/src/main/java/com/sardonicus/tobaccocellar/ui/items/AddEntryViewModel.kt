@@ -480,13 +480,6 @@ fun FlavoringList.toFlavoring(existingFlavors: List<String>): List<Flavoring> {
 }
 
 
-/** convert Items (Database Table) to ItemUiState **/
-fun Items.toItemUiState(isEntryValid: Boolean = false): ItemUiState = ItemUiState(
-    itemDetails = this.toItemDetails(),
-    isEntryValid = isEntryValid
-)
-
-
 /** copy database entities to data classes **/
 fun Items.toItemDetails(): ItemDetails = ItemDetails(
     id = id,
@@ -505,14 +498,14 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
 )
 
 fun List<Components>.toComponentList(): ComponentList {
-    val componentString = this.joinToString(", ") { it.componentName }
+    val componentString = this.map { it.componentName }.sorted().joinToString(", ")
     return ComponentList(
         componentString = componentString
     )
 }
 
 fun List<Flavoring>.toFlavoringList(): FlavoringList {
-    val flavoringString = this.joinToString(", ") { it.flavoringName }
+    val flavoringString = this.map { it.flavoringName }.sorted().joinToString(", ")
     return FlavoringList(
         flavoringString = flavoringString
     )
