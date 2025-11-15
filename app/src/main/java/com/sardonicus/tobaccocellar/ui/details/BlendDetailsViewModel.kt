@@ -163,8 +163,8 @@ fun ItemsComponentsAndTins.toBlendDetails(): BlendDetails = BlendDetails(
     subGenre = items.subGenre,
     cut = items.cut,
     inProduction = items.inProduction,
-    componentList = components.joinToString(", ") { it.componentName },
-    flavoring = flavoring.joinToString(", ") { it.flavoringName },
+    componentList = components.map { it.componentName }.sorted().joinToString(", "),
+    flavoring = flavoring.map { it.flavoringName }.sorted().joinToString(", "),
     tins = tins,
 )
 
