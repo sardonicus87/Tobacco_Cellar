@@ -1330,7 +1330,7 @@ private fun DrawScope.drawLabels(
                 // very thin slices at the top of the chart
                 if (totalThinPercent > 4) {
                     val down = (totalThinPercent - thinCount)
-                    ((centerY - radius) - percentageHeight) + (down * (percentageHeight * 1.15f)) //  (percentageY - percentageHeight) + (down * percentageHeight)
+                    ((centerY - radius) - percentageHeight) + (down * (percentageHeight * 1.15f))
                 }
                 else {
                     // alternating
