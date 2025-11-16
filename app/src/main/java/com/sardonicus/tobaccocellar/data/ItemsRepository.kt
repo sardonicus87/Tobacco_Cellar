@@ -20,6 +20,7 @@ interface ItemsRepository {
 
     suspend fun optimizeDatabase()
 
+
     // Components //
     suspend fun insertComponent(component: Components): Long
 
@@ -63,8 +64,6 @@ interface ItemsRepository {
 
 
     /** Get single item **/
-    fun getItemStream(id: Int): Flow<Items?>
-
     fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
 
     fun getComponentsForItemStream(id: Int): Flow<List<Components>>

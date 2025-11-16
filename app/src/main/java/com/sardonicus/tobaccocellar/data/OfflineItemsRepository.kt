@@ -109,8 +109,6 @@ class OfflineItemsRepository(
 
 
     /** Get single item **/
-    override fun getItemStream(id: Int): Flow<Items?> = itemsDao.getItemStream(id)
-
     override fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?> = itemsDao.getItemDetailsStream(id)
 
     override fun getComponentsForItemStream(id: Int): Flow<List<Components>> = itemsDao.getComponentsForItemStream(id)
