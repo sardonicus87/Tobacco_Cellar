@@ -1110,17 +1110,27 @@ private fun DrawScope.drawLabels(
     }
     var thinCount = 0
 
+    var firstOutsideLabelAngle = -1f
+    var tempAngle = startAngle
+    for ((_, value) in data) {
+        val sweep = (value.toFloat() / total) * 360f
+        if (sweep < outsideLabelThreshold) {
+            firstOutsideLabelAngle = (tempAngle + sweep / 2f) % 360f
+            break
+        }
+        tempAngle += sweep
+    }
+
+
+    val moveToBottom = firstOutsideLabelAngle in 180f..225f
+
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
         val midpointAngle = currentStartAngle + (sweepAngle / 2)
         val normalizedMidpointAngle = (midpointAngle) % 360f
         val isOther = label == "(Other)"
-        if (sweepAngle < outsideLabelThreshold && !isOther) {
-            outsideLabelCount++
-        }
-        if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
-            thinCount++
-        }
+        if (sweepAngle < outsideLabelThreshold && !isOther) { outsideLabelCount++ }
+        if (sweepAngle < 10f && normalizedMidpointAngle > 225f) { thinCount++ }
 
         val radius = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             outsideRadius
@@ -1131,7 +1141,6 @@ private fun DrawScope.drawLabels(
                 insideRadius
             }
         }
-
 
         /** label coloring */
         val targetColor = listOf(colors[3], colors[4], colors[5], colors[6])
@@ -1289,12 +1298,8 @@ private fun DrawScope.drawLabels(
         }
         val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             // list placement
-            if (normalizedMidpointAngle > 180f && totalOutsideLabels > 2) {
-                listY.toFloat() + ((centerY * 2) - listHeight.toFloat()) + (labelHeight * .25f)
-            }
-            else {
-                listY.toFloat()
-            }
+            val listBase = if (moveToBottom) { size.height - listHeight.toFloat() } else { 0f }
+            listBase + outsideList.toFloat()
         } else {
             // normal on slice labels
             labelY - (combinedHeight * yOffsetFactor)
