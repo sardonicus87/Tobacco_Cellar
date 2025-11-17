@@ -69,6 +69,7 @@ class PreferencesRepo(
         val PLAINTEXT_PRESET_FORMAT5 = stringPreferencesKey("plaintext_preset_format5")
         val PLAINTEXT_PRESET_DELIMITER5 = stringPreferencesKey("plaintext_preset_delimiter5")
 
+        val DEFAULT_SYNC = booleanPreferencesKey("default_sync")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
 
         const val TAG = "PreferencesRepo"
@@ -94,7 +95,7 @@ class PreferencesRepo(
         }
     }
 
-    // setting quantity displayed options //
+    // setting quantity, rating, etc display options //
     val quantityOption: Flow<QuantityOption> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -119,7 +120,6 @@ class PreferencesRepo(
         }
     }
 
-    // Other display options (ratings, genre/subgenre) //
     val showRating: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -157,6 +157,8 @@ class PreferencesRepo(
         }
     }
 
+
+    /** Setting table and list specific options and sorting **/
     // setting table options //
     val sortColumnIndex: Flow<Int> = dataStore.data
         .catch {
@@ -350,6 +352,25 @@ class PreferencesRepo(
             getItemSyncState(itemId).first().toString()
         } catch (e: IOException) {
             throw e
+        }
+    }
+
+    // set default sync selected //
+    val defaultSyncOption: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[DEFAULT_SYNC] ?: false
+        }
+
+    suspend fun saveDefaultSyncOption(sync: Boolean) {
+        dataStore.edit {
+            it[DEFAULT_SYNC] = sync
         }
     }
 

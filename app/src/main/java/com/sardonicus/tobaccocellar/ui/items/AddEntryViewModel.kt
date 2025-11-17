@@ -277,6 +277,14 @@ class AddEntryViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            val defaultSync = preferencesRepo.defaultSyncOption.first()
+            itemUiState = itemUiState.copy(
+                itemDetails = itemUiState.itemDetails.copy(
+                    isSynced = defaultSync
+                )
+            )
+        }
     }
 
 
