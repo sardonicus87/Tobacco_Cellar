@@ -225,6 +225,7 @@ private fun SettingsBody(
     var showTypeGenreDialog by rememberSaveable { mutableStateOf(false) }
     var showQuantityDialog by rememberSaveable { mutableStateOf(false) }
 
+    var showDefaultSync by rememberSaveable { mutableStateOf(false) }
     var showTinRates by rememberSaveable { mutableStateOf(false) }
     var backup by rememberSaveable { mutableStateOf(false) }
     var restore by rememberSaveable { mutableStateOf(false) }
@@ -318,6 +319,7 @@ private fun SettingsBody(
             )
 
             DatabaseSettings(
+                showDefaultSync = { showDefaultSync = it },
                 showTinRates = { showTinRates = it },
                 optimizeDatabase = optimizeDatabase,
                 showBackup = { backup = it },
@@ -373,6 +375,7 @@ private fun SettingsBody(
                 TypeGenreDialog(
                     onDismiss = { showTypeGenreDialog = false },
                     preferencesRepo = preferencesRepo,
+                    optionEnablement = viewmodel.typeGenreOptionEnablement,
                     modifier = Modifier,
                     onTypeGenreOption = { viewmodel.saveTypeGenreOption(it) }
                 )
@@ -386,7 +389,14 @@ private fun SettingsBody(
                 )
             }
 
-
+            if (showDefaultSync) {
+                DefaultSyncDialog(
+                    onDismiss = { showDefaultSync = false },
+                    onDefaultSync = { viewmodel.setDefaultSyncOption(it) },
+                    preferencesRepo = preferencesRepo,
+                    modifier = Modifier
+                )
+            }
             if (showTinRates) {
                 TinRatesDialog(
                     onDismiss = { showTinRates = false },
@@ -559,6 +569,7 @@ fun DisplaySettings(
 
 @Composable
 fun DatabaseSettings(
+    showDefaultSync: (Boolean) -> Unit,
     showTinRates: (Boolean) -> Unit,
     optimizeDatabase: () -> Unit,
     showBackup: (Boolean) -> Unit,
@@ -579,6 +590,18 @@ fun DatabaseSettings(
                 .padding(bottom = 4.dp),
             fontSize = 16.sp
         )
+        TextButton(
+            onClick = { showDefaultSync(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
+            modifier = Modifier
+                .heightIn(28.dp, 28.dp)
+        ){
+            Text(
+                text = "Default Sync Tins Option",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
         TextButton(
             onClick = { showTinRates(true) },
             contentPadding = PaddingValues(8.dp, 3.dp),
@@ -1148,6 +1171,7 @@ fun RatingsDialog(
 fun TypeGenreDialog(
     onDismiss: () -> Unit,
     onTypeGenreOption: (String) -> Unit,
+    optionEnablement: Map<TypeGenreOption, Boolean>,
     preferencesRepo: PreferencesRepo,
     modifier: Modifier = Modifier
 ) {
@@ -1186,6 +1210,7 @@ fun TypeGenreDialog(
                         RadioButton(
                             selected = currentTypeGenre == it,
                             onClick = null,
+                            enabled = optionEnablement[it] ?: false,
                             modifier = Modifier
                                 .size(36.dp)
                         )
@@ -1286,7 +1311,83 @@ fun QuantityDialog(
 
 
 /** App/Database Settings Dialogs **/
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DefaultSyncDialog(
+    onDismiss: () -> Unit,
+    onDefaultSync: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    preferencesRepo: PreferencesRepo
+) {
+    val currentSyncOption by preferencesRepo.defaultSyncOption.collectAsState(initial = false)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Set \"Sync Tins\" default on or off when adding new items.",
+                    modifier = Modifier,
+                    fontSize = 16.sp,
+                    color = LocalContentColor.current
+                )
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val offAlpha = if (!currentSyncOption) 1f else .5f
+                    val onAlpha = if (currentSyncOption) 1f else .5f
+                    Text(
+                        text = "Off",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (!currentSyncOption) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(alpha = offAlpha)
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = currentSyncOption,
+                            onCheckedChange = { onDefaultSync(it) },
+                            modifier = Modifier
+                                .requiredHeight(20.dp)
+                                .scale(.7f)
+                                .padding(start = 10.dp),
+                            colors = SwitchDefaults.colors(
+                            )
+                        )
+                    }
+                    Text(
+                        text = "On",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (currentSyncOption) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(onAlpha)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
 @Composable
 fun TinRatesDialog(
     onDismiss: () -> Unit,

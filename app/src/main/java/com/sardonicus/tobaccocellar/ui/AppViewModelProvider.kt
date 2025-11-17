@@ -75,6 +75,7 @@ object AppViewModelProvider {
         initializer {
             SettingsViewModel(
                 cellarApplication().container.itemsRepository,
+                cellarApplication().filterViewModel,
                 cellarApplication().preferencesRepo
             )
         }

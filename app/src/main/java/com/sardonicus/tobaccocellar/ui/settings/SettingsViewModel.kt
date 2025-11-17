@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -42,6 +43,7 @@ import java.util.zip.ZipOutputStream
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
+    val filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
 
@@ -50,6 +52,7 @@ class SettingsViewModel(
     private val _showRatingsOption = MutableStateFlow(false)
     private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
+    private val _defaultSyncOption = MutableStateFlow(false)
 
     private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
     val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
@@ -131,8 +134,27 @@ class SettingsViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.defaultSyncOption.first().let {
+                    _defaultSyncOption.value = it
+                    if (it) {
+                        preferencesRepo.saveDefaultSyncOption(true)
+                    }
+                }
+            }
+        }
     }
 
+
+    /** Display Settings **/
+    val typeGenreOptionEnablement: Map<TypeGenreOption, Boolean> = mapOf(
+        TypeGenreOption.TYPE to filterViewModel.typesExist.value,
+        TypeGenreOption.SUBGENRE to filterViewModel.subgenresExist.value,
+        TypeGenreOption.BOTH to (filterViewModel.typesExist.value && filterViewModel.subgenresExist.value),
+        TypeGenreOption.TYPE_FALLBACK to filterViewModel.typesExist.value,
+        TypeGenreOption.SUB_FALLBACK to filterViewModel.subgenresExist.value,
+    )
 
     fun saveThemeSetting(setting: String) {
         viewModelScope.launch {
@@ -159,9 +181,11 @@ class SettingsViewModel(
     }
 
 
-    /** Database Settings */
-    suspend fun deleteAllItems() {
-        itemsRepository.deleteAllItems()
+    /** Database Settings **/
+    fun setDefaultSyncOption(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveDefaultSyncOption(option)
+        }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
@@ -184,8 +208,12 @@ class SettingsViewModel(
         }
     }
 
+    suspend fun deleteAllItems() {
+        itemsRepository.deleteAllItems()
+    }
 
-    /** Backup/Restore */
+
+    /** Backup/Restore **/
     // Backup //
     private val _backupState = MutableStateFlow(BackupState())
     var backupState: StateFlow<BackupState> = _backupState.asStateFlow()
@@ -768,6 +796,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val showRatingOption = preferencesRepo.showRating.first().toString()
     val typeGenreOption = preferencesRepo.typeGenreOption.first().value
     val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
+    val defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first().toString()
 
     return """
             tableView=$tableView
@@ -783,6 +812,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             showRatingOption=$showRatingOption
             typeGenreOption=$typeGenreOption
             exportRating=$exportRating
+            defaultSyncTinsOption=$defaultSyncTinsOption
         """.trimIndent()
 }
 
@@ -843,6 +873,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     val options = Json.decodeFromString<ExportRating>(value)
                     preferencesRepo.saveExportRating(options.maxRating, options.rounding)
                 }
+                "defaultSyncTinsOption" -> preferencesRepo.saveDefaultSyncOption(value.toBoolean())
             }
         }
     }
