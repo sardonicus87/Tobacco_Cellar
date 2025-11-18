@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
-import android.icu.text.DecimalFormat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -1106,7 +1105,7 @@ private fun DrawScope.drawLabels(
     val totalOutsideLabels = data.values.count { (it.toFloat() / total) * 360f < outsideLabelThreshold }
     val totalThinPercent = data.values.count {
         val normalizedMidpointAngle = (currentStartAngle + (it.toFloat() / total) * 360f) % 360f
-        (it.toFloat() / total) * 360f < 10f && normalizedMidpointAngle > 225f
+        (it.toFloat() / total) * 360f < 10f && normalizedMidpointAngle > 245f
     }
     var thinCount = 0
 
@@ -1121,8 +1120,31 @@ private fun DrawScope.drawLabels(
         tempAngle += sweep
     }
 
-
     val moveToBottom = firstOutsideLabelAngle in 180f..225f
+
+    val thinPercentMeasures = mutableMapOf<String, Float>()
+    var tempMeasureAngle = startAngle
+    // measure percentage pre-processing loop
+    data.forEach { (label, value) ->
+        val sweep = (value.toFloat() / total) * 360f
+        val midpoint = tempMeasureAngle + sweep / 2f
+        val normalizedMidpoint = (midpoint + 360f) % 360f
+
+        if (sweep < 10f && normalizedMidpoint > 245f) {
+            val valuePad = if (showValues) "($value) " else ""
+            val percent = (value.toDouble() / total) * 100
+            val percentCal = " ${formatDecimal(percent)}% " + valuePad
+            val measuredWidth = textMeasurer.measure(
+                text = AnnotatedString(percentCal),
+                style = TextStyle(fontSize = 11.sp)
+            ).size.width.toFloat()
+            thinPercentMeasures[label] = measuredWidth
+        }
+        tempMeasureAngle += sweep
+    }
+    val spacing = 3.dp.toPx()
+    val totalThinWidth = thinPercentMeasures.values.sum() + (spacing * (thinPercentMeasures.size - 1).coerceAtLeast(0))
+    val orderedThinLabels = data.keys.filter { it in thinPercentMeasures.keys }
 
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
@@ -1130,7 +1152,7 @@ private fun DrawScope.drawLabels(
         val normalizedMidpointAngle = (midpointAngle) % 360f
         val isOther = label == "(Other)"
         if (sweepAngle < outsideLabelThreshold && !isOther) { outsideLabelCount++ }
-        if (sweepAngle < 10f && normalizedMidpointAngle > 225f) { thinCount++ }
+        if (sweepAngle < 10f && normalizedMidpointAngle > 245f) { thinCount++ }
 
         val radius = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             outsideRadius
@@ -1209,13 +1231,9 @@ private fun DrawScope.drawLabels(
 
         /** label text formatting */
         val labelPad = " $label "
-        val valuePad = "($value) "
-        val decimalFormat = DecimalFormat(" #.##% ")
-        val percentageCal = if (showValues) {
-                decimalFormat.format(value.toDouble() / total) + valuePad
-            } else {
-                decimalFormat.format(value.toDouble() / total)
-            }
+        val valuePad = if (showValues) "($value) " else ""
+        val percent = (value.toDouble() / total) * 100
+        val percentageCal = " ${formatDecimal(percent)}% " + valuePad
 
         val textLabel = textMeasurer.measure(
             text = AnnotatedString(labelPad),
@@ -1260,10 +1278,13 @@ private fun DrawScope.drawLabels(
         val percentageX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
         val percentageY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat()
 
-        val outsideList = (labelHeight * 1.25) * (outsideLabelCount - 1)
-        val listHeight = (labelHeight * 1.25) * totalOutsideLabels
-        val listX = outsideRadius * (-0.4f) // multiplying by negative puts it on the left of the chart
-        val listY = outsideList
+        val listSpacing = 3.dp.toPx()
+
+        val labelList = (labelHeight + listSpacing) * (outsideLabelCount - 1)
+        val listHeight = (labelHeight + listSpacing) * totalOutsideLabels
+        val listX = (centerX - outsideRadius) - 125
+
+        val listY = (centerY - outsideRadius) - (percentageHeight * 1.5f)
 
 
         /** additional adjustment based on quadrant */
@@ -1282,11 +1303,6 @@ private fun DrawScope.drawLabels(
             else -> 0f
         }
 
-        val alternatingOffsetMax = 20.dp.toPx()
-        val alternatingOffsetFactor = when (normalizedMidpointAngle) {
-            in 180f..270f -> (270f - normalizedMidpointAngle) / (90f) // 1 to 0
-            else -> 0f
-        }
 
         /** final adjustment */
         val adjustedLabelX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
@@ -1298,8 +1314,8 @@ private fun DrawScope.drawLabels(
         }
         val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             // list placement
-            val listBase = if (moveToBottom) { size.height - listHeight.toFloat() } else { 0f }
-            listBase + outsideList.toFloat()
+            val listBase = if (moveToBottom) { size.height - listHeight } else { 0f }
+            listBase + labelList
         } else {
             // normal on slice labels
             labelY - (combinedHeight * yOffsetFactor)
@@ -1307,21 +1323,30 @@ private fun DrawScope.drawLabels(
 
         val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             // very thin slices extra adjustment
-            if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
-                if (totalThinPercent > 4) {
-                    val right = (totalThinPercent - thinCount)
-                    (percentageX - (percentageWidth * xOffsetFactor)) - ((right * (percentageHeight * 1.15f)) * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
-                } else {
-                    // alternating
-                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
-                        // evens up
-                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
-                    } else {
-                        // odds down
-                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
-                    }
-                    (percentageX - (percentageWidth * xOffsetFactor)) - (additionalOffset * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
-                }
+            if (sweepAngle < 10f && normalizedMidpointAngle > 245f && totalThinPercent > 0) {
+                // list
+                val start = centerY - (totalThinWidth / 2)
+                val index = orderedThinLabels.indexOf(label)
+                val precedingWidth = orderedThinLabels.take(index).sumOf {
+                    thinPercentMeasures[it]?.toDouble() ?: 0.0
+                }.toFloat()
+                val precedingSpace = listSpacing * index
+
+                start + precedingWidth + precedingSpace
+//                if (totalThinPercent > 2) {
+//                    val right = (totalThinPercent - thinCount)
+//                    (percentageX - (percentageWidth * xOffsetFactor)) - ((right * (percentageHeight * 1.15f)) * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
+//                } else {
+//                    // alternating
+//                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
+//                        // evens up
+//                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
+//                    } else {
+//                        // odds down
+//                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
+//                    }
+//                    (percentageX - (percentageWidth * xOffsetFactor)) - (additionalOffset * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
+//                }
             } else {
                 // normal outside slice placement
                 percentageX - (percentageWidth * xOffsetFactor)
@@ -1331,23 +1356,26 @@ private fun DrawScope.drawLabels(
             adjustedLabelX + (labelWidth - percentageWidth) / 2
         }
         val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            if (sweepAngle < 10f && normalizedMidpointAngle > 225f) {
-                // very thin slices at the top of the chart
-                if (totalThinPercent > 4) {
-                    val down = (totalThinPercent - thinCount)
-                    ((centerY - radius) - percentageHeight) + (down * (percentageHeight * 1.15f))
-                }
-                else {
-                    // alternating
-                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
-                        // evens up
-                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
-                    } else {
-                        // odds down
-                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
-                    }
-                    (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
-                }
+            if (sweepAngle < 10f && normalizedMidpointAngle > 245f && totalThinPercent > 1) {
+                // list placement
+                listY
+
+//                // very thin slices at the top of the chart
+//                if (totalThinPercent > 2) {
+//                    val down = (totalThinPercent - thinCount)
+//                    ((centerY - radius) - percentageHeight) + (down * (percentageHeight * 1.15f))
+//                }
+//                else {
+//                    // alternating
+//                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
+//                        // evens up
+//                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
+//                    } else {
+//                        // odds down
+//                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
+//                    }
+//                    (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
+//                }
             } else {
                 // outside slice placement
                 percentageY - (percentageHeight * yOffsetFactor)
