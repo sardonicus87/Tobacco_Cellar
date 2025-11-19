@@ -21,9 +21,12 @@ import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -148,13 +151,43 @@ class SettingsViewModel(
 
 
     /** Display Settings **/
-    val typeGenreOptionEnablement: Map<TypeGenreOption, Boolean> = mapOf(
-        TypeGenreOption.TYPE to filterViewModel.typesExist.value,
-        TypeGenreOption.SUBGENRE to filterViewModel.subgenresExist.value,
-        TypeGenreOption.BOTH to (filterViewModel.typesExist.value && filterViewModel.subgenresExist.value),
-        TypeGenreOption.TYPE_FALLBACK to filterViewModel.typesExist.value,
-        TypeGenreOption.SUB_FALLBACK to filterViewModel.subgenresExist.value,
+    val typeGenreOptionEnablement: StateFlow<Map<TypeGenreOption, Boolean>> = combine(
+        filterViewModel.typesExist,
+        filterViewModel.subgenresExist,
+    ) { types, subgenres ->
+        mapOf(
+            TypeGenreOption.TYPE to (types || !subgenres),
+            TypeGenreOption.SUBGENRE to subgenres,
+            TypeGenreOption.BOTH to (types && subgenres),
+            TypeGenreOption.TYPE_FALLBACK to types,
+            TypeGenreOption.SUB_FALLBACK to subgenres,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = mapOf(
+            TypeGenreOption.TYPE to true,
+            TypeGenreOption.SUBGENRE to false,
+            TypeGenreOption.BOTH to false,
+            TypeGenreOption.TYPE_FALLBACK to false,
+            TypeGenreOption.SUB_FALLBACK to false,
+        )
     )
+
+    init {
+        viewModelScope.launch {
+            combine(
+                preferencesRepo.typeGenreOption,
+                typeGenreOptionEnablement
+            ) { option, typeGenreEnablement ->
+                val enabled = typeGenreEnablement[option] ?: false
+                if (enabled) option else TypeGenreOption.TYPE
+            }.collect {
+                _typeGenreOption.value = it
+                preferencesRepo.saveTypeGenreOption(it.value)
+            }
+        }
+    }
 
     fun saveThemeSetting(setting: String) {
         viewModelScope.launch {
@@ -210,6 +243,7 @@ class SettingsViewModel(
 
     suspend fun deleteAllItems() {
         itemsRepository.deleteAllItems()
+        saveTypeGenreOption(TypeGenreOption.TYPE.value)
     }
 
 

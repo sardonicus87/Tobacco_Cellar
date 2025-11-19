@@ -71,6 +71,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -102,7 +103,6 @@ import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
@@ -372,10 +372,11 @@ private fun SettingsBody(
                 )
             }
             if (showTypeGenreDialog) {
+                val enablement by viewmodel.typeGenreOptionEnablement.collectAsState()
                 TypeGenreDialog(
                     onDismiss = { showTypeGenreDialog = false },
                     preferencesRepo = preferencesRepo,
-                    optionEnablement = viewmodel.typeGenreOptionEnablement,
+                    optionEnablement = enablement,
                     modifier = Modifier,
                     onTypeGenreOption = { viewmodel.saveTypeGenreOption(it) }
                 )
@@ -499,9 +500,6 @@ fun DisplaySettings(
     showTypeGenreDialog: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
-    val ratingsExist by filterViewModel.ratingsExist.collectAsState()
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -530,7 +528,6 @@ fun DisplaySettings(
         TextButton(
             onClick = { showRatingsDialog(true) },
             contentPadding = PaddingValues(8.dp, 3.dp),
-            enabled = ratingsExist,
             modifier = Modifier
                 .heightIn(28.dp, 28.dp)
         ) {
@@ -1202,11 +1199,13 @@ fun TypeGenreDialog(
                         modifier = Modifier
                             .clickable(
                                 indication = LocalIndication.current,
-                                interactionSource = null
+                                interactionSource = null,
+                                enabled = optionEnablement[it] ?: false
                             ) { onTypeGenreOption(it.value) },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
+                        val alpha = if (optionEnablement[it] == true) 1f else .38f
                         RadioButton(
                             selected = currentTypeGenre == it,
                             onClick = null,
@@ -1217,8 +1216,10 @@ fun TypeGenreDialog(
                         Text(
                             text = it.value,
                             modifier = Modifier
-                                .padding(end = 8.dp),
+                                .padding(end = 8.dp)
+                                .alpha(alpha),
                             fontSize = 15.sp,
+
                         )
                     }
                 }

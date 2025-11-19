@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -90,6 +91,25 @@ class HomeViewModel(
         viewModelScope.launch {
             filterViewModel.everythingFlow.collect {
                 _allItems.value = it
+            }
+        }
+        viewModelScope.launch {
+            combine(
+                preferencesRepo.typeGenreOption,
+                filterViewModel.typesExist,
+                filterViewModel.subgenresExist
+            ) { option, types, subgenres ->
+                val enablement = mapOf(
+                    TypeGenreOption.TYPE to (types || !subgenres),
+                    TypeGenreOption.SUBGENRE to subgenres,
+                    TypeGenreOption.BOTH to (types && subgenres),
+                    TypeGenreOption.TYPE_FALLBACK to types,
+                    TypeGenreOption.SUB_FALLBACK to subgenres,
+                )
+                val enabled = enablement[option] ?: false
+                if (enabled) option else TypeGenreOption.TYPE
+            }.collectLatest {
+                preferencesRepo.saveTypeGenreOption(it.value)
             }
         }
     }
