@@ -29,9 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -1782,18 +1779,18 @@ fun ColumnVisibilityPopup(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val columns = TableColumn.entries.filter { it != TableColumn.BRAND && it != TableColumn.BLEND }
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
         text = {
-            LazyVerticalGrid (
-                columns = GridCells.Fixed(2),
+            LazyColumn (
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                items(TableColumn.entries) { column ->
+                items(columns) { column ->
                     Row (
                         modifier = Modifier
                             .padding(0.dp)

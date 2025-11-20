@@ -112,6 +112,16 @@ class HomeViewModel(
                 preferencesRepo.saveTypeGenreOption(it.value)
             }
         }
+        viewModelScope.launch {
+            preferencesRepo.tableColumnsHidden.collect {
+                if (it.contains(TableColumn.BRAND.name)) {
+                    updateColumnVisibility(TableColumn.BRAND, true)
+                }
+                if (it.contains(TableColumn.BLEND.name)) {
+                    updateColumnVisibility(TableColumn.BLEND, true)
+                }
+            }
+        }
     }
 
 
