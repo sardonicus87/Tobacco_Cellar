@@ -30,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
@@ -50,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -412,7 +412,6 @@ fun IncreaseDecrease(
 
 
 /** TextField with inner-padding access */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTextField(
     value: String,
@@ -481,7 +480,6 @@ fun CustomTextField(
 
 
 /** TextField with AutoComplete suggestions */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoCompleteText(
     value: String,
@@ -509,9 +507,10 @@ fun AutoCompleteText(
 
     var fieldY by remember { mutableFloatStateOf(0f) }
     var menuY by remember { mutableFloatStateOf(0f) }
+    var typeCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(value) {
-        expandedState = if (value.length >= 2) {
+        expandedState = if (value.length >= 2 && typeCount >= 2) {
             suggestionsState.isNotEmpty() && !override
         } else {
             false
@@ -540,10 +539,26 @@ fun AutoCompleteText(
 
                 val input =
                     if (componentField && text.contains(", ")) {
-                        text.substringAfterLast(", ", "") }
-                    else { text }
+                        val cursorPosition = textFieldValueState.selection.start
+                        val delimiterIndices = text.mapIndexedNotNull { index, char ->
+                            when (char) {
+                                ',' -> index
+                                ' ' -> index
+                                else -> null
+                            }
+                        }.toMutableList().apply {
+                            add(-1)
+                            add(text.length)
+                        }.sorted()
+                        val startIndex = delimiterIndices.last { it < cursorPosition }
+                        val endIndex = delimiterIndices.first { it >= cursorPosition }
 
-                if (input.length >= 2) {
+                        text.substring(startIndex + 1, endIndex).trim()
+                    } else { text }
+
+                if (input.isNotBlank()) typeCount++
+
+                if (input.length >= 2 && typeCount >= 2) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
                     val otherWordsStartsWith = allItems.filter {
                         it.split(" ").drop(1)
@@ -558,9 +573,8 @@ fun AutoCompleteText(
 
                     val selectedInput =
                         if (componentField) {
-                            val components = text.substringBeforeLast(", ", "").trim()
-                            if (components.isNotBlank()) {
-                                components.split(", ").map { it.trim() }.filter { it.isNotBlank() } }
+                            if (text.isNotBlank()) {
+                                text.split(", ").map { it.trim() }.filter { it.isNotBlank() } }
                             else { emptyList() } }
                         else { listOf(input) }
                     val selected = allItems.filter {
@@ -576,6 +590,7 @@ fun AutoCompleteText(
                 .onFocusChanged {
                     if (!it.isFocused) {
                         expandedState = false
+                        typeCount = 0
                     }
                 }
                 .onGloballyPositioned { fieldY = it.positionOnScreen().y },
@@ -628,20 +643,50 @@ fun AutoCompleteText(
                     },
                     onClick = {
                         val currentText = textFieldValueState.text
+                        val cursorPosition = textFieldValueState.selection.start
 
-                        val updatedText =
+                        val newValue =
                             if (componentField && currentText.contains(", ")) {
-                                currentText.substringBeforeLast(", ", "") + ", " + label + ", " }
-                            else { if (componentField) { "$label, " } else { label } }
+                                val delimiterIndices = currentText.mapIndexedNotNull { index, char ->
+                                    when (char) {
+                                        ',' -> index
+                                        ' ' -> index
+                                        else -> null
+                                    }
+                                }.toMutableList().apply {
+                                    add(-1)
+                                    add(currentText.length)
+                                }.sorted()
+                                val startIndex = delimiterIndices.last { it < cursorPosition }
+                                val endIndex = delimiterIndices.first { it >= cursorPosition }
 
-                        textFieldValueState = TextFieldValue(
-                            text = updatedText,
-                            selection = TextRange(updatedText.length)
-                        )
+                                val updatedText = currentText.replaceRange(startIndex + 1, endIndex, " $label, ")
+                                    .trimStart().replace("  ", " ").replace(", ,", ",")
+                                val finalCursorPos = if (startIndex == -1) {
+                                    label.length + 2
+                                } else if (endIndex == currentText.length) {
+                                    updatedText.length
+                                }
+                                else { (startIndex + 1) + label.length + 1 }
+
+                                TextFieldValue(
+                                    text = updatedText,
+                                    selection = TextRange(finalCursorPos.coerceIn(0, updatedText.length))
+                                )
+                            } else {
+                                val updatedText = if (componentField) { "$label, " } else { label }
+                                TextFieldValue(
+                                    text = updatedText,
+                                    selection = TextRange(updatedText.length)
+                                )
+                            }
+
+                        textFieldValueState = newValue
 
                         override = true
+                        typeCount = 0
                         expandedState = false
-                        onOptionSelected?.invoke(updatedText)
+                        onOptionSelected?.invoke(newValue.text)
                     },
                     enabled = true,
                     modifier = Modifier
