@@ -14,6 +14,7 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
 import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
@@ -43,6 +44,7 @@ import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.math.roundToInt
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -244,6 +246,52 @@ class SettingsViewModel(
     suspend fun deleteAllItems() {
         itemsRepository.deleteAllItems()
         saveTypeGenreOption(TypeGenreOption.TYPE.value)
+    }
+
+    fun updateTinSync() {
+        viewModelScope.launch {
+            setLoadingState(true)
+            var message = ""
+            val allItems = filterViewModel.everythingFlow.first()
+            val ozRate = preferencesRepo.tinOzConversionRate.first()
+            val gramsRate = preferencesRepo.tinGramsConversionRate.first()
+
+            try {
+                allItems.forEach { item ->
+                    val tins = item.tins.filter { !it.finished }
+                    val syncQuantity = calculateSyncTins(tins, ozRate, gramsRate)
+                    val hasSync = preferencesRepo.getItemSyncState(item.items.id).first()
+                    if (hasSync) {
+                        println("Updating sync quantity for item: ${item.items.brand} - ${item.items.blend}")
+                        itemsRepository.updateItem(
+                            item.items.copy(
+                                quantity = syncQuantity,
+                            )
+                        )
+                    }
+                }
+                message = "Update Tin Sync quantities complete."
+            } catch (e: Exception) {
+                println("Update Tins Sync Exception: $e")
+                message = "Error updating sync quantities."
+            } finally {
+                setLoadingState(false)
+                showSnackbar(message)
+            }
+        }
+    }
+
+    private fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
+        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
+            (it.tinQuantity * 16) / ozRate
+        }
+        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
+            it.tinQuantity / ozRate
+        }
+        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
+            it.tinQuantity / gramsRate
+        }
+        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
     }
 
 
@@ -831,6 +879,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val typeGenreOption = preferencesRepo.typeGenreOption.first().value
     val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
     val defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first().toString()
+    val columnVisibility = preferencesRepo.tableColumnsHidden.first().joinToString(", ") { it }
 
     return """
             tableView=$tableView
@@ -847,6 +896,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             typeGenreOption=$typeGenreOption
             exportRating=$exportRating
             defaultSyncTinsOption=$defaultSyncTinsOption
+            columnVisibility=$columnVisibility
         """.trimIndent()
 }
 
@@ -908,6 +958,10 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     preferencesRepo.saveExportRating(options.maxRating, options.rounding)
                 }
                 "defaultSyncTinsOption" -> preferencesRepo.saveDefaultSyncOption(value.toBoolean())
+                "columnVisibility" -> {
+                    val columns = value.split(", ").toSet()
+                    preferencesRepo.saveTableColumnsHidden(columns)
+                }
             }
         }
     }

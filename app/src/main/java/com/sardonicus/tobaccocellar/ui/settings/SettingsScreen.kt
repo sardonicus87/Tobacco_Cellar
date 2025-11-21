@@ -190,6 +190,7 @@ fun SettingsScreen(
 
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
+                    updateTinSync = { viewmodel.updateTinSync() },
                     optimizeDatabase = { viewmodel.optimizeDatabase() },
                     onDeleteAllClick = {
                         coroutineScope.launch {
@@ -216,6 +217,7 @@ private fun SettingsBody(
     preferencesRepo: PreferencesRepo,
     tinOzConversionRate: Double,
     tinGramsConversionRate: Double,
+    updateTinSync: () -> Unit,
     optimizeDatabase: () -> Unit,
     onDeleteAllClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -319,6 +321,7 @@ private fun SettingsBody(
             )
 
             DatabaseSettings(
+                updateTinSync = updateTinSync,
                 showDefaultSync = { showDefaultSync = it },
                 showTinRates = { showTinRates = it },
                 optimizeDatabase = optimizeDatabase,
@@ -566,6 +569,7 @@ fun DisplaySettings(
 
 @Composable
 fun DatabaseSettings(
+    updateTinSync: () -> Unit,
     showDefaultSync: (Boolean) -> Unit,
     showTinRates: (Boolean) -> Unit,
     optimizeDatabase: () -> Unit,
@@ -587,6 +591,18 @@ fun DatabaseSettings(
                 .padding(bottom = 4.dp),
             fontSize = 16.sp
         )
+        TextButton(
+            onClick = { updateTinSync() },
+            contentPadding = PaddingValues(8.dp, 3.dp),
+            modifier = Modifier
+                .heightIn(28.dp, 28.dp)
+        ) {
+            Text(
+                text = "Fix/Update Tin Sync Quantity",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
         TextButton(
             onClick = { showDefaultSync(true) },
             contentPadding = PaddingValues(8.dp, 3.dp),
