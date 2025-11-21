@@ -14,33 +14,47 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class BulkEditViewModel (
+    filterViewModel: FilterViewModel,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
 
     /** UI stuff */
+    @Suppress("UNCHECKED_CAST")
     val bulkEditUiState: StateFlow<BulkEditUiState> =
-        itemsRepository.getEverythingStream()
-            .map {
-                BulkEditUiState(
-                    items = it,
-                    autoGenres = it.map { it.items.subGenre }.distinct().sorted(),
-                    autoCuts = it.map { it.items.cut }.distinct().sorted(),
-                    autoComps = it.flatMap { it.components }.map { it.componentName }.distinct().sorted(),
-                    autoFlavor = it.flatMap { it.flavoring }.map { it.flavoringName }.distinct().sorted(),
-                    loading = false
-                )
-            }
+        combine(
+            filterViewModel.unifiedFilteredItems,
+            filterViewModel.availableSubgenres,
+            filterViewModel.availableCuts,
+            filterViewModel.availableComponents,
+            filterViewModel.availableFlavorings
+        ) {
+            val items = it[0] as List<ItemsComponentsAndTins>
+            val subgenres = it[1] as List<String>
+            val cuts = it[2] as List<String>
+            val comps = it[3] as List<String>
+            val flavors = it[4] as List<String>
+
+            BulkEditUiState(
+                items = items,
+                autoGenres = subgenres.distinct().sorted(),
+                autoCuts = cuts.distinct().sorted(),
+                autoComps = comps.distinct().sorted(),
+                autoFlavor = flavors.distinct().sorted(),
+                loading = false
+            )
+        }
             .stateIn(
                 scope = viewModelScope,
                 started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000),
@@ -264,7 +278,7 @@ class BulkEditViewModel (
                 editingState.selectedItems.forEach {
                     preferencesRepo.setItemSyncState(it.items.id, editingState.syncTins)
 
-                    val tins = itemsRepository.getTinsForItemStream(it.items.id).first()
+                    val tins = it.tins.filter { !it.finished }
                     val syncedQuantity = calculateSyncTins(tins)
                     if (editingState.syncTins) {
                         itemsRepository.updateItem(

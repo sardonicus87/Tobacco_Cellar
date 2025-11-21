@@ -89,6 +89,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
@@ -328,6 +329,8 @@ fun BulkSelections(
     selectAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val filterViewModel = LocalCellarApplication.current.filterViewModel
+
     Column(
         modifier = modifier
             .fillMaxSize(),
@@ -343,20 +346,16 @@ fun BulkSelections(
             TextButton(
                 onClick = { selectAll() },
                 modifier = Modifier,
-            ) {
-                Text(
-                    text = "Select All",
-                )
-            }
+            ) { Text("Select All") }
             TextButton(
                 onClick = { clearSelections() },
                 modifier = Modifier,
                 enabled = selectedItems.isNotEmpty(),
-            ) {
-                Text(
-                    text = "Clear Selections",
-                )
-            }
+            ) { Text("Clear Selections") }
+            TextButton(
+                onClick = { filterViewModel.openBottomSheet() },
+                modifier = Modifier
+            ) { Text("Filter") }
         }
 
         LazyVerticalGrid(
