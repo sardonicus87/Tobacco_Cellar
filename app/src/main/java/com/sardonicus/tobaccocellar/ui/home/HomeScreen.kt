@@ -179,6 +179,7 @@ fun HomeScreen(
 
     val homeUiState by viewmodel.homeUiState.collectAsState()
     val columnVisibility by viewmodel.tableColumnVisibility.collectAsState()
+    val columnVisibilityEnablement by viewmodel.columnVisibilityEnablement.collectAsState()
 
     val showSnackbar by viewmodel.showSnackbar.collectAsState()
     if (showSnackbar) {
@@ -536,6 +537,7 @@ fun HomeScreen(
                     showColumnPop = viewmodel.showColumnMenu.value,
                     hideColumnPop = viewmodel::showColumnMenuToggle,
                     columnVisibility = columnVisibility,
+                    columnVisibilityEnablement = columnVisibilityEnablement,
                     onVisibilityChange = viewmodel::updateColumnVisibility,
                     shouldScrollUp = filterViewModel::shouldScrollUp,
                     modifier = modifier
@@ -989,6 +991,7 @@ private fun HomeBody(
     showColumnPop: Boolean,
     hideColumnPop: () -> Unit,
     columnVisibility: Map<TableColumn, Boolean>,
+    columnVisibilityEnablement: Map<TableColumn, Boolean>,
     onVisibilityChange: (TableColumn, Boolean) -> Unit,
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1110,6 +1113,7 @@ private fun HomeBody(
         if (showColumnPop) {
             ColumnVisibilityPopup(
                 visibilityMap = columnVisibility,
+                columnVisibilityEnablement = columnVisibilityEnablement,
                 onVisibilityChange = { column, visibility ->
                     onVisibilityChange(column, visibility)
                 },
@@ -1775,6 +1779,7 @@ enum class TableColumn(val title: String) {
 @Composable
 fun ColumnVisibilityPopup(
     visibilityMap: Map<TableColumn, Boolean>,
+    columnVisibilityEnablement: Map<TableColumn, Boolean>,
     onVisibilityChange: (TableColumn, Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -1805,6 +1810,7 @@ fun ColumnVisibilityPopup(
                                 val visible = visibilityMap[column] ?: true
                                 onVisibilityChange(column, !visible)
                             },
+                            enabled = columnVisibilityEnablement[column] ?: true,
                             modifier = Modifier
                         )
                     }

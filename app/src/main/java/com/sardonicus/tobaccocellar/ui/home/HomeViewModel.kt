@@ -365,6 +365,57 @@ class HomeViewModel(
         }
     }
 
+    val columnVisibilityEnablement: StateFlow<Map<TableColumn, Boolean>> =
+        combine(
+            filterViewModel.typesExist,
+            filterViewModel.subgenresExist,
+            filterViewModel.ratingsExist,
+            filterViewModel.favDisExist,
+            filterViewModel.notesExist,
+        ) {
+            val types = it[0]
+            val subgenres = it[1]
+            val ratings = it[2]
+            val favDis = it[3]
+            val notes = it[4]
+
+            mapOf(
+                TableColumn.BRAND to true,
+                TableColumn.BLEND to true,
+                TableColumn.TYPE to types,
+                TableColumn.SUBGENRE to subgenres,
+                TableColumn.RATING to ratings,
+                TableColumn.FAV_DIS to favDis,
+                TableColumn.NOTE to notes,
+                TableColumn.QTY to true
+            )
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = mapOf(
+                    TableColumn.BRAND to true,
+                    TableColumn.BLEND to true,
+                    TableColumn.TYPE to true,
+                    TableColumn.SUBGENRE to true,
+                    TableColumn.RATING to true,
+                    TableColumn.FAV_DIS to true,
+                    TableColumn.NOTE to true,
+                    TableColumn.QTY to true
+                )
+            )
+
+    init {
+        viewModelScope.launch {
+            columnVisibilityEnablement.collect {
+                val disabled = it.filterValues { !it }.keys
+                disabled.forEach {
+                    updateColumnVisibility(it, false)
+                }
+            }
+        }
+    }
+
 
     /** csvExport for TopAppBar **/
     private val _showSnackbar = MutableStateFlow(false)
