@@ -387,11 +387,13 @@ class CsvImportViewModel(
         val ozRate = preferencesRepo.tinOzConversionRate.first()
         val gramsRate = preferencesRepo.tinGramsConversionRate.first()
 
-        val totalLbsTins = tinDataList.filter { it.unit == "lbs" }.sumOf {
+        val tins = tinDataList.filter { !it.finished }
+
+        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
             (it.quantity * 16) / ozRate }
-        val totalOzTins = tinDataList.filter { it.unit == "oz" }.sumOf {
+        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
             it.quantity / ozRate }
-        val totalGramsTins = tinDataList.filter { it.unit == "grams" }.sumOf {
+        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
             it.quantity / gramsRate }
 
         return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()

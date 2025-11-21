@@ -14,6 +14,7 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 
 class AddEntryViewModel(
+    private val filterViewModel: FilterViewModel,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
@@ -178,11 +180,13 @@ class AddEntryViewModel(
     }
 
     fun calculateSyncTins(): Int {
-        val totalLbsTins = tinDetailsList.filter { it.unit == "lbs" }.sumOf {
+        val tins = tinDetailsList.filter { !it.finished }
+
+        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
             (it.tinQuantity * 16) / tinConversion.value.ozRate }
-        val totalOzTins = tinDetailsList.filter { it.unit == "oz" }.sumOf {
+        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
             it.tinQuantity / tinConversion.value.ozRate }
-        val totalGramsTins = tinDetailsList.filter { it.unit == "grams" }.sumOf {
+        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
             it.tinQuantity / tinConversion.value.gramsRate }
 
         val syncedTotal =  (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
@@ -252,7 +256,7 @@ class AddEntryViewModel(
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                itemsRepository.getEverythingStream().collectLatest {
+                filterViewModel.everythingFlow.collectLatest {
                     _brands.value = it.map { it.items.brand }.distinct().sorted()
                     _subGenres.value = it
                         .map {

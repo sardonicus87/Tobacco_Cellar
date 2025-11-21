@@ -82,6 +82,7 @@ object AppViewModelProvider {
 
         initializer {
             AddEntryViewModel(
+                cellarApplication().filterViewModel,
                 cellarApplication().container.itemsRepository,
                 cellarApplication().preferencesRepo
             )
@@ -90,6 +91,7 @@ object AppViewModelProvider {
         initializer {
             EditEntryViewModel(
                 this.createSavedStateHandle(),
+                cellarApplication().filterViewModel,
                 cellarApplication().container.itemsRepository,
                 cellarApplication().preferencesRepo
             )
@@ -97,6 +99,7 @@ object AppViewModelProvider {
 
         initializer {
             BulkEditViewModel(
+                cellarApplication().filterViewModel,
                 cellarApplication().container.itemsRepository,
                 cellarApplication().preferencesRepo
             )
