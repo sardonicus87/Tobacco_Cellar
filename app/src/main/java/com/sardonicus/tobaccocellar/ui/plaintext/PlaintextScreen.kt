@@ -265,7 +265,7 @@ fun PlaintextBody(
                     modifier = Modifier
                         .heightIn(40.dp, 40.dp),
                     contentPadding = PaddingValues(8.dp, 2.dp),
-                ) { Text("Filtering") }
+                ) { Text("Filter") }
             }
 
             // Sorting
