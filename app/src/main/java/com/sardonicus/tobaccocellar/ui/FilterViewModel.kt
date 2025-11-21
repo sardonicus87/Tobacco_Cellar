@@ -384,28 +384,28 @@ class FilterViewModel (
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
     val availableContainers: StateFlow<List<String>> = _availableContainers
 
-    private val _typesExist = MutableStateFlow(false)
+    private val _typesExist = MutableStateFlow(true)
     val typesExist: StateFlow<Boolean> = _typesExist
 
-    private val _subgenresExist = MutableStateFlow(false)
+    private val _subgenresExist = MutableStateFlow(true)
     val subgenresExist: StateFlow<Boolean> = _subgenresExist
 
-    private val _ratingsExist = MutableStateFlow(false)
+    private val _ratingsExist = MutableStateFlow(true)
     val ratingsExist: StateFlow<Boolean> = _ratingsExist
 
-    private val _favDisExist = MutableStateFlow(false)
+    private val _favDisExist = MutableStateFlow(true)
     val favDisExist: StateFlow<Boolean> = _favDisExist
 
-    private val _tinsExist = MutableStateFlow(false)
+    private val _tinsExist = MutableStateFlow(true)
     val tinsExist: StateFlow<Boolean> = _tinsExist
 
     private val _tinsReady = MutableStateFlow(false)
     val tinsReady: StateFlow<Boolean> = _tinsReady
 
-    private val _notesExist = MutableStateFlow(false)
+    private val _notesExist = MutableStateFlow(true)
     val notesExist: StateFlow<Boolean> = _notesExist
 
-    private val _datesExist = MutableStateFlow(false)
+    private val _datesExist = MutableStateFlow(true)
     val datesExist: StateFlow<Boolean> = _datesExist
 
     private val _emptyDatabase = MutableStateFlow(false)
