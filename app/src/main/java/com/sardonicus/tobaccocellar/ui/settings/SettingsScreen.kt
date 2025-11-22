@@ -84,7 +84,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -681,7 +680,6 @@ fun DatabaseSettings(
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun AboutSection(
     showChangelog: (Boolean) -> Unit,

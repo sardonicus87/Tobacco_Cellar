@@ -9,7 +9,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -188,7 +187,6 @@ fun BulkEditScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BulkEditBody(
     loading: Boolean,
@@ -319,7 +317,6 @@ fun BulkEditBody(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BulkSelections(
     items: List<ItemsComponentsAndTins>,

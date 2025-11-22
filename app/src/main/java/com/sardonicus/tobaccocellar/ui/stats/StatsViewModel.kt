@@ -14,7 +14,6 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.details.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -148,7 +147,6 @@ class StatsViewModel(
 
 
     /** Filtered stats */
-    @OptIn(ExperimentalCoroutinesApi::class)
     val filteredStats: StateFlow<FilteredStats> =
         combine(
             filterViewModel.everythingFlow,

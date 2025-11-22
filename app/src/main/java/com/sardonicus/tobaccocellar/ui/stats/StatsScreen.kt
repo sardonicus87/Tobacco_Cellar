@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -151,7 +150,6 @@ fun StatsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StatsBody(
     rawStats: RawStats,
@@ -301,7 +299,6 @@ private fun StatsBody(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickStatsSection(
     rawStats: RawStats,
@@ -771,7 +768,6 @@ private fun StatSubSection(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChartsSection(
     filteredStats: FilteredStats,

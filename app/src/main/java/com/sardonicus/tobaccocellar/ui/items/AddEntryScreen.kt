@@ -420,7 +420,6 @@ private fun DeleteConfirmationDialog(
 
 
 /** Body Elements **/
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemInputForm(
     itemDetails: ItemDetails,
@@ -1448,7 +1447,6 @@ fun TinsEntry(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IndividualTin(
     tinDetails: TinDetails,
@@ -2420,7 +2418,6 @@ fun CustomDatePickerDialog(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RatingPopup(
     onDismiss: () -> Unit,

@@ -9,7 +9,6 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.calculateAge
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -29,7 +28,6 @@ class DatesViewModel(
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val datesUiState: StateFlow<DatesUiState> =
         combine(
             filterViewModel.unifiedFilteredItems,

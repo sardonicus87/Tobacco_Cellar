@@ -8,7 +8,6 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
@@ -164,7 +163,7 @@ import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+
 @Composable
 fun CellarApp(
     navController: NavHostController = rememberNavController()
@@ -258,7 +257,6 @@ fun CellarApp(
 
 
 /** App bars **/
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CellarTopAppBar(
     title: String,
