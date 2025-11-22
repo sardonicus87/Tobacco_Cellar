@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,6 +82,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -125,13 +127,13 @@ object SettingsDestination : NavigationDestination {
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
     viewmodel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     val ozRate by viewmodel.tinOzConversionRate.collectAsState()
     val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
     val snackbarState = viewmodel.snackbarState.collectAsState()
@@ -150,7 +152,9 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() }
+        ,
         topBar = {
             CellarTopAppBar(
                 title = stringResource(SettingsDestination.titleRes),
@@ -465,7 +469,7 @@ private fun SettingsBody(
                     .offset { IntOffset(animatedDragOffset.roundToInt(), 0) }
                     .pointerInput(Unit) {
                         detectDragGestures(
-                            onDrag = { change, dragAmount ->
+                            onDrag = { _, dragAmount ->
                                 if (showChangelog) {
                                     isDragging = true
                                     if (dragAmount.x > 0 && dragOffset < windowWidth) {
@@ -762,33 +766,35 @@ fun AboutSection(
                     fontSize = 14.sp,
                     softWrap = true,
                 )
-                Text(
-                    text = contactString,
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = null,
-                            indication = LocalIndication.current,
-                        ) {
-                            val annotations =
-                                contactString.getStringAnnotations("Email", 0, contactString.length)
-                            annotations
-                                .firstOrNull()
-                                ?.let {
-                                    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                        data = it.item.toUri()
-                                        putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
-                                    }
-                                    context.startActivity(
-                                        Intent.createChooser(
-                                            emailIntent,
-                                            "Send Email"
+                SelectionContainer {
+                    Text(
+                        text = contactString,
+                        modifier = Modifier
+                            .clickable(
+                                interactionSource = null,
+                                indication = LocalIndication.current,
+                            ) {
+                                val annotations =
+                                    contactString.getStringAnnotations("Email", 0, contactString.length)
+                                annotations
+                                    .firstOrNull()
+                                    ?.let {
+                                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                            data = it.item.toUri()
+                                            putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
+                                        }
+                                        context.startActivity(
+                                            Intent.createChooser(
+                                                emailIntent,
+                                                "Send Email"
+                                            )
                                         )
-                                    )
-                                }
-                        },
-                    fontSize = 14.sp,
-                    softWrap = true,
-                )
+                                    }
+                            },
+                        fontSize = 14.sp,
+                        softWrap = true,
+                    )
+                }
             }
             Spacer(Modifier.height(14.dp))
             Text(

@@ -114,7 +114,6 @@ fun CsvImportScreen(
     modifier: Modifier = Modifier,
     navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
     navigateToHome: () -> Unit,
-    navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: CsvImportViewModel = viewModel(factory = AppViewModelProvider.Factory)

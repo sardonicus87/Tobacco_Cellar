@@ -67,7 +67,6 @@ fun CsvImportResultsScreen (
     updateFlag: Boolean,
     tinFlag: Boolean,
     navigateToHome: () -> Unit,
-    navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

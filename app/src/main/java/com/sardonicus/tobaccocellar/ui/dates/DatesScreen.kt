@@ -77,7 +77,6 @@ fun DatesScreen(
     navigateToStats: () -> Unit,
     navigateToAddEntry: () -> Unit,
     navigateToDetails: (Int) -> Unit,
-    onNavigateUp: () -> Unit,
     viewModel: DatesViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()

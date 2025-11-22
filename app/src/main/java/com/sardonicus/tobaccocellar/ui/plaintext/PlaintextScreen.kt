@@ -129,7 +129,6 @@ object PlaintextDestination : NavigationDestination {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaintextScreen(
-    navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: PlaintextViewModel = viewModel(factory = AppViewModelProvider.Factory)

@@ -71,7 +71,6 @@ object BlendDetailsDestination : NavigationDestination {
 @Composable
 fun BlendDetailsScreen(
     modifier: Modifier = Modifier,
-    navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
@@ -105,7 +104,6 @@ fun BlendDetailsScreen(
         ) {
             BlendDetailsBody(
                 blendDetails = blendDetails,
-                viewModel = viewModel,
                 navigateToEditEntry = { navigateToEditEntry(it) },
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
@@ -118,7 +116,6 @@ fun BlendDetailsScreen(
 @Composable
 fun BlendDetailsBody(
     blendDetails: BlendDetails,
-    viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {

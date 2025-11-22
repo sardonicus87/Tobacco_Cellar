@@ -96,7 +96,6 @@ fun CellarNavHost(
                     popUpTo(StatsDestination.route) { inclusive = true }
                 } },
                 navigateToAddEntry = { navController.navigate(AddEntryDestination.route) },
-                onNavigateUp = { navController.navigateUp() }
             )
         }
 
@@ -124,27 +123,23 @@ fun CellarNavHost(
                 navigateToDetails = { navController.navigate("${BlendDetailsDestination.route}/${it}") {
                     launchSingleTop = true
                 } },
-                onNavigateUp = { navController.navigateUp() },
             )
         }
 
         composable(route = SettingsDestination.route) {
             SettingsScreen(
-                navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
 
         composable(route = HelpDestination.route) {
             HelpScreen(
-                navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
 
         composable(route = PlaintextDestination.route) {
             PlaintextScreen(
-                navigateBack = { navController.popBackStack() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
@@ -168,7 +163,6 @@ fun CellarNavHost(
             }
         ) {
             BlendDetailsScreen(
-                navigateBack = { navController.popBackStack() },
                 navigateToEditEntry = { navController.navigate("${EditEntryDestination.route}/${it}") },
                 onNavigateUp = { navController.navigateUp() },
             )
@@ -196,14 +190,12 @@ fun CellarNavHost(
 
         composable(route = BulkEditDestination.route) {
             BulkEditScreen(
-                navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() },
             )
         }
 
         composable(route = CsvImportDestination.route) {
             CsvImportScreen(
-                navigateBack = { navController.navigateUp() },
                 onNavigateUp = { navController.navigateUp() },
                 navigateToHome = { navController.navigate(HomeDestination.route) },
                 navigateToImportResults = { totalRecords, successCount, successfulInsertions, successfulUpdates, successfulTins, updateFlag, tinFlag -> navController.navigate(
@@ -249,10 +241,6 @@ fun CellarNavHost(
                 updateFlag = updateFlag,
                 tinFlag = tinFlag,
                 navigateToHome = { navController.navigate(HomeDestination.route) {
-                    launchSingleTop = true
-                    popUpTo(HomeDestination.route) { inclusive = false }
-                } },
-                navigateBack = { navController.navigate(HomeDestination.route) {
                     launchSingleTop = true
                     popUpTo(HomeDestination.route) { inclusive = false }
                 } },

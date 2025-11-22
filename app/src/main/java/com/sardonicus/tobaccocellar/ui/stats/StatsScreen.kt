@@ -95,7 +95,6 @@ fun StatsScreen(
     navigateToHome: () -> Unit,
     navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
-    onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
     viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {

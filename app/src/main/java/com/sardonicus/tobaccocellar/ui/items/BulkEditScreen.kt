@@ -109,7 +109,6 @@ object BulkEditDestination : NavigationDestination {
 @Composable
 fun BulkEditScreen(
     modifier: Modifier = Modifier,
-    navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: BulkEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
