@@ -229,6 +229,8 @@ class SettingsViewModel(
             preferencesRepo.setTinGramsConversionRate(gramsRate)
             _tinOzConversionRate.value = ozRate
             _tinGramsConversionRate.value = gramsRate
+
+            updateTinSync(ozRate, gramsRate)
         }
     }
 
@@ -248,13 +250,13 @@ class SettingsViewModel(
         saveTypeGenreOption(TypeGenreOption.TYPE.value)
     }
 
-    fun updateTinSync() {
+    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null) {
         viewModelScope.launch {
             setLoadingState(true)
             var message = ""
             val allItems = filterViewModel.everythingFlow.first()
-            val ozRate = preferencesRepo.tinOzConversionRate.first()
-            val gramsRate = preferencesRepo.tinGramsConversionRate.first()
+            val ozRate = ozConversion ?: preferencesRepo.tinOzConversionRate.first()
+            val gramsRate = gramsConversion ?: preferencesRepo.tinGramsConversionRate.first()
 
             try {
                 allItems.forEach { item ->
@@ -270,7 +272,10 @@ class SettingsViewModel(
                         )
                     }
                 }
-                message = "Update Tin Sync quantities complete."
+
+                message = if (ozConversion != null || gramsConversion != null) {
+                    "Conversion rates and synced entry quantities updated."
+                } else { "Synced entry quantities updated." }
             } catch (e: Exception) {
                 println("Update Tins Sync Exception: $e")
                 message = "Error updating sync quantities."
