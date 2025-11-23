@@ -595,6 +595,18 @@ fun DatabaseSettings(
             fontSize = 16.sp
         )
         TextButton(
+            onClick = { showTinRates(true) },
+            contentPadding = PaddingValues(8.dp, 3.dp),
+            modifier = Modifier
+                .heightIn(28.dp, 28.dp)
+        ){
+            Text(
+                text = "Tin Conversion Rates",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        TextButton(
             onClick = { updateTinSync() },
             contentPadding = PaddingValues(8.dp, 3.dp),
             modifier = Modifier
@@ -614,18 +626,6 @@ fun DatabaseSettings(
         ){
             Text(
                 text = "Default Sync Tins Option",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showTinRates(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ){
-            Text(
-                text = "Tin Conversion Rates",
                 modifier = Modifier,
                 fontSize = 14.sp,
             )
@@ -1496,6 +1496,19 @@ fun TinRatesDialog(
                                     cursorColor = MaterialTheme.colorScheme.primary,
                                 ),
                                 contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                                placeholder = {
+                                    Text(
+                                        text = "($ozRate)",
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        style = LocalTextStyle.current.copy(
+                                            textAlign = TextAlign.End,
+                                            fontSize = 13.5.sp,
+                                            lineHeight = 20.sp,
+                                            color = LocalContentColor.current.copy(alpha = .38f),
+                                        )
+                                    )
+                                }
                             )
                             Text(
                                 text = "oz",
@@ -1535,6 +1548,19 @@ fun TinRatesDialog(
                                     cursorColor = MaterialTheme.colorScheme.primary,
                                 ),
                                 contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                                placeholder = {
+                                    Text(
+                                        text = "($gramsRate)",
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        style = LocalTextStyle.current.copy(
+                                            textAlign = TextAlign.End,
+                                            fontSize = 13.5.sp,
+                                            lineHeight = 20.sp,
+                                            color = LocalContentColor.current.copy(alpha = .38f),
+                                        )
+                                    )
+                                }
                             )
                             Text(
                                 text = "grams",
@@ -1557,8 +1583,8 @@ fun TinRatesDialog(
             TextButton(
                 onClick = {
                     onSave(
-                        tinOzRate.toDoubleOrNull() ?: 1.75,
-                        tinGramsRate.toDoubleOrNull() ?: 50.0
+                        tinOzRate.toDoubleOrNull() ?: ozRate,
+                        tinGramsRate.toDoubleOrNull() ?: gramsRate
                     )
                 },
                 modifier = Modifier
