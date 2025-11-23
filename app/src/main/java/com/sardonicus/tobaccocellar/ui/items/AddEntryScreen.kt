@@ -544,7 +544,6 @@ fun ItemInputForm(
                             addTin = addTin,
                             removeTin = removeTin,
                             itemUiState = itemUiState,
-                            onValueChange = onValueChange,
                             validateDates = validateDates,
                             modifier = Modifier
                         )
@@ -1364,20 +1363,11 @@ fun TinsEntry(
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
     itemUiState: ItemUiState,
-    onValueChange: (ItemDetails) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(tinDetailsList) {
-        onValueChange(itemUiState.itemDetails)
-        if (itemUiState.itemDetails.isSynced) {
-            val syncTins = itemUiState.itemDetails.syncedQuantity
-            onValueChange(itemUiState.itemDetails.copy(quantity = syncTins, quantityString = syncTins.toString()))
-        }
-    }
-
     Spacer(modifier = Modifier.height(7.dp))
 
     Column(
@@ -1416,7 +1406,6 @@ fun TinsEntry(
                     isTinLabelValid = isTinLabelValid,
                     removeTin = { removeTin(index) },
                     itemUiState = itemUiState,
-                    onValueChange = onValueChange,
                     validateDates = validateDates,
                     modifier = Modifier
                         .padding(bottom = 4.dp)
@@ -1457,14 +1446,9 @@ fun IndividualTin(
     showError: Boolean,
     removeTin: () -> Unit,
     itemUiState: ItemUiState,
-    onValueChange: (ItemDetails) -> Unit,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(tinDetails) {
-        onValueChange(itemUiState.itemDetails)
-    }
-
     LaunchedEffect(tinDetailsList) {
         onTinValueChange(
             tinDetails.copy(

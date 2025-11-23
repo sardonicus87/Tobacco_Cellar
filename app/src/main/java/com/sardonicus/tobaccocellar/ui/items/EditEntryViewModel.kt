@@ -13,14 +13,12 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -158,9 +156,7 @@ class EditEntryViewModel(
     private val _showRatingPop = mutableStateOf(false)
     val showRatingPop: State<Boolean> = _showRatingPop
 
-    fun onShowRatingPop(show: Boolean) {
-        _showRatingPop.value = show
-    }
+    fun onShowRatingPop(show: Boolean) { _showRatingPop.value = show }
 
 
     /** autocomplete vals **/
@@ -185,31 +181,21 @@ class EditEntryViewModel(
 
     init {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                filterViewModel.everythingFlow.collectLatest {
-                    _brands.value = it.map { it.items.brand }.distinct().sorted()
-                    _subGenres.value = it
-                        .map {
-                            it.items.subGenre
-                        }.distinct().sorted()
-                    _cuts.value = it
-                        .map {
-                            it.items.cut
-                        }.distinct().sorted()
-                    _components.value = it.flatMap { it.components }
-                        .map {
-                            it.componentName
-                        }.distinct().sorted()
-                    _flavoring.value = it.flatMap { it.flavoring }
-                        .map {
-                            it.flavoringName
-                        }.distinct().sorted()
-                    _tinContainers.value = it.flatMap { it.tins }
-                        .map {
-                            it.container
-                        }.distinct().sorted()
-                }
-            }
+            combine(
+                filterViewModel.availableBrands,
+                filterViewModel.availableSubgenres,
+                filterViewModel.availableCuts,
+                filterViewModel.availableComponents,
+                filterViewModel.availableFlavorings,
+                filterViewModel.availableContainers
+            ) {
+                _brands.value = it[0]
+                _subGenres.value = it[1].filter { it != "(Unassigned)" }
+                _cuts.value = it[2].filter { it != "(Unassigned)" }
+                _components.value = it[3].filter { it != "(None Assigned)" }
+                _flavoring.value = it[4].filter { it != "(None Assigned)" }
+                _tinContainers.value = it[5].filter { it != "(Unassigned)" }
+            }.first()
         }
     }
 
@@ -394,6 +380,7 @@ class EditEntryViewModel(
                 detailsExpanded = tinDetails.detailsExpanded,
                 labelIsNotValid = labelInvalid.value
             )
+        updateUiState(itemUiState.itemDetails)
     }
 
     suspend fun updateItem() {
