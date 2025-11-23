@@ -48,10 +48,10 @@ class BulkEditViewModel (
 
             BulkEditUiState(
                 items = items,
-                autoGenres = subgenres.distinct().sorted(),
-                autoCuts = cuts.distinct().sorted(),
-                autoComps = comps.distinct().sorted(),
-                autoFlavor = flavors.distinct().sorted(),
+                autoGenres = subgenres.filter { it != "(Unassigned)" },
+                autoCuts = cuts.filter { it != "(Unassigned)" },
+                autoComps = comps.filter { it != "(None Assigned)" },
+                autoFlavor = flavors.filter { it != "(None Assigned)" },
                 loading = false
             )
         }
