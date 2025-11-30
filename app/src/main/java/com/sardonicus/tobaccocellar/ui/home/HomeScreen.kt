@@ -122,7 +122,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
 import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -131,11 +131,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
-object HomeDestination : NavigationDestination {
-    override val route = "home"
-    override val titleRes = R.string.home_title
-}
 
 enum class ScrollDirection { UP, DOWN }
 
@@ -444,7 +439,7 @@ fun HomeScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(HomeDestination.titleRes),
+                title = stringResource(R.string.home_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
                 navigateToBulkEdit = navigateToBulkEdit,
@@ -1044,7 +1039,7 @@ private fun HomeBody(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text = displayedMessage,
                         textAlign = TextAlign.Center,
@@ -1052,7 +1047,7 @@ private fun HomeBody(
                         modifier = Modifier
                             .padding(0.dp),
                     )
-                    Spacer(modifier = Modifier.weight(1.25f))
+                    Spacer(Modifier.weight(1.25f))
                 }
             } else {
                 if (isTableView) {
