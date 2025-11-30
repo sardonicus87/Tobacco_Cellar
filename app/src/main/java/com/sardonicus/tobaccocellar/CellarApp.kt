@@ -128,8 +128,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavKey
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
@@ -146,14 +145,16 @@ import com.sardonicus.tobaccocellar.ui.composables.IndicatorSizes
 import com.sardonicus.tobaccocellar.ui.composables.OverflowRow
 import com.sardonicus.tobaccocellar.ui.composables.PagerIndicator
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
-import com.sardonicus.tobaccocellar.ui.dates.DatesDestination
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.home.HomeDestination
 import com.sardonicus.tobaccocellar.ui.items.CustomDropDown
-import com.sardonicus.tobaccocellar.ui.navigation.CellarNavHost
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.navigation.CellarNavigation
+import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
+import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
+import com.sardonicus.tobaccocellar.ui.navigation.NavigationState
+import com.sardonicus.tobaccocellar.ui.navigation.Navigator
+import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
+import com.sardonicus.tobaccocellar.ui.navigation.rememberNavigationState
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
-import com.sardonicus.tobaccocellar.ui.stats.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
@@ -163,27 +164,22 @@ import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
 
-
 @Composable
 fun CellarApp(
-    navController: NavHostController = rememberNavController()
+    navigationState: NavigationState = rememberNavigationState(
+        startRoute = HomeDestination,
+        topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination)
+    ),
+    navigator: Navigator = remember { Navigator(navigationState) }
 ) {
-    CellarNavHost(navController = navController)
-//    val currentBackStack by navController.currentBackStackEntryAsState()
-//    val currentRoute = currentBackStack?.destination?.route
+
+    CellarNavigation(
+        navigator = navigator,
+        navigationState = navigationState,
+    )
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
-
-//    LaunchedEffect(currentRoute) {
-//        val screen = when (currentRoute) {
-//            HomeDestination.route -> ActiveScreen.HOME
-//            StatsDestination.route -> ActiveScreen.STATS
-//            DatesDestination.route -> ActiveScreen.DATES
-//            else -> ActiveScreen.Other
-//        }
-//        filterViewModel.setActiveScreen(screen)
-//    }
 
     val pagerState = rememberPagerState(pageCount = { 3 })
 
@@ -236,15 +232,12 @@ fun CellarApp(
                     productionData = productionData,
                     modifier = Modifier
                 )
-                Box (
-                    modifier = Modifier
-                        .matchParentSize()
-                ) {
+                Box (Modifier.matchParentSize()) {
                     val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
 
                     Canvas(Modifier.fillMaxSize()) {
                         drawRect(
-                            color = Color.Black,
+                            color = Color.Black.copy(alpha = .9f),
                             topLeft = Offset(0f, (size.height)),
                             size = Size(size.width, navigation)
                         )
@@ -263,7 +256,7 @@ fun CellarTopAppBar(
     canNavigateBack: Boolean,
     modifier: Modifier = Modifier,
     showMenu: Boolean = false,
-    currentDestination: NavigationDestination? = null,
+    currentDestination: NavKey? = null,
     navigateUp: () -> Unit = {},
     navigateToBulkEdit: () -> Unit = {},
     navigateToCsvImport: () -> Unit = {},
@@ -659,7 +652,7 @@ enum class ExportType { ITEMS, TINS }
 
 @Composable
 fun CellarBottomAppBar(
-    currentDestination: NavigationDestination?,
+    currentDestination: NavKey?,
     modifier: Modifier = Modifier,
     navigateToHome: () -> Unit = {},
     navigateToStats: () -> Unit = {},
@@ -847,6 +840,7 @@ fun CellarBottomAppBar(
                                 },
                         )
                     }
+
                     Text(
                         text = stringResource(R.string.dates_title),
                         modifier = Modifier
