@@ -1,21 +1,19 @@
 package com.sardonicus.tobaccocellar.ui
 
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportViewModel
 import com.sardonicus.tobaccocellar.ui.dates.DatesViewModel
-import com.sardonicus.tobaccocellar.ui.details.BlendDetailsViewModel
 import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
 import com.sardonicus.tobaccocellar.ui.items.AddEntryViewModel
 import com.sardonicus.tobaccocellar.ui.items.BulkEditViewModel
-import com.sardonicus.tobaccocellar.ui.items.EditEntryViewModel
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextViewModel
 import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
+
 
 object AppViewModelProvider {
 
@@ -40,14 +38,6 @@ object AppViewModelProvider {
                 cellarApplication().filterViewModel,
                 cellarApplication().csvHelper,
                 cellarApplication()
-            )
-        }
-
-        initializer {
-            BlendDetailsViewModel(
-                this.createSavedStateHandle(),
-                cellarApplication().container.itemsRepository,
-                cellarApplication().preferencesRepo
             )
         }
 
@@ -82,15 +72,6 @@ object AppViewModelProvider {
 
         initializer {
             AddEntryViewModel(
-                cellarApplication().filterViewModel,
-                cellarApplication().container.itemsRepository,
-                cellarApplication().preferencesRepo
-            )
-        }
-
-        initializer {
-            EditEntryViewModel(
-                this.createSavedStateHandle(),
                 cellarApplication().filterViewModel,
                 cellarApplication().container.itemsRepository,
                 cellarApplication().preferencesRepo
