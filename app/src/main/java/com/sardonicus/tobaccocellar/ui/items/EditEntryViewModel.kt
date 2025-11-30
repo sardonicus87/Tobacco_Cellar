@@ -4,7 +4,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
@@ -25,13 +24,11 @@ import java.time.ZoneOffset
 import kotlin.math.roundToInt
 
 class EditEntryViewModel(
-    savedStateHandle: SavedStateHandle,
+    private val itemsId: Int,
     private val filterViewModel: FilterViewModel,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
-
-    private val itemsId: Int = checkNotNull(savedStateHandle[EditEntryDestination.itemsIdArg])
 
     /** current item state **/
     var itemUiState by mutableStateOf(ItemUiState())

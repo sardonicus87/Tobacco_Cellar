@@ -2,7 +2,6 @@ package com.sardonicus.tobaccocellar.ui.details
 
 import android.content.res.Configuration
 import android.content.res.Resources
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -29,15 +28,16 @@ import kotlin.math.pow
 import kotlin.math.round
 
 class BlendDetailsViewModel(
-    savedStateHandle: SavedStateHandle,
+    private val itemsId: Int,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
 
-    private val itemsId: Int = checkNotNull(savedStateHandle[BlendDetailsDestination.itemsIdArg])
-
     private val _blendDetails = MutableStateFlow(BlendDetails())
     val blendDetails = _blendDetails.asStateFlow()
+
+    private val _loadingFinished = MutableStateFlow(false)
+    val loadingFinished = _loadingFinished.asStateFlow()
 
     init {
         refreshData()
@@ -52,6 +52,7 @@ class BlendDetailsViewModel(
 
     private fun refreshData() {
         viewModelScope.launch {
+            _loadingFinished.value = false
             val details = itemsRepository.getItemDetailsStream(itemsId)
                 .filterNotNull()
                 .first()
@@ -69,6 +70,7 @@ class BlendDetailsViewModel(
                     tinsTotal = calculateTotal(details.tins.filter { !it.finished }, quantityRemap)
                 )
             }
+            _loadingFinished.value = true
         }
     }
 
