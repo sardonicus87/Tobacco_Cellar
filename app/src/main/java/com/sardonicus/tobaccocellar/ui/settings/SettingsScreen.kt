@@ -1,19 +1,12 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
 import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,9 +30,6 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
@@ -64,7 +51,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,17 +60,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -94,7 +73,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -109,25 +87,18 @@ import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
 import java.util.Locale
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
-
-object SettingsDestination : NavigationDestination {
-    override val route = "settings"
-    override val titleRes = R.string.settings_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit,
+    navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     canNavigateBack: Boolean = true,
     viewmodel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -157,7 +128,7 @@ fun SettingsScreen(
         ,
         topBar = {
             CellarTopAppBar(
-                title = stringResource(SettingsDestination.titleRes),
+                title = stringResource(R.string.settings_title),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = canNavigateBack,
@@ -190,7 +161,7 @@ fun SettingsScreen(
                 SettingsBody(
                     viewmodel = viewmodel,
                     preferencesRepo = viewmodel.preferencesRepo,
-
+                    navigateToChangelog = { navigateToChangelog(it) },
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
                     updateTinSync = { viewmodel.updateTinSync() },
@@ -218,6 +189,7 @@ fun SettingsScreen(
 private fun SettingsBody(
     viewmodel: SettingsViewModel,
     preferencesRepo: PreferencesRepo,
+    navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     tinOzConversionRate: Double,
     tinGramsConversionRate: Double,
     updateTinSync: () -> Unit,
@@ -236,41 +208,7 @@ private fun SettingsBody(
     var restore by rememberSaveable { mutableStateOf(false) }
     var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
 
-    var showChangelog by rememberSaveable { mutableStateOf(false) }
-
-    var isDragging by remember { mutableStateOf(false) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    val density = LocalDensity.current
-    val coroutineScope = rememberCoroutineScope()
-    val windowWidth = LocalWindowInfo.current.containerSize.width.dp.value * density.density
-    val animatedDragOffset by animateFloatAsState(
-        targetValue = dragOffset,
-        animationSpec = tween(durationMillis = 300),
-        label = "Animated Drag Offset"
-    )
-
-    LaunchedEffect(showChangelog) {
-        if (!showChangelog) {
-            dragOffset = 0f
-        }
-    }
-
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource) : Offset {
-                return if (isDragging) {
-                    available
-                } else {
-                    Offset.Zero
-                }
-            }
-        }
-    }
-
-    BackHandler(showChangelog) { showChangelog = false }
-
     val context = LocalContext.current
-
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
     ) {
@@ -278,7 +216,6 @@ private fun SettingsBody(
             viewmodel.saveBackup(context, it)
         }
     }
-
     val openLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) {
@@ -287,214 +224,162 @@ private fun SettingsBody(
         }
     }
 
-    Box(
+    Column(
         modifier = modifier
-            .nestedScroll(nestedScrollConnection)
+            .fillMaxSize()
+            .padding(0.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(0.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(
-                modifier = Modifier
-                    .height(16.dp)
+        Spacer(Modifier.height(16.dp))
+
+        DisplaySettings(
+            showThemeDialog = { showThemeDialog = it },
+            showRatingsDialog = { showRatingsDialog = it },
+            showTypeGenreDialog = { showTypeGenreDialog = it },
+            showQuantityDialog = { showQuantityDialog = it },
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                    RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(vertical = 8.dp, horizontal = 12.dp)
+        )
+
+        DatabaseSettings(
+            updateTinSync = updateTinSync,
+            showDefaultSync = { showDefaultSync = it },
+            showTinRates = { showTinRates = it },
+            optimizeDatabase = optimizeDatabase,
+            showBackup = { backup = it },
+            showRestore = { restore = it },
+            deleteAllConfirm = { deleteAllConfirm = it },
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                    RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(vertical = 8.dp, horizontal = 12.dp)
+        )
+
+        AboutSection(
+            navigateToChangelog = { navigateToChangelog(it) },
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                    RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(vertical = 8.dp, horizontal = 12.dp)
+        )
+
+        // Popup settings dialogs
+        if (showThemeDialog) {
+            ThemeDialog(
+                onThemeSelected = { viewmodel.saveThemeSetting(it) },
+                preferencesRepo = preferencesRepo,
+                onClose = { showThemeDialog = false }
             )
-
-            DisplaySettings(
-                showThemeDialog = { showThemeDialog = it },
-                showRatingsDialog = { showRatingsDialog = it },
-                showTypeGenreDialog = { showTypeGenreDialog = it },
-                showQuantityDialog = { showQuantityDialog = it },
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
+        }
+        if (showRatingsDialog) {
+            RatingsDialog(
+                onDismiss = { showRatingsDialog = false },
+                preferencesRepo = preferencesRepo,
+                modifier = Modifier,
+                onRatingsOption = { viewmodel.saveShowRatingOption(it) }
             )
-
-            DatabaseSettings(
-                updateTinSync = updateTinSync,
-                showDefaultSync = { showDefaultSync = it },
-                showTinRates = { showTinRates = it },
-                optimizeDatabase = optimizeDatabase,
-                showBackup = { backup = it },
-                showRestore = { restore = it },
-                deleteAllConfirm = { deleteAllConfirm = it },
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
+        }
+        if (showTypeGenreDialog) {
+            val enablement by viewmodel.typeGenreOptionEnablement.collectAsState()
+            TypeGenreDialog(
+                onDismiss = { showTypeGenreDialog = false },
+                preferencesRepo = preferencesRepo,
+                optionEnablement = enablement,
+                modifier = Modifier,
+                onTypeGenreOption = { viewmodel.saveTypeGenreOption(it) }
             )
-
-            AboutSection(
-                showChangelog = { showChangelog = it },
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
+        }
+        if (showQuantityDialog) {
+            QuantityDialog(
+                onDismiss = { showQuantityDialog = false },
+                preferencesRepo = preferencesRepo,
+                modifier = Modifier,
+                onQuantityOption = { viewmodel.saveQuantityOption(it) }
             )
-
-            // Popup settings dialogs
-            if (showThemeDialog) {
-                ThemeDialog(
-                    onThemeSelected = { viewmodel.saveThemeSetting(it) },
-                    preferencesRepo = preferencesRepo,
-                    onClose = { showThemeDialog = false }
-                )
-            }
-            if (showRatingsDialog) {
-                RatingsDialog(
-                    onDismiss = { showRatingsDialog = false },
-                    preferencesRepo = preferencesRepo,
-                    modifier = Modifier,
-                    onRatingsOption = { viewmodel.saveShowRatingOption(it) }
-                )
-            }
-            if (showTypeGenreDialog) {
-                val enablement by viewmodel.typeGenreOptionEnablement.collectAsState()
-                TypeGenreDialog(
-                    onDismiss = { showTypeGenreDialog = false },
-                    preferencesRepo = preferencesRepo,
-                    optionEnablement = enablement,
-                    modifier = Modifier,
-                    onTypeGenreOption = { viewmodel.saveTypeGenreOption(it) }
-                )
-            }
-            if (showQuantityDialog) {
-                QuantityDialog(
-                    onDismiss = { showQuantityDialog = false },
-                    preferencesRepo = preferencesRepo,
-                    modifier = Modifier,
-                    onQuantityOption = { viewmodel.saveQuantityOption(it) }
-                )
-            }
-
-            if (showDefaultSync) {
-                DefaultSyncDialog(
-                    onDismiss = { showDefaultSync = false },
-                    onDefaultSync = { viewmodel.setDefaultSyncOption(it) },
-                    preferencesRepo = preferencesRepo,
-                    modifier = Modifier
-                )
-            }
-            if (showTinRates) {
-                TinRatesDialog(
-                    onDismiss = { showTinRates = false },
-                    ozRate = tinOzConversionRate,
-                    gramsRate = tinGramsConversionRate,
-                    onSave = { ozRate, gramsRate ->
-                        viewmodel.setTinConversionRates(ozRate, gramsRate)
-                        showTinRates = false
-                    },
-                    modifier = Modifier
-                )
-            }
-            if (backup) {
-                BackupDialog(
-                    onDismiss = { backup = false },
-                    onSave = {
-                        backup = false
-                        launcher.launch(it)
-                    },
-                    viewmodel = viewmodel,
-                    modifier = Modifier
-                )
-            }
-            if (restore) {
-                RestoreDialog(
-                    onDismiss = { restore = false },
-                    onRestore = {
-                        restore = false
-                        openLauncher.launch(arrayOf("application/octet-stream"))
-                    },
-                    viewmodel = viewmodel,
-                    modifier = Modifier
-                )
-            }
-            if (deleteAllConfirm) {
-                DeleteAllDialog(
-                    onDeleteConfirm = {
-                        deleteAllConfirm = false
-                        onDeleteAllClick()
-                    },
-                    onDeleteCancel = { deleteAllConfirm = false },
-                    modifier = Modifier
-                        .padding(0.dp)
-                )
-            }
-
         }
 
-        AnimatedVisibility(
-            visible = showChangelog,
-            enter = slideInHorizontally(initialOffsetX = { it }),
-            exit = slideOutHorizontally(targetOffsetX = { it })
-        ) {
-            ChangelogDialog(
-                changelogEntries = changelogEntries,
-                showChangelog = {
-                    coroutineScope.launch {
-                        if (!it) { dragOffset = 0f }
-                        showChangelog = it
-                    }
+        if (showDefaultSync) {
+            DefaultSyncDialog(
+                onDismiss = { showDefaultSync = false },
+                onDefaultSync = { viewmodel.setDefaultSyncOption(it) },
+                preferencesRepo = preferencesRepo,
+                modifier = Modifier
+            )
+        }
+        if (showTinRates) {
+            TinRatesDialog(
+                onDismiss = { showTinRates = false },
+                ozRate = tinOzConversionRate,
+                gramsRate = tinGramsConversionRate,
+                onSave = { ozRate, gramsRate ->
+                    viewmodel.setTinConversionRates(ozRate, gramsRate)
+                    showTinRates = false
                 },
                 modifier = Modifier
-                    .offset { IntOffset(animatedDragOffset.roundToInt(), 0) }
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDrag = { _, dragAmount ->
-                                if (showChangelog) {
-                                    isDragging = true
-                                    if (dragAmount.x > 0 && dragOffset < windowWidth) {
-                                        dragOffset = min(dragOffset + dragAmount.x, windowWidth)
-                                    } else if (dragAmount.x < 0 && dragOffset > 0) {
-                                        dragOffset = max(dragOffset + dragAmount.x, 0f)
-                                    }
-                                }
-                            },
-                            onDragCancel = {
-                                isDragging = false
-                            },
-                            onDragEnd = {
-                                isDragging = false
-                                if (dragOffset > density.run { 100.dp.toPx() }) {
-                                    dragOffset = windowWidth
-                                    showChangelog = false
-                                } else {
-                                    dragOffset = 0f
-                                }
-                            }
-                        )
-                    }
             )
         }
+        if (backup) {
+            BackupDialog(
+                onDismiss = { backup = false },
+                onSave = {
+                    backup = false
+                    launcher.launch(it)
+                },
+                viewmodel = viewmodel,
+                modifier = Modifier
+            )
+        }
+        if (restore) {
+            RestoreDialog(
+                onDismiss = { restore = false },
+                onRestore = {
+                    restore = false
+                    openLauncher.launch(arrayOf("application/octet-stream"))
+                },
+                viewmodel = viewmodel,
+                modifier = Modifier
+            )
+        }
+        if (deleteAllConfirm) {
+            DeleteAllDialog(
+                onDeleteConfirm = {
+                    deleteAllConfirm = false
+                    onDeleteAllClick()
+                },
+                onDeleteCancel = { deleteAllConfirm = false },
+                modifier = Modifier
+                    .padding(0.dp)
+            )
+        }
+
     }
 }
 
@@ -686,7 +571,7 @@ fun DatabaseSettings(
 
 @Composable
 fun AboutSection(
-    showChangelog: (Boolean) -> Unit,
+    navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -810,260 +695,13 @@ fun AboutSection(
                     .clickable(
                         indication = LocalIndication.current,
                         interactionSource = null
-                    ) { showChangelog(true) }
+                    ) { navigateToChangelog(changelogEntries) }
                     .padding(vertical = 1.dp),
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.primary
             )
         }
-    }
-}
-
-
-/** Changelog stuff **/
-@Composable
-fun ChangelogDialog(
-    changelogEntries: List<ChangelogEntryData>,
-    showChangelog: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val screenHeight = LocalWindowInfo.current.containerSize.height.dp
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .heightIn(max = screenHeight)
-            .padding(0.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        // header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(color = LocalCustomColors.current.backgroundVariant),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Column (
-                modifier = Modifier
-                    .weight(1f),
-                horizontalAlignment = Alignment.Start
-            ) {
-                IconButton(
-                    onClick = { showChangelog(false) },
-                    modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.arrow_back),
-                        contentDescription = "Back",
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(24.dp),
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-            Text(
-                text = "Changelog",
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                fontSize = 20.sp,
-                maxLines = 1,
-                modifier = Modifier
-                    .weight(1f),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Spacer(
-                modifier = Modifier
-                    .weight(1f)
-            )
-        }
-        // log entries
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp),
-            state = rememberLazyListState(),
-            userScrollEnabled = true,
-        ) {
-            item {
-                Spacer(
-                    modifier = Modifier
-                        .height(12.dp)
-                )
-            }
-            items(items = changelogEntries, key = { it.versionNumber }
-            ) {
-                if (it.versionNumber.isNotBlank()) {
-                    ChangeLogEntryLayout(
-                        versionNumber = it.versionNumber,
-                        buildDate = it.buildDate,
-                        changes = it.changes,
-                        improvements = it.improvements,
-                        bugFixes = it.bugFixes,
-                        modifier = Modifier
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChangeLogEntryLayout(
-    versionNumber: String,
-    buildDate: String,
-    modifier: Modifier = Modifier,
-    changes: List<String> = emptyList(),
-    improvements: List<String> = emptyList(),
-    bugFixes: List<String> = emptyList(),
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(
-            text = "Version $versionNumber  ($buildDate)",
-            modifier = Modifier,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Start,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        HorizontalDivider(
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-            thickness = 1.dp,
-        )
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 8.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            if (changes.isNotEmpty()) {
-                Text(
-                    text = "Changes:",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    changes.forEach {
-                        Row {
-                            Column {
-                                Text(
-                                    text = "•  ",
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    softWrap = true,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            if (improvements.isNotEmpty()) {
-                Text(
-                    text = "Improvements:",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    improvements.forEach {
-                        Row {
-                            Column {
-                                Text(
-                                    text = "•  ",
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    softWrap = true,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            if (bugFixes.isNotEmpty()) {
-                Text(
-                    text = "Bug Fixes:",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    bugFixes.forEach {
-                        Row {
-                            Column {
-                                Text(
-                                    text = "•  ",
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    softWrap = true,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(
-            modifier = Modifier
-                .height(16.dp)
-        )
     }
 }
 
@@ -1417,8 +1055,8 @@ fun TinRatesDialog(
     onSave: (Double, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var tinOzRate by rememberSaveable { mutableStateOf(ozRate.toString()) }
-    var tinGramsRate by rememberSaveable { mutableStateOf(gramsRate.toString()) }
+    var tinOzRate by rememberSaveable { mutableStateOf(formatDecimal(ozRate)) }
+    var tinGramsRate by rememberSaveable { mutableStateOf(formatDecimal(gramsRate)) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
