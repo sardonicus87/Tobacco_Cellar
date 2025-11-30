@@ -1055,8 +1055,6 @@ class CsvImportViewModel(
 }
 
 
-
-
 data class CsvImportState(
     val header: List<String> = emptyList(),
     val testHeader: List<String> = emptyList(),
