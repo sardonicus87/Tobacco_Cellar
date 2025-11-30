@@ -121,7 +121,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -138,12 +137,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
-
-
-object AddEntryDestination : NavigationDestination {
-    override val route = "add_entry"
-    override val titleRes = R.string.add_entry_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,7 +159,7 @@ fun AddEntryScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(AddEntryDestination.titleRes),
+                title = stringResource(R.string.add_entry_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier,
@@ -505,7 +498,7 @@ fun ItemInputForm(
         }
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
-            size = GlowSize(vertical = 6.dp)
+            size = GlowSize(vertical = 4.dp)
         ) {
             Column(
                 modifier = Modifier

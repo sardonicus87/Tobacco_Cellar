@@ -61,13 +61,8 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-
-object DatesDestination : NavigationDestination {
-    override val route = "dates_title"
-    override val titleRes = R.string.dates_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +85,7 @@ fun DatesScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(DatesDestination.titleRes),
+                title = stringResource(R.string.dates_title),
                 scrollBehavior = scrollBehavior,
                 showMenu = false,
                 canNavigateBack = false,
@@ -120,6 +115,7 @@ fun DatesScreen(
                 navigateToDetails = navigateToDetails,
                 datesUiState = datesUiState,
                 modifier = Modifier
+                    .fillMaxSize()
             )
         }
     }

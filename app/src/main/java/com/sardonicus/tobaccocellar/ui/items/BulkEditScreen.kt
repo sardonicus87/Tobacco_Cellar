@@ -97,13 +97,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-
-object BulkEditDestination : NavigationDestination {
-    override val route = "bulk_edit"
-    override val titleRes = R.string.bulk_edit_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,7 +130,7 @@ fun BulkEditScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(BulkEditDestination.titleRes),
+                title = stringResource(R.string.bulk_edit_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier,

@@ -76,18 +76,13 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
+import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
-
-object StatsDestination : NavigationDestination {
-    override val route = "stats"
-    override val titleRes = R.string.stats_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,7 +105,7 @@ fun StatsScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(StatsDestination.titleRes),
+                title = stringResource(R.string.stats_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
                 showMenu = false,
@@ -180,7 +175,7 @@ private fun StatsBody(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        Spacer(modifier = Modifier.height(1.dp))
+        Spacer(Modifier.height(1.dp))
 
         // Quick Stats //
         Box {
@@ -226,10 +221,7 @@ private fun StatsBody(
             )
         }
 
-        Spacer(
-            modifier = Modifier
-                .height(10.dp)
-        )
+        Spacer(Modifier.height(10.dp))
 
         QuickStatsSection(
             rawStats = rawStats,
@@ -243,10 +235,7 @@ private fun StatsBody(
                 .padding(start = 24.dp),
         )
 
-        Spacer(
-            modifier = Modifier
-                .height(10.dp)
-        )
+        Spacer(Modifier.height(10.dp))
 
         // Charts //
         Box {
@@ -328,10 +317,7 @@ fun QuickStatsSection(
                 textAlign = TextAlign.Start,
                 color = colorScheme.onBackground
             )
-            Spacer(
-                modifier = Modifier
-                    .width(8.dp)
-            )
+            Spacer(Modifier.width(8.dp))
             Text(
                 text = "Filtered Stats",
                 modifier = Modifier
@@ -350,10 +336,7 @@ fun QuickStatsSection(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            SelectionContainer(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
+            SelectionContainer(Modifier.weight(1f)) {
                 Text(
                     text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                             if (rawStats.averageRating.isNotBlank()) { "${rawStats.averageRating} average rating\n" } else { "" } +
@@ -370,14 +353,8 @@ fun QuickStatsSection(
                     softWrap = true,
                 )
             }
-            Spacer(
-                modifier = Modifier
-                    .width(8.dp)
-            )
-            SelectionContainer(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
+            Spacer(Modifier.width(8.dp))
+            SelectionContainer(Modifier.weight(1f)) {
                 Text(
                     text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
                             if (rawStats.averageRating.isNotBlank()) { "${filteredStats.averageRating} average rating\n" } else { "" } +
@@ -482,11 +459,7 @@ fun QuickStatsSection(
                             interactionSource = null
                         ) { contracted(true) }
                 ) {
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .weight(1f),
-                        thickness = 1.dp,
-                    )
+                    HorizontalDivider(Modifier.weight(1f), 1.dp)
                     Icon(
                         painter = painterResource(id = R.drawable.double_up),
                         contentDescription = "Collapse",
@@ -495,11 +468,7 @@ fun QuickStatsSection(
                             .size(18.dp),
                         tint = LocalContentColor.current.copy(alpha = 0.5f)
                     )
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .weight(1f),
-                        thickness = 1.dp,
-                    )
+                    HorizontalDivider(Modifier.weight(1f), 1.dp)
                 }
             } else {
                 Row(
@@ -514,11 +483,7 @@ fun QuickStatsSection(
                             interactionSource = null
                         ) { updateExpanded(true) }
                 ) {
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .weight(1f),
-                        thickness = 1.dp,
-                    )
+                    HorizontalDivider(Modifier.weight(1f), 1.dp)
                     Icon(
                         painter = painterResource(id = R.drawable.double_down),
                         contentDescription = "Expand",
@@ -527,16 +492,12 @@ fun QuickStatsSection(
                             .size(18.dp),
                         tint = LocalContentColor.current.copy(alpha = 0.5f)
                     )
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .weight(1f),
-                        thickness = 1.dp,
-                    )
+                    HorizontalDivider(Modifier.weight(1f), 1.dp)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -575,16 +536,8 @@ private fun StatSubSection(
                     .weight(1f)
                     .padding(bottom = 16.dp)
             ) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(bottom = 20.dp)
-                        .fillMaxWidth(.65f),
-                    thickness = 1.dp
-                )
-                SelectionContainer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
+                HorizontalDivider(Modifier.padding(bottom = 20.dp).fillMaxWidth(.65f), 1.dp)
+                SelectionContainer(Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -646,7 +599,7 @@ private fun StatSubSection(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(Modifier.width(8.dp))
 
             // Filtered Stats
             Column (
@@ -654,12 +607,7 @@ private fun StatSubSection(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(bottom = 20.dp)
-                        .fillMaxWidth(.65f),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(bottom = 20.dp).fillMaxWidth(.65f), 1.dp)
                 SelectionContainer {
                     Row(
                         modifier = Modifier
@@ -779,10 +727,7 @@ private fun ChartsSection(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(
-            modifier = Modifier
-                .height(10.dp)
-        )
+        Spacer(Modifier.height(10.dp))
         Text(
             text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
                     "depending on the chosen filters.",
@@ -793,10 +738,7 @@ private fun ChartsSection(
             textAlign = TextAlign.Start,
             softWrap = true,
         )
-        Spacer(
-            modifier = Modifier
-                .height(24.dp)
-        )
+        Spacer(Modifier.height(24.dp))
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -819,22 +761,14 @@ private fun ChartsSection(
                 )
             }
             if (filteredStats.typesByEntries.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Types by Entries",
                     chartData = filteredStats.typesByEntries
                 )
             }
             if (filteredStats.typesByQuantity.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Types by \"No. of Tins\"",
                     chartData = filteredStats.typesByQuantity
@@ -842,11 +776,7 @@ private fun ChartsSection(
             }
 
             if (filteredStats.ratingsDistribution.distribution.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Ratings Distribution",
                     histogramData = filteredStats.ratingsDistribution,
@@ -855,60 +785,40 @@ private fun ChartsSection(
             }
 
             if (filteredStats.favDisByEntries.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Fav/Dislike by Entries",
                     chartData = filteredStats.favDisByEntries
                 )
             }
             if (filteredStats.subgenresByEntries.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Subgenres by Entries",
                     chartData = filteredStats.subgenresByEntries
                 )
             }
             if (filteredStats.subgenresByQuantity.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Subgenres by \"No. of Tins\"",
                     chartData = filteredStats.subgenresByQuantity
                 )
             }
             if (filteredStats.cutsByEntries.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Cuts by Entries",
                     chartData = filteredStats.cutsByEntries
                 )
             }
             if (filteredStats.cutsByQuantity.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
                 ChartsFormat(
                     label = "Cuts by \"No. of Tins\"",
                     chartData = filteredStats.cutsByQuantity
                 )
             }
-
             Spacer(Modifier.height(16.dp))
         }
     }

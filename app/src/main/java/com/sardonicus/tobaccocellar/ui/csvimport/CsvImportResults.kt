@@ -1,5 +1,3 @@
-@file:Suppress("ConstPropertyName")
-
 package com.sardonicus.tobaccocellar.ui.csvimport
 
 import android.annotation.SuppressLint
@@ -38,23 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import kotlinx.coroutines.delay
-
-object CsvImportResultsDestination : NavigationDestination {
-    override val route = "import_results"
-    override val titleRes = R.string.import_results_title
-
-    const val totalRecordsArg = "total_records"
-    const val successCountArg = "success_count"
-    const val successfulInsertionsArg = "successful_insertions"
-    const val successfulUpdatesArg = "successful_updates"
-    const val successfulTinsArg = "successful_tins"
-    const val updateFlagArg = "update_flag"
-    const val tinFlagArg = "tin_flag"
-
-    val routeWithArgs = "$route/{$totalRecordsArg}/{$successCountArg}/{$successfulInsertionsArg}/{$successfulUpdatesArg}/{$successfulTinsArg}/{$updateFlagArg}/{$tinFlagArg}"
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,10 +57,11 @@ fun CsvImportResultsScreen (
     BackHandler(true) { navigateToHome() }
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(CsvImportResultsDestination.titleRes),
+                title = stringResource(R.string.import_results_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = onNavigateUp,

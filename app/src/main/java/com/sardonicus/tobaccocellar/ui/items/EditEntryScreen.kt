@@ -23,18 +23,9 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-object EditEntryDestination : NavigationDestination {
-    override val route = "edit_entry_title"
-    override val titleRes = R.string.edit_entry_title
-    @Suppress("ConstPropertyName")
-    const val itemsIdArg = "itemsId"
-    val routeWithArgs = "$route/{$itemsIdArg}"
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +46,7 @@ fun EditEntryScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(EditEntryDestination.titleRes),
+                title = stringResource(R.string.edit_entry_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 navigateUp = onNavigateUp,

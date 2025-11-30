@@ -42,13 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-
-object HelpDestination : NavigationDestination {
-    override val route = "help"
-    override val titleRes = R.string.help_faq_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +57,7 @@ fun HelpScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(HelpDestination.titleRes),
+                title = stringResource(R.string.help_faq_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = onNavigateUp,
@@ -76,6 +70,7 @@ fun HelpScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
             modifier = Modifier
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {

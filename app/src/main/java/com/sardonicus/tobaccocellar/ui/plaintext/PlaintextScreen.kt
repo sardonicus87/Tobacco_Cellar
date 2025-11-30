@@ -112,7 +112,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.navigation.NavigationDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
@@ -120,11 +119,6 @@ import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
 import kotlin.math.roundToInt
-
-object PlaintextDestination : NavigationDestination {
-    override val route = "plaintext"
-    override val titleRes = R.string.plaintext_title
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,7 +142,7 @@ fun PlaintextScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(PlaintextDestination.titleRes),
+                title = stringResource(R.string.plaintext_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = onNavigateUp,
