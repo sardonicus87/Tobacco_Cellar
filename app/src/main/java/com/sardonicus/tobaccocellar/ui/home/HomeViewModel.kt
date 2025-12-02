@@ -57,6 +57,9 @@ class HomeViewModel(
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
 
+    private val _importantAlertState = MutableStateFlow(ImportantAlertState())
+    val importantAlertState = _importantAlertState.asStateFlow()
+
     private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
 
     init {
@@ -122,6 +125,25 @@ class HomeViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            @Suppress("KotlinConstantConditions")
+            preferencesRepo.lastAlertFlow.collect { lastShown ->
+                val unseenAlerts = if (lastShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
+                    OneTimeAlerts.alerts
+                        .filter { it.id > lastShown }
+                        .sortedBy { it.id }
+                } else emptyList()
+
+                val alertToDisplay = unseenAlerts.firstOrNull()
+                val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
+
+                _importantAlertState.value = ImportantAlertState(
+                    show = (alertToDisplay != null),
+                    alertToDisplay = alertToDisplay,
+                    isCurrentAlert = isCurrent
+                )
+            }
+        }
     }
 
 
@@ -139,7 +161,9 @@ class HomeViewModel(
         preferencesRepo.typeGenreOption,
         filterViewModel.typesExist,
         filterViewModel.subgenresExist,
-        filterViewModel.ratingsExist
+        filterViewModel.ratingsExist,
+        filterViewModel.emptyDatabase,
+        filterViewModel.showTins
     ) {
         val filteredItems = it[0] as List<ItemsComponentsAndTins>
         val filteredTins = it[1] as List<Tins>
@@ -154,7 +178,8 @@ class HomeViewModel(
         val typesExist = it[10] as Boolean
         val subgenresExist = it[11] as Boolean
         val ratingsExist = it[12] as Boolean
-
+        val emptyDatabase = it[13] as Boolean
+        val showTins = it[14] as Boolean
 
         val sortQuantity = filteredItems.associate {
             it.items.id to calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
@@ -234,6 +259,8 @@ class HomeViewModel(
             isTableView = isTableView,
             tableSorting = tableSorting,
             listSorting = listSorting,
+            emptyDatabase = emptyDatabase,
+            showTins = showTins,
             isLoading = false
         )
     }
@@ -242,6 +269,51 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = HomeUiState(isLoading = true)
         )
+
+    val searchState = combine(
+        filterViewModel.searchFocused,
+        filterViewModel.searchPerformed,
+        filterViewModel.isTinSearch,
+        filterViewModel.searchTextDisplay,
+        preferencesRepo.searchSetting,
+        filterViewModel.tinsExist,
+        filterViewModel.notesExist
+    ) { it: Array<Any?> ->
+        val searchFocused = it[0] as Boolean
+        val searchPerformed = it[1] as Boolean
+        val isTinSearch = it[2] as Boolean
+        val searchText = it[3] as String
+        val searchSetting = it[4] as SearchSetting
+        val tinsExist = it[5] as Boolean
+        val notesExist = it[6] as Boolean
+
+        val blendSearch = SearchSetting.Blend
+        val notesSearch = if (notesExist) SearchSetting.Notes else null
+        val tinsSearch = if (tinsExist) SearchSetting.TinLabel else null
+        val settingsList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
+
+        SearchState(
+            searchFocused = searchFocused,
+            searchPerformed = searchPerformed,
+            isTinSearch = isTinSearch,
+            searchText = searchText,
+            currentSetting = searchSetting,
+            settingsList = settingsList
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = SearchState()
+        )
+
+
+    /** One-Time Alerts **/
+    fun saveAlertSeen(alertId: Int) {
+        viewModelScope.launch {
+            preferencesRepo.saveAlertShown(alertId)
+        }
+    }
 
 
     /** Item menu overlay and expand details **/
@@ -561,11 +633,28 @@ data class HomeUiState(
     val isTableView: Boolean = false,
     val tableSorting: TableSorting = TableSorting(),
     val listSorting: ListSorting = ListSorting(),
+    val emptyDatabase: Boolean = false,
+    val showTins: Boolean = false,
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
     val toggleIcon: Int =
         if (isTableView) R.drawable.table_view else R.drawable.list_view,
     val isLoading: Boolean = false
+)
+
+data class SearchState(
+    val searchFocused: Boolean = false,
+    val searchPerformed: Boolean = false,
+    val isTinSearch: Boolean = false,
+    val searchText: String = "",
+    val currentSetting: SearchSetting = SearchSetting.Blend,
+    val settingsList: List<SearchSetting> = listOf(SearchSetting.Blend)
+)
+
+data class ImportantAlertState(
+    val show: Boolean = false,
+    val alertToDisplay: OneTimeAlert? = null,
+    val isCurrentAlert: Boolean = false
 )
 
 data class TableSorting(

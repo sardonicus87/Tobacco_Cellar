@@ -113,7 +113,6 @@ import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -147,32 +146,25 @@ fun HomeScreen(
     navigateToSettings: () -> Unit,
     navigateToHelp: () -> Unit,
     navigateToPlaintext: () -> Unit,
+    filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
     viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
-    val preferencesRepo = LocalCellarApplication.current.preferencesRepo
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
-
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val onDismissMenu = viewmodel::onDismissMenu
-
-    val searchFocused by filterViewModel.searchFocused.collectAsState()
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-    val isTinSearch by filterViewModel.isTinSearch.collectAsState()
-    val searchText by filterViewModel.searchTextDisplay.collectAsState()
-    val emptyDatabase by filterViewModel.emptyDatabase.collectAsState()
-
-    val resetLoading by viewmodel.resetLoading.collectAsState()
-    val activeMenuId by remember { viewmodel.activeMenuId }
-    val isMenuShown by remember { viewmodel.itemMenuShown }
-    val emptyMessage by viewmodel.emptyMessage.collectAsState()
-    val showTins by filterViewModel.showTins.collectAsState()
     val columnState = rememberLazyListState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val homeUiState by viewmodel.homeUiState.collectAsState()
+    val searchState by viewmodel.searchState.collectAsState()
+    val resetLoading by viewmodel.resetLoading.collectAsState()
+    val emptyMessage by viewmodel.emptyMessage.collectAsState()
+
+    val activeMenuId by remember { viewmodel.activeMenuId }
+    val isMenuShown by remember { viewmodel.itemMenuShown }
+    val onDismissMenu = viewmodel::onDismissMenu
+
     val columnVisibility by viewmodel.tableColumnVisibility.collectAsState()
     val columnVisibilityEnablement by viewmodel.columnVisibilityEnablement.collectAsState()
 
@@ -187,19 +179,19 @@ fun HomeScreen(
         }
     }
 
-    BackHandler(searchFocused) {
-        if (searchFocused) {
+    BackHandler(searchState.searchFocused) {
+        if (searchState.searchFocused) {
             focusManager.clearFocus()
             filterViewModel.updateSearchFocused(false)
         }
     }
-    BackHandler(searchPerformed) {
-        if (!searchFocused) {
+    BackHandler(searchState.searchPerformed) {
+        if (!searchState.searchFocused) {
             filterViewModel.updateSearchText("")
             filterViewModel.onSearch("")
             filterViewModel.updateSearchIconOpacity(0.5f)
 
-            if (searchPerformed) {
+            if (searchState.searchPerformed) {
                 coroutineScope.launch {
                     EventBus.emit(SearchClearedEvent)
                 }
@@ -207,9 +199,9 @@ fun HomeScreen(
         }
     }
 
+    // Navigation control to prevent accidental double click to item details
     var lastClickedItemId by remember { mutableIntStateOf(-1) }
     var isNavigating by remember { mutableStateOf(false) }
-
     LaunchedEffect(lastClickedItemId) {
         if (lastClickedItemId != -1 && !isNavigating) {
             isNavigating = true
@@ -223,67 +215,25 @@ fun HomeScreen(
         }
     }
 
-
     // Important Alert stuff
-    val lastAlertShown by preferencesRepo.lastAlertFlow.collectAsState(initial = 999)
-    var showImportantAlert by remember { mutableStateOf(false) }
-    val onShowImportant: (Boolean) -> Unit = { showImportantAlert = it }
-    var currentAlert: OneTimeAlert? by remember { mutableStateOf(null) }
-    var unseenPastAlerts by remember { mutableStateOf(listOf<OneTimeAlert>()) }
-    var pastAlertIndex by remember { mutableIntStateOf(0) }
-    var remainingUnseen by remember { mutableIntStateOf(0) }
-    var currentPastAlertId by remember { mutableIntStateOf(-1) }
+    val importantAlertState by viewmodel.importantAlertState.collectAsState()
+    if (importantAlertState.show) {
+        val alert = importantAlertState.alertToDisplay!!
+        val isCurrent = importantAlertState.isCurrentAlert
 
-    @Suppress("KotlinConstantConditions")
-    LaunchedEffect(lastAlertShown) {
-        if (lastAlertShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
-            currentAlert = OneTimeAlerts.alerts.find { it.id == OneTimeAlerts.CURRENT_ALERT_VERSION }
-            val unseenPastAlertCount = OneTimeAlerts.CURRENT_ALERT_VERSION - lastAlertShown - 1
-            unseenPastAlerts = if (unseenPastAlertCount > 0) {
-                val startId = lastAlertShown + 1
-                val endId = OneTimeAlerts.CURRENT_ALERT_VERSION - 1
-                OneTimeAlerts.alerts.filter { it.id in startId..endId }.sortedBy { it.id }
-            } else {
-                emptyList()
-            }
-
-            remainingUnseen = unseenPastAlerts.size
-
-            if (unseenPastAlerts.isNotEmpty()) {
-                pastAlertIndex = 0
-                currentPastAlertId = unseenPastAlerts[0].id
-                showImportantAlert = true
-            } else if (currentAlert != null) {
-                currentPastAlertId = -1
-                showImportantAlert = true
-            } else {
-                remainingUnseen = 0
-                currentPastAlertId = -1
-                showImportantAlert = false
-            }
-        } else {
-            showImportantAlert = false
-            currentAlert = null
-            remainingUnseen = 0
-            currentPastAlertId = -1
-        }
-    }
-
-    if (showImportantAlert && currentAlert != null) {
-        val alert = currentAlert!!
         val scrollState = rememberScrollState()
-        var enabled by rememberSaveable { mutableStateOf(false) }
+        var enabled by rememberSaveable(alert.id) { mutableStateOf(false) }
         val atBottom by remember {
             derivedStateOf {
                 scrollState.value == scrollState.maxValue
             }
         }
-        var countdown by remember { mutableIntStateOf(5) }
-        var canScroll by remember { mutableStateOf(false) }
+        var countdown by remember(alert.id) { mutableIntStateOf(5) }
+        var canScroll by remember(alert.id) { mutableStateOf(false) }
         val updateScroll: (Boolean) -> Unit = { canScroll = it }
 
         AlertDialog(
-            onDismissRequest = { /* Not dismissible */ },
+            onDismissRequest = { },
             properties = DialogProperties(
                 dismissOnBackPress = false,
                 dismissOnClickOutside = false
@@ -321,44 +271,32 @@ fun HomeScreen(
                                 .verticalScroll(scrollState),
                         ) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            if (unseenPastAlerts.isNotEmpty() && pastAlertIndex < unseenPastAlerts.size) {
-                                Column(
-                                    modifier = Modifier
-                                ) {
+                            Column(
+                                modifier = Modifier
+                            ) {
+                                if (!isCurrent) {
                                     Text(
                                         text = "Missed Alert:",
                                         modifier = Modifier,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 15.sp
                                     )
+                                }
+                                Text(
+                                    text = "${alert.date}\n(v ${alert.appVersion})",
+                                    modifier = Modifier
+                                        .padding(bottom = 16.dp),
+                                    fontSize = 14.sp
+                                )
+                                if (canScroll) {
                                     Text(
-                                        text = "${unseenPastAlerts[pastAlertIndex].date}\n(v ${unseenPastAlerts[pastAlertIndex].appVersion})",
+                                        text = "You must scroll to the bottom to be able to acknowledge and " +
+                                                "dismiss this dialog.",
                                         modifier = Modifier
-                                            .padding(bottom = 16.dp),
-                                        fontSize = 14.sp
+                                            .padding(bottom = 16.dp)
                                     )
-                                    if (canScroll) {
-                                        Text(
-                                            text = "You must scroll to the bottom to be able to acknowledge and " +
-                                                    "dismiss this dialog.",
-                                            modifier = Modifier
-                                                .padding(bottom = 16.dp)
-                                        )
-                                    }
-                                    unseenPastAlerts[pastAlertIndex].message()
                                 }
-                            } else {
-                                Column {
-                                    if (canScroll) {
-                                        Text(
-                                            text = "You must scroll to the bottom to be able to acknowledge and " +
-                                                    "dismiss this dialog.",
-                                            modifier = Modifier
-                                                .padding(bottom = 16.dp)
-                                        )
-                                    }
-                                    alert.message()
-                                }
+                                alert.message()
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                         }
@@ -367,7 +305,7 @@ fun HomeScreen(
             },
             confirmButton = {
                 val isScrollable by remember { derivedStateOf { scrollState.maxValue > 0 } }
-                LaunchedEffect(isScrollable) {
+                LaunchedEffect(isScrollable, alert.id) {
                     if (!isScrollable) {
                         while (countdown > 0) {
                             delay(1000)
@@ -378,13 +316,13 @@ fun HomeScreen(
                         updateScroll(true)
                     }
                 }
-                LaunchedEffect(isScrollable, atBottom, currentPastAlertId) {
+                LaunchedEffect(isScrollable, atBottom, alert.id) {
                     if (isScrollable && atBottom) {
                         enabled = true
                     }
                 }
-                val buttonText = remember(isScrollable, enabled, countdown, remainingUnseen) {
-                    if (remainingUnseen > 0) {
+                val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
+                    if (!isCurrent) {
                         if (isScrollable) {
                             "Next"
                         } else {
@@ -402,15 +340,13 @@ fun HomeScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            if (remainingUnseen > 0) {
+                            if (!isCurrent) {
                                 enabled = false
                                 updateScroll(false)
                                 countdown = 5
-                                preferencesRepo.saveAlertShown(currentPastAlertId)
+                                viewmodel.saveAlertSeen(alert.id)
                             } else {
-                                preferencesRepo.saveAlertShown(alert.id)
-                                onShowImportant(false)
-                                currentAlert = null
+                                viewmodel.saveAlertSeen(alert.id)
                             }
                         }
                     },
@@ -429,6 +365,7 @@ fun HomeScreen(
             }
         )
     }
+
 
     Scaffold(
         modifier = modifier
@@ -488,12 +425,14 @@ fun HomeScreen(
                 modifier = Modifier,
                 homeUiState = homeUiState,
                 isTableView = homeUiState.isTableView,
-                emptyDatabase = emptyDatabase,
-                searchPerformed = searchPerformed,
+                emptyDatabase = homeUiState.emptyDatabase,
+                searchPerformed = searchState.searchPerformed,
                 onShowColumnPop = viewmodel::showColumnMenuToggle,
                 selectView = viewmodel::selectView,
                 filterViewModel = filterViewModel,
-                searchText = searchText,
+                searchText = searchState.searchText,
+                currentSetting = searchState.currentSetting,
+                settingsList = searchState.settingsList,
                 saveListSorting = viewmodel::saveListSorting,
                 listSorting = homeUiState.listSorting,
                 filteredItems = homeUiState.sortedItems,
@@ -505,7 +444,7 @@ fun HomeScreen(
                 HomeBody(
                     isLoading = homeUiState.isLoading,
                     resetLoading = resetLoading,
-                    emptyDb = emptyDatabase,
+                    emptyDb = homeUiState.emptyDatabase,
                     isTableView = homeUiState.isTableView,
                     showRating = homeUiState.showRating,
                     typeGenreOption = homeUiState.typeGenreOption,
@@ -515,7 +454,7 @@ fun HomeScreen(
                     tins = homeUiState.filteredTins,
                     formattedQuantity = homeUiState.formattedQuantities,
                     coroutineScope = coroutineScope,
-                    showTins = showTins,
+                    showTins = homeUiState.showTins,
                     filterViewModel = filterViewModel,
                     onDetailsClick = { if (lastClickedItemId != it) lastClickedItemId = it },
                     onEditClick = navigateToEditEntry,
@@ -524,9 +463,9 @@ fun HomeScreen(
                     onShowMenu = viewmodel::onShowMenu,
                     onDismissMenu = onDismissMenu,
                     getPositionTrigger = filterViewModel::getPositionTrigger,
-                    searchFocused = searchFocused,
-                    searchPerformed = searchPerformed,
-                    isTinSearch = isTinSearch,
+                    searchFocused = searchState.searchFocused,
+                    searchPerformed = searchState.searchPerformed,
+                    isTinSearch = searchState.isTinSearch,
                     tableSorting = homeUiState.tableSorting,
                     updateSorting = viewmodel::updateSorting,
                     showColumnPop = viewmodel.showColumnMenu.value,
@@ -556,13 +495,12 @@ private fun HomeHeader(
     filterViewModel: FilterViewModel,
     searchPerformed: Boolean,
     searchText: String,
+    currentSetting: SearchSetting,
+    settingsList: List<SearchSetting>,
     saveListSorting: (ListSortOption) -> Unit,
     listSorting: ListSorting,
     filteredItems: List<ItemsComponentsAndTins>
 ) {
-    val tinsExist by filterViewModel.tinsExist.collectAsState()
-    val notesExist by filterViewModel.notesExist.collectAsState()
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -614,7 +552,6 @@ private fun HomeHeader(
                 .weight(1f, false),
         ) {
             val coroutineScope = rememberCoroutineScope()
-            val currentSetting by LocalCellarApplication.current.preferencesRepo.searchSetting.collectAsState(initial = SearchSetting.Blend)
 
             CustomBlendSearch(
                 value = searchText,
@@ -657,15 +594,11 @@ private fun HomeHeader(
                         }
                     }
 
-                    val blendSearch = SearchSetting.Blend
-                    val notesSearch = if (notesExist) SearchSetting.Notes else null
-                    val tinsSearch = if (tinsExist) SearchSetting.TinLabel else null
-                    val settingList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
-                    val enabled = settingList.size > 1
+                    val enabled = settingsList.size > 1
 
                     LaunchedEffect(enabled) {
                         if (!enabled) {
-                            filterViewModel.saveSearchSetting(blendSearch.value)
+                            filterViewModel.saveSearchSetting(SearchSetting.Blend.value)
                         }
                     }
 
@@ -704,7 +637,7 @@ private fun HomeHeader(
                         containerColor = LocalCustomColors.current.textField,
                         offset = DpOffset((-2).dp, 2.dp)
                     ) {
-                        settingList.forEach {
+                        settingsList.forEach {
                             DropdownMenuItem(
                                 text = { Text(text = it.value) },
                                 onClick = {
@@ -1917,7 +1850,7 @@ fun TableViewMode(
             modifier = modifier
                 .fillMaxWidth()
                 .horizontalScroll(horizontalScroll)
-                .onLayoutRectChanged{
+                .onLayoutRectChanged {
                     tableWidth = it.width.dp
                 },
             horizontalAlignment = Alignment.CenterHorizontally
