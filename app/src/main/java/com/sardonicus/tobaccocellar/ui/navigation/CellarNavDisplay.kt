@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -28,7 +27,10 @@ import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
-import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.data.ItemsRepository
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvHelpScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
@@ -53,13 +55,17 @@ fun CellarNavigation(
     navigationState: NavigationState,
     modifier: Modifier = Modifier,
 ) {
+    val filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel
+    val preferencesRepo: PreferencesRepo = LocalCellarApplication.current.preferencesRepo
+    val itemsRepository: ItemsRepository = LocalCellarApplication.current.container.itemsRepository
+
     val navHeight = WindowInsets.tappableElement.asPaddingValues().calculateBottomPadding()
     val isGestureNav = remember(navHeight) { navHeight == 0.dp }
 
     val slideTransition = transitionSpec {
-        slideInHorizontally(initialOffsetX = { it }) togetherWith ExitTransition.None
+        slideInHorizontally(animationSpec = tween(1000), initialOffsetX = { it }) togetherWith ExitTransition.None
     } + popTransitionSpec {
-        EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { it })
+        EnterTransition.None togetherWith slideOutHorizontally(animationSpec = tween(1000), targetOffsetX = { it })
     } + predictivePopTransitionSpec {
         if (isGestureNav) {
             when (it) {
@@ -76,10 +82,9 @@ fun CellarNavigation(
                 else -> EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { it })
             }
         } else {
-            EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { it })
+            EnterTransition.None togetherWith slideOutHorizontally(animationSpec = tween(1000), targetOffsetX = { it })
         }
     }
-
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         when (key) {
@@ -95,20 +100,19 @@ fun CellarNavigation(
                     navigateToSettings = { navigator.navigate(SettingsDestination) },
                     navigateToHelp = { navigator.navigate(HelpDestination) },
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
+                    filterViewModel = filterViewModel,
                 )
             }
 
             is BlendDetailsDestination -> NavEntry(key, metadata = slideTransition) {
-                val context = LocalContext.current
-                val application = context.applicationContext as CellarApplication
                 val viewModel: BlendDetailsViewModel = viewModel(
                     key = key.itemsId.toString(),
                     factory = viewModelFactory {
                         initializer {
                             BlendDetailsViewModel(
                                 itemsId = key.itemsId,
-                                itemsRepository = application.container.itemsRepository,
-                                preferencesRepo = application.preferencesRepo
+                                itemsRepository = itemsRepository,
+                                preferencesRepo = preferencesRepo
                             )
                         }
                     }
@@ -154,17 +158,15 @@ fun CellarNavigation(
             }
 
             is EditEntryDestination -> NavEntry(key) {
-                val context = LocalContext.current
-                val application = context.applicationContext as CellarApplication
                 val viewModel: EditEntryViewModel = viewModel(
                     key = key.itemsId.toString(),
                     factory = viewModelFactory {
                         initializer {
                             EditEntryViewModel(
                                 itemsId = key.itemsId,
-                                filterViewModel = application.filterViewModel,
-                                itemsRepository = application.container.itemsRepository,
-                                preferencesRepo = application.preferencesRepo
+                                filterViewModel = filterViewModel,
+                                itemsRepository = itemsRepository,
+                                preferencesRepo = preferencesRepo
                             )
                         }
                     }
@@ -283,12 +285,12 @@ fun CellarNavigation(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(700)) },
-        popTransitionSpec = { fadeIn() togetherWith fadeOut() },
+        transitionSpec = { fadeIn(tween(1000)) togetherWith fadeOut(tween(1000)) },
+        popTransitionSpec = { fadeIn(tween(1000)) togetherWith fadeOut(tween(1000)) },
         predictivePopTransitionSpec = {
             if (isGestureNav) {
                 fadeIn() togetherWith scaleOut(targetScale = 0.7f)
-            } else fadeIn() togetherWith fadeOut()
+            } else fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
         }
     )
 }
