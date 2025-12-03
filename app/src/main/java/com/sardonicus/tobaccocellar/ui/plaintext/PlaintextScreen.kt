@@ -110,7 +110,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
-import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
@@ -205,7 +204,6 @@ fun PlaintextBody(
     val printList = plaintextState.plainList
 
     val setTemplateText = if (templateView) "See List" else "Set Format"
-    val screenHeight = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp }.dp - 96.dp
     val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }.dp
 
     var printDialog by rememberSaveable { mutableStateOf(false) }
@@ -484,26 +482,22 @@ fun PlaintextBody(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(16.dp))
-                if (plaintextState.loading) {
-                    LoadingIndicator(modifier = Modifier.height(screenHeight))
+                if (templateView) {
+                    PlaintextFormatting(
+                        plaintextState = plaintextState,
+                        formatString = formatString,
+                        delimiter = delimiter,
+                        saveFormatString = saveFormatString,
+                        savePreset = savePreset,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
                 } else {
-                    if (templateView) {
-                        PlaintextFormatting(
-                            plaintextState = plaintextState,
-                            formatString = formatString,
-                            delimiter = delimiter,
-                            saveFormatString = saveFormatString,
-                            savePreset = savePreset,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        )
-                    } else {
-                        PlaintextList(
-                            plaintextState = plaintextState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        )
-                    }
+                    PlaintextList(
+                        plaintextState = plaintextState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
                 }
             }
         }

@@ -404,13 +404,12 @@ class PlaintextViewModel (
             sortOptions = sortOptions,
             formatGuide = formatGuide,
             presets = presets,
-            loading = false,
         )
     }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = PlaintextListState(loading = true)
+            initialValue = PlaintextListState()
         )
 
     private fun tinNormalizedWeight(tin: Tins): Double {
@@ -874,7 +873,6 @@ data class PlaintextListState(
     val sortOptions: List<PlaintextSortOption> = emptyList(),
     val formatGuide: Map<String, String> = emptyMap(),
     val presets: List<PlaintextPreset> = emptyList(),
-    val loading: Boolean = false,
 )
 
 @Serializable
