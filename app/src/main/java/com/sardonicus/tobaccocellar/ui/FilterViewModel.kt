@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Components
@@ -363,6 +364,9 @@ class FilterViewModel (
 
     /** Filtering states **/
     // available fields for filter //
+    private val _autoComplete = MutableStateFlow(AutoCompleteData())
+    val autoComplete: StateFlow<AutoCompleteData> = _autoComplete
+
     private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
     val availableBrands: StateFlow<List<String>> = _availableBrands
 
@@ -477,6 +481,14 @@ class FilterViewModel (
                     it.manufactureDate != null || it.cellarDate != null || it.openDate != null
                 }
                 _emptyDatabase.value = it.isEmpty()
+                _autoComplete.value = AutoCompleteData(
+                    brands = _availableBrands.value,
+                    subgenres = _availableSubgenres.value.filter { it != "(Unassigned)" },
+                    cuts = _availableCuts.value.filter { it != "(Unassigned)" },
+                    components = _availableComponents.value.filter { it != "(None Assigned)" },
+                    flavorings = _availableFlavorings.value.filter { it != "(None Assigned)" },
+                    tinContainers = _availableContainers.value.filter { it != "(Unassigned)" }
+                )
             }
         }
         viewModelScope.launch {
@@ -2203,6 +2215,15 @@ data class ProductionSectionData(
 
     val productionEnabled: Boolean = false,
     val outOfProductionEnabled: Boolean = false,
+)
+
+data class AutoCompleteData(
+    val brands: List<String> = emptyList(),
+    val subgenres: List<String> = emptyList(),
+    val cuts: List<String> = emptyList(),
+    val components: List<String> = emptyList(),
+    val flavorings: List<String> = emptyList(),
+    val tinContainers: List<String> = emptyList()
 )
 
 
