@@ -35,30 +35,21 @@ class BulkEditViewModel (
     val bulkEditUiState: StateFlow<BulkEditUiState> =
         combine(
             filterViewModel.unifiedFilteredItems,
-            filterViewModel.availableSubgenres,
-            filterViewModel.availableCuts,
-            filterViewModel.availableComponents,
-            filterViewModel.availableFlavorings
-        ) {
-            val items = it[0] as List<ItemsComponentsAndTins>
-            val subgenres = it[1] as List<String>
-            val cuts = it[2] as List<String>
-            val comps = it[3] as List<String>
-            val flavors = it[4] as List<String>
+            filterViewModel.autoComplete,
+        ) { items, autoComplete ->
 
             BulkEditUiState(
                 items = items,
-                autoGenres = subgenres.filter { it != "(Unassigned)" },
-                autoCuts = cuts.filter { it != "(Unassigned)" },
-                autoComps = comps.filter { it != "(None Assigned)" },
-                autoFlavor = flavors.filter { it != "(None Assigned)" },
-                loading = false
+                autoGenres = autoComplete.subgenres,
+                autoCuts = autoComplete.cuts,
+                autoComps = autoComplete.components,
+                autoFlavor = autoComplete.flavorings,
             )
         }
             .stateIn(
                 scope = viewModelScope,
                 started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000),
-                initialValue = BulkEditUiState(loading = true)
+                initialValue = BulkEditUiState()
             )
 
     var editingState by mutableStateOf(EditingState())
@@ -300,7 +291,6 @@ class BulkEditViewModel (
 
 
 data class BulkEditUiState(
-    val loading: Boolean = false,
     val items: List<ItemsComponentsAndTins> = listOf(),
     val autoGenres: List<String> = listOf(),
     val autoCuts: List<String> = listOf(),

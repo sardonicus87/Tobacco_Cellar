@@ -155,7 +155,6 @@ fun BulkEditScreen(
                 .padding(innerPadding)
         ) {
             BulkEditBody(
-                loading = bulkEditUiState.loading,
                 saveIndicator = saveIndicator,
                 tabIndex = viewModel.tabIndex,
                 onTabChange = { viewModel.tabIndex = it },
@@ -182,7 +181,6 @@ fun BulkEditScreen(
 
 @Composable
 fun BulkEditBody(
-    loading: Boolean,
     saveIndicator: Boolean,
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
@@ -207,104 +205,100 @@ fun BulkEditBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        if (loading) {
-            LoadingIndicator()
-        } else {
-            val titles = listOf("Select Items", "Batch Edit")
+        val titles = listOf("Select Items", "Batch Edit")
 
-            Box {
-                Column(
-                    modifier = modifier
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
+        Box {
+            Column(
+                modifier = modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                SecondaryTabRow(
+                    selectedTabIndex = tabIndex,
+                    modifier = Modifier
+                        .padding(bottom = 1.dp),
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentColor = LocalContentColor.current,
+                    indicator = {
+                        SecondaryIndicator(
+                            modifier = Modifier
+                                .tabIndicatorOffset(tabIndex),
+                            color = MaterialTheme.colorScheme.inversePrimary
+                        )
+                    },
+                    divider = {
+                        HorizontalDivider(
+                            modifier = Modifier,
+                            thickness = Dp.Hairline,
+                            color = DividerDefaults.color,
+                        )
+                    },
                 ) {
-                    SecondaryTabRow(
-                        selectedTabIndex = tabIndex,
-                        modifier = Modifier
-                            .padding(bottom = 1.dp),
-                        containerColor = MaterialTheme.colorScheme.background,
-                        contentColor = LocalContentColor.current,
-                        indicator = {
-                            SecondaryIndicator(
+                    titles.forEachIndexed { index, title ->
+                        CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                            Tab(
+                                selected = tabIndex == index,
+                                onClick = {
+                                    //   selectedTabIndex = index
+                                    onTabChange(index)
+                                },
                                 modifier = Modifier
-                                    .tabIndicatorOffset(tabIndex),
-                                color = MaterialTheme.colorScheme.inversePrimary
+                                    .background(
+                                        if (tabIndex == index) MaterialTheme.colorScheme.background
+                                        else LocalCustomColors.current.backgroundUnselected
+                                    ),
+                                text = {
+                                    Text(
+                                        text = title,
+                                        fontWeight = if (tabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
+                                    )
+                                },
+                                selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                                unselectedContentColor = MaterialTheme.colorScheme.outline,
+                                interactionSource = remember { MutableInteractionSource() }
                             )
-                        },
-                        divider = {
-                            HorizontalDivider(
-                                modifier = Modifier,
-                                thickness = Dp.Hairline,
-                                color = DividerDefaults.color,
-                            )
-                        },
-                    ) {
-                        titles.forEachIndexed { index, title ->
-                            CompositionLocalProvider(LocalRippleConfiguration provides null) {
-                                Tab(
-                                    selected = tabIndex == index,
-                                    onClick = {
-                                        //   selectedTabIndex = index
-                                        onTabChange(index)
-                                    },
-                                    modifier = Modifier
-                                        .background(
-                                            if (tabIndex == index) MaterialTheme.colorScheme.background
-                                            else LocalCustomColors.current.backgroundUnselected
-                                        ),
-                                    text = {
-                                        Text(
-                                            text = title,
-                                            fontWeight = if (tabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
-                                        )
-                                    },
-                                    selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                                    unselectedContentColor = MaterialTheme.colorScheme.outline,
-                                    interactionSource = remember { MutableInteractionSource() }
-                                )
-                            }
-                        }
-                    }
-                    Column(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                    ) {
-                        when (tabIndex) {
-                            0 ->
-                                BulkSelections(
-                                    items = items,
-                                    selectedItems = selectedItems,
-                                    updateSelection = updateSelection,
-                                    clearSelections = clearSelections,
-                                    selectAll = selectAll,
-                                    modifier = Modifier
-                                )
-
-                            1 ->
-                                BulkEditing(
-                                    editingState = editingState,
-                                    onValueChange = onValueChange,
-                                    batchEditValidation = batchEditValidation,
-                                    batchEdit = batchEdit,
-                                    autoGenres = autoGenres,
-                                    autoCuts = autoCuts,
-                                    autoComps = autoComps,
-                                    autoFlavor = autoFlavor,
-                                    modifier = Modifier
-                                )
-
-                            else -> throw IllegalArgumentException("Invalid tab position")
                         }
                     }
                 }
-                if (saveIndicator) {
-                    LoadingIndicator(
-                        scrimColor = Color.Black.copy(alpha = .38f)
-                    )
+                Column(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                ) {
+                    when (tabIndex) {
+                        0 ->
+                            BulkSelections(
+                                items = items,
+                                selectedItems = selectedItems,
+                                updateSelection = updateSelection,
+                                clearSelections = clearSelections,
+                                selectAll = selectAll,
+                                modifier = Modifier
+                            )
+
+                        1 ->
+                            BulkEditing(
+                                editingState = editingState,
+                                onValueChange = onValueChange,
+                                batchEditValidation = batchEditValidation,
+                                batchEdit = batchEdit,
+                                autoGenres = autoGenres,
+                                autoCuts = autoCuts,
+                                autoComps = autoComps,
+                                autoFlavor = autoFlavor,
+                                modifier = Modifier
+                            )
+
+                        else -> throw IllegalArgumentException("Invalid tab position")
+                    }
                 }
+            }
+            if (saveIndicator) {
+                LoadingIndicator(
+                    scrimColor = Color.Black.copy(alpha = .38f)
+                )
             }
         }
     }
