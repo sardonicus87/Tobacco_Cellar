@@ -63,9 +63,9 @@ fun CellarNavigation(
     val isGestureNav = remember(navHeight) { navHeight == 0.dp }
 
     val slideTransition = transitionSpec {
-        slideInHorizontally(animationSpec = tween(1000), initialOffsetX = { it }) togetherWith ExitTransition.None
+        slideInHorizontally(tween(700)) { it } togetherWith ExitTransition.None
     } + popTransitionSpec {
-        EnterTransition.None togetherWith slideOutHorizontally(animationSpec = tween(1000), targetOffsetX = { it })
+        EnterTransition.None togetherWith slideOutHorizontally(tween(700)) { it }
     } + predictivePopTransitionSpec {
         if (isGestureNav) {
             when (it) {
@@ -79,10 +79,10 @@ fun CellarNavigation(
                             slideOutHorizontally(tween(700)) { it / 2 }
                 }
 
-                else -> EnterTransition.None togetherWith slideOutHorizontally(targetOffsetX = { it })
+                else -> EnterTransition.None togetherWith slideOutHorizontally(tween(700)) { it }
             }
         } else {
-            EnterTransition.None togetherWith slideOutHorizontally(animationSpec = tween(1000), targetOffsetX = { it })
+            EnterTransition.None togetherWith slideOutHorizontally(tween(700)) { it }
         }
     }
 
@@ -260,7 +260,7 @@ fun CellarNavigation(
             }
 
             is CsvImportResultsDestination -> {
-                val transition = transitionSpec { EnterTransition.None togetherWith fadeOut() }
+                val transition = transitionSpec { EnterTransition.None togetherWith fadeOut(tween(700)) }
 
                 NavEntry(key, metadata = transition) {
                     CsvImportResultsScreen(
@@ -285,12 +285,12 @@ fun CellarNavigation(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        transitionSpec = { fadeIn(tween(1000)) togetherWith fadeOut(tween(1000)) },
-        popTransitionSpec = { fadeIn(tween(1000)) togetherWith fadeOut(tween(1000)) },
+        transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(700)) },
+        popTransitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(700)) },
         predictivePopTransitionSpec = {
             if (isGestureNav) {
                 fadeIn() togetherWith scaleOut(targetScale = 0.7f)
-            } else fadeIn(tween(1000)) togetherWith fadeOut(tween(1000))
+            } else fadeIn(tween(700)) togetherWith fadeOut(tween(700))
         }
     )
 }
