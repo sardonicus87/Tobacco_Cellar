@@ -416,6 +416,37 @@ class StatsViewModel(
                 initialValue = FilteredStats(filteredLoading = true)
             )
 
+    val availableSections: StateFlow<AvailableSections> =
+        combine(rawStats, filteredStats) { raw, filtered ->
+            val type = raw.totalByType.any { it.key != "Unassigned" }
+            val subgenre = raw.totalBySubgenre.any { it.key != "Unassigned" }
+            val cut = raw.totalByCut.any { it.key != "Unassigned" }
+            val component = raw.totalByComponent.any { it.key != "None Assigned" }
+            val flavoring = raw.totalByFlavoring.any { it.key != "None Assigned" }
+            val container = raw.totalByContainer.any { it.key != "Unassigned" }
+
+            AvailableSections(
+                anyAvailable = subgenre || cut || component || flavoring || container,
+                type = type,
+                subgenre = subgenre,
+                cut = cut,
+                component = component,
+                flavoring = flavoring,
+                container = container,
+                available = listOfNotNull(
+                    if (subgenre) { Triple("Subgenre", raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
+                    if (cut) { Triple("Cut", raw.totalByCut, filtered.totalByCut) } else null,
+                    if (component) { Triple("Component", raw.totalByComponent, filtered.totalByComponent) } else null,
+                    if (flavoring) { Triple("Flavoring", raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
+                    if (container) { Triple("Container", raw.totalByContainer, filtered.totalByContainer) } else null
+                )
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = AvailableSections()
+        )
+
 
     private suspend fun calculateTotal(items: List<ItemsComponentsAndTins>, tins: List<Tins>, quantityOption: QuantityOption): String {
         val ozRate = preferencesRepo.tinOzConversionRate.first()
@@ -546,6 +577,17 @@ data class FilteredStats(
     val subgenresByQuantity: Map<String, Int> = emptyMap(),
     val cutsByEntries: Map<String, Int> = emptyMap(),
     val cutsByQuantity: Map<String, Int> = emptyMap(),
+)
+
+data class AvailableSections(
+    val anyAvailable: Boolean = false,
+    val type: Boolean = false,
+    val subgenre: Boolean = false,
+    val cut: Boolean = false,
+    val component: Boolean = false,
+    val flavoring: Boolean = false,
+    val container: Boolean = false,
+    val available: List<Triple<String, Map<String, Int>, Map<String, Int>>> = emptyList()
 )
 
 data class RatingsDistribution(

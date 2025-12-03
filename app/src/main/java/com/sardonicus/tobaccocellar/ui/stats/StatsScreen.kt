@@ -21,10 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,6 +97,19 @@ fun StatsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val rawStats by viewmodel.rawStats.collectAsState()
     val filteredStats by viewmodel.filteredStats.collectAsState()
+    val availableSections by viewmodel.availableSections.collectAsState()
+
+    var showLoading by remember { mutableStateOf(false) }
+    val updateLoading: (Boolean) -> Unit = { showLoading = it }
+
+    LaunchedEffect(Unit, rawStats.rawLoading, filteredStats.filteredLoading) {
+        delay(10)
+        updateLoading(true)
+
+        if (!rawStats.rawLoading && !filteredStats.filteredLoading) {
+            updateLoading(false)
+        }
+    }
 
     val focusManager = LocalFocusManager.current
 
@@ -129,12 +143,13 @@ fun StatsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (rawStats.rawLoading || filteredStats.filteredLoading) {
+            if (showLoading) {
                 LoadingIndicator()
             } else {
                 StatsBody(
                     rawStats = rawStats,
                     filteredStats = filteredStats,
+                    availableSections = availableSections,
                     viewmodel = viewmodel,
                     modifier = modifier
                         .fillMaxSize(),
@@ -148,18 +163,19 @@ fun StatsScreen(
 private fun StatsBody(
     rawStats: RawStats,
     filteredStats: FilteredStats,
+    availableSections: AvailableSections,
     viewmodel: StatsViewModel,
     modifier: Modifier = Modifier,
 ) {
     val separatorColor = colorScheme.secondary
-    val scrollState = rememberScrollState()
+    val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val expanded = viewmodel.expanded
 
     val contract = {
         scope.launch {
-            scrollState.scrollTo(0)
-            while (scrollState.value > 0) {
+            lazyListState.scrollToItem(0)
+            while (lazyListState.canScrollBackward) {
                 delay(5)
             }
             viewmodel.updateExpanded(false)
@@ -168,121 +184,297 @@ private fun StatsBody(
     }
 
 
-    Column(
+    LazyColumn(
+        state = lazyListState,
         modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(scrollState)
-            .padding(bottom = 16.dp),
-        verticalArrangement = Arrangement.Top,
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Top
     ) {
-        Spacer(Modifier.height(1.dp))
+        item {
+            Column {
+                Spacer(Modifier.height(1.dp))
 
-        // Quick Stats //
-        Box {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = LocalCustomColors.current.backgroundVariant)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.quick_stats),
-                    modifier = Modifier
-                        .padding(start = 8.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    color = colorScheme.onBackground
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .drawBehind {
-                        val strokeWidth = Dp.Hairline.toPx()
-                        val yOffset = size.height - strokeWidth / 2
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, strokeWidth),
-                            strokeWidth = strokeWidth
-                        )
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, yOffset),
-                            end = Offset(size.width, yOffset),
-                            strokeWidth = strokeWidth
+                // Quick Stats //
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(color = LocalCustomColors.current.backgroundVariant)
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.quick_stats),
+                            modifier = Modifier
+                                .padding(start = 8.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Start,
+                            color = colorScheme.onBackground
                         )
                     }
-            )
-        }
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .drawBehind {
+                                val strokeWidth = Dp.Hairline.toPx()
+                                val yOffset = size.height - strokeWidth / 2
 
-        Spacer(Modifier.height(10.dp))
+                                drawLine(
+                                    color = separatorColor,
+                                    start = Offset(0f, 0f),
+                                    end = Offset(size.width, strokeWidth),
+                                    strokeWidth = strokeWidth
+                                )
 
-        QuickStatsSection(
-            rawStats = rawStats,
-            filteredStats = filteredStats,
-            contracted = { if (it) contract() },
-            expanded = expanded,
-            updateExpanded = { viewmodel.updateExpanded(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(start = 24.dp),
-        )
+                                drawLine(
+                                    color = separatorColor,
+                                    start = Offset(0f, yOffset),
+                                    end = Offset(size.width, yOffset),
+                                    strokeWidth = strokeWidth
+                                )
+                            }
+                    )
+                }
 
-        Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(10.dp))
 
-        // Charts //
-        Box {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = LocalCustomColors.current.backgroundVariant)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text = "Charts",
+                QuickStatsSection(
+                    rawStats = rawStats,
+                    filteredStats = filteredStats,
+                    availableSections = availableSections,
+                    contracted = { if (it) contract() },
+                    expanded = expanded,
+                    updateExpanded = { viewmodel.updateExpanded(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    color = colorScheme.onBackground
+                        .wrapContentHeight()
+                        .padding(start = 24.dp),
                 )
             }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .drawBehind {
-                        val strokeWidth = Dp.Hairline.toPx()
-                        val yOffset = size.height - strokeWidth / 2
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, strokeWidth),
-                            strokeWidth = strokeWidth
-                        )
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, yOffset),
-                            end = Offset(size.width, yOffset),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-            )
         }
 
-        ChartsSection(
-            filteredStats = filteredStats
-        )
+        item { Spacer(Modifier.height(10.dp)) }
+
+        // Charts //
+        item {
+            Box {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = LocalCustomColors.current.backgroundVariant)
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        text = "Charts",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Start,
+                        color = colorScheme.onBackground
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .drawBehind {
+                            val strokeWidth = Dp.Hairline.toPx()
+                            val yOffset = size.height - strokeWidth / 2
+
+                            drawLine(
+                                color = separatorColor,
+                                start = Offset(0f, 0f),
+                                end = Offset(size.width, strokeWidth),
+                                strokeWidth = strokeWidth
+                            )
+
+                            drawLine(
+                                color = separatorColor,
+                                start = Offset(0f, yOffset),
+                                end = Offset(size.width, yOffset),
+                                strokeWidth = strokeWidth
+                            )
+                        }
+                )
+            }
+        } // label
+
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 0.dp)
+                    .wrapContentHeight(),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
+                            "depending on the chosen filters.",
+                    color = LocalContentColor.current.copy(alpha = 0.75f),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Start,
+                    softWrap = true,
+                )
+                Spacer(Modifier.height(24.dp))
+            }
+        } // disclaimer
+
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 0.dp)
+                    .wrapContentHeight(),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                ChartsFormat(
+                    label = "Brands by Number of Entries",
+                    chartData = filteredStats.brandsByEntries
+                )
+            }
+        }
+
+        if (filteredStats.brandsByQuantity.count() > 1) {
+            item {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+                ChartsFormat(
+                    label = "Brands by \"No. of Tins\"",
+                    chartData = filteredStats.brandsByQuantity,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+        if (filteredStats.typesByEntries.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Types by Entries",
+                    chartData = filteredStats.typesByEntries,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+        if (filteredStats.typesByQuantity.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Types by \"No. of Tins\"",
+                    chartData = filteredStats.typesByQuantity,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+
+            }
+        }
+        if (filteredStats.ratingsDistribution.distribution.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Ratings Distribution",
+                    histogramData = filteredStats.ratingsDistribution,
+                    showHistogram = true,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+        if (filteredStats.favDisByEntries.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Fav/Dislike by Entries",
+                    chartData = filteredStats.favDisByEntries,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+        if (filteredStats.subgenresByEntries.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Subgenres by Entries",
+                    chartData = filteredStats.subgenresByEntries,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+        if (filteredStats.subgenresByQuantity.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Subgenres by \"No. of Tins\"",
+                    chartData = filteredStats.subgenresByQuantity,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+        if (filteredStats.cutsByEntries.count() > 1) {
+            item {
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Cuts by Entries",
+                    chartData = filteredStats.cutsByEntries,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+
+            }
+        }
+        if (filteredStats.cutsByQuantity.count() > 1) {
+            item {
+
+                HorizontalDivider(
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
+                )
+                ChartsFormat(
+                    label = "Cuts by \"No. of Tins\"",
+                    chartData = filteredStats.cutsByQuantity,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                )
+            }
+        }
+
+        item { Spacer(Modifier.height(16.dp)) }
 
     }
 }
@@ -291,6 +483,7 @@ private fun StatsBody(
 fun QuickStatsSection(
     rawStats: RawStats,
     filteredStats: FilteredStats,
+    availableSections: AvailableSections,
     contracted: (Boolean) -> Unit,
     expanded: Boolean,
     updateExpanded: (Boolean) -> Unit,
@@ -373,7 +566,7 @@ fun QuickStatsSection(
         }
 
         // Second Section counts per type
-        if (rawStats.totalByType.any { it.key != "Unassigned" }) {
+        if (availableSections.type) {
             StatSubSection(
                 label = "Blend Type",
                 rawField = rawStats.totalByType,
@@ -381,64 +574,17 @@ fun QuickStatsSection(
                 modifier = Modifier
             )
         }
-        if (
-            (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) ||
-            (rawStats.totalByCut.any { it.key != "Unassigned" }) ||
-            (rawStats.totalByComponent.any { it.key != "None Assigned" }) ||
-            (rawStats.totalByFlavoring.any { it.key != "None Assigned" }) ||
-            (rawStats.totalByContainer.any { it.key != "Unassigned" })
-        ) {
+        if (availableSections.anyAvailable) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
                 if (expanded) {
-                    // Third section counts by subgenre
-                    if (rawStats.totalBySubgenre.any { it.key != "Unassigned" }) {
+                    availableSections.available.forEach { (label, raw, filtered) ->
                         StatSubSection(
-                            label = "Subgenres",
-                            rawField = rawStats.totalBySubgenre,
-                            filteredField = filteredStats.totalBySubgenre,
-                            modifier = Modifier
-                        )
-                    }
-
-                    // Fourth section counts by cuts
-                    if (rawStats.totalByCut.any { it.key != "Unassigned" }) {
-                        StatSubSection(
-                            label = "Cuts",
-                            rawField = rawStats.totalByCut,
-                            filteredField = filteredStats.totalByCut,
-                            modifier = Modifier
-                        )
-                    }
-
-                    // Fifth section counts by components
-                    if (rawStats.totalByComponent.any { it.key != "None Assigned" }) {
-                        StatSubSection(
-                            label = "Components",
-                            rawField = rawStats.totalByComponent,
-                            filteredField = filteredStats.totalByComponent,
-                            modifier = Modifier
-                        )
-                    }
-
-                    // Sixth section counts by flavorings
-                    if (rawStats.totalByFlavoring.any { it.key != "None Assigned" }) {
-                        StatSubSection(
-                            label = "Flavoring",
-                            rawField = rawStats.totalByFlavoring,
-                            filteredField = filteredStats.totalByFlavoring,
-                            modifier = Modifier
-                        )
-                    }
-
-                    // Seventh section counts by container
-                    if (rawStats.totalByContainer.any { it.key != "Unassigned" }) {
-                        StatSubSection(
-                            label = "Tin Containers",
-                            rawField = rawStats.totalByContainer,
-                            filteredField = filteredStats.totalByContainer,
+                            label = label,
+                            rawField = raw,
+                            filteredField = filtered,
                             modifier = Modifier
                         )
                     }
@@ -536,7 +682,9 @@ private fun StatSubSection(
                     .weight(1f)
                     .padding(bottom = 16.dp)
             ) {
-                HorizontalDivider(Modifier.padding(bottom = 20.dp).fillMaxWidth(.65f), 1.dp)
+                HorizontalDivider(Modifier
+                    .padding(bottom = 20.dp)
+                    .fillMaxWidth(.65f), 1.dp)
                 SelectionContainer(Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier
@@ -607,7 +755,9 @@ private fun StatSubSection(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                HorizontalDivider(Modifier.padding(bottom = 20.dp).fillMaxWidth(.65f), 1.dp)
+                HorizontalDivider(Modifier
+                    .padding(bottom = 20.dp)
+                    .fillMaxWidth(.65f), 1.dp)
                 SelectionContainer {
                     Row(
                         modifier = Modifier
@@ -715,118 +865,11 @@ private fun StatSubSection(
     }
 }
 
-@Composable
-private fun ChartsSection(
-    filteredStats: FilteredStats,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 0.dp)
-            .wrapContentHeight(),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(10.dp))
-        Text(
-            text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
-                    "depending on the chosen filters.",
-            color = LocalContentColor.current.copy(alpha = 0.75f),
-            modifier = Modifier
-                .fillMaxWidth(),
-            fontSize = 13.sp,
-            textAlign = TextAlign.Start,
-            softWrap = true,
-        )
-        Spacer(Modifier.height(24.dp))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            ChartsFormat(
-                label = "Brands by Number of Entries",
-                chartData = filteredStats.brandsByEntries
-            )
-            if (filteredStats.brandsByQuantity.count() > 1) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, bottom = 28.dp),
-                    thickness = 1.dp,
-                )
-                ChartsFormat(
-                    label = "Brands by \"No. of Tins\"",
-                    chartData = filteredStats.brandsByQuantity
-                )
-            }
-            if (filteredStats.typesByEntries.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Types by Entries",
-                    chartData = filteredStats.typesByEntries
-                )
-            }
-            if (filteredStats.typesByQuantity.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Types by \"No. of Tins\"",
-                    chartData = filteredStats.typesByQuantity
-                )
-            }
-
-            if (filteredStats.ratingsDistribution.distribution.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Ratings Distribution",
-                    histogramData = filteredStats.ratingsDistribution,
-                    showHistogram = true
-                )
-            }
-
-            if (filteredStats.favDisByEntries.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Fav/Dislike by Entries",
-                    chartData = filteredStats.favDisByEntries
-                )
-            }
-            if (filteredStats.subgenresByEntries.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Subgenres by Entries",
-                    chartData = filteredStats.subgenresByEntries
-                )
-            }
-            if (filteredStats.subgenresByQuantity.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Subgenres by \"No. of Tins\"",
-                    chartData = filteredStats.subgenresByQuantity
-                )
-            }
-            if (filteredStats.cutsByEntries.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Cuts by Entries",
-                    chartData = filteredStats.cutsByEntries
-                )
-            }
-            if (filteredStats.cutsByQuantity.count() > 1) {
-                HorizontalDivider(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 28.dp), 1.dp)
-                ChartsFormat(
-                    label = "Cuts by \"No. of Tins\"",
-                    chartData = filteredStats.cutsByQuantity
-                )
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-    }
-}
 
 @Composable
 private fun ChartsFormat(
     label: String,
+    modifier: Modifier = Modifier,
     chartData: Map<String, Int> = mapOf(),
     histogramData: RatingsDistribution = RatingsDistribution(),
     showHistogram: Boolean = false
@@ -835,7 +878,7 @@ private fun ChartsFormat(
     val showValue = remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
