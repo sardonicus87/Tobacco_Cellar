@@ -126,13 +126,10 @@ class HomeViewModel(
             }
         }
         viewModelScope.launch {
-            @Suppress("KotlinConstantConditions")
             preferencesRepo.lastAlertFlow.collect { lastShown ->
-                val unseenAlerts = if (lastShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
-                    OneTimeAlerts.alerts
-                        .filter { it.id > lastShown }
-                        .sortedBy { it.id }
-                } else emptyList()
+                val unseenAlerts = OneTimeAlerts.alerts
+                    .filter { it.id in (lastShown + 1) ..OneTimeAlerts.CURRENT_ALERT_VERSION }
+                    .sortedBy { it.id }
 
                 val alertToDisplay = unseenAlerts.firstOrNull()
                 val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
