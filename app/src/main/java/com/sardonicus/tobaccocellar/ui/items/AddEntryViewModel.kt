@@ -18,7 +18,6 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -31,7 +30,7 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 
 class AddEntryViewModel(
-    private val filterViewModel: FilterViewModel,
+    filterViewModel: FilterViewModel,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
@@ -50,6 +49,7 @@ class AddEntryViewModel(
     var tabErrorState by mutableStateOf(TabErrorState())
         private set
 
+    val autoCompleteData = filterViewModel.autoComplete.value
 
     /** update item state **/
     fun updateUiState(itemDetails: ItemDetails) {
@@ -72,10 +72,10 @@ class AddEntryViewModel(
             ItemUiState(
                 itemDetails = updatedDetails,
                 isEntryValid = validateInput(updatedDetails),
-                autoBrands = brands.value,
-                autoGenres = subGenres.value,
-                autoCuts = cuts.value,
-                autoContainers = tinContainers.value,
+                autoBrands = autoCompleteData.brands,
+                autoGenres = autoCompleteData.subgenres,
+                autoCuts = autoCompleteData.cuts,
+                autoContainers = autoCompleteData.tinContainers,
             )
     }
 
@@ -83,7 +83,7 @@ class AddEntryViewModel(
         componentList =
             ComponentList(
                 componentString = componentString,
-                autoComps = components.value,
+                autoComps = autoCompleteData.components,
             )
         updateUiState(itemUiState.itemDetails)
     }
@@ -92,7 +92,7 @@ class AddEntryViewModel(
         flavoringList =
             FlavoringList(
                 flavoringString = flavoringString,
-                autoFlavors = flavoring.value,
+                autoFlavors = autoCompleteData.flavorings,
             )
         updateUiState(itemUiState.itemDetails)
     }
@@ -231,43 +231,7 @@ class AddEntryViewModel(
     }
 
 
-    /** autocomplete vals **/
-    private val _brands = MutableStateFlow<List<String>>(emptyList())
-    private val brands: StateFlow<List<String>> = _brands
-
-    private val _subGenres = MutableStateFlow<List<String>>(emptyList())
-    private val subGenres: StateFlow<List<String>> = _subGenres
-
-    private val _cuts = MutableStateFlow<List<String>>(emptyList())
-    private val cuts: StateFlow<List<String>> = _cuts
-
-    private val _components = MutableStateFlow<List<String>>(emptyList())
-    private val components: StateFlow<List<String>> = _components
-
-    private val _flavoring = MutableStateFlow<List<String>>(emptyList())
-    private val flavoring: StateFlow<List<String>> = _flavoring
-
-    private val _tinContainers = MutableStateFlow<List<String>>(emptyList())
-    private val tinContainers: StateFlow<List<String>> = _tinContainers
-
     init {
-        viewModelScope.launch {
-            combine(
-                filterViewModel.availableBrands,
-                filterViewModel.availableSubgenres,
-                filterViewModel.availableCuts,
-                filterViewModel.availableComponents,
-                filterViewModel.availableFlavorings,
-                filterViewModel.availableContainers
-            ) {
-                _brands.value = it[0]
-                _subGenres.value = it[1].filter { it != "(Unassigned)" }
-                _cuts.value = it[2].filter { it != "(Unassigned)"}
-                _components.value = it[3].filter { it != "(None Assigned)" }
-                _flavoring.value = it[4].filter { it != "(None Assigned)" }
-                _tinContainers.value = it[5].filter { it != "(Unassigned)" }
-            }.first()
-        }
         viewModelScope.launch {
             val defaultSync = preferencesRepo.defaultSyncOption.first()
             itemUiState = itemUiState.copy(
@@ -301,8 +265,8 @@ class AddEntryViewModel(
 
     suspend fun saveItem() {
         if (validateInput()) {
-            val components = componentList.toComponents(components.value)
-            val flavoring = flavoringList.toFlavoring(flavoring.value)
+            val components = componentList.toComponents(autoCompleteData.components)
+            val flavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
 
             val savedItemId = itemsRepository.insertItem(itemUiState.itemDetails.toItem())
 

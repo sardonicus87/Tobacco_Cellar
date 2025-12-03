@@ -12,9 +12,9 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -25,7 +25,7 @@ import kotlin.math.roundToInt
 
 class EditEntryViewModel(
     private val itemsId: Int,
-    private val filterViewModel: FilterViewModel,
+    filterViewModel: FilterViewModel,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
@@ -45,6 +45,7 @@ class EditEntryViewModel(
         private set
     var loading by mutableStateOf(false)
 
+    val autoCompleteData = filterViewModel.autoComplete.value
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         val validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
@@ -118,9 +119,10 @@ class EditEntryViewModel(
     }
 
     init {
-        loading = true
-
         viewModelScope.launch {
+            delay(10)
+            loading = true
+
             val initialDetails = itemsRepository.getItemDetailsStream(itemsId)
                 .filterNotNull()
                 .first()
@@ -154,47 +156,6 @@ class EditEntryViewModel(
     val showRatingPop: State<Boolean> = _showRatingPop
 
     fun onShowRatingPop(show: Boolean) { _showRatingPop.value = show }
-
-
-    /** autocomplete vals **/
-    private val _brands = MutableStateFlow<List<String>>(emptyList())
-    private val brands: StateFlow<List<String>> = _brands
-
-    private val _subGenres = MutableStateFlow<List<String>>(emptyList())
-    private val subGenres: StateFlow<List<String>> = _subGenres
-
-    private val _cuts = MutableStateFlow<List<String>>(emptyList())
-    private val cuts: StateFlow<List<String>> = _cuts
-
-    private val _components = MutableStateFlow<List<String>>(emptyList())
-    val components: StateFlow<List<String>> = _components
-
-    private val _flavoring = MutableStateFlow<List<String>>(emptyList())
-    val flavoring: StateFlow<List<String>> = _flavoring
-
-    private val _tinContainers = MutableStateFlow<List<String>>(emptyList())
-    private val tinContainers: StateFlow<List<String>> = _tinContainers
-
-
-    init {
-        viewModelScope.launch {
-            combine(
-                filterViewModel.availableBrands,
-                filterViewModel.availableSubgenres,
-                filterViewModel.availableCuts,
-                filterViewModel.availableComponents,
-                filterViewModel.availableFlavorings,
-                filterViewModel.availableContainers
-            ) {
-                _brands.value = it[0]
-                _subGenres.value = it[1].filter { it != "(Unassigned)" }
-                _cuts.value = it[2].filter { it != "(Unassigned)" }
-                _components.value = it[3].filter { it != "(None Assigned)" }
-                _flavoring.value = it[4].filter { it != "(None Assigned)" }
-                _tinContainers.value = it[5].filter { it != "(Unassigned)" }
-            }.first()
-        }
-    }
 
 
     /** add/remove tins **/
@@ -321,10 +282,10 @@ class EditEntryViewModel(
             ItemUiState(
                 itemDetails = updatedDetails,
                 isEntryValid = validateInput(updatedDetails),
-                autoBrands = brands.value,
-                autoGenres = subGenres.value,
-                autoCuts = cuts.value,
-                autoContainers = tinContainers.value,
+                autoBrands = autoCompleteData.brands,
+                autoGenres = autoCompleteData.subgenres,
+                autoCuts = autoCompleteData.cuts,
+                autoContainers = autoCompleteData.tinContainers,
             )
     }
 
@@ -332,7 +293,7 @@ class EditEntryViewModel(
         componentList =
             ComponentList(
                 componentString = componentString,
-                autoComps = components.value,
+                autoComps = autoCompleteData.components,
             )
         updateUiState(itemUiState.itemDetails)
     }
@@ -341,7 +302,7 @@ class EditEntryViewModel(
         flavoringList =
             FlavoringList(
                 flavoringString = flavoringString,
-                autoFlavors = flavoring.value,
+                autoFlavors = autoCompleteData.flavorings,
             )
         updateUiState(itemUiState.itemDetails)
     }
@@ -387,7 +348,7 @@ class EditEntryViewModel(
 
             val previousComps = itemsRepository.getComponentsForItemStream(itemsId).first()
             val previousCompsSet = previousComps.map { it.componentName.lowercase() }
-            val editedComps = componentList.toComponents(components.value)
+            val editedComps = componentList.toComponents(autoCompleteData.components)
             val editedCompsSet = editedComps.map { it.componentName.lowercase() }
 
             val compsToAdd = editedComps.filter { it.componentName.lowercase() !in previousCompsSet }
@@ -413,7 +374,7 @@ class EditEntryViewModel(
 
             val previousFlavors = itemsRepository.getFlavoringForItemStream(itemsId).first()
             val previousFlavorsSet = previousFlavors.map { it.flavoringName.lowercase() }
-            val editedFlavoring = flavoringList.toFlavoring(flavoring.value)
+            val editedFlavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
             val editedFlavoringSet = editedFlavoring.map { it.flavoringName.lowercase() }
 
             val flavorToAdd = editedFlavoring.filter { it.flavoringName.lowercase() !in previousFlavorsSet }
