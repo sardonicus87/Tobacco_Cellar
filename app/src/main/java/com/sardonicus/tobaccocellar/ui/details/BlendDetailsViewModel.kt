@@ -2,17 +2,26 @@ package com.sardonicus.tobaccocellar.ui.details
 
 import android.content.res.Configuration
 import android.content.res.Resources
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
+import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -39,6 +48,9 @@ class BlendDetailsViewModel(
     private val _loadingFinished = MutableStateFlow(false)
     val loadingFinished = _loadingFinished.asStateFlow()
 
+    private val _selectionFocused = MutableStateFlow(false)
+    val selectionFocused = _selectionFocused.asStateFlow()
+
     init {
         refreshData()
         viewModelScope.launch {
@@ -53,10 +65,7 @@ class BlendDetailsViewModel(
     private fun refreshData() {
         viewModelScope.launch {
             _loadingFinished.value = false
-            val details = itemsRepository.getItemDetailsStream(itemsId)
-                .filterNotNull()
-                .first()
-                .toBlendDetails()
+
             val quantityRemap = when (val quantityOption = preferencesRepo.quantityOption.first()) {
                 QuantityOption.TINS -> {
                     val isMetric = isMetricLocale()
@@ -65,12 +74,55 @@ class BlendDetailsViewModel(
                 else -> quantityOption
             }
 
-            _blendDetails.update {
-                details.copy(
-                    tinsTotal = calculateTotal(details.tins.filter { !it.finished }, quantityRemap)
-                )
-            }
-            _loadingFinished.value = true
+            itemsRepository.getItemDetailsStream(itemsId)
+                .filterNotNull()
+                .collectLatest {
+                    val details = BlendDetails(
+                        id = it.items.id,
+                        brand = it.items.brand,
+                        blend = it.items.blend,
+                        favDisIcon = if (it.items.favorite) R.drawable.heart_filled_24 else if (it.items.disliked) R.drawable.heartbroken_filled_24 else null,
+                        itemDetails = setOfNotNull(
+                            buildDetailsString("Type: ", it.items.type.ifBlank { "Unassigned" }),
+                            buildDetailsString("Subgenre: ", it.items.subGenre),
+                            buildDetailsString("Cut: ", it.items.cut),
+                            buildDetailsString("Components: ", it.components.map { it.componentName }.sorted().joinToString(", ")),
+                            buildDetailsString("Flavors: ", it.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
+                            buildDetailsString("Production Status: ", if (it.items.inProduction) "in production" else "not in production"),
+                            buildDetailsString("No. of Tins: ", it.items.quantity.toString())
+                        ),
+                        rating = it.items.rating,
+                        notes = it.items.notes,
+                        tinsDetails = it.tins.associateWith { tin ->
+                            buildSet {
+                                buildDetailsString("Container: ", tin.container)?.let { add(DetailLine(it)) }
+                                buildDetailsString("Quantity: ", if (tin.unit.isNotBlank()) { formatDecimal(tin.tinQuantity) + " ${tin.unit}" } else "")
+                                    ?.let { add(DetailLine(it)) }
+
+                                if (tin.manufactureDate != null) {
+                                    val primary = buildDetailsString("Manufacture Date: ", formatMediumDate(tin.manufactureDate))!!
+                                    val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, " manufacture ")})", 12.sp)
+                                    add(DetailLine(primary, secondary))
+                                }
+
+                                if (tin.cellarDate != null) {
+                                    val primary = buildDetailsString("Cellar Date: ", formatMediumDate(tin.cellarDate))!!
+                                    val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, " cellar ")})", 12.sp)
+                                    add(DetailLine(primary, secondary))
+                                }
+
+                                if (tin.openDate != null) {
+                                    val primary = buildDetailsString("Open Date: ", formatMediumDate(tin.openDate))!!
+                                    val secondary = if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, " open ")})", 12.sp) } else { buildDetailsString("", "finished", 12.sp)}
+                                    add(DetailLine(primary, secondary))
+                                }
+                            }
+                        },
+                        tinsTotal = if (it.tins.any { it.tinQuantity > 0 && !it.finished }) calculateTotal(it.tins.filter { !it.finished }, quantityRemap) else ""
+                    )
+                    _blendDetails.value = details
+                    _loadingFinished.value = true
+                }
         }
     }
 
@@ -131,43 +183,36 @@ class BlendDetailsViewModel(
         return formattedSum ?: ""
     }
 
+    fun updateFocused(focused: Boolean) {
+        _selectionFocused.update { focused }
+    }
+
+    fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp): AnnotatedString? {
+        if (value.isBlank()) return null
+        val string = buildAnnotatedString {
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
+        }
+        return string
+    }
+
 }
 
 data class BlendDetails(
     val id: Int = 0,
     val brand: String = "",
     val blend: String = "",
-    val type: String = "",
-    val quantity: Int = 0,
+    val favDisIcon: Int? = null,
+    val itemDetails: Set<AnnotatedString> = setOf(),
     val rating: Double? = null,
-    val disliked: Boolean = false,
-    val favorite: Boolean = false,
     val notes: String = "",
-    val subGenre: String = "",
-    val cut: String = "",
-    val inProduction: Boolean = true,
-    val componentList: String = "",
-    val flavoring: String = "",
-    val tins: List<Tins> = emptyList(),
+    val tinsDetails: Map<Tins, Set<DetailLine>?> = emptyMap(),
     val tinsTotal: String = "",
 )
 
-fun ItemsComponentsAndTins.toBlendDetails(): BlendDetails = BlendDetails(
-    id = items.id,
-    brand = items.brand,
-    blend = items.blend,
-    type = items.type,
-    quantity = items.quantity,
-    rating = items.rating,
-    disliked = items.disliked,
-    favorite = items.favorite,
-    notes = items.notes,
-    subGenre = items.subGenre,
-    cut = items.cut,
-    inProduction = items.inProduction,
-    componentList = components.map { it.componentName }.sorted().joinToString(", "),
-    flavoring = flavoring.map { it.flavoringName }.sorted().joinToString(", "),
-    tins = tins,
+data class DetailLine(
+    val primary: AnnotatedString,
+    val secondary: AnnotatedString? = null
 )
 
 fun calculateAge(date: Long?, field: String): String {
