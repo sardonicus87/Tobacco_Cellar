@@ -490,7 +490,7 @@ fun ItemInputForm(
                             )
                         },
                         selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                        unselectedContentColor = textColor, // MaterialTheme.colorScheme.outline,
+                        unselectedContentColor = textColor,
                         interactionSource = remember { MutableInteractionSource() }
                     )
                 }
@@ -498,7 +498,7 @@ fun ItemInputForm(
         }
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
-            size = GlowSize(vertical = 4.dp)
+            size = GlowSize(vertical = 3.dp)
         ) {
             Column(
                 modifier = Modifier
