@@ -420,7 +420,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            val glowSize = if (homeUiState.isTableView) 0.dp else 3.dp
+            val glowSize = if (homeUiState.isTableView || (!columnState.canScrollBackward)) 0.dp else 3.dp
             HomeHeader(
                 modifier = Modifier,
                 homeUiState = homeUiState,
