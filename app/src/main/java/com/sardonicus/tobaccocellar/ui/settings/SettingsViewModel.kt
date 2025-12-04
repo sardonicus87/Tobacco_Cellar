@@ -73,7 +73,7 @@ class SettingsViewModel(
 
     fun showSnackbar(message: String) { _snackbarState.value = SnackbarState(true, message) }
 
-    fun snackbarShown() { _snackbarState.value = SnackbarState() }
+    fun snackbarShown() { _snackbarState.value = SnackbarState(false, "") }
 
     fun setLoadingState(loading: Boolean) { _loading.value = loading }
 
@@ -248,29 +248,30 @@ class SettingsViewModel(
     suspend fun deleteAllItems() {
         itemsRepository.deleteAllItems()
         saveTypeGenreOption(TypeGenreOption.TYPE.value)
+        showSnackbar("Database deleted!")
     }
 
-    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null) {
+    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, showMessage: Boolean = true) {
         viewModelScope.launch {
-            setLoadingState(true)
+            if (showMessage) {
+                setLoadingState(true)
+            }
             var message = ""
             val allItems = filterViewModel.everythingFlow.first()
+            val allSyncItems = allItems.filter { preferencesRepo.getItemSyncState(it.items.id).first() }
+
             val ozRate = ozConversion ?: preferencesRepo.tinOzConversionRate.first()
             val gramsRate = gramsConversion ?: preferencesRepo.tinGramsConversionRate.first()
 
             try {
-                allItems.forEach { item ->
-                    val tins = item.tins.filter { !it.finished }
+                allSyncItems.forEach {
+                    val tins = it.tins.filter { !it.finished }
                     val syncQuantity = calculateSyncTins(tins, ozRate, gramsRate)
-                    val hasSync = preferencesRepo.getItemSyncState(item.items.id).first()
-                    if (hasSync) {
-                        println("Updating sync quantity for item: ${item.items.brand} - ${item.items.blend}")
-                        itemsRepository.updateItem(
-                            item.items.copy(
-                                quantity = syncQuantity,
-                            )
+                    itemsRepository.updateItem(
+                        it.items.copy(
+                            quantity = syncQuantity,
                         )
-                    }
+                    )
                 }
 
                 message = if (ozConversion != null || gramsConversion != null) {
@@ -280,8 +281,10 @@ class SettingsViewModel(
                 println("Update Tins Sync Exception: $e")
                 message = "Error updating sync quantities."
             } finally {
-                setLoadingState(false)
-                showSnackbar(message)
+                if (showMessage) {
+                    setLoadingState(false)
+                    showSnackbar(message)
+                }
             }
         }
     }
@@ -459,9 +462,10 @@ class SettingsViewModel(
                     if (restoreState.databaseChecked && restoreState.settingsChecked) {
                         if (fileContentState.databasePresent && fileContentState.settingsPresent) {
                             try {
+                                restoreSettings(settingsBytes)
                                 restoreDatabase(context, databaseBytes)
                                 restoreItemSyncState(itemSyncStateBytes)
-                                restoreSettings(settingsBytes)
+                                updateTinSync(showMessage = false)
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {
                                 println("Exception: $e")
