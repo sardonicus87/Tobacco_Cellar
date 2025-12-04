@@ -48,6 +48,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -107,16 +108,22 @@ fun SettingsScreen(
     val focusManager = LocalFocusManager.current
     val ozRate by viewmodel.tinOzConversionRate.collectAsState()
     val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
-    val snackbarState = viewmodel.snackbarState.collectAsState()
+    val snackbarState by viewmodel.snackbarState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val loading by viewmodel.loading.collectAsState()
 
-    if (snackbarState.value.show) {
+    if (snackbarState.show) {
         LaunchedEffect(snackbarState) {
             snackbarHostState.showSnackbar(
-                message = snackbarState.value.message,
+                message = snackbarState.message,
                 duration = SnackbarDuration.Short
             )
+            viewmodel.snackbarShown()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
             viewmodel.snackbarShown()
         }
     }
