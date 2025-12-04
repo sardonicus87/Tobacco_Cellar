@@ -1,9 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.org.jetbrains.kotlin.serialization)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 ksp {
@@ -17,8 +17,8 @@ android {
         applicationId = "com.sardonicus.tobaccocellar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 36
-        versionName = "4.0.1"
+        versionCode = 37
+        versionName = "4.1.0"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -80,7 +80,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.viewpager2)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.commons.csv)
@@ -88,11 +87,16 @@ dependencies {
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.core)
+
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.kotlinx.serialization.core)
 
 
 
     implementation(libs.androidx.room.runtime)
-//    implementation(libs.androidx.monitor)
     implementation(libs.androidx.ui.text.google.fonts)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)

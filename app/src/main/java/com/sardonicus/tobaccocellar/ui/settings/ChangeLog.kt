@@ -1,5 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import kotlinx.serialization.Serializable
+
 val changelogEntries = listOf(
     ChangelogEntryData(
         versionNumber = "",
@@ -10,8 +12,53 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "4.1.0",
+        buildDate = "4 Dec, 2025",
+        changes = listOf(
+            "New App Setting, set \"Sync Tins?\" to be selected by default when adding new " +
+                    "entries from the Add Entry screen.",
+            "Batch Edit screen now allows filtering the selectable items list. A new button opens " +
+                    "the filter sheet (similar to Plaintext screen).",
+            "Auto Complete on comma separated fields now gives suggestions when typing in-between " +
+                    "existing comma-separated values and inserts suggestion at that point, " +
+                    "rather than only after the last value.",
+            "Cellar screen table view, Brand and Blend columns have been removed from the list " +
+                    "of hideable columns. Columns are also now automatically hidden for fields " +
+                    "that are unused in the database (overall, not affected by filtering).",
+            "Sync Tins option no longer counts tins marked as finished for synchronizing \"No. of " +
+                    "Tins\" with tin quantities. If you have entries with synced tins, there is a " +
+                    "new setting added on the Settings screen to automatically update all entries " +
+                    "with synchronized tins to this new calculation (top of \"App & Database " +
+                    "Settings\"). This also runs automatically when changing conversion rates or " +
+                    "marking a tin as finished, the function is provided here for existing synced " +
+                    "tins or other potential future changes."
+        ),
+        improvements = listOf(
+            "Improved loading speed of all screens, particularly Edit Entry and Stats screens.",
+            "Filtering, in/out of stock filtering is now based on the display quantity (was " +
+                    "previously was based on \"No. of Tins\", which could be out of sync with " +
+                    "individual tin quantities).",
+            "Components and flavorings are now sorted alphabetically on Blend Details and Edit " +
+                    "Entry screens.",
+            "Settings screen, Type/Subgenre display option now disables selectable options based " +
+                    "on whether or not Type or Subgenre (or both) are even used in the database, " +
+                    "and e-mail address is now selectable (for copying).",
+            "Stats screen, adjusted pie chart labeling: listed labels now align to bottom of " +
+                    "chart only when it would clash with percentage labels. Ultra thin slices at " +
+                    "the top of the chart now have percentages listed horizontally across the top. " +
+                    "Percentages are also now in localized format (decimal separator).",
+            "Plaintext screen, added an indicator dot to the \"Filtering\" button to indicate " +
+                    "when filtering is applied.",
+            "Stability and performance improvements, minor UI improvements."
+        ),
+        bugFixes = listOf(
+            "Potentially fixed a rare focus-related bug that could cause a crash."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "4.0.1",
-        buildDate = "",
+        buildDate = "6 Nov, 2025",
         changes = listOf(),
         improvements = listOf(
             "Plaintext Output, made rating rounding optional. Not adding rounding will return the " +
@@ -994,7 +1041,7 @@ val changelogEntries = listOf(
     )
 )
 
-
+@Serializable
 data class ChangelogEntryData(
     val versionNumber: String,
     val buildDate: String,
