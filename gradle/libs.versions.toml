@@ -18,7 +18,6 @@ lifecycleRuntimeKtx = "2.10.0"
 lifecycleViewmodelNav3 = "2.10.0"
 material = "1.13.0"
 nav3Core = "1.0.0"
-# navigationCompose = "2.9.6"
 room = "2.8.4"
 viewpager2 = "1.1.0"
 uiTextGoogleFonts = "1.9.5"
@@ -33,7 +32,6 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
-# androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
