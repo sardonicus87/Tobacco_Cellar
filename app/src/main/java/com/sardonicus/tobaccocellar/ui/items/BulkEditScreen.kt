@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
@@ -66,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -336,10 +338,25 @@ fun BulkSelections(
                 modifier = Modifier,
                 enabled = selectedItems.isNotEmpty(),
             ) { Text("Clear Selections") }
-            TextButton(
-                onClick = { filterViewModel.openBottomSheet() },
-                modifier = Modifier
-            ) { Text("Filter") }
+            Box (contentAlignment = Alignment.Center) {
+                val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
+                val borderColor = if (filteringApplied) LocalContentColor.current else Color.Transparent
+                val indicatorColor = if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
+
+                TextButton(
+                    onClick = { filterViewModel.openBottomSheet() },
+                    modifier = Modifier
+                ) { Text("Filter") }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(8.dp)
+                        .offset((-4).dp, (-6).dp)
+                        .clip(CircleShape)
+                        .border(1.dp, borderColor, CircleShape)
+                        .background(indicatorColor)
+                )
+            }
         }
 
         LazyVerticalGrid(

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -250,13 +251,26 @@ fun PlaintextBody(
             }
 
             // Open filter sheet
-            Box {
+            Box(contentAlignment = Alignment.Center) {
+                val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
+                val borderColor = if (filteringApplied) LocalContentColor.current else Color.Transparent
+                val indicatorColor = if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
+
                 TextButton(
                     onClick = { filterViewModel.openBottomSheet() },
                     modifier = Modifier
                         .heightIn(40.dp, 40.dp),
                     contentPadding = PaddingValues(8.dp, 2.dp),
                 ) { Text("Filter") }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(7.dp)
+                        .offset((-5).dp, (-5).dp)
+                        .clip(CircleShape)
+                        .border(0.5.dp, borderColor, CircleShape)
+                        .background(indicatorColor)
+                )
             }
 
             // Sorting
