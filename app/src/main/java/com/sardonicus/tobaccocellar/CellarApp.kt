@@ -172,7 +172,6 @@ fun CellarApp(
     ),
     navigator: Navigator = remember { Navigator(navigationState) }
 ) {
-
     CellarNavigation(
         navigator = navigator,
         navigationState = navigationState,
@@ -910,11 +909,7 @@ fun CellarBottomAppBar(
                             modifier = Modifier
                                 .size(26.dp)
                                 .offset(y = (-8).dp),
-                            tint = if (sheetOpen) {
-                                onPrimaryLight
-                            } else {
-                                LocalContentColor.current
-                            },
+                            tint = if (sheetOpen) onPrimaryLight else LocalContentColor.current,
                         )
                     }
 
@@ -923,12 +918,7 @@ fun CellarBottomAppBar(
                         modifier = Modifier
                             .offset(y = 13.dp),
                         fontSize = 11.sp,
-                        fontWeight =
-                        if (sheetOpen) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        },
+                        fontWeight = if (sheetOpen) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (sheetOpen) {
                             onPrimaryLight
                         } else {
@@ -1410,7 +1400,6 @@ fun BrandFilterSection(
                     filteredBrands = if (text.isBlank()) {
                         allBrands
                     } else {
-
                         val startsWith = allBrands.filter { brand ->
                             brand.startsWith(text, ignoreCase = true)
                         }
@@ -1455,9 +1444,7 @@ fun BrandFilterSection(
                     )
                     .padding(horizontal = 8.dp)
                     .combinedClickable(
-                        onClick = {
-                            brandSwitch(!excluded)
-                        },
+                        onClick = { brandSwitch(!excluded) },
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ),
