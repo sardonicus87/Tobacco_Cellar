@@ -251,9 +251,9 @@ class SettingsViewModel(
         showSnackbar("Database deleted!")
     }
 
-    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, showMessage: Boolean = true) {
+    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
         viewModelScope.launch {
-            if (showMessage) {
+            if (!runSilent) {
                 setLoadingState(true)
             }
             var message = ""
@@ -281,7 +281,7 @@ class SettingsViewModel(
                 println("Update Tins Sync Exception: $e")
                 message = "Error updating sync quantities."
             } finally {
-                if (showMessage) {
+                if (!runSilent) {
                     setLoadingState(false)
                     showSnackbar(message)
                 }
@@ -465,7 +465,7 @@ class SettingsViewModel(
                                 restoreSettings(settingsBytes)
                                 restoreDatabase(context, databaseBytes)
                                 restoreItemSyncState(itemSyncStateBytes)
-                                updateTinSync(showMessage = false)
+                                updateTinSync(runSilent = true)
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {
                                 println("Exception: $e")
