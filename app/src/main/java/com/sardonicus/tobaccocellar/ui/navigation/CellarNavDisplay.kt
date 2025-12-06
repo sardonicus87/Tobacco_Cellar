@@ -22,6 +22,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
@@ -37,6 +38,7 @@ import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
 import com.sardonicus.tobaccocellar.ui.dates.DatesScreen
 import com.sardonicus.tobaccocellar.ui.details.BlendDetailsScreen
 import com.sardonicus.tobaccocellar.ui.details.BlendDetailsViewModel
+import com.sardonicus.tobaccocellar.ui.home.FilterPane
 import com.sardonicus.tobaccocellar.ui.home.HelpScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.items.AddEntryScreen
@@ -48,6 +50,7 @@ import com.sardonicus.tobaccocellar.ui.settings.ChangelogScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import java.util.UUID
+
 
 @Composable
 fun CellarNavigation(
@@ -63,26 +66,26 @@ fun CellarNavigation(
     val isGestureNav = remember(navHeight) { navHeight == 0.dp }
 
     val slideTransition = transitionSpec {
-        slideInHorizontally(tween(700)) { it } togetherWith ExitTransition.None
+        slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
     } + popTransitionSpec {
-        EnterTransition.None togetherWith slideOutHorizontally(tween(700)) { it }
+        EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
     } + predictivePopTransitionSpec {
         if (isGestureNav) {
             when (it) {
                 NavigationEvent.EDGE_RIGHT -> {
-                    slideInHorizontally(tween(700)) { it / 2 } togetherWith
-                            slideOutHorizontally(tween(700)) { -it / 2 }
+                    slideInHorizontally(tween(500)) { it / 2 } togetherWith
+                            slideOutHorizontally(tween(500)) { -it / 2 }
                 }
 
                 NavigationEvent.EDGE_LEFT -> {
-                    slideInHorizontally(tween(700)) { -it / 2 } togetherWith
-                            slideOutHorizontally(tween(700)) { it / 2 }
+                    slideInHorizontally(tween(500)) { -it / 2 } togetherWith
+                            slideOutHorizontally(tween(500)) { it / 2 }
                 }
 
-                else -> EnterTransition.None togetherWith slideOutHorizontally(tween(700)) { it }
+                else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
             }
         } else {
-            EnterTransition.None togetherWith slideOutHorizontally(tween(700)) { it }
+            EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
         }
     }
 
@@ -146,6 +149,13 @@ fun CellarNavigation(
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToDetails = { navigator.navigate(BlendDetailsDestination(it)) },
+                )
+            }
+
+            is FilterPaneDestination -> NavEntry(key) {
+                FilterPane(
+                    filterViewModel = filterViewModel,
+                    modifier = Modifier
                 )
             }
 
@@ -285,12 +295,13 @@ fun CellarNavigation(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(700)) },
-        popTransitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(700)) },
+        sceneStrategy = SinglePaneSceneStrategy(),
+        transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
+        popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         predictivePopTransitionSpec = {
             if (isGestureNav) {
                 fadeIn() togetherWith scaleOut(targetScale = 0.7f)
-            } else fadeIn(tween(700)) togetherWith fadeOut(tween(700))
+            } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
         }
     )
 }
