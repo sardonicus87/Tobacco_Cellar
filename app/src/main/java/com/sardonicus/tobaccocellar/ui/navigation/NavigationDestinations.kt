@@ -20,6 +20,9 @@ data object StatsDestination : NavKey
 data object DatesDestination : NavKey
 
 @Serializable
+data object FilterPaneDestination : NavKey
+
+@Serializable
 data object AddEntryDestination : NavKey
 
 @Serializable

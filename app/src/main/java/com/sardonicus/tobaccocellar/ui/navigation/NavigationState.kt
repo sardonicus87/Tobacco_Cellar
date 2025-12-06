@@ -31,6 +31,7 @@ private val cellarNavKeyModule = SerializersModule {
         subclass(HelpDestination::class)
         subclass(StatsDestination::class)
         subclass(DatesDestination::class)
+        subclass(FilterPaneDestination::class)
         subclass(AddEntryDestination::class)
         subclass(EditEntryDestination::class)
         subclass(BulkEditDestination::class)
