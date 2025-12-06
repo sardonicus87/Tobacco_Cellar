@@ -170,7 +170,7 @@ fun CellarApp(
         startRoute = HomeDestination,
         topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination)
     ),
-    navigator: Navigator = remember { Navigator(navigationState) }
+    navigator: Navigator = remember { Navigator(navigationState) },
 ) {
     CellarNavigation(
         navigator = navigator,
@@ -180,7 +180,7 @@ fun CellarApp(
     val filterViewModel = LocalCellarApplication.current.filterViewModel
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
 
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState { 3 }
 
     val brandsData by filterViewModel.brandsData.collectAsState()
     val typeData by filterViewModel.typeData.collectAsState()
@@ -210,7 +210,7 @@ fun CellarApp(
             properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
         ) {
             Box {
-                FilterBottomSheet(
+                FilterLayout(
                     filterViewModel = filterViewModel,
                     closeSheet = { filterViewModel.closeBottomSheet() },
                     pagerState = pagerState,
@@ -985,10 +985,8 @@ fun CellarBottomAppBar(
 
 /** Filter sheet stuff **/
 @Composable
-fun FilterBottomSheet(
+fun FilterLayout(
     filterViewModel: FilterViewModel,
-    closeSheet: () -> Unit,
-    pagerState: PagerState,
     filtersApplied: Boolean,
     brandsData: BrandsSectionData,
     typeData: FilterSectionData,
@@ -1005,6 +1003,9 @@ fun FilterBottomSheet(
     tins: Boolean,
     productionData: ProductionSectionData,
     modifier: Modifier = Modifier,
+    closeSheet: () -> Unit = {},
+    sheetLayout: Boolean = true,
+    pagerState: PagerState = rememberPagerState { 3 },
 ) {
     Column (
         modifier = modifier
@@ -1016,323 +1017,173 @@ fun FilterBottomSheet(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header //
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp), // top
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(
+        if (sheetLayout) {
+            Row (
                 modifier = Modifier
-                    .weight(1f)
-            )
-            Text(
-                text = "Select Filters",
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                fontSize = 18.sp,
-                maxLines = 1,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(top = 4.dp),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Column (
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 6.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Top
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp), // top
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.close),
-                    contentDescription = "Close",
+                Spacer(
                     modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { closeSheet() }
-                        .padding(4.dp),
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                        .weight(1f)
                 )
+                Text(
+                    text = "Select Filters",
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    fontSize = 18.sp,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 4.dp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Column (
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 6.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.close),
+                        contentDescription = "Close",
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { closeSheet() }
+                            .padding(4.dp),
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                    )
+                }
             }
         }
 
         // Pager //
-        var innerScrolling by remember { mutableStateOf(false) }
-        val coroutineScope = rememberCoroutineScope()
+        if (sheetLayout) {
+            var innerScrolling by remember { mutableStateOf(false) }
+            val coroutineScope = rememberCoroutineScope()
 
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp)
-                .pointerInput(pagerState) {
-                    var totalDrag = 0f
-                    detectHorizontalDragGestures(
-                        onDragStart = { totalDrag = 0f },
-                        onHorizontalDrag = { change, amount ->
-                            change.consume()
-                            totalDrag += amount
-                        },
-                        onDragEnd = {
-                            coroutineScope.launch {
-                                if (totalDrag < (-50) && pagerState.currentPage < (pagerState.pageCount - 1)) {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                } else if (totalDrag > 50 && pagerState.currentPage > 0) {
-                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+                    .pointerInput(pagerState) {
+                        var totalDrag = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { totalDrag = 0f },
+                            onHorizontalDrag = { change, amount ->
+                                change.consume()
+                                totalDrag += amount
+                            },
+                            onDragEnd = {
+                                coroutineScope.launch {
+                                    if (totalDrag < (-50) && pagerState.currentPage < (pagerState.pageCount - 1)) {
+                                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                    } else if (totalDrag > 50 && pagerState.currentPage > 0) {
+                                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                    }
                                 }
                             }
-                        }
-                    )
-                },
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            PagerIndicator(
-                pagerState = pagerState,
-                modifier = Modifier
-                    .padding(0.dp),
-                indicatorSize = IndicatorSizes(6.5.dp, 6.dp)
-            )
-        }
+                        )
+                    },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PagerIndicator(
+                    pagerState = pagerState,
+                    modifier = Modifier
+                        .padding(0.dp),
+                    indicatorSize = IndicatorSizes(6.5.dp, 6.dp)
+                )
+            }
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth(),
-            userScrollEnabled = !innerScrolling,
-            beyondViewportPageCount = 2,
-            verticalAlignment = Alignment.Top,
-        ) {
-            when (it) {
-                // brand, type, rating, stock filters //
-                0 -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        BrandFilterSection(
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                userScrollEnabled = !innerScrolling,
+                beyondViewportPageCount = 2,
+                verticalAlignment = Alignment.Top,
+            ) {
+                when (it) {
+                    // brand, type, rating, stock filters //
+                    0 -> {
+                        PageOne(
+                            filterViewModel = filterViewModel,
                             brandsData = brandsData,
-                            brandSwitch = { filterViewModel.updateSelectedExcludeBrandsSwitch(it) },
-                            reorderChips = { list, map -> filterViewModel.reorderChips(list, map) },
-                            updateSelectedBrands = { string, boolean -> filterViewModel.updateSelectedBrands(string, boolean) },
-                            updateSelectedExcludedBrands = { string, boolean -> filterViewModel.updateSelectedExcludedBrands(string, boolean) },
-                            clearAll = { filterViewModel.clearAllSelectedBrands() },
-                            modifier = Modifier
-                                .padding(6.dp),
-                            innerScrolling = { innerScrolling = it }
-                        )
-                        TypeFilterSection(
                             typeData = typeData,
-                            updateSelectedTypes = { string, boolean -> filterViewModel.updateSelectedTypes(string, boolean) },
-                            modifier = Modifier
-                                .padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
-                        )
-                        OtherFiltersSection(
                             otherData = otherData,
                             favDisExist = favDisExist,
-                            updateSelectedFavorites = { filterViewModel.updateSelectedFavorites(it) },
-                            updateSelectedExcludeFavorites = { filterViewModel.updateSelectedExcludeFavorites(it) },
-                            updateSelectedDislikeds = { filterViewModel.updateSelectedDislikeds(it) },
-                            updateSelectedExcludeDislikeds = { filterViewModel.updateSelectedExcludeDislikeds(it) },
-                            updateSelectedInStock = { filterViewModel.updateSelectedInStock(it) },
-                            updateSelectedOutOfStock = { filterViewModel.updateSelectedOutOfStock(it) },
-                            updateSelectedUnrated = { filterViewModel.updateSelectedUnrated(it) },
-                            updateSelectedRatingRange = { (min, max) -> filterViewModel.updateSelectedRatingRange(min, max) },
+                            innerScrolling = { innerScrolling = it },
                             modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp),
                         )
                     }
-                }
 
-                // subgenre, cuts, components, flavoring filters //
-                1 -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp),
-                        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        FlowFilterSection(
-                            label = "Subgenre",
-                            nothingLabel = "No subgenres assigned to any blends.",
-                            displayData = subgenreData,
-                            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedSubgenre(string, boolean) },
-                            overflowCheck = { selected, avail, int ->
-                                filterViewModel.overflowCheck(selected, avail, int) },
-                            noneField = "(Unassigned)",
-                            clearAll = { filterViewModel.clearAllSelected("Subgenre") },
+                    // subgenre, cuts, components, flavoring filters //
+                    1 -> {
+                        PageTwo(
+                            filterViewModel = filterViewModel,
+                            subgenreData = subgenreData,
+                            cutData = cutData,
+                            componentData = componentData,
+                            flavoringData = flavoringData,
                             modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 5.dp)
-                        )
-
-                        FlowFilterSection(
-                            label = "Cut",
-                            nothingLabel = "No cuts assigned to any blends.",
-                            displayData = cutData,
-                            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedCut(string, boolean) },
-                            overflowCheck = { selected, avail, int ->
-                                filterViewModel.overflowCheck(selected, avail, int) },
-                            noneField = "(Unassigned)",
-                            clearAll = { filterViewModel.clearAllSelected("Cut") },
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                        )
-
-                        FlowFilterSection(
-                            label = "Components",
-                            nothingLabel = "No components assigned to any blends.",
-                            displayData = componentData,
-                            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedComponent(string, boolean) },
-                            overflowCheck = { selected, avail, int ->
-                                filterViewModel.overflowCheck(selected, avail, int) },
-                            noneField = "(None Assigned)",
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                            clearAll = { filterViewModel.clearAllSelected("Components") },
-                            onMatchOptionChange = { filterViewModel.updateCompMatching(it) },
-                        )
-
-                        FlowFilterSection(
-                            label = "Flavorings",
-                            nothingLabel = "No flavorings assigned to any blends.",
-                            displayData = flavoringData,
-                            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedFlavoring(string, boolean) },
-                            overflowCheck = { selected, avail, int ->
-                                filterViewModel.overflowCheck(selected, avail, int) },
-                            noneField = "(None Assigned)",
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                            clearAll = { filterViewModel.clearAllSelected("Flavorings") },
-                            onMatchOptionChange = { filterViewModel.updateFlavorMatching(it) },
                         )
                     }
-                }
 
-                // tin filtering, containers, production //
-                2 -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(383.dp),
-                        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        TinsFilterSection(
+                    // tin filtering, containers, production //
+                    2 -> {
+                        PageThree(
+                            filterViewModel = filterViewModel,
                             tinsFilterData = tinsFilterData,
                             hasContainer = hasContainer,
                             tins = tins,
+                            containerData = containerData,
+                            productionData = productionData,
                             updateSelectedTins = { string, boolean -> updateSelectedTins(string, boolean) },
                             modifier = Modifier
-                                .padding(horizontal = 6.dp)
+                                .height(383.dp)
+                                .padding(bottom = 24.dp)
                         )
-                        FlowFilterSection(
-                            label = "Tin Containers",
-                            nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
-                            displayData = containerData,
-                            updateSelectedOptions = { string, boolean ->
-                                filterViewModel.updateSelectedContainer(string, boolean)
-                            },
-                            overflowCheck = { selected, avail, int ->
-                                filterViewModel.overflowCheck(selected, avail, int) },
-                            noneField = "(Unassigned)",
-                            clearAll = { filterViewModel.clearAllSelected("Container") },
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 0.dp)
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                        )
-
-                        // Production
-                        Row(
-                            modifier = Modifier
-                                .border(
-                                    width = Dp.Hairline,
-                                    color = LocalCustomColors.current.sheetBoxBorder,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .background(
-                                    LocalCustomColors.current.sheetBox,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .width(intrinsicSize = IntrinsicSize.Max),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            CheckboxWithLabel(
-                                text = "In Production",
-                                checked = productionData.production,
-                                onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
-                                modifier = Modifier,
-                                enabled = productionData.productionEnabled
-                            )
-                            CheckboxWithLabel(
-                                text = "Discontinued",
-                                checked = productionData.outOfProduction,
-                                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
-                                modifier = Modifier,
-                                enabled = productionData.outOfProductionEnabled
-                            )
-                        }
-
-                        Spacer(Modifier.height(24.dp))
                     }
                 }
             }
+        } else {
+            Spacer(Modifier.height(40.dp))
+            PageOne(
+                filterViewModel = filterViewModel,
+                brandsData = brandsData,
+                typeData = typeData,
+                otherData = otherData,
+                favDisExist = favDisExist,
+                modifier = Modifier
+            )
+            PageTwo(
+                filterViewModel = filterViewModel,
+                subgenreData = subgenreData,
+                cutData = cutData,
+                componentData = componentData,
+                flavoringData = flavoringData,
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+            )
+            PageThree(
+                filterViewModel = filterViewModel,
+                tinsFilterData = tinsFilterData,
+                hasContainer = hasContainer,
+                tins = tins,
+                containerData = containerData,
+                productionData = productionData,
+                updateSelectedTins = { string, boolean -> updateSelectedTins(string, boolean) },
+                modifier = Modifier
+                    .padding(top = 4.dp)
+            )
         }
 
         TextButton(
@@ -1356,6 +1207,253 @@ fun FilterBottomSheet(
             )
         }
         Spacer(Modifier.height(12.dp))
+    }
+}
+
+
+@Composable
+private fun PageOne(
+    filterViewModel: FilterViewModel,
+    brandsData: BrandsSectionData,
+    typeData: FilterSectionData,
+    otherData: OtherSectionData,
+    favDisExist: Boolean,
+    modifier: Modifier = Modifier,
+    innerScrolling: (Boolean) -> Unit = {}
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        BrandFilterSection(
+            brandsData = brandsData,
+            brandSwitch = { filterViewModel.updateSelectedExcludeBrandsSwitch(it) },
+            reorderChips = { list, map -> filterViewModel.reorderChips(list, map) },
+            updateSelectedBrands = { string, boolean -> filterViewModel.updateSelectedBrands(string, boolean) },
+            updateSelectedExcludedBrands = { string, boolean -> filterViewModel.updateSelectedExcludedBrands(string, boolean) },
+            clearAll = { filterViewModel.clearAllSelectedBrands() },
+            modifier = Modifier
+                .padding(6.dp),
+            innerScrolling = { innerScrolling(it) }
+        )
+        TypeFilterSection(
+            typeData = typeData,
+            updateSelectedTypes = { string, boolean -> filterViewModel.updateSelectedTypes(string, boolean) },
+            modifier = Modifier
+                .padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
+        )
+        OtherFiltersSection(
+            otherData = otherData,
+            favDisExist = favDisExist,
+            updateSelectedFavorites = { filterViewModel.updateSelectedFavorites(it) },
+            updateSelectedExcludeFavorites = { filterViewModel.updateSelectedExcludeFavorites(it) },
+            updateSelectedDislikeds = { filterViewModel.updateSelectedDislikeds(it) },
+            updateSelectedExcludeDislikeds = { filterViewModel.updateSelectedExcludeDislikeds(it) },
+            updateSelectedInStock = { filterViewModel.updateSelectedInStock(it) },
+            updateSelectedOutOfStock = { filterViewModel.updateSelectedOutOfStock(it) },
+            updateSelectedUnrated = { filterViewModel.updateSelectedUnrated(it) },
+            updateSelectedRatingRange = { (min, max) -> filterViewModel.updateSelectedRatingRange(min, max) },
+            modifier = Modifier
+                .padding(horizontal = 6.dp, vertical = 0.dp),
+        )
+    }
+}
+
+@Composable
+private fun PageTwo(
+    filterViewModel: FilterViewModel,
+    subgenreData: FilterSectionData,
+    cutData: FilterSectionData,
+    componentData: FilterSectionData,
+    flavoringData: FilterSectionData,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        FlowFilterSection(
+            label = "Subgenre",
+            nothingLabel = "No subgenres assigned to any blends.",
+            displayData = subgenreData,
+            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedSubgenre(string, boolean) },
+            overflowCheck = { selected, avail, int ->
+                filterViewModel.overflowCheck(selected, avail, int) },
+            noneField = "(Unassigned)",
+            clearAll = { filterViewModel.clearAllSelected("Subgenre") },
+            modifier = Modifier
+                .padding(horizontal = 6.dp, vertical = 0.dp)
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 5.dp)
+        )
+
+        FlowFilterSection(
+            label = "Cut",
+            nothingLabel = "No cuts assigned to any blends.",
+            displayData = cutData,
+            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedCut(string, boolean) },
+            overflowCheck = { selected, avail, int ->
+                filterViewModel.overflowCheck(selected, avail, int) },
+            noneField = "(Unassigned)",
+            clearAll = { filterViewModel.clearAllSelected("Cut") },
+            modifier = Modifier
+                .padding(horizontal = 6.dp, vertical = 0.dp)
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+        )
+
+        FlowFilterSection(
+            label = "Components",
+            nothingLabel = "No components assigned to any blends.",
+            displayData = componentData,
+            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedComponent(string, boolean) },
+            overflowCheck = { selected, avail, int ->
+                filterViewModel.overflowCheck(selected, avail, int) },
+            noneField = "(None Assigned)",
+            modifier = Modifier
+                .padding(horizontal = 6.dp, vertical = 0.dp)
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+            clearAll = { filterViewModel.clearAllSelected("Components") },
+            onMatchOptionChange = { filterViewModel.updateCompMatching(it) },
+        )
+
+        FlowFilterSection(
+            label = "Flavorings",
+            nothingLabel = "No flavorings assigned to any blends.",
+            displayData = flavoringData,
+            updateSelectedOptions = { string, boolean -> filterViewModel.updateSelectedFlavoring(string, boolean) },
+            overflowCheck = { selected, avail, int ->
+                filterViewModel.overflowCheck(selected, avail, int) },
+            noneField = "(None Assigned)",
+            modifier = Modifier
+                .padding(horizontal = 6.dp, vertical = 0.dp)
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+            clearAll = { filterViewModel.clearAllSelected("Flavorings") },
+            onMatchOptionChange = { filterViewModel.updateFlavorMatching(it) },
+        )
+    }
+}
+
+@Composable
+private fun PageThree(
+    filterViewModel: FilterViewModel,
+    tinsFilterData: TinsFilterData,
+    hasContainer: Boolean,
+    tins: Boolean,
+    containerData: FilterSectionData,
+    productionData: ProductionSectionData,
+    updateSelectedTins: (String, Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TinsFilterSection(
+            tinsFilterData = tinsFilterData,
+            hasContainer = hasContainer,
+            tins = tins,
+            updateSelectedTins = { string, boolean -> updateSelectedTins(string, boolean) },
+            modifier = Modifier
+                .padding(horizontal = 6.dp)
+        )
+        FlowFilterSection(
+            label = "Tin Containers",
+            nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
+            displayData = containerData,
+            updateSelectedOptions = { string, boolean ->
+                filterViewModel.updateSelectedContainer(string, boolean)
+            },
+            overflowCheck = { selected, avail, int ->
+                filterViewModel.overflowCheck(selected, avail, int) },
+            noneField = "(Unassigned)",
+            clearAll = { filterViewModel.clearAllSelected("Container") },
+            modifier = Modifier
+                .padding(horizontal = 6.dp, vertical = 0.dp)
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+        )
+
+        // Production
+        Row(
+            modifier = Modifier
+                .border(
+                    width = Dp.Hairline,
+                    color = LocalCustomColors.current.sheetBoxBorder,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.sheetBox,
+                    RoundedCornerShape(8.dp)
+                )
+                .width(intrinsicSize = IntrinsicSize.Max),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            CheckboxWithLabel(
+                text = "In Production",
+                checked = productionData.production,
+                onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
+                modifier = Modifier,
+                enabled = productionData.productionEnabled
+            )
+            CheckboxWithLabel(
+                text = "Discontinued",
+                checked = productionData.outOfProduction,
+                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
+                modifier = Modifier,
+                enabled = productionData.outOfProductionEnabled
+            )
+        }
     }
 }
 
@@ -2837,7 +2935,7 @@ fun RatingRangePop(
                     onCheckedChange = {
                         updateSelectedUnrated(it)
                         updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
-                                      },
+                    },
                     modifier = Modifier
                         .padding(bottom = 8.dp),
                     enabled = unratedEnabled,
