@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
-import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.FilterLayout
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -51,16 +50,7 @@ fun FilterPane(
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .clickable(indication = null, interactionSource = null) {
                 focusManager.clearFocus()
-            },
-        topBar = {
-            CellarTopAppBar(
-                title = "Select Filters",
-                scrollBehavior = scrollBehavior,
-                canNavigateBack = false,
-                showMenu = false,
-                modifier = Modifier
-            )
-        },
+            }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
