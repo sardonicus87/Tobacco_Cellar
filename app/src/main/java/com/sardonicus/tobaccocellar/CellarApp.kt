@@ -89,6 +89,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.TriStateCheckbox
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -129,6 +130,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation3.runtime.NavKey
+import androidx.window.core.layout.WindowSizeClass
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
@@ -149,6 +152,7 @@ import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavigation
 import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
+import com.sardonicus.tobaccocellar.ui.navigation.FilterPaneDestination
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationState
 import com.sardonicus.tobaccocellar.ui.navigation.Navigator
@@ -166,15 +170,29 @@ import java.util.Locale
 
 @Composable
 fun CellarApp(
+    isGestureNav: Boolean,
+    windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
+    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) },
+    mainSecondaryMap: Map<NavKey, NavKey> = remember {
+        mapOf(
+            HomeDestination to FilterPaneDestination,
+            StatsDestination to FilterPaneDestination,
+            DatesDestination to FilterPaneDestination
+        )
+    },
     navigationState: NavigationState = rememberNavigationState(
         startRoute = HomeDestination,
-        topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination)
+        topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination),
+        largeScreen = isLarge,
+        mainSecondaryMap = mainSecondaryMap
     ),
-    navigator: Navigator = remember { Navigator(navigationState) },
+    navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge, mainSecondaryMap) }
 ) {
     CellarNavigation(
         navigator = navigator,
         navigationState = navigationState,
+        isGestureNav = isGestureNav,
+        largeScreen = isLarge
     )
 
     val filterViewModel = LocalCellarApplication.current.filterViewModel
@@ -346,6 +364,7 @@ fun CellarTopAppBar(
                         onDismissRequest = { expanded(false) },
                         modifier = Modifier,
                         containerColor = LocalCustomColors.current.textField,
+                        shadowElevation = 6.dp
                     ) {
                         when (menuState) {
                             MenuState.MAIN -> {
@@ -1017,36 +1036,36 @@ fun FilterLayout(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header //
-        if (sheetLayout) {
-            Row (
+        Row (
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp), // top
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp), // top
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f)
+            )
+            Text(
+                text = "Select Filters",
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = 4.dp),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Column (
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 6.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Top
             ) {
-                Spacer(
-                    modifier = Modifier
-                        .weight(1f)
-                )
-                Text(
-                    text = "Select Filters",
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    fontSize = 18.sp,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(top = 4.dp),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Column (
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 6.dp),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Top
-                ) {
+                if (sheetLayout) {
                     Icon(
                         painter = painterResource(id = R.drawable.close),
                         contentDescription = "Close",

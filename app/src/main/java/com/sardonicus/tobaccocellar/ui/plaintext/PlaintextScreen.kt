@@ -125,16 +125,16 @@ import kotlin.math.roundToInt
 fun PlaintextScreen(
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
-    viewmodel: PlaintextViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: PlaintextViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
-    val plaintextState by viewmodel.listState.collectAsState()
+    val plaintextState by viewModel.listState.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
-    val templateView by viewmodel.setTemplateView.collectAsState()
-    val formatString by viewmodel.formatStringEntry.collectAsState()
-    val delimiter by viewmodel.delimiter.collectAsState()
-    val printOptions by viewmodel.printOptions.collectAsState()
+    val templateView by viewModel.setTemplateView.collectAsState()
+    val formatString by viewModel.formatStringEntry.collectAsState()
+    val delimiter by viewModel.delimiter.collectAsState()
+    val printOptions by viewModel.printOptions.collectAsState()
 
     Scaffold(
         modifier = modifier
@@ -164,14 +164,14 @@ fun PlaintextScreen(
                 delimiter = delimiter,
                 printOptions = printOptions,
                 filterViewModel = filterViewModel,
-                saveFormatString = viewmodel::saveFormatString,
-                sortMenuState = viewmodel.sortMenuState,
-                updateSortMenuState = viewmodel::updateSortMenuState,
-                updateSorting = viewmodel::updateSorting,
-                updateSubSorting = viewmodel::updateSubSorting,
-                setTemplateView = viewmodel::setTemplateView,
-                savePrintOptions = viewmodel::savePrintOptions,
-                savePreset = viewmodel::savePreset,
+                saveFormatString = viewModel::saveFormatString,
+                sortMenuState = viewModel.sortMenuState,
+                updateSortMenuState = viewModel::updateSortMenuState,
+                updateSorting = viewModel::updateSorting,
+                updateSubSorting = viewModel::updateSubSorting,
+                setTemplateView = viewModel::setTemplateView,
+                savePrintOptions = viewModel::savePrintOptions,
+                savePreset = viewModel::savePreset,
                 templateView = templateView,
                 modifier = Modifier
                     .fillMaxSize()
@@ -314,6 +314,7 @@ fun PlaintextBody(
                             mainPosition = with(density) { it.positionOnScreen().x.toDp() }
                         },
                     containerColor = color,
+                    shadowElevation = 6.dp
                 ) {
                     plaintextState.sortOptions.forEach { option ->
                         var yPosition by remember { mutableStateOf(0.dp) }
@@ -399,7 +400,8 @@ fun PlaintextBody(
                         .onGloballyPositioned{
                             subWidth = with(density) { it.size.width.toDp() }
                         },
-                    offset = DpOffset(xOffset, yOffset ?: 0.dp)
+                    offset = DpOffset(xOffset, yOffset ?: 0.dp),
+                    shadowElevation = 6.dp
                 ) {
                     subOptionsList.forEach {
                         DropdownMenuItem(
