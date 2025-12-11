@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -92,12 +94,13 @@ fun StatsScreen(
     navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
     modifier: Modifier = Modifier,
-    viewmodel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val rawStats by viewmodel.rawStats.collectAsState()
-    val filteredStats by viewmodel.filteredStats.collectAsState()
-    val availableSections by viewmodel.availableSections.collectAsState()
+    val rawStats by viewModel.rawStats.collectAsState()
+    val filteredStats by viewModel.filteredStats.collectAsState()
+    val availableSections by viewModel.availableSections.collectAsState()
+    val selectionFocused by viewModel.selectionFocused.collectAsState()
 
     var showLoading by remember { mutableStateOf(false) }
     val updateLoading: (Boolean) -> Unit = { showLoading = it }
@@ -112,6 +115,13 @@ fun StatsScreen(
     }
 
     val focusManager = LocalFocusManager.current
+
+    BackHandler(selectionFocused) {
+        if (selectionFocused) {
+            focusManager.clearFocus()
+            viewModel.updateFocused(false)
+        }
+    }
 
     Scaffold(
         modifier = modifier
@@ -150,7 +160,8 @@ fun StatsScreen(
                     rawStats = rawStats,
                     filteredStats = filteredStats,
                     availableSections = availableSections,
-                    viewmodel = viewmodel,
+                    viewmodel = viewModel,
+                    selectionFocused = { viewModel.updateFocused(it) },
                     modifier = modifier
                         .fillMaxSize(),
                 )
@@ -165,6 +176,7 @@ private fun StatsBody(
     filteredStats: FilteredStats,
     availableSections: AvailableSections,
     viewmodel: StatsViewModel,
+    selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val separatorColor = colorScheme.secondary
@@ -244,6 +256,7 @@ private fun StatsBody(
                     rawStats = rawStats,
                     filteredStats = filteredStats,
                     availableSections = availableSections,
+                    selectionFocused = selectionFocused,
                     contracted = { if (it) contract() },
                     expanded = expanded,
                     updateExpanded = { viewmodel.updateExpanded(it) },
@@ -342,6 +355,7 @@ private fun StatsBody(
             }
         }
 
+        // TODO make a map for these sections like quick stats and do items {} loop?
         if (filteredStats.brandsByQuantity.count() > 1) {
             item {
                 HorizontalDivider(
@@ -484,6 +498,7 @@ fun QuickStatsSection(
     rawStats: RawStats,
     filteredStats: FilteredStats,
     availableSections: AvailableSections,
+    selectionFocused: (Boolean) -> Unit,
     contracted: (Boolean) -> Unit,
     expanded: Boolean,
     updateExpanded: (Boolean) -> Unit,
@@ -529,7 +544,15 @@ fun QuickStatsSection(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            SelectionContainer(Modifier.weight(1f)) {
+            SelectionContainer(Modifier
+                .weight(1f)
+                .onFocusChanged {
+                if (it.isFocused) {
+                    selectionFocused(true)
+                } else {
+                    selectionFocused(false)
+                }
+            }) {
                 Text(
                     text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
                             if (rawStats.averageRating.isNotBlank()) { "${rawStats.averageRating} average rating\n" } else { "" } +
@@ -547,7 +570,15 @@ fun QuickStatsSection(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            SelectionContainer(Modifier.weight(1f)) {
+            SelectionContainer(Modifier
+                .weight(1f)
+                .onFocusChanged {
+                    if (it.isFocused) {
+                        selectionFocused(true)
+                    } else {
+                        selectionFocused(false)
+                    }
+                }) {
                 Text(
                     text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
                             if (rawStats.averageRating.isNotBlank()) { "${filteredStats.averageRating} average rating\n" } else { "" } +
@@ -571,6 +602,7 @@ fun QuickStatsSection(
                 label = "Blend Type",
                 rawField = rawStats.totalByType,
                 filteredField = filteredStats.totalByType,
+                selectionFocused = selectionFocused,
                 modifier = Modifier
             )
         }
@@ -585,6 +617,7 @@ fun QuickStatsSection(
                             label = label,
                             rawField = raw,
                             filteredField = filtered,
+                            selectionFocused = selectionFocused,
                             modifier = Modifier
                         )
                     }
@@ -652,6 +685,7 @@ private fun StatSubSection(
     label: String,
     rawField: Map<String, Int>,
     filteredField: Map<String, Int>,
+    selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box (
@@ -685,7 +719,15 @@ private fun StatSubSection(
                 HorizontalDivider(Modifier
                     .padding(bottom = 20.dp)
                     .fillMaxWidth(.65f), 1.dp)
-                SelectionContainer(Modifier.fillMaxWidth()) {
+                SelectionContainer(Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            selectionFocused(true)
+                        } else {
+                            selectionFocused(false)
+                        }
+                    }) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -758,7 +800,13 @@ private fun StatSubSection(
                 HorizontalDivider(Modifier
                     .padding(bottom = 20.dp)
                     .fillMaxWidth(.65f), 1.dp)
-                SelectionContainer {
+                SelectionContainer(Modifier.onFocusChanged {
+                    if (it.isFocused) {
+                        selectionFocused(true)
+                    } else {
+                        selectionFocused(false)
+                    }
+                }) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
