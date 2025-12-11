@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar
 
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,14 +21,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -77,6 +81,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val application = (application as CellarApplication)
+            val gestureNavigation = gestureNavigation()
+            val isGestureNav = remember(gestureNavigation) { gestureNavigation }
 
             CompositionLocalProvider(LocalCellarApplication provides application) {
                 TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
@@ -87,7 +93,9 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
                     ) {
-                        CellarApp()
+                        CellarApp(
+                            isGestureNav = isGestureNav,
+                        )
                     }
                     SystemBarsProtection()
                 }
@@ -150,4 +158,18 @@ fun calculateNavigation(): () -> Float {
     val navigation = WindowInsets.navigationBars
     val density = LocalDensity.current
     return { navigation.getBottom(density).times(1f) }
+}
+
+@Composable
+fun gestureNavigation(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        return false
+    } else {
+        val insets = WindowInsets.systemGestures
+        val density = LocalDensity.current
+        val direction = LocalLayoutDirection.current
+        val left = insets.getLeft(density, direction)
+        val right = insets.getRight(density, direction)
+        return left > 0 && right > 0
+    }
 }
