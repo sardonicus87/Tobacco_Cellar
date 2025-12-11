@@ -148,7 +148,7 @@ fun HomeScreen(
     navigateToPlaintext: () -> Unit,
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
-    viewmodel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
@@ -156,26 +156,26 @@ fun HomeScreen(
     val columnState = rememberLazyListState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    val homeUiState by viewmodel.homeUiState.collectAsState()
-    val searchState by viewmodel.searchState.collectAsState()
-    val resetLoading by viewmodel.resetLoading.collectAsState()
-    val emptyMessage by viewmodel.emptyMessage.collectAsState()
+    val homeUiState by viewModel.homeUiState.collectAsState()
+    val searchState by viewModel.searchState.collectAsState()
+    val resetLoading by viewModel.resetLoading.collectAsState()
+    val emptyMessage by viewModel.emptyMessage.collectAsState()
 
-    val activeMenuId by remember { viewmodel.activeMenuId }
-    val isMenuShown by remember { viewmodel.itemMenuShown }
-    val onDismissMenu = viewmodel::onDismissMenu
+    val activeMenuId by remember { viewModel.activeMenuId }
+    val isMenuShown by remember { viewModel.itemMenuShown }
+    val onDismissMenu = viewModel::onDismissMenu
 
-    val columnVisibility by viewmodel.tableColumnVisibility.collectAsState()
-    val columnVisibilityEnablement by viewmodel.columnVisibilityEnablement.collectAsState()
+    val columnVisibility by viewModel.tableColumnVisibility.collectAsState()
+    val columnVisibilityEnablement by viewModel.columnVisibilityEnablement.collectAsState()
 
-    val showSnackbar by viewmodel.showSnackbar.collectAsState()
+    val showSnackbar by viewModel.showSnackbar.collectAsState()
     if (showSnackbar) {
         LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
                 message = "CSV Exported",
                 duration = SnackbarDuration.Short
             )
-            viewmodel.snackbarShown()
+            viewModel.snackbarShown()
         }
     }
 
@@ -212,11 +212,12 @@ fun HomeScreen(
         if (isNavigating) {
             delay(200)
             isNavigating = false
+            lastClickedItemId = -1
         }
     }
 
     // Important Alert stuff
-    val importantAlertState by viewmodel.importantAlertState.collectAsState()
+    val importantAlertState by viewModel.importantAlertState.collectAsState()
     if (importantAlertState.show) {
         val alert = importantAlertState.alertToDisplay!!
         val isCurrent = importantAlertState.isCurrentAlert
@@ -344,9 +345,9 @@ fun HomeScreen(
                                 enabled = false
                                 updateScroll(false)
                                 countdown = 5
-                                viewmodel.saveAlertSeen(alert.id)
+                                viewModel.saveAlertSeen(alert.id)
                             } else {
-                                viewmodel.saveAlertSeen(alert.id)
+                                viewModel.saveAlertSeen(alert.id)
                             }
                         }
                     },
@@ -386,7 +387,7 @@ fun HomeScreen(
                 navigateToPlaintext = navigateToPlaintext,
                 showMenu = true,
                 currentDestination = HomeDestination,
-                exportCsvHandler = viewmodel,
+                exportCsvHandler = viewModel,
             )
         },
         bottomBar = {
@@ -427,13 +428,13 @@ fun HomeScreen(
                 isTableView = homeUiState.isTableView,
                 emptyDatabase = homeUiState.emptyDatabase,
                 searchPerformed = searchState.searchPerformed,
-                onShowColumnPop = viewmodel::showColumnMenuToggle,
-                selectView = viewmodel::selectView,
+                onShowColumnPop = viewModel::showColumnMenuToggle,
+                selectView = viewModel::selectView,
                 filterViewModel = filterViewModel,
                 searchText = searchState.searchText,
                 currentSetting = searchState.currentSetting,
                 settingsList = searchState.settingsList,
-                saveListSorting = viewmodel::saveListSorting,
+                saveListSorting = viewModel::saveListSorting,
                 listSorting = homeUiState.listSorting,
                 filteredItems = homeUiState.sortedItems,
             )
@@ -460,19 +461,19 @@ fun HomeScreen(
                     onEditClick = navigateToEditEntry,
                     isMenuShown = isMenuShown,
                     activeMenuId = activeMenuId,
-                    onShowMenu = viewmodel::onShowMenu,
+                    onShowMenu = viewModel::onShowMenu,
                     onDismissMenu = onDismissMenu,
                     getPositionTrigger = filterViewModel::getPositionTrigger,
                     searchFocused = searchState.searchFocused,
                     searchPerformed = searchState.searchPerformed,
                     isTinSearch = searchState.isTinSearch,
                     tableSorting = homeUiState.tableSorting,
-                    updateSorting = viewmodel::updateSorting,
-                    showColumnPop = viewmodel.showColumnMenu.value,
-                    hideColumnPop = viewmodel::showColumnMenuToggle,
+                    updateSorting = viewModel::updateSorting,
+                    showColumnPop = viewModel.showColumnMenu.value,
+                    hideColumnPop = viewModel::showColumnMenuToggle,
                     columnVisibility = columnVisibility,
                     columnVisibilityEnablement = columnVisibilityEnablement,
-                    onVisibilityChange = viewmodel::updateColumnVisibility,
+                    onVisibilityChange = viewModel::updateColumnVisibility,
                     shouldScrollUp = filterViewModel::shouldScrollUp,
                     modifier = modifier
                         .fillMaxWidth()
