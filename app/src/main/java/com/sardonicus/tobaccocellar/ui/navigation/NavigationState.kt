@@ -49,6 +49,8 @@ private val cellarNavKeyModule = SerializersModule {
 fun rememberNavigationState(
     startRoute: NavKey,
     topLevelRoutes: Set<NavKey>,
+    largeScreen: Boolean = false,
+    mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
 ): NavigationState {
 
     val config = remember { SavedStateConfiguration { serializersModule = cellarNavKeyModule } }
@@ -73,19 +75,21 @@ fun rememberNavigationState(
         )
     ) { mutableStateOf(startRoute) }
 
-//    val topLevelRoute = rememberSerializable(
-//        startRoute,
-//        topLevelRoutes,
-//        MutableStateSerializer(NavKeySerializer())
-//    ) { mutableStateOf(startRoute) }
+    val backStacks = topLevelRoutes.associateWith {
+        if (largeScreen && it in mainSecondaryMap) {
+            rememberNavBackStack(it, mainSecondaryMap.getValue(it))
+        } else {
+            rememberNavBackStack(it)
+        }
+    }
 
-    val backStacks = topLevelRoutes.associateWith { rememberNavBackStack(it) }
 
-    return remember(startRoute, topLevelRoutes) {
+    return remember(startRoute, topLevelRoutes, largeScreen) {
         NavigationState(
             startRoute = startRoute,
             topLevelRoute = topLevelRoute,
             backStacks = backStacks,
+            largeScreen = largeScreen,
         )
     }
 }
@@ -94,9 +98,12 @@ fun rememberNavigationState(
 class NavigationState(
     val startRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
-    val backStacks: Map<NavKey, NavBackStack<NavKey>>
+    val backStacks: Map<NavKey, NavBackStack<NavKey>>,
+    val largeScreen: Boolean = false,
+    val mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
 ) {
     var topLevelRoute: NavKey by topLevelRoute
+
     val stacksInUse: List<NavKey>
         get() = if (topLevelRoute == startRoute) {
             listOf(startRoute)
@@ -107,8 +114,17 @@ class NavigationState(
     val canGoBack: Boolean
         get() {
             val currentStack = backStacks[topLevelRoute]
-            // We can go back if the current stack has more than one item.
-            return (currentStack?.size ?: 0) > 1
+            return (currentStack?.size ?: 0) > 1 || (topLevelRoute != startRoute)
+        }
+
+    val currentStack: List<NavKey>
+        get() { return backStacks.getValue(topLevelRoute).toList() }
+
+    val interceptBack: Boolean
+        get() {
+            val currentStack = backStacks.getValue(topLevelRoute)
+
+            return largeScreen && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
         }
 }
 
