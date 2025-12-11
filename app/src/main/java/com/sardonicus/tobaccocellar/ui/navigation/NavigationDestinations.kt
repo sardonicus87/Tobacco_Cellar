@@ -4,53 +4,89 @@ import androidx.navigation3.runtime.NavKey
 import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
 import kotlinx.serialization.Serializable
 
-@Serializable
-data object HomeDestination : NavKey
+// Used for TwoPane strategy for large screens
+enum class PaneType { MAIN, SECOND, NONE }
+interface PaneInfo {
+    val paneType: PaneType
+}
 
 @Serializable
-data class BlendDetailsDestination(val itemsId: Int) : NavKey
+data object HomeDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.MAIN
+}
 
 @Serializable
-data object HelpDestination : NavKey
+data class BlendDetailsDestination(val itemsId: Int) : NavKey, PaneInfo {
+    override val paneType = PaneType.SECOND
+}
 
 @Serializable
-data object StatsDestination : NavKey
+data object HelpDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
-data object DatesDestination : NavKey
+data object StatsDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.MAIN
+}
 
 @Serializable
-data object FilterPaneDestination : NavKey
+data object DatesDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.MAIN
+}
 
 @Serializable
-data object AddEntryDestination : NavKey
+data object FilterPaneDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.SECOND
+}
 
 @Serializable
-data class EditEntryDestination(val itemsId: Int) : NavKey
+data object AddEntryDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
-data object BulkEditDestination : NavKey
+data class EditEntryDestination(val itemsId: Int) : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
-data object SettingsDestination : NavKey
+data object BulkEditDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
-data class ChangelogDestination(val changelogEntries: List<ChangelogEntryData>) : NavKey
+data object SettingsDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE // maybe main
+}
 
 @Serializable
-data object PlaintextDestination : NavKey
+data class ChangelogDestination(val changelogEntries: List<ChangelogEntryData>) : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE // maybe second if settings main and dialogs moved to second
+}
+
+@Serializable
+data object PlaintextDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
 sealed interface CsvFlowKey : NavKey
 
 @Serializable
-data object CsvFlowDestination : NavKey
+data object CsvFlowDestination : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
-data class CsvImportDestination(val id: String) : CsvFlowKey
+data class CsvImportDestination(val id: String) : CsvFlowKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
-data object CsvHelpDestination : CsvFlowKey
+data object CsvHelpDestination : CsvFlowKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 @Serializable
 data class CsvImportResultsDestination(
@@ -61,7 +97,9 @@ data class CsvImportResultsDestination(
     val successfulTins: Int,
     val updateFlag: Boolean,
     val tinFlag: Boolean
-) : NavKey
+) : NavKey, PaneInfo {
+    override val paneType = PaneType.NONE
+}
 
 
 
