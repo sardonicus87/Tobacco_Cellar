@@ -231,57 +231,36 @@ class FilterViewModel (
 
 
     // filter applied state //
-    @Suppress("UNCHECKED_CAST")
-    val isFilterApplied: StateFlow<Boolean> = combine(
-        sheetSelectedBrands, sheetSelectedTypes, sheetSelectedFavorites,
-        sheetSelectedDislikeds, sheetSelectedInStock, sheetSelectedOutOfStock,
-        sheetSelectedExcludeBrands, sheetSelectedExcludeFavorites, sheetSelectedExcludeDislikeds,
-        sheetSelectedSubgenres, sheetSelectedCuts, sheetSelectedComponents, sheetSelectedFlavorings,
-        sheetSelectedProduction, sheetSelectedOutOfProduction, sheetSelectedHasTins,
-        sheetSelectedNoTins, sheetSelectedContainer, sheetSelectedOpened, sheetSelectedUnopened,
-        sheetSelectedFinished, sheetSelectedUnfinished, sheetSelectedUnrated, sheetSelectedRatingLow,
-        sheetSelectedRatingHigh
-    ) {
-        val brands = it[0] as List<String>
-        val types = it[1] as List<String>
-        val favorites = it[2] as Boolean
-        val dislikeds = it[3] as Boolean
-        val inStock = it[4] as Boolean
-        val outOfStock = it[5] as Boolean
-        val excludeBrands = it[6] as List<String>
-        val excludeFavorites = it[7] as Boolean
-        val excludeDislikeds = it[8] as Boolean
-        val subgenres = it[9] as List<String>
-        val cuts = it[10] as List<String>
-        val components = it[11] as List<String>
-        val flavorings = it[12] as List<String>
-        val production = it[13] as Boolean
-        val outOfProduction = it[14] as Boolean
-        val hasTins = it[15] as Boolean
-        val noTins = it[16] as Boolean
-        val container = it[17] as List<String>
-        val opened = it[18] as Boolean
-        val unopened = it[19] as Boolean
-        val finished = it[20] as Boolean
-        val unfinished = it[21] as Boolean
-        val unrated = it[22] as Boolean
-        val ratingLow = it[23] as Double?
-        val ratingHigh = it[24] as Double?
-
-        brands.isNotEmpty() ||
-            types.isNotEmpty() || favorites || dislikeds || inStock || outOfStock ||
-            excludeBrands.isNotEmpty() || excludeFavorites || excludeDislikeds ||
-            subgenres.isNotEmpty() || cuts.isNotEmpty() || components.isNotEmpty() ||
-            flavorings.isNotEmpty() || production || outOfProduction || hasTins || noTins ||
-            container.isNotEmpty() || opened || unopened || finished || unfinished || unrated ||
-            ratingLow != null || ratingHigh != null
-
+    private val listFiltersApplied = combine(
+        sheetSelectedBrands, sheetSelectedTypes, sheetSelectedExcludeBrands, sheetSelectedSubgenres,
+        sheetSelectedCuts, sheetSelectedComponents, sheetSelectedFlavorings, sheetSelectedContainer
+    ) { flows ->
+        flows.any { (it as? List<*>)?.isNotEmpty() == true }
     }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
+    private val booleanFiltersApplied = combine(
+        sheetSelectedFavorites, sheetSelectedDislikeds, sheetSelectedUnrated, sheetSelectedInStock,
+        sheetSelectedOutOfStock, sheetSelectedExcludeFavorites, sheetSelectedExcludeDislikeds,
+        sheetSelectedProduction, sheetSelectedOutOfProduction, sheetSelectedHasTins,
+        sheetSelectedNoTins, sheetSelectedOpened, sheetSelectedUnopened, sheetSelectedFinished,
+        sheetSelectedUnfinished
+    ) { flows ->
+        flows.any { it }
+    }
+    private val ratingFiltersApplied = combine(
+        sheetSelectedRatingLow, sheetSelectedRatingHigh
+    ) { low, high ->
+        low != null || high != null
+    }
+
+    val isFilterApplied: StateFlow<Boolean> = combine(
+        listFiltersApplied, booleanFiltersApplied, ratingFiltersApplied
+    ) { flows ->
+        flows.any { it }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 
 
     /** Cellar screen scroll state **/
@@ -1486,10 +1465,10 @@ class FilterViewModel (
         )
     }
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(500L),
-        initialValue = OtherSectionData()
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = OtherSectionData()
+        )
     val subgenreData: StateFlow<FilterSectionData> = generateFilterSectionData(
         availableSubgenres,
         subgenresEnabled,
@@ -1560,10 +1539,10 @@ class FilterViewModel (
         )
     }
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(500L),
-        initialValue = TinsFilterData()
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = TinsFilterData()
+        )
     val productionData: StateFlow<ProductionSectionData> = combine(
         sheetSelectedProduction,
         productionEnabled,
