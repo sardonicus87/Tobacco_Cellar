@@ -2,6 +2,8 @@ package com.sardonicus.tobaccocellar.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.SeekableTransitionState
+import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,9 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntry
@@ -24,47 +24,79 @@ import androidx.navigation3.scene.SceneStrategyScope
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 
-
 data class TwoPaneScene<T : Any>(
     override val key: Any,
     override val previousEntries: List<NavEntry<T>>,
     val mainEntry: NavEntry<T>,
     val secondEntry: NavEntry<T>,
+    val fullBackStack: List<NavEntry<T>>
 ) : Scene<T> {
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
     override val content: @Composable (() -> Unit) = {
-        val defaultTransition = fadeIn(tween(500)) togetherWith fadeOut(tween(500))
 
         Row(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.weight(.5f)) {
-                AnimatedContent(
-                    targetState = mainEntry,
+                val mainPaneState = remember { SeekableTransitionState(mainEntry) }
+                val mainTransition = rememberTransition(mainPaneState)
+
+                LaunchedEffect(mainEntry) {
+                    if (mainTransition.currentState != mainEntry) {
+                        mainPaneState.animateTo(mainEntry)
+                    } else {
+                        mainPaneState.snapTo(mainEntry)
+                    }
+                }
+
+                val transition = (mainTransition.targetState.metadata[PANE_ENTER] as? ContentTransform?)
+                    ?: (mainTransition.currentState.metadata[PANE_EXIT] as? ContentTransform)
+                    ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
+
+                val previousSTack = remember(mainTransition.currentState) { fullBackStack }
+                val isBack = isBack(previousSTack, fullBackStack)
+                val targetZIndex = if (isBack) -1f else 1f
+
+                mainTransition.AnimatedContent(
                     contentKey = { it.contentKey },
                     transitionSpec = {
-                        val enterSpec = targetState.metadata[PANE_ENTER] as? ContentTransform
-                        val exitSpec = initialState.metadata[PANE_EXIT] as? ContentTransform
-                        when {
-                            enterSpec != null -> enterSpec
-                            exitSpec != null -> exitSpec
-                            else -> defaultTransition
-                        }
+                        ContentTransform(
+                            targetContentEnter = transition.targetContentEnter,
+                            initialContentExit = transition.initialContentExit,
+                            targetContentZIndex = targetZIndex
+                        )
                     }
                 ) {
-                            it.Content()
+                    it.Content()
                 }
             }
+
             Column(modifier = Modifier.weight(.5f)) {
-                AnimatedContent(
-                    targetState = secondEntry,
+                val secondPaneState = remember { SeekableTransitionState(secondEntry) }
+                val secondTransition = rememberTransition(secondPaneState)
+
+                LaunchedEffect(secondEntry) {
+                    if (secondTransition.currentState != secondEntry) {
+                        secondPaneState.animateTo(secondEntry)
+                    } else {
+                        secondPaneState.snapTo(secondEntry)
+                    }
+                }
+
+                val transition = (secondTransition.targetState.metadata[PANE_ENTER] as? ContentTransform?)
+                    ?: (secondTransition.currentState.metadata[PANE_EXIT] as? ContentTransform)
+                    ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
+
+                val previousSTack = remember(secondTransition.currentState) { fullBackStack }
+                val isBack = isBack(previousSTack, fullBackStack)
+                val targetZIndex = if (isBack) -1f else 1f
+
+                secondTransition.AnimatedContent(
                     contentKey = { it.contentKey },
                     transitionSpec = {
-                        val enterSpec = targetState.metadata[PANE_ENTER] as? ContentTransform
-                        val exitSpec = initialState.metadata[PANE_EXIT] as? ContentTransform
-                        when {
-                            enterSpec != null -> enterSpec
-                            exitSpec != null -> exitSpec
-                            else -> defaultTransition
-                        }
+                        ContentTransform(
+                            targetContentEnter = transition.targetContentEnter,
+                            initialContentExit = transition.initialContentExit,
+                            targetContentZIndex = targetZIndex
+                        )
                     }
                 ) {
                     it.Content()
@@ -83,27 +115,21 @@ data class TwoPaneScene<T : Any>(
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
-fun <T : Any> rememberTwoPaneStrategy(): TwoPaneStrategy<T> {
+fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int): TwoPaneStrategy<T> {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val sceneKey = remember { mutableIntStateOf(0) }
-    val previousMain = remember { mutableStateOf<Any?>(null) }
-    val previousSecond = remember { mutableStateOf<Any?>(null) }
 
-    return remember(windowSizeClass) {
+    return remember(windowSizeClass, sceneKey) {
         TwoPaneStrategy(
             windowSizeClass,
-            sceneKey,
-            previousMain,
-            previousSecond
+            sceneKey
         )
     }
 }
 
+
 class TwoPaneStrategy<T : Any>(
     private val windowSizeClass: WindowSizeClass,
-    private val sceneKey: MutableState<Int>,
-    private val previousMain: MutableState<Any?>,
-    private val previousSecond: MutableState<Any?>
+    private val sceneKey: Int
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         val isLarge = windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
@@ -119,24 +145,32 @@ class TwoPaneStrategy<T : Any>(
         val mainEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.MAIN } ?: return null
         val secondEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.SECOND } ?: return null
 
-        val currentMain = mainEntry.contentKey
-        val currentSecond = secondEntry.contentKey
-        if (currentMain != previousMain.value && currentSecond != previousSecond.value) {
-            sceneKey.value++
-        }
-
-        previousMain.value = currentMain
-        previousSecond.value = currentSecond
-
         if (mainEntry.contentKey == secondEntry.contentKey) return null
 
         val previousEntries = entries.filter { it.contentKey != mainEntry.contentKey && it.contentKey != secondEntry.contentKey }
 
         return TwoPaneScene(
-                key = sceneKey,
-                previousEntries = previousEntries,
-                mainEntry = mainEntry,
-                secondEntry = secondEntry
-            )
+            key = sceneKey,
+            previousEntries = previousEntries,
+            mainEntry = mainEntry,
+            secondEntry = secondEntry,
+            fullBackStack = entries,
+        )
     }
+}
+
+private fun <T : Any> isBack(
+    oldBackStack: List<T>,
+    newBackStack: List<T>
+): Boolean {
+    // entire stack replaced
+    if (oldBackStack.first() != newBackStack.first()) return false
+    // navigated
+    if (newBackStack.size > oldBackStack.size) return false
+
+    val divergingIndex =
+        newBackStack.indices.firstOrNull { index -> newBackStack[index] != oldBackStack[index] }
+    // if newBackStack never diverged from oldBackStack, then it is a clean subset of the oldStack
+    // and is a pop
+    return divergingIndex == null && newBackStack.size != oldBackStack.size
 }
