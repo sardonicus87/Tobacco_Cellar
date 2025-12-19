@@ -22,10 +22,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -130,7 +129,6 @@ fun BlendDetailsScreen(
                     navigateToEditEntry = { navigateToEditEntry(it) },
                     selectionFocused = { viewModel.updateFocused(it) },
                     modifier = Modifier
-                        .verticalScroll(rememberScrollState())
                 )
             }
         }
@@ -145,7 +143,7 @@ fun BlendDetailsBody(
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column (
+    LazyColumn (
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
         modifier = modifier
@@ -153,183 +151,92 @@ fun BlendDetailsBody(
             .padding(horizontal = 16.dp)
     ) {
         // Header
-        Row (
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-                .padding(top = 16.dp)
-        ) {
-            Spacer(Modifier.width(24.dp))
-            // Blend name
-            Box(Modifier.weight(1f)) {
-                SelectionContainer(Modifier
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                selectionFocused(true)
-                            } else {
-                                selectionFocused(false)
+        item {
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .padding(top = 16.dp)
+            ) {
+                Spacer(Modifier.width(24.dp))
+                // Blend name
+                Box(Modifier.weight(1f)) {
+                    SelectionContainer(
+                        Modifier
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    selectionFocused(true)
+                                } else {
+                                    selectionFocused(false)
+                                }
                             }
-                        }
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top,
-                        modifier = Modifier
-                            .fillMaxWidth()
                     ) {
-                        Text(
-                            text = blendDetails.blend,
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Top,
                             modifier = Modifier
-                                .padding(bottom = 2.dp),
-                            fontSize = 30.sp,
-                            lineHeight = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 16.sp,
-                                    )
-                                ) { append("by ") }
-                                withStyle(
-                                    style = SpanStyle(
-                                        fontWeight = FontWeight.Normal,
-                                        fontStyle = FontStyle.Italic,
-                                        fontSize = 16.sp,
-                                    )
-                                ) { append(blendDetails.brand) }
-                            },
-                            modifier = Modifier
-                                .padding(bottom = 12.dp),
-                            lineHeight = 16.sp,
-                            textAlign = TextAlign.Center,
-                        )
+                                .fillMaxWidth()
+                        ) {
+                            Text(
+                                text = blendDetails.blend,
+                                modifier = Modifier
+                                    .padding(bottom = 2.dp),
+                                fontSize = 30.sp,
+                                lineHeight = 32.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                textAlign = TextAlign.Center,
+                            )
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Normal,
+                                            fontSize = 16.sp,
+                                        )
+                                    ) { append("by ") }
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Normal,
+                                            fontStyle = FontStyle.Italic,
+                                            fontSize = 16.sp,
+                                        )
+                                    ) { append(blendDetails.brand) }
+                                },
+                                modifier = Modifier
+                                    .padding(bottom = 12.dp),
+                                lineHeight = 16.sp,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
-            }
-            // Favorite/Disliked
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(24.dp)
-                    .padding(top = 0.dp),
-                contentAlignment = Alignment.TopStart
-            ) {
-                if (blendDetails.favDisIcon != null) {
-                    val tint =
-                        if (blendDetails.favDisIcon == R.drawable.heart_filled_24) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
-                    Icon(
-                        painter = painterResource(id = blendDetails.favDisIcon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(24.dp),
-                        tint = tint
-                    )
+                // Favorite/Disliked
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(24.dp)
+                        .padding(top = 0.dp),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    if (blendDetails.favDisIcon != null) {
+                        val tint =
+                            if (blendDetails.favDisIcon == R.drawable.heart_filled_24) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
+                        Icon(
+                            painter = painterResource(id = blendDetails.favDisIcon),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(24.dp),
+                            tint = tint
+                        )
+                    }
                 }
             }
         }
 
         // Blend Details
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    RoundedCornerShape(8.dp)
-                )
-                .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
-                .padding(vertical = 8.dp, horizontal = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    text = "Details",
-                    modifier = Modifier
-                        .padding(bottom = 4.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    painter = painterResource(R.drawable.edit_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .offset(y = 2.dp)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { navigateToEditEntry(blendDetails.id) },
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
-                )
-            }
-            SelectionContainer(Modifier
-                    .onFocusChanged {
-                        if (it.isFocused) {
-                            selectionFocused(true)
-                        } else {
-                            selectionFocused(false)
-                        }
-                    }
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Top,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 12.dp)
-                ) {
-                    blendDetails.itemDetails.forEach {
-                        Text(
-                            text = it,
-                            modifier = Modifier,
-                        )
-                    }
-                    if (blendDetails.rating != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                        ) {
-                            Text(
-                                text = "Rating: ",
-                                modifier = Modifier,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                            )
-                            RatingRow(
-                                rating = blendDetails.rating,
-                                modifier = Modifier,
-                                starSize = 17.dp
-                            )
-                            Text(
-                                text = "(${formatDecimal(blendDetails.rating)})",
-                                modifier = Modifier
-                                    .padding(start = 6.dp),
-                                fontSize = 12.sp,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-
-        // Notes
-        if (blendDetails.notes.isNotBlank()) {
+        item {
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Top,
@@ -340,54 +247,7 @@ fun BlendDetailsBody(
                         MaterialTheme.colorScheme.secondaryContainer,
                         RoundedCornerShape(8.dp)
                     )
-                    .background(
-                        color = LocalCustomColors.current.darkNeutral,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            ) {
-                Text(
-                    text = "Notes",
-                    modifier = Modifier
-                        .padding(bottom = 6.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-                SelectionContainer(Modifier
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                selectionFocused(true)
-                            } else {
-                                selectionFocused(false)
-                            }
-                        }
-                ) {
-                    NotesText(
-                        notes = blendDetails.notes,
-                        modifier = Modifier
-                            .padding(start = 12.dp, bottom = 8.dp)
-                    )
-                }
-            }
-        }
-
-        // Tins
-        if (blendDetails.tinsDetails.isNotEmpty()) {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Top,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer,
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        color = LocalCustomColors.current.darkNeutral,
-                        shape = RoundedCornerShape(8.dp)
-                    )
+                    .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
                     .padding(vertical = 8.dp, horizontal = 12.dp)
             ) {
                 Row(
@@ -397,27 +257,29 @@ fun BlendDetailsBody(
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = "Tins",
+                        text = "Details",
                         modifier = Modifier
-                            .padding(bottom = 6.dp),
+                            .padding(bottom = 4.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.tertiary
                     )
-
                     Spacer(Modifier.weight(1f))
-
-                    if (blendDetails.tinsTotal.isNotBlank()) {
-                        Text(
-                            text = "(${blendDetails.tinsTotal})",
-                            modifier = Modifier,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(R.drawable.edit_icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .offset(y = 2.dp)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null
+                            ) { navigateToEditEntry(blendDetails.id) },
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                    )
                 }
-                SelectionContainer(Modifier
+                SelectionContainer(
+                    Modifier
                         .onFocusChanged {
                             if (it.isFocused) {
                                 selectionFocused(true)
@@ -427,41 +289,192 @@ fun BlendDetailsBody(
                         }
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Top,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp)
                     ) {
-                        blendDetails.tinsDetails.forEach { (tin, details) ->
-                            Column(
-                                horizontalAlignment = Alignment.Start,
-                                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                        blendDetails.itemDetails.forEach {
+                            Text(
+                                text = it,
+                                modifier = Modifier,
+                            )
+                        }
+                        if (blendDetails.rating != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 12.dp)
                             ) {
-                                Column {
-                                    Text(
-                                        text = tin.tinLabel,
-                                        modifier = Modifier,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 15.sp,
-                                    )
-                                    details?.forEach {
-                                        Column(
-                                            horizontalAlignment = Alignment.Start,
-                                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                                            modifier = Modifier
-                                                .padding(start = 12.dp)
-                                        ) {
-                                            Text(
-                                                text = it.primary,
-                                                modifier = Modifier,
-                                            )
-                                            it.secondary?.let {
+                                Text(
+                                    text = "Rating: ",
+                                    modifier = Modifier,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                )
+                                RatingRow(
+                                    rating = blendDetails.rating,
+                                    modifier = Modifier,
+                                    starSize = 17.dp
+                                )
+                                Text(
+                                    text = "(${formatDecimal(blendDetails.rating)})",
+                                    modifier = Modifier
+                                        .padding(start = 6.dp),
+                                    fontSize = 12.sp,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // Notes
+        if (blendDetails.notes.isNotBlank()) {
+            item {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Top,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            color = LocalCustomColors.current.darkNeutral,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                ) {
+                    Text(
+                        text = "Notes",
+                        modifier = Modifier
+                            .padding(bottom = 6.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    SelectionContainer(
+                        Modifier
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    selectionFocused(true)
+                                } else {
+                                    selectionFocused(false)
+                                }
+                            }
+                    ) {
+                        NotesText(
+                            notes = blendDetails.notes,
+                            modifier = Modifier
+                                .padding(start = 12.dp, bottom = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Tins
+        if (blendDetails.tinsDetails.isNotEmpty()) {
+            item {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Top,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            color = LocalCustomColors.current.darkNeutral,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = "Tins",
+                            modifier = Modifier
+                                .padding(bottom = 6.dp),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+
+                        Spacer(Modifier.weight(1f))
+
+                        if (blendDetails.tinsTotal.isNotBlank()) {
+                            Text(
+                                text = "(${blendDetails.tinsTotal})",
+                                modifier = Modifier,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                    SelectionContainer(
+                        Modifier
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    selectionFocused(true)
+                                } else {
+                                    selectionFocused(false)
+                                }
+                            }
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            blendDetails.tinsDetails.forEach { (tin, details) ->
+                                Column(
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp)
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = tin.tinLabel,
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 15.sp,
+                                        )
+                                        details?.forEach {
+                                            Column(
+                                                horizontalAlignment = Alignment.Start,
+                                                verticalArrangement = Arrangement.spacedBy(
+                                                    0.dp,
+                                                    Alignment.Top
+                                                ),
+                                                modifier = Modifier
+                                                    .padding(start = 12.dp)
+                                            ) {
                                                 Text(
-                                                    text = it,
-                                                    lineHeight = 12.sp,
-                                                    modifier = Modifier
-                                                        .padding(start = 16.dp),
+                                                    text = it.primary,
+                                                    modifier = Modifier,
                                                 )
+                                                it.secondary?.let {
+                                                    Text(
+                                                        text = it,
+                                                        lineHeight = 12.sp,
+                                                        modifier = Modifier
+                                                            .padding(start = 16.dp),
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -469,12 +482,12 @@ fun BlendDetailsBody(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(6.dp))
                 }
-                Spacer(modifier = Modifier.height(6.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
