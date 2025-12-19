@@ -17,10 +17,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -137,172 +136,192 @@ fun DatesBody(
         if (loading) {
             LoadingIndicator()
         } else {
-            Column(
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                Text(
-                    text = "*Excluding \"Aging Tracker\", all date information on this screen is filter-reactive.",
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .fillMaxWidth(.9f),
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    color = LocalContentColor.current.copy(alpha= .75f),
-                )
-
-                // Aging Tracker
-                Box {
-                    val separatorColor = colorScheme.secondary
-                    Row(
+                item {
+                    Text(
+                        text = "*Excluding \"Aging Tracker\", all date information on this screen is filter-reactive.",
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(color = LocalCustomColors.current.backgroundVariant)
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Aging Tracker",
-                            modifier = Modifier
-                                .padding(start = 8.dp),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Start,
-                            color = colorScheme.onBackground
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .drawBehind {
-                                val strokeWidth = Dp.Hairline.toPx()
-                                val yOffset = size.height - strokeWidth / 2
-
-                                drawLine(
-                                    color = separatorColor,
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, strokeWidth),
-                                    strokeWidth = strokeWidth
-                                )
-
-                                drawLine(
-                                    color = separatorColor,
-                                    start = Offset(0f, yOffset),
-                                    end = Offset(size.width, yOffset),
-                                    strokeWidth = strokeWidth
-                                )
-                            }
+                            .padding(vertical = 12.dp)
+                            .fillMaxWidth(.9f),
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        color = LocalContentColor.current.copy(alpha = .75f),
                     )
                 }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    if (datesUiState.agedDueThisWeek.isNotEmpty() || datesUiState.agedDueThisMonth.isNotEmpty()) {
-                        if (datesUiState.agedDueThisWeek.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Tins ready in the next 7 days:",
-                                modifier = Modifier
-                                    .padding(bottom = 1.dp),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            AgingSection(
-                                items = datesUiState.agedDueThisWeek,
-                                navigateToDetails = navigateToDetails,
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                showTime = true
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "No tins ready this week.",
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                textAlign = TextAlign.Start,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
 
-                        if (datesUiState.agedDueThisMonth.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = "Other tins ready this month:",
-                                modifier = Modifier
-                                    .padding(bottom = 1.dp),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            AgingSection(
-                                items = datesUiState.agedDueThisMonth,
-                                navigateToDetails = navigateToDetails,
-                                showDate = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                            )
-                        } else {
-                            Text(
-                                text = "No more tins ready this month.",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                textAlign = TextAlign.Start,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(20.dp))
-                    } else {
-                        Text(
-                            text = "No tins coming of age this week or month.",
+                // Aging Tracker
+                item {
+                    Box {
+                        val separatorColor = colorScheme.secondary
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 20.dp),
-                            textAlign = TextAlign.Center
+                                .background(color = LocalCustomColors.current.backgroundVariant)
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Aging Tracker",
+                                modifier = Modifier
+                                    .padding(start = 8.dp),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Start,
+                                color = colorScheme.onBackground
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .drawBehind {
+                                    val strokeWidth = Dp.Hairline.toPx()
+                                    val yOffset = size.height - strokeWidth / 2
+
+                                    drawLine(
+                                        color = separatorColor,
+                                        start = Offset(0f, 0f),
+                                        end = Offset(size.width, strokeWidth),
+                                        strokeWidth = strokeWidth
+                                    )
+
+                                    drawLine(
+                                        color = separatorColor,
+                                        start = Offset(0f, yOffset),
+                                        end = Offset(size.width, yOffset),
+                                        strokeWidth = strokeWidth
+                                    )
+                                }
                         )
+                    }
+                }
+
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        if (datesUiState.agedDueThisWeek.isNotEmpty() || datesUiState.agedDueThisMonth.isNotEmpty()) {
+                            if (datesUiState.agedDueThisWeek.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "Tins ready in the next 7 days:",
+                                    modifier = Modifier
+                                        .padding(bottom = 1.dp),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                AgingSection(
+                                    items = datesUiState.agedDueThisWeek,
+                                    navigateToDetails = navigateToDetails,
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    showTime = true
+                                )
+                            } else {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "No tins ready this week.",
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+
+                            if (datesUiState.agedDueThisMonth.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = "Other tins ready this month:",
+                                    modifier = Modifier
+                                        .padding(bottom = 1.dp),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                AgingSection(
+                                    items = datesUiState.agedDueThisMonth,
+                                    navigateToDetails = navigateToDetails,
+                                    showDate = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                )
+                            } else {
+                                Text(
+                                    text = "No more tins ready this month.",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
+                        } else {
+                            Text(
+                                text = "No tins coming of age this week or month.",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 20.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
 
                 if (datesUiState.datesExist) {
-                    DateInfo(
-                        navigateToDetails = navigateToDetails,
-                        datesUiState = datesUiState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
-                } else {
-                    val offset = with(LocalDensity.current) { Dp.Hairline.toPx() / 2 }
-                    HorizontalDivider(
-                        Modifier.fillMaxWidth(),
-                        Dp.Hairline,
-                        colorScheme.secondary
-                    )
-                    HorizontalDivider(
-                        Modifier
-                            .fillMaxWidth()
-                            .offset(y = -offset.dp),
-                        Dp.Hairline,
-                        LocalCustomColors.current.backgroundVariant
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = "No date information found within filtered entries.",
-                        modifier = Modifier
-                            .fillMaxWidth(.75f),
-                        textAlign = TextAlign.Center,
-                        fontSize = 24.sp,
-                    )
-                    Spacer(modifier = Modifier.weight(1.25f))
+                    item {
+                        DateInfo(
+                            navigateToDetails = navigateToDetails,
+                            datesUiState = datesUiState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        )
+                    }
+                }
+
+                else {
+                    item {
+                        HorizontalDivider(
+                            Modifier.fillMaxWidth(),
+                            Dp.Hairline,
+                            colorScheme.secondary
+                        )
+                    }
+
+                    item {
+                        val offset = with(LocalDensity.current) { Dp.Hairline.toPx() / 2 }
+                        HorizontalDivider(
+                            Modifier
+                                .fillMaxWidth()
+                                .offset(y = -offset.dp),
+                            Dp.Hairline,
+                            LocalCustomColors.current.backgroundVariant
+                        )
+                    }
+
+                    item { Spacer(Modifier.weight(1f)) }
+
+                    item {
+                        Text(
+                            text = "No date information found within filtered entries.",
+                            modifier = Modifier
+                                .fillMaxWidth(.75f),
+                            textAlign = TextAlign.Center,
+                            fontSize = 24.sp,
+                        )
+                    }
+
+                    item { Spacer(Modifier.weight(1.25f)) }
                 }
             }
         }
