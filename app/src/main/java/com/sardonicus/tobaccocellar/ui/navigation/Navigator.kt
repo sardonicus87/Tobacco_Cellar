@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
-import android.util.Log
 import androidx.navigation3.runtime.NavKey
 
 class Navigator(
@@ -15,6 +14,12 @@ class Navigator(
 
         if (route in state.backStacks.keys) {
             // is a top level route, switch to that backstack
+            if (isLarge && state.topLevelRoute in mainSecondaryMap) {
+                // clear the stack of everything but main and default second before swapping routes
+                val currentStack = state.backStacks.getValue(state.topLevelRoute)
+                currentStack.removeIf { currentStack.indexOf(it) > 1 }
+            }
+
             state.topLevelRoute = route
 
             // for TwoPane compatible routes, check and if it doesn't exist, add the default
@@ -54,7 +59,6 @@ class Navigator(
 
         val (mainAfter, secondAfter) = findPanes(state.currentStack)
         if (mainBefore != mainAfter && secondBefore != secondAfter) {
-            Log.d("Navigator", "SceneKey incremented")
             state.twoPaneSceneKey.intValue++
         }
     }
@@ -64,8 +68,7 @@ class Navigator(
 
         state.cameFrom = state.currentStack.lastOrNull()
 
-        val currentStack = state.backStacks[state.topLevelRoute] ?:
-        error("Stack for ${state.topLevelRoute} not found")
+        val currentStack = state.backStacks[state.topLevelRoute] ?: error("Stack for ${state.topLevelRoute} not found")
         val currentRoute = currentStack.last()
 
         val currentRoute2: NavKey = if (isLarge && currentRoute is PaneInfo && currentRoute.paneType == PaneType.SECOND && mainSecondaryMap.containsValue(currentRoute)) {
