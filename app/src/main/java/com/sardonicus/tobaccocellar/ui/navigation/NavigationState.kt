@@ -91,6 +91,7 @@ fun rememberNavigationState(
             topLevelRoute = topLevelRoute,
             backStacks = backStacks,
             largeScreen = largeScreen,
+            mainSecondaryMap = mainSecondaryMap
         )
     }
 }
@@ -124,13 +125,6 @@ class NavigationState(
         get() { return backStacks.getValue(topLevelRoute).toList() }
 
     var cameFrom: NavKey? by mutableStateOf(currentStack.lastOrNull())
-
-    val interceptBack: Boolean
-        get() {
-            val currentStack = backStacks.getValue(topLevelRoute)
-
-            return largeScreen && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
-        }
 }
 
 
