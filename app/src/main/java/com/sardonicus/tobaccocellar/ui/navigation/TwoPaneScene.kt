@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.SeekableTransitionState
@@ -29,10 +30,13 @@ data class TwoPaneScene<T : Any>(
     override val previousEntries: List<NavEntry<T>>,
     val mainEntry: NavEntry<T>,
     val secondEntry: NavEntry<T>,
-    val fullBackStack: List<NavEntry<T>>
+    val fullBackStack: List<NavEntry<T>>,
+    val onBack: () -> Unit
 ) : Scene<T> {
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
     override val content: @Composable (() -> Unit) = {
+
+        BackHandler(enabled = true, onBack = onBack)
 
         Row(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.weight(.5f)) {
@@ -155,6 +159,7 @@ class TwoPaneStrategy<T : Any>(
             mainEntry = mainEntry,
             secondEntry = secondEntry,
             fullBackStack = entries,
+            onBack = this.onBack
         )
     }
 }
@@ -163,6 +168,9 @@ private fun <T : Any> isBack(
     oldBackStack: List<T>,
     newBackStack: List<T>
 ): Boolean {
+    // crash prevention in case something goes wrong
+    if (oldBackStack.isEmpty() || newBackStack.isEmpty()) return false
+
     // entire stack replaced
     if (oldBackStack.first() != newBackStack.first()) return false
     // navigated
