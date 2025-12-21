@@ -28,6 +28,7 @@ import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOW
 data class TwoPaneScene<T : Any>(
     override val key: Any,
     override val previousEntries: List<NavEntry<T>>,
+    val interceptBack: Boolean,
     val mainEntry: NavEntry<T>,
     val secondEntry: NavEntry<T>,
     val fullBackStack: List<NavEntry<T>>,
@@ -36,7 +37,7 @@ data class TwoPaneScene<T : Any>(
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
     override val content: @Composable (() -> Unit) = {
 
-        BackHandler(enabled = true, onBack = onBack)
+        BackHandler(enabled = interceptBack, onBack = onBack)
 
         Row(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.weight(.5f)) {
@@ -119,13 +120,14 @@ data class TwoPaneScene<T : Any>(
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
-fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int): TwoPaneStrategy<T> {
+fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean): TwoPaneStrategy<T> {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
 
-    return remember(windowSizeClass, sceneKey) {
+    return remember(windowSizeClass, sceneKey, interceptBack) {
         TwoPaneStrategy(
             windowSizeClass,
-            sceneKey
+            sceneKey,
+            interceptBack
         )
     }
 }
@@ -133,7 +135,8 @@ fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int): TwoPaneStrategy<T> {
 
 class TwoPaneStrategy<T : Any>(
     private val windowSizeClass: WindowSizeClass,
-    private val sceneKey: Int
+    private val sceneKey: Int,
+    private val interceptBack: Boolean
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         val isLarge = windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
@@ -156,6 +159,7 @@ class TwoPaneStrategy<T : Any>(
         return TwoPaneScene(
             key = sceneKey,
             previousEntries = previousEntries,
+            interceptBack = interceptBack,
             mainEntry = mainEntry,
             secondEntry = secondEntry,
             fullBackStack = entries,
