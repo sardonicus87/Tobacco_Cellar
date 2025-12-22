@@ -125,6 +125,14 @@ class NavigationState(
         get() { return backStacks.getValue(topLevelRoute).toList() }
 
     var cameFrom: NavKey? by mutableStateOf(currentStack.lastOrNull())
+
+    // For TwoPane BackHandler
+    val interceptBack: Boolean
+        get() {
+            val currentStack = backStacks.getValue(topLevelRoute)
+
+            return largeScreen && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
+        }
 }
 
 
