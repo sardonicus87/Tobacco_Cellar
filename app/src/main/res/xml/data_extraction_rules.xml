@@ -5,10 +5,10 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!--
-        <include .../>
-        <exclude .../>
-        -->
+        <include domain="sharedpref" path="."/>
+        <include domain="database" path="."/>
+        <include domain="file" path="datastore/."/>
+        <exclude domain="sharedpref" path="device.xml"/>
     </cloud-backup>
     <!--
     <device-transfer>
