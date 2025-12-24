@@ -884,7 +884,7 @@ fun ParseLinksDialog(
     modifier: Modifier = Modifier,
     preferencesRepo: PreferencesRepo
 ) {
-    val currentParseOption by preferencesRepo.parseLinks.collectAsState(initial = false)
+    val currentParseOption by preferencesRepo.parseLinks.collectAsState(initial = true)
 
     AlertDialog(
         onDismissRequest = { onDismiss() },

@@ -58,7 +58,7 @@ class SettingsViewModel(
     private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
     private val _defaultSyncOption = MutableStateFlow(false)
-    private val _parseLinks = MutableStateFlow(false)
+    private val _parseLinks = MutableStateFlow(true)
 
     private val _openDialog = MutableStateFlow<DialogType?>(null)
     val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()

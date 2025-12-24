@@ -131,7 +131,7 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[PARSE_LINKS] ?: false
+            it[PARSE_LINKS] ?: true
         }
 
     suspend fun saveParseLinksOption(parseLinks: Boolean) {
