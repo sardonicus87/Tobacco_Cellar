@@ -1,13 +1,13 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
@@ -17,34 +17,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.savedstate.serialization.SavedStateConfiguration
-import androidx.savedstate.serialization.decodeFromSavedState
-import androidx.savedstate.serialization.encodeToSavedState
-import kotlinx.serialization.PolymorphicSerializer
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
-
-private val cellarNavKeyModule = SerializersModule {
-    polymorphic(NavKey::class) {
-        subclass(HomeDestination::class)
-        subclass(BlendDetailsDestination::class)
-        subclass(HelpDestination::class)
-        subclass(StatsDestination::class)
-        subclass(DatesDestination::class)
-        subclass(FilterPaneDestination::class)
-        subclass(AddEntryDestination::class)
-        subclass(EditEntryDestination::class)
-        subclass(BulkEditDestination::class)
-        subclass(SettingsDestination::class)
-        subclass(ChangelogDestination::class)
-        subclass(PlaintextDestination::class)
-        subclass(CsvFlowDestination::class)
-        subclass(CsvImportDestination::class)
-        subclass(CsvHelpDestination::class)
-        subclass(CsvImportResultsDestination::class)
-    }
-}
+import androidx.navigation3.runtime.serialization.NavKeySerializer
+import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
 
 @Composable
 fun rememberNavigationState(
@@ -54,36 +28,36 @@ fun rememberNavigationState(
     mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
 ): NavigationState {
 
-    val config = remember { SavedStateConfiguration { serializersModule = cellarNavKeyModule } }
-
-    val topLevelRoute = rememberSaveable(
-        saver = Saver(
-            save = { state ->
-                encodeToSavedState(
-                    configuration = config,
-                    serializer = PolymorphicSerializer(NavKey::class),
-                    value = state.value
-                )
-            },
-            restore = { savedState ->
-                val restoredValue = decodeFromSavedState(
-                    configuration = config,
-                    deserializer = PolymorphicSerializer(NavKey::class),
-                    savedState = savedState,
-                )
-                mutableStateOf(restoredValue)
-            }
-        )
+    val topLevelRoute = rememberSerializable(
+        startRoute, topLevelRoutes,
+        serializer = MutableStateSerializer(NavKeySerializer())
     ) { mutableStateOf(startRoute) }
 
     val backStacks = topLevelRoutes.associateWith {
-        if (largeScreen && it in mainSecondaryMap) {
-            rememberNavBackStack(it, mainSecondaryMap.getValue(it))
-        } else {
-            rememberNavBackStack(it)
-        }
+        rememberNavBackStack(it)
     }
 
+    LaunchedEffect(largeScreen, topLevelRoutes, mainSecondaryMap) {
+        if (largeScreen) {
+            val currentStack = backStacks.getValue(topLevelRoute.value)
+            val currentTop = topLevelRoute.value
+            if (currentTop in mainSecondaryMap) {
+                val defaultSecond = mainSecondaryMap.getValue(currentTop)
+                if (!currentStack.contains(defaultSecond)) {
+                    currentStack.add(1, defaultSecond)
+                }
+            }
+        } else {
+            backStacks.forEach { (navKey, stack) ->
+                if (navKey in mainSecondaryMap) {
+                    val defaultSecond = mainSecondaryMap.getValue(navKey)
+                    if (stack.size > 1 && stack[1] == defaultSecond) {
+                        stack.remove(defaultSecond)
+                    }
+                }
+            }
+        }
+    }
 
     return remember(startRoute, topLevelRoutes, largeScreen) {
         NavigationState(
@@ -106,8 +80,6 @@ class NavigationState(
 ) {
     var topLevelRoute: NavKey by topLevelRoute
 
-    val twoPaneSceneKey = mutableIntStateOf(0)
-
     val stacksInUse: List<NavKey>
         get() = if (topLevelRoute == startRoute) {
             listOf(startRoute)
@@ -126,7 +98,9 @@ class NavigationState(
 
     var cameFrom: NavKey? by mutableStateOf(currentStack.lastOrNull())
 
-    // For TwoPane BackHandler
+    // For TwoPane Scene
+    val twoPaneSceneKey = mutableIntStateOf(0)
+
     val interceptBack: Boolean
         get() {
             val currentStack = backStacks.getValue(topLevelRoute)
@@ -152,6 +126,35 @@ fun NavigationState.toEntries(
     }
 
     return stacksInUse
-        .flatMap { decoratedEntries[it] ?: emptyList() }
+        .flatMap { stackKey ->  // decoratedEntries[it] ?: emptyList() }
+            val stackEntries = decoratedEntries[stackKey] ?: emptyList()
+
+            if (largeScreen) {
+                if (stackKey in mainSecondaryMap) {
+                    val defaultSecond = mainSecondaryMap.getValue(stackKey)
+                    val needsDefaultSecond = stackEntries.none { it == defaultSecond }
+                    if (needsDefaultSecond) {
+                        val temp = stackEntries.toMutableList()
+                        temp.add(1, entryProvider(defaultSecond))
+                        temp
+                    } else {
+                        stackEntries
+                    }
+                } else {
+                    stackEntries
+                }
+            } else {
+                if (stackKey in mainSecondaryMap) {
+                    val defaultSecond = mainSecondaryMap.getValue(stackKey)
+                    if (stackEntries.size > 1 && stackEntries[1] == defaultSecond) {
+                        stackEntries.filterIndexed { index, _ -> index != 1 }
+                    } else {
+                        stackEntries
+                    }
+                } else {
+                    stackEntries
+                }
+            }
+        }
         .toMutableStateList()
 }
