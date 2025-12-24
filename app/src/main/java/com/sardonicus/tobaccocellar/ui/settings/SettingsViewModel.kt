@@ -4,6 +4,10 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -58,6 +62,10 @@ class SettingsViewModel(
     private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
     private val _defaultSyncOption = MutableStateFlow(false)
+    private val _parseLinks = MutableStateFlow(false)
+
+    private val _openDialog = MutableStateFlow<DialogType?>(null)
+    val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
 
     private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
     val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
@@ -70,6 +78,33 @@ class SettingsViewModel(
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+
+    val displaySettings = listOf(
+        SettingsDialog("Theme", "Change the theme of the app", DialogType.Theme),
+        SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list", DialogType.Ratings),
+        SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list", DialogType.TypeGenre),
+        SettingsDialog("Cellar Quantity Display", "Change quantity display in list", DialogType.QuantityDisplay),
+        SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes", DialogType.ParseLinks)
+    )
+
+    val databaseSettings = listOf(
+        SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", DialogType.TinRates),
+        SettingsDialog("Fix/Update Tin Sync Quantity", "Recalculate quantities for synced entries", DialogType.Recalculate),
+        SettingsDialog("Default Sync Tins Option", "Set default tin sync option", DialogType.DefaultSync),
+        SettingsDialog("Clean & Optimize Database", "Clean and optimize database", DialogType.Optimize),
+        SettingsDialog("Backup", "Backup database/settings", DialogType.Backup),
+        SettingsDialog("Restore", "Restore database/settings", DialogType.Restore),
+        SettingsDialog("Delete Database", "Delete all items", DialogType.DeleteAll)
+    )
+
+
+    fun showDialog(dialog: DialogType) {
+        val noDialog = listOf(DialogType.Recalculate, DialogType.Optimize)
+        if (dialog !in noDialog) _openDialog.value = dialog else _openDialog.value = null
+    }
+
+    fun dismissDialog() { _openDialog.value = null }
 
     fun showSnackbar(message: String) { _snackbarState.value = SnackbarState(true, message) }
 
@@ -149,6 +184,16 @@ class SettingsViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.parseLinks.first().let {
+                    _parseLinks.value = it
+                    if (it) {
+                        preferencesRepo.saveParseLinksOption(true)
+                    }
+                }
+            }
+        }
     }
 
 
@@ -215,6 +260,12 @@ class SettingsViewModel(
         }
     }
 
+    fun saveParseLinksOption(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveParseLinksOption(option)
+        }
+    }
+
 
     /** Database Settings **/
     fun setDefaultSyncOption(option: Boolean) {
@@ -264,11 +315,11 @@ class SettingsViewModel(
             val gramsRate = gramsConversion ?: preferencesRepo.tinGramsConversionRate.first()
 
             try {
-                allSyncItems.forEach {
-                    val tins = it.tins.filter { !it.finished }
+                allSyncItems.forEach { items ->
+                    val tins = items.tins.filter { !it.finished }
                     val syncQuantity = calculateSyncTins(tins, ozRate, gramsRate)
                     itemsRepository.updateItem(
-                        it.items.copy(
+                        items.items.copy(
                             quantity = syncQuantity,
                         )
                     )
@@ -475,6 +526,7 @@ class SettingsViewModel(
                             if (!fileContentState.databasePresent) {
                                 try {
                                     restoreSettings(settingsBytes)
+                                    updateTinSync(runSilent = true)
                                     message = "File missing database data, settings restored."
                                 } catch (e: Exception) {
                                     println("Exception: $e")
@@ -507,6 +559,7 @@ class SettingsViewModel(
                     else if (restoreState.settingsChecked) {
                         if (fileContentState.settingsPresent) {
                             restoreSettings(settingsBytes)
+                            updateTinSync(runSilent = true)
                             message = "Settings restored."
                         } else {
                             message = "Backup file does not contain settings data."
@@ -721,6 +774,28 @@ class SettingsViewModel(
 }
 
 
+data class SettingsDialog(
+    val title: String,
+    val description: String,
+    val dialogType: DialogType
+)
+
+sealed class DialogType {
+    object Theme : DialogType()
+    object Ratings : DialogType()
+    object TypeGenre : DialogType()
+    object QuantityDisplay : DialogType()
+    object ParseLinks : DialogType()
+
+    object TinRates : DialogType()
+    object Recalculate : DialogType()
+    object DefaultSync : DialogType()
+    object Optimize : DialogType()
+    object Backup : DialogType()
+    object Restore : DialogType()
+    object DeleteAll : DialogType()
+}
+
 enum class ThemeSetting(val value: String) {
     LIGHT("Light"),
     DARK("Dark"),
@@ -889,6 +964,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
     val defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first().toString()
     val columnVisibility = preferencesRepo.tableColumnsHidden.first().joinToString(", ") { it }
+    val parseLinksOption = preferencesRepo.parseLinks.first().toString()
 
     return """
             tableView=$tableView
@@ -906,6 +982,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             exportRating=$exportRating
             defaultSyncTinsOption=$defaultSyncTinsOption
             columnVisibility=$columnVisibility
+            parseLinksOption=$parseLinksOption
         """.trimIndent()
 }
 
@@ -971,6 +1048,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     val columns = value.split(", ").toSet()
                     preferencesRepo.saveTableColumnsHidden(columns)
                 }
+                "parseLinksOption" -> preferencesRepo.saveParseLinksOption(value.toBoolean())
             }
         }
     }

@@ -23,11 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
@@ -101,16 +100,16 @@ fun SettingsScreen(
     onNavigateUp: () -> Unit,
     navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     canNavigateBack: Boolean = true,
-    viewmodel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    val ozRate by viewmodel.tinOzConversionRate.collectAsState()
-    val gramsRate by viewmodel.tinGramsConversionRate.collectAsState()
-    val snackbarState by viewmodel.snackbarState.collectAsState()
+    val ozRate by viewModel.tinOzConversionRate.collectAsState()
+    val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
+    val snackbarState by viewModel.snackbarState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val loading by viewmodel.loading.collectAsState()
+    val loading by viewModel.loading.collectAsState()
 
     if (snackbarState.show) {
         LaunchedEffect(snackbarState) {
@@ -118,13 +117,13 @@ fun SettingsScreen(
                 message = snackbarState.message,
                 duration = SnackbarDuration.Short
             )
-            viewmodel.snackbarShown()
+            viewModel.snackbarShown()
         }
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            viewmodel.snackbarShown()
+            viewModel.snackbarShown()
         }
     }
 
@@ -166,16 +165,16 @@ fun SettingsScreen(
         ) {
             Box {
                 SettingsBody(
-                    viewmodel = viewmodel,
-                    preferencesRepo = viewmodel.preferencesRepo,
+                    viewModel = viewModel,
+                    preferencesRepo = viewModel.preferencesRepo,
                     navigateToChangelog = { navigateToChangelog(it) },
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
-                    updateTinSync = { viewmodel.updateTinSync() },
-                    optimizeDatabase = { viewmodel.optimizeDatabase() },
+                    updateTinSync = { viewModel.updateTinSync() },
+                    optimizeDatabase = { viewModel.optimizeDatabase() },
                     onDeleteAllClick = {
                         coroutineScope.launch {
-                            viewmodel.deleteAllItems()
+                            viewModel.deleteAllItems()
                         }
                     },
                     modifier = modifier
@@ -194,7 +193,7 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsBody(
-    viewmodel: SettingsViewModel,
+    viewModel: SettingsViewModel,
     preferencesRepo: PreferencesRepo,
     navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     tinOzConversionRate: Double,
@@ -204,198 +203,196 @@ private fun SettingsBody(
     onDeleteAllClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showThemeDialog by rememberSaveable { mutableStateOf(false) }
-    var showRatingsDialog by rememberSaveable { mutableStateOf(false) }
-    var showTypeGenreDialog by rememberSaveable { mutableStateOf(false) }
-    var showQuantityDialog by rememberSaveable { mutableStateOf(false) }
-
-    var showDefaultSync by rememberSaveable { mutableStateOf(false) }
-    var showTinRates by rememberSaveable { mutableStateOf(false) }
-    var backup by rememberSaveable { mutableStateOf(false) }
-    var restore by rememberSaveable { mutableStateOf(false) }
-    var deleteAllConfirm by rememberSaveable { mutableStateOf(false) }
+    val openDialog by viewModel.openDialog.collectAsState()
 
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
     ) {
         it?.let {
-            viewmodel.saveBackup(context, it)
+            viewModel.saveBackup(context, it)
         }
     }
     val openLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) {
         it?.let {
-            viewmodel.restoreBackup(context, it)
+            viewModel.restoreBackup(context, it)
         }
     }
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(0.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(0.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
-        Spacer(Modifier.height(16.dp))
+        item { Spacer(Modifier.height(16.dp)) }
 
-        DisplaySettings(
-            showThemeDialog = { showThemeDialog = it },
-            showRatingsDialog = { showRatingsDialog = it },
-            showTypeGenreDialog = { showTypeGenreDialog = it },
-            showQuantityDialog = { showQuantityDialog = it },
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                    RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(vertical = 8.dp, horizontal = 12.dp)
-        )
+        item {
+            DisplaySettings(
+                viewModel = viewModel,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
+            )
+        }
 
-        DatabaseSettings(
-            updateTinSync = updateTinSync,
-            showDefaultSync = { showDefaultSync = it },
-            showTinRates = { showTinRates = it },
-            optimizeDatabase = optimizeDatabase,
-            showBackup = { backup = it },
-            showRestore = { restore = it },
-            deleteAllConfirm = { deleteAllConfirm = it },
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                    RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(vertical = 8.dp, horizontal = 12.dp)
-        )
+        item {
+            DatabaseSettings(
+                viewModel = viewModel,
+                updateTinSync = updateTinSync,
+                optimizeDatabase = optimizeDatabase,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
+            )
+        }
 
-        AboutSection(
-            navigateToChangelog = { navigateToChangelog(it) },
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                    RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(vertical = 8.dp, horizontal = 12.dp)
-        )
+        item {
+            AboutSection(
+                navigateToChangelog = { navigateToChangelog(it) },
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(
+                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
+            )
+        }
+    }
 
-        // Popup settings dialogs
-        if (showThemeDialog) {
+    when (openDialog) {
+        DialogType.Theme -> {
             ThemeDialog(
-                onThemeSelected = { viewmodel.saveThemeSetting(it) },
+                onThemeSelected = { viewModel.saveThemeSetting(it) },
                 preferencesRepo = preferencesRepo,
-                onClose = { showThemeDialog = false }
+                onClose = { viewModel.dismissDialog() }
             )
         }
-        if (showRatingsDialog) {
-            RatingsDialog(
-                onDismiss = { showRatingsDialog = false },
-                preferencesRepo = preferencesRepo,
-                modifier = Modifier,
-                onRatingsOption = { viewmodel.saveShowRatingOption(it) }
-            )
-        }
-        if (showTypeGenreDialog) {
-            val enablement by viewmodel.typeGenreOptionEnablement.collectAsState()
+        DialogType.Ratings -> {
+                RatingsDialog(
+                    onDismiss = { viewModel.dismissDialog() },
+                    preferencesRepo = preferencesRepo,
+                    modifier = Modifier,
+                    onRatingsOption = { viewModel.saveShowRatingOption(it) }
+                )
+            }
+        DialogType.TypeGenre -> {
+            val enablement by viewModel.typeGenreOptionEnablement.collectAsState()
             TypeGenreDialog(
-                onDismiss = { showTypeGenreDialog = false },
+                onDismiss = { viewModel.dismissDialog() },
                 preferencesRepo = preferencesRepo,
                 optionEnablement = enablement,
                 modifier = Modifier,
-                onTypeGenreOption = { viewmodel.saveTypeGenreOption(it) }
+                onTypeGenreOption = { viewModel.saveTypeGenreOption(it) }
             )
         }
-        if (showQuantityDialog) {
+        DialogType.QuantityDisplay -> {
             QuantityDialog(
-                onDismiss = { showQuantityDialog = false },
+                onDismiss = { viewModel.dismissDialog() },
                 preferencesRepo = preferencesRepo,
                 modifier = Modifier,
-                onQuantityOption = { viewmodel.saveQuantityOption(it) }
+                onQuantityOption = { viewModel.saveQuantityOption(it) }
             )
         }
+        DialogType.ParseLinks -> {
+                ParseLinksDialog(
+                    onDismiss = { viewModel.dismissDialog() },
+                    preferencesRepo = preferencesRepo,
+                    modifier = Modifier,
+                    onParseLinksOption = { viewModel.saveParseLinksOption(it) }
+                )
+            }
 
-        if (showDefaultSync) {
+        DialogType.DefaultSync -> {
             DefaultSyncDialog(
-                onDismiss = { showDefaultSync = false },
-                onDefaultSync = { viewmodel.setDefaultSyncOption(it) },
+                onDismiss = { viewModel.dismissDialog() },
+                onDefaultSync = { viewModel.setDefaultSyncOption(it) },
                 preferencesRepo = preferencesRepo,
                 modifier = Modifier
             )
         }
-        if (showTinRates) {
+        DialogType.TinRates -> {
             TinRatesDialog(
-                onDismiss = { showTinRates = false },
+                onDismiss = { viewModel.dismissDialog() },
                 ozRate = tinOzConversionRate,
                 gramsRate = tinGramsConversionRate,
                 onSave = { ozRate, gramsRate ->
-                    viewmodel.setTinConversionRates(ozRate, gramsRate)
-                    showTinRates = false
+                    viewModel.setTinConversionRates(ozRate, gramsRate)
+                    viewModel.dismissDialog()
                 },
                 modifier = Modifier
             )
         }
-        if (backup) {
-            BackupDialog(
-                onDismiss = { backup = false },
-                onSave = {
-                    backup = false
-                    launcher.launch(it)
-                },
-                viewmodel = viewmodel,
-                modifier = Modifier
-            )
-        }
-        if (restore) {
+        DialogType.Backup -> {
+                BackupDialog(
+                    onDismiss = { viewModel.dismissDialog() },
+                    onSave = {
+                        launcher.launch(it)
+                        viewModel.dismissDialog()
+                    },
+                    viewmodel = viewModel,
+                    modifier = Modifier
+                )
+            }
+        DialogType.Restore -> {
             RestoreDialog(
-                onDismiss = { restore = false },
+                onDismiss = { viewModel.dismissDialog() },
                 onRestore = {
-                    restore = false
                     openLauncher.launch(arrayOf("application/octet-stream"))
+                    viewModel.dismissDialog()
                 },
-                viewmodel = viewmodel,
+                viewmodel = viewModel,
                 modifier = Modifier
             )
         }
-        if (deleteAllConfirm) {
+        DialogType.DeleteAll -> {
             DeleteAllDialog(
                 onDeleteConfirm = {
-                    deleteAllConfirm = false
                     onDeleteAllClick()
+                    viewModel.dismissDialog()
                 },
-                onDeleteCancel = { deleteAllConfirm = false },
+                onDeleteCancel = { viewModel.dismissDialog() },
                 modifier = Modifier
                     .padding(0.dp)
             )
         }
-
+        DialogType.Recalculate -> { }
+        DialogType.Optimize -> { }
+        null -> { }
     }
 }
 
+
 @Composable
 fun DisplaySettings(
-    showThemeDialog: (Boolean) -> Unit,
-    showQuantityDialog: (Boolean) -> Unit,
-    showRatingsDialog: (Boolean) -> Unit,
-    showTypeGenreDialog: (Boolean) -> Unit,
+    viewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -411,66 +408,21 @@ fun DisplaySettings(
                 .padding(bottom = 4.dp),
             fontSize = 16.sp
         )
-        TextButton(
-            onClick = { showThemeDialog(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Theme",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showRatingsDialog(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Cellar Ratings Visibility",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showTypeGenreDialog(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Cellar Type/Subgenre Display",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showQuantityDialog(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text (
-                text = "Cellar Quantity Display",
-                modifier = Modifier,
-                fontSize = 14.sp,
+        viewModel.displaySettings.forEach {
+            SettingsButton(
+                text = it.title,
+                onClick = { viewModel.showDialog(it.dialogType) }
             )
         }
     }
 }
 
+
 @Composable
 fun DatabaseSettings(
+    viewModel: SettingsViewModel,
     updateTinSync: () -> Unit,
-    showDefaultSync: (Boolean) -> Unit,
-    showTinRates: (Boolean) -> Unit,
     optimizeDatabase: () -> Unit,
-    showBackup: (Boolean) -> Unit,
-    showRestore: (Boolean) -> Unit,
-    deleteAllConfirm: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -486,95 +438,46 @@ fun DatabaseSettings(
                 .padding(bottom = 4.dp),
             fontSize = 16.sp
         )
-        TextButton(
-            onClick = { showTinRates(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ){
-            Text(
-                text = "Tin Conversion Rates",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { updateTinSync() },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Fix/Update Tin Sync Quantity",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showDefaultSync(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ){
-            Text(
-                text = "Default Sync Tins Option",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { optimizeDatabase() },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Clean & Optimize Database",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
-        TextButton(
-            onClick = { showBackup(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Backup",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
-        }
+        viewModel.databaseSettings.forEach {
+            val onClickOverride:  () -> Unit =
+                when (it.dialogType) {
+                    DialogType.Recalculate -> { { updateTinSync() } }
+                    DialogType.Optimize -> { { optimizeDatabase() } }
+                    else -> { { viewModel.showDialog(it.dialogType) } }
+                }
+            val color = if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.primary
 
-        TextButton(
-            onClick = { showRestore(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Restore",
-                modifier = Modifier,
-                fontSize = 14.sp,
+            SettingsButton(
+                text = it.title,
+                onClick = onClickOverride,
+                color = color
             )
         }
-        TextButton(
-            onClick = { deleteAllConfirm(true) },
-            contentPadding = PaddingValues(8.dp, 3.dp),
-            modifier = Modifier
-                .heightIn(28.dp, 28.dp)
-        ) {
-            Text(
-                text = "Delete Database",
-                modifier = Modifier,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
     }
 }
+
+@Composable
+fun SettingsButton(
+    text: String,
+    onClick: () -> Unit,
+    color: Color = MaterialTheme.colorScheme.primary,
+) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(8.dp, 3.dp),
+        modifier = Modifier
+            .heightIn(28.dp, 28.dp),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier,
+            fontSize = 14.sp,
+            color = color
+        )
+    }
+}
+
 
 @Composable
 fun AboutSection(
@@ -905,7 +808,6 @@ fun TypeGenreDialog(
     )
 }
 
-
 @Composable
 fun QuantityDialog(
     onDismiss: () -> Unit,
@@ -957,6 +859,61 @@ fun QuantityDialog(
                             fontSize = 15.sp,
                         )
                     }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+fun ParseLinksDialog(
+    onDismiss: () -> Unit,
+    onParseLinksOption: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    preferencesRepo: PreferencesRepo
+) {
+    val currentParseOption by preferencesRepo.parseLinks.collectAsState(initial = false)
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Row(
+                modifier = modifier
+                    .padding(bottom = 0.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Parse links in notes:",
+                    modifier = Modifier,
+                    fontSize = 16.sp,
+                    color = LocalContentColor.current
+                )
+                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                    Switch(
+                        checked = currentParseOption,
+                        onCheckedChange = { onParseLinksOption(it) },
+                        modifier = Modifier
+                            .requiredHeight(20.dp)
+                            .scale(.7f)
+                            .padding(start = 10.dp),
+                        colors = SwitchDefaults.colors(
+                        )
+                    )
                 }
             }
         },
