@@ -43,6 +43,8 @@ class PreferencesRepo(
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
+        val PARSE_LINKS = booleanPreferencesKey("parse_links")
+
         val SHOW_RATING = booleanPreferencesKey("show_rating")
         val TYPE_GENRE_OPTION = stringPreferencesKey("type_genre_option")
         val LIST_SORTING = stringPreferencesKey("list_sorting")
@@ -117,6 +119,24 @@ class PreferencesRepo(
     suspend fun saveQuantityPreference(option: String) {
         dataStore.edit { preferences ->
             preferences[QUANTITY_OPTION] = option
+        }
+    }
+
+    val parseLinks: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading link preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PARSE_LINKS] ?: false
+        }
+
+    suspend fun saveParseLinksOption(parseLinks: Boolean) {
+        dataStore.edit {
+            it[PARSE_LINKS] = parseLinks
         }
     }
 
