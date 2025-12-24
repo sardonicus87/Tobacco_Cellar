@@ -55,11 +55,11 @@ fun ChangelogScreen (
                 canNavigateBack = true,
             )
         },
-    ) {
+    ) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(innerPadding),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
         ) {
