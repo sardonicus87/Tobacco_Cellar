@@ -2,10 +2,15 @@ package com.sardonicus.tobaccocellar.ui.details
 
 import android.content.res.Configuration
 import android.content.res.Resources
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -51,6 +56,9 @@ class BlendDetailsViewModel(
     private val _selectionFocused = MutableStateFlow(false)
     val selectionFocused = _selectionFocused.asStateFlow()
 
+    private val _parseLinks = MutableStateFlow(false)
+    val parseLinks = _parseLinks.asStateFlow()
+
     init {
         refreshData()
         viewModelScope.launch {
@@ -59,6 +67,9 @@ class BlendDetailsViewModel(
                     refreshData()
                 }
             }
+        }
+        viewModelScope.launch {
+            _parseLinks.value = preferencesRepo.parseLinks.first()
         }
     }
 
@@ -76,24 +87,24 @@ class BlendDetailsViewModel(
 
             itemsRepository.getItemDetailsStream(itemsId)
                 .filterNotNull()
-                .collectLatest {
+                .collectLatest { item ->
                     val details = BlendDetails(
-                        id = it.items.id,
-                        brand = it.items.brand,
-                        blend = it.items.blend,
-                        favDisIcon = if (it.items.favorite) R.drawable.heart_filled_24 else if (it.items.disliked) R.drawable.heartbroken_filled_24 else null,
+                        id = item.items.id,
+                        brand = item.items.brand,
+                        blend = item.items.blend,
+                        favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
                         itemDetails = setOfNotNull(
-                            buildDetailsString("Type: ", it.items.type.ifBlank { "Unassigned" }),
-                            buildDetailsString("Subgenre: ", it.items.subGenre),
-                            buildDetailsString("Cut: ", it.items.cut),
-                            buildDetailsString("Components: ", it.components.map { it.componentName }.sorted().joinToString(", ")),
-                            buildDetailsString("Flavors: ", it.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
-                            buildDetailsString("Production Status: ", if (it.items.inProduction) "in production" else "not in production"),
-                            buildDetailsString("No. of Tins: ", it.items.quantity.toString())
+                            buildDetailsString("Type: ", item.items.type.ifBlank { "Unassigned" }),
+                            buildDetailsString("Subgenre: ", item.items.subGenre),
+                            buildDetailsString("Cut: ", item.items.cut),
+                            buildDetailsString("Components: ", item.components.map { it.componentName }.sorted().joinToString(", ")),
+                            buildDetailsString("Flavors: ", item.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
+                            buildDetailsString("Production Status: ", if (item.items.inProduction) "in production" else "not in production"),
+                            buildDetailsString("No. of Tins: ", item.items.quantity.toString())
                         ),
-                        rating = it.items.rating,
-                        notes = it.items.notes,
-                        tinsDetails = it.tins.associateWith { tin ->
+                        rating = item.items.rating,
+                        notes = item.items.notes,
+                        tinsDetails = item.tins.associateWith { tin ->
                             buildSet {
                                 buildDetailsString("Container: ", tin.container)?.let { add(DetailLine(it)) }
                                 buildDetailsString("Quantity: ", if (tin.unit.isNotBlank()) { formatDecimal(tin.tinQuantity) + " ${tin.unit}" } else "")
@@ -118,7 +129,7 @@ class BlendDetailsViewModel(
                                 }
                             }
                         },
-                        tinsTotal = if (it.tins.any { it.tinQuantity > 0 && !it.finished }) calculateTotal(it.tins.filter { !it.finished }, quantityRemap) else ""
+                        tinsTotal = if (item.tins.any { it.tinQuantity > 0 && !it.finished }) calculateTotal(item.tins.filter { !it.finished }, quantityRemap) else ""
                     )
                     _blendDetails.value = details
                     _loadingFinished.value = true
@@ -194,6 +205,72 @@ class BlendDetailsViewModel(
             withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
         }
         return string
+    }
+
+    fun parseHyperlinks(text: String, color: Color, linkListener: LinkInteractionListener, parseLinks: Boolean): AnnotatedString {
+        if (text.isBlank()) return AnnotatedString("")
+
+        if (!parseLinks) return buildAnnotatedString { append(text) }
+
+        val urlRegex = Regex("""(https?://|www\.)[a-zA-Z0-9_./-]*[a-zA-Z0-9_/-]""")
+        val annotatedString = buildAnnotatedString {
+            val matches = urlRegex.findAll(text)
+            var lastIndex = 0
+
+            for (match in matches) {
+                val startIndex = match.range.first
+                val endIndex = match.range.last + 1
+
+                if (startIndex > lastIndex) {
+                    append(text.substring(lastIndex, startIndex))
+                }
+
+                val url = match.value
+                val annotatedUrl = if (url.startsWith("www.")) "https://$url" else url
+
+                pushLink(
+                    LinkAnnotation.Url(
+                        url = annotatedUrl,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = color,
+                                fontWeight = FontWeight.Normal,
+                                textDecoration = TextDecoration.Underline
+                            ),
+                            focusedStyle = SpanStyle(
+                                color = color,
+                                fontWeight = FontWeight.Normal,
+                                textDecoration = TextDecoration.Underline,
+                                background = color.copy(alpha = 0.2f)
+                            ),
+                            hoveredStyle = SpanStyle(
+                                color = color,
+                                fontWeight = FontWeight.Normal,
+                                textDecoration = TextDecoration.Underline,
+                                background = color.copy(alpha = 0.2f)
+                            ),
+                            pressedStyle = SpanStyle(
+                                color = color,
+                                fontWeight = FontWeight.Normal,
+                                textDecoration = TextDecoration.Underline,
+                                background = color.copy(alpha = 0.2f)
+                            ),
+                        ),
+                        linkInteractionListener = linkListener
+                    )
+                )
+                append(url)
+                pop()
+
+                lastIndex = endIndex
+            }
+
+            if (lastIndex < text.length) {
+                append(text.substring(lastIndex))
+            }
+        }
+
+        return annotatedString
     }
 
 }

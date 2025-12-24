@@ -41,11 +41,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -126,6 +131,7 @@ fun BlendDetailsScreen(
             ) {
                 BlendDetailsBody(
                     blendDetails = blendDetails,
+                    viewModel = viewModel,
                     navigateToEditEntry = { navigateToEditEntry(it) },
                     selectionFocused = { viewModel.updateFocused(it) },
                     modifier = Modifier
@@ -139,6 +145,7 @@ fun BlendDetailsScreen(
 @Composable
 fun BlendDetailsBody(
     blendDetails: BlendDetails,
+    viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -371,6 +378,7 @@ fun BlendDetailsBody(
                     ) {
                         NotesText(
                             notes = blendDetails.notes,
+                            viewModel = viewModel,
                             modifier = Modifier
                                 .padding(start = 12.dp, bottom = 8.dp)
                         )
@@ -453,7 +461,7 @@ fun BlendDetailsBody(
                                             fontWeight = FontWeight.SemiBold,
                                             fontSize = 15.sp,
                                         )
-                                        details?.forEach {
+                                        details?.forEach { detailLine ->
                                             Column(
                                                 horizontalAlignment = Alignment.Start,
                                                 verticalArrangement = Arrangement.spacedBy(
@@ -464,10 +472,10 @@ fun BlendDetailsBody(
                                                     .padding(start = 12.dp)
                                             ) {
                                                 Text(
-                                                    text = it.primary,
+                                                    text = detailLine.primary,
                                                     modifier = Modifier,
                                                 )
-                                                it.secondary?.let {
+                                                detailLine.secondary?.let {
                                                     Text(
                                                         text = it,
                                                         lineHeight = 12.sp,
@@ -495,6 +503,7 @@ fun BlendDetailsBody(
 @Composable
 fun NotesText(
     notes: String,
+    viewModel: BlendDetailsViewModel,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = 14.sp,
 ) {
@@ -502,17 +511,28 @@ fun NotesText(
     val blankLine = 10.sp
     val blankLineHeight: Dp = with(LocalDensity.current) { blankLine.toDp() }
 
+    val parseLinks by viewModel.parseLinks.collectAsState()
+    val uriHandler = LocalUriHandler.current
+    val hapticFeedback = LocalHapticFeedback.current
+    val linkListener = LinkInteractionListener { link ->
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+        (link as? LinkAnnotation.Url)?.let {
+            uriHandler.openUri(it.url)
+        }
+    }
+
     Column(
         modifier = modifier
     ) {
-        lines.forEach {
-            if (it.isEmpty()) {
+        lines.forEach { line ->
+            if (line.isEmpty()) {
                 Spacer(Modifier.height(blankLineHeight))
             } else {
+
                 Text(
-                    text = it,
-                    modifier = Modifier,
+                    text = viewModel.parseHyperlinks(line, MaterialTheme.colorScheme.primary, linkListener, parseLinks),
                     fontSize = fontSize,
+                    modifier = Modifier
                 )
             }
         }
