@@ -40,12 +40,13 @@ data class TwoPaneScene<T : Any>(
         BackHandler(enabled = interceptBack, onBack = onBack)
 
         Row(modifier = Modifier.fillMaxSize()) {
+            // Main pane
             Column(modifier = Modifier.weight(.5f)) {
                 val mainPaneState = remember { SeekableTransitionState(mainEntry) }
                 val mainTransition = rememberTransition(mainPaneState)
 
                 LaunchedEffect(mainEntry) {
-                    if (mainTransition.currentState != mainEntry) {
+                    if (mainPaneState.currentState != mainEntry) {
                         mainPaneState.animateTo(mainEntry)
                     } else {
                         mainPaneState.snapTo(mainEntry)
@@ -56,8 +57,8 @@ data class TwoPaneScene<T : Any>(
                     ?: (mainTransition.currentState.metadata[PANE_EXIT] as? ContentTransform)
                     ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
 
-                val previousSTack = remember(mainTransition.currentState) { fullBackStack }
-                val isBack = isBack(previousSTack, fullBackStack)
+                val priorStack = remember(mainTransition.currentState) { fullBackStack }
+                val isBack = isBack(priorStack, fullBackStack)
                 val targetZIndex = if (isBack) -1f else 1f
 
                 mainTransition.AnimatedContent(
@@ -74,12 +75,13 @@ data class TwoPaneScene<T : Any>(
                 }
             }
 
+            // Second pane
             Column(modifier = Modifier.weight(.5f)) {
                 val secondPaneState = remember { SeekableTransitionState(secondEntry) }
                 val secondTransition = rememberTransition(secondPaneState)
 
                 LaunchedEffect(secondEntry) {
-                    if (secondTransition.currentState != secondEntry) {
+                    if (secondPaneState.currentState != secondEntry) {
                         secondPaneState.animateTo(secondEntry)
                     } else {
                         secondPaneState.snapTo(secondEntry)
@@ -90,8 +92,8 @@ data class TwoPaneScene<T : Any>(
                     ?: (secondTransition.currentState.metadata[PANE_EXIT] as? ContentTransform)
                     ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
 
-                val previousSTack = remember(secondTransition.currentState) { fullBackStack }
-                val isBack = isBack(previousSTack, fullBackStack)
+                val priorStack = remember(secondTransition.currentState) { fullBackStack }
+                val isBack = isBack(priorStack, fullBackStack)
                 val targetZIndex = if (isBack) -1f else 1f
 
                 secondTransition.AnimatedContent(
