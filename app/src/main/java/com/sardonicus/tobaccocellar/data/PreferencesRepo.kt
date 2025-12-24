@@ -166,8 +166,8 @@ class PreferencesRepo(
             } else {
                 throw it
             }
-        }.map {
-            val savedValue = it[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
+        }.map { preferences ->
+            val savedValue = preferences[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
             TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
         }
 

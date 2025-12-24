@@ -855,14 +855,14 @@ fun CsvImportBody(
                                 MaxValueField(
                                     label = "Max Possible\nCSV Rating:",
                                     maxValue = mappingOptions.maxValueString,
-                                    onMaxValueChange = {
-                                        if (it.matches(pattern)) {
+                                    onMaxValueChange = { string ->
+                                        if (string.matches(pattern)) {
                                             var parsedDouble: Double?
 
-                                            if (it.isNotBlank()) {
-                                                val preNumber = if (it.startsWith(decimalSeparator)) {
-                                                    "0$it"
-                                                } else it
+                                            if (string.isNotBlank()) {
+                                                val preNumber = if (string.startsWith(decimalSeparator)) {
+                                                    "0$string"
+                                                } else string
 
                                                 val number = numberFormat.parse(preNumber)
                                                 parsedDouble = number?.toDouble()
@@ -870,7 +870,7 @@ fun CsvImportBody(
 
                                             val maxValueDouble = parsedDouble?.takeIf { it > 0.0 }
 
-                                            viewModel.updateMaxValue(it, maxValueDouble)
+                                            viewModel.updateMaxValue(string, maxValueDouble)
                                         }
                                     },
                                     enabled = mappingOptions.ratingColumn.isNotBlank(),

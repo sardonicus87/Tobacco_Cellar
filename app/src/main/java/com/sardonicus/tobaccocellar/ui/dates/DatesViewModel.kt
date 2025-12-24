@@ -70,8 +70,8 @@ class DatesViewModel(
     init {
         viewModelScope.launch {
             val currentReady = filterViewModel.everythingFlow.first().flatMap { it.tins }
-                .filter {
-                    it.openDate?.let {
+                .filter { tins ->
+                    tins.openDate?.let {
                         Instant.ofEpochMilli(it)
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)

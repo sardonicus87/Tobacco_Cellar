@@ -49,8 +49,8 @@ class StatsViewModel(
                 dislikedCount = it.count { it.items.disliked },
                 totalByBrand = it.groupingBy { it.items.brand }.eachCount(),
                 totalQuantity = it.sumOf { it.items.quantity },
-                estimatedWeight = calculateTotal(it, it.flatMap { it.tins.filter { !it.finished } }, quantityOption),
-                totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { it.all { it.openDate == null } }) null
+                estimatedWeight = calculateTotal(it, it.flatMap { items -> items.tins.filter { !it.finished } }, quantityOption),
+                totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { tins -> tins.all { it.openDate == null } }) null
                     else it.flatMap { it.tins }.count { it.openDate != null && !it.finished },
                 totalZeroQuantity = it.count { it.items.quantity == 0 },
 
@@ -179,7 +179,7 @@ class StatsViewModel(
                 dislikedCount = filteredItems.count { it.items.disliked },
                 unassignedCount = filteredItems.count { it.items.type.isBlank() },
                 totalQuantity = filteredItems.sumOf { it.items.quantity },
-                estimatedWeight = calculateTotal(filteredItems, filteredItems.flatMap { it.tins.filter { !it.finished && it in filteredTins } }, quantityOption),
+                estimatedWeight = calculateTotal(filteredItems, filteredItems.flatMap { items -> items.tins.filter { !it.finished && it in filteredTins } }, quantityOption),
                 totalOpened = relevantTins.count { it.openDate != null && !it.finished },
                 totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
 
@@ -188,10 +188,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate {
-                        it.key to (filteredItems.groupingBy {
+                    .associate { entry ->
+                        entry.key to (filteredItems.groupingBy {
                             it.items.type.ifBlank { "Unassigned" }
-                        }.eachCount()[it.key] ?: 0) }
+                        }.eachCount()[entry.key] ?: 0) }
                     .let {
                         val mutableMap = it.toMutableMap()
                         val unassignedEntry = mutableMap.remove("Unassigned")
@@ -205,10 +205,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate {
-                        it.key to (filteredItems.groupingBy {
+                    .associate { entry ->
+                        entry.key to (filteredItems.groupingBy {
                             it.items.subGenre.ifBlank { "Unassigned" }
-                        }.eachCount()[it.key] ?: 0)
+                        }.eachCount()[entry.key] ?: 0)
                     }
                     .let {
                         val mutableMap = it.toMutableMap()
@@ -223,10 +223,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate {
-                        it.key to (filteredItems.groupingBy {
+                    .associate { entry ->
+                        entry.key to (filteredItems.groupingBy {
                             it.items.cut.ifBlank { "Unassigned" }
-                        }.eachCount()[it.key] ?: 0)
+                        }.eachCount()[entry.key] ?: 0)
                     }
                     .let {
                         val mutableMap = it.toMutableMap()
@@ -242,10 +242,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate {
-                        it.key to (filteredItems.flatMap {
+                    .associate { entry ->
+                        entry.key to (filteredItems.flatMap {
                             it.components.ifEmpty { listOf(Components(componentName = "None Assigned")) } }
-                            .groupingBy { it.componentName }.eachCount()[it.key] ?: 0)
+                            .groupingBy { it.componentName }.eachCount()[entry.key] ?: 0)
                     }
                     .let {
                         val mutableMap = it.toMutableMap()
@@ -261,10 +261,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate {
-                        it.key to (filteredItems.flatMap {
+                    .associate { entry ->
+                        entry.key to (filteredItems.flatMap {
                             it.flavoring.ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
-                            .groupingBy { it.flavoringName }.eachCount()[it.key] ?: 0)
+                            .groupingBy { it.flavoringName }.eachCount()[entry.key] ?: 0)
                     }
                     .let {
                         val mutableMap = it.toMutableMap()
@@ -280,10 +280,10 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .associate {
-                        it.key to (relevantTins.groupingBy {
+                    .associate { entry ->
+                        entry.key to (relevantTins.groupingBy {
                             it.container.ifBlank { "Unassigned" }
-                        }.eachCount()[it.key] ?: 0)
+                        }.eachCount()[entry.key] ?: 0)
                     }
                     .let {
                         val mutableMap = it.toMutableMap()
@@ -300,13 +300,13 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
+                    .let { entries ->
+                        if (entries.size > 10) {
+                            val topNine = entries.take(9).associate { it.key to it.value }
+                            val otherCount = entries.drop(9).sumOf { it.value }
                             topNine + ("(Other)" to otherCount)
                         } else {
-                            it.associate { it.key to it.value }
+                            entries.associate { it.key to it.value }
                         }
                     },
                 brandsByQuantity = filteredItems
@@ -315,13 +315,13 @@ class StatsViewModel(
                     .fold(0) { acc, item -> acc + item.items.quantity }
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
+                    .let { entries ->
+                        if (entries.size > 10) {
+                            val topNine = entries.take(9).associate { it.key to it.value }
+                            val otherCount = entries.drop(9).sumOf { it.value }
                             topNine + ("(Other)" to otherCount)
                         } else {
-                            it.associate { it.key to it.value }
+                            entries.associate { it.key to it.value }
                         }
                     },
                 typesByEntries = filteredItems.groupingBy {
@@ -359,13 +359,13 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
+                    .let { entries ->
+                        if (entries.size > 10) {
+                            val topNine = entries.take(9).associate { it.key to it.value }
+                            val otherCount = entries.drop(9).sumOf { it.value }
                             topNine + ("(Other)" to otherCount)
                         } else {
-                            it.associate { it.key to it.value }
+                            entries.associate { it.key to it.value }
                         }
                     },
                 subgenresByQuantity = filteredItems
@@ -374,13 +374,13 @@ class StatsViewModel(
                     .fold(0) { acc, item -> acc + item.items.quantity }
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
+                    .let { entries ->
+                        if (entries.size > 10) {
+                            val topNine = entries.take(9).associate { it.key to it.value }
+                            val otherCount = entries.drop(9).sumOf { it.value }
                             topNine + ("(Other)" to otherCount)
                         } else {
-                            it.associate { it.key to it.value }
+                            entries.associate { it.key to it.value }
                         }
                     },
                 cutsByEntries = filteredItems
@@ -388,13 +388,13 @@ class StatsViewModel(
                     .eachCount()
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
+                    .let { entries ->
+                        if (entries.size > 10) {
+                            val topNine = entries.take(9).associate { it.key to it.value }
+                            val otherCount = entries.drop(9).sumOf { it.value }
                             topNine + ("(Other)" to otherCount)
                         } else {
-                            it.associate { it.key to it.value }
+                            entries.associate { it.key to it.value }
                         }
                     },
                 cutsByQuantity = filteredItems
@@ -403,13 +403,13 @@ class StatsViewModel(
                     .fold(0) { acc, item -> acc + item.items.quantity }
                     .entries
                     .sortedByDescending { it.value }
-                    .let {
-                        if (it.size > 10) {
-                            val topNine = it.take(9).associate { it.key to it.value }
-                            val otherCount = it.drop(9).sumOf { it.value }
+                    .let { entries ->
+                        if (entries.size > 10) {
+                            val topNine = entries.take(9).associate { it.key to it.value }
+                            val otherCount = entries.drop(9).sumOf { it.value }
                             topNine + ("(Other)" to otherCount)
                         } else {
-                            it.associate { it.key to it.value }
+                            entries.associate { it.key to it.value }
                         }
                     },
 

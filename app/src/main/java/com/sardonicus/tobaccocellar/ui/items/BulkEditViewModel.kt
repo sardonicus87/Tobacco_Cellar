@@ -178,48 +178,48 @@ class BulkEditViewModel (
         viewModelScope.launch {
             setLoadingState(true)
 
-            val itemsToUpdate = editingState.selectedItems.map {
-                val itemsId = it.items.id
+            val itemsToUpdate = editingState.selectedItems.map { items ->
+                val itemsId = items.items.id
 
-                val existingComps = it.components.map { it.componentName }
+                val existingComps = items.components.map { it.componentName }
                 val editComps = editingState.toComps(existingComps)
                 val updatedComps = if (editingState.compsSelected) {
                     when (editingState.compsAdd) {
                         true -> {
-                            (it.components + editComps.filterNot {
+                            (items.components + editComps.filterNot {
                                 it.componentName in existingComps
                             }).distinctBy { it.componentName }
                         }
 
                         false -> {
-                            it.components.filterNot {
-                                it.componentName in editComps.map { it.componentName }
+                            items.components.filterNot { component ->
+                                component.componentName in editComps.map { it.componentName }
                             }
                         }
                     }
-                } else { it.components }
+                } else { items.components }
                 val compsToAdd = updatedComps.filter { it.componentName !in existingComps }
-                val compsToRemove = existingComps.filter { it !in updatedComps.map { it.componentName } }
+                val compsToRemove = existingComps.filter { component -> component !in updatedComps.map { it.componentName } }
 
-                val existingFlavor = it.flavoring.map { it.flavoringName }
+                val existingFlavor = items.flavoring.map { it.flavoringName }
                 val editFlavor = editingState.toFlavor(existingFlavor)
                 val updatedFlavor = if (editingState.flavorSelected) {
                     when (editingState.flavorAdd) {
                         true -> {
-                            (it.flavoring + editFlavor.filterNot {
+                            (items.flavoring + editFlavor.filterNot {
                                 it.flavoringName in existingFlavor
                             }).distinctBy { it.flavoringName }
                         }
 
                         false -> {
-                            it.flavoring.filterNot {
-                                it.flavoringName in editFlavor.map { it.flavoringName }
+                            items.flavoring.filterNot { flavoring ->
+                                flavoring.flavoringName in editFlavor.map { it.flavoringName }
                             }
                         }
                     }
-                } else { it.flavoring }
+                } else { items.flavoring }
                 val flavorToAdd = updatedFlavor.filter { it.flavoringName !in existingFlavor }
-                val flavorToRemove = existingFlavor.filter { it !in updatedFlavor.map { it.flavoringName } }
+                val flavorToRemove = existingFlavor.filter { flavoring -> flavoring !in updatedFlavor.map { it.flavoringName } }
 
                 compsToAdd.forEach {
                     var componentId = itemsRepository.getComponentIdByName(it.componentName)
@@ -249,15 +249,15 @@ class BulkEditViewModel (
                     }
                 }
 
-                it.copy(
-                    items = it.items.copy(
-                        type = if (editingState.typeSelected) editingState.type else it.items.type,
-                        subGenre = if (editingState.genreSelected) editingState.subGenre else it.items.subGenre,
-                        cut = if (editingState.cutSelected) editingState.cut else it.items.cut,
-                        rating = if (editingState.ratingSelected) editingState.rating else it.items.rating,
-                        disliked = if (editingState.favoriteDisSelected) editingState.disliked else it.items.disliked,
-                        favorite = if (editingState.favoriteDisSelected) editingState.favorite else it.items.favorite,
-                        inProduction = if (editingState.productionSelected) editingState.inProduction else it.items.inProduction,
+                items.copy(
+                    items = items.items.copy(
+                        type = if (editingState.typeSelected) editingState.type else items.items.type,
+                        subGenre = if (editingState.genreSelected) editingState.subGenre else items.items.subGenre,
+                        cut = if (editingState.cutSelected) editingState.cut else items.items.cut,
+                        rating = if (editingState.ratingSelected) editingState.rating else items.items.rating,
+                        disliked = if (editingState.favoriteDisSelected) editingState.disliked else items.items.disliked,
+                        favorite = if (editingState.favoriteDisSelected) editingState.favorite else items.items.favorite,
+                        inProduction = if (editingState.productionSelected) editingState.inProduction else items.items.inProduction,
                     ),
                     components = updatedComps,
                     flavoring = updatedFlavor
@@ -266,14 +266,14 @@ class BulkEditViewModel (
             itemsRepository.updateMultipleItems(itemsToUpdate)
 
             if (editingState.syncTinsSelected) {
-                editingState.selectedItems.forEach {
-                    preferencesRepo.setItemSyncState(it.items.id, editingState.syncTins)
+                editingState.selectedItems.forEach { item ->
+                    preferencesRepo.setItemSyncState(item.items.id, editingState.syncTins)
 
-                    val tins = it.tins.filter { !it.finished }
+                    val tins = item.tins.filter { !it.finished }
                     val syncedQuantity = calculateSyncTins(tins)
                     if (editingState.syncTins) {
                         itemsRepository.updateItem(
-                            it.items.copy(
+                            item.items.copy(
                                 quantity = syncedQuantity,
                             )
                         )

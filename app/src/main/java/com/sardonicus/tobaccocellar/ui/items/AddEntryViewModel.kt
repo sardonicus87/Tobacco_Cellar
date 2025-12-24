@@ -246,8 +246,8 @@ class AddEntryViewModel(
     /** save to database **/
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         val validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
-        val validTins = uiState.tinDetailsList.all {
-            it.tinLabel.isNotBlank() &&
+        val validTins = uiState.tinDetailsList.all { tinDetails ->
+            tinDetails.tinLabel.isNotBlank() &&
                     tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
                     tinDetailsList.all {
                         (it.tinQuantityString.isNotBlank() && it.unit.isNotBlank()) ||

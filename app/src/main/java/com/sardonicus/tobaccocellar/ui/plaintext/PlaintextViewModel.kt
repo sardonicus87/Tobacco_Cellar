@@ -106,25 +106,25 @@ class PlaintextViewModel (
         preferencesRepo.plaintextPresetsFlow,
         preferencesRepo.tinOzConversionRate,
         preferencesRepo.tinGramsConversionRate
-    ) {
-        val filteredItems = it[0] as List<ItemsComponentsAndTins>
-        val filteredTins = it[1] as List<Tins>
-        val quantityOption = it[2] as QuantityOption
-        val formatString = it[3] as String
-        val delimiter = it[4] as String
-        val sortState = it[5] as PlaintextSortOption
-        val subSortOption = it[6] as String
-        val presets = it[7] as List<PlaintextPreset>
-        val ozRate = it[8] as Double
-        val gramsRate = it[9] as Double
+    ) { array ->
+        val filteredItems = array[0] as List<ItemsComponentsAndTins>
+        val filteredTins = array[1] as List<Tins>
+        val quantityOption = array[2] as QuantityOption
+        val formatString = array[3] as String
+        val delimiter = array[4] as String
+        val sortState = array[5] as PlaintextSortOption
+        val subSortOption = array[6] as String
+        val presets = array[7] as List<PlaintextPreset>
+        val ozRate = array[8] as Double
+        val gramsRate = array[9] as Double
 
-        val sortQuantity = filteredItems.associate {
-            it.items.id to calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+        val sortQuantity = filteredItems.associate { items ->
+            items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
         }
-        val formattedQuantities = filteredItems.associate {
-            val totalQuantity = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
-            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { it in filteredTins })
-            it.items.id to formattedQuantity
+        val formattedQuantities = filteredItems.associate { items ->
+            val totalQuantity = calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, items.tins.filter { it in filteredTins })
+            items.items.id to formattedQuantity
         }
         val tinSubSort: (Tins) -> Comparable<*> = {
             val parentItem = filteredItems.firstOrNull { item -> item.items.id == it.itemsId }
@@ -158,9 +158,9 @@ class PlaintextViewModel (
                 PlaintextSortOption.SUBGENRE.value -> filteredItems.sortedBy { it.items.subGenre }
                 PlaintextSortOption.CUT.value -> filteredItems.sortedBy { it.items.cut }
                 PlaintextSortOption.QUANTITY.value -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                PlaintextSortOption.RATING.value -> filteredItems.sortedByDescending { it.items.rating.let { it ?: 0.0 } }
+                PlaintextSortOption.RATING.value -> filteredItems.sortedByDescending { items -> items.items.rating.let { it ?: 0.0 } }
                 else -> filteredItems.sortedBy { it.items.id }
-            }.let{
+            }.let {
                 if (sortState.ascending) { it } else { it.reversed() }
             }
         } else emptyList()
@@ -387,8 +387,8 @@ class PlaintextViewModel (
             )
 
         }
-        val previewFormattedQuantities = previewData.associate {
-            it.items.id to formatQuantity(calculateTotalQuantity(it, it.tins.filter { it in previewTins }, quantityOption, ozRate, gramsRate), quantityOption, it.tins.filter { it in previewTins })
+        val previewFormattedQuantities = previewData.associate { items ->
+            items.items.id to formatQuantity(calculateTotalQuantity(items, items.tins.filter { it in previewTins }, quantityOption, ozRate, gramsRate), quantityOption, items.tins.filter { it in previewTins })
         }
 
         val listString = generateListString(sortedItems, sortedTins, sortState, formattedQuantities, formatString, delimiter)
@@ -671,8 +671,8 @@ class PlaintextViewModel (
 
 
         // Tins as sublist processing
-        processedLine = tinSublist.replace(processedLine) {
-            val sublistTemplate = it.groupValues[1]
+        processedLine = tinSublist.replace(processedLine) { result ->
+            val sublistTemplate = result.groupValues[1]
             val sublistOut = StringBuilder()
             val sublistDelimiter = sublistTemplate.substringAfterLast("~", "").substringBeforeLast("}")
 
@@ -716,9 +716,9 @@ class PlaintextViewModel (
         // Main item processing
         if (itemData != null) {
             val ratingRegex = Regex("@rating_(\\d+)(?:_(\\d))?")
-            processedLine = ratingRegex.replace(processedLine) {
-                val max = it.groupValues[1].toIntOrNull() ?: 5
-                val rounding = it.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
+            processedLine = ratingRegex.replace(processedLine) { result ->
+                val max = result.groupValues[1].toIntOrNull() ?: 5
+                val rounding = result.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
 
                 exportRatingString(itemData.items.rating, max, rounding)
             }
@@ -776,8 +776,8 @@ class PlaintextViewModel (
 
         do {
             lineBeforeThisPass = processedLine
-            processedLine = nestedConditional.replace(processedLine) {
-                val innerContent = it.groupValues[1]
+            processedLine = nestedConditional.replace(processedLine) { result ->
+                val innerContent = result.groupValues[1]
                 val placeholderScan = Regex("""@\w+(?!\w)""")
                 val allPlaceholders = placeholderScan.findAll(innerContent).toList()
 

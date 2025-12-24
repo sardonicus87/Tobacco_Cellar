@@ -161,25 +161,25 @@ class HomeViewModel(
         filterViewModel.ratingsExist,
         filterViewModel.emptyDatabase,
         filterViewModel.showTins
-    ) {
-        val filteredItems = it[0] as List<ItemsComponentsAndTins>
-        val filteredTins = it[1] as List<Tins>
-        val quantityOption = it[2] as QuantityOption
-        val isTableView = it[3] as Boolean
-        val tableSorting = it[4] as TableSorting
-        val listSorting = it[5] as ListSorting
-        val ozRate = it[6] as Double
-        val gramsRate = it[7] as Double
-        val showRating = it[8] as Boolean
-        val typeGenreOption = it[9] as TypeGenreOption
-        val typesExist = it[10] as Boolean
-        val subgenresExist = it[11] as Boolean
-        val ratingsExist = it[12] as Boolean
-        val emptyDatabase = it[13] as Boolean
-        val showTins = it[14] as Boolean
+    ) { array ->
+        val filteredItems = array[0] as List<ItemsComponentsAndTins>
+        val filteredTins = array[1] as List<Tins>
+        val quantityOption = array[2] as QuantityOption
+        val isTableView = array[3] as Boolean
+        val tableSorting = array[4] as TableSorting
+        val listSorting = array[5] as ListSorting
+        val ozRate = array[6] as Double
+        val gramsRate = array[7] as Double
+        val showRating = array[8] as Boolean
+        val typeGenreOption = array[9] as TypeGenreOption
+        val typesExist = array[10] as Boolean
+        val subgenresExist = array[11] as Boolean
+        val ratingsExist = array[12] as Boolean
+        val emptyDatabase = array[13] as Boolean
+        val showTins = array[14] as Boolean
 
-        val sortQuantity = filteredItems.associate {
-            it.items.id to calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+        val sortQuantity = filteredItems.associate { items ->
+            items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
         }
 
         val sortedItems = if (filteredItems.isNotEmpty()) {
@@ -221,10 +221,10 @@ class HomeViewModel(
             }
         } else emptyList()
 
-        val formattedQuantities = sortedItems.associate {
-            val totalQuantity = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate) // !it.finished &&
-            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, it.tins.filter { it in filteredTins }) // !it.finished &&
-            it.items.id to formattedQuantity
+        val formattedQuantities = sortedItems.associate { items ->
+            val totalQuantity = calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate) // !it.finished &&
+            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, items.tins.filter { it in filteredTins }) // !it.finished &&
+            items.items.id to formattedQuantity
         }
 
         val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY)
@@ -476,8 +476,8 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            columnVisibilityEnablement.collect {
-                val disabled = it.filterValues { !it }.keys
+            columnVisibilityEnablement.collect { visibilityMap ->
+                val disabled = visibilityMap.filterValues { !it }.keys
                 disabled.forEach {
                     updateColumnVisibility(it, false)
                 }

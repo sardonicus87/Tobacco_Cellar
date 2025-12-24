@@ -532,9 +532,9 @@ fun AutoCompleteText(
     Box(modifier = modifier) {
         TextField(
             value = textFieldValueState.copy(text = value),
-            onValueChange = {
-                textFieldValueState = it
-                val text = it.text
+            onValueChange = { textFieldValue ->
+                textFieldValueState = textFieldValue
+                val text = textFieldValue.text
                 onValueChange?.invoke(text)
 
                 val input =
@@ -560,11 +560,11 @@ fun AutoCompleteText(
 
                 if (input.length >= 2 && typeCount >= 2) {
                     val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
-                    val otherWordsStartsWith = allItems.filter {
-                        it.split(" ").drop(1)
+                    val otherWordsStartsWith = allItems.filter { string ->
+                        string.split(" ").drop(1)
                             .any {
                                 it.startsWith(input, ignoreCase = true) }
-                                && !startsWith.contains(it)
+                                && !startsWith.contains(string)
                     }
                     val contains = allItems.filter {
                         it.contains(input, ignoreCase = true)

@@ -49,8 +49,8 @@ class EditEntryViewModel(
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         val validDetails = uiState.brand.isNotBlank() && uiState.blend.isNotBlank()
-        val validTins = uiState.tinDetailsList.all {
-            it.tinLabel.isNotBlank() &&
+        val validTins = uiState.tinDetailsList.all { tinDetails ->
+            tinDetails.tinLabel.isNotBlank() &&
             tinDetailsList.map { it.tinLabel }.distinct().size == tinDetailsList.size &&
             tinDetailsList.all {
                 (it.tinQuantityString.isNotBlank() && it.unit.isNotBlank()) ||
@@ -408,7 +408,7 @@ class EditEntryViewModel(
                 val tin = it.toTin(itemsId)
                 itemsRepository.updateTin(tin)
             }
-            existingTinIds.filter { !tinDetailsList.map { it.tinId }.contains(it) }.forEach {
+            existingTinIds.filter { tinId -> !tinDetailsList.map { it.tinId }.contains(tinId) }.forEach {
                 itemsRepository.deleteTin(it)
             }
 
