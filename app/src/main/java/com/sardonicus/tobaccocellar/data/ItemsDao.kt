@@ -122,6 +122,9 @@ interface ItemsDao {
     @Query("SELECT * FROM items WHERE id = :id")
     fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
 
+    @Query("SELECT * FROM items WHERE id = :id")
+    suspend fun getItemById(id: Int): Items?
+
     // Get components by item id //
     @Transaction
     @Query(
@@ -134,6 +137,9 @@ interface ItemsDao {
         """
     )
     fun getComponentsForItemStream(itemId: Int): Flow<List<Components>>
+
+    @Query("SELECT * FROM components WHERE componentId = :id")
+    suspend fun getComponentById(id: Int): Components?
 
     // Get flavoring by item id //
     @Transaction
@@ -148,12 +154,26 @@ interface ItemsDao {
     )
     fun getFlavoringForItemStream(itemId: Int): Flow<List<Flavoring>>
 
+    @Query("SELECT * FROM flavoring WHERE flavoringId = :id")
+    suspend fun getFlavoringById(id: Int): Flavoring?
+
+    // Get tin by tin id //
+    @Query("SELECT * FROM tins WHERE tinId = :tinId")
+    fun getTinByTinIdStream(tinId: Int): Flow<Tins?>
+
+    @Query("SELECT * FROM tins WHERE tinId = :tinId")
+    fun getTinByTinId(tinId: Int): Tins?
+
+    @Query("SELECT * FROM tins WHERE itemsId = :itemsId AND tinLabel = :tinLabel")
+    fun getTinByLabel(itemsId: Int, tinLabel: String): Tins?
+
+
     // Get tins by item id //
     @Query("SELECT * FROM tins WHERE itemsId = :itemsId")
     fun getTinsForItemStream(itemsId: Int): Flow<List<Tins>>
 
     @Query("SELECT id FROM items WHERE brand = :brand AND blend = :blend")
-    suspend fun getItemIdByIndex(brand: String, blend: String): Int
+    suspend fun getItemIdByIndex(brand: String, blend: String): Int?
 
     @Query("SELECT componentId FROM components WHERE componentName = :name")
     suspend fun getComponentIdByName(name: String): Int?

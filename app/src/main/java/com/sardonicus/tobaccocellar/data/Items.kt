@@ -7,7 +7,9 @@ import androidx.room.Index
 import androidx.room.Junction
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(
     tableName = "items",
     indices = [Index(value = (["brand", "blend"]), unique = true)]
@@ -26,8 +28,11 @@ data class Items(
     val subGenre: String,
     val cut: String,
     val inProduction: Boolean,
+    val syncTins: Boolean,
+    val lastModified: Long
 )
 
+@Serializable
 @Entity(
     tableName = "tins",
     foreignKeys = [
@@ -52,8 +57,10 @@ data class Tins(
     val cellarDate: Long?,
     val openDate: Long?,
     val finished: Boolean,
+    val lastModified: Long
 )
 
+@Serializable
 @Entity(
     tableName = "components",
     indices = [Index(value = (["componentName"]), unique = true)]
@@ -88,6 +95,7 @@ data class ItemsComponentsCrossRef(
     val componentId: Int,
 )
 
+@Serializable
 @Entity(
     tableName = "flavoring",
     indices = [Index(value = (["flavoringName"]), unique = true)]
@@ -170,4 +178,18 @@ data class TinExportData(
     val cellarDate: String,
     val openDate: String,
     val finished: Boolean,
+)
+
+@Serializable
+data class TinSyncPayload(
+    val itemBrand: String,
+    val itemBlend: String,
+    val tin: Tins
+)
+
+@Serializable
+data class CrossRefSyncPayload(
+    val itemBrand: String,
+    val itemBlend: String,
+    val relatedEntityName: String,
 )

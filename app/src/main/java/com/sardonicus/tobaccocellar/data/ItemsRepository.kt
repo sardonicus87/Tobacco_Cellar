@@ -66,13 +66,25 @@ interface ItemsRepository {
     /** Get single item **/
     fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
 
+    suspend fun getItemById(id: Int): Items?
+
     fun getComponentsForItemStream(id: Int): Flow<List<Components>>
+
+    suspend fun getComponentById(id: Int): Components?
 
     fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>>
 
+    suspend fun getFlavoringById(id: Int): Flavoring?
+
     fun getTinsForItemStream(id: Int): Flow<List<Tins>>
 
-    suspend fun getItemIdByIndex(brand: String, blend: String): Int
+    fun getTinDetailsStream(tinId: Int): Flow<Tins?>
+
+    suspend fun getTinById(tinId: Int): Tins?
+
+    suspend fun getTinByLabel(itemsId: Int, tinLabel: String): Tins?
+
+    suspend fun getItemIdByIndex(brand: String, blend: String): Int?
 
     suspend fun getComponentIdByName(name: String): Int?
 
@@ -85,5 +97,9 @@ interface ItemsRepository {
 
     /** Get any by value **/
     fun getItemByIndex(brand: String, blend: String): Items?
+
+
+    /** Cloud sync **/
+    fun getPendingSyncOperationDao(): PendingSyncOperationDao
 
 }
