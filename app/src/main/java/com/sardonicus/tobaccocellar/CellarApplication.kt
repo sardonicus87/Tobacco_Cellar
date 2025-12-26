@@ -13,6 +13,8 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
@@ -34,5 +36,27 @@ class CellarApplication : Application() {
         container = AppDataContainer(this)
         preferencesRepo = PreferencesRepo(dataStore, applicationScope)
         csvHelper = CsvHelper()
+
+        migrateSyncSettings()
+    }
+
+    private fun migrateSyncSettings() {
+        CoroutineScope(Dispatchers.IO).launch {
+            if (preferencesRepo.syncSettingsMigrated.first()) {
+                return@launch
+            }
+
+            val itemsRepo = container.itemsRepository
+            val allItemIds = itemsRepo.getAllItemIds()
+
+            for (id in allItemIds) {
+                val oldSyncState = preferencesRepo.getItemSyncState(id).first()
+                val item = itemsRepo.getItemDetailsStream(id).first()?.items
+                if (item != null && item.syncTins != oldSyncState) {
+                    itemsRepo.updateItem(item.copy(syncTins = oldSyncState))
+                }
+            }
+            preferencesRepo.setSyncSettingsMigrated()
+        }
     }
 }
