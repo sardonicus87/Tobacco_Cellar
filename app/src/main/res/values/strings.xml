@@ -1,6 +1,7 @@
 <resources>
 
     <string name="app_name">Tobacco Cellar</string>
+    <string name="web_client_id">877326135702-ts94bhp54rrulv0vag1sq0v7nvbcinbj.apps.googleusercontent.com</string>
 
     // Page Titles //
     <string name="home_title">Cellar</string>

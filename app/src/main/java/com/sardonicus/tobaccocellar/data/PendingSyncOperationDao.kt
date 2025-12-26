@@ -1,0 +1,18 @@
+package com.sardonicus.tobaccocellar.data
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+
+@Dao
+interface PendingSyncOperationDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOperation(operation: PendingSyncOperation)
+
+    @Query("SELECT * FROM pending_sync_operations ORDER BY timestamp ASC")
+    suspend fun getAllOperations(): List<PendingSyncOperation>
+
+    @Query("DELETE FROM pending_sync_operations WHERE id IN (:ids)")
+    suspend fun deleteOperation(ids: List<Long>)
+}
