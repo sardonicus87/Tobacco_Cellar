@@ -121,14 +121,45 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'syncTins' INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'lastModified' INTEGER NOT NULL DEFAULT 0")
+
+        db.execSQL("ALTER TABLE 'tins' ADD COLUMN 'lastModified' INTEGER NOT NULL DEFAULT 0")
+
+        db.execSQL(
+            """
+                CREATE TABLE IF NOT EXISTS 'pending_sync_operations' (
+                    'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    'operationType' TEXT NOT NULL,
+                    'entityType' TEXT NOT NULL,
+                    'entityId' TEXT NOT NULL,
+                    'payload' TEXT NOT NULL,
+                    'timestamp' INTEGER NOT NULL
+                )
+            """
+        )
+    }
+}
+
 @Database(
-    entities = [Items::class, Tins::class, Components::class, ItemsComponentsCrossRef::class, Flavoring::class, ItemsFlavoringCrossRef::class],
-    version = 4,
+    entities = [
+        Items::class,
+        Tins::class,
+        Components::class,
+        ItemsComponentsCrossRef::class,
+        Flavoring::class,
+        ItemsFlavoringCrossRef::class,
+        PendingSyncOperation::class
+    ],
+    version = 5,
     exportSchema = true
 )
 abstract class TobaccoDatabase : RoomDatabase() {
 
     abstract fun itemsDao(): ItemsDao
+    abstract fun pendingSyncOperationDao(): PendingSyncOperationDao
 
     companion object {
         @Volatile
@@ -140,6 +171,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
                     .addMigrations(MIGRATION_1_2)
                     .addMigrations(MIGRATION_2_3)
                     .addMigrations(MIGRATION_3_4)
+                    .addMigrations(MIGRATION_4_5)
                     .build()
                     .also { Instance = it }
             }
