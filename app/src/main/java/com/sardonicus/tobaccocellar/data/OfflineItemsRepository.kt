@@ -7,6 +7,9 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperation
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperationDao
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.UploadSyncWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json

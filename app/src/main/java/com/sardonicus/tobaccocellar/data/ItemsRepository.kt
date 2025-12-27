@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.data
 
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperationDao
 import kotlinx.coroutines.flow.Flow
 
 interface ItemsRepository {
