@@ -986,10 +986,10 @@ fun DetailsEntry(
 
                 TextField(
                     value =
-                        if (itemDetails.isSynced) syncedTins.toString()
+                        if (itemDetails.syncTins) syncedTins.toString()
                         else itemDetails.quantityString,
                     onValueChange = {
-                        if (!itemDetails.isSynced) {
+                        if (!itemDetails.syncTins) {
                             if (it.matches(pattern) && it.length <= 2) {
                                 onValueChange(
                                     itemDetails.copy(
@@ -1004,7 +1004,7 @@ fun DetailsEntry(
                         .width(54.dp)
                         .padding(0.dp),
                     visualTransformation = VisualTransformation.None,
-                    enabled = !itemDetails.isSynced,
+                    enabled = !itemDetails.syncTins,
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
                     keyboardOptions = KeyboardOptions(
@@ -1086,8 +1086,8 @@ fun DetailsEntry(
                                 }
                             }
                         },
-                        increaseEnabled = !itemDetails.isSynced,
-                        decreaseEnabled = !itemDetails.isSynced,
+                        increaseEnabled = !itemDetails.syncTins,
+                        decreaseEnabled = !itemDetails.syncTins,
                         modifier = Modifier
                             .fillMaxHeight()
                     )
@@ -1106,9 +1106,9 @@ fun DetailsEntry(
                             fontSize = 14.sp,
                         )
                         CustomCheckBox(
-                            checked = itemDetails.isSynced,
+                            checked = itemDetails.syncTins,
                             onCheckedChange = {
-                                onValueChange(itemDetails.copy(isSynced = it))
+                                onValueChange(itemDetails.copy(syncTins = it))
                             },
                             checkedIcon = R.drawable.check_box_24,
                             uncheckedIcon = R.drawable.check_box_outline_24,
