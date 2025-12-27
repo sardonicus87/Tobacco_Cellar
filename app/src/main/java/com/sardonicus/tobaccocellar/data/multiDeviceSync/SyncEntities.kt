@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.data
+package com.sardonicus.tobaccocellar.data.multiDeviceSync
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
