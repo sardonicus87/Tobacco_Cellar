@@ -9,10 +9,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
 import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
+import com.sardonicus.tobaccocellar.data.MIGRATION_4_5
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
@@ -20,6 +22,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.SignInRequestedEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -59,6 +62,10 @@ class SettingsViewModel(
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
     private val _defaultSyncOption = MutableStateFlow(false)
     private val _parseLinks = MutableStateFlow(true)
+    private val _crossDeviceSync = MutableStateFlow(false)
+
+    private val _deviceSyncAcknowledgement = MutableStateFlow(false)
+    val deviceSyncAcknowledgement = _deviceSyncAcknowledgement.asStateFlow()
 
     private val _openDialog = MutableStateFlow<DialogType?>(null)
     val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
@@ -85,6 +92,7 @@ class SettingsViewModel(
     )
 
     val databaseSettings = listOf(
+        SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync", DialogType.DeviceSync),
         SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", DialogType.TinRates),
         SettingsDialog("Fix/Update Tin Sync Quantity", "Recalculate quantities for synced entries", DialogType.Recalculate),
         SettingsDialog("Default Sync Tins Option", "Set default tin sync option", DialogType.DefaultSync),
@@ -187,6 +195,23 @@ class SettingsViewModel(
                     if (it) {
                         preferencesRepo.saveParseLinksOption(true)
                     }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.crossDeviceSync.first().let {
+                    _crossDeviceSync.value = it
+                    if (it) {
+                        preferencesRepo.saveCrossDeviceSync(true)
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.crossDeviceAcknowledged.collect {
+                    _deviceSyncAcknowledgement.value = it
                 }
             }
         }
@@ -305,7 +330,7 @@ class SettingsViewModel(
             }
             var message = ""
             val allItems = filterViewModel.everythingFlow.first()
-            val allSyncItems = allItems.filter { preferencesRepo.getItemSyncState(it.items.id).first() }
+            val allSyncItems = allItems.filter { it.items.syncTins }
 
             val ozRate = ozConversion ?: preferencesRepo.tinOzConversionRate.first()
             val gramsRate = gramsConversion ?: preferencesRepo.tinGramsConversionRate.first()
@@ -349,6 +374,22 @@ class SettingsViewModel(
         return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
     }
 
+    fun saveCrossDeviceAcknowledged() {
+        viewModelScope.launch {
+            preferencesRepo.saveCrossDeviceAcknowledged(true)
+        }
+    }
+
+    fun saveCrossDeviceSync(enable: Boolean) {
+        viewModelScope.launch {
+            if (enable) {
+                EventBus.emit(SignInRequestedEvent())
+            } else {
+                preferencesRepo.saveCrossDeviceSync(false)
+            }
+        }
+    }
+
 
     /** Backup/Restore **/
     // Backup //
@@ -358,9 +399,7 @@ class SettingsViewModel(
     private val _restoreState = MutableStateFlow(RestoreState())
     var restoreState: StateFlow<RestoreState> = _restoreState.asStateFlow()
 
-    init {
-        updateSuggestedFilename()
-    }
+    init { updateSuggestedFilename() }
 
     fun onBackupOptionChanged(backupState: BackupState) {
         _backupState.value = _backupState.value.copy(
@@ -415,31 +454,18 @@ class SettingsViewModel(
                     backupDatabase(context, tempDbZip)
                 }
 
-                val databaseBytes = if (backupState.value.databaseChecked) {
-                    tempDbZip.readBytes()
-                } else { ByteArray(0) }
+                val databaseBytes = if (backupState.value.databaseChecked) { tempDbZip.readBytes() } else { ByteArray(0) }
                 val databaseLengthBytes = databaseBytes.size.toByteArray()
 
-                val itemIds = withContext(Dispatchers.IO){ itemsRepository.getAllItemIds() }
-                val itemSyncStateStringBuilder = StringBuilder()
-                for (itemId in itemIds) {
-                    val isSynced = preferencesRepo.getItemSyncStateString(itemId)
-                    itemSyncStateStringBuilder.append("$itemId:$isSynced\n")
-                }
-                val itemSyncStateBytes = itemSyncStateStringBuilder.toString().toByteArray(Charset.forName("UTF-8"))
-
-                val combinedDatabaseBytes = ByteArray(
-                    databaseLengthBytes.size + databaseBytes.size + itemSyncStateBytes.size
-                )
+                val combinedDatabaseBytes = ByteArray(databaseLengthBytes.size + databaseBytes.size)
 
                 databaseLengthBytes.copyInto(combinedDatabaseBytes)
                 databaseBytes.copyInto(combinedDatabaseBytes, databaseLengthBytes.size)
-                itemSyncStateBytes.copyInto(combinedDatabaseBytes, databaseBytes.size)
 
                 val settingsBytes = if (backupState.value.settingsChecked) createSettingsBytes() else ByteArray(0)
 
                 val magicNumber = byteArrayOf(0x54, 0x43, 0x42, 0x55) // "TCBU"
-                val version = byteArrayOf(0x02) // Version 2 zipping db files
+                val version = byteArrayOf(0x03) // Version 3 item sync state now in database
                 val settingsLength = settingsBytes.size.toByteArray()
 
                 val header = magicNumber + version + settingsLength
@@ -511,7 +537,9 @@ class SettingsViewModel(
                             try {
                                 restoreSettings(settingsBytes)
                                 restoreDatabase(context, databaseBytes)
-                                restoreItemSyncState(itemSyncStateBytes)
+                                if (fileContentState.version == 2) {
+                                    restoreItemSyncState(itemSyncStateBytes)
+                                }
                                 updateTinSync(runSilent = true)
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {
@@ -531,7 +559,9 @@ class SettingsViewModel(
                             } else {
                                 try {
                                     restoreDatabase(context, databaseBytes)
-                                    restoreItemSyncState(itemSyncStateBytes)
+                                    if (fileContentState.version == 2) {
+                                        restoreItemSyncState(itemSyncStateBytes)
+                                    }
                                     message = "File missing settings data, database restored."
                                 } catch (e: Exception) {
                                     println("Exception: $e")
@@ -544,7 +574,9 @@ class SettingsViewModel(
                         if (fileContentState.databasePresent) {
                             try {
                                 restoreDatabase(context, databaseBytes)
-                                restoreItemSyncState(itemSyncStateBytes)
+                                if (fileContentState.version == 2) {
+                                    restoreItemSyncState(itemSyncStateBytes)
+                                }
                                 message = "Database restored."
                             } catch (e: Exception) {
                                 println("Exception: $e")
@@ -570,23 +602,28 @@ class SettingsViewModel(
 
     private fun validateBackupFile(bytes: ByteArray): FileContentState {
         val magicNumber = bytes.copyOfRange(0, 4)
-        val version = bytes[4]
+        val isMagicNumberValid = magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55))
+        if (!isMagicNumberValid) {
+            return FileContentState(magicNumberValid = false, versionValid = false)
+        }
 
-        if (!magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55)) || version != 0x02.toByte()) {
-            return FileContentState(
-                magicNumberValid = magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55)),
-                versionValid = version == 0x02.toByte(),
-            )
+        val version = bytes[4]
+        val isVersionValid = (version == 0x02.toByte() || version == 0x03.toByte())
+        if (!isVersionValid) {
+            return FileContentState(magicNumberValid = true, versionValid = false)
         }
 
         val settingsLengthBytes = bytes.copyOfRange(5, 9)
         val settingsLength = byteArrayToInt(settingsLengthBytes)
         val settingsBytes = bytes.copyOfRange(bytes.size - settingsLength, bytes.size)
-        val databaseAndSyncStateBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
+        val databaseBytes = bytes.copyOfRange(9, bytes.size - settingsLength)
 
-        return FileContentState(databaseAndSyncStateBytes.isNotEmpty(), settingsBytes.isNotEmpty(),
+        return FileContentState(
+            databaseBytes.isNotEmpty(),
+            settingsBytes.isNotEmpty(),
             versionValid = true,
-            magicNumberValid = true
+            magicNumberValid = true,
+            version = version.toInt()
         )
     }
 
@@ -685,6 +722,7 @@ class SettingsViewModel(
         migrations.add(MIGRATION_1_2)
         migrations.add(MIGRATION_2_3)
         migrations.add(MIGRATION_3_4)
+        migrations.add(MIGRATION_4_5)
         return migrations
     }
 
@@ -718,20 +756,28 @@ class SettingsViewModel(
         }
     }
 
-    private fun restoreItemSyncState(itemSyncStateBytes: ByteArray) {
-        viewModelScope.launch {
-            val itemSyncStateString = String(itemSyncStateBytes, Charset.forName("UTF-8"))
-            val lines = itemSyncStateString.lines()
-            for (line in lines) {
-                val parts = line.split(":")
-                if (parts.size == 2) {
-                    val itemId = parts[0].toInt()
-                    val isSynced = parts[1].toBooleanStrictOrNull()
-                    if (isSynced != null) {
-                        preferencesRepo.setItemSyncState(itemId, isSynced)
-                    }
+    private suspend fun restoreItemSyncState(itemSyncStateBytes: ByteArray) {
+        val syncStateString = String(itemSyncStateBytes, Charset.forName("UTF-8"))
+        val lines = syncStateString.lines()
+
+        val itemsToUpdate = mutableListOf<Items>()
+
+        for (line in lines) {
+            if (line.isBlank()) continue
+            val parts = line.split(":")
+            val itemId = parts.getOrNull(0)?.toIntOrNull()
+            val isSynced = parts.getOrNull(1)?.toBoolean()
+
+            if (itemId != null && isSynced != null) {
+                val item = itemsRepository.getItemById(itemId)
+                if (item != null) {
+                    itemsToUpdate.add(item.copy(syncTins = isSynced))
                 }
             }
+        }
+
+        for (item in itemsToUpdate) {
+            itemsRepository.updateItem(item.copy(lastModified = System.currentTimeMillis()))
         }
     }
 
@@ -783,6 +829,7 @@ sealed class DialogType {
     object QuantityDisplay : DialogType()
     object ParseLinks : DialogType()
 
+    object DeviceSync : DialogType()
     object TinRates : DialogType()
     object Recalculate : DialogType()
     object DefaultSync : DialogType()
@@ -843,6 +890,7 @@ data class FileContentState(
     val settingsPresent: Boolean = false,
     val versionValid: Boolean = false,
     val magicNumberValid: Boolean = false,
+    val version: Int = 0
 )
 
 data class SnackbarState(
@@ -961,6 +1009,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first().toString()
     val columnVisibility = preferencesRepo.tableColumnsHidden.first().joinToString(", ") { it }
     val parseLinksOption = preferencesRepo.parseLinks.first().toString()
+    val syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first().toString()
+    val processedSync = preferencesRepo.processedSyncFiles.first().joinToString(", ") { it }
 
     return """
             tableView=$tableView
@@ -979,6 +1029,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             defaultSyncTinsOption=$defaultSyncTinsOption
             columnVisibility=$columnVisibility
             parseLinksOption=$parseLinksOption
+            syncAcknowledgement=$syncAcknowledgement
+            processedSync=$processedSync
         """.trimIndent()
 }
 
@@ -1045,6 +1097,11 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     preferencesRepo.saveTableColumnsHidden(columns)
                 }
                 "parseLinksOption" -> preferencesRepo.saveParseLinksOption(value.toBoolean())
+                "syncAcknowledgement" -> preferencesRepo.saveCrossDeviceAcknowledged(value.toBoolean())
+                "processedSync" -> {
+                    val files = value.split(", ").toSet()
+                    preferencesRepo.saveProcessedSyncFiles(files)
+                }
             }
         }
     }
