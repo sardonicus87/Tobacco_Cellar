@@ -24,9 +24,11 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
@@ -288,6 +290,7 @@ private fun SettingsBody(
     }
 
     when (openDialog) {
+        // Display settings
         DialogType.Theme -> {
             ThemeDialog(
                 onThemeSelected = { viewModel.saveThemeSetting(it) },
@@ -330,6 +333,19 @@ private fun SettingsBody(
                 )
             }
 
+        // App/Database Settings
+        DialogType.DeviceSync -> {
+            val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
+
+            DeviceSyncDialog(
+                onDismiss = { viewModel.dismissDialog() },
+                acknowledgement = acknowledgement,
+                confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
+                onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
+                preferencesRepo = preferencesRepo,
+                modifier = Modifier
+            )
+        }
         DialogType.DefaultSync -> {
             DefaultSyncDialog(
                 onDismiss = { viewModel.dismissDialog() },
@@ -934,6 +950,180 @@ fun ParseLinksDialog(
 
 
 /** App/Database Settings Dialogs **/
+@Composable
+fun DeviceSyncDialog(
+    onDismiss: () -> Unit,
+    acknowledgement: Boolean,
+    confirmAcknowledgement: () -> Unit,
+    onDeviceSync: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    preferencesRepo: PreferencesRepo
+) {
+    val currentOption by preferencesRepo.crossDeviceSync.collectAsState(initial = false)
+    val email by preferencesRepo.signedInUserEmail.collectAsState(initial = null)
+    val hasScope by preferencesRepo.hasDriveScope.collectAsState(initial = false)
+    val enabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() && hasScope) }
+
+    val scope = rememberCoroutineScope()
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 0.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (!acknowledgement) {
+                    Column(
+                        modifier = Modifier,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "About Multi Device Sync",
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LocalContentColor.current
+                        )
+                        Text(
+                            text = "To auto synchronize collection changes across devices, you " +
+                                    "must enable this option and authorize Google Drive access " +
+                                    "on each device. You only need to authorize once per device " +
+                                    "(though uninstalling and reinstalling will require " +
+                                    "re-authorizing). This also requires all devices to be " +
+                                    "running an the same Database Version.",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            color = LocalContentColor.current
+                        )
+                        Text(
+                            text = "I (developer) will not have access to your login or drive, " +
+                                    "this authorization just allows the app to use your Google " +
+                                    "Drive as a cloud location for storing and retrieving data " +
+                                    "changes between devices. This login and authorization can be " +
+                                    "cleared at any time in this setting dialog.",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            color = LocalContentColor.current
+                        )
+                        Text(
+                            text = "Data is only uploaded/downloaded when connected to WIFI, and " +
+                                    "does not count toward your storage quota. Data is checked " +
+                                    "once at every app start, and cyclically once every 12 hours " +
+                                    "as long as the device is powered on and connected to WIFI.",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            color = LocalContentColor.current
+                        )
+                        Text(
+                            text = "Changes are saved locally and scheduled to upload when " +
+                                    "connected to WIFI. The uploaded data only includes changes. " +
+                                    "The changes are time-stamped and device sync is bi-" +
+                                    "directional.",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            color = LocalContentColor.current
+                        )
+                        Text(
+                            text = "Before enabling this option on multiple devices, it is " +
+                                    "recommended to create a manual database backup of the " +
+                                    "device with the most up-to-date data and transfer it to " +
+                                    "and restore on the other device(s).",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            color = LocalContentColor.current
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Multi-Device Sync:",
+                        modifier = Modifier,
+                        fontSize = 16.sp,
+                        color = LocalContentColor.current
+                    )
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val offAlpha = if (!currentOption) 1f else .5f
+                        val onAlpha = if (currentOption) 1f else .5f
+                        Text(
+                            text = "Off",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            fontWeight = if (!currentOption) FontWeight.SemiBold else FontWeight.Normal,
+                            color = LocalContentColor.current.copy(alpha = offAlpha)
+                        )
+                        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                            Switch(
+                                checked = currentOption,
+                                onCheckedChange = { onDeviceSync(it) },
+                                modifier = Modifier
+                                    .requiredHeight(20.dp)
+                                    .scale(.7f)
+                                    .padding(start = 10.dp),
+                                colors = SwitchDefaults.colors(
+                                )
+                            )
+                        }
+                        Text(
+                            text = "On",
+                            modifier = Modifier,
+                            fontSize = 14.sp,
+                            fontWeight = if (currentOption) FontWeight.SemiBold else FontWeight.Normal,
+                            color = LocalContentColor.current.copy(onAlpha)
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                preferencesRepo.clearLoginState()
+                                onDeviceSync(false)
+                            }
+                        },
+                        enabled = enabled,
+                        modifier = Modifier
+                            .padding(0.dp)
+                    ) {
+                        Text(
+                            text = "Clear login and authorization"
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (!acknowledgement) {
+                TextButton(
+                    onClick = { confirmAcknowledgement() },
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Text("Acknowledge")
+                }
+            } else {
+                TextButton(
+                    onClick = { onDismiss() },
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Text("Done")
+                }
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
 @Composable
 fun DefaultSyncDialog(
     onDismiss: () -> Unit,
