@@ -21,6 +21,8 @@ class OfflineItemsRepository(
     private val context: Context
 ) : ItemsRepository {
 
+    private val dbVersion = TobaccoDatabase.getDatabaseVersion(context)
+
     /** Database operations **/
     // Items //
     override suspend fun insertItem(item: Items): Long {
@@ -30,7 +32,8 @@ class OfflineItemsRepository(
             operationType = "INSERT",
             entityType = "Items",
             entityId = itemId.toString(), // just for debugging, not used meaningfully
-            payload = Json.encodeToString(item.copy(id = itemId.toInt()))
+            payload = Json.encodeToString(item.copy(id = itemId.toInt())),
+            dbVersion = dbVersion
         )
 
         pendingSyncOperationDao.insertOperation(operation)
@@ -48,7 +51,8 @@ class OfflineItemsRepository(
                 operationType = "INSERT",
                 entityType = "Items",
                 entityId = id.toString(),
-                payload = Json.encodeToString(item.copy(id = id.toInt()))
+                payload = Json.encodeToString(item.copy(id = id.toInt())),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
         }
@@ -64,7 +68,8 @@ class OfflineItemsRepository(
             operationType = "UPDATE",
             entityType = "Items",
             entityId = item.id.toString(),
-            payload = Json.encodeToString(item)
+            payload = Json.encodeToString(item),
+            dbVersion = dbVersion
         )
 
         pendingSyncOperationDao.insertOperation(operation)
@@ -79,7 +84,8 @@ class OfflineItemsRepository(
                 operationType = "UPDATE",
                 entityType = "Items",
                 entityId = item.items.id.toString(),
-                payload = Json.encodeToString(item.items)
+                payload = Json.encodeToString(item.items),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
         }
@@ -92,7 +98,8 @@ class OfflineItemsRepository(
             operationType = "DELETE",
             entityType = "Items",
             entityId = item.id.toString(),
-            payload = Json.encodeToString(item)
+            payload = Json.encodeToString(item),
+            dbVersion = dbVersion
         )
 
         pendingSyncOperationDao.insertOperation(operation)
@@ -121,7 +128,8 @@ class OfflineItemsRepository(
                 operationType = "INSERT",
                 entityType = "Components",
                 entityId = componentId.toString(),
-                payload = Json.encodeToString(component)
+                payload = Json.encodeToString(component),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
             scheduleSyncUpload()
@@ -144,7 +152,8 @@ class OfflineItemsRepository(
             operationType = "INSERT",
             entityType = "ItemsComponentsCrossRef",
             entityId = "${crossRef.itemId}-${crossRef.componentId}",
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
         pendingSyncOperationDao.insertOperation(operation)
         scheduleSyncUpload()
@@ -165,7 +174,8 @@ class OfflineItemsRepository(
             operationType = "DELETE",
             entityType = "ItemsComponentsCrossRef",
             entityId = "${crossRef.itemId}-${crossRef.componentId}",
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
         pendingSyncOperationDao.insertOperation(operation)
         scheduleSyncUpload()
@@ -184,7 +194,8 @@ class OfflineItemsRepository(
                 operationType = "DELETE",
                 entityType = "ItemsComponentsCrossRef",
                 entityId = "${itemId}-${component.componentId}",
-                payload = Json.encodeToString(syncPayload)
+                payload = Json.encodeToString(syncPayload),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
         }
@@ -203,7 +214,8 @@ class OfflineItemsRepository(
                 operationType = "INSERT",
                 entityType = "Flavoring",
                 entityId = flavoringId.toString(),
-                payload = Json.encodeToString(flavoring)
+                payload = Json.encodeToString(flavoring),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
             scheduleSyncUpload()
@@ -226,7 +238,8 @@ class OfflineItemsRepository(
             operationType = "INSERT",
             entityType = "ItemsFlavoringCrossRef",
             entityId = "${crossRef.itemId}-${crossRef.flavoringId}",
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
         pendingSyncOperationDao.insertOperation(operation)
         scheduleSyncUpload()
@@ -247,7 +260,8 @@ class OfflineItemsRepository(
             operationType = "DELETE",
             entityType = "ItemsFlavoringCrossRef",
             entityId = "${crossRef.itemId}-${crossRef.flavoringId}",
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
         pendingSyncOperationDao.insertOperation(operation)
         scheduleSyncUpload()
@@ -266,7 +280,8 @@ class OfflineItemsRepository(
                 operationType = "DELETE",
                 entityType = "ItemsFlavoringCrossRef",
                 entityId = "${itemId}-${flavoring.flavoringId}",
-                payload = Json.encodeToString(syncPayload)
+                payload = Json.encodeToString(syncPayload),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
         }
@@ -289,7 +304,8 @@ class OfflineItemsRepository(
             operationType = "INSERT",
             entityType = "Tins",
             entityId = tinId.toString(),
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
 
         pendingSyncOperationDao.insertOperation(operation)
@@ -311,7 +327,8 @@ class OfflineItemsRepository(
             operationType = "UPDATE",
             entityType = "Tins",
             entityId = tin.tinId.toString(),
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
 
         pendingSyncOperationDao.insertOperation(operation)
@@ -332,7 +349,8 @@ class OfflineItemsRepository(
             operationType = "DELETE",
             entityType = "Tins",
             entityId = tin.tinId.toString(),
-            payload = Json.encodeToString(syncPayload)
+            payload = Json.encodeToString(syncPayload),
+            dbVersion = dbVersion
         )
         pendingSyncOperationDao.insertOperation(operation)
         scheduleSyncUpload()
@@ -352,7 +370,8 @@ class OfflineItemsRepository(
                 operationType = "INSERT",
                 entityType = "Tins",
                 entityId = tinId.toString(),
-                payload = Json.encodeToString(syncPayload)
+                payload = Json.encodeToString(syncPayload),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
         }
@@ -374,7 +393,8 @@ class OfflineItemsRepository(
                 operationType = "DELETE",
                 entityType = "Tins",
                 entityId = tin.tinId.toString(),
-                payload = Json.encodeToString(syncPayload)
+                payload = Json.encodeToString(syncPayload),
+                dbVersion = dbVersion
             )
             pendingSyncOperationDao.insertOperation(operation)
         }

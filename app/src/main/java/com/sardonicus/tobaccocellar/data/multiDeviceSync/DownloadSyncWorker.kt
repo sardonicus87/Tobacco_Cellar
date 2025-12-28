@@ -13,6 +13,7 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.TinSyncPayload
+import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
@@ -107,6 +108,13 @@ class DownloadSyncWorker(
     }
 
     private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation) {
+        val localDbVersion = TobaccoDatabase.getDatabaseVersion(applicationContext)
+
+        if (op.dbVersion != localDbVersion) {
+            Log.w("DownloadSyncWorker", "Skipping operation with Db version mismatch: Remote = ${op.dbVersion}, Local = $localDbVersion")
+            return
+        }
+
         when (op.entityType) {
             "Items" -> {
                 val remoteItem = Json.decodeFromString<Items>(op.payload)

@@ -139,6 +139,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
                     'entityId' TEXT NOT NULL,
                     'payload' TEXT NOT NULL,
                     'timestamp' INTEGER NOT NULL
+                    'dbVersion' INTEGER NOT NULL DEFAULT 0
                 )
             """
         )

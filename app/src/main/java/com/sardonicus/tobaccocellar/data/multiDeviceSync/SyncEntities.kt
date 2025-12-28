@@ -11,5 +11,6 @@ data class PendingSyncOperation(
     val entityType: String,
     val entityId: String,
     val payload: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val dbVersion: Int
 )
