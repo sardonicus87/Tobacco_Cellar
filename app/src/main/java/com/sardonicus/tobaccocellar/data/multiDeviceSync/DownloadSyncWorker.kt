@@ -44,7 +44,7 @@ class DownloadSyncWorker(
 
             val fileList = driveService.files().list()
                 .setSpaces("appDataFolder")
-                .setFields("files(id, name)")
+                .setFields("files(id, name, createdTime)")
                 .execute()
 
             if (fileList.files.isNullOrEmpty()) {
@@ -56,23 +56,46 @@ class DownloadSyncWorker(
             val newFiles = fileList.files.filter { it.id !in processedFileIds }
 
             if (newFiles.isEmpty()) {
+                Log.d("DownloadSyncWorker", "No new files found")
                 return Result.success()
             }
 
             Log.d("DownloadSyncWorker", "Found ${newFiles.size} new files to download")
 
             for (file in newFiles) {
-                val outputStream = ByteArrayOutputStream()
-                driveService.files().get(file.id).executeMediaAndDownloadTo(outputStream)
-                val fileContent = outputStream.toString()
+                try {
+                    val outputStream = ByteArrayOutputStream()
+                    driveService.files().get(file.id).executeMediaAndDownloadTo(outputStream)
+                    val fileContent = outputStream.toString()
 
-                val operations = Json.decodeFromString<List<PendingSyncOperation>>(fileContent)
-                for (op in operations) {
-                    applyOperation(itemsRepository, op)
+                    val operations = Json.decodeFromString<List<PendingSyncOperation>>(fileContent)
+                    for (op in operations) {
+                        applyOperation(itemsRepository, op)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DownloadSyncWorker", "Failed to process file ${file.id}.", e)
+                    continue
                 }
             }
 
-            val allProcessedIds = processedFileIds + newFiles.map { it.id }
+            // find old files and delete
+            val oneMonthMillis = 30 * 24 * 60 * 60 * 1000L
+            val cutOffTime = System.currentTimeMillis() - oneMonthMillis
+
+            val oldFiles = fileList.files.filter { it.createdTime.value < cutOffTime }
+            if (oldFiles.isNotEmpty()) {
+                Log.d("DownloadSyncWorker", "Cleaning up ${oldFiles.size} old files.")
+                for (file in oldFiles) {
+                    try {
+                        driveService.files().delete(file.id).execute()
+                    } catch (e: Exception) {
+                        Log.e("DownloadSyncWorker", "Failed to delete file ${file.id}.", e)
+                    }
+                }
+            }
+
+            val oldFileIds = oldFiles.map { it.id }.toSet()
+            val allProcessedIds = processedFileIds + newFiles.map { it.id } - oldFileIds
             preferencesRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
 
             Log.d("DownloadSyncWorker", "Download complete, processed ${allProcessedIds.size} files")
