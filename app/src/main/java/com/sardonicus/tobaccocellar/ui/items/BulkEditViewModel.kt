@@ -152,7 +152,8 @@ class BulkEditViewModel (
         }
     }
 
-    private fun calculateSyncTins(tins: List<Tins>): Int {
+    private fun calculateSyncTins(allTins: List<Tins>): Int {
+        val tins = allTins.filter { !it.finished }
         val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
             (it.tinQuantity * 16) / ozRate
         }
@@ -177,6 +178,8 @@ class BulkEditViewModel (
     fun batchEditSave() {
         viewModelScope.launch {
             setLoadingState(true)
+
+            val lastModified = System.currentTimeMillis()
 
             val itemsToUpdate = editingState.selectedItems.map { items ->
                 val itemsId = items.items.id
@@ -249,6 +252,11 @@ class BulkEditViewModel (
                     }
                 }
 
+                val newQuantity = if (editingState.syncTinsSelected && editingState.syncTins) {
+                    calculateSyncTins(items.tins)
+                } else { items.items.quantity }
+
+
                 items.copy(
                     items = items.items.copy(
                         type = if (editingState.typeSelected) editingState.type else items.items.type,
@@ -258,28 +266,16 @@ class BulkEditViewModel (
                         disliked = if (editingState.favoriteDisSelected) editingState.disliked else items.items.disliked,
                         favorite = if (editingState.favoriteDisSelected) editingState.favorite else items.items.favorite,
                         inProduction = if (editingState.productionSelected) editingState.inProduction else items.items.inProduction,
+                        syncTins = if (editingState.syncTinsSelected) editingState.syncTins else items.items.syncTins,
+                        quantity = newQuantity,
+                        lastModified = lastModified
                     ),
                     components = updatedComps,
                     flavoring = updatedFlavor
                 )
             }
+
             itemsRepository.updateMultipleItems(itemsToUpdate)
-
-            if (editingState.syncTinsSelected) {
-                editingState.selectedItems.forEach { item ->
-                    preferencesRepo.setItemSyncState(item.items.id, editingState.syncTins)
-
-                    val tins = item.tins.filter { !it.finished }
-                    val syncedQuantity = calculateSyncTins(tins)
-                    if (editingState.syncTins) {
-                        itemsRepository.updateItem(
-                            item.items.copy(
-                                quantity = syncedQuantity,
-                            )
-                        )
-                    }
-                }
-            }
 
             setLoadingState(false)
             resetEditingState()
