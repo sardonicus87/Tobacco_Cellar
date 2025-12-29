@@ -52,6 +52,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -432,7 +433,6 @@ fun DisplaySettings(
         }
     }
 }
-
 
 @Composable
 fun DatabaseSettings(
@@ -962,34 +962,41 @@ fun DeviceSyncDialog(
     val currentOption by preferencesRepo.crossDeviceSync.collectAsState(initial = false)
     val email by preferencesRepo.signedInUserEmail.collectAsState(initial = null)
     val hasScope by preferencesRepo.hasDriveScope.collectAsState(initial = false)
-    val enabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() && hasScope) }
+    val enabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
+
+    val scrollState = rememberScrollState()
+    val atBottom by remember {
+        derivedStateOf { scrollState.value == scrollState.maxValue }
+    }
+
 
     val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
         modifier = modifier
-            .padding(0.dp),
+            .padding(0.dp)
+            .heightIn(max = 350.dp),
         text = {
             Column(
                 modifier = Modifier
-                    .padding(bottom = 0.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .padding(bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (!acknowledgement) {
+                    Text(
+                        text = "About Multi Device Sync",
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = LocalContentColor.current
+                    )
                     Column(
-                        modifier = Modifier,
+                        modifier = Modifier
+                            .verticalScroll(scrollState),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "About Multi Device Sync",
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = LocalContentColor.current
-                        )
                         Text(
                             text = "To auto synchronize collection changes across devices, you " +
                                     "must enable this option and authorize Google Drive access " +
@@ -1032,8 +1039,8 @@ fun DeviceSyncDialog(
                         Text(
                             text = "Before enabling this option on multiple devices, it is " +
                                     "recommended to create a manual database backup of the " +
-                                    "device with the most up-to-date data and transfer it to " +
-                                    "and restore on the other device(s).",
+                                    "device with the most up-to-date data and transfer it to, " +
+                                    "and restore on, the other device(s).",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
@@ -1104,9 +1111,10 @@ fun DeviceSyncDialog(
                 TextButton(
                     onClick = { confirmAcknowledgement() },
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(0.dp),
+                    enabled = atBottom
                 ) {
-                    Text("Acknowledge")
+                    Text("Agree")
                 }
             } else {
                 TextButton(
@@ -1118,6 +1126,17 @@ fun DeviceSyncDialog(
                 }
             }
         },
+        dismissButton = if (!acknowledgement) {
+            {
+                TextButton(
+                    onClick = { onDismiss() },
+                    modifier = Modifier
+                        .padding(0.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        } else null,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
