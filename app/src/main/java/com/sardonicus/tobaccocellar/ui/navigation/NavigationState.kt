@@ -126,7 +126,8 @@ fun NavigationState.toEntries(
     }
 
     return stacksInUse
-        .flatMap { stackKey ->  // decoratedEntries[it] ?: emptyList() }
+//        .flatMap { decoratedEntries[it] ?: emptyList() }
+        .flatMap { stackKey ->
             val stackEntries = decoratedEntries[stackKey] ?: emptyList()
 
             if (largeScreen) {
