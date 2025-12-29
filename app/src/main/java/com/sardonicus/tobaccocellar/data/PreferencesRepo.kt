@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.io.IOException
@@ -71,8 +70,15 @@ class PreferencesRepo(
         val PLAINTEXT_PRESET_FORMAT5 = stringPreferencesKey("plaintext_preset_format5")
         val PLAINTEXT_PRESET_DELIMITER5 = stringPreferencesKey("plaintext_preset_delimiter5")
 
+        val CROSS_DEVICE_ACKNOWLEDGED = booleanPreferencesKey("cross_device_acknowledged")
+        val CROSS_DEVICE_SYNC = booleanPreferencesKey("cross_device_sync")
+        val SIGNED_IN_ACCOUNT = stringPreferencesKey("signed_in_account")
+        val HAS_DRIVE_SCOPE = booleanPreferencesKey("has_drive_scope")
+        val PROCESSED_SYNC_FILES = stringPreferencesKey("processed_sync_files")
+
         val DEFAULT_SYNC = booleanPreferencesKey("default_sync")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
+        val SYNC_SETTINGS_MIGRATED = booleanPreferencesKey("sync_settings_migrated")
 
         const val TAG = "PreferencesRepo"
     }
@@ -348,12 +354,6 @@ class PreferencesRepo(
 
 
     /** Sync status **/
-    suspend fun setItemSyncState(itemId: Int, isSynced: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[itemsSyncKey(itemId)] = isSynced
-        }
-    }
-
     fun getItemSyncState(itemId: Int): Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -367,12 +367,20 @@ class PreferencesRepo(
             preferences[itemsSyncKey(itemId)] ?: false
         }
 
-    suspend fun getItemSyncStateString(itemId: Int): String {
-        return try {
-            getItemSyncState(itemId).first().toString()
-        } catch (e: IOException) {
-            throw e
-        }
+    val syncSettingsMigrated: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+        it[SYNC_SETTINGS_MIGRATED] ?: false
+    }
+
+    suspend fun setSyncSettingsMigrated() {
+        dataStore.edit { it[SYNC_SETTINGS_MIGRATED] = true }
     }
 
     // set default sync selected //
@@ -623,6 +631,99 @@ class PreferencesRepo(
             3 -> PLAINTEXT_PRESET_DELIMITER4
             4 -> PLAINTEXT_PRESET_DELIMITER5
             else -> throw IllegalArgumentException("Invalid slot: $slot")
+        }
+    }
+
+    // sign in stuff for sync //
+    val crossDeviceAcknowledged: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[CROSS_DEVICE_ACKNOWLEDGED] ?: false
+        }
+
+    suspend fun saveCrossDeviceAcknowledged(acknowledged: Boolean) {
+        dataStore.edit {
+            it[CROSS_DEVICE_ACKNOWLEDGED] = acknowledged
+        }
+    }
+
+    val crossDeviceSync: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[CROSS_DEVICE_SYNC] ?: false
+        }
+
+    suspend fun saveCrossDeviceSync(sync: Boolean) {
+        dataStore.edit {
+            it[CROSS_DEVICE_SYNC] = sync
+        }
+    }
+
+    val signedInUserEmail: Flow<String?> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[SIGNED_IN_ACCOUNT]
+        }
+
+    val hasDriveScope: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[HAS_DRIVE_SCOPE] ?: false
+        }
+
+    suspend fun saveLoginState(email: String, hasDriveScope: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SIGNED_IN_ACCOUNT] = email
+            preferences[HAS_DRIVE_SCOPE] = hasDriveScope
+        }
+    }
+
+    suspend fun clearLoginState() {
+        dataStore.edit { preferences ->
+            preferences.remove(SIGNED_IN_ACCOUNT)
+            preferences.remove(HAS_DRIVE_SCOPE)
+        }
+    }
+
+    val processedSyncFiles: Flow<Set<String>> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+                    } else {
+                throw it
+            }
+        }.map {
+            it[PROCESSED_SYNC_FILES]?.split(",")?.toSet() ?: emptySet()
+        }
+
+    suspend fun saveProcessedSyncFiles(filesIds: Set<String>) {
+        dataStore.edit { preferences ->
+            preferences[PROCESSED_SYNC_FILES] = filesIds.joinToString(",")
         }
     }
 
