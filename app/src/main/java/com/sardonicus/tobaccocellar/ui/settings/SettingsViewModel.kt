@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
@@ -18,6 +20,8 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_4_5
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
@@ -513,12 +517,17 @@ class SettingsViewModel(
     fun restoreBackup(context: Context, uri: Uri) {
         viewModelScope.launch {
             setLoadingState(true)
+
+            val workManager = WorkManager.getInstance(context)
+            SyncStateManager.loggingPaused = true
+            SyncStateManager.schedulingPaused = true
+
             var message = ""
 
             val bytes = readBytesFromFile(uri, context)
             if (bytes == null) {
                 message = "Invalid file."
-            } else {
+            } else try {
                 val fileContentState = validateBackupFile(bytes)
                 val restoreState = _restoreState.value
                 val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
@@ -594,7 +603,13 @@ class SettingsViewModel(
                         }
                     }
                 }
+            } finally {
+                SyncStateManager.loggingPaused = false
+                SyncStateManager.schedulingPaused = false
             }
+
+            workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build())
+
             setLoadingState(false)
             showSnackbar(message)
         }
