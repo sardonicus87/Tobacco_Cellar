@@ -27,3 +27,4 @@ deploymentTargetSelector
 *.json
 *.dm
 /app/release
+/app/src/main/res/values/strings.xml
