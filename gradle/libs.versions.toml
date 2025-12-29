@@ -1,45 +1,62 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
-activityCompose = "1.12.1"
-androidlibrary = "8.13.1"
-agp = "8.13.1"
+activityCompose = "1.12.2"
+androidCredentials = "1.5.0"
+androidlibrary = "8.13.2"
+agp = "8.13.2"
 commonsCsv = "1.14.1"
-composeBom = "2025.12.00"
+composeBom = "2025.12.01"
 coreKtx = "1.17.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.0"
 devtoolsKsp = "2.2.21-2.0.4"
-kotlin = "2.2.21"
+googleApiClientAndroid = "2.8.1"
+googleApiServicesDrive = "v3-rev20251210-2.0.0"
+googleId = "1.1.1"
+kotlin = "2.3.0"
 kotlinxCoroutinesAndroid = "1.10.2"
-kotlinSerialization = "2.2.21"
+kotlinSerialization = "2.3.0"
 kotlinxSerializationCore = "1.9.0"
 kotlinxSerializationJson = "1.9.0"
 lifecycleRuntimeKtx = "2.10.0"
 lifecycleViewmodelNav3 = "2.10.0"
 material = "1.13.0"
+material3 = "1.4.0"
 nav3Core = "1.0.0"
+playServicesAuth = "21.4.0"
 room = "2.8.4"
-viewpager2 = "1.1.0"
 uiTextGoogleFonts = "1.10.0"
+viewpager2 = "1.1.0"
+work = "2.11.0"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-adaptive-layout = { group = "androidx.compose.material3.adaptive", name = "adaptive-layout" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "androidCredentials" }
+androidx-credentials-playservices = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "androidCredentials" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-material3-windowsizeclass = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "material3" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
+google-api-client-android = { group = "com.google.api-client", name = "google-api-client-android", version.ref = "googleApiClientAndroid" }
+google-api-services-drive = { group = "com.google.apis", name = "google-api-services-drive", version.ref = "googleApiServicesDrive" }
+google-id = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
+google-play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }

@@ -55,7 +55,7 @@ class AddEntryViewModel(
     fun updateUiState(itemDetails: ItemDetails) {
         val tinDetailsList = tinDetailsList
         val syncedTins = calculateSyncTins()
-        val updatedDetails = if (itemDetails.isSynced) {
+        val updatedDetails = if (itemDetails.syncTins) {
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins,
@@ -120,6 +120,7 @@ class AddEntryViewModel(
                 cellarDate = tinDetails.cellarDate,
                 openDate = tinDetails.openDate,
                 finished = tinDetails.finished,
+                lastModified = tinDetails.lastModified,
                 manufactureDateShort = tinDetails.manufactureDateShort,
                 cellarDateShort = tinDetails.cellarDateShort,
                 openDateShort = tinDetails.openDateShort,
@@ -202,16 +203,17 @@ class AddEntryViewModel(
 
     suspend fun checkItemExistsOnSave() {
         val currentItem = itemUiState.itemDetails
-        if (itemsRepository.exists(currentItem.brand, currentItem.blend)) {
+        val exists = itemsRepository.exists(currentItem.brand, currentItem.blend)
+        if (exists) {
+            val transferId = itemsRepository.getItemIdByIndex(currentItem.brand, currentItem.blend)
+
             existState =
                 ExistState(
                     exists = true,
-                    transferId = itemsRepository.getItemIdByIndex(
-                        currentItem.brand, currentItem.blend),
+                    transferId = transferId!!,
                     existCheck = true
                 )
-        }
-        else if (!itemsRepository.exists(currentItem.brand, currentItem.blend)) {
+        } else {
             existState =
                 ExistState(
                     exists = false,
@@ -236,7 +238,7 @@ class AddEntryViewModel(
             val defaultSync = preferencesRepo.defaultSyncOption.first()
             itemUiState = itemUiState.copy(
                 itemDetails = itemUiState.itemDetails.copy(
-                    isSynced = defaultSync
+                    syncTins = defaultSync
                 )
             )
         }
@@ -268,9 +270,10 @@ class AddEntryViewModel(
             val components = componentList.toComponents(autoCompleteData.components)
             val flavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
 
-            val savedItemId = itemsRepository.insertItem(itemUiState.itemDetails.toItem())
+            val lastModified = System.currentTimeMillis()
+            val itemDetails = itemUiState.itemDetails.copy(lastModified = lastModified)
 
-            preferencesRepo.setItemSyncState(savedItemId.toInt(), itemUiState.itemDetails.isSynced)
+            val savedItemId = itemsRepository.insertItem(itemDetails.toItem())
 
             components.forEach {
                 var componentId = itemsRepository.getComponentIdByName(it.componentName)
@@ -288,7 +291,7 @@ class AddEntryViewModel(
             }
 
             tinDetailsList.forEach {
-                val tin = it.toTin(savedItemId.toInt())
+                val tin = it.copy(lastModified = lastModified).toTin(savedItemId.toInt())
                 itemsRepository.insertTin(tin)
             }
 
@@ -330,8 +333,9 @@ data class ItemDetails(
     val subGenre: String = "",
     val cut: String = "",
     val inProduction: Boolean = true,
-    val isSynced: Boolean = false,
+    val syncTins: Boolean = false,
     val syncedQuantity: Int = 0,
+    val lastModified: Long = System.currentTimeMillis(),
 
     val tinDetailsList: List<TinDetails> = listOf(TinDetails()),
 )
@@ -349,6 +353,7 @@ data class TinDetails(
     val cellarDate: Long? = null,
     val openDate: Long? = null,
     val finished: Boolean = false,
+    val lastModified: Long = System.currentTimeMillis(),
     var manufactureDateShort: String = "",
     var cellarDateShort: String = "",
     var openDateShort: String = "",
@@ -356,7 +361,7 @@ data class TinDetails(
     var cellarDateLong: String = "",
     var openDateLong: String = "",
     var detailsExpanded: Boolean = true,
-    var labelIsNotValid: Boolean = false
+    var labelIsNotValid: Boolean = false,
 )
 
 data class ComponentList(
@@ -394,6 +399,7 @@ fun ItemDetails.toItem(): Items = Items(
     blend = blend,
     type = type,
     quantity = quantity,
+    syncTins = syncTins,
     disliked = disliked,
     favorite = favorite,
     rating = rating,
@@ -401,6 +407,7 @@ fun ItemDetails.toItem(): Items = Items(
     subGenre = subGenre,
     cut = cut,
     inProduction = inProduction,
+    lastModified = lastModified
 )
 
 fun TinDetails.toTin(itemsId: Int): Tins = Tins(
@@ -413,7 +420,8 @@ fun TinDetails.toTin(itemsId: Int): Tins = Tins(
     manufactureDate = manufactureDate,
     cellarDate = cellarDate,
     openDate = openDate,
-    finished = finished
+    finished = finished,
+    lastModified = lastModified
 )
 
 fun ComponentList.toComponents(existingComps: List<String>): List<Components> {
@@ -450,6 +458,7 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
     blend = blend,
     type = type,
     quantity = quantity,
+    syncTins = syncTins,
     disliked = disliked,
     favorite = favorite,
     rating = rating,
@@ -458,6 +467,7 @@ fun Items.toItemDetails(): ItemDetails = ItemDetails(
     subGenre = subGenre,
     cut = cut,
     inProduction = inProduction,
+    lastModified = lastModified
 )
 
 fun List<Components>.toComponentList(): ComponentList {
@@ -499,6 +509,7 @@ fun Tins.toTinDetails(): TinDetails {
         cellarDate = cellarDate,
         openDate = openDate,
         finished = finished,
+        lastModified = lastModified,
         manufactureDateShort = formatShortDate(manufactureDate),
         cellarDateShort = formatShortDate(cellarDate),
         openDateShort = formatShortDate(openDate),
