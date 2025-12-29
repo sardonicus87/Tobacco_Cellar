@@ -14,6 +14,7 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -376,6 +377,7 @@ class CsvImportViewModel(
                 cellarDate = tinData.cellarDate,
                 openDate = tinData.openDate,
                 finished = tinData.finished,
+                lastModified = System.currentTimeMillis(),
             )
         }
         withContext(Dispatchers.IO) {
@@ -417,10 +419,10 @@ class CsvImportViewModel(
 
     fun confirmImport() = viewModelScope.launch {
         _importStatus.value = ImportStatus.Loading
+        SyncStateManager.schedulingPaused = true
 
         val hasHeader = mappingOptions.hasHeader
         val collateTins = mappingOptions.collateTins
-        val syncTins = mappingOptions.syncTins
         val importOption = importOption.value
         var updatedCount = 0
         var updatedConversions = 0
@@ -563,6 +565,9 @@ class CsvImportViewModel(
                             updatedFlagSet = true
                             val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
                             val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
+                            val existingTins = withContext(Dispatchers.IO) {
+                                itemsRepository.getTinsForItemStream(existingItem.id).first()
+                            }
 
                             val updatedItem = existingItem.copy(
                                 type = if (existingItem.type.isBlank() &&
@@ -590,9 +595,10 @@ class CsvImportViewModel(
                                 )
                                     record[columnIndices[CsvField.Cut]!!]
                                 else existingItem.cut,
-                                quantity = if (collateTins)
+                                quantity = if (mappingOptions.syncTins && tinDataList.isNotEmpty() && existingTins.isEmpty())
                                     calculateSyncTinsQuantity(tinDataList)
                                 else existingItem.quantity,
+                                syncTins = if (mappingOptions.syncTins && tinDataList.isNotEmpty() && existingTins.isEmpty()) true else existingItem.syncTins,
                                 rating = if (existingItem.rating == null &&
                                     columnIndices[CsvField.Rating] != null &&
                                     mappingOptions.maxValue != null &&
@@ -626,6 +632,7 @@ class CsvImportViewModel(
                                 )
                                     record[columnIndices[CsvField.Notes]!!]
                                 else existingItem.notes,
+                                lastModified = existingItem.lastModified
                             )
 
                             val existingComponents = withContext(Dispatchers.IO) {
@@ -662,10 +669,6 @@ class CsvImportViewModel(
                                 }
                             }
 
-                            val existingTins = withContext(Dispatchers.IO) {
-                                itemsRepository.getTinsForItemStream(existingItem.id).first()
-                            }
-
                             var tinsAddedToItem = false
                             if (collateTins) {
                                 if (existingTins.isEmpty()) {
@@ -673,17 +676,17 @@ class CsvImportViewModel(
                                         tinsAddedToItem = true
                                         insertTins(existingItem.id, tinDataList)
                                         tinDataList.forEach { _ -> addedTins++ }
-                                        if (syncTins) {
-                                            preferencesRepo.setItemSyncState(existingItem.id, true)
-                                        }
                                     }
                                 }
                             }
-                            withContext(Dispatchers.IO) {
-                                itemsRepository.updateItem(updatedItem)
+
+                            if (existingItem != updatedItem) {
+                                updatedCount++
+                                val updated = updatedItem.copy(lastModified = System.currentTimeMillis())
+                                withContext(Dispatchers.IO) { itemsRepository.updateItem(updated) }
                             }
-                            if (existingItem != updatedItem) updatedCount++
                             if (existingItem == updatedItem && (compsAdded || flavorAdded || tinsAddedToItem)) updatedCount++
+
                             null
                         }
 
@@ -692,6 +695,8 @@ class CsvImportViewModel(
                             val overwriteFields = overwriteSelections.value.filterValues { it }.keys
                             val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
                             val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
+                            // Should be empty in overwrite, but double check
+                            val existingTins = withContext(Dispatchers.IO) { itemsRepository.getTinsForItemStream(existingItem.id).first() }
 
                             val updatedItem = existingItem.copy(
                                 type = if (overwriteFields.contains(CsvField.Type) &&
@@ -719,17 +724,16 @@ class CsvImportViewModel(
                                 )
                                     record[columnIndices[CsvField.Cut]!!]
                                 else existingItem.cut,
-                                quantity = if (overwriteFields.contains(CsvField.Quantity) &&
+                                quantity = if (mappingOptions.syncTins && tinDataList.isNotEmpty()) {
+                                    calculateSyncTinsQuantity(tinDataList)
+                                } else if (overwriteFields.contains(CsvField.Quantity) &&
                                     columnIndices[CsvField.Quantity] != null &&
                                     columnIndices[CsvField.Quantity]!! in record.indices
                                 ) {
-                                    if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99
-                                    ) 0
+                                    if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99) 0
                                     else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1
-                                } else if (collateTins) {
-                                    calculateSyncTinsQuantity(tinDataList)
-                                }
-                                else existingItem.quantity,
+                                } else existingItem.quantity,
+                                syncTins = if (mappingOptions.syncTins && tinDataList.isNotEmpty()) true else existingItem.syncTins,
                                 rating = if (overwriteFields.contains(CsvField.Rating) &&
                                     columnIndices[CsvField.Rating] != null &&
                                     mappingOptions.maxValue != null &&
@@ -761,6 +765,7 @@ class CsvImportViewModel(
                                 )
                                     record[columnIndices[CsvField.Notes]!!]
                                 else existingItem.notes,
+                                lastModified = existingItem.lastModified
                             )
 
                             val existingComponents = withContext(Dispatchers.IO) {
@@ -826,27 +831,22 @@ class CsvImportViewModel(
                                 }
                             }
 
-                            val existingTins = withContext(Dispatchers.IO) {
-                                itemsRepository.getTinsForItemStream(existingItem.id).first()
-                            }
-
                             if (collateTins) {
                                 if (existingTins.isEmpty()) {
                                     if (tinDataList.isNotEmpty()) {
                                         insertTins(existingItem.id, tinDataList)
                                         tinDataList.forEach { _ -> addedTins++ }
-                                        if (syncTins) {
-                                            preferencesRepo.setItemSyncState(existingItem.id, true)
-                                        }
                                     }
                                 }
                             }
 
-                            withContext(Dispatchers.IO) {
-                                itemsRepository.updateItem(updatedItem)
+                            if (existingItem != updatedItem) {
+                                updatedCount++
+                                val updated = updatedItem.copy(lastModified = System.currentTimeMillis())
+                                withContext(Dispatchers.IO) { itemsRepository.updateItem(updated) }
                             }
-                            if (existingItem != updatedItem) updatedCount++
                             if (existingItem == updatedItem && (compsAdded || flavorAdded)) updatedCount++
+
                             null
                         }
 
@@ -878,15 +878,17 @@ class CsvImportViewModel(
                             columnIndices[CsvField.Cut]!! < record.size
                         )
                             record[columnIndices[CsvField.Cut]!!] else "",
-                        quantity = if (columnIndices[CsvField.Quantity] != null &&
+                        quantity = if (mappingOptions.syncTins && tinDataList.isNotEmpty()) {
+                            calculateSyncTinsQuantity(tinDataList)
+                        }
+                            else if (columnIndices[CsvField.Quantity] != null &&
                             columnIndices[CsvField.Quantity]!! >= 0 &&
                             columnIndices[CsvField.Quantity]!! < record.size
                         ) {
                             if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99) 0
                             else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1
-                        } else if (collateTins) {
-                            calculateSyncTinsQuantity(tinDataList)
                         } else 1,
+                        syncTins = mappingOptions.syncTins && tinDataList.isNotEmpty(),
                         rating = if (columnIndices[CsvField.Rating] != null &&
                             columnIndices[CsvField.Rating]!! >= 0 &&
                             mappingOptions.maxValue != null &&
@@ -913,6 +915,7 @@ class CsvImportViewModel(
                             columnIndices[CsvField.Notes]!! < record.size
                         )
                             record[columnIndices[CsvField.Notes]!!] else "",
+                        lastModified = System.currentTimeMillis()
                     )
                 }
             }
@@ -969,9 +972,6 @@ class CsvImportViewModel(
                         if (collateTins) {
                             insertTins(itemId, tinDataList)
                             tinDataList.forEach { _ -> addedTins++ }
-                            if (syncTins) {
-                                preferencesRepo.setItemSyncState(itemId, true)
-                            }
                         }
                     }
                 }
@@ -979,6 +979,9 @@ class CsvImportViewModel(
         } catch (e: Exception) {
             _importStatus.value = ImportStatus.Error(e)
         } finally {
+            SyncStateManager.schedulingPaused = false
+            itemsRepository.triggerUploadWorker()
+
             val successfulConversions = itemsToImport.size + updatedConversions
             val successfulInsertions = insertions
             val successfulUpdates = updatedCount
