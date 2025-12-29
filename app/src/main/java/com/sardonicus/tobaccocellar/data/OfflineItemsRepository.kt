@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperation
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperationDao
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.UploadSyncWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -35,8 +36,7 @@ class OfflineItemsRepository(
             payload = Json.encodeToString(item.copy(id = itemId.toInt())),
             dbVersion = dbVersion
         )
-
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
         return itemId
     }
@@ -54,7 +54,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(item.copy(id = id.toInt())),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
         }
 
         scheduleSyncUpload()
@@ -72,7 +72,7 @@ class OfflineItemsRepository(
             dbVersion = dbVersion
         )
 
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -87,7 +87,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(item.items),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
         }
 
         scheduleSyncUpload()
@@ -102,7 +102,7 @@ class OfflineItemsRepository(
             dbVersion = dbVersion
         )
 
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         itemsDao.delete(item)
         scheduleSyncUpload()
     }
@@ -131,7 +131,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(component),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
             scheduleSyncUpload()
         }
 
@@ -155,7 +155,7 @@ class OfflineItemsRepository(
             payload = Json.encodeToString(syncPayload),
             dbVersion = dbVersion
         )
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -177,7 +177,7 @@ class OfflineItemsRepository(
             payload = Json.encodeToString(syncPayload),
             dbVersion = dbVersion
         )
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -197,7 +197,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(syncPayload),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
         }
 
         itemsDao.deleteComponentsCrossRefByItemId(itemId)
@@ -217,7 +217,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(flavoring),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
             scheduleSyncUpload()
         }
 
@@ -241,7 +241,7 @@ class OfflineItemsRepository(
             payload = Json.encodeToString(syncPayload),
             dbVersion = dbVersion
         )
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -263,7 +263,7 @@ class OfflineItemsRepository(
             payload = Json.encodeToString(syncPayload),
             dbVersion = dbVersion
         )
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -283,7 +283,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(syncPayload),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
         }
 
         itemsDao.deleteFlavoringCrossRefByItemId(itemId)
@@ -308,7 +308,7 @@ class OfflineItemsRepository(
             dbVersion = dbVersion
         )
 
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
 
         return tinId
@@ -331,7 +331,7 @@ class OfflineItemsRepository(
             dbVersion = dbVersion
         )
 
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -352,7 +352,7 @@ class OfflineItemsRepository(
             payload = Json.encodeToString(syncPayload),
             dbVersion = dbVersion
         )
-        pendingSyncOperationDao.insertOperation(operation)
+        logOperation(operation)
         scheduleSyncUpload()
     }
 
@@ -373,7 +373,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(syncPayload),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
         }
 
         scheduleSyncUpload()
@@ -396,7 +396,7 @@ class OfflineItemsRepository(
                 payload = Json.encodeToString(syncPayload),
                 dbVersion = dbVersion
             )
-            pendingSyncOperationDao.insertOperation(operation)
+            logOperation(operation)
         }
         itemsDao.deleteAllTinsForItem(itemId)
         scheduleSyncUpload()
@@ -455,7 +455,23 @@ class OfflineItemsRepository(
     /** Cloud-sync **/
     override fun getPendingSyncOperationDao(): PendingSyncOperationDao = this.pendingSyncOperationDao
 
+    override fun triggerUploadWorker() {
+        scheduleSyncUpload()
+    }
+
+    private suspend fun logOperation(operation: PendingSyncOperation) {
+        if (!SyncStateManager.loggingPaused) {
+            return
+        }
+
+        pendingSyncOperationDao.insertOperation(operation)
+    }
+
     private fun scheduleSyncUpload() {
+        if (SyncStateManager.schedulingPaused) {
+            return
+        }
+
         val workManager = WorkManager.getInstance(context)
 
         val constraints = Constraints.Builder()
