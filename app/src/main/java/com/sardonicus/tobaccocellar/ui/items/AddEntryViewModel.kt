@@ -14,6 +14,7 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -267,6 +268,8 @@ class AddEntryViewModel(
 
     suspend fun saveItem() {
         if (validateInput()) {
+            SyncStateManager.schedulingPaused = true
+
             val components = componentList.toComponents(autoCompleteData.components)
             val flavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
 
@@ -294,6 +297,9 @@ class AddEntryViewModel(
                 val tin = it.copy(lastModified = lastModified).toTin(savedItemId.toInt())
                 itemsRepository.insertTin(tin)
             }
+
+            SyncStateManager.schedulingPaused = false
+            itemsRepository.triggerUploadWorker()
 
             EventBus.emit(ItemSavedEvent(savedItemId))
         }
