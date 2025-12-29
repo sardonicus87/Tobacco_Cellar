@@ -256,6 +256,8 @@ class PlaintextViewModel (
                 disliked = false,
                 rating = 4.5,
                 notes = "",
+                syncTins = false,
+                lastModified = -1L
             ),
             Items(
                 id = 2,
@@ -270,6 +272,8 @@ class PlaintextViewModel (
                 disliked = false,
                 rating = null,
                 notes = "",
+                syncTins = false,
+                lastModified = -1L
             ),
             Items(
                 id = 3,
@@ -284,6 +288,8 @@ class PlaintextViewModel (
                 disliked = false,
                 rating = 1.0,
                 notes = "note",
+                syncTins = false,
+                lastModified = -1L
             )
         )
         val previewTins = listOf(
@@ -297,7 +303,8 @@ class PlaintextViewModel (
                 manufactureDate = 1704175200000,
                 cellarDate = 1704261600000,
                 openDate = 1704348000000,
-                finished = true
+                finished = true,
+                lastModified = -1L
             ),
             Tins(
                 tinId = 2,
@@ -309,7 +316,8 @@ class PlaintextViewModel (
                 manufactureDate = 1704175200000,
                 cellarDate = 1704261600000,
                 openDate = null,
-                finished = false
+                finished = false,
+                lastModified = -1L
             ),
             Tins(
                 tinId = 3,
@@ -321,7 +329,8 @@ class PlaintextViewModel (
                 manufactureDate = null,
                 cellarDate = null,
                 openDate = null,
-                finished = false
+                finished = false,
+                lastModified = -1L
             ),
         )
         val previewComponents = listOf(
