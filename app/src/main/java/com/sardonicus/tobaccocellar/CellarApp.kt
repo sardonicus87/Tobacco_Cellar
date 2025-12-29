@@ -1121,8 +1121,6 @@ fun FilterLayout(
                 }
             }
         }
-
-
         else {
             item { Spacer(Modifier.height(40.dp)) }
             item {
@@ -1843,7 +1841,7 @@ fun TypeFilterSection(
     val availableTypes by filterViewModel.availableTypes.collectAsState()
     val enabledTypes by filterViewModel.typesEnabled.collectAsState()
 
-    val nothingAssigned = !availableTypes.any { it != "(Unassigned)"}
+    val nothingAssigned = remember(availableTypes) { !availableTypes.any { it != "(Unassigned)" } }
 
     Column(
         modifier = modifier
