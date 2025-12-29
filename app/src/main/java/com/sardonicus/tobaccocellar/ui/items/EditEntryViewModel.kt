@@ -10,6 +10,7 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.delay
@@ -44,6 +45,11 @@ class EditEntryViewModel(
     var tabErrorState by mutableStateOf(TabErrorState())
         private set
     var loading by mutableStateOf(false)
+
+    var originalItem by mutableStateOf(OriginalItem())
+    var originalTins by mutableStateOf<List<OriginalTin>>(emptyList())
+
+
 
     val autoCompleteData = filterViewModel.autoComplete.value
 
@@ -116,6 +122,41 @@ class EditEntryViewModel(
     private fun copyOriginalDetails(itemDetails: ItemDetails) {
         itemDetails.originalBrand = itemDetails.brand
         itemDetails.originalBlend = itemDetails.blend
+
+        originalItem = originalItem.copy(
+            id = itemDetails.id,
+            brand = itemDetails.originalBrand,
+            blend = itemDetails.originalBlend,
+            type = itemDetails.type,
+            quantity = itemDetails.quantity,
+            rating = itemDetails.rating,
+            favorite = itemDetails.favorite,
+            disliked = itemDetails.disliked,
+            notes = itemDetails.notes,
+            subGenre = itemDetails.subGenre,
+            cut = itemDetails.cut,
+            inProduction = itemDetails.inProduction,
+            syncTins = itemDetails.syncTins,
+            lastModified = itemDetails.lastModified
+        )
+    }
+
+    private fun copyOriginalTins(tins: List<TinDetails>) {
+        originalTins = tins.map { originalTin ->
+            OriginalTin(
+                tinId = originalTin.tinId,
+                itemsId = originalTin.itemsId,
+                tinLabel = originalTin.tinLabel,
+                container = originalTin.container,
+                tinQuantity = originalTin.tinQuantity,
+                unit = originalTin.unit,
+                manufactureDate = originalTin.manufactureDate,
+                cellarDate = originalTin.cellarDate,
+                openDate = originalTin.openDate,
+                finished = originalTin.finished,
+                lastModified = originalTin.lastModified
+            )
+        }
     }
 
     init {
@@ -133,14 +174,15 @@ class EditEntryViewModel(
             val flavoring = initialDetails.flavoring.toFlavoringList()
             val tins = initialDetails.tins.mapIndexed { index, it ->
                 it.toTinDetails().copy(tempTinId = index + 1)
+            }. also {
+                copyOriginalTins(it)
             }
-            val savedSynced = preferencesRepo.getItemSyncState(itemsId).first()
 
             componentList = components
             flavoringList = flavoring
             tinDetailsList = tins
 
-            val updatedDetails = itemDetails.copy(isSynced = savedSynced, tinDetailsList = tins)
+            val updatedDetails = itemDetails.copy(tinDetailsList = tins)
 
             itemUiState = itemUiState.copy(
                 itemDetails = updatedDetails,
@@ -235,20 +277,19 @@ class EditEntryViewModel(
                     existCheck = false,
                 )
         } else {
-            if (itemsRepository.exists(currentItem.brand, currentItem.blend)) {
-                existState =
-                    ExistState(
-                        exists = true,
-                        transferId = 0,
-                        existCheck = true
-                    )
-            } else if (!itemsRepository.exists(currentItem.brand, currentItem.blend)) {
-                existState =
-                    ExistState(
-                        exists = false,
-                        transferId = 0,
-                        existCheck = false,
-                    )
+            val existCheck = itemsRepository.exists(currentItem.brand, currentItem.blend)
+            existState = if (existCheck) {
+                ExistState(
+                    exists = true,
+                    transferId = 0,
+                    existCheck = true
+                )
+            } else {
+                ExistState(
+                    exists = false,
+                    transferId = 0,
+                    existCheck = false,
+                )
             }
         }
     }
@@ -265,7 +306,7 @@ class EditEntryViewModel(
     fun updateUiState(itemDetails: ItemDetails) {
         val syncedTins = calculateSyncTins()
         val tinDetailsList = tinDetailsList
-        val updatedDetails = if (itemDetails.isSynced) {
+        val updatedDetails = if (itemDetails.syncTins) {
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins,
@@ -329,6 +370,8 @@ class EditEntryViewModel(
                 manufactureDate = tinDetails.manufactureDate,
                 cellarDate = tinDetails.cellarDate,
                 openDate = tinDetails.openDate,
+                finished = tinDetails.finished,
+                lastModified = tinDetails.lastModified,
                 manufactureDateShort = tinDetails.manufactureDateShort,
                 cellarDateShort = tinDetails.cellarDateShort,
                 openDateShort = tinDetails.openDateShort,
@@ -343,16 +386,39 @@ class EditEntryViewModel(
 
     suspend fun updateItem() {
         if (validateInput(itemUiState.itemDetails)) {
-            itemsRepository.updateItem(itemUiState.itemDetails.toItem())
-            preferencesRepo.setItemSyncState(itemsId, itemUiState.itemDetails.isSynced)
+            SyncStateManager.schedulingPaused = true
+
+            val lastModified = System.currentTimeMillis()
 
             val previousComps = itemsRepository.getComponentsForItemStream(itemsId).first()
             val previousCompsSet = previousComps.map { it.componentName.lowercase() }
             val editedComps = componentList.toComponents(autoCompleteData.components)
             val editedCompsSet = editedComps.map { it.componentName.lowercase() }
-
             val compsToAdd = editedComps.filter { it.componentName.lowercase() !in previousCompsSet }
             val compsToRemove = previousComps.filter { it.componentName.lowercase() !in editedCompsSet }
+
+            val previousFlavors = itemsRepository.getFlavoringForItemStream(itemsId).first()
+            val previousFlavorsSet = previousFlavors.map { it.flavoringName.lowercase() }
+            val editedFlavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
+            val editedFlavoringSet = editedFlavoring.map { it.flavoringName.lowercase() }
+            val flavorToAdd = editedFlavoring.filter { it.flavoringName.lowercase() !in previousFlavorsSet }
+            val flavorToRemove = previousFlavors.filter { it.flavoringName.lowercase() !in editedFlavoringSet }
+
+            val existingTinIds = originalTins.map { it.tinId }
+            val newTins = tinDetailsList.filter { !existingTinIds.contains(it.tinId) }
+            val updatedTins = tinDetailsList.filter { existingTinIds.contains(it.tinId) }.filter {
+                it.toTin(itemsId) != originalTins.find { originalTin -> originalTin.tinId == it.tinId }
+            }
+            val tinsToDelete = existingTinIds.filter { tinId -> !tinDetailsList.map { it.tinId }.contains(tinId) }
+
+            val actuallyUpdated = (itemUiState.itemDetails.toItem() != originalItem) ||
+                    compsToAdd.isNotEmpty() || compsToRemove.isNotEmpty() ||
+                    flavorToAdd.isNotEmpty() || flavorToRemove.isNotEmpty() ||
+                    newTins.isNotEmpty() || updatedTins.isNotEmpty() || tinsToDelete.isNotEmpty()
+
+            val itemDetails = itemUiState.itemDetails.copy(lastModified = lastModified)
+
+            if (actuallyUpdated) { itemsRepository.updateItem(itemDetails.toItem()) }
 
             compsToAdd.forEach {
                 var componentId = itemsRepository.getComponentIdByName(it.componentName)
@@ -372,14 +438,6 @@ class EditEntryViewModel(
                 }
             }
 
-            val previousFlavors = itemsRepository.getFlavoringForItemStream(itemsId).first()
-            val previousFlavorsSet = previousFlavors.map { it.flavoringName.lowercase() }
-            val editedFlavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
-            val editedFlavoringSet = editedFlavoring.map { it.flavoringName.lowercase() }
-
-            val flavorToAdd = editedFlavoring.filter { it.flavoringName.lowercase() !in previousFlavorsSet }
-            val flavorToRemove = previousFlavors.filter { it.flavoringName.lowercase() !in editedFlavoringSet }
-
             flavorToAdd.forEach {
                 var flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
                 if (flavorId == null) {
@@ -398,20 +456,21 @@ class EditEntryViewModel(
                 }
             }
 
-            val existingTinIds = itemsRepository.getTinsForItemStream(itemsId).first().map { it.tinId }
 
-            tinDetailsList.filter { !existingTinIds.contains(it.tinId) }.forEach {
-                val tin = it.toTin(itemsId)
+            newTins.forEach {
+                val tin = it.copy(lastModified = lastModified).toTin(itemsId)
                 itemsRepository.insertTin(tin)
             }
-            tinDetailsList.filter { existingTinIds.contains(it.tinId) }.forEach {
-                val tin = it.toTin(itemsId)
+            updatedTins.forEach {
+                val tin = it.copy(lastModified = lastModified).toTin(itemsId)
                 itemsRepository.updateTin(tin)
             }
-            existingTinIds.filter { tinId -> !tinDetailsList.map { it.tinId }.contains(tinId) }.forEach {
+            tinsToDelete.forEach {
                 itemsRepository.deleteTin(it)
             }
 
+            SyncStateManager.schedulingPaused = false
+            itemsRepository.triggerUploadWorker()
             EventBus.emit(ItemUpdatedEvent())
         }
     }
@@ -419,6 +478,37 @@ class EditEntryViewModel(
     suspend fun deleteItem() { itemsRepository.deleteItem(itemUiState.itemDetails.toItem()) }
 
 }
+
+data class OriginalItem(
+    val id: Int = 0,
+    val brand: String = "",
+    val blend: String = "",
+    val type: String = "",
+    val quantity: Int = 0,
+    val rating: Double? = 0.0,
+    val favorite: Boolean = false,
+    val disliked: Boolean = false,
+    val notes: String = "",
+    val subGenre: String = "",
+    val cut: String = "",
+    val inProduction: Boolean = false,
+    val syncTins: Boolean = false,
+    val lastModified: Long = -1L
+)
+
+data class OriginalTin(
+    val tinId: Int = 0,
+    val itemsId: Int = 0,
+    val tinLabel: String = "",
+    val container: String = "",
+    val tinQuantity: Double = 0.0,
+    val unit: String = "",
+    val manufactureDate: Long?,
+    val cellarDate: Long?,
+    val openDate: Long?,
+    val finished: Boolean = false,
+    val lastModified: Long = -1L
+)
 
 data class ItemUpdatedEvent(
     val updatedEvent: Boolean = true,
