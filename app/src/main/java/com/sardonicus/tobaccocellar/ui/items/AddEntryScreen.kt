@@ -564,7 +564,6 @@ fun DetailsEntry(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1283,7 +1282,7 @@ fun NotesEntry(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(itemDetails){ onValueChange(itemDetails) }
+    LaunchedEffect(itemDetails) { onValueChange(itemDetails) }
 
     Column(
         modifier = modifier
@@ -1361,7 +1360,9 @@ fun TinsEntry(
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
-    Spacer(modifier = Modifier.height(7.dp))
+    LaunchedEffect(tinDetailsList) { onTinValueChange(tinDetails) }
+
+    Spacer(Modifier.height(7.dp))
 
     Column(
         modifier = modifier
@@ -1374,7 +1375,7 @@ fun TinsEntry(
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
     ) {
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(Modifier.height(6.dp))
 
         if (tinDetailsList.isEmpty()) {
             Button(
@@ -1421,10 +1422,7 @@ fun TinsEntry(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Spacer(
-                modifier = Modifier
-                    .height(6.dp)
-            )
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
@@ -1442,7 +1440,7 @@ fun IndividualTin(
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(tinDetailsList) {
+    LaunchedEffect (tinDetailsList) {
         onTinValueChange(
             tinDetails.copy(
                 labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)
