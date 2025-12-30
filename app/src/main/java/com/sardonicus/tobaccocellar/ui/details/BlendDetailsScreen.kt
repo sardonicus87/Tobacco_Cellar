@@ -184,7 +184,7 @@ fun BlendDetailsBody(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Top,
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxWidth(.95f)
                         ) {
                             Text(
                                 text = blendDetails.blend,
