@@ -13,7 +13,6 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -161,7 +160,6 @@ class EditEntryViewModel(
 
     init {
         viewModelScope.launch {
-            delay(10)
             loading = true
 
             val initialDetails = itemsRepository.getItemDetailsStream(itemsId)
