@@ -57,6 +57,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -113,15 +114,21 @@ fun BulkEditScreen(
     val focusManager = LocalFocusManager.current
     val bulkEditUiState by viewModel.bulkEditUiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val showSnackbar = viewModel.showSnackbar.collectAsState()
+    val showSnackbar by viewModel.showSnackbar.collectAsState()
     val saveIndicator by viewModel.saveIndicator.collectAsState()
 
-    if (showSnackbar.value) {
+    if (showSnackbar) {
         LaunchedEffect(Unit) {
             snackbarHostState.showSnackbar(
                 message = "Batch edits saved.",
                 duration = SnackbarDuration.Short
             )
+            viewModel.snackbarShown()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
             viewModel.snackbarShown()
         }
     }
