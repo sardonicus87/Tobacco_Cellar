@@ -424,13 +424,24 @@ fun BlendDetailsBody(
                         Spacer(Modifier.weight(1f))
 
                         if (blendDetails.tinsTotal.isNotBlank()) {
-                            Text(
-                                text = "(${blendDetails.tinsTotal})",
-                                modifier = Modifier,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
+                            SelectionContainer(
+                                Modifier
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            selectionFocused(true)
+                                        } else {
+                                            selectionFocused(false)
+                                        }
+                                    }
+                            ) {
+                                Text(
+                                    text = "(${blendDetails.tinsTotal})",
+                                    modifier = Modifier,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
                         }
                     }
                     SelectionContainer(
