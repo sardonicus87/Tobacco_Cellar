@@ -18,8 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -85,78 +84,92 @@ fun HelpScreen(
 private fun HelpBody(
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
             .padding(0.dp)
     ) {
-        Text(
-            text = "Tobacco Cellar was originally intended to be a basic inventory list and \"" +
-                    "tobacco passport\" combined with the ease of searching and filtering, and " +
-                    "interesting statics. This remains the primary gaol, despite any additional " +
-                    "features added since launch or possible future features..",
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            softWrap = true,
-        )
-        Text(
-            text = "Please see the relevant sections for more detailed information.",
-            modifier = Modifier
-                .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
-            softWrap = true,
-        )
-        // Help section
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(0.dp)
-        ) {
+        item {
+            Text(
+                text = "Tobacco Cellar was originally intended to be a basic inventory list and \"" +
+                        "tobacco passport\" combined with the ease of searching and filtering, and " +
+                        "interesting statics. This remains the primary gaol, despite any additional " +
+                        "features added since launch or possible future features..",
+                modifier = Modifier
+                    .padding(start = 12.dp, end = 12.dp, bottom = 10.dp, top = 12.dp),
+                softWrap = true,
+            )
+        }
+        item {
+            Text(
+                text = "Please see the relevant sections for more detailed information.",
+                modifier = Modifier
+                    .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+                softWrap = true,
+            )
+        }
+        // Help sections
+        item {
             Text(
                 text = "Help:",
                 modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 softWrap = true,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
             )
+        }
+        item {
             HelpSection(
                 title = "Cellar Screen",
                 content = { CellarScreen() }
             )
+        }
+        item {
             HelpSection(
                 title = "Stats Screen",
                 content = { StatsPage() }
             )
+        }
+        item {
             HelpSection(
                 title = "Dates Screen",
                 content = { DatesPage() }
             )
+        }
+        item {
             HelpSection(
                 title = "Filtering",
                 content = { Filtering() }
             )
+        }
+        item {
             HelpSection(
                 title = "Adding Items",
                 content = { AddingItems() }
             )
+        }
+        item {
             HelpSection(
                 title = "Editing Items",
                 content = { EditingItems() }
             )
+        }
+        item {
             HelpSection(
                 title = "Adding Tins",
                 content = { AddingTins() }
             )
+        }
+        item {
             HelpSection(
                 title = "Settings",
                 content = { Settings() }
             )
         }
-        Spacer(Modifier.height(12.dp))
+        item { Spacer(Modifier.height(12.dp)) }
     }
 }
 
