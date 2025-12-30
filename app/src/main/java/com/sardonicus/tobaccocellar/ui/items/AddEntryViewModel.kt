@@ -151,9 +151,7 @@ class AddEntryViewModel(
 
     fun removeTin(tinIndex: Int) {
         tinDetailsList = tinDetailsList.toMutableList()
-            .also {
-                it.removeAt(tinIndex)
-            }
+            .also { it.removeAt(tinIndex) }
     }
 
     private val _labelInvalid = MutableStateFlow(false)
