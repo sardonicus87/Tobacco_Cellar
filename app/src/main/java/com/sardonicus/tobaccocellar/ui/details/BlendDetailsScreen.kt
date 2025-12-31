@@ -184,11 +184,12 @@ fun BlendDetailsBody(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Top,
                             modifier = Modifier
-                                .fillMaxWidth(.95f)
+                                .fillMaxWidth()
                         ) {
                             Text(
                                 text = blendDetails.blend,
                                 modifier = Modifier
+                                    .padding(horizontal = 8.dp)
                                     .padding(bottom = 2.dp),
                                 fontSize = 30.sp,
                                 lineHeight = 32.sp,
