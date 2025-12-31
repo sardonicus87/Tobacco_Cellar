@@ -103,6 +103,6 @@ interface ItemsRepository {
     /** Cloud sync **/
     fun getPendingSyncOperationDao(): PendingSyncOperationDao
 
-    fun triggerUploadWorker()
+    suspend fun triggerUploadWorker()
 
 }

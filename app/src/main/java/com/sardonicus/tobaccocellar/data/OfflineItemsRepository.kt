@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit
 class OfflineItemsRepository(
     private var itemsDao: ItemsDao,
     private val pendingSyncOperationDao: PendingSyncOperationDao,
+    private val preferencesRepo: PreferencesRepo,
     private val context: Context
 ) : ItemsRepository {
 
@@ -455,7 +456,7 @@ class OfflineItemsRepository(
     /** Cloud-sync **/
     override fun getPendingSyncOperationDao(): PendingSyncOperationDao = this.pendingSyncOperationDao
 
-    override fun triggerUploadWorker() {
+    override suspend fun triggerUploadWorker() {
         scheduleSyncUpload()
     }
 
@@ -467,15 +468,17 @@ class OfflineItemsRepository(
         pendingSyncOperationDao.insertOperation(operation)
     }
 
-    private fun scheduleSyncUpload() {
-        if (SyncStateManager.schedulingPaused) {
-            return
-        }
+    private suspend fun scheduleSyncUpload() {
+        if (SyncStateManager.schedulingPaused) return
+
+        val allowMobileData = preferencesRepo.allowMobileData.first()
+
+        val networkType = if (allowMobileData) NetworkType.CONNECTED else NetworkType.UNMETERED
 
         val workManager = WorkManager.getInstance(context)
 
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.UNMETERED)
+            .setRequiredNetworkType(networkType)
             .build()
 
         val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadSyncWorker>()

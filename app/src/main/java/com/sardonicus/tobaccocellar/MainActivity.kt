@@ -113,6 +113,7 @@ class MainActivity : ComponentActivity() {
         authorizationClient = Identity.getAuthorizationClient(this)
 
         val workManager = WorkManager.getInstance(this)
+
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.UNMETERED)
             .build()
@@ -177,7 +178,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        WorkManager.getInstance(this).enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build())
+        lifecycleScope.launch {
+            val allowMobile = preferencesRepo.allowMobileData.first()
+            val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
+
+            WorkManager.getInstance(this@MainActivity)
+                .enqueue(
+                    OneTimeWorkRequestBuilder<DownloadSyncWorker>()
+                        .setConstraints(
+                            Constraints.Builder()
+                                .setRequiredNetworkType(networkType)
+                                .build()
+                        )
+                        .build()
+                )
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
