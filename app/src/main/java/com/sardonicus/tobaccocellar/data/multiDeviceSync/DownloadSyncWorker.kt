@@ -31,16 +31,17 @@ class DownloadSyncWorker(
         try {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
             if (!syncEnabled) {
-                Log.d("DownloadSyncWorker", "Cross-device sync is disabled, stopping work")
+                Log.w("DownloadSyncWorker", "Cross-device sync is disabled, stopping work")
                 return Result.success()
             }
 
             val userEmail = preferencesRepo.signedInUserEmail.first()
-            val hasDriveScope = preferencesRepo.hasDriveScope.first()
-            if (userEmail == null || !hasDriveScope) {
-                Log.w("DownloadSyncWorker", "Cannot download, no user signed in or no Drive scope.")
+
+            if (userEmail == null) {
+                Log.w("DownloadSyncWorker", "Cannot download, no user signed in.")
                 return Result.success()
             }
+
             val driveService = GoogleDriveServiceHelper.getDriveService(applicationContext, userEmail)
 
             val fileList = driveService.files().list()
@@ -49,7 +50,7 @@ class DownloadSyncWorker(
                 .execute()
 
             if (fileList.files.isNullOrEmpty()) {
-                Log.d("DownloadSyncWorker", "No remote files found")
+                Log.w("DownloadSyncWorker", "No remote files found")
                 return Result.success()
             }
 
@@ -57,7 +58,7 @@ class DownloadSyncWorker(
             val newFiles = fileList.files.filter { it.id !in processedFileIds }
 
             if (newFiles.isEmpty()) {
-                Log.d("DownloadSyncWorker", "No new files found")
+                Log.w("DownloadSyncWorker", "No new files found")
                 return Result.success()
             }
 

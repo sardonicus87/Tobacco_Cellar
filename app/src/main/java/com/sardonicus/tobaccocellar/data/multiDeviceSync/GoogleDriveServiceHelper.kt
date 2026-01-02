@@ -10,18 +10,16 @@ import com.google.api.services.drive.DriveScopes
 
 object GoogleDriveServiceHelper {
     fun getDriveService(context: Context, email: String): Drive {
+
         val credential = GoogleAccountCredential.usingOAuth2(
-            context, listOf(DriveScopes.DRIVE_APPDATA)
-        ).apply {
-            selectedAccount = Account(email, "com.google")
-        }
+            context,
+            listOf(DriveScopes.DRIVE_APPDATA)
+        ).apply { selectedAccount = Account(email, "com.google") }
 
         val transport = NetHttpTransport()
         val jsonFactory = GsonFactory.getDefaultInstance()
 
-        return Drive.Builder(
-            transport, jsonFactory, credential
-        )
+        return Drive.Builder(transport, jsonFactory, credential)
             .setApplicationName("Tobacco Cellar")
             .build()
 

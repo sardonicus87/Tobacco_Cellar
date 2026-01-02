@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar
 
-import android.accounts.Account
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +12,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -72,6 +74,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
     private lateinit var credentialManager: CredentialManager
     private lateinit var authorizationClient: AuthorizationClient
+    private lateinit var authorizationLauncher: ActivityResultLauncher<IntentSenderRequest>
     private lateinit var preferencesRepo: PreferencesRepo
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,22 +114,43 @@ class MainActivity : ComponentActivity() {
         preferencesRepo = (application as CellarApplication).preferencesRepo
         credentialManager = CredentialManager.create(this)
         authorizationClient = Identity.getAuthorizationClient(this)
+        authorizationLauncher = registerForActivityResult(
+                ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                lifecycleScope.launch {
+                    val userEmail = preferencesRepo.signedInUserEmail.first()
+                    if (userEmail != null) {
+                        preferencesRepo.saveLoginState(userEmail, true)
+                        preferencesRepo.saveCrossDeviceSync(true)
+                        Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Driver permission was denied", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         val workManager = WorkManager.getInstance(this)
 
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.UNMETERED)
-            .build()
+        lifecycleScope.launch {
+            preferencesRepo.allowMobileData.collect { allowMobile ->
+                val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
 
-        val downloadWorkRequest = PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(networkType)
+                    .build()
 
-        workManager.enqueueUniquePeriodicWork(
-            "download_sync_work",
-            ExistingPeriodicWorkPolicy.KEEP,
-            downloadWorkRequest
-        )
+                val downloadWorkRequest = PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
+                    .setConstraints(constraints)
+                    .build()
+
+                workManager.enqueueUniquePeriodicWork(
+                    "download_sync_work",
+                    ExistingPeriodicWorkPolicy.REPLACE,
+                    downloadWorkRequest
+                )
+            }
+        }
 
         lifecycleScope.launch {
             EventBus.events.collect { event ->
@@ -224,7 +248,9 @@ class MainActivity : ComponentActivity() {
                 val credential = GoogleIdTokenCredential.createFrom(result.credential.data)
 
                 val userEmail = credential.id
+
                 preferencesRepo.saveLoginState(userEmail, false)
+
                 authorizeDrive()
 
             } catch (e: NoCredentialException) {
@@ -238,32 +264,33 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun authorizeDrive() {
-        lifecycleScope.launch {
-            val userEmail = preferencesRepo.signedInUserEmail.first()
+        val authorizationRequest = AuthorizationRequest.Builder()
+            .setRequestedScopes(listOf(Scope(DriveScopes.DRIVE_APPDATA)))
+            .build()
 
-            if (userEmail == null) {
-                Toast.makeText(this@MainActivity, "Not signed in, cannot authorize", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            val authRequest = AuthorizationRequest.builder()
-                .setRequestedScopes(listOf(Scope(DriveScopes.DRIVE_APPDATA)))
-                .setAccount(Account(userEmail, "com.google"))
-                .build()
-
-            authorizationClient.authorize(authRequest)
-                .addOnSuccessListener {
-                    lifecycleScope.launch {
-                        preferencesRepo.saveLoginState(userEmail, true)
-                        preferencesRepo.saveCrossDeviceSync(true)
+        authorizationClient.authorize(authorizationRequest)
+            .addOnSuccessListener { result ->
+                if (result.hasResolution()) {
+                    val pendingIntent = result.pendingIntent
+                    if (pendingIntent != null) {
+                        val intentSenderRequest = IntentSenderRequest.Builder(pendingIntent).build()
+                        authorizationLauncher.launch(intentSenderRequest)
                     }
-                    Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
+                } else {
+                    lifecycleScope.launch {
+                        val userEmail = preferencesRepo.signedInUserEmail.first()
+                        if (userEmail != null) {
+                            preferencesRepo.saveLoginState(userEmail, true)
+                            preferencesRepo.saveCrossDeviceSync(true)
+                            Toast.makeText(this@MainActivity, "Sync enabled.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
-                .addOnFailureListener { e ->
-                    Log.e("MainActivity", "Authorization failed", e)
-                    Toast.makeText(this@MainActivity, "Failed to enable sync.", Toast.LENGTH_SHORT).show()
-                }
-        }
+            }
+            .addOnFailureListener { e ->
+                Log.e("MainActivity", "Authorization failed", e)
+                Toast.makeText(this@MainActivity, "Could not get Drive permission", Toast.LENGTH_SHORT).show()
+            }
     }
 
 }

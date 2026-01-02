@@ -29,10 +29,9 @@ class UploadSyncWorker(
             }
 
             val userEmail = preferencesRepo.signedInUserEmail.first()
-            val hasDriveScope = preferencesRepo.hasDriveScope.first()
 
-            if (userEmail == null || !hasDriveScope) {
-                Log.w("UploadSyncWorker", "Cannot upload, no user signed in or no Drive scope.")
+            if (userEmail == null ) {
+                Log.w("UploadSyncWorker", "Cannot upload, no user signed in.")
                 return Result.success()
             }
 

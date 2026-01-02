@@ -72,6 +72,7 @@ class PreferencesRepo(
 
         val CROSS_DEVICE_ACKNOWLEDGED = booleanPreferencesKey("cross_device_acknowledged")
         val CROSS_DEVICE_SYNC = booleanPreferencesKey("cross_device_sync")
+        val ALLOW_MOBILE_DATA = booleanPreferencesKey("allow_mobile_data")
         val SIGNED_IN_ACCOUNT = stringPreferencesKey("signed_in_account")
         val HAS_DRIVE_SCOPE = booleanPreferencesKey("has_drive_scope")
         val PROCESSED_SYNC_FILES = stringPreferencesKey("processed_sync_files")
@@ -668,6 +669,24 @@ class PreferencesRepo(
     suspend fun saveCrossDeviceSync(sync: Boolean) {
         dataStore.edit {
             it[CROSS_DEVICE_SYNC] = sync
+        }
+    }
+
+    val allowMobileData: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[ALLOW_MOBILE_DATA] ?: false
+        }
+
+    suspend fun saveAllowMobileData(allow: Boolean) {
+        dataStore.edit {
+            it[ALLOW_MOBILE_DATA] = allow
         }
     }
 
