@@ -90,7 +90,48 @@ class FilterViewModel (
     }
 
 
-    /** Sheet selection states **/
+    /** Sheet UI control **/
+    val brandSearchText = MutableStateFlow("")
+    fun updateBrandSearchText(text: String) { brandSearchText.value = text }
+    fun updateFilterBrands(text: String, allBrands: List<String>): List<String> {
+        return if (text.isBlank()) {
+            allBrands
+        } else {
+            val startsWith = allBrands.filter { brand ->
+                brand.startsWith(text, ignoreCase = true)
+            }
+            val otherWordsStartsWith = allBrands.filter { brand ->
+                brand.split(" ").drop(1).any { word ->
+                    word.startsWith(text, ignoreCase = true)
+                } && !brand.startsWith(text, ignoreCase = true)
+            }
+            val contains = allBrands.filter { brand ->
+                brand.contains(text, ignoreCase = true)
+                        && !brand.startsWith(text, ignoreCase = true) &&
+                        !otherWordsStartsWith.contains(brand)
+            }
+            startsWith + otherWordsStartsWith + contains
+        }
+    }
+    fun updateUnselectedBrandRow(
+        filteredBrands: List<String>,
+        excluded: Boolean,
+        selectedBrands: List<String>,
+        selectedExcludedBrands: List<String>,
+        brandEnabled: Map<String, Boolean>
+    ): List<String> {
+        val preSorted = filteredBrands.filterNot {
+            if (!excluded) {
+                selectedBrands.contains(it)
+            } else {
+                selectedExcludedBrands.contains(it)
+            }
+        }
+
+        return reorderChips(preSorted, brandEnabled)
+    }
+
+
     // sheet selection states //
     val sheetSelectedBrands = MutableStateFlow<List<String>>(emptyList())
     val sheetSelectedTypes = MutableStateFlow<List<String>>(emptyList())
@@ -190,8 +231,7 @@ class FilterViewModel (
 
         container.isNotEmpty() || opened || unopened || finished || unfinished
 
-    }
-        .stateIn(
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
@@ -400,65 +440,65 @@ class FilterViewModel (
             itemsRepository.getEverythingStream()
         }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
-    private val lastSeenFlow: Flow<List<Int>> = preferencesRepo.datesSeen.map {
-        if (it.isBlank()) { emptyList() }
-        else { it.split(",").mapNotNull { it.trim().toIntOrNull() } }
+    private val lastSeenFlow: Flow<List<Int>> = preferencesRepo.datesSeen.map { datesString ->
+        if (datesString.isBlank()) { emptyList() }
+        else { datesString.split(",").mapNotNull { it.trim().toIntOrNull() } }
     }
 
     // setting available vals
     init {
         viewModelScope.launch {
-            everythingFlow.collectLatest {
-                _availableBrands.value = it.map { it.items.brand }
+            everythingFlow.collectLatest { data ->
+                _availableBrands.value = data.map { it.items.brand }
                     .distinct().sorted()
-                _availableTypes.value = it.map { it.items.type.ifBlank { "(Unassigned)" } }
+                _availableTypes.value = data.map { it.items.type.ifBlank { "(Unassigned)" } }
                     .distinct().sortedWith(
                         compareBy { typeOrder[it] ?: typeOrder.size }
                     )
-                _availableSubgenres.value = it.map {
+                _availableSubgenres.value = data.map {
                     it.items.subGenre.ifBlank { "(Unassigned)" }
                 }.distinct().sortedWith(
                     compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                         .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                 )
-                _availableCuts.value = it.map {
+                _availableCuts.value = data.map {
                     it.items.cut.ifBlank { "(Unassigned)" }
                 }.distinct().sortedWith(
                     compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                         .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                 )
-                _availableComponents.value = it.flatMap {
-                    it.components.ifEmpty {
+                _availableComponents.value = data.flatMap { items ->
+                    items.components.ifEmpty {
                         listOf(Components(componentName = "(None Assigned)"))
                     }.map { it.componentName }
                 }.distinct().sortedWith(
                     compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
                         .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
                 )
-                _availableFlavorings.value = it.flatMap {
-                    it.flavoring.ifEmpty {
+                _availableFlavorings.value = data.flatMap { items ->
+                    items.flavoring.ifEmpty {
                         listOf(Flavoring(flavoringName = "(None Assigned)"))
                     }.map { it.flavoringName }
                 }.distinct().sortedWith(
                     compareBy<String>{ if (it == "(None Assigned)") 1 else 0 }
                         .thenBy { if (it != "(None Assigned)") it.lowercase() else "" }
                 )
-                _availableContainers.value = it.flatMap {
+                _availableContainers.value = data.flatMap {
                     it.tins }.map { it.container.ifBlank { "(Unassigned)" }
                 }.distinct().sortedWith(
                     compareBy<String>{ if (it == "(Unassigned)") 1 else 0 }
                         .thenBy { if (it != "(Unassigned)") it.lowercase() else "" }
                 )
-                _typesExist.value = it.any { it.items.type.isNotBlank() }
-                _subgenresExist.value = it.any { it.items.subGenre.isNotBlank() }
-                _ratingsExist.value = it.any { it.items.rating != null }
-                _favDisExist.value = it.any { it.items.favorite || it.items.disliked }
-                _tinsExist.value = it.any { it.tins.isNotEmpty() }
-                _notesExist.value = it.any { it.items.notes.isNotBlank() }
-                _datesExist.value = it.flatMap { it.tins }.any {
+                _typesExist.value = data.any { it.items.type.isNotBlank() }
+                _subgenresExist.value = data.any { it.items.subGenre.isNotBlank() }
+                _ratingsExist.value = data.any { it.items.rating != null }
+                _favDisExist.value = data.any { it.items.favorite || it.items.disliked }
+                _tinsExist.value = data.any { it.tins.isNotEmpty() }
+                _notesExist.value = data.any { it.items.notes.isNotBlank() }
+                _datesExist.value = data.flatMap { it.tins }.any {
                     it.manufactureDate != null || it.cellarDate != null || it.openDate != null
                 }
-                _emptyDatabase.value = it.isEmpty()
+                _emptyDatabase.value = data.isEmpty()
                 _autoComplete.value = AutoCompleteData(
                     brands = _availableBrands.value,
                     subgenres = _availableSubgenres.value.filter { it != "(Unassigned)" },
@@ -475,8 +515,8 @@ class FilterViewModel (
                 lastSeenFlow
             ) { everything, lastSeen ->
                 val currentReady = everything.flatMap { it.tins }
-                    .filter {
-                        it.openDate?.let {
+                    .filter { tins ->
+                        tins.openDate?.let {
                             Instant.ofEpochMilli(it)
                                 .atZone(ZoneId.systemDefault())
                                 .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
@@ -681,11 +721,11 @@ class FilterViewModel (
             val currentSearchSetting = values[3] as SearchSetting
 
             if (currentSearchValue.isNotBlank()) {
-                allItems.filter {
+                allItems.filter { items ->
                     when (currentSearchSetting) {
-                        SearchSetting.Blend -> it.items.blend.contains(currentSearchValue, true)
-                        SearchSetting.Notes -> it.items.notes.contains(currentSearchValue, true)
-                        SearchSetting.TinLabel -> it.tins.any { it.tinLabel.contains(currentSearchValue, true) }
+                        SearchSetting.Blend -> items.items.blend.contains(currentSearchValue, true)
+                        SearchSetting.Notes -> items.items.notes.contains(currentSearchValue, true)
+                        SearchSetting.TinLabel -> items.tins.any { it.tinLabel.contains(currentSearchValue, true) }
                     }
                 }
             }
@@ -731,8 +771,8 @@ class FilterViewModel (
                 else -> (flavorings.isEmpty() || ((flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { flavorings.contains(it) }))
             }
 
-            val quantityRemap = allItems.associate {
-                it.items.id to calculateTotalQuantity(it, it.tins.filter { it in tinFiltering }, quantityOption, ozRate, gramsRate)
+            val quantityRemap = allItems.associate { items ->
+                items.items.id to calculateTotalQuantity(items, items.tins.filter { it in tinFiltering }, quantityOption, ozRate, gramsRate)
             }
             val isInStock = quantityRemap[items.items.id] != null && quantityRemap[items.items.id]!! > 0.0
 
@@ -1189,20 +1229,20 @@ class FilterViewModel (
             everythingFlow, sheetSelectionsFlow, preferencesRepo.quantityOption,
             preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
             unifiedFilteredTins
-        ) {
-            val allItems = it[0] as List<ItemsComponentsAndTins>
-            val selections = it[1] as SheetSelections
-            val quantityOption = it[2] as QuantityOption
-            val ozRate = it[3] as Double
-            val gramsRate = it[4] as Double
-            val filteredTins = it[5] as List<Tins>
+        ) { values ->
+            val allItems = values[0] as List<ItemsComponentsAndTins>
+            val selections = values[1] as SheetSelections
+            val quantityOption = values[2] as QuantityOption
+            val ozRate = values[3] as Double
+            val gramsRate = values[4] as Double
+            val filteredTins = values[5] as List<Tins>
 
             val relevantItems: List<ItemsComponentsAndTins> = allItems.filter {
                 contextFilterForEnable(it, selections, FilterCategory.IN_STOCK)
             }
 
-            relevantItems.any {
-                val quantityRemap = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+            relevantItems.any { items ->
+                val quantityRemap = calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
                 quantityRemap > 0.0
             }
         }
@@ -1217,20 +1257,20 @@ class FilterViewModel (
             everythingFlow, sheetSelectionsFlow, preferencesRepo.quantityOption,
             preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
             unifiedFilteredTins
-        ) {
-            val allItems = it[0] as List<ItemsComponentsAndTins>
-            val selections = it[1] as SheetSelections
-            val quantityOption = it[2] as QuantityOption
-            val ozRate = it[3] as Double
-            val gramsRate = it[4] as Double
-            val filteredTins = it[5] as List<Tins>
+        ) { values ->
+            val allItems = values[0] as List<ItemsComponentsAndTins>
+            val selections = values[1] as SheetSelections
+            val quantityOption = values[2] as QuantityOption
+            val ozRate = values[3] as Double
+            val gramsRate = values[4] as Double
+            val filteredTins = values[5] as List<Tins>
 
             val relevantItems: List<ItemsComponentsAndTins> = allItems.filter {
                 contextFilterForEnable(it, selections, FilterCategory.OUT_OF_STOCK)
             }
 
-            relevantItems.any {
-                val quantityRemap = calculateTotalQuantity(it, it.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+            relevantItems.any { item ->
+                val quantityRemap = calculateTotalQuantity(item, item.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
                 quantityRemap == 0.0
             }
         }
@@ -1324,28 +1364,28 @@ class FilterViewModel (
         { it.noTins }
     )
     val openedEnabled: StateFlow<Boolean> = createEnabledFlow(
-        { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.OPENED).any { it.openDate != null && (it.openDate < System.currentTimeMillis()) } },
+        { item -> contextTinFiltersForEnable(item, sheetSelectionsFlow.value, FilterCategory.OPENED).any { it.openDate != null && (it.openDate < System.currentTimeMillis()) } },
         FilterCategory.OPENED,
         { it.opened }
     )
     val unopenedEnabled: StateFlow<Boolean> = createEnabledFlow(
-        { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.UNOPENED).any { (it.openDate == null || it.openDate >= System.currentTimeMillis()) && !it.finished } },
+        { item -> contextTinFiltersForEnable(item, sheetSelectionsFlow.value, FilterCategory.UNOPENED).any { (it.openDate == null || it.openDate >= System.currentTimeMillis()) && !it.finished } },
         FilterCategory.UNOPENED,
         { it.unopened }
     )
     val finishedEnabled: StateFlow<Boolean> = createEnabledFlow(
-        { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.FINISHED).any { it.finished } },
+        { item -> contextTinFiltersForEnable(item, sheetSelectionsFlow.value, FilterCategory.FINISHED).any { it.finished } },
         FilterCategory.FINISHED,
         { it.finished }
     )
     val unfinishedEnabled: StateFlow<Boolean> = createEnabledFlow(
-        { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.UNFINISHED).any { !it.finished } },
+        { item -> contextTinFiltersForEnable(item, sheetSelectionsFlow.value, FilterCategory.UNFINISHED).any { !it.finished } },
         FilterCategory.UNFINISHED,
         { it.unfinished }
     )
     val containerEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableContainers,
-        { name -> { contextTinFiltersForEnable(it, sheetSelectionsFlow.value, FilterCategory.CONTAINER).any { it.container.ifBlank { "(Unassigned)" } == name } } },
+        { name -> { tins -> contextTinFiltersForEnable(tins, sheetSelectionsFlow.value, FilterCategory.CONTAINER).any { it.container.ifBlank { "(Unassigned)" } == name } } },
         FilterCategory.CONTAINER,
         { it, option -> it.container.contains(option) }
     )
@@ -1366,109 +1406,6 @@ class FilterViewModel (
     }
 
     // Flow section filtering data
-    @Suppress("UNCHECKED_CAST")
-    val brandsData: StateFlow<BrandsSectionData> = combine(
-        availableBrands,
-        sheetSelectedBrands,
-        sheetSelectedExcludeBrands,
-        sheetSelectedExcludeBrandSwitch,
-        brandsEnabled,
-        excludeBrandsEnabled
-    ) {
-            val allBrands = it[0] as List<String>
-            val selectedBrands = it[1] as List<String>
-            val excludeBrands = it[2] as List<String>
-            val excludeBrandSwitch = it[3] as Boolean
-            val brandsEnabled = it[4] as Map<String, Boolean>
-            val excludeBrandsEnabled = it[5] as Map<String, Boolean>
-            BrandsSectionData(
-                allBrands,
-                selectedBrands,
-                excludeBrands,
-                excludeBrandSwitch,
-                brandsEnabled,
-                excludeBrandsEnabled
-            )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = BrandsSectionData()
-        )
-    val typeData: StateFlow<FilterSectionData> = generateFilterSectionData(
-        availableTypes,
-        typesEnabled,
-        sheetSelectedTypes,
-        reorder = false
-    )
-    val otherData: StateFlow<OtherSectionData> = combine(
-        sheetSelectedFavorites,
-        favoritesEnabled,
-        sheetSelectedExcludeFavorites,
-        excludeFavoritesEnabled,
-        sheetSelectedDislikeds,
-        dislikedsEnabled,
-        sheetSelectedExcludeDislikeds,
-        excludeDislikesEnabled,
-        sheetSelectedInStock,
-        inStockEnabled,
-        sheetSelectedOutOfStock,
-        outOfStockEnabled,
-        sheetSelectedUnrated,
-        unratedEnabled,
-        sheetSelectedRatingLow,
-        ratingLowEnabled,
-        sheetSelectedRatingHigh,
-        ratingHighEnabled,
-        ratingsExist
-    ) { it: Array<Any?> ->
-        val favorites = it[0] as Boolean
-        val favoritesEnabled = it[1] as Boolean
-        val excludeFavorites = it[2] as Boolean
-        val excludeFavoritesEnabled = it[3] as Boolean
-        val dislikeds = it[4] as Boolean
-        val dislikedsEnabled = it[5] as Boolean
-        val excludeDislikeds = it[6] as Boolean
-        val excludeDislikedsEnabled = it[7] as Boolean
-        val inStock = it[8] as Boolean
-        val inStockEnabled = it[9] as Boolean
-        val outOfStock = it[10] as Boolean
-        val outOfStockEnabled = it[11] as Boolean
-        val unrated = it[12] as Boolean
-        val unratedEnabled = it[13] as Boolean
-        val ratingLow = it[14] as Double?
-        val ratingLowEnabled = it[15] as Double?
-        val ratingHigh = it[16] as Double?
-        val ratingHighEnabled = it[17] as Double?
-        val ratingsExist = it[18] as Boolean
-
-        OtherSectionData(
-            favorites,
-            excludeFavorites,
-            dislikeds,
-            excludeDislikeds,
-            unrated,
-            ratingLow,
-            ratingHigh,
-            inStock,
-            outOfStock,
-            favoritesEnabled,
-            excludeFavoritesEnabled,
-            dislikedsEnabled,
-            excludeDislikedsEnabled,
-            unratedEnabled,
-            ratingLowEnabled,
-            ratingHighEnabled,
-            inStockEnabled,
-            outOfStockEnabled,
-            ratingsExist
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = OtherSectionData()
-        )
     val subgenreData: StateFlow<FilterSectionData> = generateFilterSectionData(
         availableSubgenres,
         subgenresEnabled,
@@ -1495,71 +1432,6 @@ class FilterViewModel (
             availableContainers,
             containerEnabled,
             sheetSelectedContainer
-        )
-    val tinsFilterData: StateFlow<TinsFilterData> = combine(
-        sheetSelectedHasTins,
-        hasTinsEnabled,
-        sheetSelectedNoTins,
-        noTinsEnabled,
-        sheetSelectedOpened,
-        openedEnabled,
-        sheetSelectedUnopened,
-        unopenedEnabled,
-        sheetSelectedFinished,
-        finishedEnabled,
-        sheetSelectedUnfinished,
-        unfinishedEnabled
-    ) {
-        val hasTins = it[0]
-        val hasEnabled = it[1]
-        val noTins = it[2]
-        val noEnabled = it[3]
-        val opened = it[4]
-        val openedEnabled = it[5]
-        val unopened = it[6]
-        val unopenedEnabled = it[7]
-        val finished = it[8]
-        val finishedEnabled = it[9]
-        val unfinished = it[10]
-        val unfinishedEnabled = it[11]
-
-        TinsFilterData(
-            hasTins,
-            noTins,
-            opened,
-            unopened,
-            finished,
-            unfinished,
-            hasEnabled,
-            noEnabled,
-            openedEnabled,
-            unopenedEnabled,
-            finishedEnabled,
-            unfinishedEnabled
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = TinsFilterData()
-        )
-    val productionData: StateFlow<ProductionSectionData> = combine(
-        sheetSelectedProduction,
-        productionEnabled,
-        sheetSelectedOutOfProduction,
-        outOfProductionEnabled
-    ) { production, productionEnabled, outOfProduction, outOfProductionEnabled ->
-        ProductionSectionData(
-            production,
-            outOfProduction,
-            productionEnabled,
-            outOfProductionEnabled
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500L),
-            initialValue = ProductionSectionData()
         )
 
     private fun generateFilterSectionData(
@@ -2137,63 +2009,6 @@ data class FilterSectionData(
     val matching: String? = null,
 )
 
-data class BrandsSectionData(
-    val allBrands: List<String> = emptyList(),
-    val selectedBrands: List<String> = emptyList(),
-    val excludeBrands: List<String> = emptyList(),
-    val excludeBrandSwitch: Boolean = false,
-
-    val includeBrandsEnabled: Map<String, Boolean> = emptyMap(),
-    val excludeBrandsEnabled: Map<String, Boolean> = emptyMap(),
-)
-
-data class OtherSectionData(
-    val favorites: Boolean = false,
-    val excludeFavorites: Boolean = false,
-    val dislikeds: Boolean = false,
-    val excludeDislikeds: Boolean = false,
-    val unrated: Boolean = false,
-    val ratingLow: Double? = null,
-    val ratingHigh: Double? = null,
-    val inStock: Boolean = false,
-    val outOfStock: Boolean = false,
-
-    val favoritesEnabled: Boolean = false,
-    val excludeFavoritesEnabled: Boolean = false,
-    val dislikedsEnabled: Boolean = false,
-    val excludeDislikedsEnabled: Boolean = false,
-    val unratedEnabled: Boolean = false,
-    val ratingLowEnabled: Double? = null,
-    val ratingHighEnabled: Double? = null,
-    val inStockEnabled: Boolean = false,
-    val outOfStockEnabled: Boolean = false,
-
-    val ratingsExist: Boolean = false,
-)
-
-data class TinsFilterData(
-    val hasTins: Boolean = false,
-    val noTins: Boolean = false,
-    val opened: Boolean = false,
-    val unopened: Boolean = false,
-    val finished: Boolean = false,
-    val unfinished: Boolean = false,
-
-    val hasEnabled: Boolean = false,
-    val noEnabled: Boolean = false,
-    val openedEnabled: Boolean = false,
-    val unopenedEnabled: Boolean = false,
-    val finishedEnabled: Boolean = false,
-    val unfinishedEnabled: Boolean = false,
-)
-
-data class ProductionSectionData(
-    val production: Boolean = false,
-    val outOfProduction: Boolean = false,
-
-    val productionEnabled: Boolean = false,
-    val outOfProductionEnabled: Boolean = false,
-)
 
 data class AutoCompleteData(
     val brands: List<String> = emptyList(),
