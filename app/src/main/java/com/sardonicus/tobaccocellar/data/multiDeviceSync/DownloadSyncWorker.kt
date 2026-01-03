@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.CrossRefSyncPayload
@@ -23,6 +24,14 @@ class DownloadSyncWorker(
     workerParams: WorkerParameters
 ): CoroutineWorker(appContext, workerParams) {
 
+    companion object {
+        const val RESULT_KEY = "message"
+        const val SYNC_COMPLETE = "SYNC_COMPLETE"
+        const val REMOTE_EMPTY = "REMOTE_EMPTY"
+        const val UP_TO_DATE = "ALREADY_UP_TO_DATE"
+        const val SKIPPED = "SKIPPED"
+    }
+
     override suspend fun doWork(): Result {
         val app = applicationContext as CellarApplication
         val itemsRepository = app.container.itemsRepository
@@ -32,14 +41,14 @@ class DownloadSyncWorker(
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
             if (!syncEnabled) {
                 Log.w("DownloadSyncWorker", "Cross-device sync is disabled, stopping work")
-                return Result.success()
+                return Result.success(workDataOf(RESULT_KEY to SKIPPED))
             }
 
             val userEmail = preferencesRepo.signedInUserEmail.first()
 
             if (userEmail == null) {
                 Log.w("DownloadSyncWorker", "Cannot download, no user signed in.")
-                return Result.success()
+                return Result.success(workDataOf(RESULT_KEY to SKIPPED))
             }
 
             val driveService = GoogleDriveServiceHelper.getDriveService(applicationContext, userEmail)
@@ -51,20 +60,23 @@ class DownloadSyncWorker(
 
             if (fileList.files.isNullOrEmpty()) {
                 Log.w("DownloadSyncWorker", "No remote files found")
-                return Result.success()
+                return Result.success(workDataOf(RESULT_KEY to REMOTE_EMPTY))
             }
 
             val processedFileIds = preferencesRepo.processedSyncFiles.first()
             val newFiles = fileList.files.filter { it.id !in processedFileIds }
 
+            val successfullyProcessedFiles = mutableListOf<String>()
+
             if (newFiles.isEmpty()) {
                 Log.w("DownloadSyncWorker", "No new files found")
-                return Result.success()
+                return Result.success(workDataOf(RESULT_KEY to UP_TO_DATE))
             }
 
             Log.d("DownloadSyncWorker", "Found ${newFiles.size} new files to download")
 
             for (file in newFiles) {
+                var processSuccess = true
                 try {
                     val outputStream = ByteArrayOutputStream()
                     driveService.files().get(file.id).executeMediaAndDownloadTo(outputStream)
@@ -72,7 +84,13 @@ class DownloadSyncWorker(
 
                     val operations = Json.decodeFromString<List<PendingSyncOperation>>(fileContent)
                     for (op in operations) {
-                        applyOperation(itemsRepository, op)
+                        if (!applyOperation(itemsRepository, op)) {
+                            processSuccess = false
+                        }
+                    }
+
+                    if (processSuccess) {
+                        successfullyProcessedFiles.add(file.id)
                     }
                 } catch (e: Exception) {
                     Log.e("DownloadSyncWorker", "Failed to process file ${file.id}.", e)
@@ -97,23 +115,23 @@ class DownloadSyncWorker(
             }
 
             val oldFileIds = oldFiles.map { it.id }.toSet()
-            val allProcessedIds = processedFileIds + newFiles.map { it.id } - oldFileIds
+            val allProcessedIds = processedFileIds + successfullyProcessedFiles - oldFileIds
             preferencesRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
 
             Log.d("DownloadSyncWorker", "Download complete, processed ${allProcessedIds.size} files")
-            return Result.success()
+            return Result.success(workDataOf(RESULT_KEY to SYNC_COMPLETE))
         } catch (e: Exception) {
             Log.e("DownloadSyncWorker", "Error during sync download work", e)
             return Result.retry()
         }
     }
 
-    private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation) {
+    private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation): Boolean {
         val localDbVersion = TobaccoDatabase.getDatabaseVersion(applicationContext)
 
         if (op.dbVersion != localDbVersion) {
             Log.w("DownloadSyncWorker", "Skipping operation with Db version mismatch: Remote = ${op.dbVersion}, Local = $localDbVersion")
-            return
+            return false
         }
 
         when (op.entityType) {
@@ -146,7 +164,7 @@ class DownloadSyncWorker(
                 val localParentItem = repo.getItemByIndex(syncPayload.itemBrand, syncPayload.itemBlend)
                 if (localParentItem == null) {
                     Log.e("DownloadSyncWorker", "Skipping tin, parent item ${syncPayload.itemBrand} - ${syncPayload.itemBlend} not found locally.")
-                    return
+                    return false
                 }
 
                 val localTin = repo.getTinByLabel(localParentItem.id, remoteTin.tinLabel)
@@ -215,5 +233,6 @@ class DownloadSyncWorker(
                 }
             }
         }
+        return true
     }
 }
