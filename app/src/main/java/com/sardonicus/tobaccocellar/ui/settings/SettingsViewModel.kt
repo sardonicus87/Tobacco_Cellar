@@ -1,15 +1,21 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
-import androidx.lifecycle.ViewModel
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
@@ -26,8 +32,10 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import com.sardonicus.tobaccocellar.ui.utilities.SignInRequestedEvent
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,28 +62,38 @@ import java.util.zip.ZipOutputStream
 import kotlin.math.roundToInt
 
 class SettingsViewModel(
+    application: Application,
     private val itemsRepository: ItemsRepository,
     val filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
-): ViewModel() {
+): AndroidViewModel(application) {
 
     /** Theme Settings */
     private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM.value)
     private val _showRatingsOption = MutableStateFlow(false)
     private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
-    private val _defaultSyncOption = MutableStateFlow(false)
     private val _parseLinks = MutableStateFlow(true)
-    private val _crossDeviceSync = MutableStateFlow(false)
 
+    /** App & Database settings */
     private val _deviceSyncAcknowledgement = MutableStateFlow(false)
     val deviceSyncAcknowledgement = _deviceSyncAcknowledgement.asStateFlow()
 
-    private val _openDialog = MutableStateFlow<DialogType?>(null)
-    val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
+    private val _crossDeviceSync = MutableStateFlow(false)
+    val crossDeviceSync = _crossDeviceSync.asStateFlow()
+
+    private val _allowMobileData = MutableStateFlow(false)
+    val allowMobileData = _allowMobileData.asStateFlow()
 
     private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
     val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
+
+    private val _defaultSyncOption = MutableStateFlow(false)
+
+
+    /** General UI control **/
+    private val _openDialog = MutableStateFlow<DialogType?>(null)
+    val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
 
     private val _tinGramsConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.gramsRate)
     val tinGramsConversionRate: StateFlow<Double> = _tinGramsConversionRate.asStateFlow()
@@ -85,6 +103,8 @@ class SettingsViewModel(
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+    private val networkMonitor = NetworkMonitor(getApplication())
 
 
     val displaySettings = listOf(
@@ -204,11 +224,8 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.crossDeviceSync.first().let {
+                preferencesRepo.crossDeviceSync.collect {
                     _crossDeviceSync.value = it
-                    if (it) {
-                        preferencesRepo.saveCrossDeviceSync(true)
-                    }
                 }
             }
         }
@@ -216,6 +233,13 @@ class SettingsViewModel(
             withContext(Dispatchers.IO) {
                 preferencesRepo.crossDeviceAcknowledged.collect {
                     _deviceSyncAcknowledgement.value = it
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.allowMobileData.collect {
+                    _allowMobileData.value = it
                 }
             }
         }
@@ -386,11 +410,115 @@ class SettingsViewModel(
 
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
+            preferencesRepo.saveCrossDeviceSync(enable)
             if (enable) {
                 EventBus.emit(SignInRequestedEvent())
             } else {
                 preferencesRepo.saveCrossDeviceSync(false)
             }
+        }
+    }
+
+    fun saveAllowMobileData(enable: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveAllowMobileData(enable)
+        }
+    }
+
+    val manualSyncEnabled: StateFlow<Boolean> = combine(
+        preferencesRepo.allowMobileData,
+        networkMonitor.isConnected,
+        networkMonitor.isWifi
+    ) { allowMobile, isConnected, isWifi ->
+        (allowMobile && isConnected) || isWifi
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
+
+    fun manualSync() {
+        viewModelScope.launch {
+            val userEmail = preferencesRepo.signedInUserEmail.first()
+
+            if (userEmail == null) {
+                Log.d("Sync Worker", "User email or scope is null.")
+                return@launch
+            }
+
+            val context: Context = getApplication()
+            val workManager = WorkManager.getInstance(context)
+
+            val allowMobile = preferencesRepo.allowMobileData.first()
+            val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
+
+            itemsRepository.triggerUploadWorker()
+
+            val workRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(networkType)
+                        .build()
+                )
+                .build()
+
+            workManager.enqueueUniqueWork(
+                "manual_download_sync",
+                ExistingWorkPolicy.REPLACE,
+                workRequest
+            )
+
+            val timeoutJob = viewModelScope.launch {
+                delay(5000)
+                val workInfo = workManager.getWorkInfoById(workRequest.id).get()
+                if (workInfo?.state == WorkInfo.State.ENQUEUED) {
+                    workManager.cancelWorkById(workRequest.id)
+                    setLoadingState(false)
+                    showSnackbar("Sync failed (connection timeout).")
+                }
+            }
+
+            workManager.getWorkInfoByIdFlow(workRequest.id)
+                .collect { workInfo ->
+                    when (workInfo?.state) {
+                        WorkInfo.State.ENQUEUED -> {
+                            setLoadingState(true)
+                        }
+                        WorkInfo.State.RUNNING -> {
+                            timeoutJob.cancel()
+                            setLoadingState(true)
+                        }
+                        WorkInfo.State.SUCCEEDED -> {
+                            timeoutJob.cancel()
+                            setLoadingState(false)
+                            val result = workInfo.outputData
+                            when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
+                                DownloadSyncWorker.SYNC_COMPLETE -> {
+                                    showSnackbar("Sync complete.")
+                                }
+                                DownloadSyncWorker.REMOTE_EMPTY -> {
+                                    showSnackbar("Remote files not found.")
+                                }
+                                DownloadSyncWorker.UP_TO_DATE -> {
+                                    showSnackbar("No new sync data available.")
+                                }
+                            }
+                        }
+                        WorkInfo.State.FAILED -> {
+                            timeoutJob.cancel()
+                            setLoadingState(false)
+                            showSnackbar("Sync failed (check connection).")
+                        }
+                        WorkInfo.State.CANCELLED -> {
+                            timeoutJob.cancel()
+                            setLoadingState(false)
+                        }
+                        else -> {
+                            timeoutJob.cancel()
+                            setLoadingState(false)
+                        }
+                    }
+                }
         }
     }
 

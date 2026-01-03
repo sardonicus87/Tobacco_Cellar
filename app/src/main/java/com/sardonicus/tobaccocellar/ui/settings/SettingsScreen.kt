@@ -52,7 +52,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -224,6 +223,10 @@ private fun SettingsBody(
         }
     }
 
+    val deviceSync by viewModel.crossDeviceSync.collectAsState()
+    val allowMobileData by viewModel.allowMobileData.collectAsState()
+    val manualSyncEnabled by viewModel.manualSyncEnabled.collectAsState()
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -342,7 +345,12 @@ private fun SettingsBody(
                 onDismiss = { viewModel.dismissDialog() },
                 acknowledgement = acknowledgement,
                 confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
+                deviceSync = deviceSync,
                 onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
+                allowMobileData = allowMobileData,
+                onAllowMobileData = { viewModel.saveAllowMobileData(it) },
+                manualSyncEnabled = manualSyncEnabled,
+                onManualSync = { viewModel.manualSync() },
                 preferencesRepo = preferencesRepo,
                 modifier = Modifier
             )
@@ -415,14 +423,14 @@ fun DisplaySettings(
     Column(
         modifier = modifier
             .fillMaxWidth(),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
         Text(
             text = "Display Settings",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(bottom = 4.dp),
+                .padding(bottom = 3.dp),
             fontSize = 16.sp
         )
         viewModel.displaySettings.forEach {
@@ -444,14 +452,14 @@ fun DatabaseSettings(
     Column(
         modifier = modifier
             .fillMaxWidth(),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
         Text(
             text = "App & Database Settings",
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(bottom = 4.dp),
+                .padding(bottom = 3.dp),
             fontSize = 16.sp
         )
         viewModel.databaseSettings.forEach {
@@ -462,7 +470,7 @@ fun DatabaseSettings(
                     else -> { { viewModel.showDialog(it.dialogType) } }
                 }
             val color = if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.primary
 
             SettingsButton(
                 text = it.title,
@@ -477,12 +485,13 @@ fun DatabaseSettings(
 fun SettingsButton(
     text: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     TextButton(
         onClick = onClick,
         contentPadding = PaddingValues(8.dp, 3.dp),
-        modifier = Modifier
+        modifier = modifier
             .heightIn(28.dp, 28.dp),
     ) {
         Text(
@@ -955,20 +964,21 @@ fun DeviceSyncDialog(
     onDismiss: () -> Unit,
     acknowledgement: Boolean,
     confirmAcknowledgement: () -> Unit,
+    deviceSync: Boolean,
     onDeviceSync: (Boolean) -> Unit,
+    allowMobileData: Boolean,
+    onAllowMobileData: (Boolean) -> Unit,
+    manualSyncEnabled: Boolean,
+    onManualSync: () -> Unit,
     modifier: Modifier = Modifier,
     preferencesRepo: PreferencesRepo
 ) {
-    val currentOption by preferencesRepo.crossDeviceSync.collectAsState(initial = false)
     val email by preferencesRepo.signedInUserEmail.collectAsState(initial = null)
     val hasScope by preferencesRepo.hasDriveScope.collectAsState(initial = false)
-    val enabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
+    val syncEnabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
-    val atBottom by remember {
-        derivedStateOf { scrollState.value == scrollState.maxValue }
-    }
-
+    val atBottom by remember(scrollState.canScrollForward) { mutableStateOf(!scrollState.canScrollForward) }
 
     val scope = rememberCoroutineScope()
 
@@ -998,40 +1008,52 @@ fun DeviceSyncDialog(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
+                            text = "(You must scroll to the bottom to accept)",
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally),
+                            fontSize = 12.sp,
+                            color = LocalContentColor.current
+                        )
+                        Text(
                             text = "To auto synchronize collection changes across devices, you " +
                                     "must enable this option and authorize Google Drive access " +
-                                    "on each device. You only need to authorize once per device " +
-                                    "(though uninstalling and reinstalling will require " +
-                                    "re-authorizing). This also requires all devices to be " +
-                                    "running an the same Database Version.",
+                                    "on each device. You do not need the Google Drive app for " +
+                                    "this functionality to work. You only need to authorize once " +
+                                    "per device (though uninstalling and reinstalling will " +
+                                    "require re-authorizing). This also requires all devices to " +
+                                    "be running a version of the app with the same Database Version.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "I (developer) will not have access to your login or drive, " +
-                                    "this authorization just allows the app to use your Google " +
-                                    "Drive as a cloud location for storing and retrieving data " +
-                                    "changes between devices. This login and authorization can be " +
-                                    "cleared at any time in this setting dialog.",
+                            text = "I (developer), and any third parties will not have access to " +
+                                    "your login or drive, this authorization just allows the app " +
+                                    "to use your Google Drive as a cloud location for storing and " +
+                                    "retrieving data changes between devices. The app will create " +
+                                    "a hidden folder that only this app can access, and this app-" +
+                                    "specific folder is the only part of your Drive that the app " +
+                                    "can access. Login and authorization can be cleared at any " +
+                                    "time in this setting dialog.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "Data is only uploaded/downloaded when connected to WIFI, and " +
-                                    "does not count toward your storage quota. Data is checked " +
-                                    "once at every app start, and cyclically once every 12 hours " +
-                                    "as long as the device is powered on and connected to WIFI.",
+                            text = "Data does not count toward your Google Drive storage quota, " +
+                                    "and is checked once at every app start, and cyclically once " +
+                                    "every 12 hours as long as the device is powered on. The app " +
+                                    "start check and 12-hour cycled downloads respect your " +
+                                    "settings regarding mobile data or WIFI only.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "Changes are saved locally and scheduled to upload when " +
-                                    "connected to WIFI. The uploaded data only includes changes. " +
-                                    "The changes are time-stamped and device sync is bi-" +
-                                    "directional.",
+                            text = "Changes are saved locally and scheduled to upload according " +
+                                    "to your mobile data settings (mobile or WIFI only). The " +
+                                    "uploaded data only includes changes, which are time-stamped " +
+                                    "as device sync is bi-directional.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
@@ -1047,30 +1069,26 @@ fun DeviceSyncDialog(
                         )
                     }
                 } else {
-                    Text(
-                        text = "Multi-Device Sync:",
-                        modifier = Modifier,
-                        fontSize = 16.sp,
-                        color = LocalContentColor.current
-                    )
+                    Spacer(Modifier.height(4.dp))
+                    // Enable Sync
                     Row(
                         modifier = modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                            .fillMaxWidth()
+                            .height(28.dp)
+                            .padding(start = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val offAlpha = if (!currentOption) 1f else .5f
-                        val onAlpha = if (currentOption) 1f else .5f
                         Text(
-                            text = "Off",
+                            text = "Multi-Device Sync:",
                             modifier = Modifier,
-                            fontSize = 14.sp,
-                            fontWeight = if (!currentOption) FontWeight.SemiBold else FontWeight.Normal,
-                            color = LocalContentColor.current.copy(alpha = offAlpha)
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = LocalContentColor.current
                         )
                         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                             Switch(
-                                checked = currentOption,
+                                checked = deviceSync,
                                 onCheckedChange = { onDeviceSync(it) },
                                 modifier = Modifier
                                     .requiredHeight(20.dp)
@@ -1080,14 +1098,54 @@ fun DeviceSyncDialog(
                                 )
                             )
                         }
+                    }
+
+                    // Allow Mobile
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .height(28.dp)
+                            .padding(start = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = "On",
+                            text = "Allow Mobile Data:",
                             modifier = Modifier,
-                            fontSize = 14.sp,
-                            fontWeight = if (currentOption) FontWeight.SemiBold else FontWeight.Normal,
-                            color = LocalContentColor.current.copy(onAlpha)
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = LocalContentColor.current
+                        )
+                        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                            Switch(
+                                checked = allowMobileData,
+                                onCheckedChange = { onAllowMobileData(it) },
+                                modifier = Modifier
+                                    .requiredHeight(20.dp)
+                                    .scale(.7f)
+                                    .padding(start = 10.dp),
+                                colors = SwitchDefaults.colors(
+                                )
+                            )
+                        }
+                    }
+
+                    // Manual Sync
+                    TextButton(
+                        onClick = { onManualSync() },
+                        enabled = deviceSync && syncEnabled && manualSyncEnabled,
+                        contentPadding = PaddingValues(8.dp, 3.dp),
+                        modifier = modifier
+                            .heightIn(28.dp, 28.dp)
+                    ) {
+                        Text(
+                            text = "Manual Sync",
+                            modifier = Modifier,
+                            fontSize = 16.sp,
                         )
                     }
+
+                    // Clear Login
                     TextButton(
                         onClick = {
                             scope.launch {
@@ -1095,12 +1153,14 @@ fun DeviceSyncDialog(
                                 onDeviceSync(false)
                             }
                         },
-                        enabled = enabled,
-                        modifier = Modifier
-                            .padding(0.dp)
+                        enabled = syncEnabled,
+                        contentPadding = PaddingValues(8.dp, 3.dp),
+                        modifier = modifier
+                            .heightIn(28.dp, 28.dp)
                     ) {
                         Text(
-                            text = "Clear login and authorization"
+                            text = "Clear Login",
+                            fontSize = 16.sp,
                         )
                     }
                 }
