@@ -493,4 +493,8 @@ class OfflineItemsRepository(
         )
     }
 
+    override suspend fun hasPendingOperations(): Boolean {
+        return pendingSyncOperationDao.hasPendingOperations()
+    }
+
 }

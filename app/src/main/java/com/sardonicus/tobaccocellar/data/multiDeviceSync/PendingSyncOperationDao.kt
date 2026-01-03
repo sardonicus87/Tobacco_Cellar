@@ -15,4 +15,7 @@ interface PendingSyncOperationDao {
 
     @Query("DELETE FROM pending_sync_operations WHERE id IN (:ids)")
     suspend fun deleteOperation(ids: List<Long>)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM pending_sync_operations LIMIT 1)")
+    suspend fun hasPendingOperations(): Boolean
 }

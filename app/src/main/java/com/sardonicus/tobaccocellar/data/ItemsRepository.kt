@@ -105,4 +105,6 @@ interface ItemsRepository {
 
     suspend fun triggerUploadWorker()
 
+    suspend fun hasPendingOperations(): Boolean
+
 }

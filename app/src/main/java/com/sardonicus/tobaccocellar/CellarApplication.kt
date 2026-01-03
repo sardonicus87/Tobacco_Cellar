@@ -10,9 +10,12 @@ import com.sardonicus.tobaccocellar.data.AppDataContainer
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -38,6 +41,27 @@ class CellarApplication : Application() {
         csvHelper = CsvHelper()
 
         migrateSyncSettings()
+
+        applicationScope.launch {
+            val networkMonitor = NetworkMonitor(this@CellarApplication)
+            val itemsRepository = container.itemsRepository
+
+            val networkCheckFlow = combine(
+                networkMonitor.isWifi,
+                networkMonitor.isConnected,
+                preferencesRepo.allowMobileData
+            ) { isWifi, isConnected, allowMobile ->
+                isWifi || (isConnected && allowMobile)
+            }
+
+            networkCheckFlow.distinctUntilChanged().collect { canUpload ->
+                if (canUpload) {
+                    if (itemsRepository.hasPendingOperations()) {
+                        itemsRepository.triggerUploadWorker()
+                    }
+                }
+            }
+        }
     }
 
     private fun migrateSyncSettings() {
