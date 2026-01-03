@@ -12,13 +12,19 @@ class Navigator(
 
         state.cameFrom = state.currentStack.lastOrNull()
 
-        if (route in state.backStacks.keys) {
-            // is a top level route, switch to that backstack
-            if (isLarge && state.topLevelRoute in mainSecondaryMap) {
-                // clear the stack of everything but main and default second before swapping routes
-                val currentStack = state.backStacks.getValue(state.topLevelRoute)
-                currentStack.removeIf { currentStack.indexOf(it) > 1 }
-            }
+        if (route in state.backStacks.keys) { // is a top level route, switch to that backstack
+
+            // Two Pane stuff
+//            if (isLarge && state.topLevelRoute in mainSecondaryMap) {
+//                // clear the stack of everything but main and default second before swapping stacks
+//                val currentStack = state.backStacks.getValue(state.topLevelRoute)
+//                currentStack.removeIf { currentStack.indexOf(it) > 1 }
+//            }
+
+            // For TwoPane, save the current backstack before navigating
+            val oldStack = if (isLarge && state.topLevelRoute in mainSecondaryMap) {
+                state.backStacks.getValue(state.topLevelRoute)
+            } else { null }
 
             state.topLevelRoute = route
 
@@ -31,6 +37,9 @@ class Navigator(
                     currentStack.add(1, defaultSecond)
                 }
             }
+
+            // For TwoPane scene, clean up the previous stack after swapping top level routes
+            oldStack?.removeIf { oldStack.indexOf(it) > 1 }
 
         } else {
             // for TwoPane compatible routes, check and if it is already on the stack, remove the
@@ -89,6 +98,12 @@ class Navigator(
             state.twoPaneSceneKey.intValue++
         }
     }
+//
+//    fun removeDefaultSecond() {
+//        val currentStack = state.backStacks.getValue(state.topLevelRoute)
+//        val defaultSecond = mainSecondaryMap.getValue(state.topLevelRoute)
+//        currentStack.removeIf { it == defaultSecond }
+//    }
 }
 
 private fun findPanes(stack: List<NavKey>): Pair<NavKey?, NavKey?> {
