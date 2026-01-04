@@ -461,7 +461,7 @@ class OfflineItemsRepository(
     }
 
     private suspend fun logOperation(operation: PendingSyncOperation) {
-        if (!SyncStateManager.loggingPaused) {
+        if (SyncStateManager.loggingPaused) {
             return
         }
 
