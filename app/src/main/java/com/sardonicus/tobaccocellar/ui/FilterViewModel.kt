@@ -16,6 +16,7 @@ import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -374,6 +375,9 @@ class FilterViewModel (
                     resetFilter()
                     _refresh.emit(Unit)
                     _shouldScrollUp.value = true
+                }
+                if (it is SyncDownloadEvent) {
+                    _refresh.emit(Unit)
                 }
             }
         }
