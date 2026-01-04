@@ -10,6 +10,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.sardonicus.tobaccocellar.data.AppContainer
 import com.sardonicus.tobaccocellar.data.AppDataContainer
@@ -18,6 +19,8 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,6 +107,20 @@ class CellarApplication : Application() {
                 downloadWorkRequest
             )
 
+            workManager.getWorkInfoByIdFlow(downloadWorkRequest.id)
+                .collect { workInfo ->
+                    when (workInfo?.state) {
+                        WorkInfo.State.SUCCEEDED -> {
+                            val result = workInfo.outputData
+                            when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
+                                DownloadSyncWorker.SYNC_COMPLETE -> {
+                                    EventBus.emit(SyncDownloadEvent)
+                                }
+                            }
+                        }
+                        else -> {}
+                    }
+                }
         }
     }
 
