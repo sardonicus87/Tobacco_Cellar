@@ -413,8 +413,6 @@ class SettingsViewModel(
             preferencesRepo.saveCrossDeviceSync(enable)
             if (enable) {
                 EventBus.emit(SignInRequestedEvent())
-            } else {
-                preferencesRepo.saveCrossDeviceSync(false)
             }
         }
     }
