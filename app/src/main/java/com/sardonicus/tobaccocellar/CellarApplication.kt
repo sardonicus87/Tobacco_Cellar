@@ -5,10 +5,18 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.sardonicus.tobaccocellar.data.AppContainer
 import com.sardonicus.tobaccocellar.data.AppDataContainer
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
@@ -18,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
@@ -42,6 +51,7 @@ class CellarApplication : Application() {
 
         migrateSyncSettings()
 
+        // Network Flow and trigger upload if can upload
         applicationScope.launch {
             val networkMonitor = NetworkMonitor(this@CellarApplication)
             val itemsRepository = container.itemsRepository
@@ -62,6 +72,39 @@ class CellarApplication : Application() {
                 }
             }
         }
+
+        // Workers
+        applicationScope.launch {
+            val workManager = WorkManager.getInstance(this@CellarApplication)
+
+            val allowMobile = preferencesRepo.allowMobileData.first()
+            val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
+            val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(networkType)
+                        .build()
+                )
+                .build()
+
+            workManager.enqueue(onStartWorkRequest)
+
+            // Periodic Worker
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val downloadWorkRequest = PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build()
+
+            workManager.enqueueUniquePeriodicWork(
+                "download_sync_work",
+                ExistingPeriodicWorkPolicy.KEEP,
+                downloadWorkRequest
+            )
+
+        }
     }
 
     private fun migrateSyncSettings() {
@@ -69,6 +112,9 @@ class CellarApplication : Application() {
             if (preferencesRepo.syncSettingsMigrated.first()) {
                 return@launch
             }
+
+            SyncStateManager.loggingPaused = true
+            SyncStateManager.schedulingPaused = true
 
             val itemsRepo = container.itemsRepository
             val allItemIds = itemsRepo.getAllItemIds()
@@ -80,6 +126,9 @@ class CellarApplication : Application() {
                     itemsRepo.updateItem(item.copy(syncTins = oldSyncState))
                 }
             }
+
+            SyncStateManager.loggingPaused = false
+            SyncStateManager.schedulingPaused = false
             preferencesRepo.setSyncSettingsMigrated()
         }
     }

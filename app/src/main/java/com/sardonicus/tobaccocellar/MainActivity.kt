@@ -45,12 +45,6 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.lifecycleScope
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -60,13 +54,11 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.drive.DriveScopes
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
-import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.SignInRequestedEvent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
@@ -130,28 +122,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val workManager = WorkManager.getInstance(this)
-
-        lifecycleScope.launch {
-            preferencesRepo.allowMobileData.collect { allowMobile ->
-                val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
-
-                val constraints = Constraints.Builder()
-                    .setRequiredNetworkType(networkType)
-                    .build()
-
-                val downloadWorkRequest = PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
-                    .setConstraints(constraints)
-                    .build()
-
-                workManager.enqueueUniquePeriodicWork(
-                    "download_sync_work",
-                    ExistingPeriodicWorkPolicy.REPLACE,
-                    downloadWorkRequest
-                )
-            }
-        }
-
+        // sign in launch
         lifecycleScope.launch {
             EventBus.events.collect { event ->
                 if (event is SignInRequestedEvent) {
@@ -196,26 +167,6 @@ class MainActivity : ComponentActivity() {
                     SystemBarsProtection()
                 }
             }
-        }
-    }
-
-
-    override fun onStart() {
-        super.onStart()
-        lifecycleScope.launch {
-            val allowMobile = preferencesRepo.allowMobileData.first()
-            val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
-
-            WorkManager.getInstance(this@MainActivity)
-                .enqueue(
-                    OneTimeWorkRequestBuilder<DownloadSyncWorker>()
-                        .setConstraints(
-                            Constraints.Builder()
-                                .setRequiredNetworkType(networkType)
-                                .build()
-                        )
-                        .build()
-                )
         }
     }
 
@@ -282,7 +233,7 @@ class MainActivity : ComponentActivity() {
                         if (userEmail != null) {
                             preferencesRepo.saveLoginState(userEmail, true)
                             preferencesRepo.saveCrossDeviceSync(true)
-                            Toast.makeText(this@MainActivity, "Sync enabled.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Sync enabled.", Toast.LENGTH_SHORT).show()  // check if needed
                         }
                     }
                 }

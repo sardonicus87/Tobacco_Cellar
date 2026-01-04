@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.TinSyncPayload
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
@@ -30,12 +31,24 @@ class DownloadSyncWorker(
         const val REMOTE_EMPTY = "REMOTE_EMPTY"
         const val UP_TO_DATE = "ALREADY_UP_TO_DATE"
         const val SKIPPED = "SKIPPED"
+        const val NETWORK_ERROR = "NETWORK_ERROR"
     }
 
     override suspend fun doWork(): Result {
         val app = applicationContext as CellarApplication
         val itemsRepository = app.container.itemsRepository
         val preferencesRepo = app.preferencesRepo
+
+        val allowMobile = preferencesRepo.allowMobileData.first()
+        if (!allowMobile) {
+            val networkMonitor = NetworkMonitor(applicationContext)
+            val isWifi = networkMonitor.isWifi.first()
+
+            if (!isWifi) {
+                Log.w("DownloadSyncWorker", "Not connected to Wifi, skipping work")
+                return Result.success(workDataOf(RESULT_KEY to NETWORK_ERROR))
+            }
+        }
 
         try {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
