@@ -356,6 +356,8 @@ class SettingsViewModel(
             if (!runSilent) {
                 setLoadingState(true)
             }
+            SyncStateManager.schedulingPaused = true
+
             var message = ""
             val allItems = filterViewModel.everythingFlow.first()
             val allSyncItems = allItems.filter { it.items.syncTins }
@@ -379,10 +381,12 @@ class SettingsViewModel(
                 } else { "Synced entry quantities updated." }
             } catch (e: Exception) {
                 println("Update Tins Sync Exception: $e")
+                SyncStateManager.schedulingPaused = false
                 message = "Error updating sync quantities."
             } finally {
                 if (!runSilent) {
                     setLoadingState(false)
+                    SyncStateManager.schedulingPaused = false
                     showSnackbar(message)
                 }
             }
@@ -492,6 +496,7 @@ class SettingsViewModel(
                             val result = workInfo.outputData
                             when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
                                 DownloadSyncWorker.SYNC_COMPLETE -> {
+                                    EventBus.emit(SyncDownloadEvent)
                                     showSnackbar("Sync complete.")
                                 }
                                 DownloadSyncWorker.REMOTE_EMPTY -> {
@@ -1040,6 +1045,7 @@ data class SnackbarState(
 )
 
 data object DatabaseRestoreEvent
+data object SyncDownloadEvent
 
 
 /** Extension functions */
@@ -1152,6 +1158,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val parseLinksOption = preferencesRepo.parseLinks.first().toString()
     val syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first().toString()
     val processedSync = preferencesRepo.processedSyncFiles.first().joinToString(", ") { it }
+    val allowMobileSync = preferencesRepo.allowMobileData.first().toString()
 
     return """
             tableView=$tableView
@@ -1172,6 +1179,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             parseLinksOption=$parseLinksOption
             syncAcknowledgement=$syncAcknowledgement
             processedSync=$processedSync
+            allowMobileSync=$allowMobileSync
         """.trimIndent()
 }
 
@@ -1243,6 +1251,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     val files = value.split(", ").toSet()
                     preferencesRepo.saveProcessedSyncFiles(files)
                 }
+                "allowMobileSync" -> preferencesRepo.saveAllowMobileData(value.toBoolean())
             }
         }
     }
