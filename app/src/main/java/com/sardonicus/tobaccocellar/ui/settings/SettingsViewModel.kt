@@ -387,6 +387,7 @@ class SettingsViewModel(
                 if (!runSilent) {
                     setLoadingState(false)
                     SyncStateManager.schedulingPaused = false
+                    itemsRepository.triggerUploadWorker()
                     showSnackbar(message)
                 }
             }
