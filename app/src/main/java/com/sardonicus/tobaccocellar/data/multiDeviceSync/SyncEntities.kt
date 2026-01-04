@@ -2,7 +2,9 @@ package com.sardonicus.tobaccocellar.data.multiDeviceSync
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "pending_sync_operations")
 data class PendingSyncOperation(
     @PrimaryKey(autoGenerate = true)
