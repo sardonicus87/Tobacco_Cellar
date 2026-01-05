@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -16,6 +17,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
@@ -26,6 +28,7 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
@@ -68,8 +71,8 @@ class SettingsViewModel(
 ): AndroidViewModel(application) {
 
     /** Display Settings */
-    private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM.value)
-    val themeSetting: StateFlow<String> = _themeSetting.asStateFlow()
+    private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM)
+    val themeSetting: StateFlow<ThemeSetting> = _themeSetting.asStateFlow()
 
     private val _showRatings = MutableStateFlow(false)
     val showRatings: StateFlow<Boolean> = _showRatings.asStateFlow()
@@ -363,11 +366,7 @@ class SettingsViewModel(
 
     fun manualSync() {
         viewModelScope.launch {
-            val userEmail = preferencesRepo.signedInUserEmail.first()
-
-            if (userEmail == null) {
-                return@launch
-            }
+            preferencesRepo.signedInUserEmail.first() ?: return@launch
 
             val context: Context = getApplication()
             val workManager = WorkManager.getInstance(context)
@@ -443,6 +442,55 @@ class SettingsViewModel(
                         }
                     }
                 }
+        }
+    }
+
+    fun clearRemoteData() {
+        viewModelScope.launch {
+            setLoadingState(true)
+
+            val email = preferencesRepo.signedInUserEmail.first()
+            if (email == null) {
+                setLoadingState(false)
+                return@launch
+            }
+
+            try {
+                val context: Context = getApplication()
+                val driveService = GoogleDriveServiceHelper.getDriveService(context, email)
+
+                val files = driveService.files().list()
+                    .setSpaces("appDataFolder")
+                    .setFields("files(id, name, createdTime)")
+                    .execute()
+
+                if (files.files.isNullOrEmpty()) {
+                    setLoadingState(false)
+                    showSnackbar("No data to delete.")
+                    return@launch
+                }
+
+                val batch = driveService.batch()
+                val callback = object : JsonBatchCallback<Void>() {
+                    override fun onSuccess(t: Void?, responseHeaders: com.google.api.client.http.HttpHeaders?) {}
+                    override fun onFailure(e: com.google.api.client.googleapis.json.GoogleJsonError?, responseHeaders: com.google.api.client.http.HttpHeaders?) {
+                        Log.e("ClearRemoteData", "Error deleting file in batch: ${e?.message}")
+                    }
+                }
+
+                for (file in files.files) {
+                    driveService.files().delete(file.id).queue(batch, callback)
+                }
+
+                batch.execute()
+                showSnackbar("Remote data deleted.")
+
+            } catch (e: Exception) {
+                println("Exception: $e")
+                showSnackbar("Error deleting remote data.")
+            } finally {
+                setLoadingState(false)
+            }
         }
     }
 

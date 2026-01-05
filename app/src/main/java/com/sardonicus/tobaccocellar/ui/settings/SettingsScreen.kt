@@ -357,6 +357,7 @@ private fun SettingsBody(
                 onAllowMobileData = { viewModel.saveAllowMobileData(it) },
                 manualSyncEnabled = manualSyncEnabled,
                 onManualSync = { viewModel.manualSync() },
+                clearRemoteData = { viewModel.clearRemoteData() },
                 clearLoginState = { viewModel.clearLoginState() },
                 modifier = Modifier
             )
@@ -641,7 +642,7 @@ fun AboutSection(
 /** Display Settings Dialogs **/
 @Composable
 fun ThemeDialog(
-    themeSetting: String,
+    themeSetting: ThemeSetting,
     onThemeSelected: (String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -668,7 +669,7 @@ fun ThemeDialog(
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
                         RadioButton(
-                            selected = themeSetting == it.value,
+                            selected = themeSetting == it,
                             onClick = null,
                             modifier = Modifier
                                 .size(36.dp)
@@ -1000,6 +1001,7 @@ fun DeviceSyncDialog(
     onAllowMobileData: (Boolean) -> Unit,
     manualSyncEnabled: Boolean,
     onManualSync: () -> Unit,
+    clearRemoteData: () -> Unit,
     clearLoginState: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1059,8 +1061,11 @@ fun DeviceSyncDialog(
                                     "retrieving data changes between devices. The app will create " +
                                     "a hidden folder that only this app can access, and this app-" +
                                     "specific folder is the only part of your Drive that the app " +
-                                    "can access. Login and authorization can be cleared at any " +
-                                    "time in this setting dialog.",
+                                    "can access. Login and remote sync data can be cleared at any " +
+                                    "time in this setting dialog (if you want everything cleared, " +
+                                    "clear remote data before clearing login). If you wish to " +
+                                    "clear the authorization, this must be done in your Google " +
+                                    "Account settings: Services > Connected Apps).",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
@@ -1167,6 +1172,20 @@ fun DeviceSyncDialog(
                         Text(
                             text = "Manual Sync",
                             modifier = Modifier,
+                            fontSize = 15.sp,
+                        )
+                    }
+
+                    // Clear remote data
+                    TextButton(
+                        onClick = { clearRemoteData() },
+                        enabled = syncEnabled,
+                        contentPadding = PaddingValues(8.dp, 3.dp),
+                        modifier = modifier
+                            .heightIn(28.dp, 28.dp)
+                    ) {
+                        Text(
+                            text = "Clear Remote Data",
                             fontSize = 15.sp,
                         )
                     }
