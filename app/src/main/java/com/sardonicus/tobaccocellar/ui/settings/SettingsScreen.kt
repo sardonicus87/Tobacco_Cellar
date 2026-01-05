@@ -84,7 +84,6 @@ import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
@@ -126,6 +125,7 @@ fun SettingsScreen(
     DisposableEffect(Unit) {
         onDispose {
             viewModel.snackbarShown()
+            viewModel.dismissDialog()
         }
     }
 
@@ -168,7 +168,6 @@ fun SettingsScreen(
             Box {
                 SettingsBody(
                     viewModel = viewModel,
-                    preferencesRepo = viewModel.preferencesRepo,
                     navigateToChangelog = { navigateToChangelog(it) },
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
@@ -196,7 +195,6 @@ fun SettingsScreen(
 @Composable
 private fun SettingsBody(
     viewModel: SettingsViewModel,
-    preferencesRepo: PreferencesRepo,
     navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     tinOzConversionRate: Double,
     tinGramsConversionRate: Double,
@@ -205,8 +203,6 @@ private fun SettingsBody(
     onDeleteAllClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val openDialog by viewModel.openDialog.collectAsState()
-
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -223,9 +219,22 @@ private fun SettingsBody(
         }
     }
 
+    val openDialog by viewModel.openDialog.collectAsState()
+
+    val themeSetting by viewModel.themeSetting.collectAsState()
+    val showRatings by viewModel.showRatings.collectAsState()
+    val typeGenreOption by viewModel.typeGenreOption.collectAsState()
+    val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
+    val quantityOption by viewModel.quantityOption.collectAsState()
+    val parseLinks by viewModel.parseLinks.collectAsState()
+
+    val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
     val deviceSync by viewModel.crossDeviceSync.collectAsState()
+    val email by viewModel.userEmail.collectAsState()
+    val hasScope by viewModel.hasScope.collectAsState()
     val allowMobileData by viewModel.allowMobileData.collectAsState()
     val manualSyncEnabled by viewModel.manualSyncEnabled.collectAsState()
+    val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
 
     LazyColumn(
         modifier = modifier
@@ -257,8 +266,6 @@ private fun SettingsBody(
         item {
             DatabaseSettings(
                 viewModel = viewModel,
-                updateTinSync = updateTinSync,
-                optimizeDatabase = optimizeDatabase,
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
@@ -297,69 +304,60 @@ private fun SettingsBody(
         // Display settings
         DialogType.Theme -> {
             ThemeDialog(
-                onThemeSelected = { viewModel.saveThemeSetting(it) },
-                preferencesRepo = preferencesRepo,
-                onClose = { viewModel.dismissDialog() }
+                onDismiss = { viewModel.dismissDialog() },
+                themeSetting = themeSetting,
+                onThemeSelected = { viewModel.saveThemeSetting(it) }
             )
         }
         DialogType.Ratings -> {
-                RatingsDialog(
-                    onDismiss = { viewModel.dismissDialog() },
-                    preferencesRepo = preferencesRepo,
-                    modifier = Modifier,
-                    onRatingsOption = { viewModel.saveShowRatingOption(it) }
-                )
-            }
+            RatingsDialog(
+                onDismiss = { viewModel.dismissDialog() },
+                showRatings = showRatings,
+                onRatingsOption = { viewModel.saveShowRatingOption(it) },
+                modifier = Modifier,
+            )
+        }
         DialogType.TypeGenre -> {
-            val enablement by viewModel.typeGenreOptionEnablement.collectAsState()
             TypeGenreDialog(
                 onDismiss = { viewModel.dismissDialog() },
-                preferencesRepo = preferencesRepo,
-                optionEnablement = enablement,
-                modifier = Modifier,
-                onTypeGenreOption = { viewModel.saveTypeGenreOption(it) }
+                typeGenreOption = typeGenreOption,
+                optionEnablement = typeGenreEnablement,
+                onTypeGenreOption = { viewModel.saveTypeGenreOption(it) },
+                modifier = Modifier
             )
         }
         DialogType.QuantityDisplay -> {
             QuantityDialog(
                 onDismiss = { viewModel.dismissDialog() },
-                preferencesRepo = preferencesRepo,
-                modifier = Modifier,
-                onQuantityOption = { viewModel.saveQuantityOption(it) }
+                quantityOption = quantityOption,
+                onQuantityOption = { viewModel.saveQuantityOption(it) },
+                modifier = Modifier
             )
         }
         DialogType.ParseLinks -> {
-                ParseLinksDialog(
-                    onDismiss = { viewModel.dismissDialog() },
-                    preferencesRepo = preferencesRepo,
-                    modifier = Modifier,
-                    onParseLinksOption = { viewModel.saveParseLinksOption(it) }
-                )
-            }
+            ParseLinksDialog(
+                onDismiss = { viewModel.dismissDialog() },
+                parseLinks = parseLinks,
+                onParseLinksOption = { viewModel.saveParseLinksOption(it) },
+                modifier = Modifier
+            )
+        }
 
         // App/Database Settings
         DialogType.DeviceSync -> {
-            val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
-
             DeviceSyncDialog(
                 onDismiss = { viewModel.dismissDialog() },
                 acknowledgement = acknowledgement,
                 confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
                 deviceSync = deviceSync,
                 onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
+                email = email,
+                hasScope = hasScope,
                 allowMobileData = allowMobileData,
                 onAllowMobileData = { viewModel.saveAllowMobileData(it) },
                 manualSyncEnabled = manualSyncEnabled,
                 onManualSync = { viewModel.manualSync() },
-                preferencesRepo = preferencesRepo,
-                modifier = Modifier
-            )
-        }
-        DialogType.DefaultSync -> {
-            DefaultSyncDialog(
-                onDismiss = { viewModel.dismissDialog() },
-                onDefaultSync = { viewModel.setDefaultSyncOption(it) },
-                preferencesRepo = preferencesRepo,
+                clearLoginState = { viewModel.clearLoginState() },
                 modifier = Modifier
             )
         }
@@ -375,20 +373,29 @@ private fun SettingsBody(
                 modifier = Modifier
             )
         }
-        DialogType.Backup -> {
-                BackupDialog(
-                    onDismiss = { viewModel.dismissDialog() },
-                    onSave = {
-                        launcher.launch(it)
-                        viewModel.dismissDialog()
-                    },
-                    viewmodel = viewModel,
-                    modifier = Modifier
-                )
-            }
-        DialogType.Restore -> {
-            RestoreDialog(
+        DialogType.TinSyncDefault -> {
+            TinSyncDefaultDialog(
                 onDismiss = { viewModel.dismissDialog() },
+                defaultSyncOption = defaultSyncOption,
+                onDefaultSync = { viewModel.setDefaultSyncOption(it) },
+                modifier = Modifier
+            )
+        }
+        DialogType.DbOperations -> {
+            DbOperationsDialog(
+                onDismiss = { viewModel.dismissDialog() },
+                updateTinSync = updateTinSync,
+                optimizeDatabase = optimizeDatabase,
+                modifier = Modifier
+            )
+        }
+        DialogType.BackupRestore -> {
+            BackupRestoreDialog(
+                onDismiss = { viewModel.dismissDialog() },
+                onSave = {
+                    launcher.launch(it)
+                    viewModel.dismissDialog()
+                },
                 onRestore = {
                     openLauncher.launch(arrayOf("application/octet-stream"))
                     viewModel.dismissDialog()
@@ -408,8 +415,6 @@ private fun SettingsBody(
                     .padding(0.dp)
             )
         }
-        DialogType.Recalculate -> { }
-        DialogType.Optimize -> { }
         null -> { }
     }
 }
@@ -445,8 +450,6 @@ fun DisplaySettings(
 @Composable
 fun DatabaseSettings(
     viewModel: SettingsViewModel,
-    updateTinSync: () -> Unit,
-    optimizeDatabase: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -463,18 +466,12 @@ fun DatabaseSettings(
             fontSize = 16.sp
         )
         viewModel.databaseSettings.forEach {
-            val onClickOverride:  () -> Unit =
-                when (it.dialogType) {
-                    DialogType.Recalculate -> { { updateTinSync() } }
-                    DialogType.Optimize -> { { optimizeDatabase() } }
-                    else -> { { viewModel.showDialog(it.dialogType) } }
-                }
             val color = if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.primary
 
             SettingsButton(
                 text = it.title,
-                onClick = onClickOverride,
+                onClick = { viewModel.showDialog(it.dialogType) },
                 color = color
             )
         }
@@ -497,7 +494,7 @@ fun SettingsButton(
         Text(
             text = text,
             modifier = Modifier,
-            fontSize = 14.sp,
+            fontSize = 15.sp,
             color = color
         )
     }
@@ -644,15 +641,13 @@ fun AboutSection(
 /** Display Settings Dialogs **/
 @Composable
 fun ThemeDialog(
+    themeSetting: String,
     onThemeSelected: (String) -> Unit,
-    onClose: () -> Unit,
-    preferencesRepo: PreferencesRepo,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentTheme by preferencesRepo.themeSetting.collectAsState(initial = ThemeSetting.SYSTEM.value)
-
     AlertDialog(
-        onDismissRequest = { onClose() },
+        onDismissRequest = { onDismiss() },
         modifier = modifier
             .padding(0.dp),
         text = {
@@ -673,7 +668,7 @@ fun ThemeDialog(
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
                         RadioButton(
-                            selected = currentTheme == it.value,
+                            selected = themeSetting == it.value,
                             onClick = null,
                             modifier = Modifier
                                 .size(36.dp)
@@ -689,7 +684,7 @@ fun ThemeDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onClose() },
+                onClick = { onDismiss() },
                 modifier = Modifier
                     .padding(0.dp)
             ) {
@@ -705,39 +700,58 @@ fun ThemeDialog(
 @Composable
 fun RatingsDialog(
     onDismiss: () -> Unit,
+    showRatings: Boolean,
     onRatingsOption: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    preferencesRepo: PreferencesRepo
+    modifier: Modifier = Modifier
 ) {
-    val currentShowRating by preferencesRepo.showRating.collectAsState(initial = false)
-
     AlertDialog(
         onDismissRequest = { onDismiss() },
         modifier = modifier
             .padding(0.dp),
         text = {
-            Row(
-                modifier = modifier
+            Column(
+                modifier = Modifier
                     .padding(bottom = 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
                     text = "Display ratings on cellar screen:",
                     modifier = Modifier,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     color = LocalContentColor.current
                 )
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                    Switch(
-                        checked = currentShowRating,
-                        onCheckedChange = { onRatingsOption(it) },
-                        modifier = Modifier
-                            .requiredHeight(20.dp)
-                            .scale(.7f)
-                            .padding(start = 10.dp),
-                        colors = SwitchDefaults.colors(
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val offAlpha = if (!showRatings) 1f else .5f
+                    val onAlpha = if (showRatings) 1f else .5f
+                    Text(
+                        text = "Off",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (!showRatings) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(alpha = offAlpha)
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = showRatings,
+                            onCheckedChange = { onRatingsOption(it) },
+                            modifier = Modifier
+                                .requiredHeight(20.dp)
+                                .scale(.6f),
+                            colors = SwitchDefaults.colors(
+                            )
                         )
+                    }
+                    Text(
+                        text = "On",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (showRatings) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(onAlpha)
                     )
                 }
             }
@@ -760,13 +774,11 @@ fun RatingsDialog(
 @Composable
 fun TypeGenreDialog(
     onDismiss: () -> Unit,
-    onTypeGenreOption: (String) -> Unit,
+    typeGenreOption: TypeGenreOption,
     optionEnablement: Map<TypeGenreOption, Boolean>,
-    preferencesRepo: PreferencesRepo,
+    onTypeGenreOption: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentTypeGenre by preferencesRepo.typeGenreOption.collectAsState(initial = TypeGenreOption.TYPE)
-
     AlertDialog(
         onDismissRequest = { onDismiss() },
         modifier = modifier
@@ -778,13 +790,12 @@ fun TypeGenreDialog(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 Text(
-                    text = "This option sets the display of Type, Subgenre or both in list view " +
-                            "on the Cellar screen. Fallback options allow you to select one or " +
-                            "the other, but if that field is unused for an entry, try to fallback " +
-                            "to the other field.",
+                    text = "This option sets the display of Type, Subgenre or both in list view. " +
+                            "Fallback options displays the option and if it's unused on an entry, " +
+                            "fallback to the other (in parentheses).",
                     modifier = Modifier
                         .padding(bottom = 12.dp),
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     color = LocalContentColor.current
                 )
                 TypeGenreOption.entries.forEach {
@@ -800,7 +811,7 @@ fun TypeGenreDialog(
                     ) {
                         val alpha = if (optionEnablement[it] == true) 1f else .38f
                         RadioButton(
-                            selected = currentTypeGenre == it,
+                            selected = typeGenreOption == it,
                             onClick = null,
                             enabled = optionEnablement[it] ?: false,
                             modifier = Modifier
@@ -836,12 +847,10 @@ fun TypeGenreDialog(
 @Composable
 fun QuantityDialog(
     onDismiss: () -> Unit,
+    quantityOption: QuantityOption,
     onQuantityOption: (String) -> Unit,
-    preferencesRepo: PreferencesRepo,
     modifier: Modifier = Modifier
 ) {
-    val currentQuantity by preferencesRepo.quantityOption.collectAsState(initial = QuantityOption.TINS)
-
     AlertDialog(
         onDismissRequest = { onDismiss() },
         modifier = modifier
@@ -854,8 +863,8 @@ fun QuantityDialog(
             ) {
                 Text(
                     text = "Displayed quantities for ounces and grams are based on the summed " +
-                            "quantities of tins. If no tins are present, the \"No. of Tins\" " +
-                            "value will be displayed instead.",
+                            "quantities of tins. If no tins are present, \"No. of Tins\" will " +
+                            "value will be converted and displayed with an asterisk.",
                     modifier = Modifier
                         .padding(bottom = 12.dp),
                     fontSize = 14.sp,
@@ -873,7 +882,7 @@ fun QuantityDialog(
                         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
                     ) {
                         RadioButton(
-                            selected = currentQuantity == it,
+                            selected = quantityOption == it,
                             onClick = null,
                             modifier = Modifier
                                 .size(36.dp)
@@ -905,39 +914,58 @@ fun QuantityDialog(
 @Composable
 fun ParseLinksDialog(
     onDismiss: () -> Unit,
+    parseLinks: Boolean,
     onParseLinksOption: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    preferencesRepo: PreferencesRepo
+    modifier: Modifier = Modifier
 ) {
-    val currentParseOption by preferencesRepo.parseLinks.collectAsState(initial = true)
-
     AlertDialog(
         onDismissRequest = { onDismiss() },
         modifier = modifier
             .padding(0.dp),
         text = {
-            Row(
-                modifier = modifier
+            Column(
+                modifier = Modifier
                     .padding(bottom = 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
                     text = "Parse links in notes:",
                     modifier = Modifier,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     color = LocalContentColor.current
                 )
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                    Switch(
-                        checked = currentParseOption,
-                        onCheckedChange = { onParseLinksOption(it) },
-                        modifier = Modifier
-                            .requiredHeight(20.dp)
-                            .scale(.7f)
-                            .padding(start = 10.dp),
-                        colors = SwitchDefaults.colors(
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val offAlpha = if (!parseLinks) 1f else .5f
+                    val onAlpha = if (parseLinks) 1f else .5f
+                    Text(
+                        text = "Off",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (!parseLinks) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(alpha = offAlpha)
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = parseLinks,
+                            onCheckedChange = { onParseLinksOption(it) },
+                            modifier = Modifier
+                                .requiredHeight(20.dp)
+                                .scale(.6f),
+                            colors = SwitchDefaults.colors(
+                            )
                         )
+                    }
+                    Text(
+                        text = "On",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (parseLinks) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(onAlpha)
                     )
                 }
             }
@@ -966,21 +994,19 @@ fun DeviceSyncDialog(
     confirmAcknowledgement: () -> Unit,
     deviceSync: Boolean,
     onDeviceSync: (Boolean) -> Unit,
+    email: String?,
+    hasScope: Boolean,
     allowMobileData: Boolean,
     onAllowMobileData: (Boolean) -> Unit,
     manualSyncEnabled: Boolean,
     onManualSync: () -> Unit,
+    clearLoginState: () -> Unit,
     modifier: Modifier = Modifier,
-    preferencesRepo: PreferencesRepo
 ) {
-    val email by preferencesRepo.signedInUserEmail.collectAsState(initial = null)
-    val hasScope by preferencesRepo.hasDriveScope.collectAsState(initial = false)
     val syncEnabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
     val atBottom by remember(scrollState.canScrollForward) { mutableStateOf(!scrollState.canScrollForward) }
-
-    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -991,7 +1017,7 @@ fun DeviceSyncDialog(
             Column(
                 modifier = Modifier
                     .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (!acknowledgement) {
                     Text(
@@ -1082,7 +1108,7 @@ fun DeviceSyncDialog(
                         Text(
                             text = "Multi-Device Sync:",
                             modifier = Modifier,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                             color = LocalContentColor.current
                         )
@@ -1091,8 +1117,7 @@ fun DeviceSyncDialog(
                                 checked = deviceSync,
                                 onCheckedChange = { onDeviceSync(it) },
                                 modifier = Modifier
-                                    .requiredHeight(20.dp)
-                                    .scale(.7f)
+                                    .scale(.6f)
                                     .padding(start = 10.dp),
                                 colors = SwitchDefaults.colors(
                                 )
@@ -1109,20 +1134,21 @@ fun DeviceSyncDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val alpha = if (!deviceSync) .38f else 1f
                         Text(
                             text = "Allow Mobile Data:",
                             modifier = Modifier,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
-                            color = LocalContentColor.current
+                            color = LocalContentColor.current.copy(alpha = alpha)
                         )
                         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                             Switch(
                                 checked = allowMobileData,
                                 onCheckedChange = { onAllowMobileData(it) },
+                                enabled = deviceSync,
                                 modifier = Modifier
-                                    .requiredHeight(20.dp)
-                                    .scale(.7f)
+                                    .scale(.6f)
                                     .padding(start = 10.dp),
                                 colors = SwitchDefaults.colors(
                                 )
@@ -1141,17 +1167,15 @@ fun DeviceSyncDialog(
                         Text(
                             text = "Manual Sync",
                             modifier = Modifier,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                         )
                     }
 
                     // Clear Login
                     TextButton(
                         onClick = {
-                            scope.launch {
-                                preferencesRepo.clearLoginState()
-                                onDeviceSync(false)
-                            }
+                            clearLoginState()
+                            onDeviceSync(false)
                         },
                         enabled = syncEnabled,
                         contentPadding = PaddingValues(8.dp, 3.dp),
@@ -1160,7 +1184,7 @@ fun DeviceSyncDialog(
                     ) {
                         Text(
                             text = "Clear Login",
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                         )
                     }
                 }
@@ -1197,83 +1221,6 @@ fun DeviceSyncDialog(
                 }
             }
         } else null,
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large
-    )
-}
-
-@Composable
-fun DefaultSyncDialog(
-    onDismiss: () -> Unit,
-    onDefaultSync: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    preferencesRepo: PreferencesRepo
-) {
-    val currentSyncOption by preferencesRepo.defaultSyncOption.collectAsState(initial = false)
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        modifier = modifier
-            .padding(0.dp),
-        text = {
-            Column(
-                modifier = Modifier
-                    .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Set \"Sync Tins\" default on or off when adding new items.",
-                    modifier = Modifier,
-                    fontSize = 16.sp,
-                    color = LocalContentColor.current
-                )
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val offAlpha = if (!currentSyncOption) 1f else .5f
-                    val onAlpha = if (currentSyncOption) 1f else .5f
-                    Text(
-                        text = "Off",
-                        modifier = Modifier,
-                        fontSize = 14.sp,
-                        fontWeight = if (!currentSyncOption) FontWeight.SemiBold else FontWeight.Normal,
-                        color = LocalContentColor.current.copy(alpha = offAlpha)
-                    )
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                        Switch(
-                            checked = currentSyncOption,
-                            onCheckedChange = { onDefaultSync(it) },
-                            modifier = Modifier
-                                .requiredHeight(20.dp)
-                                .scale(.7f)
-                                .padding(start = 10.dp),
-                            colors = SwitchDefaults.colors(
-                            )
-                        )
-                    }
-                    Text(
-                        text = "On",
-                        modifier = Modifier,
-                        fontSize = 14.sp,
-                        fontWeight = if (currentSyncOption) FontWeight.SemiBold else FontWeight.Normal,
-                        color = LocalContentColor.current.copy(onAlpha)
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onDismiss() },
-                modifier = Modifier
-                    .padding(0.dp)
-            ) {
-                Text("Done")
-            }
-        },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
@@ -1470,82 +1417,71 @@ fun TinRatesDialog(
 }
 
 @Composable
-private fun BackupDialog(
+fun TinSyncDefaultDialog(
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit,
-    viewmodel: SettingsViewModel,
-    modifier: Modifier = Modifier,
+    defaultSyncOption: Boolean,
+    onDefaultSync: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val backupState by viewmodel.backupState.collectAsState()
-
     AlertDialog(
         onDismissRequest = { onDismiss() },
         modifier = modifier
             .padding(0.dp),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        ),
         text = {
-            Column (
-                modifier = modifier
+            Column(
+                modifier = Modifier
                     .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Select what to backup. If you check both boxes, a single file will " +
-                            "be created that holds both. The restore function can optionally " +
-                            "restore either the database or the settings from the joint backup " +
-                            "file.",
-                    modifier = Modifier
-                        .padding(bottom = 12.dp),
+                    text = "Set \"Sync Tins\" default on or off when adding new entries.",
+                    modifier = Modifier,
                     fontSize = 15.sp,
                     color = LocalContentColor.current
                 )
-                CheckboxWithLabel(
-                    text = "Database",
-                    checked = backupState.databaseChecked,
-                    onCheckedChange = {
-                        viewmodel.onBackupOptionChanged(
-                            backupState.copy(databaseChecked = it)
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val offAlpha = if (!defaultSyncOption) 1f else .5f
+                    val onAlpha = if (defaultSyncOption) 1f else .5f
+                    Text(
+                        text = "Off",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (!defaultSyncOption) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(alpha = offAlpha)
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = defaultSyncOption,
+                            onCheckedChange = { onDefaultSync(it) },
+                            modifier = Modifier
+                                .requiredHeight(20.dp)
+                                .scale(.6f),
+                            colors = SwitchDefaults.colors(
+                            )
                         )
-                    },
-                    modifier = Modifier
-                        .padding(bottom = 0.dp),
-                )
-                CheckboxWithLabel(
-                    text = "Settings",
-                    checked = backupState.settingsChecked,
-                    onCheckedChange = {
-                        viewmodel.onBackupOptionChanged(
-                            backupState.copy(settingsChecked = it)
-                        )
-                    },
-                    modifier = Modifier
-                        .padding(bottom = 0.dp),
-                )
+                    }
+                    Text(
+                        text = "On",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (defaultSyncOption) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(onAlpha)
+                    )
+                }
             }
         },
-        dismissButton = {
+        confirmButton = {
             TextButton(
                 onClick = { onDismiss() },
                 modifier = Modifier
                     .padding(0.dp)
             ) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val suggestedFilename = backupState.suggestedFilename
-                    onSave(suggestedFilename)
-                },
-                modifier = Modifier
-                    .padding(0.dp),
-                enabled = backupState.databaseChecked || backupState.settingsChecked
-            ) {
-                Text(stringResource(R.string.save))
+                Text("Done")
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -1555,12 +1491,84 @@ private fun BackupDialog(
 }
 
 @Composable
-private fun RestoreDialog(
+private fun DbOperationsDialog(
     onDismiss: () -> Unit,
-    onRestore: () -> Unit,
-    viewmodel: SettingsViewModel,
+    updateTinSync: () -> Unit,
+    optimizeDatabase: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "These options shouldn't be necessary. Fix tin sync quantity corrects " +
+                            "the \"No. of Tins\" for entries with quantity sync checked. Optimize " +
+                            "database cleans up any potentially orphaned data.",
+                    fontSize = 15.sp,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .padding(bottom = 8.dp),
+                )
+                TextButton(
+                    onClick = { updateTinSync() },
+                    contentPadding = PaddingValues(8.dp, 3.dp),
+                    modifier = modifier
+                        .heightIn(28.dp, 28.dp)
+                ) {
+                    Text(
+                        text = "Fix/Update Tin Sync Quantity",
+                        modifier = Modifier,
+                        fontSize = 15.sp,
+                    )
+                }
+                TextButton(
+                    onClick = { optimizeDatabase() },
+                    contentPadding = PaddingValues(8.dp, 3.dp),
+                    modifier = modifier
+                        .heightIn(28.dp, 28.dp)
+                ) {
+                    Text(
+                        text = "Clean and Optimize Database",
+                        modifier = Modifier,
+                        fontSize = 15.sp,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+private fun BackupRestoreDialog(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    onRestore: () -> Unit,
+    viewmodel: SettingsViewModel,
+    modifier: Modifier = Modifier
+) {
+    var option: String? by rememberSaveable { mutableStateOf(null) }
+    val updateOption: (String?) -> Unit = { option = it }
+
+    val backupState by viewmodel.backupState.collectAsState()
     val restoreState by viewmodel.restoreState.collectAsState()
 
     AlertDialog(
@@ -1572,55 +1580,53 @@ private fun RestoreDialog(
             dismissOnClickOutside = true
         ),
         text = {
-            Column (
-                modifier = modifier
-                    .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                Text(
-                    text = "Select what to restore.\n\nWARNING: Restore will overwrite any existing " +
-                            "settings and/or database data (depending on which is selected). " +
-                            "Either or both can be restored from a joint database/settings backup " +
-                            "file.",
-                    modifier = Modifier
-                        .padding(bottom = 12.dp),
-                    fontSize = 15.sp,
-                    color = LocalContentColor.current
-                )
-                CheckboxWithLabel(
-                    text = "Database",
-                    checked = restoreState.databaseChecked,
-                    onCheckedChange = {
-                        viewmodel.onRestoreOptionChanged(
-                            restoreState.copy(databaseChecked = it)
-                        ) },
-                    modifier = Modifier
-                        .padding(bottom = 0.dp),
-                )
-                CheckboxWithLabel(
-                    text = "Settings",
-                    checked = restoreState.settingsChecked,
-                    onCheckedChange = {
-                        viewmodel.onRestoreOptionChanged(
-                            restoreState.copy(settingsChecked = it)
+            when (option) {
+                "Backup" -> BackupDialog(backupState, viewmodel)
+                "Restore" -> RestoreDialog(restoreState, viewmodel)
+                null -> {
+                    Column(
+                        modifier = Modifier
+                            .padding(bottom = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "Would you like to Backup or Restore?",
+                            fontSize = 15.sp,
+                            color = LocalContentColor.current
                         )
-                    },
-                    modifier = Modifier
-                        .padding(bottom = 0.dp),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onRestore()
-                    onDismiss()
-                },
-                modifier = Modifier
-                    .padding(0.dp),
-                enabled = restoreState.databaseChecked || restoreState.settingsChecked
-            ) {
-                Text(stringResource(R.string.ok))
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
+                                onClick = { updateOption("Backup") },
+                                contentPadding = PaddingValues(8.dp, 3.dp),
+                                modifier = modifier
+                                    .heightIn(28.dp, 28.dp)
+                            ) {
+                                Text(
+                                    text = "Backup",
+                                    fontSize = 15.sp
+                                )
+                            }
+                            TextButton(
+                                onClick = { updateOption("Restore") },
+                                contentPadding = PaddingValues(8.dp, 3.dp),
+                                modifier = modifier
+                                    .heightIn(28.dp, 28.dp)
+                            ) {
+                                Text(
+                                    text = "Restore",
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
             }
         },
         dismissButton = {
@@ -1632,10 +1638,131 @@ private fun RestoreDialog(
                 Text(stringResource(R.string.cancel))
             }
         },
+        confirmButton = {
+            when (option) {
+                "Backup" -> {
+                    TextButton(
+                        onClick = {
+                            val suggestedFilename = backupState.suggestedFilename
+                            onSave(suggestedFilename)
+                        },
+                        modifier = Modifier
+                            .padding(0.dp),
+                        enabled = backupState.databaseChecked || backupState.settingsChecked
+                    ) {
+                        Text(stringResource(R.string.save))
+                    }
+                }
+                "Restore" -> {
+                    TextButton(
+                        onClick = { onRestore() },
+                        modifier = Modifier
+                            .padding(0.dp),
+                        enabled = restoreState.databaseChecked || restoreState.settingsChecked
+                    ) {
+                        Text(text = "Open")
+                    }
+                }
+                null -> { }
+            }
+
+        },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
     )
+
+}
+
+@Composable
+private fun BackupDialog(
+    backupState: BackupState,
+    viewmodel: SettingsViewModel,
+    modifier: Modifier = Modifier,
+) {
+    Column (
+        modifier = modifier
+            .padding(bottom = 0.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        Text(
+            text = "Select what to backup. If you check both boxes, a single file will " +
+                    "be created that holds both. The restore function can optionally " +
+                    "restore either the database or the settings from the joint backup " +
+                    "file.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            fontSize = 15.sp,
+            color = LocalContentColor.current
+        )
+        CheckboxWithLabel(
+            text = "Database",
+            checked = backupState.databaseChecked,
+            onCheckedChange = {
+                viewmodel.onBackupOptionChanged(
+                    backupState.copy(databaseChecked = it)
+                )
+            },
+            modifier = Modifier
+                .padding(bottom = 0.dp),
+        )
+        CheckboxWithLabel(
+            text = "Settings",
+            checked = backupState.settingsChecked,
+            onCheckedChange = {
+                viewmodel.onBackupOptionChanged(
+                    backupState.copy(settingsChecked = it)
+                )
+            },
+            modifier = Modifier
+                .padding(bottom = 0.dp),
+        )
+    }
+}
+
+@Composable
+private fun RestoreDialog(
+    restoreState: RestoreState,
+    viewmodel: SettingsViewModel,
+    modifier: Modifier = Modifier,
+) {
+    Column (
+        modifier = modifier
+            .padding(bottom = 0.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        Text(
+            text = "Select what to restore.\n\nWARNING: Restore will overwrite any existing " +
+                    "settings and/or database data (depending on which is selected). " +
+                    "Either or both can be restored from a joint database/settings backup " +
+                    "file.",
+            modifier = Modifier
+                .padding(bottom = 12.dp),
+            fontSize = 15.sp,
+            color = LocalContentColor.current
+        )
+        CheckboxWithLabel(
+            text = "Database",
+            checked = restoreState.databaseChecked,
+            onCheckedChange = {
+                viewmodel.onRestoreOptionChanged(
+                    restoreState.copy(databaseChecked = it)
+                ) },
+            modifier = Modifier
+                .padding(bottom = 0.dp),
+        )
+        CheckboxWithLabel(
+            text = "Settings",
+            checked = restoreState.settingsChecked,
+            onCheckedChange = {
+                viewmodel.onRestoreOptionChanged(
+                    restoreState.copy(settingsChecked = it)
+                )
+            },
+            modifier = Modifier
+                .padding(bottom = 0.dp),
+        )
+    }
 }
 
 @Composable
@@ -1647,7 +1774,10 @@ private fun DeleteAllDialog(
     AlertDialog(
         onDismissRequest = { /* Do nothing */ },
         title = { Text(stringResource(R.string.delete_all)) },
-        text = { Text(stringResource(R.string.delete_all_question)) },
+        text = { Text(
+            stringResource(R.string.delete_all_question),
+            fontSize = 15.sp
+        ) },
         modifier = modifier,
         dismissButton = {
             TextButton(onClick = onDeleteCancel) {

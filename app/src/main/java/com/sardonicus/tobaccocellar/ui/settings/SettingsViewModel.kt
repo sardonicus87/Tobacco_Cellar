@@ -5,7 +5,6 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -68,12 +67,22 @@ class SettingsViewModel(
     val preferencesRepo: PreferencesRepo,
 ): AndroidViewModel(application) {
 
-    /** Theme Settings */
+    /** Display Settings */
     private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM.value)
-    private val _showRatingsOption = MutableStateFlow(false)
+    val themeSetting: StateFlow<String> = _themeSetting.asStateFlow()
+
+    private val _showRatings = MutableStateFlow(false)
+    val showRatings: StateFlow<Boolean> = _showRatings.asStateFlow()
+
     private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
+    val typeGenreOption: StateFlow<TypeGenreOption> = _typeGenreOption.asStateFlow()
+
     private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
+    val quantityOption: StateFlow<QuantityOption> = _quantityOption.asStateFlow()
+
     private val _parseLinks = MutableStateFlow(true)
+    val parseLinks: StateFlow<Boolean> = _parseLinks.asStateFlow()
+
 
     /** App & Database settings */
     private val _deviceSyncAcknowledgement = MutableStateFlow(false)
@@ -82,6 +91,12 @@ class SettingsViewModel(
     private val _crossDeviceSync = MutableStateFlow(false)
     val crossDeviceSync = _crossDeviceSync.asStateFlow()
 
+    private val _userEmail = MutableStateFlow<String?>(null)
+    val userEmail = _userEmail.asStateFlow()
+
+    private val _hasScope = MutableStateFlow(false)
+    val hasScope = _hasScope.asStateFlow()
+
     private val _allowMobileData = MutableStateFlow(false)
     val allowMobileData = _allowMobileData.asStateFlow()
 
@@ -89,6 +104,7 @@ class SettingsViewModel(
     val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
 
     private val _defaultSyncOption = MutableStateFlow(false)
+    val defaultSyncOption = _defaultSyncOption.asStateFlow()
 
 
     /** General UI control **/
@@ -118,18 +134,15 @@ class SettingsViewModel(
     val databaseSettings = listOf(
         SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync", DialogType.DeviceSync),
         SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", DialogType.TinRates),
-        SettingsDialog("Fix/Update Tin Sync Quantity", "Recalculate quantities for synced entries", DialogType.Recalculate),
-        SettingsDialog("Default Sync Tins Option", "Set default tin sync option", DialogType.DefaultSync),
-        SettingsDialog("Clean & Optimize Database", "Clean and optimize database", DialogType.Optimize),
-        SettingsDialog("Backup", "Backup database/settings", DialogType.Backup),
-        SettingsDialog("Restore", "Restore database/settings", DialogType.Restore),
+        SettingsDialog("Default Sync Tins Option", "Set default tin sync option", DialogType.TinSyncDefault),
+        SettingsDialog("Database Operations", "Fix sync quantities and optimize database", DialogType.DbOperations),
+        SettingsDialog("Backup/Restore", "Backup or restore database/settings", DialogType.BackupRestore),
         SettingsDialog("Delete Database", "Delete all items", DialogType.DeleteAll)
     )
 
 
     fun showDialog(dialog: DialogType) {
-        val noDialog = listOf(DialogType.Recalculate, DialogType.Optimize)
-        if (dialog !in noDialog) _openDialog.value = dialog else _openDialog.value = null
+        _openDialog.value = dialog
     }
 
     fun dismissDialog() { _openDialog.value = null }
@@ -142,83 +155,52 @@ class SettingsViewModel(
 
     // option initializations //
     init {
+        // Theme Setting
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.themeSetting.first().let {
+                preferencesRepo.themeSetting.collect {
                     _themeSetting.value = it
-                    if (it == ThemeSetting.SYSTEM.value) {
-                        preferencesRepo.saveThemeSetting(ThemeSetting.SYSTEM.value)
-                    }
                 }
             }
         }
+        // Ratings Visibility
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.quantityOption.first().let {
-                    _quantityOption.value = it
-                    if (it == QuantityOption.TINS) {
-                        preferencesRepo.saveQuantityPreference(QuantityOption.TINS.value)
-                    }
+                preferencesRepo.showRating.collect {
+                    _showRatings.value = it
                 }
             }
         }
+        // Type/Genre Display
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.tinOzConversionRate.first().let {
-                    _tinOzConversionRate.value = it
-                    if (it == TinConversionRates.DEFAULT.ozRate) {
-                        preferencesRepo.setTinOzConversionRate(TinConversionRates.DEFAULT.ozRate)
-                    }
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.tinGramsConversionRate.first().let {
-                    _tinGramsConversionRate.value = it
-                    if (it == TinConversionRates.DEFAULT.gramsRate) {
-                        preferencesRepo.setTinGramsConversionRate(TinConversionRates.DEFAULT.gramsRate)
-                    }
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.typeGenreOption.first().let {
+                preferencesRepo.typeGenreOption.collect {
                     _typeGenreOption.value = it
-                    if (it == TypeGenreOption.TYPE) {
-                        preferencesRepo.saveTypeGenreOption(TypeGenreOption.TYPE.value)
-                    }
                 }
             }
         }
+        // Quantity Display
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.showRating.first().let {
-                    _showRatingsOption.value = it
-                    if (it) {
-                        preferencesRepo.saveShowRatingOption(true)
-                    }
+                preferencesRepo.quantityOption.collect {
+                    _quantityOption.value = it
                 }
             }
         }
+        //Parse Links
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.defaultSyncOption.first().let {
-                    _defaultSyncOption.value = it
-                    if (it) {
-                        preferencesRepo.saveDefaultSyncOption(true)
-                    }
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.parseLinks.first().let {
+                preferencesRepo.parseLinks.collect {
                     _parseLinks.value = it
-                    if (it) {
-                        preferencesRepo.saveParseLinksOption(true)
-                    }
+                }
+            }
+        }
+
+        // Device Sync
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.crossDeviceAcknowledged.collect {
+                    _deviceSyncAcknowledgement.value = it
                 }
             }
         }
@@ -231,8 +213,15 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                preferencesRepo.crossDeviceAcknowledged.collect {
-                    _deviceSyncAcknowledgement.value = it
+                preferencesRepo.signedInUserEmail.collect {
+                    _userEmail.value = it
+                }
+            }
+        }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.hasDriveScope.collect {
+                    _hasScope.value = it
                 }
             }
         }
@@ -243,6 +232,28 @@ class SettingsViewModel(
                 }
             }
         }
+        // Tin Conversion Rates
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.tinOzConversionRate.collect {
+                    _tinOzConversionRate.value = it
+                }
+            }
+            withContext(Dispatchers.IO) {
+                preferencesRepo.tinGramsConversionRate.collect {
+                    _tinGramsConversionRate.value = it
+                }
+            }
+        }
+        // Default sync tins
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preferencesRepo.defaultSyncOption.collect {
+                    _defaultSyncOption.value = it
+                }
+            }
+        }
+
     }
 
 
@@ -317,96 +328,6 @@ class SettingsViewModel(
 
 
     /** Database Settings **/
-    fun setDefaultSyncOption(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveDefaultSyncOption(option)
-        }
-    }
-
-    fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
-        viewModelScope.launch {
-            preferencesRepo.setTinOzConversionRate(ozRate)
-            preferencesRepo.setTinGramsConversionRate(gramsRate)
-            _tinOzConversionRate.value = ozRate
-            _tinGramsConversionRate.value = gramsRate
-
-            updateTinSync(ozRate, gramsRate)
-        }
-    }
-
-    fun optimizeDatabase() {
-        viewModelScope.launch {
-            setLoadingState(true)
-
-            itemsRepository.optimizeDatabase()
-
-            setLoadingState(false)
-            showSnackbar("Optimization complete.")
-        }
-    }
-
-    suspend fun deleteAllItems() {
-        itemsRepository.deleteAllItems()
-        saveTypeGenreOption(TypeGenreOption.TYPE.value)
-        showSnackbar("Database deleted!")
-    }
-
-    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
-        viewModelScope.launch {
-            if (!runSilent) {
-                setLoadingState(true)
-            }
-            SyncStateManager.schedulingPaused = true
-
-            var message = ""
-            val allItems = filterViewModel.everythingFlow.first()
-            val allSyncItems = allItems.filter { it.items.syncTins }
-
-            val ozRate = ozConversion ?: preferencesRepo.tinOzConversionRate.first()
-            val gramsRate = gramsConversion ?: preferencesRepo.tinGramsConversionRate.first()
-
-            try {
-                allSyncItems.forEach { items ->
-                    val tins = items.tins.filter { !it.finished }
-                    val syncQuantity = calculateSyncTins(tins, ozRate, gramsRate)
-                    itemsRepository.updateItem(
-                        items.items.copy(
-                            quantity = syncQuantity,
-                        )
-                    )
-                }
-
-                message = if (ozConversion != null || gramsConversion != null) {
-                    "Conversion rates and synced entry quantities updated."
-                } else { "Synced entry quantities updated." }
-            } catch (e: Exception) {
-                println("Update Tins Sync Exception: $e")
-                SyncStateManager.schedulingPaused = false
-                message = "Error updating sync quantities."
-            } finally {
-                if (!runSilent) {
-                    setLoadingState(false)
-                    SyncStateManager.schedulingPaused = false
-                    itemsRepository.triggerUploadWorker()
-                    showSnackbar(message)
-                }
-            }
-        }
-    }
-
-    private fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
-        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
-            (it.tinQuantity * 16) / ozRate
-        }
-        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
-            it.tinQuantity / ozRate
-        }
-        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
-            it.tinQuantity / gramsRate
-        }
-        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
-    }
-
     fun saveCrossDeviceAcknowledged() {
         viewModelScope.launch {
             preferencesRepo.saveCrossDeviceAcknowledged(true)
@@ -445,7 +366,6 @@ class SettingsViewModel(
             val userEmail = preferencesRepo.signedInUserEmail.first()
 
             if (userEmail == null) {
-                Log.d("Sync Worker", "User email or scope is null.")
                 return@launch
             }
 
@@ -525,6 +445,104 @@ class SettingsViewModel(
                 }
         }
     }
+
+    fun clearLoginState() {
+        viewModelScope.launch {
+            preferencesRepo.clearLoginState()
+        }
+    }
+
+    fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
+        viewModelScope.launch {
+            preferencesRepo.setTinOzConversionRate(ozRate)
+            preferencesRepo.setTinGramsConversionRate(gramsRate)
+            _tinOzConversionRate.value = ozRate
+            _tinGramsConversionRate.value = gramsRate
+
+            updateTinSync(ozRate, gramsRate)
+        }
+    }
+
+    fun setDefaultSyncOption(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveDefaultSyncOption(option)
+        }
+    }
+
+    fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
+        viewModelScope.launch {
+            if (!runSilent) {
+                setLoadingState(true)
+            }
+            SyncStateManager.schedulingPaused = true
+
+            var message = ""
+            val allItems = filterViewModel.everythingFlow.first()
+            val allSyncItems = allItems.filter { it.items.syncTins }
+
+            val ozRate = ozConversion ?: preferencesRepo.tinOzConversionRate.first()
+            val gramsRate = gramsConversion ?: preferencesRepo.tinGramsConversionRate.first()
+
+            try {
+                allSyncItems.forEach { items ->
+                    val tins = items.tins.filter { !it.finished }
+                    val syncQuantity = calculateSyncTins(tins, ozRate, gramsRate)
+                    itemsRepository.updateItem(
+                        items.items.copy(
+                            quantity = syncQuantity,
+                        )
+                    )
+                }
+
+                message = if (ozConversion != null || gramsConversion != null) {
+                    "Conversion rates and synced entry quantities updated."
+                } else { "Synced entry quantities updated." }
+            } catch (e: Exception) {
+                println("Update Tins Sync Exception: $e")
+                SyncStateManager.schedulingPaused = false
+                message = "Error updating sync quantities."
+            } finally {
+                if (!runSilent) {
+                    setLoadingState(false)
+                    SyncStateManager.schedulingPaused = false
+                    itemsRepository.triggerUploadWorker()
+                    showSnackbar(message)
+                }
+            }
+        }
+    }
+
+    fun optimizeDatabase() {
+        viewModelScope.launch {
+            setLoadingState(true)
+
+            itemsRepository.optimizeDatabase()
+
+            setLoadingState(false)
+            showSnackbar("Optimization complete.")
+        }
+    }
+
+    suspend fun deleteAllItems() {
+        itemsRepository.deleteAllItems()
+        saveTypeGenreOption(TypeGenreOption.TYPE.value)
+        showSnackbar("Database deleted!")
+    }
+
+
+    private fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
+        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
+            (it.tinQuantity * 16) / ozRate
+        }
+        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
+            it.tinQuantity / ozRate
+        }
+        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
+            it.tinQuantity / gramsRate
+        }
+        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
+    }
+
 
 
     /** Backup/Restore **/
@@ -978,11 +996,9 @@ sealed class DialogType {
 
     object DeviceSync : DialogType()
     object TinRates : DialogType()
-    object Recalculate : DialogType()
-    object DefaultSync : DialogType()
-    object Optimize : DialogType()
-    object Backup : DialogType()
-    object Restore : DialogType()
+    object TinSyncDefault : DialogType()
+    object DbOperations : DialogType()
+    object BackupRestore: DialogType()
     object DeleteAll : DialogType()
 }
 
