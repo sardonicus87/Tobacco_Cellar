@@ -270,21 +270,26 @@ class PreferencesRepo(
 
 
     /** Setting theme options **/
-    val themeSetting: StateFlow<String> = dataStore.data
-        .map {
-            it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
-        }.catch {
+    val themeSetting: StateFlow<ThemeSetting> = dataStore.data
+        .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading theme preferences.", it)
-                emit(ThemeSetting.SYSTEM.value)
+                emit(emptyPreferences())
             } else {
                 throw it
             }
-        }
-        .stateIn(
+        }.map {
+            val savedValue = it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
+            when (savedValue) {
+                ThemeSetting.LIGHT.value -> ThemeSetting.LIGHT
+                ThemeSetting.DARK.value -> ThemeSetting.DARK
+                ThemeSetting.SYSTEM.value -> ThemeSetting.SYSTEM
+                else -> ThemeSetting.SYSTEM
+            }
+        }.stateIn(
             scope = applicationScope,
             started = SharingStarted.Eagerly,
-            initialValue = ThemeSetting.SYSTEM.value
+            initialValue = ThemeSetting.SYSTEM
         )
 
     suspend fun saveThemeSetting(themeSetting: String) {

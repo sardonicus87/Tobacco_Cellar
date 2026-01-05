@@ -336,17 +336,15 @@ fun TobaccoCellarTheme(
     val userThemeSetting by preferencesRepo.themeSetting.collectAsState()
 
     val colorScheme = when (userThemeSetting) {
-        ThemeSetting.DARK.value -> darkScheme
-        ThemeSetting.LIGHT.value -> lightScheme
-        ThemeSetting.SYSTEM.value -> { if (isSystemInDarkTheme()) darkScheme else lightScheme }
-        else -> lightScheme
+        ThemeSetting.DARK -> darkScheme
+        ThemeSetting.LIGHT -> lightScheme
+        ThemeSetting.SYSTEM -> { if (isSystemInDarkTheme()) darkScheme else lightScheme }
     }
 
     val customColors = when (userThemeSetting) {
-        ThemeSetting.DARK.value -> customDark
-        ThemeSetting.LIGHT.value -> customLight
-        ThemeSetting.SYSTEM.value -> { if (isSystemInDarkTheme()) customDark else customLight }
-        else -> customLight
+        ThemeSetting.DARK -> customDark
+        ThemeSetting.LIGHT -> customLight
+        ThemeSetting.SYSTEM -> { if (isSystemInDarkTheme()) customDark else customLight }
     }
 
     CompositionLocalProvider(LocalCustomColors provides customColors) {
