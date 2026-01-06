@@ -5,7 +5,6 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -342,6 +341,8 @@ class SettingsViewModel(
             preferencesRepo.saveCrossDeviceSync(enable)
             if (enable) {
                 EventBus.emit(SignInRequestedEvent())
+            } else {
+                stopWorkers()
             }
         }
     }
@@ -449,47 +450,54 @@ class SettingsViewModel(
         viewModelScope.launch {
             setLoadingState(true)
 
-            val email = preferencesRepo.signedInUserEmail.first()
-            if (email == null) {
-                setLoadingState(false)
-                return@launch
-            }
-
-            try {
-                val context: Context = getApplication()
-                val driveService = GoogleDriveServiceHelper.getDriveService(context, email)
-
-                val files = driveService.files().list()
-                    .setSpaces("appDataFolder")
-                    .setFields("files(id, name, createdTime)")
-                    .execute()
-
-                if (files.files.isNullOrEmpty()) {
+            withContext(Dispatchers.IO) {
+                val email = preferencesRepo.signedInUserEmail.first()
+                if (email == null) {
                     setLoadingState(false)
-                    showSnackbar("No data to delete.")
-                    return@launch
+                    return@withContext
                 }
 
-                val batch = driveService.batch()
-                val callback = object : JsonBatchCallback<Void>() {
-                    override fun onSuccess(t: Void?, responseHeaders: com.google.api.client.http.HttpHeaders?) {}
-                    override fun onFailure(e: com.google.api.client.googleapis.json.GoogleJsonError?, responseHeaders: com.google.api.client.http.HttpHeaders?) {
-                        Log.e("ClearRemoteData", "Error deleting file in batch: ${e?.message}")
+                try {
+                    val context: Context = getApplication()
+                    val driveService = GoogleDriveServiceHelper.getDriveService(context, email)
+
+                    val files = driveService.files().list()
+                        .setSpaces("appDataFolder")
+                        .setFields("files(id, name, createdTime)")
+                        .execute()
+
+                    if (files.files.isNullOrEmpty()) {
+                        setLoadingState(false)
+                        showSnackbar("No data to delete.")
+                        return@withContext
                     }
+
+                    val batch = driveService.batch()
+                    val callback = object : JsonBatchCallback<Void>() {
+                        override fun onSuccess(
+                            t: Void?,
+                            responseHeaders: com.google.api.client.http.HttpHeaders?
+                        ) { }
+
+                        override fun onFailure(
+                            e: com.google.api.client.googleapis.json.GoogleJsonError?,
+                            responseHeaders: com.google.api.client.http.HttpHeaders?
+                        ) { println("ClearRemoteData, error deleting file in batch: ${e?.message}") }
+                    }
+
+                    for (file in files.files) {
+                        driveService.files().delete(file.id).queue(batch, callback)
+                    }
+
+                    batch.execute()
+                    showSnackbar("Remote data deleted.")
+
+                } catch (e: Exception) {
+                    println("Exception: $e")
+                    showSnackbar("Error deleting remote data.")
+                } finally {
+                    setLoadingState(false)
                 }
-
-                for (file in files.files) {
-                    driveService.files().delete(file.id).queue(batch, callback)
-                }
-
-                batch.execute()
-                showSnackbar("Remote data deleted.")
-
-            } catch (e: Exception) {
-                println("Exception: $e")
-                showSnackbar("Error deleting remote data.")
-            } finally {
-                setLoadingState(false)
             }
         }
     }
@@ -497,6 +505,17 @@ class SettingsViewModel(
     fun clearLoginState() {
         viewModelScope.launch {
             preferencesRepo.clearLoginState()
+        }
+    }
+
+    fun stopWorkers() {
+        viewModelScope.launch {
+            preferencesRepo.signedInUserEmail.first() ?: return@launch
+
+            val context: Context = getApplication()
+            val workManager = WorkManager.getInstance(context)
+
+            workManager.cancelUniqueWork(("download_sync_work"))
         }
     }
 
