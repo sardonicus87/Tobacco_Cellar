@@ -1,7 +1,9 @@
 package com.sardonicus.tobaccocellar
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.os.Bundle
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -36,7 +38,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = VIEW_PREFERENCE_NAME
 )
 
-class CellarApplication : Application() {
+class CellarApplication : Application(), Application.ActivityLifecycleCallbacks {
     lateinit var container: AppContainer
     lateinit var preferencesRepo: PreferencesRepo
     lateinit var csvHelper: CsvHelper
@@ -44,10 +46,13 @@ class CellarApplication : Application() {
         FilterViewModel(container.itemsRepository, preferencesRepo)
     }
 
+//    private var startWorkEnqueued = false
+
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
+        registerActivityLifecycleCallbacks(this)
         container = AppDataContainer(this)
         preferencesRepo = PreferencesRepo(dataStore, applicationScope)
         csvHelper = CsvHelper()
@@ -79,18 +84,7 @@ class CellarApplication : Application() {
         // Workers
         applicationScope.launch {
             val workManager = WorkManager.getInstance(this@CellarApplication)
-
-            val allowMobile = preferencesRepo.allowMobileData.first()
-            val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
-            val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
-                .setConstraints(
-                    Constraints.Builder()
-                        .setRequiredNetworkType(networkType)
-                        .build()
-                )
-                .build()
-
-            workManager.enqueue(onStartWorkRequest)
+            val syncEnabled = preferencesRepo.crossDeviceSync.first()
 
             // Periodic Worker
             val constraints = Constraints.Builder()
@@ -101,12 +95,15 @@ class CellarApplication : Application() {
                 .setConstraints(constraints)
                 .build()
 
-            workManager.enqueueUniquePeriodicWork(
-                "download_sync_work",
-                ExistingPeriodicWorkPolicy.KEEP,
-                downloadWorkRequest
-            )
+            if (syncEnabled) {
+                workManager.enqueueUniquePeriodicWork(
+                    "download_sync_work",
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    downloadWorkRequest
+                )
+            }
 
+            // Refresh Db flow when there's a download
             workManager.getWorkInfoByIdFlow(downloadWorkRequest.id)
                 .collect { workInfo ->
                     when (workInfo?.state) {
@@ -123,6 +120,7 @@ class CellarApplication : Application() {
                 }
         }
     }
+
 
     private fun migrateSyncSettings() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -149,4 +147,39 @@ class CellarApplication : Application() {
             preferencesRepo.setSyncSettingsMigrated()
         }
     }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        if (savedInstanceState == null) {  // && !startWorkEnqueued
+            applicationScope.launch {
+                val workManager = WorkManager.getInstance(this@CellarApplication)
+                val syncEnabled = preferencesRepo.crossDeviceSync.first()
+
+
+                if (syncEnabled) {
+                    val allowMobile = preferencesRepo.allowMobileData.first()
+                    val networkType =
+                        if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
+
+                    val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
+                        .setConstraints(
+                            Constraints.Builder()
+                                .setRequiredNetworkType(networkType)
+                                .build()
+                        )
+                        .build()
+
+                    workManager.enqueue(onStartWorkRequest)
+                    // startWorkEnqueued
+                }
+            }
+        }
+    }
+
+    override fun onActivityStarted(activity: Activity) {}
+    override fun onActivityResumed(activity: Activity) {}
+    override fun onActivityPaused(activity: Activity) {}
+    override fun onActivityStopped(activity: Activity) {}
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+    override fun onActivityDestroyed(activity: Activity) {}
+
 }
