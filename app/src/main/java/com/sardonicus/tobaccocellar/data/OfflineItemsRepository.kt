@@ -482,7 +482,7 @@ class OfflineItemsRepository(
             .build()
 
         val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadSyncWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
+            .setInitialDelay(5, TimeUnit.SECONDS)
             .setConstraints(constraints)
             .build()
 
