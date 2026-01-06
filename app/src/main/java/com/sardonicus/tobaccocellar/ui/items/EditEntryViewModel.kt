@@ -405,11 +405,11 @@ class EditEntryViewModel(
             val existingTinIds = originalTins.map { it.tinId }
             val newTins = tinDetailsList.filter { !existingTinIds.contains(it.tinId) }
             val updatedTins = tinDetailsList.filter { existingTinIds.contains(it.tinId) }.filter {
-                it.toTin(itemsId) != originalTins.find { originalTin -> originalTin.tinId == it.tinId }
+                it.toOriginalTin() != originalTins.find { originalTin -> originalTin.tinId == it.tinId }
             }
             val tinsToDelete = existingTinIds.filter { tinId -> !tinDetailsList.map { it.tinId }.contains(tinId) }
 
-            val actuallyUpdated = (itemUiState.itemDetails.toItem() != originalItem) ||
+            val actuallyUpdated = (itemUiState.itemDetails.toOriginalItem() != originalItem) ||
                     compsToAdd.isNotEmpty() || compsToRemove.isNotEmpty() ||
                     flavorToAdd.isNotEmpty() || flavorToRemove.isNotEmpty() ||
                     newTins.isNotEmpty() || updatedTins.isNotEmpty() || tinsToDelete.isNotEmpty()
@@ -454,7 +454,6 @@ class EditEntryViewModel(
                 }
             }
 
-
             newTins.forEach {
                 val tin = it.copy(lastModified = lastModified).toTin(itemsId)
                 itemsRepository.insertTin(tin)
@@ -468,7 +467,7 @@ class EditEntryViewModel(
             }
 
             SyncStateManager.schedulingPaused = false
-            itemsRepository.triggerUploadWorker()
+            if (actuallyUpdated) { itemsRepository.triggerUploadWorker() }
             EventBus.emit(ItemUpdatedEvent())
         }
     }
@@ -511,3 +510,39 @@ data class OriginalTin(
 data class ItemUpdatedEvent(
     val updatedEvent: Boolean = true,
 )
+
+
+fun ItemDetails.toOriginalItem(): OriginalItem {
+    return OriginalItem(
+        id = this.id,
+        brand = this.brand,
+        blend = this.blend,
+        type = this.type,
+        quantity = this.quantity,
+        rating = this.rating,
+        favorite = this.favorite,
+        disliked = this.disliked,
+        notes = this.notes,
+        subGenre = this.subGenre,
+        cut = this.cut,
+        inProduction = this.inProduction,
+        syncTins = this.syncTins,
+        lastModified = this.lastModified
+    )
+}
+
+fun TinDetails.toOriginalTin(): OriginalTin {
+    return OriginalTin(
+        tinId = this.tinId,
+        itemsId = this.itemsId,
+        tinLabel = this.tinLabel,
+        container = this.container,
+        tinQuantity = this.tinQuantity,
+        unit = this.unit,
+        manufactureDate = this.manufactureDate,
+        cellarDate = this.cellarDate,
+        openDate = this.openDate,
+        finished = this.finished,
+        lastModified = this.lastModified
+    )
+}
