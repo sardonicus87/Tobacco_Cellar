@@ -18,12 +18,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 
 data class TwoPaneScene<T : Any>(
     override val key: Any,
@@ -96,17 +101,22 @@ data class TwoPaneScene<T : Any>(
                 val isBack = isBack(priorStack, fullBackStack)
                 val targetZIndex = if (isBack) -1f else 1f
 
-                secondTransition.AnimatedContent(
-                    contentKey = { it.contentKey },
-                    transitionSpec = {
-                        ContentTransform(
-                            targetContentEnter = transition.targetContentEnter,
-                            initialContentExit = transition.initialContentExit,
-                            targetContentZIndex = targetZIndex
-                        )
-                    }
+                GlowBox(
+                    color = GlowColor(Color.Black.copy(alpha = .15f)),
+                    size = GlowSize(start = 4.dp)
                 ) {
-                    it.Content()
+                    secondTransition.AnimatedContent(
+                        contentKey = { it.contentKey },
+                        transitionSpec = {
+                            ContentTransform(
+                                targetContentEnter = transition.targetContentEnter,
+                                initialContentExit = transition.initialContentExit,
+                                targetContentZIndex = targetZIndex
+                            )
+                        }
+                    ) {
+                        it.Content()
+                    }
                 }
             }
         }
@@ -141,7 +151,7 @@ class TwoPaneStrategy<T : Any>(
     private val interceptBack: Boolean
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
-        val isLarge = windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
+        val isLarge = windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)  // && windowSizeClass.isHeightAtLeastBreakPoint(HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
         if (!isLarge) return null
 
