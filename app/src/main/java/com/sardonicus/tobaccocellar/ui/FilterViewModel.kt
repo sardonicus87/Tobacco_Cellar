@@ -968,13 +968,13 @@ class FilterViewModel (
             else selections.types.isEmpty() || (selections.types.contains(item.items.type.ifBlank { "(Unassigned)" }))
         val favoriteMatch =
             if (favDisGroup) true
-            else !selections.favorites || item.items.favorite
+            else !selections.favorites || (if (selections.dislikeds) (item.items.disliked || item.items.favorite) else item.items.favorite)
         val excludeLikeMatch =
             if (favDisGroup) true
             else !selections.excludeFavorites || !item.items.favorite
         val dislikedMatch =
             if (favDisGroup) true
-            else !selections.dislikeds || item.items.disliked
+            else !selections.dislikeds || (if (selections.favorites) (item.items.disliked || item.items.favorite) else item.items.disliked)
         val excludeDislikeMatch =
             if (favDisGroup) true
             else !selections.excludeDislikeds || !item.items.disliked
@@ -1228,8 +1228,7 @@ class FilterViewModel (
         FilterCategory.RATING_HIGH
     ) { it.maxOrNull() }
     @Suppress("UNCHECKED_CAST")
-    val inStockEnabled: StateFlow<Boolean> =
-        combine(
+    val inStockEnabled: StateFlow<Boolean> = combine(
             everythingFlow, sheetSelectionsFlow, preferencesRepo.quantityOption,
             preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
             unifiedFilteredTins
@@ -1256,8 +1255,7 @@ class FilterViewModel (
                 initialValue = false
             )
     @Suppress("UNCHECKED_CAST")
-    val outOfStockEnabled: StateFlow<Boolean> =
-        combine(
+    val outOfStockEnabled: StateFlow<Boolean> = combine(
             everythingFlow, sheetSelectionsFlow, preferencesRepo.quantityOption,
             preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
             unifiedFilteredTins
