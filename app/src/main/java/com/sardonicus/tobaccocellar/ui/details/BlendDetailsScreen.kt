@@ -75,6 +75,7 @@ fun BlendDetailsScreen(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
+    isTwoPane: Boolean,
     viewModel: BlendDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -113,9 +114,10 @@ fun BlendDetailsScreen(
                 canNavigateBack = true,
                 navigateUp = onNavigateUp,
                 showMenu = false,
+                overrideBack = isTwoPane,
                 modifier = Modifier
             )
-        },
+        }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

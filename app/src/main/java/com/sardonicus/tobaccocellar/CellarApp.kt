@@ -169,7 +169,7 @@ import java.util.Locale
 fun CellarApp(
     isGestureNav: Boolean,
     windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
-    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) },
+    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) },  // && windowSizeClass.isHeightAtLeastBreakPoint(HEIGHT_DP_MEDIUM_LOWER_BOUND)
     mainSecondaryMap: Map<NavKey, NavKey> = remember {
         mapOf(
             HomeDestination to FilterPaneDestination,
@@ -247,8 +247,9 @@ fun CellarTopAppBar(
     navigateToHelp: () -> Unit = {},
     navigateToPlaintext: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
-    preferencesRepo: PreferencesRepo = LocalCellarApplication.current.preferencesRepo,
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    overrideBack: Boolean = false,
+    preferencesRepo: PreferencesRepo = LocalCellarApplication.current.preferencesRepo,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
@@ -301,9 +302,11 @@ fun CellarTopAppBar(
         modifier = modifier,
         navigationIcon = {
             if (canNavigateBack) {
+                val icon = if (overrideBack) painterResource(id = R.drawable.arrow_forward) else painterResource(id = R.drawable.arrow_back)
+
                 IconButton(onClick = navigateUp) {
                     Icon(
-                        painter = painterResource(id = R.drawable.arrow_back),
+                        painter = icon, // painterResource(id = R.drawable.arrow_back),
                         contentDescription = null
                     )
                 }
@@ -642,6 +645,7 @@ fun CellarBottomAppBar(
     navigateToStats: () -> Unit = {},
     navigateToAddEntry: () -> Unit = {},
     navigateToDates: () -> Unit = {},
+    isTwoPane: Boolean = false,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     val sheetState by filterViewModel.bottomSheetState.collectAsState()
@@ -850,68 +854,72 @@ fun CellarBottomAppBar(
                 }
 
                 // Filter //
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val borderColor =
-                        if (filteringApplied) {
-                            if (searchPerformed && currentDestination == HomeDestination) {
-                                LocalCustomColors.current.indicatorBorderCorrection
-                            } else {
-                                if (sheetOpen) {
-                                    onPrimaryLight
-                                } else LocalContentColor.current
-                            }
-                        } else { Color.Transparent }
-
-                    val indicatorColor =
-                        if (filteringApplied) {
-                            if (searchPerformed && currentDestination == HomeDestination) {
-                                LocalCustomColors.current.indicatorCircle.copy(alpha = 0.5f)
-                            } else LocalCustomColors.current.indicatorCircle
-                        } else Color.Transparent
-
+                if (!isTwoPane) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
-                            .offset(x = 13.dp, y = (-17).dp)
-                            .clip(CircleShape)
-                            .border(1.5.dp, borderColor, CircleShape)
-                            .background(indicatorColor)
-                    )
-                    IconButton(
-                        onClick = { filterViewModel.openBottomSheet() },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty
+                            .padding(vertical = 4.dp)
+                            .weight(1f),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.filter_24),
-                            contentDescription = stringResource(R.string.filter_items),
+                        val borderColor =
+                            if (filteringApplied) {
+                                if (searchPerformed && currentDestination == HomeDestination) {
+                                    LocalCustomColors.current.indicatorBorderCorrection
+                                } else {
+                                    if (sheetOpen) {
+                                        onPrimaryLight
+                                    } else LocalContentColor.current
+                                }
+                            } else {
+                                Color.Transparent
+                            }
+
+                        val indicatorColor =
+                            if (filteringApplied) {
+                                if (searchPerformed && currentDestination == HomeDestination) {
+                                    LocalCustomColors.current.indicatorCircle.copy(alpha = 0.5f)
+                                } else LocalCustomColors.current.indicatorCircle
+                            } else Color.Transparent
+
+                        Box(
                             modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = (-8).dp),
-                            tint = if (sheetOpen) onPrimaryLight else LocalContentColor.current,
+                                .size(8.dp)
+                                .offset(x = 13.dp, y = (-17).dp)
+                                .clip(CircleShape)
+                                .border(1.5.dp, borderColor, CircleShape)
+                                .background(indicatorColor)
+                        )
+                        IconButton(
+                            onClick = { filterViewModel.openBottomSheet() },
+                            modifier = Modifier
+                                .padding(0.dp),
+                            enabled = if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.filter_24),
+                                contentDescription = stringResource(R.string.filter_items),
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .offset(y = (-8).dp),
+                                tint = if (sheetOpen) onPrimaryLight else LocalContentColor.current,
+                            )
+                        }
+
+                        Text(
+                            text = stringResource(R.string.filter_items),
+                            modifier = Modifier
+                                .offset(y = 13.dp),
+                            fontSize = 11.sp,
+                            fontWeight = if (sheetOpen) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (sheetOpen) {
+                                onPrimaryLight
+                            } else {
+                                if ((searchPerformed && currentDestination == HomeDestination) || databaseEmpty) {
+                                    LocalContentColor.current.copy(alpha = 0.5f)
+                                } else LocalContentColor.current
+                            }
                         )
                     }
-
-                    Text(
-                        text = stringResource(R.string.filter_items),
-                        modifier = Modifier
-                            .offset(y = 13.dp),
-                        fontSize = 11.sp,
-                        fontWeight = if (sheetOpen) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (sheetOpen) {
-                            onPrimaryLight
-                        } else {
-                            if ((searchPerformed && currentDestination == HomeDestination) || databaseEmpty) {
-                                LocalContentColor.current.copy(alpha = 0.5f)
-                            } else LocalContentColor.current
-                        }
-                    )
                 }
 
                 // Add //
@@ -989,36 +997,36 @@ fun FilterLayout(
     ) {
         // Header //
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp), // top
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(
+            if (sheetLayout) {
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                )
-                Text(
-                    text = "Select Filters",
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    fontSize = 18.sp,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(top = 4.dp),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 6.dp),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Top
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (sheetLayout) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                    )
+                    Text(
+                        text = "Select Filters",
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 4.dp),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 6.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Top
+                    ) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
                             contentDescription = "Close",
@@ -1033,6 +1041,23 @@ fun FilterLayout(
                             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                         )
                     }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select Filters",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp,
+                        maxLines = 1,
+                        modifier = Modifier,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
             }
         }
@@ -1122,7 +1147,7 @@ fun FilterLayout(
             }
         }
         else {
-            item { Spacer(Modifier.height(40.dp)) }
+            item { Spacer(Modifier.height(8.dp)) }
             item {
                 PageOne(
                     filterViewModel = filterViewModel,

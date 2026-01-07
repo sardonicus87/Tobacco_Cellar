@@ -48,6 +48,7 @@ import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import java.util.UUID
 
+
 @Composable
 fun CellarNavigation(
     navigator: Navigator,
@@ -114,6 +115,7 @@ fun CellarNavigation(
                     navigateToSettings = { navigator.navigate(SettingsDestination) },
                     navigateToHelp = { navigator.navigate(HelpDestination) },
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
+                    isTwoPane = navigationState.isTwoPane,
                     filterViewModel = filterViewModel,
                 )
             }
@@ -135,6 +137,7 @@ fun CellarNavigation(
                 BlendDetailsScreen(
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
                     onNavigateUp = { navigator.goBack() },
+                    isTwoPane = navigationState.isTwoPane,
                     viewModel = viewModel
                 )
             }
@@ -150,6 +153,7 @@ fun CellarNavigation(
                     navigateToHome = { navigator.navigate(HomeDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
+                    isTwoPane = navigationState.isTwoPane,
                     modifier = Modifier
                 )
             }
@@ -160,6 +164,8 @@ fun CellarNavigation(
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToDetails = { navigator.navigate(BlendDetailsDestination(it)) },
+                    isTwoPane = navigationState.isTwoPane,
+                    modifier = Modifier
                 )
             }
 
@@ -301,22 +307,24 @@ fun CellarNavigation(
         }
     }
 
-    val currentTop = navigationState.topLevelRoute.let { it is PaneInfo && it.paneType == PaneType.MAIN }
-    val currentLast = navigationState.currentStack.lastOrNull().let { it is PaneInfo && it.paneType == PaneType.SECOND }
-    val twoPaneCompatible: Boolean = remember(largeScreen, currentTop, currentLast) { largeScreen && currentTop && currentLast }
-    val scene = if (twoPaneCompatible) rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack)
-        else remember { SinglePaneSceneStrategy() }
+//    val currentTop = navigationState.topLevelRoute.let { it is PaneInfo && it.paneType == PaneType.MAIN }
+//    val currentLast = navigationState.currentStack.lastOrNull().let { it is PaneInfo && it.paneType != PaneType.NONE }
+//    val twoPaneCompatible: Boolean = remember(largeScreen, currentLast) { largeScreen && currentLast }
+//    val scene = if (twoPaneCompatible) rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack)
+//        else remember { SinglePaneSceneStrategy() }
+
+//    val scene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack).then(SinglePaneSceneStrategy())
 
 
     NavDisplay(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        sceneStrategy = scene,
+        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack).then(SinglePaneSceneStrategy()),
         transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         predictivePopTransitionSpec = {
-            if (isGestureNav && (scene::class != TwoPaneStrategy::class)) {
+            if (isGestureNav && initialState::class != TwoPaneStrategy::class) {
                 fadeIn() togetherWith scaleOut(targetScale = 0.7f)
             } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
         }

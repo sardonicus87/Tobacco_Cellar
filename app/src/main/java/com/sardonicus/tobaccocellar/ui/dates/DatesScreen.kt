@@ -71,6 +71,7 @@ fun DatesScreen(
     navigateToStats: () -> Unit,
     navigateToAddEntry: () -> Unit,
     navigateToDetails: (Int) -> Unit,
+    isTwoPane: Boolean,
     viewModel: DatesViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -99,6 +100,7 @@ fun DatesScreen(
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = DatesDestination,
+                isTwoPane = isTwoPane
             )
         },
     ) { innerPadding ->

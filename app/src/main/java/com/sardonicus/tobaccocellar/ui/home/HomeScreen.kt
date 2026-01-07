@@ -148,6 +148,7 @@ fun HomeScreen(
     navigateToHelp: () -> Unit,
     navigateToPlaintext: () -> Unit,
     filterViewModel: FilterViewModel,
+    isTwoPane: Boolean,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
@@ -231,6 +232,7 @@ fun HomeScreen(
 
         val scrollState = rememberScrollState()
         var enabled by rememberSaveable(alert.id) { mutableStateOf(false) }
+    //    val atBottom2 = remember(scrollState.canScrollForward) { !scrollState.canScrollForward }
         val atBottom by remember {
             derivedStateOf {
                 scrollState.value == scrollState.maxValue
@@ -404,6 +406,7 @@ fun HomeScreen(
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
+                isTwoPane = isTwoPane
             )
         },
         snackbarHost = {

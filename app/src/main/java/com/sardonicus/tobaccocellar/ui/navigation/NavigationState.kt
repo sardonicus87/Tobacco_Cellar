@@ -101,11 +101,23 @@ class NavigationState(
     // For TwoPane Scene
     val twoPaneSceneKey = mutableIntStateOf(0)
 
+    val isTwoPane: Boolean
+        get() {
+            val currentStack = backStacks.getValue(topLevelRoute)
+        //    val main = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
+        //    val second = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.SECOND }
+            val startCompatible = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN } != null
+            val lastCompatible = currentStack.lastOrNull().let { it is PaneInfo && it.paneType == PaneType.SECOND }
+
+            return largeScreen && startCompatible && lastCompatible
+        }
+
     val interceptBack: Boolean
         get() {
             val currentStack = backStacks.getValue(topLevelRoute)
+        //    val lastEntry = currentStack.lastOrNull().let { it is PaneInfo && it.paneType == PaneType.SECOND }
 
-            return largeScreen && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
+            return isTwoPane && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
         }
 }
 
