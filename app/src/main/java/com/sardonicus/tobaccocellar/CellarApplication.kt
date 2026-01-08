@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -14,11 +15,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIOException
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.sardonicus.tobaccocellar.data.AppContainer
 import com.sardonicus.tobaccocellar.data.AppDataContainer
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
@@ -31,6 +35,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
@@ -42,13 +47,13 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     lateinit var container: AppContainer
     lateinit var preferencesRepo: PreferencesRepo
     lateinit var csvHelper: CsvHelper
-    val filterViewModel: FilterViewModel by lazy {
-        FilterViewModel(container.itemsRepository, preferencesRepo)
-    }
+    val filterViewModel: FilterViewModel by lazy { FilterViewModel(container.itemsRepository, preferencesRepo) }
+
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var lastSyncVerification: Long = 0
 
 //    private var startWorkEnqueued = false
 
-    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
@@ -148,6 +153,47 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
     }
 
+    private fun verifySyncStatus() {
+        applicationScope.launch {
+            if (preferencesRepo.crossDeviceSync.first()) {
+                val userEmail = preferencesRepo.signedInUserEmail.first()
+                if (userEmail != null) {
+                    withContext(Dispatchers.IO) {
+                        try {
+                            val driveService = GoogleDriveServiceHelper.getDriveService(this@CellarApplication, userEmail)
+
+                            driveService.files().list()
+                                .setSpaces("appDataFolder")
+                                .setPageSize(1)
+                                .setFields("files(id)")
+                                .execute()
+                        } catch (e: Exception) {
+                            val authError = when (e) {
+                                is GoogleJsonResponseException ->
+                                    e.statusCode == 401 || e.statusCode == 403
+                                is GoogleAuthIOException -> true
+                                else -> false
+                            }
+
+                            if (authError) {
+                                resetSyncState()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun resetSyncState() {
+        preferencesRepo.saveCrossDeviceSync(false)
+        preferencesRepo.clearLoginState()
+
+        val workManager = WorkManager.getInstance(this@CellarApplication)
+        workManager.cancelUniqueWork("download_sync_work")
+        Toast.makeText(this@CellarApplication, "Sync disabled.", Toast.LENGTH_SHORT).show()
+    }
+
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         if (savedInstanceState == null) {  // && !startWorkEnqueued
             applicationScope.launch {
@@ -174,8 +220,14 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             }
         }
     }
-
-    override fun onActivityStarted(activity: Activity) {}
+    override fun onActivityStarted(activity: Activity) {
+        // hot starts
+        val tenMinutes: Long = 10 * 60 * 1000
+        if (System.currentTimeMillis() - lastSyncVerification > tenMinutes) {
+            lastSyncVerification = System.currentTimeMillis()
+            verifySyncStatus()
+        }
+    }
     override fun onActivityResumed(activity: Activity) {}
     override fun onActivityPaused(activity: Activity) {}
     override fun onActivityStopped(activity: Activity) {}
