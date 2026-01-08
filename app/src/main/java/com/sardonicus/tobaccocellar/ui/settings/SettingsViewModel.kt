@@ -124,6 +124,19 @@ class SettingsViewModel(
 
     private val networkMonitor = NetworkMonitor(getApplication())
 
+    val networkEnabled: StateFlow<Boolean> = combine(
+        preferencesRepo.allowMobileData,
+        networkMonitor.isConnected,
+        networkMonitor.isWifi
+    ) { allowMobile, isConnected, isWifi ->
+        (allowMobile && isConnected) || isWifi
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
 
     val displaySettings = listOf(
         SettingsDialog("Theme", "Change the theme of the app", DialogType.Theme),
@@ -338,10 +351,10 @@ class SettingsViewModel(
 
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
-            preferencesRepo.saveCrossDeviceSync(enable)
             if (enable) {
                 EventBus.emit(SignInRequestedEvent())
             } else {
+                preferencesRepo.saveCrossDeviceSync(false)
                 stopWorkers()
             }
         }
@@ -353,21 +366,16 @@ class SettingsViewModel(
         }
     }
 
-    val manualSyncEnabled: StateFlow<Boolean> = combine(
-        preferencesRepo.allowMobileData,
-        networkMonitor.isConnected,
-        networkMonitor.isWifi
-    ) { allowMobile, isConnected, isWifi ->
-        (allowMobile && isConnected) || isWifi
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = false
-    )
-
     fun manualSync() {
         viewModelScope.launch {
             preferencesRepo.signedInUserEmail.first() ?: return@launch
+
+            if (!networkEnabled.value) {
+                val message = if (!networkMonitor.isWifi.first()) "allow mobile data is off"
+                    else "check connection"
+                showSnackbar("Failed: $message.")
+                return@launch
+            }
 
             val context: Context = getApplication()
             val workManager = WorkManager.getInstance(context)
@@ -448,6 +456,13 @@ class SettingsViewModel(
 
     fun clearRemoteData() {
         viewModelScope.launch {
+            if (!networkEnabled.value) {
+                val message = if (!networkMonitor.isWifi.first()) "allow mobile data is off"
+                    else "check connection"
+                showSnackbar("Failed: $message.")
+                return@launch
+            }
+
             setLoadingState(true)
 
             withContext(Dispatchers.IO) {

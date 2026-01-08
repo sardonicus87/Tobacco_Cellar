@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +29,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -222,6 +225,7 @@ private fun SettingsBody(
     }
 
     val openDialog by viewModel.openDialog.collectAsState()
+    val connectionEnabled by viewModel.networkEnabled.collectAsState()
 
     val themeSetting by viewModel.themeSetting.collectAsState()
     val showRatings by viewModel.showRatings.collectAsState()
@@ -235,7 +239,6 @@ private fun SettingsBody(
     val email by viewModel.userEmail.collectAsState()
     val hasScope by viewModel.hasScope.collectAsState()
     val allowMobileData by viewModel.allowMobileData.collectAsState()
-    val manualSyncEnabled by viewModel.manualSyncEnabled.collectAsState()
     val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
 
     LazyColumn(
@@ -351,6 +354,7 @@ private fun SettingsBody(
                 DeviceSyncDialog(
                     onDismiss = { viewModel.dismissDialog() },
                     acknowledgement = acknowledgement,
+                    connectionEnabled = connectionEnabled,
                     confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
                     deviceSync = deviceSync,
                     onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
@@ -358,7 +362,6 @@ private fun SettingsBody(
                     hasScope = hasScope,
                     allowMobileData = allowMobileData,
                     onAllowMobileData = { viewModel.saveAllowMobileData(it) },
-                    manualSyncEnabled = manualSyncEnabled,
                     onManualSync = { viewModel.manualSync() },
                     clearRemoteData = { viewModel.clearRemoteData() },
                     clearLoginState = { viewModel.clearLoginState() },
@@ -996,6 +999,7 @@ fun ParseLinksDialog(
 fun DeviceSyncDialog(
     onDismiss: () -> Unit,
     acknowledgement: Boolean,
+    connectionEnabled: Boolean,
     confirmAcknowledgement: () -> Unit,
     deviceSync: Boolean,
     onDeviceSync: (Boolean) -> Unit,
@@ -1003,7 +1007,6 @@ fun DeviceSyncDialog(
     hasScope: Boolean,
     allowMobileData: Boolean,
     onAllowMobileData: (Boolean) -> Unit,
-    manualSyncEnabled: Boolean,
     onManualSync: () -> Unit,
     clearRemoteData: () -> Unit,
     clearLoginState: () -> Unit,
@@ -1131,8 +1134,7 @@ fun DeviceSyncDialog(
                                     modifier = Modifier
                                         .scale(.6f)
                                         .padding(start = 10.dp),
-                                    colors = SwitchDefaults.colors(
-                                    )
+                                    colors = SwitchDefaults.colors()
                                 )
                             }
                         }
@@ -1162,39 +1164,74 @@ fun DeviceSyncDialog(
                                     modifier = Modifier
                                         .scale(.6f)
                                         .padding(start = 10.dp),
-                                    colors = SwitchDefaults.colors(
-                                    )
+                                    colors = SwitchDefaults.colors()
                                 )
                             }
                         }
 
                         // Manual Sync
-                        TextButton(
-                            onClick = { onManualSync() },
-                            enabled = deviceSync && accountLinked && manualSyncEnabled,
-                            contentPadding = PaddingValues(8.dp, 3.dp),
-                            modifier = modifier
-                                .heightIn(28.dp, 28.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .height(IntrinsicSize.Min)
+                                .fillMaxWidth()
                         ) {
-                            Text(
-                                text = "Manual Sync",
-                                modifier = Modifier,
-                                fontSize = 15.sp,
-                            )
-                        }
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier
+                                    .width(IntrinsicSize.Max)
+                            ) {
+                                TextButton(
+                                    onClick = { onManualSync() },
+                                    enabled = deviceSync && accountLinked && connectionEnabled,
+                                    contentPadding = PaddingValues(8.dp, 3.dp),
+                                    modifier = modifier
+                                        .heightIn(28.dp, 28.dp)
+                                ) {
+                                    Text(
+                                        text = "Manual Sync",
+                                        modifier = Modifier,
+                                        fontSize = 15.sp,
+                                    )
+                                }
 
-                        // Clear remote data
-                        TextButton(
-                            onClick = { clearRemoteData() },
-                            enabled = accountLinked,
-                            contentPadding = PaddingValues(8.dp, 3.dp),
-                            modifier = modifier
-                                .heightIn(28.dp, 28.dp)
-                        ) {
-                            Text(
-                                text = "Clear Remote Data",
-                                fontSize = 15.sp,
-                            )
+                                // Clear remote data
+                                TextButton(
+                                    onClick = { clearRemoteData() },
+                                    enabled = accountLinked && connectionEnabled,
+                                    contentPadding = PaddingValues(8.dp, 3.dp),
+                                    modifier = modifier
+                                        .heightIn(28.dp, 28.dp)
+                                ) {
+                                    Text(
+                                        text = "Clear Remote Data",
+                                        fontSize = 15.sp,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            if (!connectionEnabled) {
+                                Box (
+                                    modifier = Modifier
+                                        .width(IntrinsicSize.Min)
+                                        .padding(end = 10.dp)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Text(
+                                        text = "(Check connection)",
+                                        autoSize = TextAutoSize.StepBased(
+                                            minFontSize = 12.sp,
+                                            maxFontSize = 14.sp,
+                                        ),
+                                        textAlign = TextAlign.End,
+                                        modifier = Modifier,
+                                        maxLines = 2,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                                    )
+                                }
+                            }
                         }
 
                         // Clear Login
