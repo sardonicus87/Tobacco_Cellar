@@ -58,8 +58,16 @@ class UploadSyncWorker(
             )
 
             Log.d("UploadSyncWorker", "Uploading to server with filename: $filename")
-            driveService.files().create(fileMetadata, contentStream)
+            val uploadedFile = driveService.files().create(fileMetadata, contentStream)
+                .setFields("id")
                 .execute()
+
+            val fileId = uploadedFile.id
+            if (fileId != null) {
+                val currentProcessedFiles = preferencesRepo.processedSyncFiles.first()
+                val updatedProcessedFiles = currentProcessedFiles + fileId
+                preferencesRepo.saveProcessedSyncFiles(updatedProcessedFiles)
+            }
 
             val processedIds = pendingOperations.map { it.id }
             pendingSyncOperationDao.deleteOperation(processedIds)
