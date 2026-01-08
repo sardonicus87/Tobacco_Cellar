@@ -30,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -348,23 +347,24 @@ private fun SettingsBody(
 
         // App/Database Settings
         DialogType.DeviceSync -> {
-            DeviceSyncDialog(
-                onDismiss = { viewModel.dismissDialog() },
-                loading = loading,
-                acknowledgement = acknowledgement,
-                confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
-                deviceSync = deviceSync,
-                onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
-                email = email,
-                hasScope = hasScope,
-                allowMobileData = allowMobileData,
-                onAllowMobileData = { viewModel.saveAllowMobileData(it) },
-                manualSyncEnabled = manualSyncEnabled,
-                onManualSync = { viewModel.manualSync() },
-                clearRemoteData = { viewModel.clearRemoteData() },
-                clearLoginState = { viewModel.clearLoginState() },
-                modifier = Modifier
-            )
+            if (!loading) {
+                DeviceSyncDialog(
+                    onDismiss = { viewModel.dismissDialog() },
+                    acknowledgement = acknowledgement,
+                    confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
+                    deviceSync = deviceSync,
+                    onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
+                    email = email,
+                    hasScope = hasScope,
+                    allowMobileData = allowMobileData,
+                    onAllowMobileData = { viewModel.saveAllowMobileData(it) },
+                    manualSyncEnabled = manualSyncEnabled,
+                    onManualSync = { viewModel.manualSync() },
+                    clearRemoteData = { viewModel.clearRemoteData() },
+                    clearLoginState = { viewModel.clearLoginState() },
+                    modifier = Modifier
+                )
+            }
         }
         DialogType.TinRates -> {
             TinRatesDialog(
@@ -995,7 +995,6 @@ fun ParseLinksDialog(
 @Composable
 fun DeviceSyncDialog(
     onDismiss: () -> Unit,
-    loading: Boolean,
     acknowledgement: Boolean,
     confirmAcknowledgement: () -> Unit,
     deviceSync: Boolean,
@@ -1010,7 +1009,7 @@ fun DeviceSyncDialog(
     clearLoginState: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val syncEnabled by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
+    val accountLinked by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
     val atBottom by remember(scrollState.canScrollForward) { mutableStateOf(!scrollState.canScrollForward) }
@@ -1105,124 +1104,113 @@ fun DeviceSyncDialog(
                         )
                     }
                 } else {
-                    Box(
-                        contentAlignment = Alignment.Center
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Spacer(Modifier.height(4.dp))
+                        // Enable Sync
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(28.dp)
+                                .padding(start = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Spacer(Modifier.height(4.dp))
-                            // Enable Sync
-                            Row(
-                                modifier = modifier
-                                    .fillMaxWidth()
-                                    .height(28.dp)
-                                    .padding(start = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Multi-Device Sync:",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = LocalContentColor.current
-                                )
-                                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                                    Switch(
-                                        checked = deviceSync,
-                                        onCheckedChange = { onDeviceSync(it) },
-                                        modifier = Modifier
-                                            .scale(.6f)
-                                            .padding(start = 10.dp),
-                                        colors = SwitchDefaults.colors(
-                                        )
+                            Text(
+                                text = "Multi-Device Sync:",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = LocalContentColor.current
+                            )
+                            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                                Switch(
+                                    checked = deviceSync,
+                                    onCheckedChange = { onDeviceSync(it) },
+                                    modifier = Modifier
+                                        .scale(.6f)
+                                        .padding(start = 10.dp),
+                                    colors = SwitchDefaults.colors(
                                     )
-                                }
-                            }
-
-                            // Allow Mobile
-                            Row(
-                                modifier = modifier
-                                    .fillMaxWidth()
-                                    .height(28.dp)
-                                    .padding(start = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val alpha = if (!deviceSync) .38f else 1f
-                                Text(
-                                    text = "Allow Mobile Data:",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = LocalContentColor.current.copy(alpha = alpha)
-                                )
-                                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                                    Switch(
-                                        checked = allowMobileData,
-                                        onCheckedChange = { onAllowMobileData(it) },
-                                        enabled = deviceSync,
-                                        modifier = Modifier
-                                            .scale(.6f)
-                                            .padding(start = 10.dp),
-                                        colors = SwitchDefaults.colors(
-                                        )
-                                    )
-                                }
-                            }
-
-                            // Manual Sync
-                            TextButton(
-                                onClick = { onManualSync() },
-                                enabled = deviceSync && syncEnabled && manualSyncEnabled,
-                                contentPadding = PaddingValues(8.dp, 3.dp),
-                                modifier = modifier
-                                    .heightIn(28.dp, 28.dp)
-                            ) {
-                                Text(
-                                    text = "Manual Sync",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
-                            }
-
-                            // Clear remote data
-                            TextButton(
-                                onClick = { clearRemoteData() },
-                                enabled = syncEnabled,
-                                contentPadding = PaddingValues(8.dp, 3.dp),
-                                modifier = modifier
-                                    .heightIn(28.dp, 28.dp)
-                            ) {
-                                Text(
-                                    text = "Clear Remote Data",
-                                    fontSize = 15.sp,
-                                )
-                            }
-
-                            // Clear Login
-                            TextButton(
-                                onClick = {
-                                    clearLoginState()
-                                    onDeviceSync(false)
-                                },
-                                enabled = syncEnabled,
-                                contentPadding = PaddingValues(8.dp, 3.dp),
-                                modifier = modifier
-                                    .heightIn(28.dp, 28.dp)
-                            ) {
-                                Text(
-                                    text = "Clear Login",
-                                    fontSize = 15.sp,
                                 )
                             }
                         }
-                        if (loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .padding(0.dp)
-                                    .size(48.dp),
+
+                        // Allow Mobile
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(28.dp)
+                                .padding(start = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val alpha = if (!deviceSync) .38f else 1f
+                            Text(
+                                text = "Allow Mobile Data:",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = LocalContentColor.current.copy(alpha = alpha)
+                            )
+                            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                                Switch(
+                                    checked = allowMobileData,
+                                    onCheckedChange = { onAllowMobileData(it) },
+                                    enabled = deviceSync,
+                                    modifier = Modifier
+                                        .scale(.6f)
+                                        .padding(start = 10.dp),
+                                    colors = SwitchDefaults.colors(
+                                    )
+                                )
+                            }
+                        }
+
+                        // Manual Sync
+                        TextButton(
+                            onClick = { onManualSync() },
+                            enabled = deviceSync && accountLinked && manualSyncEnabled,
+                            contentPadding = PaddingValues(8.dp, 3.dp),
+                            modifier = modifier
+                                .heightIn(28.dp, 28.dp)
+                        ) {
+                            Text(
+                                text = "Manual Sync",
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                            )
+                        }
+
+                        // Clear remote data
+                        TextButton(
+                            onClick = { clearRemoteData() },
+                            enabled = accountLinked,
+                            contentPadding = PaddingValues(8.dp, 3.dp),
+                            modifier = modifier
+                                .heightIn(28.dp, 28.dp)
+                        ) {
+                            Text(
+                                text = "Clear Remote Data",
+                                fontSize = 15.sp,
+                            )
+                        }
+
+                        // Clear Login
+                        TextButton(
+                            onClick = {
+                                clearLoginState()
+                                onDeviceSync(false)
+                            },
+                            enabled = accountLinked,
+                            contentPadding = PaddingValues(8.dp, 3.dp),
+                            modifier = modifier
+                                .heightIn(28.dp, 28.dp)
+                        ) {
+                            Text(
+                                text = "Clear Login",
+                                fontSize = 15.sp,
                             )
                         }
                     }
