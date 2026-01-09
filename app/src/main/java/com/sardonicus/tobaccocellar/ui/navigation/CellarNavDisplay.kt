@@ -307,14 +307,6 @@ fun CellarNavigation(
         }
     }
 
-//    val currentTop = navigationState.topLevelRoute.let { it is PaneInfo && it.paneType == PaneType.MAIN }
-//    val currentLast = navigationState.currentStack.lastOrNull().let { it is PaneInfo && it.paneType != PaneType.NONE }
-//    val twoPaneCompatible: Boolean = remember(largeScreen, currentLast) { largeScreen && currentLast }
-//    val scene = if (twoPaneCompatible) rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack)
-//        else remember { SinglePaneSceneStrategy() }
-
-//    val scene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack).then(SinglePaneSceneStrategy())
-
 
     NavDisplay(
         entries = navigationState.toEntries(entryProvider),
@@ -328,24 +320,5 @@ fun CellarNavigation(
                 fadeIn() togetherWith scaleOut(targetScale = 0.7f)
             } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
         }
-
-//        transitionSpec = {
-//            if (targetState is TwoPaneScene<*> && initialState is TwoPaneScene<*>) {
-//                EnterTransition.None togetherWith ExitTransition.None
-//            } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
-//        },
-//        popTransitionSpec = {
-//            if (targetState is TwoPaneScene<*> && initialState is TwoPaneScene<*>) {
-//                EnterTransition.None togetherWith ExitTransition.None
-//            } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
-//        },
-//        predictivePopTransitionSpec = {
-//            if (targetState is TwoPaneScene<*> && initialState is TwoPaneScene<*>) {
-//                EnterTransition.None togetherWith ExitTransition.None
-//            } else
-//                if (isGestureNav && (scene::class != TwoPaneStrategy::class)) {
-//                    fadeIn() togetherWith scaleOut(targetScale = 0.7f)
-//                } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
-//        }
     )
 }
