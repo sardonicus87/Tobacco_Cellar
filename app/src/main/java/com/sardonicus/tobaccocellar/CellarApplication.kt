@@ -68,6 +68,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         applicationScope.launch {
             val networkMonitor = NetworkMonitor(this@CellarApplication)
             val itemsRepository = container.itemsRepository
+            val syncEnabled = preferencesRepo.crossDeviceSync.first()
 
             val networkCheckFlow = combine(
                 networkMonitor.isWifi,
@@ -78,7 +79,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             }
 
             networkCheckFlow.distinctUntilChanged().collect { canUpload ->
-                if (canUpload) {
+                if (canUpload && syncEnabled) {
                     if (itemsRepository.hasPendingOperations()) {
                         itemsRepository.triggerUploadWorker()
                     }
