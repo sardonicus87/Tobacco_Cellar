@@ -132,6 +132,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation3.runtime.NavKey
 import androidx.window.core.layout.WindowSizeClass
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
@@ -169,7 +170,7 @@ import java.util.Locale
 fun CellarApp(
     isGestureNav: Boolean,
     windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
-    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) },  // && windowSizeClass.isHeightAtLeastBreakPoint(HEIGHT_DP_MEDIUM_LOWER_BOUND)
+    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) },  // WIDTH_DP_EXPANDED_LOWER_BOUND windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
     mainSecondaryMap: Map<NavKey, NavKey> = remember {
         mapOf(
             HomeDestination to FilterPaneDestination,
@@ -1471,27 +1472,8 @@ fun BrandFilterSection(
             CustomFilterTextField(
                 value = brandSearchText,
                 onValueChange = { text ->
-                    // brandSearchText = text
                     filterViewModel.updateBrandSearchText(text)
                     filteredBrands = filterViewModel.updateFilterBrands(text, allBrands)
-//                    filteredBrands = if (text.isBlank()) {
-//                        allBrands
-//                    } else {
-//                        val startsWith = allBrands.filter { brand ->
-//                            brand.startsWith(text, ignoreCase = true)
-//                        }
-//                        val otherWordsStartsWith = allBrands.filter { brand ->
-//                            brand.split(" ").drop(1).any { word ->
-//                                word.startsWith(text, ignoreCase = true)
-//                            } && !brand.startsWith(text, ignoreCase = true)
-//                        }
-//                        val contains = allBrands.filter { brand ->
-//                            brand.contains(text, ignoreCase = true)
-//                                    && !brand.startsWith(text, ignoreCase = true) &&
-//                                    !otherWordsStartsWith.contains(brand)
-//                        }
-//                        startsWith + otherWordsStartsWith + contains
-//                    }
                 },
                 modifier = Modifier
                     .weight(1f, false),
@@ -1551,14 +1533,6 @@ fun BrandFilterSection(
 
         // Selectable brands row //
         val lazyListState = rememberLazyListState()
-//        val preSortUnselected = filteredBrands.filterNot {
-//            if (!excluded) {
-//                selectedBrands.contains(it)
-//            } else {
-//                selectedExcludedBrands.contains(it)
-//            }
-//        }
-     //   val unselectedBrands = filterViewModel.reorderChips(preSortUnselected, brandEnabled)
         val unselectedBrands = filterViewModel.updateUnselectedBrandRow(
             filteredBrands,
             excluded,
@@ -1865,12 +1839,12 @@ fun TypeFilterSection(
     val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
     val availableTypes by filterViewModel.availableTypes.collectAsState()
     val enabledTypes by filterViewModel.typesEnabled.collectAsState()
+    val types = listOf("Aromatic", "English", "Burley", "Virginia", "Other", "(Unassigned)")
 
     val nothingAssigned = remember(availableTypes) { !availableTypes.any { it != "(Unassigned)" } }
 
     Column(
         modifier = modifier
-            .height(96.dp)
     ) {
         if (nothingAssigned) {
             Row(
@@ -1880,7 +1854,8 @@ fun TypeFilterSection(
                         MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         RoundedCornerShape(8.dp)
                     )
-                    .fillMaxSize(),
+                    .heightIn(min = 48.dp, max = 96.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1898,14 +1873,11 @@ fun TypeFilterSection(
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp),
-                horizontalArrangement = Arrangement.spacedBy(
-                    space = 6.dp,
-                    alignment = Alignment.CenterHorizontally
-                ),
+                    .heightIn(min = 48.dp, max = 96.dp),
+                horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                availableTypes.forEach {
+                types.forEach {
                     FilterChip(
                         selected = selectedTypes.contains(it),
                         onClick = { filterViewModel.updateSelectedTypes(it, !selectedTypes.contains(it)) },
