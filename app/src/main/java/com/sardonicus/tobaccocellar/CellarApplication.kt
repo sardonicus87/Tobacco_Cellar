@@ -86,7 +86,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             }
         }
 
-        // Workers
+        // Periodic Worker
         applicationScope.launch {
             val workManager = WorkManager.getInstance(this@CellarApplication)
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
@@ -195,6 +195,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        // cold/warm start check for new files
         if (savedInstanceState == null) {  // && !startWorkEnqueued
             applicationScope.launch {
                 val workManager = WorkManager.getInstance(this@CellarApplication)
