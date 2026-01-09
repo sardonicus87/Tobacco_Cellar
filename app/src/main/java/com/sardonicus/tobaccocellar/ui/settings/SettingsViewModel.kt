@@ -148,10 +148,10 @@ class SettingsViewModel(
 
     val databaseSettings = listOf(
         SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync", DialogType.DeviceSync),
-        SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", DialogType.TinRates),
-        SettingsDialog("Default Sync Tins Option", "Set default tin sync option", DialogType.TinSyncDefault),
-        SettingsDialog("Database Operations", "Fix sync quantities and optimize database", DialogType.DbOperations),
         SettingsDialog("Backup/Restore", "Backup or restore database/settings", DialogType.BackupRestore),
+        SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", DialogType.TinRates),
+        SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option", DialogType.TinSyncDefault),
+        SettingsDialog("Other Db Operations", "Fix sync quantities and optimize database", DialogType.DbOperations),
         SettingsDialog("Delete Database", "Delete all items", DialogType.DeleteAll)
     )
 
@@ -268,7 +268,6 @@ class SettingsViewModel(
                 }
             }
         }
-
     }
 
 
@@ -1077,10 +1076,10 @@ sealed class DialogType {
     object ParseLinks : DialogType()
 
     object DeviceSync : DialogType()
+    object BackupRestore: DialogType()
     object TinRates : DialogType()
     object TinSyncDefault : DialogType()
     object DbOperations : DialogType()
-    object BackupRestore: DialogType()
     object DeleteAll : DialogType()
 }
 

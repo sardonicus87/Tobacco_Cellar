@@ -1108,7 +1108,7 @@ fun DeviceSyncDialog(
                     }
                 } else {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Spacer(Modifier.height(4.dp))
                         // Enable Sync
@@ -1178,7 +1178,7 @@ fun DeviceSyncDialog(
                                 .fillMaxWidth()
                         ) {
                             Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
                                 modifier = Modifier
                                     .width(IntrinsicSize.Max)
                             ) {
@@ -1570,7 +1570,7 @@ private fun DbOperationsDialog(
             Column(
                 modifier = Modifier
                     .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = "These options shouldn't be necessary. Fix tin sync quantity corrects " +
@@ -1578,7 +1578,7 @@ private fun DbOperationsDialog(
                             "database cleans up any potentially orphaned data.",
                     fontSize = 15.sp,
                     modifier = Modifier
-                        .padding(horizontal = 8.dp)
+                        .padding(horizontal = 10.dp)
                         .padding(bottom = 8.dp),
                 )
                 TextButton(
@@ -1652,20 +1652,22 @@ private fun BackupRestoreDialog(
                     Column(
                         modifier = Modifier
                             .padding(bottom = 0.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = "Would you like to Backup or Restore?",
                             fontSize = 15.sp,
                             color = LocalContentColor.current
                         )
-                        Spacer(Modifier.height(12.dp))
-                        Row(
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                            verticalAlignment = Alignment.CenterVertically
+                               // .padding(start = 16.dp)
+                                .fillMaxWidth()
+                            ,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { updateOption("Backup") },
                                 contentPadding = PaddingValues(8.dp, 3.dp),
@@ -1689,7 +1691,6 @@ private fun BackupRestoreDialog(
                                 )
                             }
                         }
-                        Spacer(Modifier.height(12.dp))
                     }
                 }
             }
