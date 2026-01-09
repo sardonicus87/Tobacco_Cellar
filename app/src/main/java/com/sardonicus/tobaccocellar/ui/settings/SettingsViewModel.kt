@@ -775,11 +775,11 @@ class SettingsViewModel(
                     if (restoreState.databaseChecked && restoreState.settingsChecked) {
                         if (fileContentState.databasePresent && fileContentState.settingsPresent) {
                             try {
-                                restoreSettings(settingsBytes)
                                 restoreDatabase(context, databaseBytes)
                                 if (fileContentState.version == 2) {
                                     restoreItemSyncState(itemSyncStateBytes)
                                 }
+                                restoreSettings(settingsBytes)
                                 updateTinSync(runSilent = true)
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {

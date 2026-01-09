@@ -1046,17 +1046,16 @@ fun DeviceSyncDialog(
                             text = "(You must scroll to the bottom to accept)",
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally),
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             color = LocalContentColor.current
                         )
                         Text(
                             text = "To auto synchronize collection changes across devices, you " +
-                                    "must enable this option and authorize Google Drive access " +
-                                    "on each device. You do not need the Google Drive app for " +
-                                    "this functionality to work. You only need to authorize once " +
-                                    "per device (though uninstalling and reinstalling will " +
-                                    "require re-authorizing). This also requires all devices to " +
-                                    "be running a version of the app with the same Database Version.",
+                                    "must enable this option and sign-in with the same Google " +
+                                    "account to authorize Google Drive access on each device (you " +
+                                    "do not need the Google Drive app for this functionality to " +
+                                    "work). This feature also requires all synced devices to be " +
+                                    "running a version of the app with the same Database Version.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
@@ -1066,13 +1065,13 @@ fun DeviceSyncDialog(
                                     "your login or drive, this authorization just allows the app " +
                                     "to use your Google Drive as a cloud location for storing and " +
                                     "retrieving data changes between devices. The app will create " +
-                                    "a hidden folder that only this app can access, and this app-" +
-                                    "specific folder is the only part of your Drive that the app " +
-                                    "can access. Login and remote sync data can be cleared at any " +
-                                    "time in this setting dialog (if you want everything cleared, " +
-                                    "clear remote data before clearing login). If you wish to " +
-                                    "clear the authorization, this must be done in your Google " +
-                                    "Account settings: Services > Connected Apps).",
+                                    "a hidden folder that only this app can access, and this " +
+                                    "folder is the only part of your Drive that the app can " +
+                                    "access. Login and remote sync data can be cleared at any " +
+                                    "time in this setting dialog (clear remote data before " +
+                                    "clearing login). If you wish to revoke Drive authorization, " +
+                                    "this must be done in your Google Account settings: Services " +
+                                    "> Connected Apps).",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
@@ -1083,15 +1082,6 @@ fun DeviceSyncDialog(
                                     "every 12 hours as long as the device is powered on. The app " +
                                     "start check and 12-hour cycled downloads respect your " +
                                     "settings regarding mobile data or WIFI only.",
-                            modifier = Modifier,
-                            fontSize = 14.sp,
-                            color = LocalContentColor.current
-                        )
-                        Text(
-                            text = "Changes are saved locally and scheduled to upload according " +
-                                    "to your mobile data settings (mobile or WIFI only). The " +
-                                    "uploaded data only includes changes, which are time-stamped " +
-                                    "as device sync is bi-directional.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
