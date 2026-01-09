@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.csvimport
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1495,6 +1496,7 @@ fun MaxValueField(
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MappingField(
