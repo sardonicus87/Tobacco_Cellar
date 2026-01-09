@@ -206,6 +206,7 @@ fun CsvImportBody(
                             }
 
                             is CsvResult.Error -> {
+                                println(result.exception.toString())
                                 onShowError(true)
                             }
 
