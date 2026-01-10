@@ -34,7 +34,6 @@ import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
-import com.sardonicus.tobaccocellar.ui.utilities.SignInRequestedEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -351,7 +350,7 @@ class SettingsViewModel(
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
             if (enable) {
-                EventBus.emit(SignInRequestedEvent())
+                EventBus.emit(SignInEvent)
             } else {
                 preferencesRepo.saveCrossDeviceSync(false)
                 stopWorkers()
@@ -518,7 +517,7 @@ class SettingsViewModel(
 
     fun clearLoginState() {
         viewModelScope.launch {
-            preferencesRepo.clearLoginState()
+            EventBus.emit(SignOutEvent)
         }
     }
 
@@ -610,7 +609,6 @@ class SettingsViewModel(
         showSnackbar("Database deleted!")
     }
 
-
     private fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
         val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
             (it.tinQuantity * 16) / ozRate
@@ -623,7 +621,6 @@ class SettingsViewModel(
         }
         return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
     }
-
 
 
     /** Backup/Restore **/
@@ -784,7 +781,7 @@ class SettingsViewModel(
                                 message = "Database and Settings restored."
                             } catch (e: Exception) {
                                 println("Exception: $e")
-                                message = "Restore failed. Error: ${e.message}."
+                                message = "Restore failed."
                             }
                         } else {
                             if (!fileContentState.databasePresent) {
@@ -802,6 +799,7 @@ class SettingsViewModel(
                                     if (fileContentState.version == 2) {
                                         restoreItemSyncState(itemSyncStateBytes)
                                     }
+                                    updateTinSync(runSilent = true)
                                     message = "File missing settings data, database restored."
                                 } catch (e: Exception) {
                                     println("Exception: $e")
@@ -1144,6 +1142,8 @@ data class SnackbarState(
 
 data object DatabaseRestoreEvent
 data object SyncDownloadEvent
+data object SignOutEvent
+data object SignInEvent
 
 
 /** Extension functions */
