@@ -1,7 +1,6 @@
 package com.sardonicus.tobaccocellar.data.multiDeviceSync
 
 import android.content.Context
-import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.api.client.http.InputStreamContent
@@ -23,25 +22,11 @@ class UploadSyncWorker(
 
         try {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
-            if (!syncEnabled) {
-                Log.d("UploadSyncWorker", "Cross-device sync is disabled, stopping work")
-                return Result.success()
-            }
+            if (!syncEnabled) { return Result.success() }
 
-            val userEmail = preferencesRepo.signedInUserEmail.first()
+            val userEmail = preferencesRepo.signedInUserEmail.first() ?: return Result.success()
 
-            if (userEmail == null ) {
-                Log.w("UploadSyncWorker", "Cannot upload, no user signed in.")
-                return Result.success()
-            }
-
-            val pendingOperations = pendingSyncOperationDao.getAllOperations()
-
-            if (pendingOperations.isEmpty()) {
-                Log.d("UploadSyncWorker", "No pending operations to upload")
-                return Result.success()
-            }
-            Log.d("UploadSyncWorker", "Found ${pendingOperations.size} pending uploads")
+            val pendingOperations = pendingSyncOperationDao.getAllOperations().ifEmpty { return Result.success() }
 
             val driveService = GoogleDriveServiceHelper.getDriveService(applicationContext, userEmail)
             val jsonPayload = Json.encodeToString(pendingOperations)
@@ -57,7 +42,6 @@ class UploadSyncWorker(
                 ByteArrayInputStream(jsonPayload.toByteArray())
             )
 
-            Log.d("UploadSyncWorker", "Uploading to server with filename: $filename")
             val uploadedFile = driveService.files().create(fileMetadata, contentStream)
                 .setFields("id")
                 .execute()
@@ -74,7 +58,7 @@ class UploadSyncWorker(
 
             return Result.success()
         } catch (e: Exception) {
-            Log.e("UploadSyncWorker", "Error uploading to server", e)
+            println("UploadSyncWorker error uploading to server, $e")
             return Result.retry()
         }
     }
