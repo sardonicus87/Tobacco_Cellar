@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -40,8 +39,10 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.lifecycleScope
@@ -49,14 +50,15 @@ import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.drive.DriveScopes
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.ui.settings.SignInEvent
+import com.sardonicus.tobaccocellar.ui.settings.SignOutEvent
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.SignInRequestedEvent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -118,14 +120,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             } else {
-                Toast.makeText(this, "Driver permission was denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Drive permission was denied", Toast.LENGTH_SHORT).show()
             }
         }
 
         // sign in launch
         lifecycleScope.launch {
             EventBus.events.collect { event ->
-                if (event is SignInRequestedEvent) {
+                if (event is SignInEvent) {
                     val userEmail = preferencesRepo.signedInUserEmail.first()
                     val hasScope = preferencesRepo.hasDriveScope.first()
 
@@ -139,9 +141,12 @@ class MainActivity : ComponentActivity() {
                             authorizeDrive()
                         }
                         else -> {
-                            signIn()
+                           signIn()
                         }
                     }
+                }
+                if (event is SignOutEvent) {
+                    signOut()
                 }
             }
         }
@@ -185,9 +190,10 @@ class MainActivity : ComponentActivity() {
 
     private fun signIn() {
         lifecycleScope.launch {
-            val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(getString(R.string.web_client_id))
+            val googleIdOption = GetSignInWithGoogleOption.Builder(getString(R.string.web_client_id)) // GetGoogleIdOption.Builder()
+             //   .setFilterByAuthorizedAccounts(false)
+             //   .setServerClientId(getString(R.string.web_client_id))
+             //   .setAutoSelectEnabled(false)
                 .build()
 
             val request = GetCredentialRequest.Builder()
@@ -197,7 +203,6 @@ class MainActivity : ComponentActivity() {
             try {
                 val result = credentialManager.getCredential(this@MainActivity, request)
                 val credential = GoogleIdTokenCredential.createFrom(result.credential.data)
-
                 val userEmail = credential.id
 
                 preferencesRepo.saveLoginState(userEmail, false)
@@ -205,11 +210,28 @@ class MainActivity : ComponentActivity() {
                 authorizeDrive()
 
             } catch (e: NoCredentialException) {
-                Log.e("MainActivity", "No credential found on device.", e)
+                println("MainActivity no credential found on device: $e")
                 Toast.makeText(this@MainActivity, "No Google accounts found on this device", Toast.LENGTH_SHORT).show()
+            } catch (e: GetCredentialCancellationException) {
+                println("MainActivity sign-in with credential manager cancelled: $e")
+                Toast.makeText(this@MainActivity, "Sign-in canceled", Toast.LENGTH_SHORT).show()
             } catch (e: GetCredentialException) {
-                Log.e("MainActivity", "Sign-in with credential manager failed", e)
+                println("MainActivity sign-in with credential manager failed: $e")
                 Toast.makeText(this@MainActivity, "Sign-in failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun signOut() {
+        lifecycleScope.launch {
+            try {
+                credentialManager.clearCredentialState(ClearCredentialStateRequest())
+                preferencesRepo.saveCrossDeviceSync(false)
+                preferencesRepo.clearLoginState()
+                Toast.makeText(this@MainActivity, "Logged out.", Toast.LENGTH_SHORT).show()
+            }
+            catch (e: Exception) {
+                println("MainActivity sign-out failed: $e")
             }
         }
     }
@@ -233,14 +255,18 @@ class MainActivity : ComponentActivity() {
                         if (userEmail != null) {
                             preferencesRepo.saveLoginState(userEmail, true)
                             preferencesRepo.saveCrossDeviceSync(true)
-                            Toast.makeText(this@MainActivity, "Sync enabled.", Toast.LENGTH_SHORT).show()  // check if needed
+                            Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("MainActivity", "Authorization failed", e)
-                Toast.makeText(this@MainActivity, "Could not get Drive permission", Toast.LENGTH_SHORT).show()
+                println("MainActivity authorization failed: $e")
+                lifecycleScope.launch {
+                    preferencesRepo.saveCrossDeviceSync(false)
+                    preferencesRepo.clearLoginState()
+                    Toast.makeText(this@MainActivity, "Could not get Drive permission", Toast.LENGTH_SHORT).show()
+                }
             }
     }
 
