@@ -19,6 +19,7 @@ import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -374,6 +376,8 @@ class FilterViewModel (
                 if (it is DatabaseRestoreEvent) {
                     resetFilter()
                     _refresh.emit(Unit)
+                    delay(25)
+                    _refresh.emit(Unit)
                     _shouldScrollUp.value = true
                 }
                 if (it is SyncDownloadEvent) {
@@ -442,7 +446,7 @@ class FilterViewModel (
     val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
             itemsRepository.getEverythingStream()
-        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+        }.distinctUntilChanged().shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     private val lastSeenFlow: Flow<List<Int>> = preferencesRepo.datesSeen.map { datesString ->
         if (datesString.isBlank()) { emptyList() }
