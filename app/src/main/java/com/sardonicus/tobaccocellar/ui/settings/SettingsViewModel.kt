@@ -743,7 +743,7 @@ class SettingsViewModel(
 
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             setLoadingState(true)
 
             val workManager = WorkManager.getInstance(context)
@@ -837,7 +837,9 @@ class SettingsViewModel(
                 SyncStateManager.schedulingPaused = false
             }
 
-            workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build())
+            if (crossDeviceSync.value) {
+                workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build())
+            }
 
             setLoadingState(false)
             showSnackbar(message)
