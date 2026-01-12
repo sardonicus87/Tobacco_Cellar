@@ -16,7 +16,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
@@ -50,7 +49,7 @@ import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.drive.DriveScopes
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
@@ -190,10 +189,10 @@ class MainActivity : ComponentActivity() {
 
     private fun signIn() {
         lifecycleScope.launch {
-            val googleIdOption = GetSignInWithGoogleOption.Builder(getString(R.string.web_client_id)) // GetGoogleIdOption.Builder()
-             //   .setFilterByAuthorizedAccounts(false)
-             //   .setServerClientId(getString(R.string.web_client_id))
-             //   .setAutoSelectEnabled(false)
+            val googleIdOption = GetGoogleIdOption.Builder()  // GetSignInWithGoogleOption.Builder(getString(R.string.web_client_id))
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(getString(R.string.web_client_id))
+                .setAutoSelectEnabled(false)
                 .build()
 
             val request = GetCredentialRequest.Builder()
@@ -209,14 +208,11 @@ class MainActivity : ComponentActivity() {
 
                 authorizeDrive()
 
-            } catch (e: NoCredentialException) {
-                println("MainActivity no credential found on device: $e")
+            } catch (_: NoCredentialException) {
                 Toast.makeText(this@MainActivity, "No Google accounts found on this device", Toast.LENGTH_SHORT).show()
-            } catch (e: GetCredentialCancellationException) {
-                println("MainActivity sign-in with credential manager cancelled: $e")
-                Toast.makeText(this@MainActivity, "Sign-in canceled", Toast.LENGTH_SHORT).show()
-            } catch (e: GetCredentialException) {
-                println("MainActivity sign-in with credential manager failed: $e")
+            } catch (_: GetCredentialCancellationException) {
+            //    Toast.makeText(this@MainActivity, "Sign-in canceled", Toast.LENGTH_SHORT).show()
+            } catch (_: GetCredentialException) {
                 Toast.makeText(this@MainActivity, "Sign-in failed", Toast.LENGTH_SHORT).show()
             }
         }
@@ -230,8 +226,8 @@ class MainActivity : ComponentActivity() {
                 preferencesRepo.clearLoginState()
                 Toast.makeText(this@MainActivity, "Logged out.", Toast.LENGTH_SHORT).show()
             }
-            catch (e: Exception) {
-                println("MainActivity sign-out failed: $e")
+            catch (_: Exception) {
+                Toast.makeText(this@MainActivity, "Sign-out failed", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -260,8 +256,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            .addOnFailureListener { e ->
-                println("MainActivity authorization failed: $e")
+            .addOnFailureListener { _ ->
                 lifecycleScope.launch {
                     preferencesRepo.saveCrossDeviceSync(false)
                     preferencesRepo.clearLoginState()
@@ -278,8 +273,9 @@ private fun SystemBarsProtection(
     statusBarHeight: () -> Float = calculateStatusBar(),
     navigationHeight: () -> Float = calculateNavigation()
 ) {
-    val darkTheme: Boolean = isSystemInDarkTheme()
-    val color = if (darkTheme) Color.Black else Color.Black
+ //   val darkTheme: Boolean = isSystemInDarkTheme()
+ //   val color = if(darkTheme) Color.Black else Color.Black
+    val color = Color.Black
 
     Canvas(
         modifier = Modifier
