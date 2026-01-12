@@ -23,7 +23,7 @@ class OfflineItemsRepository(
     private val context: Context
 ) : ItemsRepository {
 
-    private val dbVersion = TobaccoDatabase.getDatabaseVersion(context)
+    private val dbVersion by lazy { TobaccoDatabase.getDatabaseVersion(context) }
 
     /** Database operations **/
     // Items //
