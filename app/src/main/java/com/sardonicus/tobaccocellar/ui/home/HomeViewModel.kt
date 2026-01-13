@@ -3,9 +3,13 @@ package com.sardonicus.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
@@ -32,10 +36,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.supervisorScope
 import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
@@ -64,81 +69,89 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            combine(
-                preferencesRepo.sortColumnIndex,
-                preferencesRepo.sortAscending
-            ) { columnIndex, sortAscending ->
-                TableSorting(columnIndex, sortAscending)
-            }.collect {
-                _tableTableSorting.value = it
-            }
-        }
-        viewModelScope.launch {
-            combine(
-                preferencesRepo.listSorting,
-                preferencesRepo.listAscending
-            ) { value, ascending ->
-                val option = ListSortOption.entries.firstOrNull { it.value == value } ?: ListSortOption.DEFAULT
-                ListSorting(option, ascending)
-            }.collect {
-                _listSorting.value = it
-            }
-        }
-        viewModelScope.launch {
             EventBus.events.collect {
                 if (it is DatabaseRestoreEvent) {
                     _resetLoading.value = true
                 }
             }
         }
-        viewModelScope.launch {
-            filterViewModel.everythingFlow.collect {
-                _allItems.value = it
-            }
-        }
-        viewModelScope.launch {
-            combine(
-                preferencesRepo.typeGenreOption,
-                filterViewModel.typesExist,
-                filterViewModel.subgenresExist
-            ) { option, types, subgenres ->
-                val enablement = mapOf(
-                    TypeGenreOption.TYPE to (types || !subgenres),
-                    TypeGenreOption.SUBGENRE to subgenres,
-                    TypeGenreOption.BOTH to (types && subgenres),
-                    TypeGenreOption.TYPE_FALLBACK to types,
-                    TypeGenreOption.SUB_FALLBACK to subgenres,
-                )
-                val enabled = enablement[option] ?: false
-                if (enabled) option else TypeGenreOption.TYPE
-            }.collectLatest {
-                preferencesRepo.saveTypeGenreOption(it.value)
-            }
-        }
-        viewModelScope.launch {
-            preferencesRepo.tableColumnsHidden.collect {
-                if (it.contains(TableColumn.BRAND.name)) {
-                    updateColumnVisibility(TableColumn.BRAND, true)
+        viewModelScope.launch(Dispatchers.Default) {
+            supervisorScope {
+                launch {
+                    filterViewModel.everythingFlow.collect {
+                        _allItems.value = it
+                    }
                 }
-                if (it.contains(TableColumn.BLEND.name)) {
-                    updateColumnVisibility(TableColumn.BLEND, true)
+                // Table Sorting
+                launch {
+                    combine(
+                        preferencesRepo.sortColumnIndex,
+                        preferencesRepo.sortAscending
+                    ) { columnIndex, sortAscending ->
+                        TableSorting(columnIndex, sortAscending)
+                    }.collect {
+                        _tableTableSorting.value = it
+                    }
                 }
-            }
-        }
-        viewModelScope.launch {
-            preferencesRepo.lastAlertFlow.collect { lastShown ->
-                val unseenAlerts = OneTimeAlerts.alerts
-                    .filter { it.id in (lastShown + 1) ..OneTimeAlerts.CURRENT_ALERT_VERSION }
-                    .sortedBy { it.id }
+                // List Sorting
+                launch {
+                    combine(
+                        preferencesRepo.listSorting,
+                        preferencesRepo.listAscending
+                    ) { value, ascending ->
+                        val option = ListSortOption.entries.firstOrNull { it.value == value } ?: ListSortOption.DEFAULT
+                        ListSorting(option, ascending)
+                    }.collect {
+                        _listSorting.value = it
+                    }
+                }
+                // Ensure Brand and Blend columns never get hidden, unhide them if so
+                launch(Dispatchers.IO) {
+                    preferencesRepo.tableColumnsHidden.collect {
+                        if (it.contains(TableColumn.BRAND.name)) {
+                            updateColumnVisibility(TableColumn.BRAND, true)
+                        }
+                        if (it.contains(TableColumn.BLEND.name)) {
+                            updateColumnVisibility(TableColumn.BLEND, true)
+                        }
+                    }
+                }
+                // Type/Subgenre visibility, default to Type if an option becomes disabled
+                launch(Dispatchers.IO) {
+                    combine(
+                        preferencesRepo.typeGenreOption,
+                        filterViewModel.typesExist,
+                        filterViewModel.subgenresExist
+                    ) { option, types, subgenres ->
+                        val enablement = mapOf(
+                            TypeGenreOption.TYPE to (types || !subgenres),
+                            TypeGenreOption.SUBGENRE to subgenres,
+                            TypeGenreOption.BOTH to (types && subgenres),
+                            TypeGenreOption.TYPE_FALLBACK to types,
+                            TypeGenreOption.SUB_FALLBACK to subgenres,
+                        )
+                        val enabled = enablement[option] ?: false
+                        if (enabled) option else TypeGenreOption.TYPE
+                    }.collectLatest {
+                        preferencesRepo.saveTypeGenreOption(it.value)
+                    }
+                }
+                launch {
+                    preferencesRepo.lastAlertFlow.collect { lastShown ->
+                        val unseenAlerts = OneTimeAlerts.alerts
+                            .filter { it.id in (lastShown + 1) ..OneTimeAlerts.CURRENT_ALERT_VERSION }
+                            .sortedBy { it.id }
 
-                val alertToDisplay = unseenAlerts.firstOrNull()
-                val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
+                        val alertToDisplay = unseenAlerts.firstOrNull()
+                        val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
 
-                _importantAlertState.value = ImportantAlertState(
-                    show = (alertToDisplay != null),
-                    alertToDisplay = alertToDisplay,
-                    isCurrentAlert = isCurrent
-                )
+                        _importantAlertState.value = ImportantAlertState(
+                            show = (alertToDisplay != null),
+                            alertToDisplay = alertToDisplay,
+                            isCurrentAlert = isCurrent
+                        )
+                    }
+                }
             }
         }
     }
@@ -227,6 +240,21 @@ class HomeViewModel(
             items.items.id to formattedQuantity
         }
 
+        val formattedTypeGenre = sortedItems.associate { item ->
+            val text = when (typeGenreOption) {
+                TypeGenreOption.TYPE -> item.items.type
+                TypeGenreOption.SUBGENRE -> item.items.subGenre
+                TypeGenreOption.BOTH -> {
+                    item.items.type +
+                            if (item.items.type.isNotEmpty() && item.items.subGenre.isNotEmpty()) { " - " } else { "" } +
+                            item.items.subGenre
+                }
+                TypeGenreOption.TYPE_FALLBACK -> item.items.type.ifBlank { item.items.subGenre }
+                TypeGenreOption.SUB_FALLBACK -> item.items.subGenre.ifBlank { item.items.type }
+            }
+            item.items.id to text
+        }
+
         val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY)
         val subgenreOption = when (typeGenreOption) {
             TypeGenreOption.SUBGENRE -> true
@@ -252,6 +280,7 @@ class HomeViewModel(
             showRating = showRating,
             sortingOptions = sortingOptions,
             typeGenreOption = typeGenreOption,
+            formattedTypeGenre = formattedTypeGenre,
             formattedQuantities = formattedQuantities,
             isTableView = isTableView,
             tableSorting = tableSorting,
@@ -261,6 +290,7 @@ class HomeViewModel(
             isLoading = false
         )
     }
+        .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
@@ -307,7 +337,7 @@ class HomeViewModel(
 
     /** One-Time Alerts **/
     fun saveAlertSeen(alertId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             preferencesRepo.saveAlertShown(alertId)
         }
     }
@@ -362,7 +392,7 @@ class HomeViewModel(
 
 
     fun selectView(isTableView: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             preferencesRepo.saveViewPreference(isTableView)
         }
     }
@@ -378,7 +408,7 @@ class HomeViewModel(
 
         _listSorting.value = newListSorting
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             preferencesRepo.saveListSorting(newListSorting.option.value, newListSorting.listAscending)
         }
     }
@@ -397,7 +427,7 @@ class HomeViewModel(
 
         _tableTableSorting.value = newTableSorting
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             preferencesRepo.saveTableSortingPreferences(
                 newTableSorting.columnIndex, newTableSorting.sortAscending
             )
@@ -423,7 +453,7 @@ class HomeViewModel(
         )
 
     fun updateColumnVisibility(column: TableColumn, visible: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val currentHidden = preferencesRepo.tableColumnsHidden.first()
             val newHidden = if (visible) {
                 currentHidden - column.name
@@ -474,8 +504,9 @@ class HomeViewModel(
                 )
             )
 
+    // make columns not visible automatically if they become disabled
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             columnVisibilityEnablement.collect { visibilityMap ->
                 val disabled = visibilityMap.filterValues { !it }.keys
                 disabled.forEach {
@@ -493,55 +524,51 @@ class HomeViewModel(
     fun snackbarShown() { _showSnackbar.value = false }
 
     override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val data = if (allItems) _allItems.value else homeUiState.value.sortedItems
-                val maxRating = exportRating.maxRating
-                val rounding = exportRating.rounding
+        viewModelScope.launch(Dispatchers.IO) {
+            val data = if (allItems) _allItems.value else homeUiState.value.sortedItems
+            val maxRating = exportRating.maxRating
+            val rounding = exportRating.rounding
 
-                val csvData = csvHelper.exportToCsv(data, maxRating, rounding)
+            val csvData = csvHelper.exportToCsv(data, maxRating, rounding)
 
-                if (uri != null) {
-                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
-                            outputStream ->
-                        outputStream.write(csvData.toByteArray())
-                        _showSnackbar.value = true
-                    }
-                } else {
-                    val documentsDirectory = Environment
-                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    val file = File(documentsDirectory, "tobacco_cellar.csv")
-                    file.writeText(csvData)
+            if (uri != null) {
+                getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
+                        outputStream ->
+                    outputStream.write(csvData.toByteArray())
+                    _showSnackbar.value = true
                 }
+            } else {
+                val documentsDirectory = Environment
+                    .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val file = File(documentsDirectory, "tobacco_cellar.csv")
+                file.writeText(csvData)
             }
         }
     }
 
     override fun onTinsExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val maxRating = exportRating.maxRating
-                val rounding = exportRating.rounding
-                val data: List<TinExportData> = if (allItems) {
-                    createTinExportData(_allItems.value, maxRating, rounding)
-                } else {
-                    createTinExportData(homeUiState.value.sortedItems, maxRating, rounding)
-                }
+        viewModelScope.launch(Dispatchers.IO) {
+            val maxRating = exportRating.maxRating
+            val rounding = exportRating.rounding
+            val data: List<TinExportData> = if (allItems) {
+                createTinExportData(_allItems.value, maxRating, rounding)
+            } else {
+                createTinExportData(homeUiState.value.sortedItems, maxRating, rounding)
+            }
 
-                val tinCsvData = csvHelper.exportTinsToCsv(data)
+            val tinCsvData = csvHelper.exportTinsToCsv(data)
 
-                if (uri != null) {
-                    getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
-                            outputStream ->
-                        outputStream.write(tinCsvData.toByteArray())
-                        _showSnackbar.value = true
-                    }
-                } else {
-                    val documentsDirectory = Environment
-                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    val file = File(documentsDirectory, "tobacco_cellar_as_tins.csv")
-                    file.writeText(tinCsvData)
+            if (uri != null) {
+                getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
+                        outputStream ->
+                    outputStream.write(tinCsvData.toByteArray())
+                    _showSnackbar.value = true
                 }
+            } else {
+                val documentsDirectory = Environment
+                    .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val file = File(documentsDirectory, "tobacco_cellar_as_tins.csv")
+                file.writeText(tinCsvData)
             }
         }
     }
@@ -626,6 +653,7 @@ data class HomeUiState(
     val showRating: Boolean = false,
     val sortingOptions: List<ListSortOption> = emptyList(),
     val typeGenreOption: TypeGenreOption = TypeGenreOption.TYPE,
+    val formattedTypeGenre: Map<Int, String> = emptyMap(),
     val formattedQuantities: Map<Int, String> = emptyMap(),
     val isTableView: Boolean = false,
     val tableSorting: TableSorting = TableSorting(),
@@ -637,6 +665,13 @@ data class HomeUiState(
     val toggleIcon: Int =
         if (isTableView) R.drawable.table_view else R.drawable.list_view,
     val isLoading: Boolean = false
+)
+
+@Stable
+data class ItemsIconData(
+    val icon: Int,
+    val color: Color,
+    val size: Dp = 17.dp
 )
 
 data class SearchState(
@@ -658,14 +693,20 @@ data class TableSorting(
     val columnIndex: Int = -1,
     val sortAscending: Boolean = true,
     val sortIcon: Int =
-        if (sortAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        when (columnIndex) {
+            4, 7 -> if (sortAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
+            else -> if (sortAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        }
 )
 
 data class ListSorting(
     val option: ListSortOption = ListSortOption.DEFAULT,
     val listAscending: Boolean = true,
     val listIcon: Int =
-        if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        when (option) {
+            ListSortOption.RATING, ListSortOption.QUANTITY -> if (listAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
+            else -> if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        }
 )
 
 enum class ListSortOption(val value: String) {
