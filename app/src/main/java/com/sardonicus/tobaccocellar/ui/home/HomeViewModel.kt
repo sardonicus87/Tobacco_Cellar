@@ -67,6 +67,9 @@ class HomeViewModel(
 
     private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
 
+    private val _isRendered = MutableStateFlow(false)
+    fun updateListRendered(rendered: Boolean) { _isRendered.value = rendered }
+
     init {
         viewModelScope.launch {
             EventBus.events.collect {
@@ -156,6 +159,34 @@ class HomeViewModel(
         }
     }
 
+    val emptyMessage: StateFlow<String> =
+        combine(
+            filterViewModel.searchValue,
+            filterViewModel.searchPerformed,
+            filterViewModel.isFilterApplied,
+            filterViewModel.emptyDatabase,
+            filterViewModel.homeScreenFilteredItems
+        ) { searchText, searchPerformed, filteringApplied, emptyDatabase, filteredItems ->
+            val emptyList = filteredItems.isEmpty()
+            if (!emptyList) { "" }
+            else if (searchPerformed) {
+                "No entries found matching\n\"$searchText\"."
+            }
+            else if (filteringApplied) {
+                "No entries found matching\nselected filters."
+            }
+            else if (emptyDatabase) {
+                "No entries found in cellar.\nClick \"+\" to add items,\n" +
+                        "or use options to import CSV."
+            }
+            else { "" }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = ""
+            )
+
 
     @Suppress("UNCHECKED_CAST")
     val homeUiState = combine(
@@ -173,7 +204,10 @@ class HomeViewModel(
         filterViewModel.subgenresExist,
         filterViewModel.ratingsExist,
         filterViewModel.emptyDatabase,
-        filterViewModel.showTins
+        filterViewModel.showTins,
+        emptyMessage,
+        resetLoading,
+        _isRendered
     ) { array ->
         val filteredItems = array[0] as List<ItemsComponentsAndTins>
         val filteredTins = array[1] as List<Tins>
@@ -190,6 +224,9 @@ class HomeViewModel(
         val ratingsExist = array[12] as Boolean
         val emptyDatabase = array[13] as Boolean
         val showTins = array[14] as Boolean
+        val emptyMessage = array[15] as String
+        val resetLoading = array[16] as Boolean
+        val isRendered = array[17] as Boolean
 
         val sortQuantity = filteredItems.associate { items ->
             items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
@@ -274,6 +311,16 @@ class HomeViewModel(
 
         if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
 
+        val dataLoading = if (resetLoading) {
+            true
+        } else {
+            if (!emptyDatabase && sortedItems.isNotEmpty()) {
+                !isRendered
+            } else {
+                if (emptyDatabase) false else emptyMessage.isBlank()
+            }
+        }
+
         HomeUiState(
             sortedItems = sortedItems,
             filteredTins = filteredTins,
@@ -287,7 +334,7 @@ class HomeViewModel(
             listSorting = listSorting,
             emptyDatabase = emptyDatabase,
             showTins = showTins,
-            isLoading = false
+            isLoading = dataLoading
         )
     }
         .flowOn(Dispatchers.Default)
@@ -362,35 +409,6 @@ class HomeViewModel(
 
 
     /** Sorting and toggle view **/
-    val emptyMessage: StateFlow<String> =
-        combine(
-            filterViewModel.searchValue,
-            filterViewModel.searchPerformed,
-            filterViewModel.isFilterApplied,
-            filterViewModel.emptyDatabase,
-            filterViewModel.homeScreenFilteredItems
-        ) { searchText, searchPerformed, filteringApplied, emptyDatabase, filteredItems ->
-            val emptyList = filteredItems.isEmpty()
-            if (!emptyList) { "" }
-            else if (searchPerformed) {
-                "No entries found matching\n\"$searchText\"."
-            }
-            else if (filteringApplied) {
-                "No entries found matching\nselected filters."
-            }
-            else if (emptyDatabase) {
-                "No entries found in cellar.\nClick \"+\" to add items,\n" +
-                        "or use options to import CSV."
-            }
-            else { "" }
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000L),
-                initialValue = ""
-            )
-
-
     fun selectView(isTableView: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             preferencesRepo.saveViewPreference(isTableView)

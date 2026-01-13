@@ -131,7 +131,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 enum class ScrollDirection { UP, DOWN }
@@ -162,7 +161,6 @@ fun HomeScreen(
 
     val homeUiState by viewModel.homeUiState.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
-    val resetLoading by viewModel.resetLoading.collectAsState()
     val emptyMessage by viewModel.emptyMessage.collectAsState()
 
     val activeMenuId by remember { viewModel.activeMenuId }
@@ -378,6 +376,10 @@ fun HomeScreen(
         )
     }
 
+    val listRendered by remember { derivedStateOf { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() } }
+    LaunchedEffect(listRendered) {
+        viewModel.updateListRendered(listRendered)
+    }
 
     Scaffold(
         modifier = modifier
@@ -448,9 +450,7 @@ fun HomeScreen(
                 size = GlowSize(top = glowSize)
             ) {
                 HomeBody(
-                    isLoading = homeUiState.isLoading,
-                    resetLoading = resetLoading,
-                    emptyDb = homeUiState.emptyDatabase,
+                    showLoading = homeUiState.isLoading,
                     isTableView = homeUiState.isTableView,
                     showRating = homeUiState.showRating,
                     formattedTypeGenre = homeUiState.formattedTypeGenre,
@@ -491,6 +491,7 @@ fun HomeScreen(
 }
 
 
+/** Header stuff **/
 @Composable
 private fun HomeHeader(
     homeUiState: HomeUiState,
@@ -937,11 +938,10 @@ private fun CustomBlendSearch(
 }
 
 
+/** Body stuff **/
 @Composable
 private fun HomeBody(
-    isLoading: Boolean,
-    resetLoading: Boolean,
-    emptyDb: Boolean,
+    showLoading: Boolean,
     isTableView: Boolean,
     showRating: Boolean,
     formattedTypeGenre: Map<Int, String>,
@@ -976,26 +976,6 @@ private fun HomeBody(
 ) {
     var displayedMessage by remember { mutableStateOf(emptyMessage) }
     var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
-
-    var showLoading by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isLoading, resetLoading, emptyDb, emptyMessage, sortedItems) {
-        if (isLoading || resetLoading) {
-            showLoading = true
-        } else {
-            if (!emptyDb && sortedItems.isNotEmpty()) {
-                snapshotFlow { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() }.first { it }
-                showLoading = false
-            } else {
-                if (emptyDb) {
-                    showLoading = false
-                } else {
-                    snapshotFlow { emptyMessage.isNotBlank() }.first { it }
-                    showLoading = false
-                }
-            }
-        }
-    }
 
     Box {
         Column(
@@ -1508,7 +1488,9 @@ private fun CellarListItem(
         }
     }
 
-    Spacer(Modifier.height(1.dp).background(LocalCustomColors.current.backgroundVariant))
+    Spacer(Modifier
+        .height(1.dp)
+        .background(LocalCustomColors.current.backgroundVariant))
 }
 
 @Composable
