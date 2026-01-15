@@ -76,7 +76,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
@@ -95,7 +94,7 @@ fun StatsScreen(
     navigateToAddEntry: () -> Unit,
     modifier: Modifier = Modifier,
     isTwoPane: Boolean,
-    viewModel: StatsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: StatsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val rawStats by viewModel.rawStats.collectAsState()

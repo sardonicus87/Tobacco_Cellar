@@ -90,7 +90,6 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.CsvResult
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.CsvImportDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -109,7 +108,7 @@ fun CsvImportScreen(
     navigateToHome: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
-    viewModel: CsvImportViewModel = viewModel(factory = AppViewModelProvider.Factory, key = navKey.id)
+    viewModel: CsvImportViewModel = viewModel(key = navKey.id)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val csvImportState = viewModel.csvImportState.value

@@ -111,7 +111,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
@@ -146,7 +145,7 @@ fun AddEntryScreen(
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
-    viewModel: AddEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: AddEntryViewModel = viewModel(),
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()

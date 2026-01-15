@@ -92,7 +92,6 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -108,7 +107,7 @@ fun BulkEditScreen(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
-    viewModel: BulkEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: BulkEditViewModel = viewModel(),
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current

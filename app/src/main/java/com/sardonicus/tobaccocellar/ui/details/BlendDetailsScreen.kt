@@ -64,7 +64,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
@@ -76,7 +75,7 @@ fun BlendDetailsScreen(
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     isTwoPane: Boolean,
-    viewModel: BlendDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: BlendDetailsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current

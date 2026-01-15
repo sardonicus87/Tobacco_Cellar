@@ -88,7 +88,6 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
@@ -104,7 +103,7 @@ fun SettingsScreen(
     onNavigateUp: () -> Unit,
     navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     canNavigateBack: Boolean = true,
-    viewModel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: SettingsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()

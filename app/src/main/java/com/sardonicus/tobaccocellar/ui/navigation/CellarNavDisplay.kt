@@ -12,6 +12,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,6 +26,7 @@ import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
+import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
@@ -32,20 +34,28 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvHelpScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
+import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportViewModel
 import com.sardonicus.tobaccocellar.ui.dates.DatesScreen
+import com.sardonicus.tobaccocellar.ui.dates.DatesViewModel
 import com.sardonicus.tobaccocellar.ui.details.BlendDetailsScreen
 import com.sardonicus.tobaccocellar.ui.details.BlendDetailsViewModel
 import com.sardonicus.tobaccocellar.ui.home.FilterPane
 import com.sardonicus.tobaccocellar.ui.home.HelpScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeScreen
+import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
 import com.sardonicus.tobaccocellar.ui.items.AddEntryScreen
+import com.sardonicus.tobaccocellar.ui.items.AddEntryViewModel
 import com.sardonicus.tobaccocellar.ui.items.BulkEditScreen
+import com.sardonicus.tobaccocellar.ui.items.BulkEditViewModel
 import com.sardonicus.tobaccocellar.ui.items.EditEntryScreen
 import com.sardonicus.tobaccocellar.ui.items.EditEntryViewModel
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextScreen
+import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextViewModel
 import com.sardonicus.tobaccocellar.ui.settings.ChangelogScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
+import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
+import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
 import java.util.UUID
 
 
@@ -55,13 +65,23 @@ fun CellarNavigation(
     navigationState: NavigationState,
     isGestureNav: Boolean,
     largeScreen: Boolean,
+    filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val currentFrom = if (navigationState.cameFrom != null) navigationState.cameFrom!!::class.simpleName else null
 
-    val filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel
-    val preferencesRepo: PreferencesRepo = LocalCellarApplication.current.preferencesRepo
-    val itemsRepository: ItemsRepository = LocalCellarApplication.current.container.itemsRepository
+
+    LaunchedEffect(largeScreen, navigationState.isTwoPane) {
+        if (largeScreen && navigationState.isTwoPane) {
+            filterViewModel.closeBottomSheet()
+        }
+    }
+
+    val app = LocalCellarApplication.current
+    val preferencesRepo: PreferencesRepo = app.preferencesRepo
+    val itemsRepository: ItemsRepository = app.container.itemsRepository
+    val csvHelper: CsvHelper = app.csvHelper
+
+    val currentFrom = if (navigationState.cameFrom != null) navigationState.cameFrom!!::class.simpleName else null
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
@@ -104,6 +124,19 @@ fun CellarNavigation(
 
         when (key) {
             is HomeDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: HomeViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            HomeViewModel(
+                                preferencesRepo,
+                                filterViewModel,
+                                csvHelper,
+                                app
+                            )
+                        }
+                    }
+                )
+
                 HomeScreen (
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
@@ -117,6 +150,7 @@ fun CellarNavigation(
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
                     isTwoPane = navigationState.isTwoPane,
                     filterViewModel = filterViewModel,
+                    viewModel = viewModel
                 )
             }
 
@@ -149,23 +183,47 @@ fun CellarNavigation(
             }
 
             is StatsDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: StatsViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            StatsViewModel(
+                                filterViewModel,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
                 StatsScreen(
                     navigateToHome = { navigator.navigate(HomeDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     isTwoPane = navigationState.isTwoPane,
-                    modifier = Modifier
+                    modifier = Modifier,
+                    viewModel = viewModel
                 )
             }
 
             is DatesDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: DatesViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            DatesViewModel(
+                                filterViewModel,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
                 DatesScreen(
                     navigateToHome = { navigator.navigate(HomeDestination) },
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToDetails = { navigator.navigate(BlendDetailsDestination(it)) },
                     isTwoPane = navigationState.isTwoPane,
-                    modifier = Modifier
+                    modifier = Modifier,
+                    viewModel = viewModel
                 )
             }
 
@@ -177,10 +235,24 @@ fun CellarNavigation(
             }
 
             is AddEntryDestination -> NavEntry(key, metadata = paneInfo) {
-                AddEntryScreen(
+                val viewModel: AddEntryViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            AddEntryViewModel(
+                                filterViewModel,
+                                itemsRepository,
+                                preferencesRepo,
+                            )
+                        }
+                    }
+                )
+
+
+                AddEntryScreen (
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
+                    viewModel = viewModel
                 )
             }
 
@@ -207,15 +279,42 @@ fun CellarNavigation(
             }
 
             is BulkEditDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: BulkEditViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            BulkEditViewModel(
+                                filterViewModel,
+                                itemsRepository,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
                 BulkEditScreen(
                     onNavigateUp = { navigator.goBack() },
+                    viewModel = viewModel
                 )
             }
 
             is SettingsDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: SettingsViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            SettingsViewModel(
+                                app,
+                                itemsRepository,
+                                filterViewModel,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
                 SettingsScreen(
                     onNavigateUp = { navigator.goBack() },
                     navigateToChangelog = { navigator.navigate(ChangelogDestination(it)) },
+                    viewModel = viewModel
                 )
             }
 
@@ -227,8 +326,20 @@ fun CellarNavigation(
             }
 
             is PlaintextDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: PlaintextViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            PlaintextViewModel(
+                                filterViewModel,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
                 PlaintextScreen(
                     onNavigateUp = { navigator.goBack() },
+                    viewModel = viewModel
                 )
             }
 
@@ -243,6 +354,17 @@ fun CellarNavigation(
                     when (val csvKey = nestedKey as CsvFlowKey) {
 
                         is CsvImportDestination -> NavEntry(csvKey, metadata = paneInfo) {
+                            val viewModel: CsvImportViewModel = viewModel(
+                                factory = viewModelFactory {
+                                    initializer {
+                                        CsvImportViewModel(
+                                            itemsRepository,
+                                            preferencesRepo
+                                        )
+                                    }
+                                }
+                            )
+
                             CsvImportScreen(
                                 navKey = csvKey,
                                 onNavigateUp = { navigator.goBack() },
@@ -261,7 +383,8 @@ fun CellarNavigation(
                                             tinFlag
                                         )
                                     )
-                                }
+                                },
+                                viewModel = viewModel
                             )
                         }
 
