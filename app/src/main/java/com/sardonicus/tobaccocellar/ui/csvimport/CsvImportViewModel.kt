@@ -358,8 +358,7 @@ class CsvImportViewModel(
                 }
                 else -> null
             }
-        } catch (e: Exception) {
-            println("Exception: $e")
+        } catch (_: Exception) {
             null
         }
     }

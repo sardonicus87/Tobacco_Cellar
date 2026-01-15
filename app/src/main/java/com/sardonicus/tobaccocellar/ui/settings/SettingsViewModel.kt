@@ -495,7 +495,7 @@ class SettingsViewModel(
                         override fun onFailure(
                             e: com.google.api.client.googleapis.json.GoogleJsonError?,
                             responseHeaders: com.google.api.client.http.HttpHeaders?
-                        ) { println("ClearRemoteData, error deleting file in batch: ${e?.message}") }
+                        ) {  }
                     }
 
                     for (file in files.files) {
@@ -505,8 +505,7 @@ class SettingsViewModel(
                     batch.execute()
                     showSnackbar("Remote data deleted.")
 
-                } catch (e: Exception) {
-                    println("Exception: $e")
+                } catch (_: Exception) {
                     showSnackbar("Error deleting remote data.")
                 } finally {
                     setLoadingState(false)
@@ -577,8 +576,7 @@ class SettingsViewModel(
                 message = if (ozConversion != null || gramsConversion != null) {
                     "Conversion rates and synced entry quantities updated."
                 } else { "Synced entry quantities updated." }
-            } catch (e: Exception) {
-                println("Update Tins Sync Exception: $e")
+            } catch (_: Exception) {
                 SyncStateManager.schedulingPaused = false
                 message = "Error updating sync quantities."
             } finally {
@@ -710,18 +708,10 @@ class SettingsViewModel(
 
                 writeBytesToFile(uri, combinedBytes, context)
                 message = "Backup complete."
-            } catch (e: Exception) {
-                println("Exception: $e")
+            } catch (_: Exception) {
                 try {
-                    val deleted = DocumentsContract.deleteDocument(context.contentResolver, uri)
-                    if (deleted) {
-                        println("$uri deleted successfully.")
-                    } else {
-                        println("Failed to delete $uri.")
-                    }
-                } catch (e: Exception) {
-                    println("Exception: $e")
-                }
+                    DocumentsContract.deleteDocument(context.contentResolver, uri)
+                } catch (_: Exception) { }
                 message = "Backup failed."
             } finally {
                 deleteTempFile(tempDbZip)
@@ -779,8 +769,7 @@ class SettingsViewModel(
                                 restoreSettings(settingsBytes)
                                 updateTinSync(runSilent = true)
                                 message = "Database and Settings restored."
-                            } catch (e: Exception) {
-                                println("Exception: $e")
+                            } catch (_: Exception) {
                                 message = "Restore failed."
                             }
                         } else {
@@ -789,8 +778,7 @@ class SettingsViewModel(
                                     restoreSettings(settingsBytes)
                                     updateTinSync(runSilent = true)
                                     message = "File missing database data, settings restored."
-                                } catch (e: Exception) {
-                                    println("Exception: $e")
+                                } catch (_: Exception) {
                                     message = "Restore failed."
                                 }
                             } else {
@@ -801,8 +789,7 @@ class SettingsViewModel(
                                     }
                                     updateTinSync(runSilent = true)
                                     message = "File missing settings data, database restored."
-                                } catch (e: Exception) {
-                                    println("Exception: $e")
+                                } catch (_: Exception) {
                                     message = "Restore failed."
                                 }
                             }
@@ -816,8 +803,7 @@ class SettingsViewModel(
                                     restoreItemSyncState(itemSyncStateBytes)
                                 }
                                 message = "Database restored."
-                            } catch (e: Exception) {
-                                println("Exception: $e")
+                            } catch (_: Exception) {
                                 message = "Error restoring database."
                             }
                         } else { message = "Backup file does not contain database data." }
@@ -947,7 +933,6 @@ class SettingsViewModel(
             }
 
         } catch (e: Exception) {
-            println("Exception: $e")
             copyFile(backupDbFile, dbFile)
             if (File("$dbPath-wal.bak").exists()) { copyFile(File("$dbPath-wal.bak"), walFile) }
             if (File("$dbPath-shm.bak").exists()) { copyFile(File("$dbPath-shm.bak"), shmFile) }
@@ -1258,7 +1243,6 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val parseLinksOption = preferencesRepo.parseLinks.first().toString()
     val syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first().toString()
     val processedSync = preferencesRepo.processedSyncFiles.first().joinToString(", ") { it }
-    val allowMobileSync = preferencesRepo.allowMobileData.first().toString()
 
     return """
             tableView=$tableView
@@ -1279,7 +1263,6 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             parseLinksOption=$parseLinksOption
             syncAcknowledgement=$syncAcknowledgement
             processedSync=$processedSync
-            allowMobileSync=$allowMobileSync
         """.trimIndent()
 }
 
@@ -1288,9 +1271,7 @@ fun writeBytesToFile(uri: Uri, bytes: ByteArray, context: Context) {
         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
             outputStream.write(bytes)
         }
-    } catch (e: Exception) {
-        println("Exception: $e")
-    }
+    } catch (_: Exception) { }
 }
 
 // Restore backup //
@@ -1299,8 +1280,7 @@ fun readBytesFromFile(uri: Uri, context: Context): ByteArray? {
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             inputStream.readBytes()
         }
-    } catch (e: IOException) {
-        println("Exception: $e")
+    } catch (_: IOException) {
         null
     }
 }
@@ -1351,7 +1331,6 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     val files = value.split(", ").toSet()
                     preferencesRepo.saveProcessedSyncFiles(files)
                 }
-                "allowMobileSync" -> preferencesRepo.saveAllowMobileData(value.toBoolean())
             }
         }
     }

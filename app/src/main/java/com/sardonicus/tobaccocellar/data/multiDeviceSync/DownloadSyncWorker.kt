@@ -87,8 +87,7 @@ class DownloadSyncWorker(
 
                     if (processSuccess) { successfullyProcessedFiles.add(file.id) }
 
-                } catch (e: Exception) {
-                    println("DownloadSyncWorker failed to process file ${file.id}, $e")
+                } catch (_: Exception) {
                     continue
                 }
             }
@@ -102,8 +101,8 @@ class DownloadSyncWorker(
                 for (file in oldFiles) {
                     try {
                         driveService.files().delete(file.id).execute()
-                    } catch (e: Exception) {
-                        println("DownloadSyncWorker failed to delete file ${file.id}, $e")
+                    } catch (_: Exception) {
+                        continue
                     }
                 }
             }
@@ -114,8 +113,7 @@ class DownloadSyncWorker(
             preferencesRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
 
             return Result.success(workDataOf(RESULT_KEY to SYNC_COMPLETE))
-        } catch (e: Exception) {
-            println("DownloadSyncWorker error during sync download work, $e")
+        } catch (_: Exception) {
             return Result.retry()
         }
     }

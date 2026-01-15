@@ -186,7 +186,6 @@ fun CsvImportBody(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) { result ->
-        println("ActivityResult result: $result")
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
             try {
@@ -207,7 +206,6 @@ fun CsvImportBody(
                             }
 
                             is CsvResult.Error -> {
-                                println(result.exception.toString())
                                 onShowError(true)
                             }
 
@@ -218,8 +216,7 @@ fun CsvImportBody(
 
                     }
                 }
-            } catch (e: Exception) {
-                println("Exception: $e")
+            } catch (_: Exception) {
                 onShowError(true)
             }
         }

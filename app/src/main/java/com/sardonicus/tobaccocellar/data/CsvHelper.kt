@@ -32,10 +32,8 @@ class CsvHelper {
                 CsvResult.Empty
             }
         } catch (e: ParseException) {
-            println("Error reading CSV: ${e.message}")
             CsvResult.Error(e)
         } catch (e: Exception) {
-            println("Error reading CSV: ${e.message}")
             CsvResult.Error(e)
         }
     }

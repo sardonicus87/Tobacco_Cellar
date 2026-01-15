@@ -57,8 +57,7 @@ class UploadSyncWorker(
             pendingSyncOperationDao.deleteOperation(processedIds)
 
             return Result.success()
-        } catch (e: Exception) {
-            println("UploadSyncWorker error uploading to server, $e")
+        } catch (_: Exception) {
             return Result.retry()
         }
     }
