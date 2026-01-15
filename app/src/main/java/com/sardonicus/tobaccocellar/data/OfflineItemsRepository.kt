@@ -461,15 +461,15 @@ class OfflineItemsRepository(
     }
 
     private suspend fun logOperation(operation: PendingSyncOperation) {
-        if (SyncStateManager.loggingPaused) {
-            return
-        }
+        if (SyncStateManager.loggingPaused) return
+        if (!preferencesRepo.crossDeviceSync.first()) return
 
         pendingSyncOperationDao.insertOperation(operation)
     }
 
     private suspend fun scheduleSyncUpload() {
         if (SyncStateManager.schedulingPaused) return
+        if (!preferencesRepo.crossDeviceSync.first()) return
 
         val allowMobileData = preferencesRepo.allowMobileData.first()
 
