@@ -55,6 +55,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -1014,7 +1015,7 @@ fun DeviceSyncDialog(
     val accountLinked by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
-    val atBottom by remember(scrollState.canScrollForward) { mutableStateOf(!scrollState.canScrollForward) }
+    val atBottom by remember { derivedStateOf { !scrollState.canScrollForward } }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
