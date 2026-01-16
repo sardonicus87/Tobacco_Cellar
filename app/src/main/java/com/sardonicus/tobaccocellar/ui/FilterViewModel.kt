@@ -1,7 +1,11 @@
 package com.sardonicus.tobaccocellar.ui
 
+import androidx.compose.runtime.Stable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation3.runtime.NavKey
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -18,8 +22,8 @@ import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,14 +34,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -57,13 +62,13 @@ class FilterViewModel (
 
 
     /** HomeScreen HomeHeader blend search **/
-    private val _searchIconOpacity = MutableStateFlow(0.5f)
-    val searchIconOpacity: StateFlow<Float> = _searchIconOpacity.asStateFlow()
+    private val _searchMenuExpanded = MutableStateFlow(false)
+    val searchMenuExpanded: StateFlow<Boolean> = _searchMenuExpanded.asStateFlow()
 
-    fun updateSearchIconOpacity(opacity: Float) { _searchIconOpacity.value = opacity }
+    fun setSearchMenuExpanded(expanded: Boolean) { _searchMenuExpanded.value = expanded }
 
     fun saveSearchSetting(setting: String) {
-        viewModelScope.launch { preferencesRepo.setSearchSetting(setting) }
+        viewModelScope.launch(Dispatchers.IO) { preferencesRepo.setSearchSetting(setting) }
     }
 
     private val _searchTextDisplay = MutableStateFlow("")
@@ -86,7 +91,9 @@ class FilterViewModel (
 
     init {
         viewModelScope.launch {
-            preferencesRepo.searchSetting.collect {
+            preferencesRepo.searchSetting
+                .flowOn(Dispatchers.IO)
+                .collect {
                 _isTinSearch.value = (it == SearchSetting.TinLabel)
             }
         }
@@ -376,8 +383,8 @@ class FilterViewModel (
                 if (it is DatabaseRestoreEvent) {
                     resetFilter()
                     _refresh.emit(Unit)
-                    delay(25)
-                    _refresh.emit(Unit)
+//                    delay(25)
+//                    _refresh.emit(Unit)
                     _shouldScrollUp.value = true
                 }
                 if (it is SyncDownloadEvent) {
@@ -386,6 +393,29 @@ class FilterViewModel (
             }
         }
     }
+
+
+    /** Home Scroll State stuff **/
+    @Suppress("UNCHECKED_CAST")
+    val homeScrollState: StateFlow<HomeScrollState> = combine(
+        currentPosition,
+        shouldScrollUp,
+        savedItemId,
+        shouldReturn,
+        getPosition
+    ) { values ->
+        val position = values[0] as Map<Int, Int>
+        val scrollUp = values[1] as Boolean
+        val savedItemId = values[2] as Int
+        val doReturn = values[3] as Boolean
+        val getPosition = values[4] as Int
+
+        HomeScrollState(position, scrollUp, savedItemId, doReturn, getPosition)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = HomeScrollState()
+    )
 
 
     /** Filtering states **/
@@ -446,7 +476,7 @@ class FilterViewModel (
     val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest {
             itemsRepository.getEverythingStream()
-        }.distinctUntilChanged().shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     private val lastSeenFlow: Flow<List<Int>> = preferencesRepo.datesSeen.map { datesString ->
         if (datesString.isBlank()) { emptyList() }
@@ -455,7 +485,7 @@ class FilterViewModel (
 
     // setting available vals
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             everythingFlow.collectLatest { data ->
                 _availableBrands.value = data.map { it.items.brand }
                     .distinct().sorted()
@@ -517,7 +547,7 @@ class FilterViewModel (
                 )
             }
         }
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             combine (
                 everythingFlow,
                 lastSeenFlow
@@ -537,87 +567,97 @@ class FilterViewModel (
 
     // remove selected filters if the last item with that filter is removed or changed //
     init {
-        viewModelScope.launch {
-            launch {
-                _availableBrands.collectLatest {
-                    val invalidBrands = _selectedBrands.value.filter { it !in availableBrands.value }
+        viewModelScope.launch(Dispatchers.Default) {
+            supervisorScope {
+                launch {
+                    _availableBrands.collectLatest {
+                        val invalidBrands =
+                            _selectedBrands.value.filter { it !in availableBrands.value }
 
-                    if (invalidBrands.isNotEmpty()) {
-                        sheetSelectedBrands.value =
-                            sheetSelectedBrands.value.filter { it in availableBrands.value }
-                        _selectedBrands.value =
-                            _selectedBrands.value.filter { it in availableBrands.value }
+                        if (invalidBrands.isNotEmpty()) {
+                            sheetSelectedBrands.value =
+                                sheetSelectedBrands.value.filter { it in availableBrands.value }
+                            _selectedBrands.value =
+                                _selectedBrands.value.filter { it in availableBrands.value }
+                        }
                     }
                 }
-            }
-            launch {
-                _availableTypes.collectLatest {
-                    val invalidTypes = _selectedTypes.value.filter { it !in availableTypes.value }
+                launch {
+                    _availableTypes.collectLatest {
+                        val invalidTypes =
+                            _selectedTypes.value.filter { it !in availableTypes.value }
 
-                    if (invalidTypes.isNotEmpty()) {
-                        sheetSelectedTypes.value =
-                            sheetSelectedTypes.value.filter { it in availableTypes.value }
-                        _selectedTypes.value =
-                            _selectedTypes.value.filter { it in availableTypes.value }
+                        if (invalidTypes.isNotEmpty()) {
+                            sheetSelectedTypes.value =
+                                sheetSelectedTypes.value.filter { it in availableTypes.value }
+                            _selectedTypes.value =
+                                _selectedTypes.value.filter { it in availableTypes.value }
+                        }
                     }
                 }
-            }
-            launch {
-                _availableSubgenres.collectLatest {
-                    val invalidSubgenres = _selectedSubgenre.value.filter { it !in availableSubgenres.value }
+                launch {
+                    _availableSubgenres.collectLatest {
+                        val invalidSubgenres =
+                            _selectedSubgenre.value.filter { it !in availableSubgenres.value }
 
-                    if (invalidSubgenres.isNotEmpty()) {
-                        sheetSelectedSubgenres.value =
-                            sheetSelectedSubgenres.value.filter { it in availableSubgenres.value }
-                        _selectedSubgenre.value =
-                            _selectedSubgenre.value.filter { it in availableSubgenres.value }
+                        if (invalidSubgenres.isNotEmpty()) {
+                            sheetSelectedSubgenres.value =
+                                sheetSelectedSubgenres.value.filter { it in availableSubgenres.value }
+                            _selectedSubgenre.value =
+                                _selectedSubgenre.value.filter { it in availableSubgenres.value }
+                        }
                     }
                 }
-            }
-            launch {
-                _availableCuts.collectLatest {
-                    val invalidCuts = sheetSelectedCuts.value.filter { it !in availableCuts.value }
+                launch {
+                    _availableCuts.collectLatest {
+                        val invalidCuts =
+                            sheetSelectedCuts.value.filter { it !in availableCuts.value }
 
-                    if (invalidCuts.isNotEmpty()) {
-                        sheetSelectedCuts.value =
-                            _selectedCut.value.filter { it in availableCuts.value }
-                        _selectedCut.value = _selectedCut.value.filter { it in availableCuts.value }
+                        if (invalidCuts.isNotEmpty()) {
+                            sheetSelectedCuts.value =
+                                _selectedCut.value.filter { it in availableCuts.value }
+                            _selectedCut.value =
+                                _selectedCut.value.filter { it in availableCuts.value }
+                        }
                     }
                 }
-            }
-            launch {
-                _availableComponents.collectLatest {
-                    val invalidComponents = _selectedComponents.value.filter { it !in availableComponents.value }
+                launch {
+                    _availableComponents.collectLatest {
+                        val invalidComponents =
+                            _selectedComponents.value.filter { it !in availableComponents.value }
 
-                    if (invalidComponents.isNotEmpty()) {
-                        sheetSelectedComponents.value =
-                            sheetSelectedComponents.value.filter { it in availableComponents.value }
-                        _selectedComponents.value =
-                            _selectedComponents.value.filter { it in availableComponents.value }
+                        if (invalidComponents.isNotEmpty()) {
+                            sheetSelectedComponents.value =
+                                sheetSelectedComponents.value.filter { it in availableComponents.value }
+                            _selectedComponents.value =
+                                _selectedComponents.value.filter { it in availableComponents.value }
+                        }
                     }
                 }
-            }
-            launch {
-                _availableFlavorings.collectLatest {
-                    val invalidFlavors = _selectedFlavorings.value.filter { it !in availableFlavorings.value }
+                launch {
+                    _availableFlavorings.collectLatest {
+                        val invalidFlavors =
+                            _selectedFlavorings.value.filter { it !in availableFlavorings.value }
 
-                    if (invalidFlavors.isNotEmpty()) {
-                        sheetSelectedFlavorings.value =
-                            sheetSelectedFlavorings.value.filter { it in availableFlavorings.value }
-                        _selectedFlavorings.value =
-                            _selectedFlavorings.value.filter { it in availableFlavorings.value }
+                        if (invalidFlavors.isNotEmpty()) {
+                            sheetSelectedFlavorings.value =
+                                sheetSelectedFlavorings.value.filter { it in availableFlavorings.value }
+                            _selectedFlavorings.value =
+                                _selectedFlavorings.value.filter { it in availableFlavorings.value }
+                        }
                     }
                 }
-            }
-            launch {
-                _availableContainers.collectLatest {
-                    val invalidContainers = sheetSelectedContainer.value.filter { it !in availableContainers.value }
+                launch {
+                    _availableContainers.collectLatest {
+                        val invalidContainers =
+                            sheetSelectedContainer.value.filter { it !in availableContainers.value }
 
-                    if (invalidContainers.isNotEmpty()) {
-                        sheetSelectedContainer.value =
-                            sheetSelectedContainer.value.filter { it in availableContainers.value }
-                        _selectedContainer.value =
-                            _selectedContainer.value.filter { it in availableContainers.value }
+                        if (invalidContainers.isNotEmpty()) {
+                            sheetSelectedContainer.value =
+                                sheetSelectedContainer.value.filter { it in availableContainers.value }
+                            _selectedContainer.value =
+                                _selectedContainer.value.filter { it in availableContainers.value }
+                        }
                     }
                 }
             }
@@ -709,6 +749,7 @@ class FilterViewModel (
                 ozRate, gramsRate, applyTin
             )
         }
+            .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -739,6 +780,7 @@ class FilterViewModel (
             }
             else filteredItems
         }
+            .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -949,7 +991,7 @@ class FilterViewModel (
         selections: SheetSelections,
         ignoreCategory: FilterCategory? = null
     ): Boolean {
-        val applyTins = true // activeScreen.value != ActiveScreen.DATES
+        val applyTins = true
 
         val stockGroup = ignoreCategory in setOf(FilterCategory.IN_STOCK, FilterCategory.OUT_OF_STOCK)
         val favDisGroup = ignoreCategory in setOf(
@@ -1285,6 +1327,7 @@ class FilterViewModel (
                 started = SharingStarted.WhileSubscribed(5000L),
                 initialValue = false
             )
+
     val subgenresEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableSubgenres,
         { name -> { it.items.subGenre.ifBlank { "(Unassigned)" } == name } },
@@ -1405,6 +1448,236 @@ class FilterViewModel (
         FilterCategory.OUT_OF_PRODUCTION,
         { it.outOfProduction }
     )
+
+
+    /** Final UI States and hoisted states for other stuff **/
+    val bottomAppBarState = combine(
+        bottomSheetState,
+        isFilterApplied,
+        searchPerformed,
+        datesExist,
+        emptyDatabase,
+        tinsReady
+    ) { values: Array<Any?> ->
+        val sheetState = values[0] as BottomSheetState
+        val filterApplied = values[1] as Boolean
+        val searchPerformed = values[2] as Boolean
+        val datesExist = values[3] as Boolean
+        val databaseEmpty = values[4] as Boolean
+        val tinsReady = values[5] as Boolean
+
+        val sheetOpen = sheetState == BottomSheetState.OPENED
+
+        BottomAppBarState(
+            sheetState,
+            sheetOpen,
+            filterApplied,
+            searchPerformed,
+            datesExist,
+            databaseEmpty,
+            tinsReady
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = BottomAppBarState()
+        )
+
+    // HomeScreen stuff
+    val searchState = combine(
+        searchFocused,
+        searchPerformed,
+        isTinSearch,
+        searchTextDisplay,
+        preferencesRepo.searchSetting,
+        tinsExist,
+        notesExist,
+        searchMenuExpanded
+    ) { it: Array<Any?> ->
+        val searchFocused = it[0] as Boolean
+        val searchPerformed = it[1] as Boolean
+        val isTinSearch = it[2] as Boolean
+        val searchText = it[3] as String
+        val searchSetting = it[4] as SearchSetting
+        val tinsExist = it[5] as Boolean
+        val notesExist = it[6] as Boolean
+        val searchMenuExpanded = it[7] as Boolean
+
+        val blendSearch = SearchSetting.Blend
+        val notesSearch = if (notesExist) SearchSetting.Notes else null
+        val tinsSearch = if (tinsExist) SearchSetting.TinLabel else null
+        val settingsList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
+        val settingsEnabled = settingsList.size > 1
+
+        val iconOpacity = if (searchPerformed) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
+
+        if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend.value) }
+
+
+        SearchState(
+            searchFocused = searchFocused,
+            searchPerformed = searchPerformed,
+            isTinSearch = isTinSearch,
+            searchText = searchText,
+            currentSetting = searchSetting,
+            settingsList = settingsList,
+            settingsEnabled = settingsEnabled,
+            searchMenuExpanded = searchMenuExpanded,
+            searchIconOpacity = iconOpacity
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = SearchState()
+        )
+
+
+    // Final filter sections UI states //
+    @Suppress("UNCHECKED_CAST")
+    val brandFilterUiState = combine(
+        brandSearchText,
+        availableBrands,
+        sheetSelectedExcludeBrandSwitch,
+        sheetSelectedBrands,
+        sheetSelectedExcludeBrands,
+        brandsEnabled,
+        excludeBrandsEnabled
+    ) { values ->
+        val brandSearchText = values[0] as String
+        val allBrands = values[1] as List<String>
+        val excludeSwitch = values[2] as Boolean
+        val selectedIncludeBrands = values[3] as List<String>
+        val selectedExcludedBrands = values[4] as List<String>
+        val includeEnabled = values[5] as Map<String, Boolean>
+        val excludeEnabled = values[6] as Map<String, Boolean>
+
+        val filteredBrands = updateFilterBrands(brandSearchText, allBrands)
+        val brandEnabled = if (excludeSwitch) excludeEnabled else includeEnabled
+        val selectedBrands = if (excludeSwitch) selectedExcludedBrands else selectedIncludeBrands
+
+        val unselectedBrands = updateUnselectedBrandRow(
+            filteredBrands,
+            excludeSwitch,
+            selectedBrands,
+            selectedExcludedBrands,
+            brandEnabled
+        )
+
+        BrandFilterUiState(
+            filteredBrands = filteredBrands,
+            excludeSwitch = excludeSwitch,
+
+            unselectedBrands = unselectedBrands,
+            brandEnabled = brandEnabled,
+
+            selectedBrands = selectedBrands,
+            selectedExcludeBrands = selectedExcludedBrands,
+        )
+
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = BrandFilterUiState()
+        )
+
+    val otherFiltersUiState = combine(
+        sheetSelectedFavorites,
+        sheetSelectedExcludeFavorites,
+        favoritesEnabled,
+        excludeFavoritesEnabled,
+
+        sheetSelectedDislikeds,
+        sheetSelectedExcludeDislikeds,
+        dislikedsEnabled,
+        excludeDislikesEnabled,
+
+        sheetSelectedUnrated,
+        unratedEnabled,
+        sheetSelectedRatingLow,
+        ratingLowEnabled,
+        sheetSelectedRatingHigh,
+        ratingHighEnabled,
+
+        sheetSelectedInStock,
+        inStockEnabled,
+        sheetSelectedOutOfStock,
+        outOfStockEnabled,
+
+        favDisExist,
+        ratingsExist,
+    ) { values: Array<Any?> ->
+        val favorites = values[0] as Boolean
+        val excludeFavorites = values[1] as Boolean
+        val favoritesEnabled = values[2] as Boolean
+        val excludeFavoritesEnabled = values[3] as Boolean
+        val dislikeds = values[4] as Boolean
+        val excludeDislikeds = values[5] as Boolean
+        val dislikedsEnabled = values[6] as Boolean
+        val excludeDislikedsEnabled = values[7] as Boolean
+        val unrated = values[8] as Boolean
+        val unratedEnabled = values[9] as Boolean
+        val ratingLow = values[10] as Double?
+        val ratingLowEnabled = values[11] as Double?
+        val ratingHigh = values[12] as Double?
+        val ratingHighEnabled = values[13] as Double?
+        val inStock = values[14] as Boolean
+        val inStockEnabled = values[15] as Boolean
+        val outOfStock = values[16] as Boolean
+        val outOfStockEnabled = values[17] as Boolean
+        val favDisExist = values[18] as Boolean
+        val ratingsExist = values[19] as Boolean
+
+        val favoritesSelection = when {
+            favorites -> ToggleableState.On
+            excludeFavorites -> ToggleableState.Indeterminate
+            else -> ToggleableState.Off
+        }
+
+        val dislikedsSelection = when {
+            dislikeds -> ToggleableState.On
+            excludeDislikeds -> ToggleableState.Indeterminate
+            else -> ToggleableState.Off
+        }
+
+        OtherFiltersUiState(
+            favoritesSelection = favoritesSelection,
+            favoritesEnabled = favoritesEnabled && favDisExist,
+            favoritesExcludeEnabled = excludeFavoritesEnabled,
+
+            dislikedsSelection = dislikedsSelection,
+            dislikedsEnabled = dislikedsEnabled && favDisExist,
+            dislikedsExcludeEnabled = excludeDislikedsEnabled,
+
+            favDisExist = favDisExist,
+            ratingsExist = ratingsExist,
+
+            unrated = unrated,
+            unratedEnabled = unratedEnabled,
+            ratingLow = ratingLow,
+            ratingLowEnabled = ratingLowEnabled,
+            ratingHigh = ratingHigh,
+            ratingHighEnabled = ratingHighEnabled,
+            rangeEnabled = ratingLowEnabled != null && ratingHighEnabled != null,
+            unchosen = ratingLow == null && ratingHigh == null,
+
+            inStock = inStock,
+            inStockEnabled = inStockEnabled,
+            outOfStock = outOfStock,
+            outOfStockEnabled = outOfStockEnabled,
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = OtherFiltersUiState()
+        )
 
     fun reorderChips(available: List<String>, enablement: Map<String, Boolean>): List<String> {
         if (available.isEmpty()) return emptyList()
@@ -1596,6 +1869,46 @@ class FilterViewModel (
         _selectedExcludeDislikeds.value = isSelected
 
         _shouldScrollUp.value = true
+    }
+
+    fun updateFavSelection() {
+        when (otherFiltersUiState.value.favoritesSelection) {
+            ToggleableState.Off -> {
+                if (favoritesEnabled.value) updateSelectedFavorites(true)
+                else if (excludeFavoritesEnabled.value) updateSelectedExcludeFavorites(true)
+                else {
+                    updateSelectedFavorites(false)
+                    updateSelectedExcludeFavorites(false)
+                }
+            }
+            ToggleableState.On ->
+                if (excludeFavoritesEnabled.value) updateSelectedExcludeFavorites(true)
+                else updateSelectedFavorites(false)
+            ToggleableState.Indeterminate -> {
+                updateSelectedFavorites(false)
+                updateSelectedExcludeFavorites(false)
+            }
+        }
+    }
+
+    fun updateDisSelection() {
+        when (otherFiltersUiState.value.dislikedsSelection) {
+            ToggleableState.Off -> {
+                if (dislikedsEnabled.value) updateSelectedDislikeds(true)
+                else if (excludeDislikesEnabled.value) updateSelectedExcludeDislikeds(true)
+                else {
+                    updateSelectedDislikeds(false)
+                    updateSelectedExcludeDislikeds(false)
+                }
+            }
+            ToggleableState.On ->
+                if (excludeDislikesEnabled.value) updateSelectedExcludeDislikeds(true)
+                else updateSelectedDislikeds(false)
+            ToggleableState.Indeterminate -> {
+                updateSelectedDislikeds(false)
+                updateSelectedExcludeDislikeds(false)
+            }
+        }
     }
 
     fun updateSelectedUnrated(isSelected: Boolean) {
@@ -2008,11 +2321,98 @@ data class SheetSelections(
     val outOfProduction: Boolean = false,
 )
 
+data class BrandFilterUiState(
+    val filteredBrands: List<String> = emptyList(),
+    val excludeSwitch: Boolean = false,
+    val unselectedBrands: List<String> = emptyList(),
+    val brandEnabled: Map<String, Boolean> = emptyMap(),
+    val selectedBrands: List<String> = emptyList(),
+    val selectedExcludeBrands: List<String> = emptyList(),
+)
+
+data class OtherFiltersUiState(
+    // Favorites
+    val favoritesSelection: ToggleableState = ToggleableState.Off,
+    val favoritesEnabled: Boolean = false,
+    val favoritesExcludeEnabled: Boolean = false,
+
+    // Dislikes
+    val dislikedsSelection: ToggleableState = ToggleableState.Off,
+    val dislikedsEnabled: Boolean = false,
+    val dislikedsExcludeEnabled: Boolean = false,
+
+    // Global flags
+    val favDisExist: Boolean = false,
+    val ratingsExist: Boolean = false,
+
+    // Ratings
+    val unrated: Boolean = false,
+    val unratedEnabled: Boolean = false,
+    val ratingLow: Double? = null,
+    val ratingLowEnabled: Double? = null,
+    val ratingHigh: Double? = null,
+    val ratingHighEnabled: Double? = null,
+    val rangeEnabled: Boolean = false,
+    val unchosen: Boolean = false,
+
+    // Stock
+    val inStock: Boolean = false,
+    val inStockEnabled: Boolean = false,
+    val outOfStock: Boolean = false,
+    val outOfStockEnabled: Boolean = false,
+)
+
 data class FilterSectionData(
     val available: List<String>,
     val selected: List<String>,
     val enabled: Map<String, Boolean>,
     val matching: String? = null,
+)
+
+
+/** Stuff for stuff other than Filter Sheet **/
+data class BottomAppBarState(
+    val sheetState: BottomSheetState = BottomSheetState.CLOSED,
+    val sheetOpen: Boolean = false,
+    val filteringApplied: Boolean = false,
+    val searchPerformed: Boolean = false,
+    val datesExist: Boolean = true,
+    val databaseEmpty: Boolean = false,
+    val tinsReady: Boolean = false
+)
+
+data class BottomBarButtonData(
+    val title: String,
+    val icon: Int,
+    val destination: NavKey? = null,
+    val onClick: () -> Unit,
+    val enabled: Boolean = true,
+    val showIndicator: Boolean = false,
+    val indicatorColor: Color = Color.Transparent,
+    val borderColor: Color = Color.Transparent,
+    val activeColor: Color
+)
+
+data class SearchState(
+    val searchFocused: Boolean = false,
+    val searchPerformed: Boolean = false,
+    val isTinSearch: Boolean = false,
+    val searchText: String = "",
+    val currentSetting: SearchSetting = SearchSetting.Blend,
+    val settingsList: List<SearchSetting> = listOf(SearchSetting.Blend),
+    val settingsEnabled: Boolean = false,
+    val searchMenuExpanded: Boolean = false,
+    val searchIconOpacity: Float = 0.5f
+)
+
+
+@Stable
+data class HomeScrollState(
+    val currentPosition: Map<Int, Int> = mapOf(0 to 0, 1 to 0),
+    val shouldScrollUp: Boolean = false,
+    val savedItemId: Int = -1,
+    val shouldReturn: Boolean = false,
+    val getPosition: Int = 0
 )
 
 

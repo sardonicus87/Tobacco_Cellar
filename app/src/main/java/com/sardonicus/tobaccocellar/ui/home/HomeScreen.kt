@@ -117,8 +117,8 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.Tins
-import com.sardonicus.tobaccocellar.ui.AppViewModelProvider
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.HomeScrollState
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -131,6 +131,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 enum class ScrollDirection { UP, DOWN }
@@ -151,7 +152,7 @@ fun HomeScreen(
     filterViewModel: FilterViewModel,
     isTwoPane: Boolean,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: HomeViewModel = viewModel(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
@@ -160,8 +161,7 @@ fun HomeScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val homeUiState by viewModel.homeUiState.collectAsState()
-    val searchState by viewModel.searchState.collectAsState()
-    val emptyMessage by viewModel.emptyMessage.collectAsState()
+    val searchState by filterViewModel.searchState.collectAsState()
 
     val activeMenuId by remember { viewModel.activeMenuId }
     val isMenuShown by remember { viewModel.itemMenuShown }
@@ -197,7 +197,6 @@ fun HomeScreen(
         if (!searchState.searchFocused) {
             filterViewModel.updateSearchText("")
             filterViewModel.onSearch("")
-            filterViewModel.updateSearchIconOpacity(0.5f)
 
             if (searchState.searchPerformed) {
                 coroutineScope.launch {
@@ -227,152 +226,10 @@ fun HomeScreen(
     // Important Alert stuff
     val importantAlertState by viewModel.importantAlertState.collectAsState()
     if (importantAlertState.show) {
-        val alert = importantAlertState.alertToDisplay!!
-        val isCurrent = importantAlertState.isCurrentAlert
-
-        val scrollState = rememberScrollState()
-        var enabled by rememberSaveable(alert.id) { mutableStateOf(false) }
-    //    val atBottom2 = remember(scrollState.canScrollForward) { !scrollState.canScrollForward }
-        val atBottom by remember {
-            derivedStateOf {
-                scrollState.value == scrollState.maxValue
-            }
-        }
-        var countdown by remember(alert.id) { mutableIntStateOf(5) }
-        var canScroll by remember(alert.id) { mutableStateOf(false) }
-        val updateScroll: (Boolean) -> Unit = { canScroll = it }
-
-        AlertDialog(
-            onDismissRequest = { },
-            properties = DialogProperties(
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false
-            ),
-            containerColor = LocalCustomColors.current.darkNeutral,
-            title = {
-                Text(
-                    text = "Important Alert!",
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "This is a one-time alert.",
-                        modifier = Modifier
-                            .padding(bottom = 12.dp)
-                            .fillMaxWidth(),
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp
-                    )
-                    GlowBox(
-                        color = GlowColor(LocalCustomColors.current.darkNeutral),
-                        size = GlowSize(vertical = 6.dp),
-                        modifier = Modifier
-                            .height(175.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .verticalScroll(scrollState),
-                        ) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Column(
-                                modifier = Modifier
-                            ) {
-                                if (!isCurrent) {
-                                    Text(
-                                        text = "Missed Alert:",
-                                        modifier = Modifier,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 15.sp
-                                    )
-                                }
-                                Text(
-                                    text = "${alert.date}\n(v ${alert.appVersion})",
-                                    modifier = Modifier
-                                        .padding(bottom = 16.dp),
-                                    fontSize = 14.sp
-                                )
-                                if (canScroll) {
-                                    Text(
-                                        text = "You must scroll to the bottom to be able to acknowledge and " +
-                                                "dismiss this dialog.",
-                                        modifier = Modifier
-                                            .padding(bottom = 16.dp)
-                                    )
-                                }
-                                alert.message()
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                val isScrollable by remember { derivedStateOf { scrollState.maxValue > 0 } }
-                LaunchedEffect(isScrollable, alert.id) {
-                    if (!isScrollable) {
-                        while (countdown > 0) {
-                            delay(1000)
-                            countdown--
-                        }
-                        enabled = true
-                    } else {
-                        updateScroll(true)
-                    }
-                }
-                LaunchedEffect(isScrollable, atBottom, alert.id) {
-                    if (isScrollable && atBottom) {
-                        enabled = true
-                    }
-                }
-                val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
-                    if (!isCurrent) {
-                        if (isScrollable) {
-                            "Next"
-                        } else {
-                            if (enabled) "Next" else "( $countdown )"
-                        }
-                    } else {
-                        if (isScrollable) {
-                            "Confirm"
-                        } else {
-                            if (enabled) "Confirm" else "( $countdown )"
-                        }
-                    }
-                }
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            if (!isCurrent) {
-                                enabled = false
-                                updateScroll(false)
-                                countdown = 5
-                                viewModel.saveAlertSeen(alert.id)
-                            } else {
-                                viewModel.saveAlertSeen(alert.id)
-                            }
-                        }
-                    },
-                    enabled = enabled
-                ) {
-                    Box (contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Confirm",
-                            color = Color.Transparent
-                        )
-                        Text(
-                            text = buttonText
-                        )
-                    }
-                }
-            }
+        ImportantAlertDialog(
+            importantAlertState = importantAlertState,
+            coroutineScope = coroutineScope,
+            viewModel = viewModel
         )
     }
 
@@ -380,6 +237,7 @@ fun HomeScreen(
     LaunchedEffect(listRendered) {
         viewModel.updateListRendered(listRendered)
     }
+
 
     Scaffold(
         modifier = modifier
@@ -437,12 +295,30 @@ fun HomeScreen(
         ) {
             val glowSize = if (homeUiState.isTableView || (!columnState.canScrollBackward)) 0.dp else 3.dp
             HomeHeader(
-                homeUiState = homeUiState,
-                searchState = searchState,
-                filterViewModel = filterViewModel,
+                searchText = searchState.searchText,
+                searchIconOpacity = searchState.searchIconOpacity,
+                updateSearchText = filterViewModel::updateSearchText,
+                onSearch = filterViewModel::onSearch,
+                updateSearchFocused = filterViewModel::updateSearchFocused,
+                getPositionTrigger = filterViewModel::getPositionTrigger,
+                searchSettingEnabled = searchState.settingsEnabled,
+                saveSearchSetting = filterViewModel::saveSearchSetting,
+                searchPerformed = searchState.searchPerformed,
+                settingsList = searchState.settingsList,
+                currentSetting = searchState.currentSetting,
+                searchMenuExpanded = searchState.searchMenuExpanded,
+                onExpandSearchMenu = filterViewModel::setSearchMenuExpanded,
+                toggleIcon = homeUiState.toggleIcon,
+                toggleContentDescription = homeUiState.toggleContentDescription,
+                isTableView = homeUiState.isTableView,
+                emptyDatabase = homeUiState.emptyDatabase,
+                sortingOptions = homeUiState.sortingOptions,
+                listSorting = homeUiState.listSorting,
+                sortedItemsSize = homeUiState.sortedItems.size,
                 selectView = viewModel::selectView,
                 onShowColumnPop = viewModel::showColumnMenuToggle,
                 saveListSorting = viewModel::saveListSorting,
+                shouldScrollUp = filterViewModel::shouldScrollUp,
                 modifier = Modifier,
             )
             GlowBox(
@@ -455,7 +331,7 @@ fun HomeScreen(
                     showRating = homeUiState.showRating,
                     formattedTypeGenre = homeUiState.formattedTypeGenre,
                     typeGenreOption = homeUiState.typeGenreOption,
-                    emptyMessage = emptyMessage,
+                    emptyMessage = homeUiState.emptyMessage,
                     columnState = columnState,
                     sortedItems = homeUiState.sortedItems,
                     tins = homeUiState.filteredTins,
@@ -494,12 +370,30 @@ fun HomeScreen(
 /** Header stuff **/
 @Composable
 private fun HomeHeader(
-    homeUiState: HomeUiState,
-    searchState: SearchState,
-    filterViewModel: FilterViewModel,
+    searchText: String,
+    searchIconOpacity: Float,
+    updateSearchText: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    updateSearchFocused: (Boolean) -> Unit,
+    getPositionTrigger: () -> Unit,
+    searchSettingEnabled: Boolean,
+    saveSearchSetting: (String) -> Unit,
+    searchPerformed: Boolean,
+    settingsList: List<SearchSetting>,
+    currentSetting: SearchSetting,
+    searchMenuExpanded: Boolean,
+    onExpandSearchMenu: (Boolean) -> Unit,
+    toggleIcon: Int,
+    toggleContentDescription: Int,
+    isTableView: Boolean,
+    emptyDatabase: Boolean,
+    sortingOptions: List<ListSortOption>,
+    listSorting: ListSorting,
+    sortedItemsSize: Int,
     selectView: (Boolean) -> Unit,
     onShowColumnPop: () -> Unit,
     saveListSorting: (ListSortOption) -> Unit,
+    shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -513,7 +407,9 @@ private fun HomeHeader(
     ) {
         // Select view
         ViewSelect(
-            homeUiState = homeUiState,
+            toggleIcon = toggleIcon,
+            toggleContentDescription = toggleContentDescription,
+            isTableView = isTableView,
             selectView = selectView,
             modifier = Modifier
                 .width(74.dp)
@@ -528,9 +424,20 @@ private fun HomeHeader(
                 .weight(1f, false),
         ) {
             SearchField(
-                filterViewModel = filterViewModel,
-                emptyDatabase = homeUiState.emptyDatabase,
-                searchState = searchState,
+                searchText = searchText,
+                searchIconOpacity = searchIconOpacity,
+                updateSearchText = updateSearchText,
+                onSearch = onSearch,
+                updateSearchFocused = updateSearchFocused,
+                getPositionTrigger = getPositionTrigger,
+                enabled = searchSettingEnabled,
+                saveSearchSetting = saveSearchSetting,
+                searchPerformed = searchPerformed,
+                settingsList = settingsList,
+                currentSetting = currentSetting,
+                searchMenuExpanded = searchMenuExpanded,
+                onExpandSearchMenu = onExpandSearchMenu,
+                emptyDatabase = emptyDatabase,
                 modifier = Modifier
             )
         }
@@ -538,21 +445,33 @@ private fun HomeHeader(
         Spacer(Modifier.width(8.dp))
 
         // total items & list sorting or column hiding
-        MenuAndTotal(
-            homeUiState = homeUiState,
-            filterViewModel = filterViewModel,
-            saveListSorting = saveListSorting,
-            onShowColumnPop = onShowColumnPop,
-            modifier = Modifier
-                .padding(0.dp)
-                .width(68.dp)
-        )
+        Row(
+            modifier = modifier
+                .width(68.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+        ) {
+
+
+            ListColumnMenu(
+                isTableView = isTableView,
+                shouldScrollUp = shouldScrollUp,
+                sortingOptions = sortingOptions,
+                listSorting = listSorting,
+                saveListSorting = saveListSorting,
+                onShowColumnPop = onShowColumnPop
+            )
+            Spacer(Modifier.width(6.dp))
+            TotalCount(sortedItemsSize)
+        }
     }
 }
 
 @Composable
 private fun ViewSelect(
-    homeUiState: HomeUiState,
+    toggleIcon: Int,
+    toggleContentDescription: Int,
+    isTableView: Boolean,
     selectView: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -572,14 +491,14 @@ private fun ViewSelect(
                 .padding(0.dp)
         )
         IconButton(
-            onClick = { selectView(!homeUiState.isTableView) },
+            onClick = { selectView(!isTableView) },
             modifier = Modifier
                 .padding(4.dp)
                 .size(22.dp)
         ) {
             Icon(
-                painter = painterResource(homeUiState.toggleIcon),
-                contentDescription = stringResource(homeUiState.toggleContentDescription),
+                painter = painterResource(toggleIcon),
+                contentDescription = stringResource(toggleContentDescription),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .size(20.dp)
@@ -591,62 +510,49 @@ private fun ViewSelect(
 
 @Composable
 private fun SearchField (
-    filterViewModel: FilterViewModel,
+    searchText: String,
+    searchIconOpacity: Float,
+    updateSearchText: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    updateSearchFocused: (Boolean) -> Unit,
+    getPositionTrigger: () -> Unit,
+    enabled: Boolean,
+    saveSearchSetting: (String) -> Unit,
+    searchPerformed: Boolean,
+    settingsList: List<SearchSetting>,
+    currentSetting: SearchSetting,
+    searchMenuExpanded: Boolean,
+    onExpandSearchMenu: (Boolean) -> Unit,
     emptyDatabase: Boolean,
-    searchState: SearchState,
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
 
     CustomBlendSearch(
-        value = searchState.searchText,
+        value = searchText,
         onValueChange = {
-            filterViewModel.updateSearchText(it)
+            updateSearchText(it)
             if (it.isEmpty()) {
-                filterViewModel.onSearch(it)
-                filterViewModel.updateSearchIconOpacity(0.5f)
+                onSearch(it)
             }
         },
         modifier = modifier
             .fillMaxWidth()
             .onFocusChanged {
-                if (it.isFocused) filterViewModel.updateSearchFocused(true)
-                else filterViewModel.updateSearchFocused(false)
+                if (it.isFocused) updateSearchFocused(true)
+                else updateSearchFocused(false)
             },
         onImeAction = {
             coroutineScope.launch {
-                if (searchState.searchText.isNotBlank()) {
-                    if (!searchState.searchPerformed) { filterViewModel.getPositionTrigger() }
+                if (searchText.isNotBlank()) {
+                    if (!searchPerformed) { getPositionTrigger() }
                     delay(15)
                     EventBus.emit(SearchPerformedEvent)
-                    filterViewModel.onSearch(searchState.searchText)
+                    onSearch(searchText)
                 }
             }
         },
         leadingIcon = {
-            val iconAlpha = filterViewModel.searchIconOpacity.collectAsState().value
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            LaunchedEffect(expanded, searchState.searchPerformed) {
-                if (searchState.searchPerformed) {
-                    filterViewModel.updateSearchIconOpacity(1f)
-                } else {
-                    filterViewModel.updateSearchIconOpacity(0.5f)
-                }
-                if (!searchState.searchPerformed) {
-                    if (expanded) { filterViewModel.updateSearchIconOpacity(1f) }
-                    if (!expanded) { filterViewModel.updateSearchIconOpacity(0.5f) }
-                }
-            }
-
-            val enabled = searchState.settingsList.size > 1
-
-            LaunchedEffect(enabled) {
-                if (!enabled) {
-                    filterViewModel.saveSearchSetting(SearchSetting.Blend.value)
-                }
-            }
-
             Box(
                 modifier = Modifier
                     .padding(0.dp)
@@ -654,7 +560,7 @@ private fun SearchField (
                         enabled = enabled && !emptyDatabase,
                         indication = LocalIndication.current,
                         interactionSource = null
-                    ) { expanded = !expanded }
+                    ) { onExpandSearchMenu(!searchMenuExpanded) }
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.search),
@@ -662,7 +568,7 @@ private fun SearchField (
                     modifier = Modifier
                         .padding(end = 2.dp)
                         .size(20.dp),
-                    tint = LocalContentColor.current.copy(alpha = iconAlpha)
+                    tint = LocalContentColor.current.copy(alpha = searchIconOpacity)
                 )
                 Icon(
                     painter = painterResource(id = R.drawable.triangle_arrow_down),
@@ -672,22 +578,22 @@ private fun SearchField (
                         .offset(x = 7.dp, y = 0.dp)
                         .padding(0.dp)
                         .size(16.dp),
-                    tint = if (enabled && !emptyDatabase) LocalContentColor.current.copy(alpha = iconAlpha) else Color.Transparent
+                    tint = if (enabled && !emptyDatabase) LocalContentColor.current.copy(alpha = searchIconOpacity) else Color.Transparent
                 )
             }
             DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
+                expanded = searchMenuExpanded,
+                onDismissRequest = { onExpandSearchMenu(false) },
                 modifier = Modifier,
                 containerColor = LocalCustomColors.current.textField,
                 offset = DpOffset((-2).dp, 2.dp)
             ) {
-                searchState.settingsList.forEach {
+                settingsList.forEach {
                     DropdownMenuItem(
                         text = { Text(text = it.value) },
                         onClick = {
-                            filterViewModel.saveSearchSetting(it.value)
-                            expanded = false
+                            saveSearchSetting(it.value)
+                            onExpandSearchMenu(false)
                         },
                         modifier = Modifier
                             .padding(0.dp),
@@ -697,7 +603,7 @@ private fun SearchField (
             }
         },
         trailingIcon = {
-            if (searchState.searchText.isNotEmpty()) {
+            if (searchText.isNotEmpty()) {
                 Icon(
                     painter = painterResource(id = R.drawable.clear_24),
                     contentDescription = null,
@@ -707,11 +613,10 @@ private fun SearchField (
                             indication = LocalIndication.current,
                             interactionSource = null
                         ) {
-                            filterViewModel.updateSearchText("")
-                            filterViewModel.onSearch("")
-                            filterViewModel.updateSearchIconOpacity(0.5f)
+                            updateSearchText("")
+                            onSearch("")
 
-                            if (searchState.searchPerformed) {
+                            if (searchPerformed) {
                                 coroutineScope.launch {
                                     EventBus.emit(SearchClearedEvent)
                                 }
@@ -722,134 +627,131 @@ private fun SearchField (
                 )
             }
         },
-        placeholder = "${searchState.currentSetting.value} Search",
+        placeholder = "${currentSetting.value} Search",
     )
 }
 
 @Composable
-private fun MenuAndTotal(
-    homeUiState: HomeUiState,
-    filterViewModel: FilterViewModel,
+private fun ListColumnMenu(
+    isTableView: Boolean,
+    sortingOptions: List<ListSortOption>,
+    listSorting: ListSorting,
+    shouldScrollUp: () -> Unit,
     saveListSorting: (ListSortOption) -> Unit,
     onShowColumnPop: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End,
-    ) {
-        var sortingMenu by rememberSaveable { mutableStateOf(false) }
+    var sortingMenu by rememberSaveable { mutableStateOf(false) }
 
-        Box {
-            // List Sorting
-            if (!homeUiState.isTableView) {
-                IconButton(
-                    onClick = { sortingMenu = !sortingMenu },
+    Box {
+        // List Sorting
+        if (!isTableView) {
+            IconButton(
+                onClick = { sortingMenu = !sortingMenu },
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(22.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.sort_bars),
+                    contentDescription = "List sorting",
                     modifier = Modifier
-                        .padding(4.dp)
-                        .size(22.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.sort_bars),
-                        contentDescription = "List sorting",
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(0.dp),
-                    )
-                }
-                DropdownMenu(
-                    expanded = sortingMenu,
-                    onDismissRequest = { sortingMenu = false },
-                    shadowElevation = 4.dp,
-                    modifier = Modifier,
-                    containerColor = LocalCustomColors.current.textField,
-                ) {
-                    homeUiState.sortingOptions.forEach {
-                        DropdownMenuItem(
-                            text = {
-                                Row(
+                        .size(20.dp)
+                        .padding(0.dp),
+                )
+            }
+            DropdownMenu(
+                expanded = sortingMenu,
+                onDismissRequest = { sortingMenu = false },
+                shadowElevation = 4.dp,
+                modifier = Modifier,
+                containerColor = LocalCustomColors.current.textField,
+            ) {
+                sortingOptions.forEach {
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    text = it.value,
+                                    fontWeight = FontWeight.Normal,
                                     modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(14.dp),
+                                    contentAlignment = Alignment.CenterEnd
                                 ) {
-                                    Text(
-                                        text = it.value,
-                                        fontWeight = FontWeight.Normal,
-                                        modifier = Modifier
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .width(14.dp),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        if (homeUiState.listSorting.option.value == it.value) {
-                                            val icon = homeUiState.listSorting.listIcon
-                                            Image(
-                                                painter = painterResource(id = icon),
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .size(28.dp)
-                                                    .offset(x = (-6).dp)
-                                                    .padding(0.dp),
-                                                colorFilter = ColorFilter.tint(LocalContentColor.current),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                        }
+                                    if (listSorting.option.value == it.value) {
+                                        val icon = listSorting.listIcon
+                                        Image(
+                                            painter = painterResource(id = icon),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .offset(x = (-6).dp)
+                                                .padding(0.dp),
+                                            colorFilter = ColorFilter.tint(LocalContentColor.current),
+                                            contentScale = ContentScale.Crop
+                                        )
                                     }
                                 }
-                            },
-                            onClick = {
-                                saveListSorting(it)
-                                filterViewModel.shouldScrollUp()
-                            },
-                            modifier = Modifier
-                                .padding(0.dp),
-                            enabled = true,
-                        )
-                    }
-                }
-            } else {
-                IconButton(
-                    onClick = { onShowColumnPop() },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .size(22.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.table_edit),
-                        contentDescription = "Column Visibility",
+                            }
+                        },
+                        onClick = {
+                            saveListSorting(it)
+                            shouldScrollUp()
+                        },
                         modifier = Modifier
-                            .size(20.dp)
                             .padding(0.dp),
+                        enabled = true,
                     )
                 }
-            } // column popup button
+            }
+        } else {
+            IconButton(
+                onClick = { onShowColumnPop() },
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(22.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.table_edit),
+                    contentDescription = "Column Visibility",
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(0.dp),
+                )
+            }
         }
+    }
+}
 
-        Spacer(Modifier.width(6.dp))
-
-        // Total Items //
-        Box (contentAlignment = Alignment.CenterEnd) {
-            Text(
-                text = "999",
-                modifier = Modifier,
-                textAlign = TextAlign.End,
-                fontWeight = FontWeight.Normal,
-                fontSize = 15.sp,
-                maxLines = 1,
-                color = Color.Transparent
-            )
-            Text(
-                text = "${homeUiState.sortedItems.size}",
-                modifier = Modifier,
-                textAlign = TextAlign.End,
-                fontWeight = FontWeight.Normal,
-                fontSize = 15.sp,
-                maxLines = 1,
-            )
-        }
+@Composable
+private fun TotalCount(
+    count: Int,
+) {
+    Box (contentAlignment = Alignment.CenterEnd) {
+        Text(
+            text = "999",
+            modifier = Modifier,
+            textAlign = TextAlign.End,
+            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+            maxLines = 1,
+            color = Color.Transparent
+        )
+        Text(
+            text = "$count",
+            modifier = Modifier,
+            textAlign = TextAlign.End,
+            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+            maxLines = 1,
+        )
     }
 }
 
@@ -974,97 +876,17 @@ private fun HomeBody(
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var displayedMessage by remember { mutableStateOf(emptyMessage) }
-    var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
+    val scrollState by filterViewModel.homeScrollState.collectAsState()
 
     Box {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-            modifier = modifier
-                .fillMaxSize()
-                .padding(0.dp)
-        ) {
-            if (sortedItems.isEmpty()) {
-                LaunchedEffect(emptyMessage, searchPerformed, searchWasPerformed) {
-                    if (searchWasPerformed && !searchPerformed) {
-                        delay(20L)
-                        displayedMessage = emptyMessage
-                    } else {
-                        displayedMessage = emptyMessage
-                    }
-                    searchWasPerformed = searchPerformed
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        text = displayedMessage,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier
-                            .padding(0.dp),
-                    )
-                    Spacer(Modifier.weight(1.25f))
-                }
-            } else {
-                if (isTableView) {
-                    TableViewMode(
-                        sortedItems = sortedItems,
-                        columnState = columnState,
-                        typeGenreOption = typeGenreOption,
-                        showTins = showTins,
-                        filteredTins = tins,
-                        formattedQty = formattedQuantity,
-                        searchPerformed = searchPerformed,
-                        isTinSearch = isTinSearch,
-                        searchFocused = searchFocused,
-                        onDetailsClick = { onDetailsClick(it.id) },
-                        onEditClick = { onEditClick(it.id) },
-                        getPositionTrigger = { getPositionTrigger() },
-                        activeMenuId = activeMenuId,
-                        onShowMenu = onShowMenu,
-                        onDismissMenu = onDismissMenu,
-                        isMenuShown = isMenuShown,
-                        sorting = tableSorting,
-                        updateSorting = updateSorting,
-                        columnVisibility = columnVisibility,
-                        shouldScrollUp = shouldScrollUp,
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth()
-                    )
-                } else {
-                    ListViewMode(
-                        sortedItems = sortedItems,
-                        columnState = columnState,
-                        showRating = showRating,
-                        formattedTypeGenre = formattedTypeGenre,
-                        showTins = showTins,
-                        tinsList = tins,
-                        formattedQuantity = formattedQuantity,
-                        searchPerformed = searchPerformed,
-                        isTinSearch = isTinSearch,
-                        searchFocused = searchFocused,
-                        onDetailsClick = { onDetailsClick(it.id) },
-                        onEditClick = { onEditClick(it.id) },
-                        getPositionTrigger = { getPositionTrigger() },
-                        activeMenuId = activeMenuId,
-                        onShowMenu = onShowMenu,
-                        onDismissMenu = onDismissMenu,
-                        isMenuShown = isMenuShown,
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth()
-                    )
-                }
-            }
-        }
+        BodyContent(
+            isTableView, showRating, formattedTypeGenre, typeGenreOption,
+            emptyMessage, columnState, sortedItems, tins, formattedQuantity,
+            showTins, onDetailsClick, onEditClick, isMenuShown, activeMenuId,
+            onShowMenu, onDismissMenu, getPositionTrigger, searchFocused,
+            searchPerformed, isTinSearch, tableSorting, updateSorting,
+            columnVisibility, shouldScrollUp, modifier
+        )
 
         if (showLoading) { LoadingIndicator() }
 
@@ -1092,59 +914,193 @@ private fun HomeBody(
                 .padding(16.dp)
         )
 
-        val currentItemsList by rememberUpdatedState(sortedItems)
-        val currentPosition by filterViewModel.currentPosition.collectAsState()
-        val shouldScrollUp by filterViewModel.shouldScrollUp.collectAsState()
-        val savedItemId by filterViewModel.savedItemId.collectAsState()
-        val savedItemIndex = sortedItems.indexOfFirst { it.items.id == savedItemId }
-        val shouldReturn by filterViewModel.shouldReturn.collectAsState()
-        val getPosition by filterViewModel.getPosition.collectAsState()
+        HomeScrollHandler(
+            columnState, sortedItems, scrollState, filterViewModel,
+            searchPerformed, coroutineScope,
+        )
+    }
+}
 
-        // Scroll to Positions //
-        LaunchedEffect(currentItemsList) {
-            while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) { delay(2) }
-            if (savedItemIndex != -1) {
-                withFrameNanos {
-                    coroutineScope.launch {
-                        if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
-                            val offset =
-                                (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-                            columnState.scrollToItem(savedItemIndex, offset)
-                        } else {
-                            columnState.scrollToItem(savedItemIndex)
-                        }
-                    }
-                }
-                filterViewModel.resetScroll()
-            }
-            if (shouldScrollUp) {
-                columnState.scrollToItem(0)
-                filterViewModel.resetScroll()
-            }
-            if (shouldReturn && !searchPerformed && !shouldScrollUp) {
-                val index = currentPosition[0]
-                val offset = currentPosition[1]
+@Composable
+private fun BodyContent(
+    isTableView: Boolean,
+    showRating: Boolean,
+    formattedTypeGenre: Map<Int, String>,
+    typeGenreOption: TypeGenreOption,
+    emptyMessage: String,
+    columnState: LazyListState,
+    sortedItems: List<ItemsComponentsAndTins>,
+    tins: List<Tins>,
+    formattedQuantity: Map<Int, String>,
+    showTins: Boolean,
+    onDetailsClick: (Int) -> Unit,
+    onEditClick: (Int) -> Unit,
+    isMenuShown: Boolean,
+    activeMenuId: Int?,
+    onShowMenu: (Int) -> Unit,
+    onDismissMenu: () -> Unit,
+    getPositionTrigger: () -> Unit,
+    searchFocused: Boolean,
+    searchPerformed: Boolean,
+    isTinSearch: Boolean,
+    tableSorting: TableSorting,
+    updateSorting: (Int) -> Unit,
+    columnVisibility: Map<TableColumn, Boolean>,
+    shouldScrollUp: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var displayedMessage by remember { mutableStateOf(emptyMessage) }
+    var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
 
-                if (index != null && offset != null) {
-                    withFrameNanos {
-                        coroutineScope.launch {
-                            columnState.scrollToItem(index, offset)
-                        }
-                    }
-                    filterViewModel.resetScroll()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top,
+        modifier = modifier
+            .fillMaxSize()
+            .padding(0.dp)
+    ) {
+        if (sortedItems.isEmpty()) {
+            LaunchedEffect(emptyMessage, searchPerformed, searchWasPerformed) {
+                if (searchWasPerformed && !searchPerformed) {
+                    delay(20L)
+                    displayedMessage = emptyMessage
+                } else {
+                    displayedMessage = emptyMessage
                 }
+                searchWasPerformed = searchPerformed
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = displayedMessage,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier
+                        .padding(0.dp),
+                )
+                Spacer(Modifier.weight(1.25f))
+            }
+        } else {
+            if (isTableView) {
+                TableViewMode(
+                    sortedItems = sortedItems,
+                    columnState = columnState,
+                    typeGenreOption = typeGenreOption,
+                    showTins = showTins,
+                    filteredTins = tins,
+                    formattedQty = formattedQuantity,
+                    searchPerformed = searchPerformed,
+                    isTinSearch = isTinSearch,
+                    searchFocused = searchFocused,
+                    onDetailsClick = { onDetailsClick(it.id) },
+                    onEditClick = { onEditClick(it.id) },
+                    getPositionTrigger = { getPositionTrigger() },
+                    activeMenuId = activeMenuId,
+                    onShowMenu = onShowMenu,
+                    onDismissMenu = onDismissMenu,
+                    isMenuShown = isMenuShown,
+                    sorting = tableSorting,
+                    updateSorting = updateSorting,
+                    columnVisibility = columnVisibility,
+                    shouldScrollUp = shouldScrollUp,
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth()
+                )
+            } else {
+                ListViewMode(
+                    sortedItems = sortedItems,
+                    columnState = columnState,
+                    showRating = showRating,
+                    formattedTypeGenre = formattedTypeGenre,
+                    showTins = showTins,
+                    tinsList = tins,
+                    formattedQuantity = formattedQuantity,
+                    searchPerformed = searchPerformed,
+                    isTinSearch = isTinSearch,
+                    searchFocused = searchFocused,
+                    onDetailsClick = { onDetailsClick(it.id) },
+                    onEditClick = { onEditClick(it.id) },
+                    getPositionTrigger = { getPositionTrigger() },
+                    activeMenuId = activeMenuId,
+                    onShowMenu = onShowMenu,
+                    onDismissMenu = onDismissMenu,
+                    isMenuShown = isMenuShown,
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth()
+                )
             }
         }
+    }
+}
 
-        // Save positions //
-        LaunchedEffect(getPosition) {
-            if (getPosition > 0 && !searchPerformed) {
-                val layoutInfo = columnState.layoutInfo
-                val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+@Composable
+private fun HomeScrollHandler(
+    columnState: LazyListState,
+    sortedItems: List<ItemsComponentsAndTins>,
+    scrollState: HomeScrollState,
+    filterViewModel: FilterViewModel,
+    searchPerformed: Boolean,
+    coroutineScope: CoroutineScope,
+) {
+    val currentItemsList by rememberUpdatedState(sortedItems)
+    val savedItemIndex = remember(sortedItems, scrollState.savedItemId) {
+        sortedItems.indexOfFirst { it.items.id == scrollState.savedItemId }
+    }
 
-                if (firstVisibleItem != null) {
-                    filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+    // Scroll to Positions //
+    LaunchedEffect(currentItemsList) {
+        // while (columnState.layoutInfo.visibleItemsInfo.isEmpty()) { delay(2) }
+        snapshotFlow { columnState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
+
+        if (savedItemIndex != -1) {
+            withFrameNanos {
+                coroutineScope.launch {
+                    if (savedItemIndex > 0 && savedItemIndex < (sortedItems.size - 1)) {
+                        val offset =
+                            (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                        columnState.scrollToItem(savedItemIndex, offset)
+                    } else {
+                        columnState.scrollToItem(savedItemIndex)
+                    }
                 }
+            }
+            filterViewModel.resetScroll()
+        }
+        if (scrollState.shouldScrollUp) {
+            columnState.scrollToItem(0)
+            filterViewModel.resetScroll()
+        }
+        if (scrollState.shouldReturn && !searchPerformed && !scrollState.shouldScrollUp) {
+            val index = scrollState.currentPosition[0]
+            val offset = scrollState.currentPosition[1]
+
+            if (index != null && offset != null) {
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(index, offset)
+                    }
+                }
+                filterViewModel.resetScroll()
+            }
+        }
+    }
+
+    // Save positions //
+    LaunchedEffect(scrollState.getPosition) {
+        if (scrollState.getPosition > 0 && !searchPerformed) {
+            val layoutInfo = columnState.layoutInfo
+            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+            if (firstVisibleItem != null) {
+                filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
             }
         }
     }
@@ -1493,6 +1449,7 @@ private fun CellarListItem(
         .background(LocalCustomColors.current.backgroundVariant))
 }
 
+@Stable
 @Composable
 private fun MainDetails(
     item: Items,
@@ -1557,6 +1514,7 @@ private fun MainDetails(
     }
 }
 
+@Stable
 @Composable
 private fun QuantityColumn(
     formattedQuantity: String,
@@ -1577,6 +1535,7 @@ private fun QuantityColumn(
     )
 }
 
+@Stable
 @Composable
 private fun IconRow(
     item: Items,
@@ -1613,6 +1572,7 @@ private fun IconRow(
 
 }
 
+@Stable
 @Composable
 private fun RatingLabel(
     rating: Double,
@@ -2390,4 +2350,157 @@ fun TableCell(
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+
+@Composable
+fun ImportantAlertDialog(
+    importantAlertState: ImportantAlertState,
+    coroutineScope: CoroutineScope,
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier
+) {
+    val alert = importantAlertState.alertToDisplay!!
+    val isCurrent = importantAlertState.isCurrentAlert
+
+    val scrollState = rememberScrollState()
+    var enabled by rememberSaveable(alert.id) { mutableStateOf(false) }
+    val atBottom by remember { derivedStateOf { !scrollState.canScrollForward } }
+    var countdown by remember(alert.id) { mutableIntStateOf(5) }
+    var canScroll by remember(alert.id) { mutableStateOf(false) }
+    val updateScroll: (Boolean) -> Unit = { canScroll = it }
+
+    AlertDialog(
+        onDismissRequest = { },
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        modifier = modifier,
+        containerColor = LocalCustomColors.current.darkNeutral,
+        title = {
+            Text(
+                text = "Important Alert!",
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.error,
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "This is a one-time alert.",
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .fillMaxWidth(),
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp
+                )
+                GlowBox(
+                    color = GlowColor(LocalCustomColors.current.darkNeutral),
+                    size = GlowSize(vertical = 6.dp),
+                    modifier = Modifier
+                        .height(175.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(scrollState),
+                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier
+                        ) {
+                            if (!isCurrent) {
+                                Text(
+                                    text = "Missed Alert:",
+                                    modifier = Modifier,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp
+                                )
+                            }
+                            Text(
+                                text = "${alert.date}\n(v ${alert.appVersion})",
+                                modifier = Modifier
+                                    .padding(bottom = 16.dp),
+                                fontSize = 14.sp
+                            )
+                            if (canScroll) {
+                                Text(
+                                    text = "You must scroll to the bottom to be able to acknowledge and " +
+                                            "dismiss this dialog.",
+                                    modifier = Modifier
+                                        .padding(bottom = 16.dp)
+                                )
+                            }
+                            alert.message(this)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            val isScrollable by remember { derivedStateOf { scrollState.maxValue > 0 } }
+            LaunchedEffect(isScrollable, alert.id) {
+                if (!isScrollable) {
+                    while (countdown > 0) {
+                        delay(1000)
+                        countdown--
+                    }
+                    enabled = true
+                } else {
+                    updateScroll(true)
+                }
+            }
+            LaunchedEffect(isScrollable, atBottom, alert.id) {
+                if (isScrollable && atBottom) {
+                    enabled = true
+                }
+            }
+            val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
+                if (!isCurrent) {
+                    if (isScrollable) {
+                        "Next"
+                    } else {
+                        if (enabled) "Next" else "( $countdown )"
+                    }
+                } else {
+                    if (isScrollable) {
+                        "Confirm"
+                    } else {
+                        if (enabled) "Confirm" else "( $countdown )"
+                    }
+                }
+            }
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        if (!isCurrent) {
+                            enabled = false
+                            updateScroll(false)
+                            countdown = 5
+                            viewModel.saveAlertSeen(alert.id)
+                        } else {
+                            viewModel.saveAlertSeen(alert.id)
+                        }
+                    }
+                },
+                enabled = enabled
+            ) {
+                Box (contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Confirm",
+                        color = Color.Transparent
+                    )
+                    Text(
+                        text = buttonText
+                    )
+                }
+            }
+        }
+    )
 }

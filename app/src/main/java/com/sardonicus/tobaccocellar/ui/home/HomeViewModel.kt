@@ -139,6 +139,7 @@ class HomeViewModel(
                         preferencesRepo.saveTypeGenreOption(it.value)
                     }
                 }
+                // Important alerts
                 launch {
                     preferencesRepo.lastAlertFlow.collect { lastShown ->
                         val unseenAlerts = OneTimeAlerts.alerts
@@ -153,14 +154,17 @@ class HomeViewModel(
                             alertToDisplay = alertToDisplay,
                             isCurrentAlert = isCurrent
                         )
+
+                        if (lastShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
+                            preferencesRepo.saveAlertShown(OneTimeAlerts.CURRENT_ALERT_VERSION)
+                        }
                     }
                 }
             }
         }
     }
 
-    val emptyMessage: StateFlow<String> =
-        combine(
+    val emptyMessage: StateFlow<String> = combine(
             filterViewModel.searchValue,
             filterViewModel.searchPerformed,
             filterViewModel.isFilterApplied,
@@ -324,6 +328,7 @@ class HomeViewModel(
         HomeUiState(
             sortedItems = sortedItems,
             filteredTins = filteredTins,
+            emptyMessage = emptyMessage,
             showRating = showRating,
             sortingOptions = sortingOptions,
             typeGenreOption = typeGenreOption,
@@ -342,43 +347,6 @@ class HomeViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = HomeUiState(isLoading = true)
-        )
-
-    val searchState = combine(
-        filterViewModel.searchFocused,
-        filterViewModel.searchPerformed,
-        filterViewModel.isTinSearch,
-        filterViewModel.searchTextDisplay,
-        preferencesRepo.searchSetting,
-        filterViewModel.tinsExist,
-        filterViewModel.notesExist
-    ) { it: Array<Any?> ->
-        val searchFocused = it[0] as Boolean
-        val searchPerformed = it[1] as Boolean
-        val isTinSearch = it[2] as Boolean
-        val searchText = it[3] as String
-        val searchSetting = it[4] as SearchSetting
-        val tinsExist = it[5] as Boolean
-        val notesExist = it[6] as Boolean
-
-        val blendSearch = SearchSetting.Blend
-        val notesSearch = if (notesExist) SearchSetting.Notes else null
-        val tinsSearch = if (tinsExist) SearchSetting.TinLabel else null
-        val settingsList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
-
-        SearchState(
-            searchFocused = searchFocused,
-            searchPerformed = searchPerformed,
-            isTinSearch = isTinSearch,
-            searchText = searchText,
-            currentSetting = searchSetting,
-            settingsList = settingsList
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = SearchState()
         )
 
 
@@ -668,6 +636,7 @@ class HomeViewModel(
 data class HomeUiState(
     val sortedItems: List<ItemsComponentsAndTins> = emptyList(),
     val filteredTins: List<Tins> = emptyList(),
+    val emptyMessage: String = "",
     val showRating: Boolean = false,
     val sortingOptions: List<ListSortOption> = emptyList(),
     val typeGenreOption: TypeGenreOption = TypeGenreOption.TYPE,
@@ -692,14 +661,6 @@ data class ItemsIconData(
     val size: Dp = 17.dp
 )
 
-data class SearchState(
-    val searchFocused: Boolean = false,
-    val searchPerformed: Boolean = false,
-    val isTinSearch: Boolean = false,
-    val searchText: String = "",
-    val currentSetting: SearchSetting = SearchSetting.Blend,
-    val settingsList: List<SearchSetting> = listOf(SearchSetting.Blend)
-)
 
 data class ImportantAlertState(
     val show: Boolean = false,
