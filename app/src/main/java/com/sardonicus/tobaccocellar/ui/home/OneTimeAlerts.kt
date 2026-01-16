@@ -1,6 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 
 data class OneTimeAlert(
     val id: Int,
-    val message: @Composable () -> Unit,
+    val message: @Composable (ColumnScope.() -> Unit),
     val date: String,
     val appVersion: String
 )
@@ -35,42 +35,40 @@ object OneTimeAlerts {
             date = "27 Mar, 2025",
             appVersion = "2.7.0",
             message = {
-                Column {
+                Text(
+                    text = "I have employed code and resource shrinking, which makes the app " +
+                            "much smaller and should improve performance. However, this " +
+                            "could result in some bugs. I have attempted to thoroughly test " +
+                            "the app, but may have missed some things.\n\nAdditionally, the " +
+                            "backup/restore function has been changed due to a potential for " +
+                            "database corruption upon RESTORE. From this version on, any " +
+                            "previously created backups will not work, you must create a new " +
+                            "backup file. See the changelog for more information.",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                )
+                Text(
+                    text = "PLEASE contact me if you encounter any issues:",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(bottom = 6.dp)
+                )
+                SelectionContainer {
                     Text(
-                        text = "I have employed code and resource shrinking, which makes the app " +
-                                "much smaller and should improve performance. However, this " +
-                                "could result in some bugs. I have attempted to thoroughly test " +
-                                "the app, but may have missed some things.\n\nAdditionally, the " +
-                                "backup/restore function has been changed due to a potential for " +
-                                "database corruption upon RESTORE. From this version on, any " +
-                                "previously created backups will not work, you must create a new " +
-                                "backup file. See the changelog for more information.",
+                        text = "sardonicus.notadev@gmail.com",
+                        fontWeight = FontWeight.Black,
                         modifier = Modifier
-                            .padding(bottom = 16.dp)
-                    )
-                    Text(
-                        text = "PLEASE contact me if you encounter any issues:",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .padding(bottom = 6.dp)
-                    )
-                    SelectionContainer {
-                        Text(
-                            text = "sardonicus.notadev@gmail.com",
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    Text(
-                        text = "(Email address can be found on the app settings screen)",
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
+                            .fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
                 }
+                Text(
+                    text = "(Email address can be found on the app settings screen)",
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                )
             }
         )
     )
