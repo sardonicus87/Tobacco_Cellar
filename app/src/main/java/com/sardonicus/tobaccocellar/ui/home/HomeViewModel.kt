@@ -154,10 +154,6 @@ class HomeViewModel(
                             alertToDisplay = alertToDisplay,
                             isCurrentAlert = isCurrent
                         )
-
-                        if (lastShown < OneTimeAlerts.CURRENT_ALERT_VERSION) {
-                            preferencesRepo.saveAlertShown(OneTimeAlerts.CURRENT_ALERT_VERSION)
-                        }
                     }
                 }
             }
