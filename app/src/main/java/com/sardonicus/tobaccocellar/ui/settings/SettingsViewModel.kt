@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -107,6 +108,12 @@ class SettingsViewModel(
     private val _defaultSyncOption = MutableStateFlow(false)
     val defaultSyncOption = _defaultSyncOption.asStateFlow()
 
+    private val _selectionFocused = MutableStateFlow(false)
+    val selectionFocused = _selectionFocused.asStateFlow()
+
+    private val _selectionKey = MutableStateFlow(0)
+    val selectionKey = _selectionKey.asStateFlow()
+
 
     /** General UI control **/
     private val _openDialog = MutableStateFlow<DialogType?>(null)
@@ -166,6 +173,15 @@ class SettingsViewModel(
     fun snackbarShown() { _snackbarState.value = SnackbarState(false, "") }
 
     fun setLoadingState(loading: Boolean) { _loading.value = loading }
+
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
+    }
+
+    fun updateFocused(focused: Boolean) {
+        _selectionFocused.update { focused }
+    }
 
     // option initializations //
     init {

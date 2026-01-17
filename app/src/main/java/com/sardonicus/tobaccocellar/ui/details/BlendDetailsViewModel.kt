@@ -53,6 +53,9 @@ class BlendDetailsViewModel(
     private val _loadingFinished = MutableStateFlow(false)
     val loadingFinished = _loadingFinished.asStateFlow()
 
+    private val _selectionKey = MutableStateFlow(0)
+    val selectionKey = _selectionKey.asStateFlow()
+
     private val _selectionFocused = MutableStateFlow(false)
     val selectionFocused = _selectionFocused.asStateFlow()
 
@@ -71,6 +74,11 @@ class BlendDetailsViewModel(
         viewModelScope.launch {
             _parseLinks.value = preferencesRepo.parseLinks.first()
         }
+    }
+
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
     }
 
     private fun refreshData() {

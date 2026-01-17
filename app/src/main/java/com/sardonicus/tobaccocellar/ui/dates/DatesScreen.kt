@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.dates
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,9 +31,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,11 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -74,14 +77,26 @@ fun DatesScreen(
     viewModel: DatesViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val focusManager = LocalFocusManager.current
 
     val datesUiState by viewModel.datesUiState.collectAsState()
+    val selectionFocused by viewModel.selectionFocused.collectAsState()
+    val selectionKey by viewModel.selectionKey.collectAsState()
+
+    BackHandler(selectionFocused) {
+        if (selectionFocused) {
+            viewModel.resetSelection()
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetSelection()
+        }
+    }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
+            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.dates_title),
@@ -95,9 +110,9 @@ fun DatesScreen(
             CellarBottomAppBar(
                 modifier = Modifier
                     .padding(0.dp),
-                navigateToHome = navigateToHome,
-                navigateToStats = navigateToStats,
-                navigateToAddEntry = navigateToAddEntry,
+                navigateToHome = { viewModel.resetSelection(); navigateToHome() },
+                navigateToStats = { viewModel.resetSelection(); navigateToStats() },
+                navigateToAddEntry = { viewModel.resetSelection(); navigateToAddEntry() },
                 currentDestination = DatesDestination,
                 isTwoPane = isTwoPane
             )
@@ -114,6 +129,8 @@ fun DatesScreen(
                 loading = datesUiState.loading,
                 navigateToDetails = navigateToDetails,
                 datesUiState = datesUiState,
+                selectionKey = selectionKey,
+                updateSelectionFocused = viewModel::updateFocused,
                 modifier = Modifier
                     .fillMaxSize()
             )
@@ -126,6 +143,8 @@ fun DatesBody(
     loading: Boolean,
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
+    selectionKey: Int,
+    updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -284,6 +303,8 @@ fun DatesBody(
                         DateInfo(
                             navigateToDetails = navigateToDetails,
                             datesUiState = datesUiState,
+                            selectionKey = selectionKey,
+                            updateSelectionFocused = updateSelectionFocused,
                             modifier = Modifier
                                 .fillMaxWidth()
                         )
@@ -334,6 +355,8 @@ fun DatesBody(
 fun DateInfo(
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
+    selectionKey: Int,
+    updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -395,7 +418,16 @@ fun DateInfo(
         ) {
             Spacer(modifier = Modifier.height(10.dp))
             if (datesUiState.averageAgeManufacture.isNotBlank() || datesUiState.averageAgeCellar.isNotBlank() || datesUiState.averageAgeOpen.isNotBlank() || datesUiState.averageWaitTime.isNotBlank()) {
-                SelectionContainer {
+                key(selectionKey) { SelectionContainer(
+                    modifier = Modifier
+                        .onFocusChanged{
+                            if (it.isFocused) {
+                                updateSelectionFocused(true)
+                            } else {
+                                updateSelectionFocused(false)
+                            }
+                        }
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -542,7 +574,7 @@ fun DateInfo(
                             }
                         }
                     }
-                }
+                } }
                 Spacer(modifier = Modifier.height(20.dp))
             } else {
                 Text(

@@ -14,12 +14,14 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.details.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlin.math.floor
@@ -31,6 +33,9 @@ class StatsViewModel(
 
     private val _selectionFocused = MutableStateFlow(false)
     val selectionFocused = _selectionFocused.asStateFlow()
+
+    private val _selectionKey = MutableStateFlow(0)
+    val selectionKey = _selectionKey.asStateFlow()
 
     /** Raw stats */
     val rawStats: StateFlow<RawStats> =
@@ -145,6 +150,7 @@ class StatsViewModel(
                 rawLoading = false
             )
         }
+            .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(),
@@ -416,6 +422,7 @@ class StatsViewModel(
                 filteredLoading = false,
             )
         }
+            .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
@@ -529,6 +536,11 @@ class StatsViewModel(
 
     fun updateFocused(focused: Boolean) {
         _selectionFocused.update { focused }
+    }
+
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
     }
 
 }

@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -55,6 +56,12 @@ class PlaintextViewModel (
 
     private val _delimiter = MutableStateFlow("")
     val delimiter: StateFlow<String> = _delimiter.asStateFlow()
+
+    private val _selectionFocused = MutableStateFlow(false)
+    val selectionFocused = _selectionFocused.asStateFlow()
+
+    private val _selectionKey = MutableStateFlow(0)
+    val selectionKey = _selectionKey.asStateFlow()
 
 
     init {
@@ -421,6 +428,15 @@ class PlaintextViewModel (
             initialValue = PlaintextListState()
         )
 
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
+    }
+
+    fun updateFocused(focused: Boolean) {
+        _selectionFocused.update { focused }
+    }
+
     private fun tinNormalizedWeight(tin: Tins): Double {
         if (tin.finished) return 0.0
         if (tin.unit.isBlank()) return 0.0
@@ -490,6 +506,7 @@ class PlaintextViewModel (
             preferencesRepo.setPlaintextPrintOptions(font, margin)
         }
     }
+
 
     private fun generateListString(
         items: List<ItemsComponentsAndTins>,

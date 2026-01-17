@@ -32,9 +32,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,7 +46,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -78,11 +79,12 @@ fun BlendDetailsScreen(
     viewModel: BlendDetailsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val focusManager = LocalFocusManager.current
 
     val blendDetails by viewModel.blendDetails.collectAsState()
     val loadingFinished by viewModel.loadingFinished.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
+    val selectionKey by viewModel.selectionKey.collectAsState()
+
 
     var contentVisible by remember { mutableStateOf(false) }
     val updateVisible: (Boolean) -> Unit = { contentVisible = it }
@@ -94,24 +96,30 @@ fun BlendDetailsScreen(
     }
     BackHandler(selectionFocused) {
         if (selectionFocused) {
-            focusManager.clearFocus()
-            viewModel.updateFocused(false)
+            viewModel.resetSelection()
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetSelection()
         }
     }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) {
-                focusManager.clearFocus()
-                viewModel.updateFocused(false)
-            },
+            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.blend_details_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
-                navigateUp = onNavigateUp,
+                navigateUp = {
+                    if (selectionFocused) {
+                        viewModel.resetSelection()
+                        onNavigateUp()
+                    } else { onNavigateUp() }
+                },
                 showMenu = false,
                 overrideBack = isTwoPane,
                 modifier = Modifier
@@ -133,8 +141,12 @@ fun BlendDetailsScreen(
                 BlendDetailsBody(
                     blendDetails = blendDetails,
                     viewModel = viewModel,
-                    navigateToEditEntry = { navigateToEditEntry(it) },
-                    selectionFocused = { viewModel.updateFocused(it) },
+                    navigateToEditEntry = {
+                        viewModel.resetSelection()
+                        navigateToEditEntry(it)
+                    },
+                    selectionFocused = viewModel::updateFocused,
+                    selectionKey = selectionKey,
                     modifier = Modifier
                 )
             }
@@ -149,6 +161,7 @@ fun BlendDetailsBody(
     viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
     selectionFocused: (Boolean) -> Unit,
+    selectionKey: Int,
     modifier: Modifier = Modifier
 ) {
     LazyColumn (
@@ -171,7 +184,7 @@ fun BlendDetailsBody(
                 Spacer(Modifier.width(24.dp))
                 // Blend name
                 Box(Modifier.weight(1f)) {
-                    SelectionContainer(
+                    key(selectionKey) { SelectionContainer(
                         Modifier
                             .onFocusChanged {
                                 if (it.isFocused) {
@@ -219,7 +232,7 @@ fun BlendDetailsBody(
                                 textAlign = TextAlign.Center,
                             )
                         }
-                    }
+                    } }
                 }
                 // Favorite/Disliked
                 Box(
@@ -287,7 +300,7 @@ fun BlendDetailsBody(
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
                     )
                 }
-                SelectionContainer(
+                key(selectionKey) { SelectionContainer(
                     Modifier
                         .onFocusChanged {
                             if (it.isFocused) {
@@ -336,7 +349,7 @@ fun BlendDetailsBody(
                             }
                         }
                     }
-                }
+                } }
             }
         }
 
@@ -368,7 +381,7 @@ fun BlendDetailsBody(
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.tertiary
                     )
-                    SelectionContainer(
+                    key(selectionKey) { SelectionContainer(
                         Modifier
                             .onFocusChanged {
                                 if (it.isFocused) {
@@ -384,7 +397,7 @@ fun BlendDetailsBody(
                             modifier = Modifier
                                 .padding(start = 12.dp, bottom = 8.dp)
                         )
-                    }
+                    } }
                 }
             }
         }
@@ -426,7 +439,7 @@ fun BlendDetailsBody(
                         Spacer(Modifier.weight(1f))
 
                         if (blendDetails.tinsTotal.isNotBlank()) {
-                            SelectionContainer(
+                            key(selectionKey) { SelectionContainer(
                                 Modifier
                                     .onFocusChanged {
                                         if (it.isFocused) {
@@ -443,10 +456,10 @@ fun BlendDetailsBody(
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
-                            }
+                            } }
                         }
                     }
-                    SelectionContainer(
+                    key(selectionKey) { SelectionContainer(
                         Modifier
                             .onFocusChanged {
                                 if (it.isFocused) {
@@ -502,7 +515,7 @@ fun BlendDetailsBody(
                                 }
                             }
                         }
-                    }
+                    } }
                     Spacer(modifier = Modifier.height(6.dp))
                 }
             }

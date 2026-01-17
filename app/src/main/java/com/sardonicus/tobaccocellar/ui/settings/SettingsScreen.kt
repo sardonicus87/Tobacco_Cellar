@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
@@ -57,6 +58,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -66,6 +68,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -114,6 +117,8 @@ fun SettingsScreen(
     val snackbarState by viewModel.snackbarState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val loading by viewModel.loading.collectAsState()
+    val selectionFocused by viewModel.selectionFocused.collectAsState()
+
 
     if (snackbarState.show) {
         LaunchedEffect(snackbarState) {
@@ -125,8 +130,11 @@ fun SettingsScreen(
         }
     }
 
+    BackHandler(selectionFocused) { viewModel.resetSelection() }
+
     DisposableEffect(Unit) {
         onDispose {
+            viewModel.resetSelection()
             viewModel.snackbarShown()
             viewModel.dismissDialog()
         }
@@ -135,13 +143,16 @@ fun SettingsScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() }
+            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() }
         ,
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.settings_title),
                 scrollBehavior = scrollBehavior,
-                navigateUp = onNavigateUp,
+                navigateUp = {
+                    viewModel.resetSelection()
+                    onNavigateUp()
+                },
                 canNavigateBack = canNavigateBack,
                 showMenu = false,
             )
@@ -171,7 +182,10 @@ fun SettingsScreen(
             Box {
                 SettingsBody(
                     viewModel = viewModel,
-                    navigateToChangelog = { navigateToChangelog(it) },
+                    navigateToChangelog = {
+                        viewModel.resetSelection()
+                        navigateToChangelog(it)
+                    },
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
                     updateTinSync = { viewModel.updateTinSync() },
@@ -226,6 +240,7 @@ private fun SettingsBody(
 
     val openDialog by viewModel.openDialog.collectAsState()
     val connectionEnabled by viewModel.networkEnabled.collectAsState()
+    val selectionKey by viewModel.selectionKey.collectAsState()
 
     val themeSetting by viewModel.themeSetting.collectAsState()
     val showRatings by viewModel.showRatings.collectAsState()
@@ -289,6 +304,8 @@ private fun SettingsBody(
         item {
             AboutSection(
                 navigateToChangelog = { navigateToChangelog(it) },
+                selectionKey = selectionKey,
+                selectionFocused = viewModel::updateFocused,
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 10.dp)
                     .border(
@@ -512,6 +529,8 @@ fun SettingsButton(
 @Composable
 fun AboutSection(
     navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
+    selectionKey: Int,
+    selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -591,7 +610,16 @@ fun AboutSection(
                     fontSize = 14.sp,
                     softWrap = true,
                 )
-                SelectionContainer {
+                key(selectionKey) { SelectionContainer(
+                    modifier = Modifier
+                        .onFocusChanged {
+                            if (it.isFocused) {
+                                selectionFocused(true)
+                            } else {
+                                selectionFocused(false)
+                            }
+                        }
+                ) {
                     Text(
                         text = contactString,
                         modifier = Modifier
@@ -619,7 +647,7 @@ fun AboutSection(
                         fontSize = 14.sp,
                         softWrap = true,
                     )
-                }
+                } }
             }
             Spacer(Modifier.height(14.dp))
             Text(

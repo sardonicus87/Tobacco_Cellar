@@ -9,11 +9,14 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.calculateAge
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -27,6 +30,12 @@ class DatesViewModel(
     private val filterViewModel: FilterViewModel,
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
+
+    private val _selectionFocused = MutableStateFlow(false)
+    val selectionFocused = _selectionFocused.asStateFlow()
+
+    private val _selectionKey = MutableStateFlow(0)
+    val selectionKey = _selectionKey.asStateFlow()
 
     val datesUiState: StateFlow<DatesUiState> =
         combine(
@@ -246,6 +255,15 @@ class DatesViewModel(
 
     fun tinTimeInPeriod(tinTime: Long, start: Long, end: Long): Boolean {
         return tinTime in start..end
+    }
+
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
+    }
+
+    fun updateFocused(focused: Boolean) {
+        _selectionFocused.update { focused }
     }
 
 }

@@ -54,8 +54,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -134,17 +136,36 @@ fun PlaintextScreen(
     val formatString by viewModel.formatStringEntry.collectAsState()
     val delimiter by viewModel.delimiter.collectAsState()
     val printOptions by viewModel.printOptions.collectAsState()
+    val selectionKey by viewModel.selectionKey.collectAsState()
+    val selectionFocused by viewModel.selectionFocused.collectAsState()
+
+    BackHandler(selectionFocused) {
+        if (selectionFocused) {
+            viewModel.resetSelection()
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetSelection()
+        }
+    }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
+            .clickable(indication = null, interactionSource = null) {
+                viewModel.resetSelection()
+                focusManager.clearFocus()
+            },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.plaintext_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
-                navigateUp = onNavigateUp,
+                navigateUp = {
+                    viewModel.resetSelection()
+                    onNavigateUp()
+                },
                 showMenu = false,
                 modifier = Modifier,
             )
@@ -172,6 +193,8 @@ fun PlaintextScreen(
                 savePrintOptions = viewModel::savePrintOptions,
                 savePreset = viewModel::savePreset,
                 templateView = templateView,
+                selectionKey = selectionKey,
+                selectionFocused = viewModel::updateFocused,
                 modifier = Modifier
                     .fillMaxSize()
 
@@ -196,6 +219,8 @@ fun PlaintextBody(
     savePrintOptions: (Float, Double) -> Unit,
     savePreset: (Int, String, String) -> Unit,
     templateView: Boolean,
+    selectionKey: Int,
+    selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -504,12 +529,16 @@ fun PlaintextBody(
                         delimiter = delimiter,
                         saveFormatString = saveFormatString,
                         savePreset = savePreset,
+                        selectionKey = selectionKey,
+                        selectionFocused = selectionFocused,
                         modifier = Modifier
                             .fillMaxWidth()
                     )
                 } else {
                     PlaintextList(
                         plaintextState = plaintextState,
+                        selectionKey = selectionKey,
+                        selectionFocused = selectionFocused,
                         modifier = Modifier
                             .fillMaxWidth()
                     )
@@ -543,6 +572,8 @@ fun PlaintextBody(
 @Composable
 fun PlaintextList(
     plaintextState: PlaintextListState,
+    selectionKey: Int,
+    selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -560,14 +591,23 @@ fun PlaintextList(
                     .padding(top = 32.dp)
             )
         } else {
-            SelectionContainer {
+            key(selectionKey) { SelectionContainer(
+                modifier = Modifier
+                    .onFocusChanged{
+                        if (it.isFocused) {
+                            selectionFocused(true)
+                        } else {
+                            selectionFocused(false)
+                        }
+                    }
+            ) {
                 Text(
                     text = plaintextState.plainList,
                     fontSize = 15.sp,
                     modifier = Modifier
                         .padding(bottom = 32.dp)
                 )
-            }
+            } }
         }
     }
 }
@@ -580,6 +620,8 @@ fun PlaintextFormatting(
     delimiter: String,
     saveFormatString: (String, String) -> Unit,
     savePreset: (Int, String, String) -> Unit,
+    selectionKey: Int,
+    selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var saveDialog by rememberSaveable { mutableStateOf(false) }
@@ -806,11 +848,18 @@ fun PlaintextFormatting(
         )
 
         // Formatting Options
-        SelectionContainer(
+        key(selectionKey) { SelectionContainer(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
                 .padding(bottom = 16.dp)
+                .onFocusChanged {
+                    if (it.isFocused) {
+                        selectionFocused(true)
+                    } else {
+                        selectionFocused(false)
+                    }
+                }
         ) {
             Row(
                 modifier = Modifier
@@ -959,7 +1008,7 @@ fun PlaintextFormatting(
                     }
                 }
             }
-        }
+        } }
 
         Text(
             text = "The \"@rating_0_0\" tag is to be used in a specific way. The first zero should " +
