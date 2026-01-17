@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 
 data class OneTimeAlert(
     val id: Int,
-    val message: @Composable (ColumnScope.() -> Unit),
+    val message: @Composable ColumnScope.() -> Unit,
     val date: String,
     val appVersion: String
 )
