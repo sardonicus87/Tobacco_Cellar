@@ -72,7 +72,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -111,7 +110,6 @@ fun SettingsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
     val ozRate by viewModel.tinOzConversionRate.collectAsState()
     val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
     val snackbarState by viewModel.snackbarState.collectAsState()

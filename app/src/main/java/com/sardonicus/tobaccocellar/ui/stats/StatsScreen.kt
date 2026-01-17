@@ -168,7 +168,6 @@ fun StatsScreen(
                     availableSections = availableSections,
                     viewmodel = viewModel,
                     selectionKey = selectionKey,
-                    resetSelection = viewModel::resetSelection,
                     selectionFocused = viewModel::updateFocused,
                     modifier = modifier
                         .fillMaxSize(),
@@ -185,7 +184,6 @@ private fun StatsBody(
     availableSections: AvailableSections,
     viewmodel: StatsViewModel,
     selectionKey: Int,
-    resetSelection: () -> Unit,
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
