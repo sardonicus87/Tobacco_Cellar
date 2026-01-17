@@ -149,6 +149,11 @@ class HomeViewModel(
                         val alertToDisplay = unseenAlerts.firstOrNull()
                         val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
 
+                        // Safety check, should never happen
+                        if (lastShown > OneTimeAlerts.CURRENT_ALERT_VERSION) {
+                            preferencesRepo.saveAlertShown(OneTimeAlerts.CURRENT_ALERT_VERSION)
+                        }
+
                         _importantAlertState.value = ImportantAlertState(
                             show = (alertToDisplay != null),
                             alertToDisplay = alertToDisplay,

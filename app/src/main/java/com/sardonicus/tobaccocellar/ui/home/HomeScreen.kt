@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -187,17 +188,13 @@ fun HomeScreen(
         }
     }
 
-    BackHandler(searchState.searchFocused) {
+    BackHandler(searchState.searchFocused || searchState.searchPerformed) {
         if (searchState.searchFocused) {
             focusManager.clearFocus()
             filterViewModel.updateSearchFocused(false)
-        }
-    }
-    BackHandler(searchState.searchPerformed) {
-        if (!searchState.searchFocused) {
+        } else {
             filterViewModel.updateSearchText("")
             filterViewModel.onSearch("")
-
             if (searchState.searchPerformed) {
                 coroutineScope.launch {
                     EventBus.emit(SearchClearedEvent)
@@ -228,7 +225,6 @@ fun HomeScreen(
     if (importantAlertState.show) {
         ImportantAlertDialog(
             importantAlertState = importantAlertState,
-            coroutineScope = coroutineScope,
             viewModel = viewModel
         )
     }
@@ -1251,7 +1247,6 @@ private fun ItemMenu(
 
 
 /** List View Mode **/
-@Stable
 @Composable
 fun ListViewMode(
     sortedItems: List<ItemsComponentsAndTins>,
@@ -2356,16 +2351,15 @@ fun TableCell(
 @Composable
 fun ImportantAlertDialog(
     importantAlertState: ImportantAlertState,
-    coroutineScope: CoroutineScope,
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier
 ) {
     val alert = importantAlertState.alertToDisplay!!
     val isCurrent = importantAlertState.isCurrentAlert
 
-    val scrollState = rememberScrollState()
+    val scrollState = rememberSaveable(alert.id, saver = ScrollState.Saver) { ScrollState(0) } // rememberScrollState()
     var enabled by rememberSaveable(alert.id) { mutableStateOf(false) }
-    val atBottom by remember { derivedStateOf { !scrollState.canScrollForward } }
+    val atBottom by remember(alert.id) { derivedStateOf { !scrollState.canScrollForward } }
     var countdown by remember(alert.id) { mutableIntStateOf(5) }
     var canScroll by remember(alert.id) { mutableStateOf(false) }
     val updateScroll: (Boolean) -> Unit = { canScroll = it }
@@ -2443,7 +2437,7 @@ fun ImportantAlertDialog(
             }
         },
         confirmButton = {
-            val isScrollable by remember { derivedStateOf { scrollState.maxValue > 0 } }
+            val isScrollable by remember(alert.id) { derivedStateOf { scrollState.maxValue > 0 } }
             LaunchedEffect(isScrollable, alert.id) {
                 if (!isScrollable) {
                     while (countdown > 0) {
@@ -2478,15 +2472,13 @@ fun ImportantAlertDialog(
 
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        if (!isCurrent) {
-                            enabled = false
-                            updateScroll(false)
-                            countdown = 5
-                            viewModel.saveAlertSeen(alert.id)
-                        } else {
-                            viewModel.saveAlertSeen(alert.id)
-                        }
+                    if (!isCurrent) {
+                        enabled = false
+                        updateScroll(false)
+                        countdown = 5
+                        viewModel.saveAlertSeen(alert.id)
+                    } else {
+                        viewModel.saveAlertSeen(alert.id)
                     }
                 },
                 enabled = enabled
