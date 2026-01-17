@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.sardonicus.tobaccocellar.data
 
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
