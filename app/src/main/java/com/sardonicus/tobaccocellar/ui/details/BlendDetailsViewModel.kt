@@ -31,15 +31,12 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
 import java.time.ZoneId
 import java.util.Locale
-import kotlin.math.pow
-import kotlin.math.round
 
 class BlendDetailsViewModel(
     private val itemsId: Int,
@@ -346,21 +343,10 @@ fun isMetricLocale(): Boolean {
 fun formatDecimal(number: Double?, places: Int = 2): String {
     if (number == null) return ""
 
-    val multiplier = 10.0.pow(places)
-    val rounded = round(number * multiplier) / multiplier
     val formatted = NumberFormat.getNumberInstance(Locale.getDefault())
+    formatted.minimumFractionDigits = 0
     formatted.maximumFractionDigits = places
-    formatted.minimumFractionDigits = places
+    formatted.roundingMode = java.math.RoundingMode.HALF_UP
 
-    var formattedString = formatted.format(rounded)
-    val decimalSeparator = (formatted as? DecimalFormat)?.decimalFormatSymbols?.decimalSeparator ?: '.'
-    if (places > 0 && formattedString.contains(decimalSeparator)) {
-        while (formattedString.endsWith("0") && formattedString.contains(decimalSeparator)) {
-            formattedString = formattedString.dropLast(1)
-        }
-        if (formattedString.endsWith(decimalSeparator)) {
-            formattedString = formattedString.dropLast(1)
-        }
-    }
-    return formattedString
+    return formatted.format(number)
 }

@@ -28,7 +28,6 @@ import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import kotlin.math.round
 import kotlin.math.roundToInt
 
 class CsvImportViewModel(
@@ -189,7 +188,7 @@ class CsvImportViewModel(
             val originalNumber = value.toDoubleOrNull() ?: return null
 
             val scaledNumber = originalNumber.times(scaling)
-            val roundedNumber = round(scaledNumber * 10) / 10
+            val roundedNumber = (scaledNumber * 10).roundToInt() / 10.0
 
             roundedNumber.takeIf { it <= 5.0 } ?: 5.0
 
@@ -224,7 +223,7 @@ class CsvImportViewModel(
             val preQuantity5 = preQuantity4.toDoubleOrNull() ?: 0.0
 
             val quantity = if (preQuantity5 != 0.0) {
-                (round(preQuantity5 * 100.0)) / 100.0
+                ((preQuantity5 * 100.0).roundToInt()) / 100.0
             } else {
                 0.0
             }
