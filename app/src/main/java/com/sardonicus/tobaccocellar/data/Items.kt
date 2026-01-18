@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.data
 
+import androidx.compose.runtime.Stable
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -10,6 +11,7 @@ import androidx.room.Relation
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 @Entity(
     tableName = "items",
     indices = [Index(value = (["brand", "blend"]), unique = true)]
@@ -33,6 +35,7 @@ data class Items(
 )
 
 @Serializable
+@Stable
 @Entity(
     tableName = "tins",
     foreignKeys = [
@@ -61,6 +64,7 @@ data class Tins(
 )
 
 @Serializable
+@Stable
 @Entity(
     tableName = "components",
     indices = [Index(value = (["componentName"]), unique = true)]
@@ -96,6 +100,7 @@ data class ItemsComponentsCrossRef(
 )
 
 @Serializable
+@Stable
 @Entity(
     tableName = "flavoring",
     indices = [Index(value = (["flavoringName"]), unique = true)]
@@ -131,6 +136,7 @@ data class ItemsFlavoringCrossRef(
 )
 
 
+@Stable
 data class ItemsComponentsAndTins(
     @Embedded val items: Items,
     @Relation(
