@@ -945,94 +945,79 @@ private fun BodyContent(
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var displayedMessage by remember { mutableStateOf(emptyMessage) }
-    var searchWasPerformed by remember { mutableStateOf(searchPerformed) }
+    val handleDetailsClick = remember(onDetailsClick) { { item: Items -> onDetailsClick(item.id) } }
+    val handleEditClick = remember(onEditClick) { { item: Items -> onEditClick(item.id) } }
+    val checkMenuVisibility = remember(isMenuShown, activeMenuId) { { id: Int -> isMenuShown && activeMenuId == id } }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
-        modifier = modifier
-            .fillMaxSize()
-            .padding(0.dp)
-    ) {
-        if (sortedItems.isEmpty()) {
-            LaunchedEffect(emptyMessage, searchPerformed, searchWasPerformed) {
-                if (searchWasPerformed && !searchPerformed) {
-                    delay(20L)
-                    displayedMessage = emptyMessage
-                } else {
-                    displayedMessage = emptyMessage
-                }
-                searchWasPerformed = searchPerformed
-            }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+    if (sortedItems.isEmpty()) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = modifier
+                .fillMaxSize()
+        ) {
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = emptyMessage, // displayedMessage,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = displayedMessage,
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(0.dp),
-                )
-                Spacer(Modifier.weight(1.25f))
-            }
+                    .padding(0.dp),
+            )
+            Spacer(Modifier.weight(1.25f))
+        }
+    } else {
+        if (isTableView) {
+            TableViewMode(
+                sortedItems = sortedItems,
+                columnState = columnState,
+                typeGenreOption = typeGenreOption,
+                showTins = showTins,
+                filteredTins = tins,
+                formattedQty = formattedQuantity,
+                searchPerformed = searchPerformed,
+                isTinSearch = isTinSearch,
+                searchFocused = searchFocused,
+                onDetailsClick = handleDetailsClick,
+                onEditClick = handleEditClick,
+                getPositionTrigger = { getPositionTrigger() },
+                activeMenuId = activeMenuId,
+                onShowMenu = onShowMenu,
+                onDismissMenu = onDismissMenu,
+                isMenuShown = isMenuShown,
+                checkMenuVisibility = checkMenuVisibility,
+                sorting = tableSorting,
+                updateSorting = updateSorting,
+                columnVisibility = columnVisibility,
+                shouldScrollUp = shouldScrollUp,
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxWidth()
+            )
         } else {
-            if (isTableView) {
-                TableViewMode(
-                    sortedItems = sortedItems,
-                    columnState = columnState,
-                    typeGenreOption = typeGenreOption,
-                    showTins = showTins,
-                    filteredTins = tins,
-                    formattedQty = formattedQuantity,
-                    searchPerformed = searchPerformed,
-                    isTinSearch = isTinSearch,
-                    searchFocused = searchFocused,
-                    onDetailsClick = { onDetailsClick(it.id) },
-                    onEditClick = { onEditClick(it.id) },
-                    getPositionTrigger = { getPositionTrigger() },
-                    activeMenuId = activeMenuId,
-                    onShowMenu = onShowMenu,
-                    onDismissMenu = onDismissMenu,
-                    isMenuShown = isMenuShown,
-                    sorting = tableSorting,
-                    updateSorting = updateSorting,
-                    columnVisibility = columnVisibility,
-                    shouldScrollUp = shouldScrollUp,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth()
-                )
-            } else {
-                ListViewMode(
-                    sortedItems = sortedItems,
-                    columnState = columnState,
-                    showRating = showRating,
-                    formattedTypeGenre = formattedTypeGenre,
-                    showTins = showTins,
-                    tinsList = tins,
-                    formattedQuantity = formattedQuantity,
-                    searchPerformed = searchPerformed,
-                    isTinSearch = isTinSearch,
-                    searchFocused = searchFocused,
-                    onDetailsClick = { onDetailsClick(it.id) },
-                    onEditClick = { onEditClick(it.id) },
-                    getPositionTrigger = { getPositionTrigger() },
-                    activeMenuId = activeMenuId,
-                    onShowMenu = onShowMenu,
-                    onDismissMenu = onDismissMenu,
-                    isMenuShown = isMenuShown,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth()
-                )
-            }
+            ListViewMode(
+                sortedItems = sortedItems,
+                columnState = columnState,
+                showRating = showRating,
+                formattedTypeGenre = formattedTypeGenre,
+                showTins = showTins,
+                tinsList = tins,
+                formattedQuantity = formattedQuantity,
+                searchPerformed = searchPerformed,
+                isTinSearch = isTinSearch,
+                searchFocused = searchFocused,
+                onDetailsClick = handleDetailsClick,
+                onEditClick = handleEditClick,
+                getPositionTrigger = { getPositionTrigger() },
+                activeMenuId = activeMenuId,
+                onShowMenu = onShowMenu,
+                onDismissMenu = onDismissMenu,
+                isMenuShown = isMenuShown,
+                checkMenuVisibility = checkMenuVisibility,
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxWidth()
+            )
         }
     }
 }
@@ -1208,6 +1193,7 @@ fun rememberJumpToState(
 
 
 /** Item Menu **/
+@Stable
 @Composable
 private fun ItemMenu(
     searchPerformed: Boolean,
@@ -1266,6 +1252,7 @@ fun ListViewMode(
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
     onDismissMenu: () -> Unit,
+    checkMenuVisibility: (Int) -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -1302,7 +1289,7 @@ fun ListViewMode(
                                 if (searchFocused) {
                                     focusManager.clearFocus()
                                 } else {
-                                    if (isMenuShown && activeMenuId == item.items.id) {
+                                    if (checkMenuVisibility(item.items.id)) {
                                         // do nothing
                                     } else {
                                         if (isMenuShown) {
@@ -1328,7 +1315,7 @@ fun ListViewMode(
                         ),
                     onMenuDismiss = { onDismissMenu() },
                     getPositionTrigger = { getPositionTrigger() },
-                    showMenu = isMenuShown && activeMenuId == item.items.id
+                    showMenu = checkMenuVisibility(item.items.id)
                 )
             }
         }
@@ -1758,6 +1745,7 @@ fun TableViewMode(
     onShowMenu: (Int) -> Unit,
     isMenuShown: Boolean,
     onDismissMenu: () -> Unit,
+    checkMenuVisibility: (Int) -> Boolean,
     sorting: TableSorting,
     updateSorting: (Int) -> Unit,
     columnVisibility: Map<TableColumn, Boolean>,
@@ -1938,8 +1926,8 @@ fun TableViewMode(
                 state = columnState
             ) {
                 items(items = sortedItems, key = { it.items.id }) { item ->
-                    val showMenu = isMenuShown && activeMenuId == item.items.id
-                    BackHandler(isMenuShown && activeMenuId == item.items.id) { onDismissMenu() }
+                    val showMenu = checkMenuVisibility(item.items.id)
+                    BackHandler(showMenu) { onDismissMenu() }
 
                     Row(
                         modifier = Modifier
@@ -1956,7 +1944,7 @@ fun TableViewMode(
                                             if (searchFocused) {
                                                 focusManager.clearFocus()
                                             } else {
-                                                if (isMenuShown && activeMenuId == item.items.id) {
+                                                if (checkMenuVisibility(item.items.id)) {
                                                     // do nothing
                                                 } else {
                                                     if (isMenuShown) {

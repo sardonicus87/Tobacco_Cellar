@@ -29,6 +29,7 @@ import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -165,32 +166,61 @@ class HomeViewModel(
         }
     }
 
+    private var searchWasPerformed = false
+    private var savedSearchText = ""
+
+    @Suppress("UNCHECKED_CAST")
     val emptyMessage: StateFlow<String> = combine(
-            filterViewModel.searchValue,
-            filterViewModel.searchPerformed,
-            filterViewModel.isFilterApplied,
-            filterViewModel.emptyDatabase,
-            filterViewModel.homeScreenFilteredItems
-        ) { searchText, searchPerformed, filteringApplied, emptyDatabase, filteredItems ->
-            val emptyList = filteredItems.isEmpty()
+        filterViewModel.searchValue,
+        filterViewModel.searchPerformed,
+        filterViewModel.isFilterApplied,
+        filterViewModel.emptyDatabase,
+        filterViewModel.homeScreenFilteredItems,
+        preferencesRepo.searchSetting
+    ) { values ->
+        val searchText = values[0] as String
+        val searchPerformed = values[1] as Boolean
+        val filteringApplied = values[2] as Boolean
+        val emptyDatabase = values[3] as Boolean
+        val filteredItems = values[4] as List<ItemsComponentsAndTins>
+        val searchSetting = values[5] as SearchSetting
+
+        val emptyList = filteredItems.isEmpty()
+
+        if (searchPerformed && searchText.isNotBlank()) {
+            savedSearchText = searchText
+        }
+
+        val emptyMessage =
             if (!emptyList) { "" }
             else if (searchPerformed) {
-                "No entries found matching\n\"$searchText\"."
-            }
+                "No entries found matching\n\"$savedSearchText\" in ${searchSetting.value}." }
             else if (filteringApplied) {
                 "No entries found matching\nselected filters."
             }
             else if (emptyDatabase) {
                 "No entries found in cellar.\nClick \"+\" to add items,\n" +
-                        "or use options to import CSV."
-            }
+                        "or use options to import CSV." }
             else { "" }
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000L),
-                initialValue = ""
-            )
+
+        val displayedMessage =
+            if (searchWasPerformed && !searchPerformed) {
+                delay(50L)
+                emptyMessage
+            } else {
+                emptyMessage
+            }
+        searchWasPerformed = searchPerformed
+//        savedSearchText = searchText
+
+        displayedMessage
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = ""
+        )
 
 
     @Suppress("UNCHECKED_CAST")
