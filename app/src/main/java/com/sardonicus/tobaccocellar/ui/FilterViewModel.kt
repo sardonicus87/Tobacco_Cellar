@@ -6,12 +6,15 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavKey
+import com.sardonicus.tobaccocellar.ExportType
+import com.sardonicus.tobaccocellar.MenuState
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
@@ -19,12 +22,14 @@ import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
+import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,6 +51,7 @@ import kotlinx.coroutines.supervisorScope
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.collections.any
 
 class FilterViewModel (
     private val itemsRepository: ItemsRepository,
@@ -1451,6 +1457,89 @@ class FilterViewModel (
 
 
     /** Final UI States and hoisted states for other stuff **/
+    // top app bar
+    val menuExpanded = MutableStateFlow(false)
+    val menuState = MutableStateFlow(MenuState.MAIN)
+    val exportCsvPopup = MutableStateFlow(false)
+    val exportType = MutableStateFlow<ExportType?>(null)
+    val displayedExportRating = MutableStateFlow(Pair("", ""))
+    val selectAllItems = MutableStateFlow(true)
+
+    val topAppBarMenuState = combine(
+        menuExpanded,
+        menuState
+    ) { values: Array<Any?> ->
+        val menuExpanded = values[0] as Boolean
+        val menuState = values[1] as MenuState
+
+        TopAppBarMenuState(
+            menuExpanded = menuExpanded,
+            menuState = menuState,
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500),
+            initialValue = TopAppBarMenuState()
+        )
+
+    @Suppress("UNCHECKED_CAST")
+    val exportCsvState = combine(
+        preferencesRepo.exportRating,
+        displayedExportRating,
+        selectAllItems
+    ) { values: Array<Any?> ->
+        val exportRating = values[0] as ExportRating
+        val displayedExportRating = values[1] as Pair<String, String>
+        val selectAllItems = values[2] as Boolean
+
+        val selectedIndex = if (selectAllItems) 0 else 1
+
+        ExportCsvState(
+            exportRating,
+            displayedExportRating,
+            selectAllItems,
+            selectedIndex
+        )
+
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = ExportCsvState()
+        )
+
+    fun toggleMenu() {
+        menuExpanded.value = !menuExpanded.value
+        getPositionTrigger()
+    }
+    fun showMenu(expanded: Boolean) { menuExpanded.value = expanded }
+    fun changeMenuState(state: MenuState) { menuState.value = state }
+    fun changeExportType(type: ExportType) { exportType.value = type }
+    fun selectAll(all: Boolean) { selectAllItems.value = all }
+    fun showExportCsv(show: Boolean) {
+        if (show) {
+            viewModelScope.launch {
+                val current = preferencesRepo.exportRating.first()
+                displayedExportRating.value = Pair(current.maxRating.toString(), current.rounding.toString())
+                exportCsvPopup.value = true
+            }
+        } else {
+            exportCsvPopup.value = false
+            changeMenuState(MenuState.MAIN)
+        }
+    }
+    fun updateExportRating(max: String, rounding: String) { displayedExportRating.value = Pair(max, rounding) }
+    suspend fun saveExportRating(rating: String, rounding: String) {
+        val max = rating.toIntOrNull() ?: 5
+        val roundingInt = rounding.toIntOrNull() ?: 2
+        preferencesRepo.saveExportRating(max, roundingInt)
+    }
+
+
+    // Bottom app bar
     val bottomAppBarState = combine(
         bottomSheetState,
         isFilterApplied,
@@ -1484,6 +1573,7 @@ class FilterViewModel (
             started = SharingStarted.WhileSubscribed(5000L),
             initialValue = BottomAppBarState()
         )
+
 
     // HomeScreen stuff
     val searchState = combine(
@@ -1586,6 +1676,35 @@ class FilterViewModel (
             initialValue = BrandFilterUiState()
         )
 
+    @Suppress("UNCHECKED_CAST")
+    val typeFilterUiState = combine(
+        availableTypes,
+        sheetSelectedTypes,
+        typesEnabled
+    ) { values ->
+        val availableTypes = values[0] as List<String>
+        val selectedTypes = values[1] as List<String>
+        val typeEnabled = values[2] as Map<String, Boolean>
+
+        val types = listOf("Aromatic", "English", "Burley", "Virginia", "Other", "(Unassigned)")
+
+        TypeFilterUiState(
+            types = types,
+            availableTypes = availableTypes,
+            selectedTypes = selectedTypes,
+            enabled = typeEnabled,
+            nothingAssigned = !availableTypes.any { it != "(Unassigned)" }
+
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = TypeFilterUiState()
+        )
+
+
     val otherFiltersUiState = combine(
         sheetSelectedFavorites,
         sheetSelectedExcludeFavorites,
@@ -1645,6 +1764,8 @@ class FilterViewModel (
             else -> ToggleableState.Off
         }
 
+        val unchosen = ratingLow == null && ratingHigh == null
+
         OtherFiltersUiState(
             favoritesSelection = favoritesSelection,
             favoritesEnabled = favoritesEnabled && favDisExist,
@@ -1664,7 +1785,12 @@ class FilterViewModel (
             ratingHigh = ratingHigh,
             ratingHighEnabled = ratingHighEnabled,
             rangeEnabled = ratingLowEnabled != null && ratingHighEnabled != null,
-            unchosen = ratingLow == null && ratingHigh == null,
+            unchosen = unchosen,
+            lowText = formatDecimal(ratingLow, 1).ifBlank { "0" },
+            lowTextAlpha =  if (unchosen || ratingLow == null) .7f else 1f,
+            highText = formatDecimal(ratingHigh, 1).ifBlank { "5" },
+            highTextAlpha = if (unchosen || ratingHigh == null) .7f else 1f,
+            ratingRowEmptyAlpha = if (unchosen || (ratingLow != null && ratingHigh == null)) 1f else .38f,
 
             inStock = inStock,
             inStockEnabled = inStockEnabled,
@@ -2330,6 +2456,14 @@ data class BrandFilterUiState(
     val selectedExcludeBrands: List<String> = emptyList(),
 )
 
+data class TypeFilterUiState(
+    val types: List<String> = emptyList(),
+    val availableTypes: List<String> = emptyList(),
+    val selectedTypes: List<String> = emptyList(),
+    val enabled: Map<String, Boolean> = emptyMap(),
+    val nothingAssigned: Boolean = false,
+)
+
 data class OtherFiltersUiState(
     // Favorites
     val favoritesSelection: ToggleableState = ToggleableState.Off,
@@ -2354,6 +2488,11 @@ data class OtherFiltersUiState(
     val ratingHighEnabled: Double? = null,
     val rangeEnabled: Boolean = false,
     val unchosen: Boolean = false,
+    val lowText: String = "",
+    val lowTextAlpha: Float = 1f,
+    val highText: String = "",
+    val highTextAlpha: Float = 1f,
+    val ratingRowEmptyAlpha: Float = 1f,
 
     // Stock
     val inStock: Boolean = false,
@@ -2371,6 +2510,19 @@ data class FilterSectionData(
 
 
 /** Stuff for stuff other than Filter Sheet **/
+data class TopAppBarMenuState(
+    val menuExpanded: Boolean = false,
+    val menuState: MenuState = MenuState.MAIN,
+)
+
+data class ExportCsvState(
+    val exportRating: ExportRating = ExportRating(),
+    val exportRatingString: Pair<String, String> = Pair("", ""),
+    val allItems: Boolean = true,
+    val selectedIndex: Int = 0
+)
+
+@Stable
 data class BottomAppBarState(
     val sheetState: BottomSheetState = BottomSheetState.CLOSED,
     val sheetOpen: Boolean = false,
@@ -2381,6 +2533,7 @@ data class BottomAppBarState(
     val tinsReady: Boolean = false
 )
 
+@Stable
 data class BottomBarButtonData(
     val title: String,
     val icon: Int,
