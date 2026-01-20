@@ -151,12 +151,11 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val application = (application as CellarApplication)
             val gestureNavigation = gestureNavigation()
             val isGestureNav = remember(gestureNavigation) { gestureNavigation }
 
-            CompositionLocalProvider(LocalCellarApplication provides application) {
-                TobaccoCellarTheme(preferencesRepo = application.preferencesRepo) {
+            CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
+                TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
