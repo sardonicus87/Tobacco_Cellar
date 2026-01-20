@@ -7,7 +7,13 @@ class Navigator(
     private val isLarge: Boolean = false,
     private val mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
 ) {
+    private var lastNavigationTime = 0L
+
     fun navigate(route: NavKey) {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastNavigationTime < 300) return
+        lastNavigationTime = currentTime
+
         val (mainBefore, secondBefore) = findPanes(state.currentStack)
 
         state.cameFrom = state.currentStack.lastOrNull()
