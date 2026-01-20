@@ -41,7 +41,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -94,6 +93,8 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -115,6 +116,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -130,12 +132,14 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
 import androidx.navigation3.runtime.NavKey
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
-import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.ui.BottomBarButtonData
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterSectionData
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -156,7 +160,6 @@ import com.sardonicus.tobaccocellar.ui.navigation.NavigationState
 import com.sardonicus.tobaccocellar.ui.navigation.Navigator
 import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
 import com.sardonicus.tobaccocellar.ui.navigation.rememberNavigationState
-import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
@@ -170,7 +173,7 @@ import java.util.Locale
 fun CellarApp(
     isGestureNav: Boolean,
     windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
-    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) },  // WIDTH_DP_EXPANDED_LOWER_BOUND windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
+    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) },  // windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
     mainSecondaryMap: Map<NavKey, NavKey> = remember {
         mapOf(
             HomeDestination to FilterPaneDestination,
@@ -184,52 +187,55 @@ fun CellarApp(
         largeScreen = isLarge,
         mainSecondaryMap = mainSecondaryMap
     ),
-    navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge, mainSecondaryMap) }
+    navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge, mainSecondaryMap) },
+    filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     CellarNavigation(
         navigator = navigator,
         navigationState = navigationState,
         isGestureNav = isGestureNav,
-        largeScreen = isLarge
+        largeScreen = isLarge,
+        filterViewModel = filterViewModel
     )
 
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
-    val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
+    FilterSheet(filterViewModel)
 
-    val pagerState = rememberPagerState { 3 }
-
-    if (bottomSheetState == BottomSheetState.OPENED) {
-        ModalBottomSheet(
-            onDismissRequest = { filterViewModel.closeBottomSheet() },
-            modifier = Modifier
-                .statusBarsPadding(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-            dragHandle = { },
-            properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
-        ) {
-            Box {
-                FilterLayout(
-                    filterViewModel = filterViewModel,
-                    closeSheet = { filterViewModel.closeBottomSheet() },
-                    pagerState = pagerState,
-                    modifier = Modifier
-                )
-                Box (Modifier.matchParentSize()) {
-                    val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
-
-                    Canvas(Modifier.fillMaxSize()) {
-                        drawRect(
-                            color = Color.Black.copy(alpha = .9f),
-                            topLeft = Offset(0f, (size.height)),
-                            size = Size(size.width, navigation)
-                        )
-                    }
-                }
-            }
-        }
-    }
+//    val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
+//
+//    val pagerState = rememberPagerState { 3 }
+//
+//    if (bottomSheetState == BottomSheetState.OPENED) {
+//        ModalBottomSheet(
+//            onDismissRequest = { filterViewModel.closeBottomSheet() },
+//            modifier = Modifier
+//                .statusBarsPadding(),
+//            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+//            containerColor = MaterialTheme.colorScheme.background,
+//            contentColor = MaterialTheme.colorScheme.onBackground,
+//            dragHandle = { },
+//            properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
+//        ) {
+//            Box {
+//                FilterLayout(
+//                    filterViewModel = filterViewModel,
+//                    closeSheet = filterViewModel::closeBottomSheet, // { filterViewModel.closeBottomSheet() },
+//                    pagerState = pagerState,
+//                    modifier = Modifier
+//                )
+//                Box (Modifier.matchParentSize()) {
+//                    val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
+//
+//                    Canvas(Modifier.fillMaxSize()) {
+//                        drawRect(
+//                            color = Color.Black.copy(alpha = .9f),
+//                            topLeft = Offset(0f, (size.height)),
+//                            size = Size(size.width, navigation)
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
 }
 
 
@@ -250,53 +256,62 @@ fun CellarTopAppBar(
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     overrideBack: Boolean = false,
-    preferencesRepo: PreferencesRepo = LocalCellarApplication.current.preferencesRepo,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    var menuExpanded by rememberSaveable { mutableStateOf(false) }
-    var menuState by rememberSaveable { mutableStateOf(MenuState.MAIN) }
-
-    var exportCsvPopup by rememberSaveable { mutableStateOf(false) }
-    var exportType by remember { mutableStateOf<ExportType?>(null) }
-    val previouslySavedExportRating by preferencesRepo.exportRating.collectAsState(ExportRating())
-
-    var allItems by rememberSaveable { mutableStateOf(true) }
-    val selectAll: (Boolean) -> Unit = { allItems = it }
-    var exportRating by remember { mutableStateOf(previouslySavedExportRating) }
+    val exportCsvPopup by filterViewModel.exportCsvPopup.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     val exportCsvLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
-            exportCsvHandler?.onExportCsvClick(uri, allItems, exportRating)
+            val data = filterViewModel.exportCsvState.value
+            exportCsvHandler?.onExportCsvClick(uri, data.allItems, data.exportRating)
         }
     }
-    val exportCsvIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "text/csv"
-        putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
-    }
-
     val exportAsTinsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data
-            exportCsvHandler?.onTinsExportCsvClick(uri, allItems, exportRating)
+            val data = filterViewModel.exportCsvState.value
+            exportCsvHandler?.onTinsExportCsvClick(uri, data.allItems, data.exportRating)
         }
     }
-    val exportAsTinsIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "text/csv"
-        putExtra(Intent.EXTRA_TITLE, "tobacco_cellar_as_tins.csv")
+    val exportCsvIntent = remember {
+        Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "text/csv"
+            putExtra(Intent.EXTRA_TITLE, "tobacco_cellar.csv")
+        }
+    }
+    val exportAsTinsIntent = remember {
+        Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "text/csv"
+            putExtra(Intent.EXTRA_TITLE, "tobacco_cellar_as_tins.csv")
+        }
     }
 
-    val coroutineScope = rememberCoroutineScope()
-    val expanded: (Boolean) -> Unit = { menuExpanded = it }
-    val changeMenuState: (MenuState) -> Unit = { menuState = it }
-    val showExportCsv: (Boolean) -> Unit = { exportCsvPopup = it }
+    val onConfirmExport: (String, String) -> Unit = remember(exportCsvLauncher, exportAsTinsLauncher) {
+        { max, rounding ->
+            coroutineScope.launch {
+                filterViewModel.saveExportRating(max, rounding)
 
+                val currentType = filterViewModel.exportType.value
+                when (currentType) {
+                    ExportType.ITEMS -> {
+                        exportCsvLauncher.launch(exportCsvIntent)
+                    }
+                    ExportType.TINS -> exportAsTinsLauncher.launch(exportAsTinsIntent)
+                    null -> {}
+                }
+
+                filterViewModel.showExportCsv(false)
+            }
+        }
+    }
 
     TopAppBar(
         title = { Text(title) },
@@ -307,7 +322,7 @@ fun CellarTopAppBar(
 
                 IconButton(onClick = navigateUp) {
                     Icon(
-                        painter = icon, // painterResource(id = R.drawable.arrow_back),
+                        painter = icon,
                         contentDescription = null
                     )
                 }
@@ -315,155 +330,29 @@ fun CellarTopAppBar(
         },
         actions = {
             if (showMenu) {
-                IconButton(
-                    onClick = {
-                        expanded(!menuExpanded)
-                        filterViewModel.getPositionTrigger()
-                    },
-                    modifier = Modifier
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.more_vert),
-                        contentDescription = null,
+                Box {
+                    IconButton(
+                        onClick = filterViewModel::toggleMenu,
                         modifier = Modifier
-                            .size(24.dp)
-                    )
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { expanded(false) },
-                        modifier = Modifier,
-                        containerColor = LocalCustomColors.current.textField,
-                        shadowElevation = 6.dp
+                            .size(36.dp)
                     ) {
-                        when (menuState) {
-                            MenuState.MAIN -> {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.bulk_edit_title)) },
-                                    onClick = {
-                                        expanded(false)
-                                        navigateToBulkEdit()
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled = currentDestination == HomeDestination,
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.import_csv)) },
-                                    onClick = {
-                                        expanded(false)
-                                        navigateToCsvImport()
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled = currentDestination == HomeDestination,
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(text = "Export CSV ")
-                                            Icon(
-                                                painterResource(R.drawable.arrow_right),
-                                                "Export Options",
-                                            modifier = Modifier.size(20.dp),
-                                            tint = LocalContentColor.current.copy(alpha = 0.75f))
-                                        }
-                                    },
-                                    onClick = {
-                                        changeMenuState(MenuState.EXPORT_CSV)
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled =
-                                        currentDestination == HomeDestination && exportCsvHandler != null,
-                                    contentPadding = PaddingValues(
-                                        horizontal = 12.dp,
-                                        vertical = 0.dp
-                                    ),
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(text = "Plaintext") },
-                                    onClick = {
-                                        expanded(false)
-                                        navigateToPlaintext()
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled = currentDestination == HomeDestination,
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.help_faq)) },
-                                    onClick = {
-                                        expanded(false)
-                                        navigateToHelp()
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled = true,
-                                )
-
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.settings)) },
-                                    onClick = {
-                                        expanded(false)
-                                        navigateToSettings()
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled = true,
-                                )
-                            }
-                            MenuState.EXPORT_CSV -> {
-                                DropdownMenuItem(
-                                    text = {
-                                        Icon(
-                                            painterResource(R.drawable.arrow_left),
-                                            "Back",
-                                            modifier = Modifier.size(20.dp),
-                                            tint = LocalContentColor.current.copy(alpha = 0.75f)
-                                        )
-                                    },
-                                    onClick = { changeMenuState(MenuState.MAIN) }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(text = "Normal") },
-                                    onClick = {
-                                        exportType = ExportType.ITEMS
-                                        showExportCsv(true)
-                                        expanded(false)
-                                        changeMenuState(MenuState.MAIN)
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled =
-                                        currentDestination == HomeDestination && exportCsvHandler != null,
-                                    contentPadding = PaddingValues(
-                                        horizontal = 12.dp,
-                                        vertical = 0.dp
-                                    ),
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(text = "As Tins") },
-                                    onClick = {
-                                        exportType = ExportType.TINS
-                                        showExportCsv(true)
-                                        expanded(false)
-                                        changeMenuState(MenuState.MAIN)
-                                    },
-                                    modifier = Modifier
-                                        .padding(0.dp),
-                                    enabled =
-                                        currentDestination == HomeDestination && exportCsvHandler != null,
-                                    contentPadding = PaddingValues(
-                                        horizontal = 12.dp,
-                                        vertical = 0.dp
-                                    ),
-                                )
-                            }
-                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.more_vert),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(24.dp)
+                        )
                     }
+                    TopBarMenu(
+                        filterViewModel = filterViewModel,
+                        currentDestination = currentDestination,
+                        navigateToBulkEdit = navigateToBulkEdit,
+                        navigateToCsvImport = navigateToCsvImport,
+                        navigateToPlaintext = navigateToPlaintext,
+                        navigateToHelp = navigateToHelp,
+                        navigateToSettings = navigateToSettings,
+                        exportCsvHandler = exportCsvHandler
+                    )
                 }
             }
         },
@@ -479,159 +368,311 @@ fun CellarTopAppBar(
     )
 
     if (exportCsvPopup) {
-        val options = listOf("All", "Filtered")
-        val selectedIndex = if (allItems) 0 else 1
-
-        var currentMaxString by rememberSaveable { mutableStateOf(exportRating.maxRating.toString()) }
-        var currentRoundingString by rememberSaveable { mutableStateOf(exportRating.rounding.toString()) }
-        val allowedMax = remember { Regex("^(\\s*|\\d{0,3})$") }
-
-        AlertDialog(
-            onDismissRequest = { showExportCsv(false) },
-            title = {
-                Text(
-                    text = "Export CSV Options"
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                ) {
-                    // Items option //
-                    Text(
-                        text = "Choose which entries to export (all or currently filtered) and " +
-                                "scaling options for ratings.",
-                        modifier = Modifier
-                            .padding(bottom = 8.dp)
-                    )
-                    SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(bottom = 16.dp)
-                    ) {
-                        options.forEachIndexed { index, label ->
-                            SegmentedButton(
-                                selected = index == selectedIndex,
-                                onClick = { selectAll(index == 0) },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                                contentPadding = PaddingValues(8.dp, 4.dp),
-                                icon = { }
-                            ) {
-                                Text(label)
-                            }
-                        }
-                    }
-
-                    // Export Rating options //
-                    Column(
-                        modifier = Modifier
-                            .width(IntrinsicSize.Min)
-                            .align(Alignment.CenterHorizontally),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Text(
-                                text = "Max Rating:",
-                                modifier = Modifier
-                                    .width(95.dp),
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 15.sp,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                            TextField(
-                                value = currentMaxString,
-                                onValueChange = {
-                                    if (it.matches(allowedMax)) {
-                                        currentMaxString = it
-                                        exportRating =
-                                            exportRating.copy(maxRating = it.toIntOrNull() ?: 5)
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Done
-                                ),
-                                modifier = Modifier
-                                    .width(80.dp),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = LocalCustomColors.current.textField,
-                                    unfocusedContainerColor = LocalCustomColors.current.textField,
-                                    disabledContainerColor = LocalCustomColors.current.textField,
-                                    cursorColor = MaterialTheme.colorScheme.primary,
-                                ),
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Text(
-                                text = "Decimal Places: ",
-                                modifier = Modifier
-                                    .width(95.dp),
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 15.sp,
-                                maxLines = 2,
-                            )
-                            CustomDropDown(
-                                selectedValue = currentRoundingString,
-                                onValueChange = {
-                                    currentRoundingString = it
-                                    exportRating = exportRating.copy(rounding = it.toIntOrNull() ?: 2)
-                                },
-                                options = listOf("0", "1", "2"),
-                                modifier = Modifier
-                                    .width(80.dp),
-                            )
-                        }
-                    }
-                }
-            },
-            modifier = modifier,
-            containerColor = MaterialTheme.colorScheme.background,
-            textContentColor = MaterialTheme.colorScheme.onBackground,
-            shape = MaterialTheme.shapes.large,
-            dismissButton = {
-                TextButton(onClick = { showExportCsv(false) }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    coroutineScope.launch {
-                        preferencesRepo.saveExportRating(exportRating.maxRating, exportRating.rounding)
-                    }
-                    when (exportType) {
-                        ExportType.ITEMS -> exportCsvLauncher.launch(exportCsvIntent)
-                        ExportType.TINS -> exportAsTinsLauncher.launch(exportAsTinsIntent)
-                        null -> { }
-                    }
-                    showExportCsv(false)
-                }
-                ) {
-                    Text(
-                        text = "Confirm"
-                    )
-                }
-            }
+        ExportCsvDialog(
+            confirm = onConfirmExport,
+            filterViewModel = filterViewModel,
+            showExportCsv = { filterViewModel.showExportCsv(false) },
+            modifier = Modifier
         )
     }
+}
+
+@Composable
+fun TopBarMenu(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+    currentDestination: NavKey? = null,
+    navigateToBulkEdit: () -> Unit = {},
+    navigateToCsvImport: () -> Unit = {},
+    navigateToPlaintext: () -> Unit = {},
+    navigateToHelp: () -> Unit = {},
+    navigateToSettings: () -> Unit = {},
+    exportCsvHandler: ExportCsvHandler? = null,
+) {
+    val menuState by filterViewModel.topAppBarMenuState.collectAsState()
+
+    DropdownMenu(
+        expanded = menuState.menuExpanded,
+        onDismissRequest = { filterViewModel.showMenu(false) },
+        modifier = modifier,
+        containerColor = LocalCustomColors.current.textField,
+        shadowElevation = 6.dp
+    ) {
+        when (menuState.menuState) {
+            MenuState.MAIN -> {
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.bulk_edit_title)) },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        navigateToBulkEdit()
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled = currentDestination == HomeDestination,
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.import_csv)) },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        navigateToCsvImport()
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled = currentDestination == HomeDestination,
+                )
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Export CSV ")
+                            Icon(
+                                painterResource(R.drawable.arrow_right),
+                                "Export Options",
+                                modifier = Modifier.size(20.dp),
+                                tint = LocalContentColor.current.copy(alpha = 0.75f))
+                        }
+                    },
+                    onClick = {
+                        filterViewModel.changeMenuState(MenuState.EXPORT_CSV)
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled =
+                        currentDestination == HomeDestination && exportCsvHandler != null,
+                    contentPadding = PaddingValues(
+                        horizontal = 12.dp,
+                        vertical = 0.dp
+                    ),
+                )
+                DropdownMenuItem(
+                    text = { Text(text = "Plaintext") },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        navigateToPlaintext()
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled = currentDestination == HomeDestination,
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.help_faq)) },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        navigateToHelp()
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled = true,
+                )
+
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.settings)) },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        navigateToSettings()
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled = true,
+                )
+            }
+            MenuState.EXPORT_CSV -> {
+                DropdownMenuItem(
+                    text = {
+                        Icon(
+                            painterResource(R.drawable.arrow_left),
+                            "Back",
+                            modifier = Modifier.size(20.dp),
+                            tint = LocalContentColor.current.copy(alpha = 0.75f)
+                        )
+                    },
+                    onClick = { filterViewModel.changeMenuState(MenuState.MAIN) }
+                )
+                DropdownMenuItem(
+                    text = { Text(text = "Normal") },
+                    onClick = {
+                        filterViewModel.changeExportType(ExportType.ITEMS)
+                        filterViewModel.showExportCsv(true)
+                        filterViewModel.showMenu(false)
+                    //    filterViewModel.changeMenuState(MenuState.MAIN)
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled =
+                        currentDestination == HomeDestination && exportCsvHandler != null,
+                    contentPadding = PaddingValues(
+                        horizontal = 12.dp,
+                        vertical = 0.dp
+                    ),
+                )
+                DropdownMenuItem(
+                    text = { Text(text = "As Tins") },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        filterViewModel.changeExportType(ExportType.TINS)
+                        filterViewModel.showExportCsv(true)
+                    //    filterViewModel.changeMenuState(MenuState.MAIN)
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled =
+                        currentDestination == HomeDestination && exportCsvHandler != null,
+                    contentPadding = PaddingValues(
+                        horizontal = 12.dp,
+                        vertical = 0.dp
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExportCsvDialog(
+    confirm: (String, String) -> Unit,
+    filterViewModel: FilterViewModel,
+    showExportCsv: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val dialogState by filterViewModel.exportCsvState.collectAsState()
+
+    val options = listOf("All", "Filtered")
+    val allowedMax = remember { Regex("^(\\s*|\\d{0,3})$") }
+
+    AlertDialog(
+        onDismissRequest = { showExportCsv() },
+        title = {
+            Text(
+                text = "Export CSV Options"
+            )
+        },
+        text = {
+            Column(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+            ) {
+                // Items option //
+                Text(
+                    text = "Choose which entries to export (all or currently filtered) and " +
+                            "scaling options for ratings.",
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                )
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 16.dp)
+                ) {
+                    options.forEachIndexed { index, label ->
+                        SegmentedButton(
+                            selected = index == dialogState.selectedIndex,
+                            onClick = { filterViewModel.selectAll(index == 0) },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                            contentPadding = PaddingValues(8.dp, 4.dp),
+                            icon = { }
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+
+                // Export Rating options //
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .align(Alignment.CenterHorizontally),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            text = "Max Rating:",
+                            modifier = Modifier
+                                .width(95.dp),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        TextField(
+                            value = dialogState.exportRatingString.first,
+                            onValueChange = {
+                                if (it.matches(allowedMax)) {
+                                    filterViewModel.updateExportRating(it, dialogState.exportRatingString.second)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            modifier = Modifier
+                                .width(80.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            text = "Decimal Places: ",
+                            modifier = Modifier
+                                .width(95.dp),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            maxLines = 2,
+                        )
+                        CustomDropDown(
+                            selectedValue = dialogState.exportRatingString.second,
+                            onValueChange = {
+                                filterViewModel.updateExportRating(dialogState.exportRatingString.first, it)
+                            },
+                            options = listOf("0", "1", "2"),
+                            modifier = Modifier
+                                .width(80.dp),
+                        )
+                    }
+                }
+            }
+        },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        dismissButton = {
+            TextButton(onClick = { showExportCsv() }) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { confirm(dialogState.exportRatingString.first, dialogState.exportRatingString.second) }
+            ) {
+                Text(
+                    text = "Confirm"
+                )
+            }
+        }
+    )
 }
 
 enum class MenuState { MAIN, EXPORT_CSV }
@@ -649,14 +690,84 @@ fun CellarBottomAppBar(
     isTwoPane: Boolean = false,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    val sheetState by filterViewModel.bottomSheetState.collectAsState()
-    val sheetOpen = sheetState == BottomSheetState.OPENED
-    val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-    val datesExist by filterViewModel.datesExist.collectAsState()
-    val databaseEmpty by filterViewModel.emptyDatabase.collectAsState()
+    val uiState by filterViewModel.bottomAppBarState.collectAsState()
+    var clickToAdd by remember { mutableStateOf(false) }
+    val updateClickToAdd = remember { { it: Boolean -> clickToAdd = it } }
 
-    val tinsReady by filterViewModel.tinsReady.collectAsState()
+    val navIcon = LocalCustomColors.current.navIcon
+    val indicatorCircle = LocalCustomColors.current.indicatorCircle
+    val indicatorBorderCorrection = LocalCustomColors.current.indicatorBorderCorrection
+
+    val buttons = remember(currentDestination, clickToAdd, uiState, isTwoPane, navIcon,
+        indicatorCircle, indicatorBorderCorrection
+    ) {
+        listOfNotNull(
+            BottomBarButtonData(
+                title = "Cellar",
+                icon = R.drawable.table_view_old,
+                destination = HomeDestination,
+                onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
+                activeColor = if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon
+            ),
+            // 2. Stats
+            BottomBarButtonData(
+                title = "Stats",
+                icon = R.drawable.bar_chart,
+                destination = StatsDestination,
+                onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
+                enabled = !uiState.databaseEmpty,
+                activeColor = if (currentDestination == StatsDestination && !clickToAdd) onPrimaryLight
+                else if (uiState.databaseEmpty) navIcon.copy(alpha = 0.5f)
+                else navIcon
+            ),
+            // 3. Dates
+            BottomBarButtonData(
+                title = "Dates",
+                icon = R.drawable.calendar_month,
+                destination = DatesDestination,
+                onClick = { filterViewModel.getPositionTrigger(); navigateToDates() },
+                enabled = uiState.datesExist,
+                showIndicator = uiState.tinsReady,
+                indicatorColor = if (uiState.tinsReady) indicatorCircle else Color.Transparent,
+                borderColor = if (uiState.tinsReady) {
+                    if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight else navIcon
+                } else Color.Transparent,
+                activeColor = if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
+                else if (uiState.datesExist) navIcon
+                else navIcon.copy(alpha = 0.5f)
+            ),
+            // 4. Filtering
+            if (!isTwoPane) BottomBarButtonData(
+                title = "Filter",
+                icon = R.drawable.filter_24,
+                onClick = filterViewModel::openBottomSheet,
+                enabled = if (currentDestination == HomeDestination && !uiState.databaseEmpty) !uiState.searchPerformed else !uiState.databaseEmpty,
+                showIndicator = uiState.filteringApplied,
+                indicatorColor = if (uiState.filteringApplied) {
+                    if (uiState.searchPerformed && currentDestination == HomeDestination) {
+                        indicatorCircle.copy(alpha = 0.5f)
+                    } else indicatorCircle
+                } else Color.Transparent,
+                borderColor = if (uiState.filteringApplied) {
+                    if (uiState.searchPerformed && currentDestination == HomeDestination) {
+                        indicatorBorderCorrection
+                    } else {
+                        if (uiState.sheetOpen) {
+                            onPrimaryLight
+                        } else navIcon
+                    }
+                } else Color.Transparent,
+                activeColor = if (uiState.sheetOpen) onPrimaryLight else navIcon
+            ) else null,
+            // 5. Add
+            BottomBarButtonData(
+                title = "Add",
+                icon = R.drawable.add_circle,
+                onClick = { updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
+                activeColor = if (clickToAdd) onPrimaryLight else navIcon
+            )
+        )
+    }
 
     BottomAppBar(
         modifier = modifier
@@ -677,298 +788,105 @@ fun CellarBottomAppBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                var clickToAdd by remember { mutableStateOf(false) }
-
-                // Cellar //
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    IconButton(
-                        onClick = navigateToHome,
-                        modifier = Modifier
-                            .padding(0.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.table_view_old),
-                            contentDescription = stringResource(R.string.home_title),
-                            modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = (-8).dp),
-                            tint =
-                            if (currentDestination == HomeDestination && !clickToAdd) {
-                                onPrimaryLight
-                            } else {
-                                LocalContentColor.current
-                            },
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .offset(y = 13.dp),
-                        fontSize = 11.sp,
-                        fontWeight =
-                        if (currentDestination == HomeDestination && !clickToAdd) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        },
-                        color =
-                        if (currentDestination == HomeDestination && !clickToAdd) {
-                            onPrimaryLight
-                        } else {
-                            LocalContentColor.current
-                        },
-                    )
+                buttons.forEach { button ->
+                    BottomBarButton(button, Modifier.weight(1f))
                 }
+            }
+        }
+    }
+}
 
-                // Stats //
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    IconButton(
-                        onClick = {
-                            filterViewModel.getPositionTrigger()
-                            navigateToStats()
-                        },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = !databaseEmpty
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.bar_chart),
-                            contentDescription = stringResource(R.string.stats_title),
-                            modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = (-8).dp),
-                            tint =
-                            if (currentDestination == StatsDestination && !clickToAdd) {
-                                onPrimaryLight
-                            } else {
-                                if (databaseEmpty) {
-                                    LocalContentColor.current.copy(alpha = 0.5f)
-                                } else LocalContentColor.current
-                            },
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.stats_title),
-                        modifier = Modifier
-                            .offset(y = 13.dp),
-                        fontSize = 11.sp,
-                        fontWeight =
-                        if (currentDestination == StatsDestination && !clickToAdd) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        },
-                        color =
-                        if (currentDestination == StatsDestination && !clickToAdd) {
-                            onPrimaryLight
-                        } else {
-                            if (databaseEmpty) {
-                                LocalContentColor.current.copy(alpha = 0.5f)
-                            } else LocalContentColor.current
-                        },
-                    )
+@Stable
+@Composable
+private fun BottomBarButton(
+    data: BottomBarButtonData,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        // The Indicator
+        if (data.showIndicator) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .offset(x = 13.dp, y = (-17).dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, data.borderColor, CircleShape)
+                    .background(data.indicatorColor)
+            )
+        }
+
+        IconButton(
+            onClick = data.onClick,
+            enabled = data.enabled,
+            modifier = Modifier.padding(0.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = data.icon),
+                contentDescription = data.title,
+                modifier = Modifier
+                    .size(26.dp)
+                    .offset(y = (-8).dp),
+                tint = data.activeColor
+            )
+        }
+
+        Text(
+            text = data.title,
+            modifier = Modifier.offset(y = 13.dp),
+            fontSize = 11.sp,
+            fontWeight = if (data.activeColor == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
+            color = data.activeColor
+        )
+    }
+}
+
+
+/** Filter sheet stuff **/
+@Composable
+fun FilterSheet(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier
+) {
+    val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
+    val pagerState = rememberPagerState { 3 }
+
+    if (bottomSheetState == BottomSheetState.OPENED) {
+        ModalBottomSheet(
+            onDismissRequest = { filterViewModel.closeBottomSheet() },
+            modifier = modifier
+                .statusBarsPadding(),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            dragHandle = { },
+            properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
+        ) {
+            val view = LocalView.current
+            (view.parent as? DialogWindowProvider)?.window?.let { window ->
+                SideEffect {
+                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                    WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
                 }
-
-                // Dates //
-                Box(
+            }
+            Box {
+                val density = LocalDensity.current
+                val navigation = WindowInsets.navigationBars.getBottom(density).times(1f)
+                FilterLayout(
+                    filterViewModel = filterViewModel,
+                    closeSheet = filterViewModel::closeBottomSheet,
+                    pagerState = pagerState,
                     modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val borderColor =
-                        if (tinsReady) { // && !datesSeen
-                            if (currentDestination == DatesDestination && !clickToAdd) {
-                                onPrimaryLight }
-                            else LocalContentColor.current }
-                        else Color.Transparent
-                    val indicatorColor =
-                        if (tinsReady) { // && !datesSeen
-                            LocalCustomColors.current.indicatorCircle }
-                        else Color.Transparent
+                )
 
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .offset(x = 13.dp, y = (-17).dp)
-                            .clip(CircleShape)
-                            .border(1.5.dp, borderColor, CircleShape)
-                            .background(indicatorColor)
-                    )
-                    IconButton(
-                        onClick = {
-                                filterViewModel.getPositionTrigger()
-                                navigateToDates()
-                            },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = datesExist
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.calendar_month),
-                            contentDescription = stringResource(R.string.dates_title),
-                            modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = (-8).dp),
-                            tint =
-                                if (currentDestination == DatesDestination && !clickToAdd) {
-                                    onPrimaryLight
-                                } else {
-                                    LocalContentColor.current
-                                },
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.dates_title),
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .offset(y = 13.dp),
-                        fontSize = 11.sp,
-                        fontWeight =
-                            if (currentDestination == DatesDestination && !clickToAdd) {
-                                FontWeight.SemiBold
-                            } else {
-                                FontWeight.Normal
-                            },
-                        color =
-                            if (currentDestination == DatesDestination && !clickToAdd) {
-                                onPrimaryLight
-                            } else {
-                                if (datesExist) {
-                                LocalContentColor.current} else {
-                                    LocalContentColor.current.copy(alpha = 0.5f)
-                                }
-                            },
-                    )
-                }
-
-                // Filter //
-                if (!isTwoPane) {
-                    Box(
-                        modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .weight(1f),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        val borderColor =
-                            if (filteringApplied) {
-                                if (searchPerformed && currentDestination == HomeDestination) {
-                                    LocalCustomColors.current.indicatorBorderCorrection
-                                } else {
-                                    if (sheetOpen) {
-                                        onPrimaryLight
-                                    } else LocalContentColor.current
-                                }
-                            } else {
-                                Color.Transparent
-                            }
-
-                        val indicatorColor =
-                            if (filteringApplied) {
-                                if (searchPerformed && currentDestination == HomeDestination) {
-                                    LocalCustomColors.current.indicatorCircle.copy(alpha = 0.5f)
-                                } else LocalCustomColors.current.indicatorCircle
-                            } else Color.Transparent
-
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .offset(x = 13.dp, y = (-17).dp)
-                                .clip(CircleShape)
-                                .border(1.5.dp, borderColor, CircleShape)
-                                .background(indicatorColor)
-                        )
-                        IconButton(
-                            onClick = { filterViewModel.openBottomSheet() },
-                            modifier = Modifier
-                                .padding(0.dp),
-                            enabled = if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.filter_24),
-                                contentDescription = stringResource(R.string.filter_items),
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .offset(y = (-8).dp),
-                                tint = if (sheetOpen) onPrimaryLight else LocalContentColor.current,
-                            )
-                        }
-
-                        Text(
-                            text = stringResource(R.string.filter_items),
-                            modifier = Modifier
-                                .offset(y = 13.dp),
-                            fontSize = 11.sp,
-                            fontWeight = if (sheetOpen) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (sheetOpen) {
-                                onPrimaryLight
-                            } else {
-                                if ((searchPerformed && currentDestination == HomeDestination) || databaseEmpty) {
-                                    LocalContentColor.current.copy(alpha = 0.5f)
-                                } else LocalContentColor.current
-                            }
-                        )
-                    }
-                }
-
-                // Add //
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    IconButton(
-                        onClick = {
-                            clickToAdd = true
-                            filterViewModel.getPositionTrigger()
-                            navigateToAddEntry()
-                        },
-                        modifier = Modifier
-                            .padding(0.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.add_circle),
-                            contentDescription = stringResource(R.string.add),
-                            modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = (-8).dp),
-                            tint =
-                            if (clickToAdd) {
-                                onPrimaryLight
-                            } else {
-                                LocalContentColor.current
-                            },
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.add),
-                        modifier = Modifier
-                            .offset(y = 13.dp),
-                        fontSize = 11.sp,
-                        fontWeight =
-                        if (clickToAdd) {
-                            FontWeight.SemiBold
-                        } else {
-                            FontWeight.Normal
-                        },
-                        color = if (clickToAdd) {
-                            onPrimaryLight
-                        } else {
-                            LocalContentColor.current
-                        }
+                Canvas(Modifier.matchParentSize()) {
+                    drawRect(
+                        color = Color.Black.copy(alpha = .9f),
+                        topLeft = Offset(0f, (size.height)),
+                        size = Size(size.width, navigation)
                     )
                 }
             }
@@ -976,8 +894,6 @@ fun CellarBottomAppBar(
     }
 }
 
-
-/** Filter sheet stuff **/
 @Composable
 fun FilterLayout(
     filterViewModel: FilterViewModel,
@@ -988,213 +904,229 @@ fun FilterLayout(
 ) {
     val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
 
-    LazyColumn (
+    Column (
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
-            .imePadding(),
+            .imePadding()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header //
-        item {
-            if (sheetLayout) {
-                Row(
+
+        FilterHeader(sheetLayout, closeSheet)
+
+        if (sheetLayout) { PagerLayout(filterViewModel, pagerState) }
+        else { PaneLayout(filterViewModel) }
+
+        FilterFooter(filterViewModel, filtersApplied)
+
+    }
+}
+
+@Composable
+private fun FilterHeader(
+    sheetLayout: Boolean,
+    closeSheet: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (sheetLayout) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "Select Filters",
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = 4.dp),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 6.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.close),
+                    contentDescription = "Close",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1f)
-                    )
-                    Text(
-                        text = "Select Filters",
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                        fontSize = 18.sp,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(top = 4.dp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 6.dp),
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.close),
-                            contentDescription = "Close",
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { closeSheet() }
-                                .padding(4.dp),
-                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
-                        )
-                    }
-                }
-            } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Select Filters",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 20.sp,
-                        maxLines = 1,
-                        modifier = Modifier,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { closeSheet() }
+                        .padding(4.dp),
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                )
             }
         }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Select Filters",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 20.sp,
+                maxLines = 1,
+                modifier = Modifier,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+    }
+}
 
-        // Pager //
-        if (sheetLayout) {
-            item {
-                var innerScrolling by remember { mutableStateOf(false) }
-                val updateInnerScrolling: (Boolean) -> Unit = { innerScrolling = it }
-                val coroutineScope = rememberCoroutineScope()
+@Composable
+private fun PagerLayout(
+    filterViewModel: FilterViewModel,
+    pagerState: PagerState
+) {
+    var innerScrolling by remember { mutableStateOf(false) }
+    val updateInnerScrolling: (Boolean) -> Unit = { innerScrolling = it }
+    val coroutineScope = rememberCoroutineScope()
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                        .pointerInput(pagerState) {
-                            var totalDrag = 0f
-                            detectHorizontalDragGestures(
-                                onDragStart = {
-                                    totalDrag = 0f
-                                    println(totalDrag)
-                                },
-                                onHorizontalDrag = { change, amount ->
-                                    change.consume()
-                                    totalDrag += amount
-                                    println(totalDrag)
-                                },
-                                onDragEnd = {
-                                    coroutineScope.launch {
-                                        if (totalDrag < (-50) && pagerState.currentPage < (pagerState.pageCount - 1)) {
-                                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                        } else if (totalDrag > 50 && pagerState.currentPage > 0) {
-                                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                        }
-                                    }
-                                }
-                            )
-                        },
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PagerIndicator(
-                        pagerState = pagerState,
-                        modifier = Modifier
-                            .padding(0.dp),
-                        indicatorSize = IndicatorSizes(6.5.dp, 6.dp)
-                    )
-                }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .pointerInput(pagerState) {
+                var totalDrag = 0f
+                val updateTotalDrag: (Float) -> Unit = { totalDrag = it }
 
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    userScrollEnabled = !innerScrolling,
-                    beyondViewportPageCount = 2,
-                    verticalAlignment = Alignment.Top,
-                ) { page ->
-                    when (page) {
-                        // brand, type, rating, stock filters //
-                        0 -> {
-                            PageOne(
-                                filterViewModel = filterViewModel,
-                                innerScrolling = { updateInnerScrolling(it) },
-                                modifier = Modifier
-                            )
-                        }
-
-                        // subgenre, cuts, components, flavoring filters //
-                        1 -> {
-                            PageTwo(
-                                filterViewModel = filterViewModel,
-                                modifier = Modifier
-                            )
-                        }
-
-                        // tin filtering, containers, production //
-                        2 -> {
-                            PageThree(
-                                filterViewModel = filterViewModel,
-                                modifier = Modifier
-                                    .height(383.dp)
-                                    .padding(bottom = 24.dp)
-                            )
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        updateTotalDrag(0f)
+                    },
+                    onHorizontalDrag = { change, amount ->
+                        change.consume()
+                        val currentDrag = totalDrag
+                        updateTotalDrag(currentDrag + amount)
+                    },
+                    onDragEnd = {
+                        coroutineScope.launch {
+                            if (totalDrag < (-50) && pagerState.currentPage < (pagerState.pageCount - 1)) {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            } else if (totalDrag > 50 && pagerState.currentPage > 0) {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            }
                         }
                     }
-                }
-            }
-        }
-        else {
-            item { Spacer(Modifier.height(8.dp)) }
-            item {
+                )
+            },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PagerIndicator(
+            pagerState = pagerState,
+            modifier = Modifier
+                .padding(0.dp),
+            indicatorSize = IndicatorSizes(6.5.dp, 6.dp)
+        )
+    }
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(383.dp),
+        userScrollEnabled = !innerScrolling,
+        //    beyondViewportPageCount = 2,
+        verticalAlignment = Alignment.Top,
+    ) { page ->
+        when (page) {
+            // brand, type, rating, stock filters //
+            0 -> {
                 PageOne(
                     filterViewModel = filterViewModel,
+                    innerScrolling = { updateInnerScrolling(it) },
                     modifier = Modifier
                 )
             }
-            item {
+
+            // subgenre, cuts, components, flavoring filters //
+            1 -> {
                 PageTwo(
                     filterViewModel = filterViewModel,
                     modifier = Modifier
-                        .padding(vertical = 8.dp)
                 )
             }
-            item {
+
+            // tin filtering, containers, production //
+            2 -> {
                 PageThree(
                     filterViewModel = filterViewModel,
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        .height(383.dp)
+                        .padding(bottom = 24.dp)
                 )
             }
         }
-
-        item {
-            TextButton(
-                onClick = { filterViewModel.resetFilter() },
-                modifier = Modifier
-                    .offset(x = (-4).dp)
-                    .padding(top = 6.dp),
-                enabled = filtersApplied,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.close),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .padding(end = 3.dp)
-                        .size(20.dp)
-                )
-                Text(
-                    text = "Clear All",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-        item { Spacer(Modifier.height(12.dp)) }
     }
+}
+
+@Composable
+private fun PaneLayout(
+    filterViewModel: FilterViewModel
+) {
+    Spacer(Modifier.height(8.dp))
+    PageOne(
+        filterViewModel = filterViewModel,
+        modifier = Modifier
+    )
+    PageTwo(
+        filterViewModel = filterViewModel,
+        modifier = Modifier
+            .padding(vertical = 8.dp)
+    )
+    PageThree(
+        filterViewModel = filterViewModel,
+        modifier = Modifier
+            .padding(top = 4.dp)
+    )
+}
+
+@Composable
+private fun FilterFooter(
+    filterViewModel: FilterViewModel,
+    filtersApplied: Boolean
+) {
+    TextButton(
+        onClick = { filterViewModel.resetFilter() },
+        modifier = Modifier
+            .offset(x = (-4).dp)
+            .padding(top = 6.dp),
+        enabled = filtersApplied,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.close),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(end = 3.dp)
+                .size(20.dp)
+        )
+        Text(
+            text = "Clear All",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+    Spacer(Modifier.height(12.dp))
 }
 
 
@@ -1446,19 +1378,8 @@ fun BrandFilterSection(
     innerScrolling: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val selectedBrands by filterViewModel.sheetSelectedBrands.collectAsState()
-    val selectedExcludedBrands by filterViewModel.sheetSelectedExcludeBrands.collectAsState()
-    val excluded by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
-    val allBrands by filterViewModel.availableBrands.collectAsState()
-    val includeEnabled by filterViewModel.brandsEnabled.collectAsState()
-    val excludeEnabled by filterViewModel.excludeBrandsEnabled.collectAsState()
-
-    val brandEnabled = remember(excluded, excludeEnabled, includeEnabled) { if (excluded) excludeEnabled else includeEnabled }
-
+    val filteringState by filterViewModel.brandFilterUiState.collectAsState()
     val brandSearchText by filterViewModel.brandSearchText.collectAsState()
-    var filteredBrands by remember { mutableStateOf(allBrands) }
-
-    var showOverflowPopup by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -1470,10 +1391,9 @@ fun BrandFilterSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CustomFilterTextField(
-                value = brandSearchText,
+                value = brandSearchText,  // filteringState.brandSearchText,
                 onValueChange = { text ->
                     filterViewModel.updateBrandSearchText(text)
-                    filteredBrands = filterViewModel.updateFilterBrands(text, allBrands)
                 },
                 modifier = Modifier
                     .weight(1f, false),
@@ -1487,325 +1407,153 @@ fun BrandFilterSection(
                 maxLines = 1,
             )
             // Brand include/exclude button
-            Column(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .width(IntrinsicSize.Max)
-                    .height(48.dp)
-                    .background(
-                        LocalCustomColors.current.textField,
-                        RoundedCornerShape(8.dp)
-                    )
-                    .border(
-                        Dp.Hairline,
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(horizontal = 8.dp)
-                    .combinedClickable(
-                        onClick = { filterViewModel.updateSelectedExcludeBrandsSwitch(!excluded) },
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Include",
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .offset(y = 3.dp),
-                    color = if (!excluded) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    fontWeight = if (!excluded) FontWeight.SemiBold else FontWeight.Normal,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = "Exclude",
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .offset(y = (-3).dp),
-                    color = if (excluded) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    fontWeight = if (excluded) FontWeight.SemiBold else FontWeight.Normal,
-                    fontSize = 14.sp
-                )
-            }
+            IncludeExcludeSwitch(
+                filteringState.excludeSwitch,
+                { filterViewModel.updateSelectedExcludeBrandsSwitch(!filteringState.excludeSwitch) },
+                Modifier
+            )
         }
 
         // Selectable brands row //
-        val lazyListState = rememberLazyListState()
-        val unselectedBrands = filterViewModel.updateUnselectedBrandRow(
-            filteredBrands,
-            excluded,
-            selectedBrands,
-            selectedExcludedBrands,
-            brandEnabled
+        SelectableBrandsRow(
+            filteringState.filteredBrands,
+            filteringState.unselectedBrands,
+            filteringState.excludeSwitch,
+            innerScrolling,
+            { brand -> filterViewModel.updateSelectedExcludedBrands(brand, true) },
+            { brand -> filterViewModel.updateSelectedBrands(brand, true) },
+            { text -> filterViewModel.updateBrandSearchText(text) },
+            filteringState.brandEnabled,
+            Modifier.fillMaxWidth()
         )
 
-        GlowBox(
-            color = GlowColor(MaterialTheme.colorScheme.background),
-            size = GlowSize(horizontal = 15.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 2.dp)
-                    .height(36.dp)
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                if (event.changes.any { it.pressed }) {
-                                    innerScrolling(true)
-                                } else {
-                                    innerScrolling(false)
-                                }
-                            }
-                        }
-                    },
-                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
-                verticalAlignment = Alignment.CenterVertically,
-                state = lazyListState
-            ) {
-                items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
-                    val brand = unselectedBrands[index]
-                    val clickAction = remember(excluded, brand) {
-                        {
-                            if (excluded) {
-                                filterViewModel.updateSelectedExcludedBrands(brand, true)
-                            } else {
-                                filterViewModel.updateSelectedBrands(brand, true)
-                            }
-                         //   brandSearchText = ""
-                         //   filteredBrands = allBrands
-                            filterViewModel.updateBrandSearchText("")
-                            filteredBrands = filterViewModel.updateFilterBrands("", allBrands)
-                        }
-                    }
-
-                    BrandTextButton(
-                        brand = brand,
-                        onClickAction = clickAction,
-                        enabled = brandEnabled[brand] ?: false,
-                        modifier = Modifier
-                    )
-                }
-            }
-
-            LaunchedEffect(filteredBrands) { lazyListState.scrollToItem(0) }
-            LaunchedEffect(brandEnabled) { lazyListState.scrollToItem(0) }
-        }
 
         // Selected brands chip box //
-        var chipBoxWidth by remember { mutableStateOf(0.dp) }
-        val density = LocalDensity.current
-        Box (
+        SelectedBrandChipBox(
+            filteringState.selectedBrands,
+            filteringState.excludeSwitch,
+            { brand -> filterViewModel.updateSelectedExcludedBrands(brand, false) },
+            { brand -> filterViewModel.updateSelectedBrands(brand, false) },
+            { filterViewModel.clearAllSelectedBrands() },
+            Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun IncludeExcludeSwitch(
+    excluded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .padding(start = 12.dp)
+            .width(IntrinsicSize.Max)
+            .height(48.dp)
+            .background(
+                LocalCustomColors.current.textField,
+                RoundedCornerShape(8.dp)
+            )
+            .border(
+                Dp.Hairline,
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 8.dp)
+            .combinedClickable(
+                onClick = { onClick() },
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Include",
             modifier = Modifier
-                .onGloballyPositioned { chipBoxWidth = with(density) { it.size.width.toDp() } }
+                .padding(0.dp)
+                .offset(y = 3.dp),
+            color = if (!excluded) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            fontWeight = if (!excluded) FontWeight.SemiBold else FontWeight.Normal,
+            fontSize = 14.sp
+        )
+        Text(
+            text = "Exclude",
+            modifier = Modifier
+                .padding(0.dp)
+                .offset(y = (-3).dp),
+            color = if (excluded) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            fontWeight = if (excluded) FontWeight.SemiBold else FontWeight.Normal,
+            fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+private fun SelectableBrandsRow(
+    filteredBrands: List<String>,
+    unselectedBrands: List<String>,
+    excludeSwitch: Boolean,
+    innerScrolling: (Boolean) -> Unit,
+    updateSelectedExcludedBrands: (String) -> Unit,
+    updateSelectedBrands: (String) -> Unit,
+    updateBrandSearchText: (String) -> Unit,
+    brandEnabled: Map<String, Boolean>,
+    modifier: Modifier = Modifier
+) {
+    val lazyListState = rememberLazyListState()
+
+    GlowBox(
+        color = GlowColor(MaterialTheme.colorScheme.background),
+        size = GlowSize(horizontal = 15.dp),
+        modifier = modifier
+    ) {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 2.dp)
+                .height(36.dp)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.changes.any { it.pressed }) {
+                                innerScrolling(true)
+                            } else {
+                                innerScrolling(false)
+                            }
+                        }
+                    }
+                },
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
+            verticalAlignment = Alignment.CenterVertically,
+            state = lazyListState
         ) {
-            val maxWidth = (chipBoxWidth * 0.32f) - 4.dp
-            val chipCountToShow = 5
-            val overflowCount =
-                if (excluded) { selectedExcludedBrands.size - chipCountToShow }
-                else { selectedBrands.size - chipCountToShow }
-            val chips = if (excluded) selectedExcludedBrands else selectedBrands
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier,
-                    contentAlignment = Alignment.Center
-                ) {
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(
-                                width = Dp.Hairline,
-                                color = LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(
-                                LocalCustomColors.current.sheetBox,
-                                RoundedCornerShape(8.dp)
-                            )
-                            .height(96.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                    ) {
-                        chips.take(chipCountToShow).forEach { brand ->
-                            val onRemoved = remember(brand, excluded) {
-                                {
-                                    if (excluded) {
-                                        filterViewModel.updateSelectedExcludedBrands(brand, false)
-                                    } else {
-                                        filterViewModel.updateSelectedBrands(brand, false)
-                                    }
-                                }
-                            }
-                            Chip(
-                                text = brand,
-                                onChipClicked = { },
-                                onChipRemoved = onRemoved,
-                                trailingIcon = true,
-                                iconSize = 20.dp,
-                                trailingTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxWidth = maxWidth,
-                                modifier = Modifier,
-                                colors = AssistChipDefaults.assistChipColors(
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    containerColor = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.07f) else MaterialTheme.colorScheme.background,
-                                ),
-                                border = AssistChipDefaults.assistChipBorder(
-                                    enabled = true,
-                                    borderColor = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else
-                                        MaterialTheme.colorScheme.outline
-                                )
-                            )
+            items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
+                val brand = unselectedBrands[index]
+                val clickAction = remember(excludeSwitch, brand) {
+                    {
+                        if (excludeSwitch) {
+                            updateSelectedExcludedBrands(brand)
+                        } else {
+                            updateSelectedBrands(brand)
                         }
-                        if (overflowCount > 0) {
-                            Chip(
-                                text = "+$overflowCount",
-                                onChipClicked = { showOverflowPopup = true },
-                                onChipRemoved = { },
-                                trailingIcon = false,
-                                modifier = Modifier,
-                                colors = AssistChipDefaults.assistChipColors(
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    containerColor = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.07f) else MaterialTheme.colorScheme.background,
-                                ),
-                                border = AssistChipDefaults.assistChipBorder(
-                                    enabled = true,
-                                    borderColor = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else
-                                        MaterialTheme.colorScheme.outline
-                                )
-                            )
-                        }
-                    }
-
-                    Box {
-                        if (selectedBrands.isEmpty() && selectedExcludedBrands.isEmpty())
-                            Text(
-                                text = if (excluded) "Excluded Brands" else "Included Brands",
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                color = if (excluded) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center
-                            )
+                        updateBrandSearchText("")
                     }
                 }
-                if (showOverflowPopup) {
-                    AlertDialog(
-                        onDismissRequest = { showOverflowPopup = false },
-                        title = {
-                            Text(
-                                text = if (excluded) "Excluded Brands" else "Included Brands",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        modifier = Modifier,
-                        text = {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(0.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
-                            ) {
-                                GlowBox(
-                                    color = GlowColor(MaterialTheme.colorScheme.background),
-                                    size = GlowSize(vertical = 10.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .heightIn(min = 0.dp, max = 280.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    LazyVerticalGrid(
-                                        columns = GridCells.Fixed(2),
-                                        modifier = Modifier
-                                            .heightIn(min = 0.dp, max = 280.dp),
-                                        userScrollEnabled = true,
-                                        contentPadding = PaddingValues(bottom = 10.dp),
-                                        verticalArrangement = Arrangement.spacedBy((-6).dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        items(chips) { brand ->
-                                            val onRemoved = remember(brand, excluded) {
-                                                {
-                                                    if (excluded) {
-                                                        filterViewModel.updateSelectedExcludedBrands(brand, false)
-                                                    } else {
-                                                        filterViewModel.updateSelectedBrands(brand, false)
-                                                    }
-                                                }
-                                            }
-                                            Chip(
-                                                text = brand,
-                                                onChipClicked = { },
-                                                onChipRemoved = onRemoved,
-                                                colors = AssistChipDefaults.assistChipColors(
-                                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    containerColor = MaterialTheme.colorScheme.background,
-                                                ),
-                                                border = AssistChipDefaults.assistChipBorder(
-                                                    enabled = true,
-                                                    borderColor = MaterialTheme.colorScheme.outline
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    TextButton(
-                                        onClick = {
-                                            filterViewModel.clearAllSelectedBrands()
-                                            showOverflowPopup = false
-                                        },
-                                        modifier = Modifier
-                                            .offset(x = (-4).dp),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.close),
-                                            contentDescription = "",
-                                            modifier = Modifier
-                                                .padding(end = 3.dp)
-                                                .size(20.dp)
-                                        )
-                                        Text(
-                                            text = "Clear All",
-                                            modifier = Modifier,
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            Button(onClick = { showOverflowPopup = false }) {
-                                Text("Close")
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        textContentColor = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
+
+                BrandTextButton(
+                    brand = brand,
+                    onClickAction = clickAction,
+                    enabled = brandEnabled[brand] ?: false,
+                    modifier = Modifier
+                )
             }
         }
+
+        LaunchedEffect(filteredBrands) { lazyListState.scrollToItem(0) }
+        LaunchedEffect(brandEnabled) { lazyListState.scrollToItem(0) }
     }
 }
 
@@ -1830,23 +1578,237 @@ private fun BrandTextButton(
     }
 }
 
+@Composable
+private fun SelectedBrandChipBox(
+    selectedBrands: List<String>,
+    excludeSwitch: Boolean,
+    updateSelectedExcludedBrands: (String) -> Unit,
+    updateSelectedBrands: (String) -> Unit,
+    clearAllSelectedBrands: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showOverflowPopup by remember { mutableStateOf(false) }
+    val updateShowOverflow: (Boolean) -> Unit = { showOverflowPopup = it }
+
+    var chipBoxWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+    Box (
+        modifier = Modifier
+            .onGloballyPositioned { chipBoxWidth = with(density) { it.size.width.toDp() } }
+    ) {
+        val maxWidth = (chipBoxWidth * 0.32f) - 4.dp
+        val chipCountToShow = 5
+        val overflowCount = selectedBrands.size - chipCountToShow
+
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier,
+                contentAlignment = Alignment.Center
+            ) {
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = Dp.Hairline,
+                            color = LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .background(
+                            LocalCustomColors.current.sheetBox,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .height(96.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                ) {
+                    selectedBrands.take(chipCountToShow).forEach { brand ->
+                        val onRemoved = remember(brand, excludeSwitch) {
+                            {
+                                if (excludeSwitch) {
+                                    updateSelectedExcludedBrands(brand)
+                                } else {
+                                    updateSelectedBrands(brand)
+                                }
+                            }
+                        }
+                        Chip(
+                            text = brand,
+                            onChipClicked = { },
+                            onChipRemoved = onRemoved,
+                            trailingIcon = true,
+                            iconSize = 20.dp,
+                            trailingTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxWidth = maxWidth,
+                            modifier = Modifier,
+                            colors = AssistChipDefaults.assistChipColors(
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                containerColor = if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.07f) else MaterialTheme.colorScheme.background,
+                            ),
+                            border = AssistChipDefaults.assistChipBorder(
+                                enabled = true,
+                                borderColor = if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else
+                                    MaterialTheme.colorScheme.outline
+                            )
+                        )
+                    }
+                    if (overflowCount > 0) {
+                        Chip(
+                            text = "+$overflowCount",
+                            onChipClicked = { updateShowOverflow(true) },
+                            onChipRemoved = { },
+                            trailingIcon = false,
+                            modifier = Modifier,
+                            colors = AssistChipDefaults.assistChipColors(
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                containerColor = if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.07f) else MaterialTheme.colorScheme.background,
+                            ),
+                            border = AssistChipDefaults.assistChipBorder(
+                                enabled = true,
+                                borderColor = if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else
+                                    MaterialTheme.colorScheme.outline
+                            )
+                        )
+                    }
+                }
+
+                Box {
+                    if (selectedBrands.isEmpty()) // && selectedExcludedBrands.isEmpty())
+                        Text(
+                            text = if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                            modifier = Modifier
+                                .padding(0.dp),
+                            color = if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            textAlign = TextAlign.Center
+                        )
+                }
+            }
+            if (showOverflowPopup) {
+                AlertDialog(
+                    onDismissRequest = { showOverflowPopup = false },
+                    title = {
+                        Text(
+                            text = if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    modifier = Modifier,
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
+                        ) {
+                            GlowBox(
+                                color = GlowColor(MaterialTheme.colorScheme.background),
+                                size = GlowSize(vertical = 10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 0.dp, max = 280.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    modifier = Modifier
+                                        .heightIn(min = 0.dp, max = 280.dp),
+                                    userScrollEnabled = true,
+                                    contentPadding = PaddingValues(bottom = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy((-6).dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(selectedBrands) { brand ->
+                                        val onRemoved = remember(brand, excludeSwitch) {
+                                            {
+                                                if (excludeSwitch) {
+                                                    updateSelectedExcludedBrands(brand)
+                                                } else {
+                                                    updateSelectedBrands(brand)
+                                                }
+                                            }
+                                        }
+                                        Chip(
+                                            text = brand,
+                                            onChipClicked = { },
+                                            onChipRemoved = onRemoved,
+                                            colors = AssistChipDefaults.assistChipColors(
+                                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                containerColor = MaterialTheme.colorScheme.background,
+                                            ),
+                                            border = AssistChipDefaults.assistChipBorder(
+                                                enabled = true,
+                                                borderColor = MaterialTheme.colorScheme.outline
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        clearAllSelectedBrands()
+                                        updateShowOverflow(false)
+                                    },
+                                    modifier = Modifier
+                                        .offset(x = (-4).dp),
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.close),
+                                        contentDescription = "",
+                                        modifier = Modifier
+                                            .padding(end = 3.dp)
+                                            .size(20.dp)
+                                    )
+                                    Text(
+                                        text = "Clear All",
+                                        modifier = Modifier,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(onClick = { showOverflowPopup = false }) {
+                            Text("Close")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    textContentColor = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun TypeFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
-    val availableTypes by filterViewModel.availableTypes.collectAsState()
-    val enabledTypes by filterViewModel.typesEnabled.collectAsState()
-    val types = listOf("Aromatic", "English", "Burley", "Virginia", "Other", "(Unassigned)")
-
-    val nothingAssigned = remember(availableTypes) { !availableTypes.any { it != "(Unassigned)" } }
+    val typeState by filterViewModel.typeFilterUiState.collectAsState()
 
     Column(
         modifier = modifier
     ) {
-        if (nothingAssigned) {
+        if (typeState.nothingAssigned) {
             Row(
                 modifier = Modifier
                     .border(
@@ -1877,10 +1839,10 @@ fun TypeFilterSection(
                 horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                types.forEach {
+                typeState.types.forEach {
                     FilterChip(
-                        selected = selectedTypes.contains(it),
-                        onClick = { filterViewModel.updateSelectedTypes(it, !selectedTypes.contains(it)) },
+                        selected = typeState.selectedTypes.contains(it),
+                        onClick = { filterViewModel.updateSelectedTypes(it, !typeState.selectedTypes.contains(it)) },
                         label = { Text(it, fontSize = 14.sp) },
                         modifier = Modifier
                             .padding(0.dp),
@@ -1888,7 +1850,7 @@ fun TypeFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background,
                         ),
-                        enabled = enabledTypes[it] ?: false
+                        enabled = typeState.enabled[it] ?: false
                     )
                 }
             }
@@ -1901,59 +1863,9 @@ fun OtherFiltersSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val favDisExist by filterViewModel.favDisExist.collectAsState()
-    val ratingsExist by filterViewModel.ratingsExist.collectAsState()
-
-    val favorites by filterViewModel.sheetSelectedFavorites.collectAsState()
-    val excludeFavorites by filterViewModel.sheetSelectedExcludeFavorites.collectAsState()
-    val favoritesSelection = remember(favorites, excludeFavorites) {
-        if (favorites) ToggleableState.On
-        else if (excludeFavorites) ToggleableState.Indeterminate
-        else ToggleableState.Off
-    }
-
-    val favoritesEnabled by filterViewModel.favoritesEnabled.collectAsState()
-    val favoritesExcludeEnabled by filterViewModel.excludeFavoritesEnabled.collectAsState()
-    val favoritesEnabledTristate = remember(favoritesSelection, favoritesEnabled, favoritesExcludeEnabled) {
-        when (favoritesSelection) {
-            ToggleableState.Off -> favoritesEnabled || favoritesExcludeEnabled
-            ToggleableState.On -> true
-            ToggleableState.Indeterminate -> true
-        }
-    }
-
-    val dislikeds by filterViewModel.sheetSelectedDislikeds.collectAsState()
-    val excludeDislikeds by filterViewModel.sheetSelectedExcludeDislikeds.collectAsState()
-    val dislikedsSelection = remember(dislikeds, excludeDislikeds) {
-        if (dislikeds) ToggleableState.On
-        else if (excludeDislikeds) ToggleableState.Indeterminate
-        else ToggleableState.Off
-    }
-
-    val dislikedsEnabled by filterViewModel.dislikedsEnabled.collectAsState()
-    val dislikedsExcludeEnabled by filterViewModel.excludeDislikesEnabled.collectAsState()
-    val dislikedsEnabledTristate = remember(dislikedsSelection, dislikedsEnabled, dislikedsExcludeEnabled) {
-        when (dislikedsSelection) {
-            ToggleableState.Off -> dislikedsEnabled || dislikedsExcludeEnabled
-            ToggleableState.On -> true
-            ToggleableState.Indeterminate -> true
-        }
-    }
-
+    val otherState by filterViewModel.otherFiltersUiState.collectAsState()
     var showRatingPop by rememberSaveable { mutableStateOf(false) }
-    val unrated by filterViewModel.sheetSelectedUnrated.collectAsState()
-    val unratedEnabled by filterViewModel.unratedEnabled.collectAsState()
-    val ratingLow by filterViewModel.sheetSelectedRatingLow.collectAsState()
-    val ratingLowEnabled by filterViewModel.ratingLowEnabled.collectAsState()
-    val ratingHigh by filterViewModel.sheetSelectedRatingHigh.collectAsState()
-    val ratingHighEnabled by filterViewModel.ratingHighEnabled.collectAsState()
 
-    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
-    val inStockEnabled by filterViewModel.inStockEnabled.collectAsState()
-    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
-    val outOfStockEnabled by filterViewModel.outOfStockEnabled.collectAsState()
-
-    // Overall ratings and stock filters //
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -1979,199 +1891,31 @@ fun OtherFiltersSection(
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                // Fav/Dis //
-                Box {
-                    Row {
-                        TriStateCheckWithLabel(
-                            text = "Favorites",
-                            state = favoritesSelection,
-                            onClick = {
-                                when (favoritesSelection) {
-                                    ToggleableState.Off -> {
-                                        if (favoritesEnabled) filterViewModel.updateSelectedFavorites(true)
-                                        else if (favoritesExcludeEnabled) filterViewModel.updateSelectedExcludeFavorites(true)
-                                        else {
-                                            filterViewModel.updateSelectedFavorites(false)
-                                            filterViewModel.updateSelectedExcludeFavorites(false)
-                                        }
-                                    }
-                                    ToggleableState.On ->
-                                        if (favoritesExcludeEnabled) filterViewModel.updateSelectedExcludeFavorites(true)
-                                        else filterViewModel.updateSelectedFavorites(false)
-                                    ToggleableState.Indeterminate -> {
-                                        filterViewModel.updateSelectedFavorites(false)
-                                        filterViewModel.updateSelectedExcludeFavorites(false)
-                                    }
-                                }
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                    if (favorites) MaterialTheme.colorScheme.primary
-                                    else if (excludeFavorites) MaterialTheme.colorScheme.error
-                                    else Color.Transparent,
-                            ),
-                            enabled = favoritesEnabledTristate && favDisExist,
-                            maxLines = 1
-                        )
+                FavoriteDislikeFilters(
+                    filterViewModel,
+                    otherState.favoritesSelection,
+                    otherState.favoritesEnabled,
+                    otherState.dislikedsSelection,
+                    otherState.dislikedsEnabled,
+                    otherState.favDisExist,
+                    otherState.ratingsExist
+                )
 
-                        TriStateCheckWithLabel(
-                            text = "Dislikes",
-                            state = dislikedsSelection,
-                            onClick = {
-                                when (dislikedsSelection) {
-                                    ToggleableState.Off -> {
-                                        if (dislikedsEnabled) filterViewModel.updateSelectedDislikeds(true)
-                                        else if (dislikedsExcludeEnabled) filterViewModel.updateSelectedExcludeDislikeds(true)
-                                        else {
-                                            filterViewModel.updateSelectedDislikeds(false)
-                                            filterViewModel.updateSelectedExcludeDislikeds(false)
-                                        }
-                                    }
-                                    ToggleableState.On -> {
-                                        if (dislikedsExcludeEnabled) filterViewModel.updateSelectedExcludeDislikeds(true)
-                                        else {
-                                            filterViewModel.updateSelectedDislikeds(false)
-                                            filterViewModel.updateSelectedExcludeDislikeds(true)
-                                        }
-                                    }
-                                    ToggleableState.Indeterminate -> {
-                                        filterViewModel.updateSelectedDislikeds(false)
-                                        filterViewModel.updateSelectedExcludeDislikeds(false)
-                                    }
-                                }
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor =
-                                    if (dislikeds) MaterialTheme.colorScheme.primary
-                                    else if (excludeDislikeds) MaterialTheme.colorScheme.error
-                                    else Color.Transparent,
-                            ),
-                            enabled = dislikedsEnabledTristate && favDisExist,
-                            maxLines = 1
-                        )
-                    }
-                    if (!favDisExist && ratingsExist) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .background(
-                                    LocalCustomColors.current.sheetBox.copy(alpha = .85f),
-                                    RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
-                                )
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No favorites/dislikes assigned.",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-                }
-
-                // Star Rating //
-                Box {
-                    val rangeEnabled = remember(ratingLowEnabled, ratingHighEnabled) { ratingLowEnabled != null && ratingHighEnabled != null }
-                    Row(
-                        modifier = Modifier
-                            .height(36.dp)
-                            .width(229.dp)
-                            .padding(horizontal = 12.dp)
-                            .alpha(if (!rangeEnabled) .38f else 1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "Rating:",
-                            modifier = Modifier
-                                .padding(end = 8.dp),
-                            fontSize = 15.sp
-                        )
-                        Row(
-                            modifier = Modifier
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = null,
-                                    enabled = rangeEnabled,
-                                ) { showRatingPop = true },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
-                        ) {
-                            val unchosenColor = LocalCustomColors.current.starRating
-                            val chosenColor = LocalContentColor.current
-                            val unchosen = remember(ratingLow, ratingHigh) { ratingLow == null && ratingHigh == null }
-                            val emptyColor = remember(unchosen, ratingLow, ratingHigh) { if (unchosen || (ratingLow != null && ratingHigh == null)) unchosenColor else chosenColor }
-                            val emptyAlpha = remember(unchosen, ratingLow, ratingHigh) { if (unchosen || (ratingLow != null && ratingHigh == null)) 1f else .38f }
-                            val lowTextAlpha = remember(unchosen, ratingLow) { if (unchosen || ratingLow == null) .7f else 1f }
-                            val highTextAlpha = remember(unchosen, ratingHigh) { if (unchosen || ratingHigh == null) .7f else 1f }
-                            Box (contentAlignment = Alignment.CenterEnd) {
-                                Text(
-                                    text = "4.5",
-                                    modifier = Modifier,
-                                    fontSize = 13.sp,
-                                    color = Color.Transparent
-                                )
-                                Text(
-                                    text = formatDecimal(ratingLow, 1).ifBlank { "0" },
-                                    modifier = Modifier,
-                                    fontSize = 13.sp,
-                                    maxLines = 1,
-                                    color = LocalContentColor.current.copy(alpha = lowTextAlpha)
-                                )
-                            }
-                            RatingRow(
-                                range = Pair(ratingLow, ratingHigh),
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp),
-                                starSize = 18.dp,
-                                showDivider = true,
-                                minColor = LocalContentColor.current,
-                                minAlpha = .38f,
-                                emptyColor = emptyColor,
-                                emptyAlpha = emptyAlpha
-                            )
-                            Box (contentAlignment = Alignment.CenterStart) {
-                                Text(
-                                    text = "4.5",
-                                    modifier = Modifier,
-                                    fontSize = 13.sp,
-                                    color = Color.Transparent
-                                )
-                                Text(
-                                    text = formatDecimal(ratingHigh, 1).ifBlank { "5" },
-                                    modifier = Modifier,
-                                    fontSize = 13.sp,
-                                    maxLines = 1,
-                                    color = LocalContentColor.current.copy(alpha = highTextAlpha)
-                                )
-                            }
-                        }
-                    }
-                    if (favDisExist && !ratingsExist) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .background(
-                                    LocalCustomColors.current.sheetBox.copy(alpha = .85f),
-                                    RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
-                                )
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No ratings assigned.",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-                }
+                StarRatingFilters(
+                    otherState.rangeEnabled,
+                    otherState.ratingLow,
+                    otherState.ratingHigh,
+                    otherState.unchosen,
+                    otherState.favDisExist,
+                    otherState.ratingsExist,
+                    otherState.lowText,
+                    otherState.lowTextAlpha,
+                    otherState.highText,
+                    otherState.highTextAlpha,
+                    otherState.ratingRowEmptyAlpha,
+                ) { showRatingPop = it }
             }
-            if (!favDisExist && !ratingsExist) {
+            if (!otherState.favDisExist && !otherState.ratingsExist) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -2200,11 +1944,11 @@ fun OtherFiltersSection(
 
         if (showRatingPop) {
             RatingRangePop(
-                unrated = unrated,
-                unratedEnabled = unratedEnabled,
-                selectedRange = Pair(ratingLow, ratingHigh),
-                ratingRangeEnabled = Pair(ratingLowEnabled, ratingHighEnabled),
-                updateSelectedUnrated = { filterViewModel.updateSelectedUnrated(it) },
+                unrated = otherState.unrated,
+                unratedEnabled = otherState.unratedEnabled,
+                selectedRange = Pair(otherState.ratingLow, otherState.ratingHigh),
+                ratingRangeEnabled = Pair(otherState.ratingLowEnabled, otherState.ratingHighEnabled),
+                updateSelectedUnrated = filterViewModel::updateSelectedUnrated,
                 updateSelectedRatingRange = { (min, max) ->
                     filterViewModel.updateSelectedRatingRange(min, max)
                 },
@@ -2214,39 +1958,576 @@ fun OtherFiltersSection(
         }
 
         // In Stock
-        Column(
-            modifier = Modifier
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max)
-                .padding(vertical = 3.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            CheckboxWithLabel(
-                text = "In-stock",
-                checked = inStock,
-                onCheckedChange = { filterViewModel.updateSelectedInStock(it) },
-                modifier = Modifier,
-                enabled = inStockEnabled
+        InStockSection(
+            otherState.inStock,
+            otherState.inStockEnabled,
+            otherState.outOfStock,
+            otherState.outOfStockEnabled,
+            filterViewModel::updateSelectedInStock,
+            filterViewModel::updateSelectedOutOfStock,
+        )
+    }
+}
+
+@Composable
+private fun FavoriteDislikeFilters(
+    filterViewModel: FilterViewModel,
+    favSelection: ToggleableState,
+    favEnabled: Boolean,
+    disSelection: ToggleableState,
+    disEnabled: Boolean,
+    favDisExist: Boolean,
+    ratingsExist: Boolean
+) {
+    Box {
+        Row {
+            TriStateCheckWithLabel(
+                text = "Favorites",
+                state = favSelection,
+                onClick = { filterViewModel.updateFavSelection() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor =
+                        when (favSelection) {
+                            ToggleableState.On -> MaterialTheme.colorScheme.primary
+                            ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
+                            else -> Color.Transparent
+                        },
+                ),
+                enabled = favEnabled,
+                maxLines = 1
             )
-            CheckboxWithLabel(
-                text = "Out",
-                checked = outOfStock,
-                onCheckedChange = { filterViewModel.updateSelectedOutOfStock(it) },
-                modifier = Modifier,
-                enabled = outOfStockEnabled
+
+            TriStateCheckWithLabel(
+                text = "Dislikes",
+                state = disSelection,
+                onClick = { filterViewModel.updateDisSelection() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor =
+                        when (disSelection) {
+                            ToggleableState.On -> MaterialTheme.colorScheme.primary
+                            ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
+                            else -> Color.Transparent
+                        },
+                ),
+                enabled = disEnabled,
+                maxLines = 1
             )
+        }
+        if (!favDisExist && ratingsExist) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                        RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
+                    )
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No favorites/dislikes assigned.",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                )
+            }
         }
     }
 }
+
+@Composable
+private fun StarRatingFilters(
+    rangeEnabled: Boolean,
+    ratingLow: Double?,
+    ratingHigh: Double?,
+    unchosen: Boolean,
+    favDisExist: Boolean,
+    ratingsExist: Boolean,
+    lowText: String,
+    lowTextAlpha: Float,
+    highText: String,
+    highTextAlpha: Float,
+    ratingRowEmptyAlpha: Float,
+    showRatingPop: (Boolean) -> Unit
+) {
+    Box {
+        Row(
+            modifier = Modifier
+                .height(36.dp)
+                .width(229.dp)
+                .padding(horizontal = 12.dp)
+                .alpha(if (!rangeEnabled) .38f else 1f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Rating:",
+                modifier = Modifier
+                    .padding(end = 8.dp),
+                fontSize = 15.sp
+            )
+            Row(
+                modifier = Modifier
+                    .clickable(
+                        indication = null,
+                        interactionSource = null,
+                        enabled = rangeEnabled,
+                    ) { showRatingPop(true) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
+            ) {
+                val unchosenColor = LocalCustomColors.current.starRating
+                val chosenColor = LocalContentColor.current
+                val emptyColor = remember(unchosen, ratingLow, ratingHigh) { if (unchosen || (ratingLow != null && ratingHigh == null)) unchosenColor else chosenColor }
+
+                Box (contentAlignment = Alignment.CenterEnd) {
+                    Text(
+                        text = "4.5",
+                        modifier = Modifier,
+                        fontSize = 13.sp,
+                        color = Color.Transparent
+                    )
+                    Text(
+                        text = lowText,
+                        modifier = Modifier,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        color = LocalContentColor.current.copy(alpha = lowTextAlpha)
+                    )
+                }
+                RatingRow(
+                    range = Pair(ratingLow, ratingHigh),
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp),
+                    starSize = 18.dp,
+                    showDivider = true,
+                    minColor = LocalContentColor.current,
+                    minAlpha = .38f,
+                    emptyColor = emptyColor,
+                    emptyAlpha = ratingRowEmptyAlpha
+                )
+                Box (contentAlignment = Alignment.CenterStart) {
+                    Text(
+                        text = "4.5",
+                        modifier = Modifier,
+                        fontSize = 13.sp,
+                        color = Color.Transparent
+                    )
+                    Text(
+                        text = highText,
+                        modifier = Modifier,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        color = LocalContentColor.current.copy(alpha = highTextAlpha)
+                    )
+                }
+            }
+        }
+        if (favDisExist && !ratingsExist) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        LocalCustomColors.current.sheetBox.copy(alpha = .85f),
+                        RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
+                    )
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No ratings assigned.",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RatingRangePop(
+    unrated: Boolean,
+    unratedEnabled: Boolean,
+    selectedRange: Pair<Double?, Double?>,
+    ratingRangeEnabled: Pair<Double?, Double?>,
+    updateSelectedUnrated: (Boolean) -> Unit,
+    updateSelectedRatingRange: (Pair<Double?, Double?>) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var ratingLowString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.first)) }
+    var selectedLow by rememberSaveable { mutableStateOf(selectedRange.first) }
+    val minRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.first) }
+
+    var ratingHighString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.second)) }
+    var selectedHigh by rememberSaveable { mutableStateOf(selectedRange.second) }
+    val maxRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.second) }
+
+    val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
+    val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
+
+    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val decimalSeparator = symbols.decimalSeparator.toString()
+    val allowedPattern = remember(decimalSeparator) {
+        val ds = Regex.escape(decimalSeparator)
+        Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .wrapContentHeight(),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+        ),
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.small,
+        title = {
+            Text(
+                text = "Rating",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                modifier = Modifier
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
+            ) {
+                CheckboxWithLabel(
+                    text = "Unrated",
+                    checked = unrated,
+                    onCheckedChange = {
+                        updateSelectedUnrated(it)
+                        updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                    enabled = unratedEnabled,
+                    fontColor = if (!unratedEnabled) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
+                )
+                // Rating Range //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Low Rating //
+                    TextField(
+                        value = ratingLowString,
+                        onValueChange = {
+                            if (it.matches(allowedPattern)) {
+                                ratingLowString = it
+
+                                try {
+                                    if (it.isNotBlank()) {
+                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+                                            "0$it"
+                                        } else it
+                                        val number = numberFormat.parse(preNumber)?.toDouble()
+
+                                        selectedLow = when {
+                                            number == null -> null
+                                            number < (minRating ?: 0.0) -> (minRating ?: 0.0)
+                                            number > compMax -> compMax
+                                            else -> number
+                                        }
+                                    } else {
+                                        selectedLow = null
+                                    }
+
+                                } catch (e: ParseException) {
+                                    Log.e("Rating filter low", "Input: $it", e)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(70.dp)
+                            .padding(end = 8.dp)
+                            .onFocusChanged {
+                                if (!it.isFocused) {
+                                    if (ratingLowString != formatDecimal(selectedLow))
+                                        ratingLowString = formatDecimal(selectedLow)
+                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                }
+                            },
+                        enabled = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                            }
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+
+                    // Selected Range Display //
+                    val lowField = ratingLowString.toDoubleOrNull()?.coerceIn(0.0, compMax)
+                    val highField = ratingHighString.toDoubleOrNull()?.coerceIn(compMin, 5.0)
+
+                    val emptyColor = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
+                    val emptyAlpha = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) 1f else .5f
+
+                    RatingRow(
+                        range = Pair(lowField, highField),
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp),
+                        starSize = 20.dp,
+                        showDivider = true,
+                        minColor = LocalContentColor.current,
+                        maxColor = LocalCustomColors.current.starRating,
+                        emptyColor = emptyColor,
+                        minAlpha = .5f,
+                        maxAlpha = 1f,
+                        emptyAlpha = emptyAlpha
+                    )
+
+                    // High Rating //
+                    TextField(
+                        value = ratingHighString,
+                        onValueChange = {
+                            if (it.matches(allowedPattern)) {
+                                ratingHighString = it
+
+                                try {
+                                    if (it.isNotBlank()) {
+                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+                                            "0$it"
+                                        } else it
+                                        val number = numberFormat.parse(preNumber)?.toDouble()
+
+                                        selectedHigh = when {
+                                            number == null -> null
+                                            number < compMin -> compMin
+                                            number > (maxRating ?: 5.0) -> (maxRating ?: 5.0)
+                                            else -> number
+                                        }
+                                    } else {
+                                        selectedHigh = null
+                                    }
+
+                                } catch (e: ParseException) {
+                                    Log.e("Rating filter high", "Input: $it", e)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(70.dp)
+                            .padding(start = 8.dp)
+                            .onFocusChanged {
+                                if (!it.isFocused) {
+                                    if (ratingHighString != formatDecimal(selectedHigh))
+                                        ratingHighString = formatDecimal(selectedHigh)
+                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                }
+                            },
+                        enabled = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                this.defaultKeyboardAction(ImeAction.Done)
+                            }
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+                }
+
+                // Clear buttons and available range //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 29.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val lowAlpha = if (ratingLowString.isNotBlank()) .75f else 0.38f
+                    val highAlpha = if (ratingHighString.isNotBlank()) .75f else 0.38f
+
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = "Clear",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null,
+                                enabled = ratingLowString.isNotBlank()
+                            ) {
+                                ratingLowString = ""
+                                selectedLow = null
+                                updateSelectedRatingRange(Pair(null, selectedHigh))
+                            }
+                            .padding(4.dp)
+                            .size(20.dp)
+                            .alpha(lowAlpha)
+                    )
+                    Text(
+                        text = "(Limits: ${formatDecimal(minRating).ifBlank { "0.0" }} - ${formatDecimal(maxRating).ifBlank { "5.0" }})",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        modifier = Modifier,
+                        color = LocalContentColor.current.copy(alpha = 0.5f)
+                    )
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = "Clear",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null,
+                                enabled = ratingHighString.isNotBlank()
+                            ) {
+                                ratingHighString = ""
+                                selectedHigh = null
+                                updateSelectedRatingRange(Pair(selectedLow, null))
+                            }
+                            .padding(4.dp)
+                            .size(20.dp)
+                            .alpha(highAlpha)
+                    )
+                }
+
+                // Clear all button //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = {
+                            ratingLowString = ""
+                            selectedLow = null
+                            ratingHighString = ""
+                            selectedHigh = null
+                            updateSelectedUnrated(false)
+                            updateSelectedRatingRange(Pair(null, null))
+                        },
+                        enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated,
+                        modifier = Modifier
+                            .offset(x = (-4).dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.close),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .padding(end = 3.dp)
+                                .size(20.dp)
+                        )
+                        Text(
+                            text = "Clear All",
+                            modifier = Modifier,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                    onDismiss()
+                },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Done")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun InStockSection(
+    inStock: Boolean,
+    inStockEnabled: Boolean,
+    outOfStock: Boolean,
+    outOfStockEnabled: Boolean,
+    updateSelectedInStock: (Boolean) -> Unit,
+    updateSelectedOutOfStock: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .background(
+                LocalCustomColors.current.sheetBox,
+                RoundedCornerShape(8.dp)
+            )
+            .border(
+                width = Dp.Hairline,
+                color = LocalCustomColors.current.sheetBoxBorder,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .width(intrinsicSize = IntrinsicSize.Max)
+            .padding(vertical = 3.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        CheckboxWithLabel(
+            text = "In-stock",
+            checked = inStock,
+            onCheckedChange = { updateSelectedInStock(it) },
+            modifier = Modifier,
+            enabled = inStockEnabled
+        )
+        CheckboxWithLabel(
+            text = "Out",
+            checked = outOfStock,
+            onCheckedChange = { updateSelectedOutOfStock(it) },
+            modifier = Modifier,
+            enabled = outOfStockEnabled
+        )
+    }
+}
+
 
 @Composable
 fun FlowFilterSection(
@@ -2286,110 +2567,10 @@ fun FlowFilterSection(
                 color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
             )
             if (enableMatchOption) {
-                Row(
-                    modifier = Modifier
-                        .padding(0.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Match: ",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier,
-                        color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
-                    )
-                    Box(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .clickable(
-                                enabled = !nothingAssigned,
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { onMatchOptionChange("Any") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Any",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Transparent,
-                        )
-                        Text(
-                            text = "Any",
-                            fontSize = 14.sp,
-                            fontWeight = if (displayData.matching == "Any" && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
-                            color = if (displayData.matching == "Any" && !nothingAssigned) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .6f),
-                            modifier = Modifier
-                        )
-                    }
-                    Text(
-                        text = " / ",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier,
-                        color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
-                    )
-                    Box(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .clickable(
-                                enabled = !nothingAssigned,
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { onMatchOptionChange("All") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "All",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Transparent,
-                        )
-                        Text(
-                            text = "All",
-                            fontSize = 14.sp,
-                            fontWeight = if (displayData.matching == "All") FontWeight.Medium else FontWeight.Normal,
-                            color = if (displayData.matching == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                                alpha = .6f
-                            ),
-                            modifier = Modifier
-                        )
-                    }
-                    Text(
-                        text = " / ",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier,
-                        color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
-                    )
-                    Box(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .clickable(
-                                enabled = !nothingAssigned,
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { onMatchOptionChange("Only") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Only",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Transparent,
-                        )
-                        Text(
-                            text = "Only",
-                            fontSize = 14.sp,
-                            fontWeight = if (displayData.matching == "Only") FontWeight.Medium else FontWeight.Normal,
-                            color = if (displayData.matching == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                                alpha = .6f
-                            ),
-                            modifier = Modifier
-                        )
-                    }
-                }
+                FlowFilterMatchOptions(
+                    nothingAssigned, displayData.matching, { onMatchOptionChange(it) },
+                    Modifier, Arrangement.End
+                )
             }
         }
 
@@ -2484,7 +2665,7 @@ fun FlowFilterSection(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(0.dp),
-                            fontSize = 16.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
@@ -2521,112 +2702,13 @@ fun FlowFilterSection(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Top
                                 ) {
-                                    Spacer(modifier = Modifier.height(5.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     // match options
                                     if (enableMatchOption) {
-                                        Row(
-                                            modifier = Modifier
-                                                .padding(bottom = 4.dp),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "Match: ",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                modifier = Modifier
-                                            )
-                                            // Any
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(0.dp)
-                                                    .clickable(
-                                                        indication = LocalIndication.current,
-                                                        interactionSource = null
-                                                    ) { onMatchOptionChange("Any") },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = "Any",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = Color.Transparent,
-                                                )
-                                                Text(
-                                                    text = "Any",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (displayData.matching == "Any") FontWeight.Medium else FontWeight.Normal,
-                                                    color = if (displayData.matching == "Any") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                                                        alpha = .7f
-                                                    ),
-                                                    modifier = Modifier
-                                                )
-                                            }
-                                            Text(
-                                                text = " / ",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Normal,
-                                                modifier = Modifier
-                                            )
-                                            // All
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(0.dp)
-                                                    .clickable(
-                                                        indication = LocalIndication.current,
-                                                        interactionSource = null
-                                                    ) { onMatchOptionChange("All") },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = "All",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = Color.Transparent,
-                                                )
-                                                Text(
-                                                    text = "All",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (displayData.matching == "All") FontWeight.Medium else FontWeight.Normal,
-                                                    color = if (displayData.matching == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                                                        alpha = .7f
-                                                    ),
-                                                    modifier = Modifier
-                                                )
-                                            }
-                                            Text(
-                                                text = " / ",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Normal,
-                                                modifier = Modifier
-                                            )
-                                            // Only
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(0.dp)
-                                                    .clickable(
-                                                        indication = LocalIndication.current,
-                                                        interactionSource = null
-                                                    ) { onMatchOptionChange("Only") },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = "Only",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = Color.Transparent,
-                                                )
-                                                Text(
-                                                    text = "Only",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (displayData.matching == "Only") FontWeight.Medium else FontWeight.Normal,
-                                                    color = if (displayData.matching == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                                                        alpha = .7f
-                                                    ),
-                                                    modifier = Modifier
-                                                )
-                                            }
-                                        }
+                                        FlowFilterMatchOptions(
+                                            false, displayData.matching, { onMatchOptionChange(it) },
+                                            Modifier.padding(bottom = 4.dp), Arrangement.Center
+                                        )
                                     }
 
                                     // Chips
@@ -2708,6 +2790,120 @@ fun FlowFilterSection(
         }
     }
 }
+
+@Composable
+fun FlowFilterMatchOptions(
+    nothingAssigned: Boolean,
+    matching: String?,
+    onMatchOptionChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    arrangement: Arrangement.Horizontal = Arrangement.Center,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = arrangement,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Match: ",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            modifier = Modifier,
+            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
+        )
+        Box(
+            modifier = Modifier
+                .padding(0.dp)
+                .clickable(
+                    enabled = !nothingAssigned,
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { onMatchOptionChange("Any") },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Any",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Transparent,
+            )
+            Text(
+                text = "Any",
+                fontSize = 14.sp,
+                fontWeight = if (matching == "Any" && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
+                color = if (matching == "Any" && !nothingAssigned) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .6f),
+                modifier = Modifier
+            )
+        }
+        Text(
+            text = " / ",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            modifier = Modifier,
+            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+        )
+        Box(
+            modifier = Modifier
+                .padding(0.dp)
+                .clickable(
+                    enabled = !nothingAssigned,
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { onMatchOptionChange("All") },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "All",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Transparent,
+            )
+            Text(
+                text = "All",
+                fontSize = 14.sp,
+                fontWeight = if (matching == "All") FontWeight.Medium else FontWeight.Normal,
+                color = if (matching == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                    alpha = .6f
+                ),
+                modifier = Modifier
+            )
+        }
+        Text(
+            text = " / ",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            modifier = Modifier,
+            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+        )
+        Box(
+            modifier = Modifier
+                .padding(0.dp)
+                .clickable(
+                    enabled = !nothingAssigned,
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { onMatchOptionChange("Only") },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Only",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Transparent,
+            )
+            Text(
+                text = "Only",
+                fontSize = 14.sp,
+                fontWeight = if (matching == "Only") FontWeight.Medium else FontWeight.Normal,
+                color = if (matching == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
+                    alpha = .6f
+                ),
+                modifier = Modifier
+            )
+        }
+    }
+}
+
 
 @Composable
 fun TinsFilterSection(
@@ -2877,339 +3073,6 @@ fun TinsFilterSection(
 
 
 /** Custom composables for sheet **/
-@Composable
-fun RatingRangePop(
-    unrated: Boolean,
-    unratedEnabled: Boolean,
-    selectedRange: Pair<Double?, Double?>,
-    ratingRangeEnabled: Pair<Double?, Double?>,
-    updateSelectedUnrated: (Boolean) -> Unit,
-    updateSelectedRatingRange: (Pair<Double?, Double?>) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var ratingLowString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.first)) }
-    var selectedLow by rememberSaveable { mutableStateOf(selectedRange.first) }
-    val minRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.first) }
-
-    var ratingHighString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.second)) }
-    var selectedHigh by rememberSaveable { mutableStateOf(selectedRange.second) }
-    val maxRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.second) }
-
-    val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
-    val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
-
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
-    val decimalSeparator = symbols.decimalSeparator.toString()
-    val allowedPattern = remember(decimalSeparator) {
-        val ds = Regex.escape(decimalSeparator)
-        Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        modifier = modifier
-            .wrapContentHeight(),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-        ),
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.small,
-        title = {
-            Text(
-                text = "Rating",
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
-            ) {
-                CheckboxWithLabel(
-                    text = "Unrated",
-                    checked = unrated,
-                    onCheckedChange = {
-                        updateSelectedUnrated(it)
-                        updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
-                    },
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                    enabled = unratedEnabled,
-                    fontColor = if (!unratedEnabled) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
-                )
-                // Rating Range //
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Low Rating //
-                    TextField(
-                        value = ratingLowString,
-                        onValueChange = {
-                            if (it.matches(allowedPattern)) {
-                                ratingLowString = it
-
-                                try {
-                                    if (it.isNotBlank()) {
-                                        val preNumber = if (it.startsWith(decimalSeparator)) {
-                                            "0$it"
-                                        } else it
-                                        val number = numberFormat.parse(preNumber)?.toDouble()
-
-                                        selectedLow = when {
-                                            number == null -> null
-                                            number < (minRating ?: 0.0) -> (minRating ?: 0.0)
-                                            number > compMax -> compMax
-                                            else -> number
-                                        }
-                                    } else {
-                                        selectedLow = null
-                                    }
-
-                                } catch (e: ParseException) {
-                                    Log.e("Rating filter low", "Input: $it", e)
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .width(70.dp)
-                            .padding(end = 8.dp)
-                            .onFocusChanged {
-                                if (!it.isFocused) {
-                                    if (ratingLowString != formatDecimal(selectedLow))
-                                        ratingLowString = formatDecimal(selectedLow)
-                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
-                                }
-                            },
-                        enabled = true,
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            focusedContainerColor = LocalCustomColors.current.textField,
-                            unfocusedContainerColor = LocalCustomColors.current.textField,
-                            disabledContainerColor = LocalCustomColors.current.textField,
-                        ),
-                        shape = MaterialTheme.shapes.extraSmall
-                    )
-
-                    // Selected Range Display //
-                    val lowField = ratingLowString.toDoubleOrNull()?.coerceIn(0.0, compMax)
-                    val highField = ratingHighString.toDoubleOrNull()?.coerceIn(compMin, 5.0)
-
-                    val emptyColor = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
-                    val emptyAlpha = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) 1f else .5f
-
-                    RatingRow(
-                        range = Pair(lowField, highField),
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp),
-                        starSize = 20.dp,
-                        showDivider = true,
-                        minColor = LocalContentColor.current,
-                        maxColor = LocalCustomColors.current.starRating,
-                        emptyColor = emptyColor,
-                        minAlpha = .5f,
-                        maxAlpha = 1f,
-                        emptyAlpha = emptyAlpha
-                    )
-
-                    // High Rating //
-                    TextField(
-                        value = ratingHighString,
-                        onValueChange = {
-                            if (it.matches(allowedPattern)) {
-                                ratingHighString = it
-
-                                try {
-                                    if (it.isNotBlank()) {
-                                        val preNumber = if (it.startsWith(decimalSeparator)) {
-                                            "0$it"
-                                        } else it
-                                        val number = numberFormat.parse(preNumber)?.toDouble()
-
-                                        selectedHigh = when {
-                                            number == null -> null
-                                            number < compMin -> compMin
-                                            number > (maxRating ?: 5.0) -> (maxRating ?: 5.0)
-                                            else -> number
-                                        }
-                                    } else {
-                                        selectedHigh = null
-                                    }
-
-                                } catch (e: ParseException) {
-                                    Log.e("Rating filter high", "Input: $it", e)
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .width(70.dp)
-                            .padding(start = 8.dp)
-                            .onFocusChanged {
-                                if (!it.isFocused) {
-                                    if (ratingHighString != formatDecimal(selectedHigh))
-                                        ratingHighString = formatDecimal(selectedHigh)
-                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
-                                }
-                            },
-                        enabled = true,
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
-                            }
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            focusedContainerColor = LocalCustomColors.current.textField,
-                            unfocusedContainerColor = LocalCustomColors.current.textField,
-                            disabledContainerColor = LocalCustomColors.current.textField,
-                        ),
-                        shape = MaterialTheme.shapes.extraSmall
-                    )
-                }
-
-                // Clear buttons and available range //
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 29.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val lowAlpha = if (ratingLowString.isNotBlank()) .75f else 0.38f
-                    val highAlpha = if (ratingHighString.isNotBlank()) .75f else 0.38f
-
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                        contentDescription = "Clear",
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null,
-                                enabled = ratingLowString.isNotBlank()
-                            ) {
-                                ratingLowString = ""
-                                selectedLow = null
-                                updateSelectedRatingRange(Pair(null, selectedHigh))
-                            }
-                            .padding(4.dp)
-                            .size(20.dp)
-                            .alpha(lowAlpha)
-                    )
-                    Text(
-                        text = "(Limits: ${formatDecimal(minRating).ifBlank { "0.0" }} - ${formatDecimal(maxRating).ifBlank { "5.0" }})",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier,
-                        color = LocalContentColor.current.copy(alpha = 0.5f)
-                    )
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                        contentDescription = "Clear",
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null,
-                                enabled = ratingHighString.isNotBlank()
-                            ) {
-                                ratingHighString = ""
-                                selectedHigh = null
-                                updateSelectedRatingRange(Pair(selectedLow, null))
-                            }
-                            .padding(4.dp)
-                            .size(20.dp)
-                            .alpha(highAlpha)
-                    )
-                }
-
-                // Clear all button //
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    TextButton(
-                        onClick = {
-                            ratingLowString = ""
-                            selectedLow = null
-                            ratingHighString = ""
-                            selectedHigh = null
-                            updateSelectedUnrated(false)
-                            updateSelectedRatingRange(Pair(null, null))
-                        },
-                        enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated,
-                        modifier = Modifier
-                            .offset(x = (-4).dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.close),
-                            contentDescription = "",
-                            modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(20.dp)
-                        )
-                        Text(
-                            text = "Clear All",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
-                    onDismiss()
-                },
-                contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Done")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = { onDismiss() },
-                contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Cancel")
-            }
-        }
-    )
-}
-
 @Composable
 fun CheckboxWithLabel(
     text: String,
