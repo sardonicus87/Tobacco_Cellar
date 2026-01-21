@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -186,100 +187,68 @@ class SettingsViewModel(
     // option initializations //
     init {
         // Theme Setting
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.themeSetting.collect {
-                    _themeSetting.value = it
+        viewModelScope.launch(Dispatchers.Default) {
+            supervisorScope {
+                // Theme Setting
+                launch {
+                    preferencesRepo.themeSetting.collect {
+                        _themeSetting.value = it
+                    }
                 }
-            }
-        }
-        // Ratings Visibility
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.showRating.collect {
-                    _showRatings.value = it
+                // Ratings Visibility
+                launch {
+                    preferencesRepo.showRating.collect {
+                        _showRatings.value = it
+                    }
                 }
-            }
-        }
-        // Type/Genre Display
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.typeGenreOption.collect {
-                    _typeGenreOption.value = it
+                // Type/Genre Display
+                launch {
+                    preferencesRepo.typeGenreOption.collect {
+                        _typeGenreOption.value = it
+                    }
                 }
-            }
-        }
-        // Quantity Display
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.quantityOption.collect {
-                    _quantityOption.value = it
+                // Quantity Display
+                launch {
+                    preferencesRepo.quantityOption.collect {
+                        _quantityOption.value = it
+                    }
                 }
-            }
-        }
-        //Parse Links
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.parseLinks.collect {
-                    _parseLinks.value = it
+                //Parse Links
+                launch {
+                    preferencesRepo.parseLinks.collect {
+                        _parseLinks.value = it
+                    }
                 }
-            }
-        }
+                // Device Sync
+                launch {
+                    preferencesRepo.crossDeviceAcknowledged.collect {
+                        _deviceSyncAcknowledgement.value = it
+                    }
+                    preferencesRepo.crossDeviceSync.collect {
+                        _crossDeviceSync.value = it
+                    }
+                    preferencesRepo.signedInUserEmail.collect {
+                        _userEmail.value = it
+                    }
+                    preferencesRepo.allowMobileData.collect {
+                        _allowMobileData.value = it
+                    }
+                }
+                // Tin Conversion Rates
+                launch {
+                    preferencesRepo.tinOzConversionRate.collect {
+                        _tinOzConversionRate.value = it
+                    }
 
-        // Device Sync
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.crossDeviceAcknowledged.collect {
-                    _deviceSyncAcknowledgement.value = it
+                    preferencesRepo.tinGramsConversionRate.collect {
+                        _tinGramsConversionRate.value = it
+                    }
                 }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.crossDeviceSync.collect {
-                    _crossDeviceSync.value = it
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.signedInUserEmail.collect {
-                    _userEmail.value = it
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.hasDriveScope.collect {
-                    _hasScope.value = it
-                }
-            }
-        }
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.allowMobileData.collect {
-                    _allowMobileData.value = it
-                }
-            }
-        }
-        // Tin Conversion Rates
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.tinOzConversionRate.collect {
-                    _tinOzConversionRate.value = it
-                }
-            }
-            withContext(Dispatchers.IO) {
-                preferencesRepo.tinGramsConversionRate.collect {
-                    _tinGramsConversionRate.value = it
-                }
-            }
-        }
-        // Default sync tins
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                preferencesRepo.defaultSyncOption.collect {
-                    _defaultSyncOption.value = it
+                // Default sync tins
+                launch {
+                    preferencesRepo.defaultSyncOption.collect {
+                        _defaultSyncOption.value = it
+                    }
                 }
             }
         }
