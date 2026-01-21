@@ -13,6 +13,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -68,10 +70,11 @@ fun CellarNavigation(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-
-
-    LaunchedEffect(largeScreen, navigationState.isTwoPane) {
-        if (largeScreen && navigationState.isTwoPane) {
+    val shouldCloseSheet by remember(largeScreen, navigationState.isTwoPane) {
+        derivedStateOf { largeScreen && navigationState.isTwoPane }
+    }
+    LaunchedEffect(shouldCloseSheet) {
+        if (shouldCloseSheet) {
             filterViewModel.closeBottomSheet()
         }
     }
@@ -81,7 +84,7 @@ fun CellarNavigation(
     val itemsRepository: ItemsRepository = app.container.itemsRepository
     val csvHelper: CsvHelper = app.csvHelper
 
-    val currentFrom = if (navigationState.cameFrom != null) navigationState.cameFrom!!::class.simpleName else null
+    val currentFrom = remember(navigationState.cameFrom) { if (navigationState.cameFrom != null) navigationState.cameFrom!!::class.simpleName else null }
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
