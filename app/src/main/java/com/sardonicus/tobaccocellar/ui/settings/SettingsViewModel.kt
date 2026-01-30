@@ -272,10 +272,10 @@ class SettingsViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = mapOf(
             TypeGenreOption.TYPE to true,
-            TypeGenreOption.SUBGENRE to false,
-            TypeGenreOption.BOTH to false,
-            TypeGenreOption.TYPE_FALLBACK to false,
-            TypeGenreOption.SUB_FALLBACK to false,
+            TypeGenreOption.SUBGENRE to true,
+            TypeGenreOption.BOTH to true,
+            TypeGenreOption.TYPE_FALLBACK to true,
+            TypeGenreOption.SUB_FALLBACK to true,
         )
     )
 
@@ -285,7 +285,7 @@ class SettingsViewModel(
                 preferencesRepo.typeGenreOption,
                 typeGenreOptionEnablement
             ) { option, typeGenreEnablement ->
-                val enabled = typeGenreEnablement[option] ?: false
+                val enabled = typeGenreEnablement[option] ?: true
                 if (enabled) option else TypeGenreOption.TYPE
             }.collect {
                 _typeGenreOption.value = it
