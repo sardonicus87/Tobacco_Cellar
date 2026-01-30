@@ -4,8 +4,7 @@ import androidx.navigation3.runtime.NavKey
 
 class Navigator(
     val state: NavigationState,
-    private val isLarge: Boolean = false,
-    private val mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
+    private val isLarge: Boolean = false
 ) {
     private var lastNavigationTime = 0L
 

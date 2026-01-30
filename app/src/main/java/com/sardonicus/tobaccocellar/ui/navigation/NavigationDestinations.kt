@@ -10,6 +10,12 @@ interface PaneInfo {
     val paneType: PaneType
 }
 
+val mainSecondaryMap: Map<NavKey, NavKey> = mapOf(
+    HomeDestination to FilterPaneDestination,
+    StatsDestination to FilterPaneDestination,
+    DatesDestination to FilterPaneDestination
+)
+
 @Serializable
 data object HomeDestination : NavKey, PaneInfo {
     override val paneType = PaneType.MAIN
@@ -100,25 +106,3 @@ data class CsvImportResultsDestination(
 ) : NavKey, PaneInfo {
     override val paneType = PaneType.NONE
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

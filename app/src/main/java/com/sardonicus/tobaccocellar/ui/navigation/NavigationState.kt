@@ -14,6 +14,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -25,8 +26,7 @@ import androidx.savedstate.compose.serialization.serializers.MutableStateSeriali
 fun rememberNavigationState(
     startRoute: NavKey,
     topLevelRoutes: Set<NavKey>,
-    largeScreen: Boolean = false,
-    mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
+    largeScreen: Boolean = false
 ): NavigationState {
 
     val topLevelRoute = rememberSerializable(
@@ -65,8 +65,7 @@ fun rememberNavigationState(
             startRoute = startRoute,
             topLevelRoute = topLevelRoute,
             backStacks = backStacks,
-            largeScreen = largeScreen,
-            mainSecondaryMap = mainSecondaryMap
+            largeScreen = largeScreen
         )
     }
 }
@@ -76,8 +75,7 @@ class NavigationState(
     val startRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
     val backStacks: Map<NavKey, NavBackStack<NavKey>>,
-    val largeScreen: Boolean = false,
-    val mainSecondaryMap: Map<NavKey, NavKey> = emptyMap()
+    val largeScreen: Boolean = false
 ) {
     var topLevelRoute: NavKey by topLevelRoute
 
@@ -128,9 +126,9 @@ fun NavigationState.toEntries(
     entryProvider: (NavKey) -> NavEntry<NavKey>
 ): SnapshotStateList<NavEntry<NavKey>> {
     val decoratedEntries = backStacks.mapValues { (_, stack) ->
-        val decorators = listOf(
-            rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
-            rememberViewModelStoreNavEntryDecorator<NavKey>(),
+        val decorators: List<NavEntryDecorator<NavKey>> = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
         )
         rememberDecoratedNavEntries(
             backStack = stack,
