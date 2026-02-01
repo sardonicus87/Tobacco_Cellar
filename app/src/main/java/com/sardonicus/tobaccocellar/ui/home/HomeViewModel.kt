@@ -3,10 +3,13 @@ package com.sardonicus.tobaccocellar.ui.home
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -14,6 +17,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
+import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TinExportData
@@ -36,6 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -54,17 +59,40 @@ class HomeViewModel(
     application: Application
 ): AndroidViewModel(application), ExportCsvHandler {
 
-    private val _tableTableSorting = mutableStateOf(TableSorting())
-    val tableSorting: State<TableSorting> = _tableTableSorting
+    private val _tableTableSorting = MutableStateFlow(TableSorting())
+    val tableSorting: StateFlow<TableSorting> = _tableTableSorting.asStateFlow()
 
     private val _listSorting = mutableStateOf(ListSorting())
     val listSorting: State<ListSorting> = _listSorting
 
-    private val _resetLoading = MutableStateFlow(false)
-    val resetLoading = _resetLoading.asStateFlow()
+    private val _isTableView = MutableStateFlow(false)
+    val isTableView: StateFlow<Boolean> = _isTableView.asStateFlow()
 
     private val _importantAlertState = MutableStateFlow(ImportantAlertState())
     val importantAlertState = _importantAlertState.asStateFlow()
+
+    private val _resetLoading = MutableStateFlow(false)
+    val resetLoading = _resetLoading.asStateFlow()
+
+    private val _itemMenuShown = mutableStateOf(false)
+    val itemMenuShown: State<Boolean> = _itemMenuShown
+
+    private val _activeMenuId = mutableStateOf<Int?>(null)
+    val activeMenuId: State<Int?> = _activeMenuId
+
+    private val _showColumnMenu = mutableStateOf(false)
+    val showColumnMenu: State<Boolean> = _showColumnMenu
+
+    private val _listShadow = mutableStateOf(0.dp)
+    val listShadow: State<Dp> = _listShadow
+
+    private val _tableShadow = mutableFloatStateOf(0f)
+    val tableShadow: State<Float> = _tableShadow
+
+    fun updateScrollShadow (canScroll: Boolean) {
+        _listShadow.value = if (canScroll) 3.dp else 0.dp
+        _tableShadow.floatValue = if (canScroll) 0.15f else 0f
+    }
 
     private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
 
@@ -81,6 +109,7 @@ class HomeViewModel(
         }
         viewModelScope.launch(Dispatchers.Default) {
             supervisorScope {
+                // everything flow
                 launch {
                     filterViewModel.everythingFlow.collect {
                         _allItems.value = it
@@ -109,6 +138,34 @@ class HomeViewModel(
                         _listSorting.value = it
                     }
                 }
+                // Table View
+                launch {
+                    preferencesRepo.isTableView.collect {
+                        _isTableView.value = it
+                    }
+                }
+                // Important alerts
+                launch {
+                    preferencesRepo.lastAlertFlow.collect { lastShown ->
+                        val unseenAlerts = OneTimeAlerts.alerts
+                            .filter { it.id in (lastShown + 1) ..OneTimeAlerts.CURRENT_ALERT_VERSION }
+                            .sortedBy { it.id }
+
+                        val alertToDisplay = unseenAlerts.firstOrNull()
+                        val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
+
+                        // Safety check, should never happen
+                        if (lastShown > OneTimeAlerts.CURRENT_ALERT_VERSION) {
+                            preferencesRepo.saveAlertShown(OneTimeAlerts.CURRENT_ALERT_VERSION)
+                        }
+
+                        _importantAlertState.value = ImportantAlertState(
+                            show = (alertToDisplay != null),
+                            alertToDisplay = alertToDisplay,
+                            isCurrentAlert = isCurrent
+                        )
+                    }
+                }
                 // Ensure Brand and Blend columns never get hidden, unhide them if so
                 launch(Dispatchers.IO) {
                     preferencesRepo.tableColumnsHidden.collect {
@@ -134,32 +191,10 @@ class HomeViewModel(
                             TypeGenreOption.TYPE_FALLBACK to types,
                             TypeGenreOption.SUB_FALLBACK to subgenres,
                         )
-                        val enabled = enablement[option] ?: false
+                        val enabled = enablement[option] ?: true
                         if (enabled) option else TypeGenreOption.TYPE
                     }.collectLatest {
                         preferencesRepo.saveTypeGenreOption(it.value)
-                    }
-                }
-                // Important alerts
-                launch {
-                    preferencesRepo.lastAlertFlow.collect { lastShown ->
-                        val unseenAlerts = OneTimeAlerts.alerts
-                            .filter { it.id in (lastShown + 1) ..OneTimeAlerts.CURRENT_ALERT_VERSION }
-                            .sortedBy { it.id }
-
-                        val alertToDisplay = unseenAlerts.firstOrNull()
-                        val isCurrent = alertToDisplay?.id == OneTimeAlerts.CURRENT_ALERT_VERSION
-
-                        // Safety check, should never happen
-                        if (lastShown > OneTimeAlerts.CURRENT_ALERT_VERSION) {
-                            preferencesRepo.saveAlertShown(OneTimeAlerts.CURRENT_ALERT_VERSION)
-                        }
-
-                        _importantAlertState.value = ImportantAlertState(
-                            show = (alertToDisplay != null),
-                            alertToDisplay = alertToDisplay,
-                            isCurrentAlert = isCurrent
-                        )
                     }
                 }
             }
@@ -169,6 +204,7 @@ class HomeViewModel(
     private var searchWasPerformed = false
     private var savedSearchText = ""
 
+    @Stable
     @Suppress("UNCHECKED_CAST")
     val emptyMessage: StateFlow<String> = combine(
         filterViewModel.searchValue,
@@ -211,10 +247,10 @@ class HomeViewModel(
                 emptyMessage
             }
         searchWasPerformed = searchPerformed
-//        savedSearchText = searchText
 
         displayedMessage
     }
+        .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
@@ -222,52 +258,369 @@ class HomeViewModel(
             initialValue = ""
         )
 
+    val itemsCount = filterViewModel.homeScreenFilteredItems.map { it.size }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = 0
+        )
 
-    @Suppress("UNCHECKED_CAST")
-    val homeUiState = combine(
-        filterViewModel.homeScreenFilteredItems,
-        filterViewModel.homeScreenFilteredTins,
-        preferencesRepo.quantityOption,
-        preferencesRepo.isTableView,
-        snapshotFlow { tableSorting.value },
-        snapshotFlow { listSorting.value },
-        preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate,
-        preferencesRepo.showRating,
+    val viewSelect = isTableView.map {
+        ViewSelect(
+            isTableView = it,
+        )
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = ViewSelect()
+        )
+
+    val listSortingMenuState = combine(
+        isTableView,
         preferencesRepo.typeGenreOption,
         filterViewModel.typesExist,
         filterViewModel.subgenresExist,
         filterViewModel.ratingsExist,
-        filterViewModel.emptyDatabase,
-        filterViewModel.showTins,
-        emptyMessage,
-        resetLoading,
-        _isRendered
-    ) { array ->
-        val filteredItems = array[0] as List<ItemsComponentsAndTins>
-        val filteredTins = array[1] as List<Tins>
-        val quantityOption = array[2] as QuantityOption
-        val isTableView = array[3] as Boolean
-        val tableSorting = array[4] as TableSorting
-        val listSorting = array[5] as ListSorting
-        val ozRate = array[6] as Double
-        val gramsRate = array[7] as Double
-        val showRating = array[8] as Boolean
-        val typeGenreOption = array[9] as TypeGenreOption
-        val typesExist = array[10] as Boolean
-        val subgenresExist = array[11] as Boolean
-        val ratingsExist = array[12] as Boolean
-        val emptyDatabase = array[13] as Boolean
-        val showTins = array[14] as Boolean
-        val emptyMessage = array[15] as String
-        val resetLoading = array[16] as Boolean
-        val isRendered = array[17] as Boolean
+        preferencesRepo.showRating,
+        snapshotFlow { listSorting.value }
+    ) { values ->
+        val isTableView = values[0] as Boolean
+        val typeGenreOption = values[1] as TypeGenreOption
+        val typesExist = values[2] as Boolean
+        val subgenresExist = values[3] as Boolean
+        val ratingsExist = values[4] as Boolean
+        val showRating = values[5] as Boolean
+        val listSorting = values[6] as ListSorting
 
-        val sortQuantity = filteredItems.associate { items ->
-            items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+        val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY)
+        val subgenreOption = when (typeGenreOption) {
+            TypeGenreOption.SUBGENRE -> true
+            TypeGenreOption.BOTH -> true
+            TypeGenreOption.SUB_FALLBACK -> true
+            else -> false
+        }
+        val sortingOptions = ListSortOption.entries.filter {
+            when (it) {
+                in alwaysOptions -> true
+                ListSortOption.TYPE -> typesExist
+                ListSortOption.SUBGENRE -> subgenreOption && subgenresExist
+                ListSortOption.RATING -> ratingsExist && showRating
+                else -> false
+            }
         }
 
-        val sortedItems = if (filteredItems.isNotEmpty()) {
+        ListColumnMenuState(
+            isTableView = isTableView,
+            sortingOptions = SortingOptionsList(sortingOptions),
+            listSorting = listSorting
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = ListColumnMenuState()
+        )
+
+    val menuState = combine(
+        snapshotFlow { itemMenuShown.value },
+        snapshotFlow { activeMenuId.value },
+    ) { shown, id ->
+        MenuState(shown, id)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = MenuState()
+        )
+
+    val sortQuantity = combine(
+        filterViewModel.homeScreenFilteredItems,
+        filterViewModel.homeScreenFilteredTins,
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate
+    ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
+        filteredItems.associate { items ->
+            items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+        }
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyMap()
+        )
+
+    val formattedQuantities = combine(
+        filterViewModel.homeScreenFilteredItems,
+        filterViewModel.homeScreenFilteredTins,
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate
+    ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
+
+        filteredItems.associate { items ->
+            val totalQuantity =
+                calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate) // !it.finished &&
+            val formattedQuantity =
+                formatQuantity(totalQuantity, quantityOption, items.tins.filter { it in filteredTins }) // !it.finished &&
+
+            items.items.id to formattedQuantity
+        }
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyMap()
+        )
+
+    @Suppress("UNCHECKED_CAST")
+    val sortedItems = combine(
+        filterViewModel.homeScreenFilteredItems,
+        isTableView,
+        tableSorting,
+        snapshotFlow { listSorting.value },
+        preferencesRepo.typeGenreOption,
+        sortQuantity,
+        formattedQuantities
+    ) { array ->
+        val filteredItems = array[0] as List<ItemsComponentsAndTins>
+        val isTableView = array[1] as Boolean
+        val tableSorting = array[2] as TableSorting
+        val listSorting = array[3] as ListSorting
+        val typeGenreOption = array[4] as TypeGenreOption
+        val sortQuantity = array[5] as Map<Int, Double>
+
+        sortItems(filteredItems, isTableView, tableSorting, listSorting, sortQuantity, typeGenreOption)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyList()
+        )
+
+    val filteredTins = filterViewModel.homeScreenFilteredTins.map { TinsList(it) }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = TinsList()
+        )
+
+    @Suppress("UNCHECKED_CAST")
+    val itemsListState: StateFlow<ItemsList> = combine(
+        sortedItems,
+        formattedQuantities,
+        preferencesRepo.showRating,
+        preferencesRepo.typeGenreOption,
+        filteredTins,
+        filterViewModel.showTins,
+    ) { array ->
+        val items = array[0] as List<ItemsComponentsAndTins>
+        val quantities = array[1] as Map<Int, String>
+        val showRating = array[2] as Boolean
+        val typeOption = array[3] as TypeGenreOption
+        val tins = array[4] as TinsList
+        val showTins = array[5] as Boolean
+
+        val list = items.map {item ->
+            val quantity = quantities[item.items.id] ?: "--"
+            ItemsListState(
+                item = item,
+                itemId = item.items.id,
+                formattedQuantity = quantity,
+                outOfStock = quantity.none { it in '1'..'9' },
+                formattedTypeGenre = calculateTypeGenre(item.items, typeOption),
+                tins = if (showTins) item.tins.filter { it in tins.tins } else emptyList(),
+                showRating = showRating && item.items.rating != null,
+            )
+        }
+
+        ItemsList(list)
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = ItemsList()
+        )
+
+    val tableLayoutData = combine(
+        preferencesRepo.tableColumnsHidden,
+        preferencesRepo.typeGenreOption
+    ) { tableColumnsHidden, typeGenreOption ->
+        val columnVisibility: Map<TableColumn, Boolean> = TableColumn.entries.associateWith { column ->
+            column.name !in tableColumnsHidden
+        }
+        val columnOrder = listOf(
+            TableColumn.BRAND,
+            TableColumn.BLEND,
+            TableColumn.TYPE,
+            TableColumn.SUBGENRE,
+            TableColumn.RATING,
+            TableColumn.FAV_DIS,
+            TableColumn.NOTE,
+            TableColumn.QTY
+        )
+        val columnMinWidths = columnOrder.map {
+            val visible = columnVisibility[it] ?: true
+            if (visible) {
+                when (it) {
+                    TableColumn.BRAND -> 180.dp
+                    TableColumn.BLEND -> 300.dp
+                    TableColumn.TYPE -> 108.dp
+                    TableColumn.SUBGENRE -> 120.dp
+                    TableColumn.RATING -> 64.dp
+                    TableColumn.FAV_DIS -> 64.dp
+                    TableColumn.NOTE -> 64.dp
+                    TableColumn.QTY -> 98.dp
+                }
+            } else {
+                0.dp
+            }
+        }
+        val totalWidth = columnMinWidths.sumOf { it.value.toDouble() }.dp
+
+        val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
+        val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
+        val columnMapping = columnOrder.map {
+            when (it) {
+                TableColumn.BRAND -> { item: Items -> item.brand }
+                TableColumn.BLEND -> { item: Items -> item.blend }
+                TableColumn.TYPE -> { item: Items -> item.type.ifBlank { if (fallbackType) "(${item.subGenre})" else "" } }
+                TableColumn.SUBGENRE -> { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) "(${item.type})" else "" } }
+                TableColumn.RATING -> { item: Items -> item.rating }
+                TableColumn.FAV_DIS -> { item: Items ->
+                    when {
+                        item.favorite -> 1
+                        item.disliked -> 2
+                        else -> 0
+                    }
+                }
+
+                TableColumn.NOTE -> { item: Items -> item.notes }
+                TableColumn.QTY -> { item: Items -> item.id }
+            }
+        }
+        val alignment = columnMinWidths.indices.map {
+            when (it) {
+                0 -> Alignment.CenterStart // brand
+                1 -> Alignment.CenterStart // blend
+                2 -> Alignment.Center // type
+                3 -> Alignment.Center // subgenre
+                4 -> Alignment.Center // rating
+                5 -> Alignment.Center // fav/dis
+                6 -> Alignment.Center // notes
+                7 -> Alignment.Center // quantity
+                else -> Alignment.CenterStart
+            }
+        }
+
+        TableLayoutData(
+            columnMinWidths = ColumnWidth(columnMinWidths),
+            totalWidth = totalWidth,
+            columnMapping = ColumnMapping(columnMapping),
+            alignment = ColumnAlignment(alignment)
+        )
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = TableLayoutData()
+        )
+
+
+    @Stable
+    @Suppress("UNCHECKED_CAST")
+    val homeUiState = combine(
+        sortedItems,
+        isTableView,
+        filterViewModel.emptyDatabase,
+        emptyMessage,
+        resetLoading,
+        _isRendered,
+        formattedQuantities,
+    ) { array ->
+        val sortedItems = array[0] as List<ItemsComponentsAndTins>
+        val isTableView = array[1] as Boolean
+        val emptyDatabase = array[2] as Boolean
+        val emptyMessage = array[3] as String
+        val resetLoading = array[4] as Boolean
+        val isRendered = array[5] as Boolean
+        val formattedQuantities = array[6] as Map<Int, String>
+
+
+        if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
+
+        val dataLoading = if (resetLoading) {
+            true
+        } else {
+            if (!emptyDatabase && sortedItems.isNotEmpty()) {
+                !isRendered
+            } else {
+                if (emptyDatabase) false else emptyMessage.isBlank()
+            }
+        }
+
+        HomeUiState(
+            isTableView = isTableView,
+            emptyDatabase = emptyDatabase,
+            isLoading = dataLoading
+        )
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = HomeUiState(isLoading = true)
+        )
+
+
+    /** One-Time Alerts **/
+    fun saveAlertSeen(alertId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepo.saveAlertShown(alertId)
+        }
+    }
+
+
+    /** Item menu overlay and expand details **/
+    fun onShowMenu(itemId: Int) {
+        _itemMenuShown.value = true
+        _activeMenuId.value = itemId
+    }
+
+    fun onDismissMenu() {
+        _itemMenuShown.value = false
+        _activeMenuId.value = null
+    }
+
+
+    /** Helper functions **/
+    private fun sortItems(
+        filteredItems: List<ItemsComponentsAndTins>,
+        isTableView: Boolean,
+        tableSorting: TableSorting,
+        listSorting: ListSorting,
+        sortQuantity: Map<Int, Double>,
+        typeGenreOption: TypeGenreOption,
+    ): List<ItemsComponentsAndTins> {
+        return if (filteredItems.isNotEmpty()) {
             if (isTableView) {
                 when (tableSorting.columnIndex) {
                     0 -> filteredItems.sortedBy { it.items.brand }
@@ -305,112 +658,27 @@ class HomeViewModel(
                 }
             }
         } else emptyList()
-
-        val formattedQuantities = sortedItems.associate { items ->
-            val totalQuantity = calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate) // !it.finished &&
-            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, items.tins.filter { it in filteredTins }) // !it.finished &&
-            items.items.id to formattedQuantity
-        }
-
-        val formattedTypeGenre = sortedItems.associate { item ->
-            val text = when (typeGenreOption) {
-                TypeGenreOption.TYPE -> item.items.type
-                TypeGenreOption.SUBGENRE -> item.items.subGenre
-                TypeGenreOption.BOTH -> {
-                    item.items.type +
-                            if (item.items.type.isNotEmpty() && item.items.subGenre.isNotEmpty()) { " - " } else { "" } +
-                            item.items.subGenre
-                }
-                TypeGenreOption.TYPE_FALLBACK -> item.items.type.ifBlank { item.items.subGenre }
-                TypeGenreOption.SUB_FALLBACK -> item.items.subGenre.ifBlank { item.items.type }
-            }
-            item.items.id to text
-        }
-
-        val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY)
-        val subgenreOption = when (typeGenreOption) {
-            TypeGenreOption.SUBGENRE -> true
-            TypeGenreOption.BOTH -> true
-            TypeGenreOption.SUB_FALLBACK -> true
-            else -> false
-        }
-        val sortingOptions = ListSortOption.entries.filter {
-            when (it) {
-                in alwaysOptions -> true
-                ListSortOption.TYPE -> typesExist
-                ListSortOption.SUBGENRE -> subgenreOption && subgenresExist
-                ListSortOption.RATING -> ratingsExist && showRating
-                else -> false
-            }
-        }
-
-        if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
-
-        val dataLoading = if (resetLoading) {
-            true
-        } else {
-            if (!emptyDatabase && sortedItems.isNotEmpty()) {
-                !isRendered
-            } else {
-                if (emptyDatabase) false else emptyMessage.isBlank()
-            }
-        }
-
-        HomeUiState(
-            sortedItems = sortedItems,
-            filteredTins = filteredTins,
-            emptyMessage = emptyMessage,
-            showRating = showRating,
-            sortingOptions = sortingOptions,
-            typeGenreOption = typeGenreOption,
-            formattedTypeGenre = formattedTypeGenre,
-            formattedQuantities = formattedQuantities,
-            isTableView = isTableView,
-            tableSorting = tableSorting,
-            listSorting = listSorting,
-            emptyDatabase = emptyDatabase,
-            showTins = showTins,
-            isLoading = dataLoading
-        )
     }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = HomeUiState(isLoading = true)
-        )
+
+    private fun calculateTypeGenre(item: Items, option: TypeGenreOption): String {
+        return when (option) {
+            TypeGenreOption.TYPE -> item.type
+            TypeGenreOption.SUBGENRE -> item.subGenre
+            TypeGenreOption.BOTH -> {
+                item.type +
+                        if (item.type.isNotEmpty() && item.subGenre.isNotEmpty()) { " - " } else { "" } +
+                        item.subGenre
+            }
+            TypeGenreOption.TYPE_FALLBACK -> item.type.ifBlank { item.subGenre }
+            TypeGenreOption.SUB_FALLBACK -> item.subGenre.ifBlank { item.type }
+        }
+    }
 
 
-    /** One-Time Alerts **/
-    fun saveAlertSeen(alertId: Int) {
+    /** UI functions **/
+    fun selectView() {
         viewModelScope.launch(Dispatchers.IO) {
-            preferencesRepo.saveAlertShown(alertId)
-        }
-    }
-
-
-    /** Item menu overlay and expand details **/
-    private val _itemMenuShown = mutableStateOf(false)
-    val itemMenuShown: State<Boolean> = _itemMenuShown
-
-    private val _activeMenuId = mutableStateOf<Int?>(null)
-    val activeMenuId: State<Int?> = _activeMenuId
-
-    fun onShowMenu(itemId: Int) {
-        _itemMenuShown.value = true
-        _activeMenuId.value = itemId
-    }
-
-    fun onDismissMenu() {
-        _itemMenuShown.value = false
-        _activeMenuId.value = null
-    }
-
-
-    /** Sorting and toggle view **/
-    fun selectView(isTableView: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            preferencesRepo.saveViewPreference(isTableView)
+            preferencesRepo.saveViewPreference(!_isTableView.value)
         }
     }
 
@@ -444,15 +712,12 @@ class HomeViewModel(
 
         _tableTableSorting.value = newTableSorting
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             preferencesRepo.saveTableSortingPreferences(
                 newTableSorting.columnIndex, newTableSorting.sortAscending
             )
         }
     }
-
-    private val _showColumnMenu = mutableStateOf(false)
-    val showColumnMenu: State<Boolean> = _showColumnMenu
 
     fun showColumnMenuToggle() {
         _showColumnMenu.value = !_showColumnMenu.value
@@ -540,9 +805,11 @@ class HomeViewModel(
 
     fun snackbarShown() { _showSnackbar.value = false }
 
+    val filteredItems = filterViewModel.homeScreenFilteredItems.value
+
     override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
         viewModelScope.launch(Dispatchers.IO) {
-            val data = if (allItems) _allItems.value else homeUiState.value.sortedItems
+            val data = if (allItems) _allItems.value else filteredItems
             val maxRating = exportRating.maxRating
             val rounding = exportRating.rounding
 
@@ -570,7 +837,7 @@ class HomeViewModel(
             val data: List<TinExportData> = if (allItems) {
                 createTinExportData(_allItems.value, maxRating, rounding)
             } else {
-                createTinExportData(homeUiState.value.sortedItems, maxRating, rounding)
+                createTinExportData(filteredItems, maxRating, rounding)
             }
 
             val tinCsvData = csvHelper.exportTinsToCsv(data)
@@ -664,25 +931,53 @@ class HomeViewModel(
 
 }
 
+@Stable
+data class ItemsList(val list: List<ItemsListState> = emptyList())
+
+@Stable
+data class ItemsListState(
+    val item: ItemsComponentsAndTins,
+    val itemId: Int,
+    val formattedQuantity: String,
+    val outOfStock: Boolean,
+    val formattedTypeGenre: String,
+    val tins: List<Tins>,
+    val showRating: Boolean,
+)
+
+@Stable
+data class TinsList(val tins: List<Tins> = emptyList())
+
+@Stable
+data class SortingOptionsList(val options: List<ListSortOption> = emptyList())
+
+@Stable
 data class HomeUiState(
-    val sortedItems: List<ItemsComponentsAndTins> = emptyList(),
-    val filteredTins: List<Tins> = emptyList(),
-    val emptyMessage: String = "",
-    val showRating: Boolean = false,
-    val sortingOptions: List<ListSortOption> = emptyList(),
-    val typeGenreOption: TypeGenreOption = TypeGenreOption.TYPE,
-    val formattedTypeGenre: Map<Int, String> = emptyMap(),
-    val formattedQuantities: Map<Int, String> = emptyMap(),
     val isTableView: Boolean = false,
-    val tableSorting: TableSorting = TableSorting(),
-    val listSorting: ListSorting = ListSorting(),
     val emptyDatabase: Boolean = false,
-    val showTins: Boolean = false,
+    val isLoading: Boolean = false
+)
+
+@Stable
+data class ViewSelect(
+    val isTableView: Boolean = false,
     val toggleContentDescription: Int =
         if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
     val toggleIcon: Int =
         if (isTableView) R.drawable.table_view else R.drawable.list_view,
-    val isLoading: Boolean = false
+)
+
+@Stable
+data class ListColumnMenuState(
+    val isTableView: Boolean = false,
+    val sortingOptions: SortingOptionsList = SortingOptionsList(),
+    val listSorting: ListSorting = ListSorting()
+)
+
+@Stable
+data class MenuState(
+    val isMenuShown: Boolean = false,
+    val activeMenuId: Int? = null
 )
 
 @Stable
@@ -692,13 +987,14 @@ data class ItemsIconData(
     val size: Dp = 17.dp
 )
 
-
+@Stable
 data class ImportantAlertState(
     val show: Boolean = false,
     val alertToDisplay: OneTimeAlert? = null,
     val isCurrentAlert: Boolean = false
 )
 
+@Stable
 data class TableSorting(
     val columnIndex: Int = -1,
     val sortAscending: Boolean = true,
@@ -709,6 +1005,24 @@ data class TableSorting(
         }
 )
 
+@Stable
+data class TableLayoutData(
+    val columnMinWidths: ColumnWidth = ColumnWidth(),
+    val totalWidth: Dp = 0.dp,
+    val columnMapping: ColumnMapping = ColumnMapping(),
+    val alignment: ColumnAlignment = ColumnAlignment()
+)
+
+@Stable
+data class ColumnWidth(val values: List<Dp> = emptyList())
+
+@Stable
+data class ColumnAlignment(val values: List<Alignment> = emptyList())
+
+@Stable
+data class ColumnMapping(val values: List<(Items) -> Any?> = emptyList())
+
+@Stable
 data class ListSorting(
     val option: ListSortOption = ListSortOption.DEFAULT,
     val listAscending: Boolean = true,
@@ -719,6 +1033,7 @@ data class ListSorting(
         }
 )
 
+@Immutable
 enum class ListSortOption(val value: String) {
     DEFAULT("Default"),
     BLEND("Blend"),
@@ -729,7 +1044,7 @@ enum class ListSortOption(val value: String) {
     QUANTITY("Quantity")
 }
 
-
+@Immutable
 sealed class SearchSetting(val value: String) {
     data object Blend: SearchSetting("Blend")
     data object Notes: SearchSetting("Notes")
