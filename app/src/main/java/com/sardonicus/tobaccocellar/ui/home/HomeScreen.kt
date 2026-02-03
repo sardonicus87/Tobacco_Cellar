@@ -80,7 +80,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -117,8 +116,6 @@ import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.Items
-import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.HomeScrollState
 import com.sardonicus.tobaccocellar.ui.SearchState
@@ -165,7 +162,6 @@ fun HomeScreen(
     val homeUiState by viewModel.homeUiState.collectAsState()
     val searchState by filterViewModel.searchState.collectAsState()
     val menuState by viewModel.menuState.collectAsState()
-    val onDismissMenu = viewModel::onDismissMenu
 
     val showSnackbar by viewModel.showSnackbar.collectAsState()
     if (showSnackbar) {
@@ -181,7 +177,7 @@ fun HomeScreen(
     DisposableEffect(Unit) {
         onDispose {
             viewModel.snackbarShown()
-            onDismissMenu()
+            viewModel.onDismissMenu()
         }
     }
 
@@ -215,7 +211,7 @@ fun HomeScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .clickable(indication = null, interactionSource = null) {
                 focusManager.clearFocus()
-                onDismissMenu()
+                viewModel.onDismissMenu()
             },
         topBar = {
             CellarTopAppBar(
@@ -273,7 +269,6 @@ fun HomeScreen(
                 getPositionTrigger = filterViewModel::getPositionTrigger,
                 saveSearchSetting = filterViewModel::saveSearchSetting,
                 onExpandSearchMenu = filterViewModel::setSearchMenuExpanded,
-            //    selectView = viewModel::selectView,
                 onShowColumnPop = viewModel::showColumnMenuToggle,
                 saveListSorting = viewModel::saveListSorting,
                 shouldScrollUp = filterViewModel::shouldScrollUp,
@@ -282,21 +277,16 @@ fun HomeScreen(
                 HomeBody(
                     viewModel = viewModel,
                     filterViewModel = filterViewModel,
-                    showLoading = homeUiState.isLoading,
-                    isTableView = homeUiState.isTableView,
-                    coroutineScope = coroutineScope,
+                    showLoading = { homeUiState.isLoading },
+                    isTableView = { homeUiState.isTableView },
+                    coroutineScope = { coroutineScope },
                     onDetailsClick = navigateToBlendDetails,
                     onEditClick = navigateToEditEntry,
-                    isMenuShown = menuState.isMenuShown,
-                    activeMenuId = menuState.activeMenuId,
-                    onShowMenu = viewModel::onShowMenu,
-                    onDismissMenu = onDismissMenu,
+                    isMenuShown = { menuState.isMenuShown },
+                    activeMenuId = { menuState.activeMenuId },
                     getPositionTrigger = filterViewModel::getPositionTrigger,
-                    searchFocused = searchState.searchFocused,
-                    searchPerformed = searchState.searchPerformed,
-                    showColumnPop = viewModel.showColumnMenu.value,
-                    hideColumnPop = viewModel::showColumnMenuToggle,
-                    onVisibilityChange = viewModel::updateColumnVisibility,
+                    searchFocused = { searchState.searchFocused },
+                    searchPerformed = { searchState.searchPerformed },
                     shouldScrollUp = filterViewModel::shouldScrollUp,
                     modifier = modifier
                         .fillMaxWidth()
@@ -756,29 +746,22 @@ private fun CustomBlendSearch(
 private fun HomeBody(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
-    showLoading: Boolean,
-    isTableView: Boolean,
-    coroutineScope: CoroutineScope,
+    showLoading: () -> Boolean,
+    isTableView: () -> Boolean,
+    coroutineScope: () -> CoroutineScope,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
-    isMenuShown: Boolean,
-    activeMenuId: Int?,
-    onShowMenu: (Int) -> Unit,
-    onDismissMenu: () -> Unit,
+    isMenuShown: () -> Boolean,
+    activeMenuId: () -> Int?,
     getPositionTrigger: () -> Unit,
-    showColumnPop: Boolean,
-    hideColumnPop: () -> Unit,
-    onVisibilityChange: (TableColumn, Boolean) -> Unit,
     shouldScrollUp: () -> Unit,
-    searchFocused: Boolean,
-    searchPerformed: Boolean,
+    searchFocused: () -> Boolean,
+    searchPerformed: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     val columnState = rememberLazyListState()
     val scrollState by filterViewModel.homeScrollState.collectAsState()
     val sortedItems by viewModel.itemsListState.collectAsState()
-    val tableSorting by viewModel.tableSorting.collectAsState()
-    val tableLayoutData by viewModel.tableLayoutData.collectAsState()
     val itemsCount by viewModel.itemsCount.collectAsState()
 
     LaunchedEffect(columnState) {
@@ -790,19 +773,17 @@ private fun HomeBody(
     Box {
         BodyContent(
             viewModel, isTableView, columnState, sortedItems, onDetailsClick, onEditClick,
-            isMenuShown, activeMenuId, onShowMenu, onDismissMenu, getPositionTrigger, searchFocused,
-            searchPerformed, tableSorting, tableLayoutData, shouldScrollUp, modifier
+            isMenuShown, activeMenuId, getPositionTrigger, searchFocused,
+            searchPerformed, shouldScrollUp, modifier
         )
 
-        if (showLoading) { LoadingIndicator() }
+        if (showLoading()) { LoadingIndicator() }
 
-        if (showColumnPop) {
+        if (viewModel.showColumnMenu.value) {
             ColumnVisibilityPopup(
                 viewModel = viewModel,
-                onVisibilityChange = { column, visibility ->
-                    onVisibilityChange(column, visibility)
-                },
-                onDismiss = { hideColumnPop() }
+                onVisibilityChange = viewModel::updateColumnVisibility,
+                onDismiss = viewModel::showColumnMenuToggle
             )
         }
 
@@ -810,18 +791,18 @@ private fun HomeBody(
         // jump to button
         JumpToButton(
             columnState = columnState,
-            itemCount = itemsCount,
-            coroutineScope = coroutineScope,
-            onScrollToTop = { coroutineScope.launch { columnState.scrollToItem(0) } },
-            onScrollToBottom = { coroutineScope.launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
+            itemCountPass = { itemsCount > 75 },
+            coroutineScope = coroutineScope(),
+            onScrollToTop = { coroutineScope().launch { columnState.scrollToItem(0) } },
+            onScrollToBottom = { coroutineScope().launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(16.dp)
         )
 
         HomeScrollHandler(
-            columnState, sortedItems, itemsCount, scrollState, filterViewModel,
-            searchPerformed, coroutineScope,
+            columnState, sortedItems, { itemsCount }, scrollState, filterViewModel,
+            searchPerformed(), coroutineScope(),
         )
     }
 }
@@ -829,26 +810,25 @@ private fun HomeBody(
 @Composable
 private fun BodyContent(
     viewModel: HomeViewModel,
-    isTableView: Boolean,
+    isTableView: () -> Boolean,
     columnState: LazyListState,
     sortedItems: ItemsList,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
-    isMenuShown: Boolean,
-    activeMenuId: Int?,
-    onShowMenu: (Int) -> Unit,
-    onDismissMenu: () -> Unit,
+    isMenuShown: () -> Boolean,
+    activeMenuId: () -> Int?,
     getPositionTrigger: () -> Unit,
-    searchFocused: Boolean,
-    searchPerformed: Boolean,
-    tableSorting: TableSorting,
-    tableLayoutData: TableLayoutData,
+    searchFocused: () -> Boolean,
+    searchPerformed: () -> Boolean,
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tableSorting by viewModel.tableSorting.collectAsState()
+    val tableLayoutData by viewModel.tableLayoutData.collectAsState()
     val emptyMessage by viewModel.emptyMessage.collectAsState()
 
-    LaunchedEffect(isTableView) { columnState.scrollToItem(0) }
+    LaunchedEffect(isTableView()) { columnState.scrollToItem(0) }
+    LaunchedEffect(columnState.canScrollBackward) { viewModel.updateScrollShadow(columnState.canScrollBackward) }
 
     if (sortedItems.list.isEmpty()) {
         Column(
@@ -868,12 +848,11 @@ private fun BodyContent(
             Spacer(Modifier.weight(1.25f))
         }
     } else {
-        if (isTableView) {
+        if (isTableView()) {
             TableViewMode(
                 sortedItems = sortedItems,
                 columnState = columnState,
-                updateShadowSize = viewModel::updateScrollShadow,
-                shadowAlpha = viewModel.tableShadow.value,
+                shadowAlpha = { viewModel.tableShadow.value },
                 tableLayoutData = tableLayoutData,
                 sorting = tableSorting,
                 updateSorting = viewModel::updateSorting,
@@ -881,10 +860,10 @@ private fun BodyContent(
                 searchPerformed = searchPerformed,
                 onDetailsClick = onDetailsClick,
                 onEditClick = onEditClick,
-                getPositionTrigger = { getPositionTrigger() },
+                getPositionTrigger = getPositionTrigger,
                 shouldScrollUp = shouldScrollUp,
-                onShowMenu = onShowMenu,
-                onDismissMenu = onDismissMenu,
+                onShowMenu = viewModel::onShowMenu,
+                onDismissMenu = viewModel::onDismissMenu,
                 isMenuShown = isMenuShown,
                 activeMenuId = activeMenuId,
                 modifier = Modifier
@@ -899,14 +878,13 @@ private fun BodyContent(
                 ListViewMode(
                     sortedItems = sortedItems,
                     columnState = columnState,
-                    updateShadowSize = viewModel::updateScrollShadow,
                     searchFocused = searchFocused,
                     searchPerformed = searchPerformed,
                     onDetailsClick = onDetailsClick,
                     onEditClick = onEditClick,
-                    getPositionTrigger = { getPositionTrigger() },
-                    onShowMenu = onShowMenu,
-                    onDismissMenu = onDismissMenu,
+                    getPositionTrigger = getPositionTrigger,
+                    onShowMenu = viewModel::onShowMenu,
+                    onDismissMenu = viewModel::onDismissMenu,
                     isMenuShown = isMenuShown,
                     activeMenuId = activeMenuId,
                     modifier = Modifier
@@ -922,7 +900,7 @@ private fun BodyContent(
 private fun HomeScrollHandler(
     columnState: LazyListState,
     sortedItems: ItemsList,
-    itemsCount: Int,
+    itemsCount: () -> Int,
     scrollState: HomeScrollState,
     filterViewModel: FilterViewModel,
     searchPerformed: Boolean,
@@ -940,7 +918,7 @@ private fun HomeScrollHandler(
         if (savedItemIndex != -1) {
             withFrameNanos {
                 coroutineScope.launch {
-                    if (savedItemIndex > 0 && savedItemIndex < (itemsCount - 1)) {
+                    if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
                         val offset =
                             (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                         columnState.scrollToItem(savedItemIndex, offset)
@@ -988,7 +966,7 @@ private fun HomeScrollHandler(
 @Composable
 private fun JumpToButton(
     columnState: LazyListState,
-    itemCount: Int,
+    itemCountPass: () -> Boolean,
     coroutineScope: CoroutineScope,
     onScrollToTop: () -> Unit,
     onScrollToBottom: () -> Unit,
@@ -1003,7 +981,7 @@ private fun JumpToButton(
     val direction = if (scrollDirection == ScrollDirection.DOWN) "bottom" else "top"
 
     AnimatedVisibility(
-        visible = isVisible && (itemCount > 75),
+        visible = isVisible && itemCountPass(),
         enter = fadeIn(animationSpec = tween(150)),
         exit = fadeOut(animationSpec = tween(150)),
         modifier = modifier
@@ -1125,20 +1103,17 @@ private fun ItemMenu(
 fun ListViewMode(
     sortedItems: ItemsList,
     columnState: LazyListState,
-    updateShadowSize: (Boolean) -> Unit,
-    searchPerformed: Boolean,
-    searchFocused: Boolean,
+    searchPerformed: () -> Boolean,
+    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     getPositionTrigger: () -> Unit,
     onShowMenu: (Int) -> Unit,
-    isMenuShown: Boolean,
-    activeMenuId: Int?,
+    isMenuShown: () -> Boolean,
+    activeMenuId: () -> Int?,
     onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(columnState.canScrollBackward) { updateShadowSize(columnState.canScrollBackward) }
-
     Box(
         modifier = Modifier
             .padding(0.dp)
@@ -1147,6 +1122,7 @@ fun ListViewMode(
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
+                .background(LocalCustomColors.current.backgroundVariant)
                 .padding(0.dp),
             state = columnState,
         ) {
@@ -1154,25 +1130,32 @@ fun ListViewMode(
                 val haptics = LocalHapticFeedback.current
                 val focusManager = LocalFocusManager.current
 
-                BackHandler(isMenuShown && activeMenuId == item.itemId) { onDismissMenu() }
+                BackHandler(isMenuShown() && activeMenuId() == item.itemId) { onDismissMenu() }
 
                 ListItem(
-                    item = item,
+                    brand = { item.item.items.brand },
+                    blend = { item.item.items.blend },
+                    favorite = { item.item.items.favorite },
+                    disliked = { item.item.items.disliked },
+                    notes = { item.item.items.notes },
+                    typeGenreText = { item.formattedTypeGenre },
+                    formattedQuantity = { item.formattedQuantity },
+                    outOfStock = { item.outOfStock },
+                    rating = { item.rating },
                     onEditClick = { onEditClick(item.itemId) },
                     modifier = Modifier
-                        .padding(0.dp)
                         .combinedClickable(
                             onClick = {
-                                if (searchFocused) {
+                                if (searchFocused()) {
                                     focusManager.clearFocus()
                                 } else {
-                                    if (isMenuShown && activeMenuId == item.itemId) {
+                                    if (isMenuShown() && activeMenuId() == item.itemId) {
                                         // do nothing
                                     } else {
-                                        if (isMenuShown) {
+                                        if (isMenuShown()) {
                                             onDismissMenu()
                                         } else {
-                                            if (!searchPerformed) {
+                                            if (!searchPerformed()) {
                                                 getPositionTrigger()
                                             }
                                             onDetailsClick(item.itemId)
@@ -1182,17 +1165,17 @@ fun ListViewMode(
                             },
                             onLongClick = {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                if (!searchPerformed) {
+                                if (!searchPerformed()) {
                                     getPositionTrigger()
                                 }
                                 onShowMenu(item.itemId)
                             },
                             indication = null,
                             interactionSource = null
-                        )
-                    ,
+                        ),
                     onMenuDismiss = onDismissMenu,
-                    showMenu = isMenuShown && activeMenuId == item.itemId
+                    showMenu = { isMenuShown() && activeMenuId() == item.itemId },
+                    filteredTins = item.tins,
                 )
             }
         }
@@ -1202,9 +1185,18 @@ fun ListViewMode(
 
 @Composable
 private fun ListItem(
-    item: ItemsListState,
+    brand: () -> String,
+    blend: () -> String,
+    favorite: () -> Boolean,
+    disliked: () -> Boolean,
+    notes: () -> String,
+    typeGenreText: () -> String,
+    formattedQuantity: () -> String,
+    outOfStock: () -> Boolean,
+    rating: () -> String,
+    filteredTins: TinsList,
     onMenuDismiss: () -> Unit,
-    showMenu: Boolean,
+    showMenu: () -> Boolean,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1214,7 +1206,7 @@ private fun ListItem(
     ) {
         Box(
             modifier = modifier
-                .padding(0.dp)
+                .padding(bottom = 1.dp)
         ) {
             // main details
             Column {
@@ -1228,9 +1220,13 @@ private fun ListItem(
                 ) {
                     // Entry info
                     MainDetails(
-                        item = item.item.items,
-                        typeGenreText = item.formattedTypeGenre,
-                        showRating = item.showRating,
+                        brand = brand,
+                        blend = blend,
+                        favorite = favorite,
+                        disliked = disliked,
+                        notes = notes,
+                        rating = rating,
+                        typeGenreText = typeGenreText,
                         modifier = Modifier
                             .weight(1f, false)
                     )
@@ -1244,14 +1240,15 @@ private fun ListItem(
                         horizontalAlignment = Alignment.End
                     ) {
                         QuantityColumn(
-                            formattedQuantity = item.formattedQuantity,
+                            formattedQuantity = formattedQuantity,
+                            outOfStock = outOfStock,
                             modifier = Modifier
                         )
                     }
                 }
 
                 // Tins
-                if (item.tins.isNotEmpty()) {
+                if (filteredTins.tins.isNotEmpty()) {
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = .5f)),
                         size = GlowSize(top = 3.dp),
@@ -1265,7 +1262,7 @@ private fun ListItem(
                             verticalAlignment = Alignment.Top
                         ) {
                             TinList(
-                                filteredTins = item.tins,
+                                filteredTins = filteredTins,
                                 modifier = Modifier
                             )
                         }
@@ -1273,7 +1270,7 @@ private fun ListItem(
                 }
             }
 
-            if (showMenu) {
+            if (showMenu()) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -1289,17 +1286,17 @@ private fun ListItem(
             }
         }
     }
-
-    Spacer(Modifier
-        .height(1.dp)
-        .background(LocalCustomColors.current.backgroundVariant))
 }
 
 @Composable
 private fun MainDetails(
-    item: Items,
-    typeGenreText: String,
-    showRating: Boolean,
+    blend: () -> String,
+    brand: () -> String,
+    favorite: () -> Boolean,
+    disliked: () -> Boolean,
+    notes: () -> String,
+    rating: () -> String,
+    typeGenreText: () -> String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1308,7 +1305,7 @@ private fun MainDetails(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = item.blend,
+                text = blend(),
                 modifier = Modifier
                     .weight(1f, false)
                     .padding(end = 4.dp),
@@ -1320,7 +1317,7 @@ private fun MainDetails(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            IconRow(item)
+            IconRow(favorite, disliked, notes)
         }
         Row(
             modifier = Modifier
@@ -1330,7 +1327,7 @@ private fun MainDetails(
             verticalAlignment = Alignment.Top
         ) {
             Text(
-                text = item.brand,
+                text = brand(),
                 modifier = Modifier,
                 fontStyle = Italic,
                 fontWeight = FontWeight.Medium,
@@ -1340,9 +1337,9 @@ private fun MainDetails(
                     textDecoration = TextDecoration.None
                 )
             )
-            if (typeGenreText.isNotEmpty()){
+            if (typeGenreText().isNotEmpty()){
                 Text (
-                    text = typeGenreText,
+                    text = typeGenreText(),
                     modifier = Modifier,
                     style = MaterialTheme.typography.titleMedium.copy(
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1352,8 +1349,8 @@ private fun MainDetails(
                     fontSize = 11.sp
                 )
             }
-            if (showRating && item.rating != null) {
-                RatingLabel(item.rating)
+            if (rating().isNotEmpty()) {
+                RatingLabel(rating)
             }
         }
     }
@@ -1361,16 +1358,15 @@ private fun MainDetails(
 
 @Composable
 private fun QuantityColumn(
-    formattedQuantity: String,
+    formattedQuantity: () -> String,
+    outOfStock: () -> Boolean,
     modifier: Modifier = Modifier
 ) {
-    val outOfStock = remember(formattedQuantity) { formattedQuantity.none { it in '1'..'9' } }
-
     Text(
-        text = formattedQuantity,
+        text = formattedQuantity(),
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium.copy(
-            color = if (outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
+            color = if (outOfStock()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
             textDecoration = TextDecoration.None
         ),
         fontWeight = FontWeight.Normal,
@@ -1381,43 +1377,52 @@ private fun QuantityColumn(
 
 @Composable
 private fun IconRow(
-    item: Items,
+    favorite: () -> Boolean,
+    disliked: () -> Boolean,
+    notes: () -> String,
     modifier: Modifier = Modifier,
 ) {
-    val favColor = LocalCustomColors.current.favHeart
-    val disColor = LocalCustomColors.current.disHeart
-    val noteColor = MaterialTheme.colorScheme.tertiary
-
-    val icons = remember(item.favorite, item.disliked, item.notes) {
-        buildList {
-            if (item.favorite) add(ItemsIconData(R.drawable.heart_filled_24, favColor))
-            if (item.disliked) add(ItemsIconData(R.drawable.heartbroken_filled_24, disColor))
-            if (item.notes.isNotEmpty()) add(ItemsIconData(R.drawable.notes_24, noteColor, 16.dp))
-        }
-    }
-
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        icons.forEach {
+        if (favorite()) {
             Icon(
-                painter = painterResource(id = it.icon),
+                painter = painterResource(id = R.drawable.heart_filled_24),
                 contentDescription = null,
                 modifier = Modifier
                     .padding(start = 2.dp)
-                    .size(it.size),
-                tint = it.color
+                    .size(17.dp),
+                tint = LocalCustomColors.current.favHeart
+            )
+        }
+        if (disliked()) {
+            Icon(
+                painter = painterResource(id = R.drawable.heartbroken_filled_24),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(start = 2.dp)
+                    .size(17.dp),
+                tint = LocalCustomColors.current.disHeart
+            )
+        }
+        if (notes().isNotBlank()) {
+            Icon(
+                painter = painterResource(id = R.drawable.notes_24),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(start = 2.dp)
+                    .size(16.dp),
+                tint = MaterialTheme.colorScheme.tertiary
             )
         }
     }
-
 }
 
 @Composable
 private fun RatingLabel(
-    rating: Double,
+    rating: () -> String,
     modifier: Modifier = Modifier
 ) {
     Row (
@@ -1426,7 +1431,7 @@ private fun RatingLabel(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = rating.toString(),
+            text = rating(),
             modifier = Modifier,
             fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
@@ -1445,7 +1450,7 @@ private fun RatingLabel(
 
 @Composable
 private fun TinList(
-    filteredTins: List<Tins>,
+    filteredTins: TinsList,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1457,7 +1462,7 @@ private fun TinList(
             .padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
             .fillMaxWidth()
     ) {
-        filteredTins.forEach {
+        filteredTins.tins.forEach {
             Row (
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -1586,28 +1591,23 @@ fun ColumnVisibilityPopup(
 fun TableViewMode(
     sortedItems: ItemsList,
     columnState: LazyListState,
-    updateShadowSize: (Boolean) -> Unit,
-    shadowAlpha: Float,
+    shadowAlpha: () -> Float,
     tableLayoutData: TableLayoutData,
     sorting: TableSorting,
-    searchPerformed: Boolean,
-    searchFocused: Boolean,
+    searchPerformed: () -> Boolean,
+    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     getPositionTrigger: () -> Unit,
-    activeMenuId: Int?,
+    activeMenuId: () -> Int?,
     onShowMenu: (Int) -> Unit,
-    isMenuShown: Boolean,
+    isMenuShown: () -> Boolean,
     onDismissMenu: () -> Unit,
     updateSorting: (Int) -> Unit,
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(columnState.canScrollBackward) { updateShadowSize(columnState.canScrollBackward) }
-
     val horizontalScroll = rememberScrollState()
-    val focusManager = LocalFocusManager.current
-    val haptics = LocalHapticFeedback.current
 
     Box(
         modifier = Modifier
@@ -1631,7 +1631,6 @@ fun TableViewMode(
                     activeMenuId,
                     onDismissMenu,
                     searchFocused,
-                    focusManager,
                     Modifier
                         .fillMaxWidth()
                         .zIndex(1f)
@@ -1641,7 +1640,7 @@ fun TableViewMode(
                                 radius = 3.dp,
                                 spread = 1.dp,
                                 offset = DpOffset(0.dp, 3.dp),
-                                alpha = shadowAlpha // alpha
+                                alpha = shadowAlpha()
                             )
                         )
                 )
@@ -1649,31 +1648,34 @@ fun TableViewMode(
 
             items(items = sortedItems.list, key = { it.itemId }) { item ->
 
-                BackHandler(isMenuShown && activeMenuId == item.itemId) { onDismissMenu() }
+                BackHandler(isMenuShown() && activeMenuId() == item.itemId) { onDismissMenu() }
+
+                val haptics = LocalHapticFeedback.current
+                val focusManager = LocalFocusManager.current
 
                 TableItem(
-                    item,
-                    tableLayoutData,
-                    horizontalScroll,
-                    (isMenuShown && activeMenuId == item.itemId),
-                    { onEditClick(item.itemId) },
-                    onDismissMenu,
+                    item = item,
+                    layoutData = tableLayoutData,
+                    horizontalScroll = horizontalScroll,
+                    showMenu = { isMenuShown() && activeMenuId() == item.itemId },
+                    onEditClick = { onEditClick(item.itemId) },
+                    onDismissMenu = onDismissMenu,
                     modifier
                         .fillMaxWidth()
                         .height(intrinsicSize = IntrinsicSize.Min)
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .combinedClickable(
                             onClick = {
-                                if (searchFocused) {
+                                if (searchFocused()) {
                                     focusManager.clearFocus()
                                 } else {
-                                    if (isMenuShown && activeMenuId == item.itemId) {
+                                    if (isMenuShown() && activeMenuId() == item.itemId) {
                                         // do nothing
                                     } else {
-                                        if (isMenuShown) {
+                                        if (isMenuShown()) {
                                             onDismissMenu()
                                         } else {
-                                            if (!searchPerformed) {
+                                            if (!searchPerformed()) {
                                                 getPositionTrigger()
                                             }
                                             onDetailsClick(item.itemId)
@@ -1685,7 +1687,7 @@ fun TableViewMode(
                                 haptics.performHapticFeedback(
                                     HapticFeedbackType.LongPress
                                 )
-                                if (!searchPerformed) {
+                                if (!searchPerformed()) {
                                     getPositionTrigger()
                                 }
                                 onShowMenu(item.itemId)
@@ -1696,7 +1698,7 @@ fun TableViewMode(
                 )
 
                 // tins
-                if (item.tins.isNotEmpty()) {
+                if (item.tins.tins.isNotEmpty()) {
                     TableTinsList(
                         item.tins,
                         modifier
@@ -1716,11 +1718,10 @@ fun TableHeaderRow(
     updateSorting: (Int) -> Unit,
     sorting: TableSorting,
     shouldScrollUp: () -> Unit,
-    isMenuShown: Boolean,
-    activeMenuId: Int?,
+    isMenuShown: () -> Boolean,
+    activeMenuId: () -> Int?,
     onDismissMenu: () -> Unit,
-    searchFocused: Boolean,
-    focusManager: FocusManager,
+    searchFocused: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -1729,25 +1730,11 @@ fun TableHeaderRow(
             .background(MaterialTheme.colorScheme.primaryContainer)
     ) {
         for (columnIndex in layoutData.columnMinWidths.values.indices) {
-            val width = layoutData.columnMinWidths.values[columnIndex]
-            val headerText = remember (width) {
-                if (width == 0.dp) "" else
-                    when (columnIndex) {
-                        0 -> "Brand"
-                        1 -> "Blend"
-                        2 -> "Type"
-                        3 -> "Subgenre"
-                        4 -> "" // rating
-                        5 -> "" // favorite/dislike
-                        6 -> "Note"
-                        7 -> "Qty"
-                        else -> ""
-                    }
-            }
+            val focusManager = LocalFocusManager.current
 
             Box(
                 modifier = Modifier
-                    .width(width)
+                    .width(layoutData.columnMinWidths.values[columnIndex])
                     .fillMaxHeight()
                     .align(Alignment.CenterVertically)
                     .border(Dp.Hairline, LocalCustomColors.current.tableBorder)
@@ -1759,12 +1746,12 @@ fun TableHeaderRow(
                         Box(
                             modifier = Modifier
                                 .clickable(
-                                    enabled = width > 0.dp,
+                                    enabled = layoutData.columnMinWidths.values[columnIndex] > 0.dp,
                                     onClick = {
-                                        if (searchFocused) {
+                                        if (searchFocused()) {
                                             focusManager.clearFocus()
                                         } else {
-                                            if (isMenuShown && activeMenuId != null) {
+                                            if (isMenuShown() && activeMenuId() != null) {
                                                 onDismissMenu()
                                             } else {
                                                 updateSorting(columnIndex)
@@ -1780,7 +1767,7 @@ fun TableHeaderRow(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = headerText,
+                                    text = layoutData.headerText.values[columnIndex],
                                     modifier = Modifier,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -1802,12 +1789,12 @@ fun TableHeaderRow(
                         Box(
                             modifier = Modifier
                                 .clickable(
-                                    enabled = width > 0.dp,
+                                    enabled = layoutData.columnMinWidths.values[4] > 0.dp,
                                     onClick = {
-                                        if (searchFocused) {
+                                        if (searchFocused()) {
                                             focusManager.clearFocus()
                                         } else {
-                                            if (isMenuShown && activeMenuId != null) {
+                                            if (isMenuShown() && activeMenuId() != null) {
                                                 onDismissMenu()
                                             } else {
                                                 updateSorting(columnIndex)
@@ -1864,7 +1851,7 @@ fun TableHeaderRow(
                     6 -> { // notes
                         Box(contentAlignment = layoutData.alignment.values[columnIndex]) {
                             Text(
-                                text = headerText,
+                                text = layoutData.headerText.values[columnIndex],
                                 modifier = Modifier,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -1881,7 +1868,7 @@ fun TableItem(
     item: ItemsListState,
     layoutData: TableLayoutData,
     horizontalScroll: ScrollState,
-    showMenu: Boolean,
+    showMenu: () -> Boolean,
     onEditClick: () -> Unit,
     onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier
@@ -1893,7 +1880,6 @@ fun TableItem(
                 .background(MaterialTheme.colorScheme.secondaryContainer)
         ) {
             for (columnIndex in layoutData.columnMinWidths.values.indices) {
-                val cellValue = layoutData.columnMapping.values[columnIndex](item.item.items)
 
                 Box(
                     modifier = Modifier
@@ -1908,29 +1894,26 @@ fun TableItem(
                     when (columnIndex) {
                         0, 1, 2, 3, 4 -> { // brand, blend, type, subgenre, rating
                             Text(
-                                text = cellValue?.toString() ?: "",
+                                text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         } // brand, blend, type, subgenre, rating
                         5 -> { // fav/disliked
-                            val favDisValue = cellValue as Int
+                            val favDisValue = layoutData.columnMapping.values[columnIndex](item.item.items) as Int
                             if (favDisValue != 0) {
-                                val icon = if (favDisValue == 1) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24
-                                val color = if (favDisValue == 1) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
-
                                 Image(
-                                    painter = painterResource(icon),
+                                    painter = painterResource(if (favDisValue == 1) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(20.dp),
-                                    colorFilter = ColorFilter.tint(color)
+                                    colorFilter = ColorFilter.tint(if (favDisValue == 1) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart)
                                 )
                             }
                         } // fav/disliked
                         6 -> { // notes
-                            if (cellValue?.toString()?.isNotEmpty() == true) {
+                            if (layoutData.columnMapping.values[columnIndex](item.item.items)?.toString()?.isNotEmpty() == true) {
                                 Image(
                                     painter = painterResource(id = R.drawable.notes_24),
                                     contentDescription = null,
@@ -1941,18 +1924,16 @@ fun TableItem(
                             }
                         } // notes
                         7 -> { // quantity
-                            val color = if (item.outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer
-
                             Text(
                                 text = item.formattedQuantity,
-                                color = color,
+                                color = if (item.outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         } // quantity
                         else -> {
                             Text(
-                                text = cellValue?.toString() ?: "",
+                                text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
                                 modifier = Modifier,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -1962,22 +1943,22 @@ fun TableItem(
                 }
             }
         }
-        if (showMenu) {
-            val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
-            val currentScrollOffset by remember { derivedStateOf { horizontalScroll.value } }
-            val switch = screenWidth.dp >= layoutData.totalWidth
-            val width = if (switch) layoutData.totalWidth.value.toInt() else screenWidth
-
+        if (showMenu()) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .padding(0.dp)
             ) {
+                val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
+            //    val currentScrollOffset by remember { derivedStateOf { horizontalScroll.value } }
+                val switch = remember(screenWidth, layoutData.totalWidth) { screenWidth.dp >= layoutData.totalWidth }
+            //    val width = remember(switch) { if (switch) layoutData.totalWidth.value.dp else screenWidth.dp }
+
                 Box (
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(width.dp)
-                        .offset { IntOffset(if (switch) 0 else currentScrollOffset, 0) },
+                        .width(if (switch) layoutData.totalWidth.value.dp else screenWidth.dp)
+                        .offset { IntOffset(if (switch) 0 else horizontalScroll.value, 0) },
                     contentAlignment = Alignment.Center
                 ) {
                     ItemMenu(
@@ -1993,7 +1974,7 @@ fun TableItem(
 
 @Composable
 fun TableTinsList(
-    filteredTins: List<Tins>,
+    filteredTins: TinsList,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -2010,7 +1991,7 @@ fun TableTinsList(
                 .padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
                 .fillMaxWidth()
         ) {
-            filteredTins.forEachIndexed { index, it ->
+            filteredTins.tins.forEachIndexed { index, it ->
                 Row(
                     modifier = Modifier
                         .height(IntrinsicSize.Min),
@@ -2067,7 +2048,7 @@ fun TableTinsList(
                             fontSize = 13.sp
                         )
                     }
-                    if (index != filteredTins.lastIndex) {
+                    if (index != filteredTins.tins.lastIndex) {
                         VerticalDivider(Modifier
                             .fillMaxHeight(.85f)
                             .padding(horizontal = 12.dp), thickness = 2.dp, color = LocalCustomColors.current.tableBorder)

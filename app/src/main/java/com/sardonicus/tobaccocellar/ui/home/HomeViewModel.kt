@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -204,7 +203,6 @@ class HomeViewModel(
     private var searchWasPerformed = false
     private var savedSearchText = ""
 
-    @Stable
     @Suppress("UNCHECKED_CAST")
     val emptyMessage: StateFlow<String> = combine(
         filterViewModel.searchValue,
@@ -435,16 +433,20 @@ class HomeViewModel(
         val tins = array[4] as TinsList
         val showTins = array[5] as Boolean
 
-        val list = items.map {item ->
+        val list = items.map { item ->
             val quantity = quantities[item.items.id] ?: "--"
+            val filteredTins = if (showTins) item.tins.filter { it in tins.tins } else emptyList()
+
+            val showRating = showRating && item.items.rating != null
+
             ItemsListState(
                 item = item,
                 itemId = item.items.id,
                 formattedQuantity = quantity,
                 outOfStock = quantity.none { it in '1'..'9' },
                 formattedTypeGenre = calculateTypeGenre(item.items, typeOption),
-                tins = if (showTins) item.tins.filter { it in tins.tins } else emptyList(),
-                showRating = showRating && item.items.rating != null,
+                tins = TinsList(filteredTins),
+                rating = if (showRating) item.items.rating.toString() else "",
             )
         }
 
@@ -529,11 +531,29 @@ class HomeViewModel(
             }
         }
 
+        val headerText = columnMinWidths.indices.map {
+            val width = columnMinWidths[it]
+            if (width == 0.dp) "" else {
+                when (it) {
+                    0 -> "Brand"
+                    1 -> "Blend"
+                    2 -> "Type"
+                    3 -> "Subgenre"
+                    4 -> "" // rating
+                    5 -> "" // favorite/dislike
+                    6 -> "Note"
+                    7 -> "Qty"
+                    else -> ""
+                }
+            }
+        }
+
         TableLayoutData(
             columnMinWidths = ColumnWidth(columnMinWidths),
             totalWidth = totalWidth,
             columnMapping = ColumnMapping(columnMapping),
-            alignment = ColumnAlignment(alignment)
+            alignment = ColumnAlignment(alignment),
+            headerText = HeaderText(headerText)
         )
     }
         .distinctUntilChanged()
@@ -545,7 +565,6 @@ class HomeViewModel(
         )
 
 
-    @Stable
     @Suppress("UNCHECKED_CAST")
     val homeUiState = combine(
         sortedItems,
@@ -941,8 +960,8 @@ data class ItemsListState(
     val formattedQuantity: String,
     val outOfStock: Boolean,
     val formattedTypeGenre: String,
-    val tins: List<Tins>,
-    val showRating: Boolean,
+    val tins: TinsList,
+    val rating: String
 )
 
 @Stable
@@ -981,13 +1000,6 @@ data class MenuState(
 )
 
 @Stable
-data class ItemsIconData(
-    val icon: Int,
-    val color: Color,
-    val size: Dp = 17.dp
-)
-
-@Stable
 data class ImportantAlertState(
     val show: Boolean = false,
     val alertToDisplay: OneTimeAlert? = null,
@@ -1010,7 +1022,8 @@ data class TableLayoutData(
     val columnMinWidths: ColumnWidth = ColumnWidth(),
     val totalWidth: Dp = 0.dp,
     val columnMapping: ColumnMapping = ColumnMapping(),
-    val alignment: ColumnAlignment = ColumnAlignment()
+    val alignment: ColumnAlignment = ColumnAlignment(),
+    val headerText: HeaderText = HeaderText()
 )
 
 @Stable
@@ -1021,6 +1034,9 @@ data class ColumnAlignment(val values: List<Alignment> = emptyList())
 
 @Stable
 data class ColumnMapping(val values: List<(Items) -> Any?> = emptyList())
+
+@Stable
+data class HeaderText(val values: List<String> = emptyList())
 
 @Stable
 data class ListSorting(
@@ -1050,7 +1066,6 @@ sealed class SearchSetting(val value: String) {
     data object Notes: SearchSetting("Notes")
     data object TinLabel: SearchSetting("Tin Label")
 }
-
 
 /** helper functions for quantity display **/
 fun calculateTotalQuantity(
