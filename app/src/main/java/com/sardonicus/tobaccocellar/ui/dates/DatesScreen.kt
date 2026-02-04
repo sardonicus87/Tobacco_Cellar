@@ -126,10 +126,9 @@ fun DatesScreen(
                 .padding(innerPadding)
         ) {
             DatesBody(
-                loading = datesUiState.loading,
                 navigateToDetails = navigateToDetails,
                 datesUiState = datesUiState,
-                selectionKey = selectionKey,
+                selectionKey = { selectionKey },
                 updateSelectionFocused = viewModel::updateFocused,
                 modifier = Modifier
                     .fillMaxSize()
@@ -140,20 +139,21 @@ fun DatesScreen(
 
 @Composable
 fun DatesBody(
-    loading: Boolean,
     navigateToDetails: (Int) -> Unit,
     datesUiState: DatesUiState,
-    selectionKey: Int,
+    selectionKey: () -> Int,
     updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val separatorColor = colorScheme.secondary
+
     Column(
         modifier = modifier
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        if (loading) {
+        if (datesUiState.loading) {
             LoadingIndicator()
         } else {
             LazyColumn(
@@ -162,6 +162,7 @@ fun DatesBody(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
+                // disclaimer
                 item {
                     Text(
                         text = "*Excluding \"Aging Tracker\", all date information on this screen is filter-reactive.",
@@ -177,7 +178,6 @@ fun DatesBody(
                 // Aging Tracker
                 item {
                     Box {
-                        val separatorColor = colorScheme.secondary
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -229,61 +229,36 @@ fun DatesBody(
                         horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.Top
                     ) {
-                        if (datesUiState.agedDueThisWeek.isNotEmpty() || datesUiState.agedDueThisMonth.isNotEmpty()) {
-                            if (datesUiState.agedDueThisWeek.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = "Tins ready in the next 7 days:",
-                                    modifier = Modifier
-                                        .padding(bottom = 1.dp),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                                AgingSection(
-                                    items = datesUiState.agedDueThisWeek,
-                                    navigateToDetails = navigateToDetails,
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    showTime = true
-                                )
-                            } else {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = "No tins ready this week.",
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    textAlign = TextAlign.Start,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            }
-
-                            if (datesUiState.agedDueThisMonth.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = "Other tins ready this month:",
-                                    modifier = Modifier
-                                        .padding(bottom = 1.dp),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                                AgingSection(
-                                    items = datesUiState.agedDueThisMonth,
-                                    navigateToDetails = navigateToDetails,
-                                    showDate = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                )
-                            } else {
-                                Text(
-                                    text = "No more tins ready this month.",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    textAlign = TextAlign.Start,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
+                        if (datesUiState.agingExists) {
+                            datesUiState.agingSection.forEach {
+                                if (it.agingDue.isNotEmpty()) {
+                                    Spacer(Modifier.height(12.dp))
+                                    Text(
+                                        text = it.exists,
+                                        modifier = Modifier
+                                            .padding(bottom = 1.dp),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                    AgingSection(
+                                        items = it.agingDue,
+                                        navigateToDetails = navigateToDetails,
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        showTime = true
+                                    )
+                                }
+                                else {
+                                    Spacer(Modifier.height(12.dp))
+                                    Text(
+                                        text = it.empty,
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        textAlign = TextAlign.Start,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(20.dp))
                         } else {
@@ -298,20 +273,174 @@ fun DatesBody(
                     }
                 }
 
+
                 if (datesUiState.datesExist) {
+                    // Quick Stats
                     item {
-                        DateInfo(
-                            navigateToDetails = navigateToDetails,
-                            datesUiState = datesUiState,
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(color = LocalCustomColors.current.backgroundVariant)
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Quick Date Stats",
+                                    modifier = Modifier
+                                        .padding(start = 8.dp),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Start,
+                                    color = colorScheme.onBackground
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .drawBehind {
+                                        val strokeWidth = Dp.Hairline.toPx()
+                                        val yOffset = size.height - strokeWidth / 2
+
+                                        drawLine(
+                                            color = separatorColor,
+                                            start = Offset(0f, 0f),
+                                            end = Offset(size.width, strokeWidth),
+                                            strokeWidth = strokeWidth
+                                        )
+
+                                        drawLine(
+                                            color = separatorColor,
+                                            start = Offset(0f, yOffset),
+                                            end = Offset(size.width, yOffset),
+                                            strokeWidth = strokeWidth
+                                        )
+                                    }
+                            )
+                        }
+                    }
+
+                    item {
+                        QuickStatsSection(
+                            averagesExist = { datesUiState.averageAgeExists },
+                            averageAgeSection = datesUiState.averageAgeSection,
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
-                            modifier = Modifier
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                }
 
-                else {
+                    // Oldest Tins
+                    item {
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(color = LocalCustomColors.current.backgroundVariant)
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Oldest Tins",
+                                    modifier = Modifier
+                                        .padding(start = 8.dp),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Start,
+                                    color = colorScheme.onBackground
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .drawBehind {
+                                        val strokeWidth = Dp.Hairline.toPx()
+                                        val yOffset = size.height - strokeWidth / 2
+
+                                        drawLine(
+                                            color = separatorColor,
+                                            start = Offset(0f, 0f),
+                                            end = Offset(size.width, strokeWidth),
+                                            strokeWidth = strokeWidth
+                                        )
+
+                                        drawLine(
+                                            color = separatorColor,
+                                            start = Offset(0f, yOffset),
+                                            end = Offset(size.width, yOffset),
+                                            strokeWidth = strokeWidth
+                                        )
+                                    }
+                            )
+                        }
+                    }
+
+                    item {
+                        OldestTinsSection(
+                            oldestExist = { datesUiState.oldestTinsExists },
+                            oldestSection = datesUiState.oldestTinsSection,
+                            navigateToDetails = navigateToDetails,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    //  Future tins
+                    item {
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(color = LocalCustomColors.current.backgroundVariant)
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Future Tins",
+                                    modifier = Modifier
+                                        .padding(start = 8.dp),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Start,
+                                    color = colorScheme.onBackground
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .drawBehind {
+                                        val strokeWidth = Dp.Hairline.toPx()
+                                        val yOffset = size.height - strokeWidth / 2
+
+                                        drawLine(
+                                            color = separatorColor,
+                                            start = Offset(0f, 0f),
+                                            end = Offset(size.width, strokeWidth),
+                                            strokeWidth = strokeWidth
+                                        )
+
+                                        drawLine(
+                                            color = separatorColor,
+                                            start = Offset(0f, yOffset),
+                                            end = Offset(size.width, yOffset),
+                                            strokeWidth = strokeWidth
+                                        )
+                                    }
+                            )
+                        }
+                    }
+
+                    item {
+                        FutureTinsSection(
+                            futureExists = { datesUiState.futureTinsExists },
+                            futureSection = datesUiState.futureTinsSection,
+                            navigateToDetails = navigateToDetails,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
                     item {
                         HorizontalDivider(
                             Modifier.fillMaxWidth(),
@@ -352,12 +481,88 @@ fun DatesBody(
 
 
 @Composable
-fun DateInfo(
+private fun AgingSection(
+    items: List<DateInfoItem>,
     navigateToDetails: (Int) -> Unit,
-    datesUiState: DatesUiState,
-    selectionKey: Int,
+    modifier: Modifier = Modifier,
+    showDate: Boolean = false,
+    showTime: Boolean = false
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
+    ) {
+        items.forEach {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Top,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { navigateToDetails(it.id) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = "• ${it.brand}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
+                    )
+                    Text(
+                        text = ", ${it.blend}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, false)
+                    )
+                    Text(
+                        text = " - ${it.tinLabel}",
+                        fontSize = 14.sp,
+                        fontStyle = FontStyle.Italic,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
+                    )
+                    if (showTime) {
+                        Text(
+                            text = " (${it.time})",
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .width(IntrinsicSize.Max)
+                        )
+                    }
+                    if (showDate) {
+                        Text(
+                            text = " (${it.date})",
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .width(IntrinsicSize.Max)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun QuickStatsSection(
+    averagesExist: () -> Boolean,
+    averageAgeSection: List<AverageAgeSection>,
+    selectionKey: () -> Int,
     updateSelectionFocused: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
@@ -365,217 +570,77 @@ fun DateInfo(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
-        val separatorColor = colorScheme.secondary
-
-        // Quick stats
-        Box {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = LocalCustomColors.current.backgroundVariant)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Quick Date Stats",
-                    modifier = Modifier
-                        .padding(start = 8.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    color = colorScheme.onBackground
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .drawBehind {
-                        val strokeWidth = Dp.Hairline.toPx()
-                        val yOffset = size.height - strokeWidth / 2
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, strokeWidth),
-                            strokeWidth = strokeWidth
-                        )
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, yOffset),
-                            end = Offset(size.width, yOffset),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-            )
-        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
-            if (datesUiState.averageAgeManufacture.isNotBlank() || datesUiState.averageAgeCellar.isNotBlank() || datesUiState.averageAgeOpen.isNotBlank() || datesUiState.averageWaitTime.isNotBlank()) {
-                key(selectionKey) { SelectionContainer(
-                    modifier = Modifier
-                        .onFocusChanged{
-                            if (it.isFocused) {
-                                updateSelectionFocused(true)
-                            } else {
-                                updateSelectionFocused(false)
-                            }
-                        }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Min)
-                            .padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
+            Spacer(Modifier.height(10.dp))
+            if (averagesExist()) {
+                key(selectionKey()) {
+                    SelectionContainer(
+                        Modifier.onFocusChanged { updateSelectionFocused(it.isFocused) }
                     ) {
-                        Column(
+                        Row(
                             modifier = Modifier
-                                .width(IntrinsicSize.Max)
-                                .padding(start = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                            horizontalAlignment = Alignment.Start
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
+                                .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
                         ) {
-                            if (datesUiState.averageAgeManufacture.isNotBlank()) {
-                                Text(
-                                    text = "Average age (manuf): ",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
-                            }
-                            if (datesUiState.averageAgeCellar.isNotBlank()) {
-                                Text(
-                                    text = "Average time in cellar: ",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
-                            }
-                            if (datesUiState.averageAgeOpen.isNotBlank()) {
-                                Text(
-                                    text = "Average opened time: ",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
-                            }
-                            if (datesUiState.averageWaitTime.isNotBlank()) {
-                                Text(
-                                    text = "Average wait (open): ",
-                                    modifier = Modifier,
-                                    fontSize = 15.sp,
-                                )
-                            }
-                        }
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(end = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            if (datesUiState.averageAgeManufacture.isNotBlank()) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    horizontalArrangement = Arrangement.Start,
-                                    verticalAlignment = Alignment.CenterVertically
-
-                                ) {
+                            Column(
+                                modifier = Modifier
+                                    .width(IntrinsicSize.Max)
+                                    .padding(start = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                averageAgeSection.forEach {
                                     Text(
-                                        text = datesUiState.averageAgeManufacture,
+                                        text = it.title,
                                         modifier = Modifier,
-                                        maxLines = 1,
-                                        style = LocalTextStyle.current.copy(
-                                            color = LocalContentColor.current
-                                        ),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 15.sp,
-                                            stepSize = .25.sp
-                                        )
+                                        fontSize = 15.sp,
                                     )
                                 }
                             }
-                            if (datesUiState.averageAgeCellar.isNotBlank()) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    horizontalArrangement = Arrangement.Start,
-                                    verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .padding(end = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                averageAgeSection.forEach {
+                                    Row(
+                                        modifier = Modifier
+                                            .weight(1f),
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.CenterVertically
 
-                                ) {
-                                    Text(
-                                        text = datesUiState.averageAgeCellar,
-                                        modifier = Modifier,
-                                        maxLines = 1,
-                                        style = LocalTextStyle.current.copy(
-                                            color = LocalContentColor.current
-                                        ),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 15.sp,
-                                            stepSize = .25.sp
+                                    ) {
+                                        Text(
+                                            text = it.averageAge,
+                                            modifier = Modifier,
+                                            maxLines = 1,
+                                            style = LocalTextStyle.current.copy(
+                                                color = LocalContentColor.current
+                                            ),
+                                            autoSize = TextAutoSize.StepBased(
+                                                minFontSize = 13.sp,
+                                                maxFontSize = 15.sp,
+                                                stepSize = .25.sp
+                                            )
                                         )
-                                    )
-                                }
-                            }
-                            if (datesUiState.averageAgeOpen.isNotBlank()) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    horizontalArrangement = Arrangement.Start,
-                                    verticalAlignment = Alignment.CenterVertically
-
-                                ) {
-                                    Text(
-                                        text = datesUiState.averageAgeOpen,
-                                        modifier = Modifier,
-                                        maxLines = 1,
-                                        style = LocalTextStyle.current.copy(
-                                            color = LocalContentColor.current
-                                        ),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 15.sp,
-                                            stepSize = .25.sp
-                                        )
-                                    )
-                                }
-                            }
-                            if (datesUiState.averageWaitTime.isNotBlank()) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    horizontalArrangement = Arrangement.Start,
-                                    verticalAlignment = Alignment.CenterVertically
-
-                                ) {
-                                    Text(
-                                        text = datesUiState.averageWaitTime,
-                                        modifier = Modifier,
-                                        maxLines = 1,
-                                        style = LocalTextStyle.current.copy(
-                                            color = LocalContentColor.current
-                                        ),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 15.sp,
-                                            stepSize = .25.sp
-                                        )
-                                    )
+                                    }
                                 }
                             }
                         }
                     }
-                } }
-                Spacer(modifier = Modifier.height(20.dp))
+                }
+                Spacer(Modifier.height(20.dp))
             } else {
                 Text(
                     text = "No relevant date stats found in entries.",
@@ -587,175 +652,82 @@ fun DateInfo(
                 )
             }
         }
+    }
+}
 
-        // Oldest Tins
-        Box {
-            Row(
+
+@Composable
+private fun OldestTinsSection(
+    oldestExist: () -> Boolean,
+    oldestSection: List<OldestTinsSection>,
+    navigateToDetails: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
+    ) {
+        if (oldestExist()) {
+            oldestSection.forEach {
+                Spacer(Modifier.height(10.dp))
+                DatesSection(
+                    label = it.title,
+                    items = it.oldestTins,
+                    navigateToDetails = navigateToDetails,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+            }
+            Spacer(Modifier.height(20.dp))
+        } else {
+            Text(
+                text = "No tin dates found.",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(color = LocalCustomColors.current.backgroundVariant)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Oldest Tins",
-                    modifier = Modifier
-                        .padding(start = 8.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    color = colorScheme.onBackground
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .drawBehind {
-                        val strokeWidth = Dp.Hairline.toPx()
-                        val yOffset = size.height - strokeWidth / 2
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, strokeWidth),
-                            strokeWidth = strokeWidth
-                        )
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, yOffset),
-                            end = Offset(size.width, yOffset),
-                            strokeWidth = strokeWidth
-                        )
-                    }
+                    .padding(vertical = 20.dp),
+                textAlign = TextAlign.Center,
             )
         }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            if (datesUiState.pastManufacture.isNotEmpty() || datesUiState.pastCellared.isNotEmpty() || datesUiState.pastOpened.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
+    }
+}
+
+@Composable
+private fun FutureTinsSection(
+    futureExists: () -> Boolean,
+    futureSection: List<FutureTinsSection>,
+    navigateToDetails: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
+    ) {
+        if (futureExists()) {
+            Spacer(Modifier.height(10.dp))
+            futureSection.forEach {
                 DatesSection(
-                    label = "Manufacture",
-                    items = datesUiState.pastManufacture,
+                    label = it.title,
+                    items = it.futureTins,
                     navigateToDetails = navigateToDetails,
                     modifier = Modifier
                         .fillMaxWidth()
-                )
-                DatesSection(
-                    label = "Cellared",
-                    items = datesUiState.pastCellared,
-                    navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-                DatesSection(
-                    label = "Opened",
-                    items = datesUiState.pastOpened,
-                    navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-            } else {
-                Text(
-                    text = "No tin dates found.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 20.dp),
-                    textAlign = TextAlign.Center,
                 )
             }
-        }
-
-        // Future tins
-        Box {
-            Row(
+            Spacer(modifier = Modifier.height(20.dp))
+        } else {
+            Text(
+                text = "No future tin dates found.",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(color = LocalCustomColors.current.backgroundVariant)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Future Tins",
-                    modifier = Modifier
-                        .padding(start = 8.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    color = colorScheme.onBackground
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .drawBehind {
-                        val strokeWidth = Dp.Hairline.toPx()
-                        val yOffset = size.height - strokeWidth / 2
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, strokeWidth),
-                            strokeWidth = strokeWidth
-                        )
-
-                        drawLine(
-                            color = separatorColor,
-                            start = Offset(0f, yOffset),
-                            end = Offset(size.width, yOffset),
-                            strokeWidth = strokeWidth
-                        )
-                    }
+                    .padding(vertical = 20.dp),
+                textAlign = TextAlign.Center,
             )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            if (datesUiState.futureManufacture.isNotEmpty() || datesUiState.futureCellared.isNotEmpty() || datesUiState.futureOpened.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                DatesSection(
-                    label = "Manufacture",
-                    items = datesUiState.futureManufacture,
-                    navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-                DatesSection(
-                    label = "Cellared",
-                    items = datesUiState.futureCellared,
-                    navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-                DatesSection(
-                    label = "Opened",
-                    items = datesUiState.futureOpened,
-                    navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-            } else {
-                Text(
-                    text = "No future tin dates found.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 20.dp),
-                    textAlign = TextAlign.Center,
-                )
-            }
         }
     }
 }
@@ -890,78 +862,3 @@ fun DatesSection(
     }
 }
 
-
-@Composable
-fun AgingSection(
-    items: List<DateInfoItem>,
-    navigateToDetails: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-    showDate: Boolean = false,
-    showTime: Boolean = false
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        items.forEach {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Top,
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { navigateToDetails(it.id) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "• ${it.brand}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .width(IntrinsicSize.Max)
-                    )
-                    Text(
-                        text = ", ${it.blend}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f, false)
-                    )
-                    Text(
-                        text = " - ${it.tinLabel}",
-                        fontSize = 14.sp,
-                        fontStyle = FontStyle.Italic,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .width(IntrinsicSize.Max)
-                    )
-                    if (showTime) {
-                        Text(
-                            text = " (${it.time})",
-                            fontSize = 14.sp,
-                            modifier = Modifier
-                                .width(IntrinsicSize.Max)
-                        )
-                    }
-                    if (showDate) {
-                        Text(
-                            text = " (${it.date})",
-                            fontSize = 14.sp,
-                            modifier = Modifier
-                                .width(IntrinsicSize.Max)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

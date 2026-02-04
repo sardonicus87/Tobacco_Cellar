@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.dates
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -47,24 +48,53 @@ class DatesViewModel(
             val filteredItemTins = filteredItems.flatMap { it.tins }.filter { it in filteredTins }
             val tinDates = filteredItemTins.mapNotNull { it.manufactureDate } + filteredItemTins.mapNotNull { it.cellarDate } + filteredItemTins.mapNotNull { it.openDate }
 
+            val agingDueThisWeek = agingDue(allItems).first
+            val agingDueThisMonth = agingDue(allItems).second
+
+            val weekSection = AgingSection("Tins ready in the next 7 days:", "No tins ready this week.", agingDueThisWeek)
+            val monthSection = AgingSection("Other tins ready this month:", "No more tins ready this month.", agingDueThisMonth)
+
+            val averageManuf = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { it.manufactureDate }
+            val averageCellar = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null }
+            val averageOpen = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
+            val averageWait = calculateAverageDate(filteredItemTins, DatePeriod.FUTURE) { it.openDate }
+
+            val manufSection = AverageAgeSection("Average age (manuf): ", averageManuf)
+            val cellarSection = AverageAgeSection("Average time in cellar: ", averageCellar)
+            val openSection = AverageAgeSection("Average opened time: ", averageOpen)
+            val waitSection = AverageAgeSection("Average wait (open): ", averageWait)
+
+            val pastManu = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.manufactureDate }
+            val pastCellar = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null }
+            val pastOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
+
+            val oldestManu = OldestTinsSection("Manufacture", pastManu)
+            val oldestCellar = OldestTinsSection("Cellared", pastCellar)
+            val oldestOpened = OldestTinsSection("Opened", pastOpened)
+
+            val futureManu = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.manufactureDate }
+            val futureCellar = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.cellarDate }
+            val futureOpen = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.openDate }
+
+            val futureManuSection = FutureTinsSection("Manufacture", futureManu)
+            val futureCellarSection = FutureTinsSection("Cellared", futureCellar)
+            val futureOpenSection = FutureTinsSection("Opened", futureOpen)
+
             DatesUiState(
                 items = filteredItems,
                 datesExist = tinDates.isNotEmpty(),
 
-                agedDueThisWeek = agingDue(allItems).first,
-                agedDueThisMonth = agingDue(allItems).second,
+                agingSection = listOf(weekSection, monthSection),
+                agingExists = agingDue(allItems).first.isNotEmpty() || agingDue(allItems).second.isNotEmpty(),
 
-                averageAgeManufacture = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { it.manufactureDate },
-                averageAgeCellar = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
-                averageAgeOpen = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
-                averageWaitTime = calculateAverageDate(filteredItemTins, DatePeriod.FUTURE) { it.openDate },
+                averageAgeSection = listOf(manufSection, cellarSection, openSection, waitSection),
+                averageAgeExists = averageManuf.isNotBlank() || averageCellar.isNotBlank() || averageOpen.isNotBlank() || averageWait.isNotBlank(),
 
-                pastManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.manufactureDate },
-                pastCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null },
-                pastOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null },
-                futureManufacture = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.manufactureDate },
-                futureCellared = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.cellarDate },
-                futureOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.openDate },
+                oldestTinsSection = listOf(oldestManu, oldestCellar, oldestOpened),
+                oldestTinsExists = pastManu.isNotEmpty() || pastCellar.isNotEmpty() || pastOpened.isNotEmpty(),
+
+                futureTinsSection = listOf(futureManuSection, futureCellarSection, futureOpenSection),
+                futureTinsExists = futureManu.isNotEmpty() || futureCellar.isNotEmpty() || futureOpen.isNotEmpty(),
 
                 loading = false,
             )
@@ -269,27 +299,51 @@ class DatesViewModel(
 }
 
 
+@Stable
 data class DatesUiState(
     val items: List<ItemsComponentsAndTins> = listOf(),
     val datesExist: Boolean = false,
     val loading: Boolean = false,
 
-    val agedDueThisWeek: List<DateInfoItem> = emptyList(),
-    val agedDueThisMonth: List<DateInfoItem> = emptyList(),
+    val agingSection: List<AgingSection> = emptyList(),
+    val agingExists: Boolean = false,
 
-    val averageAgeManufacture: String = "",
-    val averageAgeCellar: String = "",
-    val averageAgeOpen: String = "",
-    val averageWaitTime: String = "",
+    val averageAgeSection: List<AverageAgeSection> = emptyList(),
+    val averageAgeExists: Boolean = false,
 
-    val pastManufacture: List<DateInfoItem> = emptyList(),
-    val pastCellared: List<DateInfoItem> = emptyList(),
-    val pastOpened: List<DateInfoItem> = emptyList(),
-    val futureManufacture: List<DateInfoItem> = emptyList(),
-    val futureCellared: List<DateInfoItem> = emptyList(),
-    val futureOpened: List<DateInfoItem> = emptyList(),
+    val oldestTinsSection: List<OldestTinsSection> = emptyList(),
+    val oldestTinsExists: Boolean = false,
+
+    val futureTinsSection: List<FutureTinsSection> = emptyList(),
+    val futureTinsExists: Boolean = false,
 )
 
+@Stable
+data class AgingSection(
+    val exists: String = "",
+    val empty: String = "",
+    val agingDue: List<DateInfoItem> = emptyList(),
+)
+
+@Stable
+data class AverageAgeSection(
+    val title: String = "",
+    val averageAge: String = "",
+)
+
+@Stable
+data class OldestTinsSection(
+    val title: String = "",
+    val oldestTins: List<DateInfoItem> = emptyList(),
+)
+
+@Stable
+data class FutureTinsSection(
+    val title: String = "",
+    val futureTins: List<DateInfoItem> = emptyList(),
+)
+
+@Stable
 data class DateInfoItem(
     val id: Int = 0,
     val brand: String = "",
