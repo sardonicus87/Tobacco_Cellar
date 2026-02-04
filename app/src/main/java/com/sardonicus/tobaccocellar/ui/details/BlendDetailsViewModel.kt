@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.details
 
 import android.content.res.Configuration
 import android.content.res.Resources
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -24,6 +25,7 @@ import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -59,6 +61,12 @@ class BlendDetailsViewModel(
     private val _parseLinks = MutableStateFlow(false)
     val parseLinks = _parseLinks.asStateFlow()
 
+    private val _contentVisible = MutableStateFlow(false)
+    val contentVisible = _contentVisible.asStateFlow()
+    fun updateVisible() {
+        _contentVisible.value = true
+    }
+
     init {
         refreshData()
         viewModelScope.launch {
@@ -70,6 +78,14 @@ class BlendDetailsViewModel(
         }
         viewModelScope.launch {
             _parseLinks.value = preferencesRepo.parseLinks.first()
+        }
+        viewModelScope.launch {
+            loadingFinished.collect {
+                if (it) {
+                    delay(10)
+                    updateVisible()
+                }
+            }
         }
     }
 
@@ -199,9 +215,7 @@ class BlendDetailsViewModel(
         return formattedSum ?: ""
     }
 
-    fun updateFocused(focused: Boolean) {
-        _selectionFocused.update { focused }
-    }
+    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
 
     fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp): AnnotatedString? {
         if (value.isBlank()) return null
@@ -280,6 +294,7 @@ class BlendDetailsViewModel(
 
 }
 
+@Stable
 data class BlendDetails(
     val id: Int = 0,
     val brand: String = "",
@@ -292,6 +307,7 @@ data class BlendDetails(
     val tinsTotal: String = "",
 )
 
+@Stable
 data class DetailLine(
     val primary: AnnotatedString,
     val secondary: AnnotatedString? = null

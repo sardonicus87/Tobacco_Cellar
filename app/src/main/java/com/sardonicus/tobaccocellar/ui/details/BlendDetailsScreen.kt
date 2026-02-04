@@ -33,13 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -67,7 +63,6 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,19 +76,9 @@ fun BlendDetailsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val blendDetails by viewModel.blendDetails.collectAsState()
-    val loadingFinished by viewModel.loadingFinished.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
-    val selectionKey by viewModel.selectionKey.collectAsState()
+    val contentVisible by viewModel.contentVisible.collectAsState()
 
-
-    var contentVisible by remember { mutableStateOf(false) }
-    val updateVisible: (Boolean) -> Unit = { contentVisible = it }
-
-
-    LaunchedEffect(loadingFinished) {
-        delay(10)
-        updateVisible(true)
-    }
     BackHandler(selectionFocused) {
         if (selectionFocused) {
             viewModel.resetSelection()
@@ -108,7 +93,7 @@ fun BlendDetailsScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
+            .clickable(indication = null, interactionSource = null, onClick = viewModel::resetSelection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.blend_details_title),
@@ -135,8 +120,8 @@ fun BlendDetailsScreen(
                 .padding(innerPadding)
         ) {
             AnimatedVisibility(
-                visible = loadingFinished && contentVisible,
-                enter = fadeIn(animationSpec = tween(300))
+                visible = contentVisible,
+                enter = fadeIn(tween(500))
             ) {
                 BlendDetailsBody(
                     blendDetails = blendDetails,
@@ -146,7 +131,6 @@ fun BlendDetailsScreen(
                         navigateToEditEntry(it)
                     },
                     selectionFocused = viewModel::updateFocused,
-                    selectionKey = selectionKey,
                     modifier = Modifier
                 )
             }
@@ -161,9 +145,10 @@ fun BlendDetailsBody(
     viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
     selectionFocused: (Boolean) -> Unit,
-    selectionKey: Int,
     modifier: Modifier = Modifier
 ) {
+    val selectionKey by viewModel.selectionKey.collectAsState()
+
     LazyColumn (
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
@@ -185,14 +170,7 @@ fun BlendDetailsBody(
                 // Blend name
                 Box(Modifier.weight(1f)) {
                     key(selectionKey) { SelectionContainer(
-                        Modifier
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    selectionFocused(true)
-                                } else {
-                                    selectionFocused(false)
-                                }
-                            }
+                        Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -301,14 +279,7 @@ fun BlendDetailsBody(
                     )
                 }
                 key(selectionKey) { SelectionContainer(
-                    Modifier
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                selectionFocused(true)
-                            } else {
-                                selectionFocused(false)
-                            }
-                        }
+                    Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                 ) {
                     Column(
                         horizontalAlignment = Alignment.Start,
@@ -367,10 +338,7 @@ fun BlendDetailsBody(
                             MaterialTheme.colorScheme.secondaryContainer,
                             RoundedCornerShape(8.dp)
                         )
-                        .background(
-                            color = LocalCustomColors.current.darkNeutral,
-                            shape = RoundedCornerShape(8.dp)
-                        )
+                        .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
                     Text(
@@ -382,14 +350,7 @@ fun BlendDetailsBody(
                         color = MaterialTheme.colorScheme.tertiary
                     )
                     key(selectionKey) { SelectionContainer(
-                        Modifier
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    selectionFocused(true)
-                                } else {
-                                    selectionFocused(false)
-                                }
-                            }
+                        Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                     ) {
                         NotesText(
                             notes = blendDetails.notes,
@@ -440,14 +401,7 @@ fun BlendDetailsBody(
 
                         if (blendDetails.tinsTotal.isNotBlank()) {
                             key(selectionKey) { SelectionContainer(
-                                Modifier
-                                    .onFocusChanged {
-                                        if (it.isFocused) {
-                                            selectionFocused(true)
-                                        } else {
-                                            selectionFocused(false)
-                                        }
-                                    }
+                                Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                             ) {
                                 Text(
                                     text = "(${blendDetails.tinsTotal})",
@@ -460,14 +414,7 @@ fun BlendDetailsBody(
                         }
                     }
                     key(selectionKey) { SelectionContainer(
-                        Modifier
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    selectionFocused(true)
-                                } else {
-                                    selectionFocused(false)
-                                }
-                            }
+                        Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                     ) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
