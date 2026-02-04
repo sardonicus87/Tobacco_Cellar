@@ -787,11 +787,12 @@ private fun HomeBody(
             )
         }
 
+        val itemsCountPass by remember { derivedStateOf { itemsCount > 75 } }
 
         // jump to button
         JumpToButton(
             columnState = columnState,
-            itemCountPass = { itemsCount > 75 },
+            itemCountPass = { itemsCountPass },
             coroutineScope = coroutineScope(),
             onScrollToTop = { coroutineScope().launch { columnState.scrollToItem(0) } },
             onScrollToBottom = { coroutineScope().launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
@@ -823,10 +824,6 @@ private fun BodyContent(
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val tableSorting by viewModel.tableSorting.collectAsState()
-    val tableLayoutData by viewModel.tableLayoutData.collectAsState()
-    val emptyMessage by viewModel.emptyMessage.collectAsState()
-
     LaunchedEffect(isTableView()) { columnState.scrollToItem(0) }
     LaunchedEffect(columnState.canScrollBackward) { viewModel.updateScrollShadow(columnState.canScrollBackward) }
 
@@ -837,6 +834,8 @@ private fun BodyContent(
             modifier = modifier
                 .fillMaxSize()
         ) {
+            val emptyMessage by viewModel.emptyMessage.collectAsState()
+
             Spacer(Modifier.weight(1f))
             Text(
                 text = emptyMessage,
@@ -849,10 +848,14 @@ private fun BodyContent(
         }
     } else {
         if (isTableView()) {
+            val tableSorting by viewModel.tableSorting.collectAsState()
+            val tableLayoutData by viewModel.tableLayoutData.collectAsState()
+            val tableShadow by viewModel.tableShadow.collectAsState()
+
             TableViewMode(
                 sortedItems = sortedItems,
                 columnState = columnState,
-                shadowAlpha = { viewModel.tableShadow.value },
+                shadowAlpha = { tableShadow },
                 tableLayoutData = tableLayoutData,
                 sorting = tableSorting,
                 updateSorting = viewModel::updateSorting,
@@ -871,9 +874,11 @@ private fun BodyContent(
                     .fillMaxWidth()
             )
         } else {
+            val listShadow by viewModel.listShadow.collectAsState()
+
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
-                size = GlowSize(top =  viewModel.listShadow.value)
+                size = GlowSize(top =  listShadow)
             ) {
                 ListViewMode(
                     sortedItems = sortedItems,
@@ -972,16 +977,10 @@ private fun JumpToButton(
     onScrollToBottom: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val (isVisibleState, scrollDirectionState) = rememberJumpToState(columnState)
-
-    val isVisible by remember { isVisibleState }
-    val scrollDirection by remember { scrollDirectionState }
-
-    val icon = if (scrollDirection == ScrollDirection.DOWN) R.drawable.double_down else R.drawable.double_up
-    val direction = if (scrollDirection == ScrollDirection.DOWN) "bottom" else "top"
+    val jumpToState = rememberJumpToState(columnState)
 
     AnimatedVisibility(
-        visible = isVisible && itemCountPass(),
+        visible = jumpToState.first.value && itemCountPass(),
         enter = fadeIn(animationSpec = tween(150)),
         exit = fadeOut(animationSpec = tween(150)),
         modifier = modifier
@@ -989,7 +988,8 @@ private fun JumpToButton(
         FloatingActionButton(
             onClick = {
                 coroutineScope.launch {
-                    if (scrollDirection == ScrollDirection.DOWN) {
+                    jumpToState.second.value
+                    if (jumpToState.second.value == ScrollDirection.DOWN) {
                         onScrollToBottom()
                     } else {
                         onScrollToTop()
@@ -1004,8 +1004,8 @@ private fun JumpToButton(
                 .border(Dp.Hairline, LocalCustomColors.current.whiteBlackInverted.copy(alpha = 0.3f), CircleShape)
         ) {
             Icon(
-                painter = painterResource(id = icon),
-                contentDescription = "Scroll to $direction",
+                painter = painterResource(id = if (jumpToState.second.value == ScrollDirection.DOWN) R.drawable.double_down else R.drawable.double_up),
+                contentDescription = if (jumpToState.second.value == ScrollDirection.DOWN) "Scroll to bottom" else "Scroll to top",
                 modifier = Modifier
                     .size(36.dp),
             )

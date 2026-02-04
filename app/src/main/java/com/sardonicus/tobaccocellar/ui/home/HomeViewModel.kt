@@ -6,7 +6,6 @@ import android.os.Environment
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -82,15 +81,15 @@ class HomeViewModel(
     private val _showColumnMenu = mutableStateOf(false)
     val showColumnMenu: State<Boolean> = _showColumnMenu
 
-    private val _listShadow = mutableStateOf(0.dp)
-    val listShadow: State<Dp> = _listShadow
+    private val _listShadow = MutableStateFlow(0.dp)
+    val listShadow: StateFlow<Dp> = _listShadow.asStateFlow()
 
-    private val _tableShadow = mutableFloatStateOf(0f)
-    val tableShadow: State<Float> = _tableShadow
+    private val _tableShadow = MutableStateFlow(0f)
+    val tableShadow: StateFlow<Float> = _tableShadow.asStateFlow()
 
     fun updateScrollShadow (canScroll: Boolean) {
         _listShadow.value = if (canScroll) 3.dp else 0.dp
-        _tableShadow.floatValue = if (canScroll) 0.15f else 0f
+        _tableShadow.value = if (canScroll) 0.15f else 0f
     }
 
     private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
