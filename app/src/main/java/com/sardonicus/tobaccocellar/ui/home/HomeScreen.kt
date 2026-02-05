@@ -274,25 +274,24 @@ fun HomeScreen(
                 shouldScrollUp = filterViewModel::shouldScrollUp,
                 modifier = Modifier,
             )
-                HomeBody(
-                    viewModel = viewModel,
-                    filterViewModel = filterViewModel,
-                    showLoading = { homeUiState.isLoading },
-                    isTableView = { homeUiState.isTableView },
-                    coroutineScope = { coroutineScope },
-                    onDetailsClick = navigateToBlendDetails,
-                    onEditClick = navigateToEditEntry,
-                    isMenuShown = { menuState.isMenuShown },
-                    activeMenuId = { menuState.activeMenuId },
-                    getPositionTrigger = filterViewModel::getPositionTrigger,
-                    searchFocused = { searchState.searchFocused },
-                    searchPerformed = { searchState.searchPerformed },
-                    shouldScrollUp = filterViewModel::shouldScrollUp,
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(0.dp),
-                )
-          //  }
+            HomeBody(
+                viewModel = viewModel,
+                filterViewModel = filterViewModel,
+                showLoading = { homeUiState.isLoading },
+                isTableView = { homeUiState.isTableView },
+                coroutineScope = { coroutineScope },
+                onDetailsClick = navigateToBlendDetails,
+                onEditClick = navigateToEditEntry,
+                isMenuShown = { menuState.isMenuShown },
+                activeMenuId = { menuState.activeMenuId },
+                getPositionTrigger = filterViewModel::getPositionTrigger,
+                searchFocused = { searchState.searchFocused },
+                searchPerformed = { searchState.searchPerformed },
+                shouldScrollUp = filterViewModel::shouldScrollUp,
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+            )
         }
     }
 }
@@ -396,7 +395,7 @@ private fun ViewSelect(
                 .padding(0.dp)
         )
         IconButton(
-            onClick = viewModel::selectView, // { viewModel.selectView(!state.isTableView) },
+            onClick = viewModel::selectView,
             modifier = Modifier
                 .padding(4.dp)
                 .size(22.dp)
@@ -763,6 +762,7 @@ private fun HomeBody(
     val scrollState by filterViewModel.homeScrollState.collectAsState()
     val sortedItems by viewModel.itemsListState.collectAsState()
     val itemsCount by viewModel.itemsCount.collectAsState()
+    val showColumnMenu by viewModel.showColumnMenu.collectAsState()
 
     LaunchedEffect(columnState) {
         snapshotFlow { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() }
@@ -779,7 +779,7 @@ private fun HomeBody(
 
         if (showLoading()) { LoadingIndicator() }
 
-        if (viewModel.showColumnMenu.value) {
+        if (showColumnMenu) {
             ColumnVisibilityPopup(
                 viewModel = viewModel,
                 onVisibilityChange = viewModel::updateColumnVisibility,
@@ -824,6 +824,11 @@ private fun BodyContent(
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listShadow by viewModel.listShadow.collectAsState()
+    val tableSorting by viewModel.tableSorting.collectAsState()
+    val tableLayoutData by viewModel.tableLayoutData.collectAsState()
+    val tableShadow by viewModel.tableShadow.collectAsState()
+
     LaunchedEffect(isTableView()) { columnState.scrollToItem(0) }
     LaunchedEffect(columnState.canScrollBackward) { viewModel.updateScrollShadow(columnState.canScrollBackward) }
 
@@ -848,10 +853,6 @@ private fun BodyContent(
         }
     } else {
         if (isTableView()) {
-            val tableSorting by viewModel.tableSorting.collectAsState()
-            val tableLayoutData by viewModel.tableLayoutData.collectAsState()
-            val tableShadow by viewModel.tableShadow.collectAsState()
-
             TableViewMode(
                 sortedItems = sortedItems,
                 columnState = columnState,
@@ -874,8 +875,6 @@ private fun BodyContent(
                     .fillMaxWidth()
             )
         } else {
-            val listShadow by viewModel.listShadow.collectAsState()
-
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
                 size = GlowSize(top =  listShadow)
@@ -1731,6 +1730,20 @@ fun TableHeaderRow(
     ) {
         for (columnIndex in layoutData.columnMinWidths.values.indices) {
             val focusManager = LocalFocusManager.current
+            val onClick = remember(searchFocused(), isMenuShown(), activeMenuId()) {
+                {
+                    if (searchFocused()) {
+                        focusManager.clearFocus()
+                    } else {
+                        if (isMenuShown() && activeMenuId() != null) {
+                            onDismissMenu()
+                        } else {
+                            updateSorting(columnIndex)
+                            shouldScrollUp()
+                        }
+                    }
+                }
+            }
 
             Box(
                 modifier = Modifier
@@ -1747,18 +1760,20 @@ fun TableHeaderRow(
                             modifier = Modifier
                                 .clickable(
                                     enabled = layoutData.columnMinWidths.values[columnIndex] > 0.dp,
-                                    onClick = {
-                                        if (searchFocused()) {
-                                            focusManager.clearFocus()
-                                        } else {
-                                            if (isMenuShown() && activeMenuId() != null) {
-                                                onDismissMenu()
-                                            } else {
-                                                updateSorting(columnIndex)
-                                                shouldScrollUp()
-                                            }
-                                        }
-                                    },
+                                    onClick = onClick
+//                                        {
+//                                        if (searchFocused()) {
+//                                            focusManager.clearFocus()
+//                                        } else {
+//                                            if (isMenuShown() && activeMenuId() != null) {
+//                                                onDismissMenu()
+//                                            } else {
+//                                                updateSorting(columnIndex)
+//                                                shouldScrollUp()
+//                                            }
+//                                        }
+//                                    }
+                                    ,
                                     indication = null,
                                     interactionSource = null
                                 )
@@ -1789,19 +1804,21 @@ fun TableHeaderRow(
                         Box(
                             modifier = Modifier
                                 .clickable(
-                                    enabled = layoutData.columnMinWidths.values[4] > 0.dp,
-                                    onClick = {
-                                        if (searchFocused()) {
-                                            focusManager.clearFocus()
-                                        } else {
-                                            if (isMenuShown() && activeMenuId() != null) {
-                                                onDismissMenu()
-                                            } else {
-                                                updateSorting(columnIndex)
-                                                shouldScrollUp()
-                                            }
-                                        }
-                                    },
+                                    enabled = layoutData.columnMinWidths.values[columnIndex] > 0.dp,
+                                    onClick = onClick
+//                                        {
+//                                        if (searchFocused()) {
+//                                            focusManager.clearFocus()
+//                                        } else {
+//                                            if (isMenuShown() && activeMenuId() != null) {
+//                                                onDismissMenu()
+//                                            } else {
+//                                                updateSorting(columnIndex)
+//                                                shouldScrollUp()
+//                                            }
+//                                        }
+//                                    }
+                                    ,
                                     indication = null,
                                     interactionSource = null
                                 )

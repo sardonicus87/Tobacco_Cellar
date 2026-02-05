@@ -5,9 +5,7 @@ import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -60,8 +58,8 @@ class HomeViewModel(
     private val _tableTableSorting = MutableStateFlow(TableSorting())
     val tableSorting: StateFlow<TableSorting> = _tableTableSorting.asStateFlow()
 
-    private val _listSorting = mutableStateOf(ListSorting())
-    val listSorting: State<ListSorting> = _listSorting
+    private val _listSorting = MutableStateFlow(ListSorting())
+    val listSorting = _listSorting.asStateFlow()
 
     private val _isTableView = MutableStateFlow(false)
     val isTableView: StateFlow<Boolean> = _isTableView.asStateFlow()
@@ -72,14 +70,14 @@ class HomeViewModel(
     private val _resetLoading = MutableStateFlow(false)
     val resetLoading = _resetLoading.asStateFlow()
 
-    private val _itemMenuShown = mutableStateOf(false)
-    val itemMenuShown: State<Boolean> = _itemMenuShown
+    private val _itemMenuShown = MutableStateFlow(false)
+    val itemMenuShown = _itemMenuShown.asStateFlow()
 
-    private val _activeMenuId = mutableStateOf<Int?>(null)
-    val activeMenuId: State<Int?> = _activeMenuId
+    private val _activeMenuId = MutableStateFlow<Int?>(null)
+    val activeMenuId = _activeMenuId.asStateFlow()
 
-    private val _showColumnMenu = mutableStateOf(false)
-    val showColumnMenu: State<Boolean> = _showColumnMenu
+    private val _showColumnMenu = MutableStateFlow(false)
+    val showColumnMenu = _showColumnMenu.asStateFlow()
 
     private val _listShadow = MutableStateFlow(0.dp)
     val listShadow: StateFlow<Dp> = _listShadow.asStateFlow()
@@ -284,7 +282,7 @@ class HomeViewModel(
         filterViewModel.subgenresExist,
         filterViewModel.ratingsExist,
         preferencesRepo.showRating,
-        snapshotFlow { listSorting.value }
+        listSorting
     ) { values ->
         val isTableView = values[0] as Boolean
         val typeGenreOption = values[1] as TypeGenreOption
@@ -325,8 +323,8 @@ class HomeViewModel(
         )
 
     val menuState = combine(
-        snapshotFlow { itemMenuShown.value },
-        snapshotFlow { activeMenuId.value },
+        itemMenuShown,
+        activeMenuId,
     ) { shown, id ->
         MenuState(shown, id)
     }
@@ -386,7 +384,7 @@ class HomeViewModel(
         filterViewModel.homeScreenFilteredItems,
         isTableView,
         tableSorting,
-        snapshotFlow { listSorting.value },
+        listSorting,
         preferencesRepo.typeGenreOption,
         sortQuantity,
         formattedQuantities
@@ -737,9 +735,7 @@ class HomeViewModel(
         }
     }
 
-    fun showColumnMenuToggle() {
-        _showColumnMenu.value = !_showColumnMenu.value
-    }
+    fun showColumnMenuToggle() { _showColumnMenu.value = !_showColumnMenu.value }
 
     val tableColumnVisibility: StateFlow<Map<TableColumn, Boolean>> =
         preferencesRepo.tableColumnsHidden.map {
