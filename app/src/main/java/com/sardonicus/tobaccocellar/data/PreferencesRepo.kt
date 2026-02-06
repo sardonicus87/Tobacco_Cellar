@@ -455,7 +455,7 @@ class PreferencesRepo(
 
 
     /** Dates indicator seen **/
-    val datesSeen: Flow<String> = dataStore.data
+    val datesSeen: StateFlow<String> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading dates indicator preferences.", it)
@@ -465,7 +465,11 @@ class PreferencesRepo(
             }
         }.map {
             it[DATES_SEEN_LIST] ?: ""
-        }
+        }.stateIn (
+            scope = applicationScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
 
     suspend fun setDatesSeen(seen: String) {
         dataStore.edit {
