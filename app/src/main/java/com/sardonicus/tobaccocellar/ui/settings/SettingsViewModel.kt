@@ -1228,6 +1228,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val parseLinksOption = preferencesRepo.parseLinks.first().toString()
     val syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first().toString()
     val processedSync = preferencesRepo.processedSyncFiles.first().joinToString(", ") { it }
+    val datesLastSeen = preferencesRepo.datesSeen.first()
 
     return """
             tableView=$tableView
@@ -1248,6 +1249,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             parseLinksOption=$parseLinksOption
             syncAcknowledgement=$syncAcknowledgement
             processedSync=$processedSync
+            datesLastSeen=$datesLastSeen
         """.trimIndent()
 }
 
@@ -1316,6 +1318,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     val files = value.split(", ").toSet()
                     preferencesRepo.saveProcessedSyncFiles(files)
                 }
+                "datesLastSeen" -> preferencesRepo.setDatesSeen(value)
             }
         }
     }
