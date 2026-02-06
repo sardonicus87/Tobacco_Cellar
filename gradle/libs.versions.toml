@@ -9,7 +9,6 @@ composeBom = "2026.01.01"
 coreKtx = "1.17.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.0"
-dependencyAnalysis = "3.5.1"  # use terminal for dependency analysis: .\gradlew projectHealth
 devtoolsKsp = "2.3.2"
 googleApiClientAndroid = "2.8.1"
 googleApiServicesDrive = "v3-rev20251210-2.0.0"
@@ -31,7 +30,7 @@ uiTextGoogleFonts = "1.10.2"
 work = "2.11.1"
 
 [libraries]
-# accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
+# accompanist-system-ui-controller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 # androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity", version.ref = "activityCompose" }
 androidx-adaptive-layout = { group = "androidx.compose.material3.adaptive", name = "adaptive-layout" }
@@ -72,7 +71,6 @@ ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 android-library = { id = "com.android.library", version.ref = "androidlibrary" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyAnalysis" }
 devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "devtoolsKsp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+#jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization" }
