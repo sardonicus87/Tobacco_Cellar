@@ -143,6 +143,7 @@ import com.sardonicus.tobaccocellar.ui.BottomBarButtonData
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterSectionData
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.FlowMatchOption
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -154,7 +155,6 @@ import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavigation
 import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
-import com.sardonicus.tobaccocellar.ui.navigation.FilterPaneDestination
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
 import com.sardonicus.tobaccocellar.ui.navigation.NavigationState
 import com.sardonicus.tobaccocellar.ui.navigation.Navigator
@@ -173,21 +173,13 @@ import java.util.Locale
 fun CellarApp(
     isGestureNav: Boolean,
     windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
-    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) },  // windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
-    mainSecondaryMap: Map<NavKey, NavKey> = remember {
-        mapOf(
-            HomeDestination to FilterPaneDestination,
-            StatsDestination to FilterPaneDestination,
-            DatesDestination to FilterPaneDestination
-        )
-    },
+    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }, // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)  // isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
     navigationState: NavigationState = rememberNavigationState(
         startRoute = HomeDestination,
         topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination),
-        largeScreen = isLarge,
-        mainSecondaryMap = mainSecondaryMap
+        largeScreen = isLarge
     ),
-    navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge, mainSecondaryMap) },
+    navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge) },
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     CellarNavigation(
@@ -199,43 +191,6 @@ fun CellarApp(
     )
 
     FilterSheet(filterViewModel)
-
-//    val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
-//
-//    val pagerState = rememberPagerState { 3 }
-//
-//    if (bottomSheetState == BottomSheetState.OPENED) {
-//        ModalBottomSheet(
-//            onDismissRequest = { filterViewModel.closeBottomSheet() },
-//            modifier = Modifier
-//                .statusBarsPadding(),
-//            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-//            containerColor = MaterialTheme.colorScheme.background,
-//            contentColor = MaterialTheme.colorScheme.onBackground,
-//            dragHandle = { },
-//            properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true),
-//        ) {
-//            Box {
-//                FilterLayout(
-//                    filterViewModel = filterViewModel,
-//                    closeSheet = filterViewModel::closeBottomSheet, // { filterViewModel.closeBottomSheet() },
-//                    pagerState = pagerState,
-//                    modifier = Modifier
-//                )
-//                Box (Modifier.matchParentSize()) {
-//                    val navigation = WindowInsets.navigationBars.getBottom(LocalDensity.current).times(1f)
-//
-//                    Canvas(Modifier.fillMaxSize()) {
-//                        drawRect(
-//                            color = Color.Black.copy(alpha = .9f),
-//                            topLeft = Offset(0f, (size.height)),
-//                            size = Size(size.width, navigation)
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//    }
 }
 
 
@@ -690,15 +645,15 @@ fun CellarBottomAppBar(
     isTwoPane: Boolean = false,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
+    LaunchedEffect(Unit) { filterViewModel.updateClickToAdd(false) }
+
     val uiState by filterViewModel.bottomAppBarState.collectAsState()
-    var clickToAdd by remember { mutableStateOf(false) }
-    val updateClickToAdd = remember { { it: Boolean -> clickToAdd = it } }
 
     val navIcon = LocalCustomColors.current.navIcon
     val indicatorCircle = LocalCustomColors.current.indicatorCircle
     val indicatorBorderCorrection = LocalCustomColors.current.indicatorBorderCorrection
 
-    val buttons = remember(currentDestination, clickToAdd, uiState, isTwoPane, navIcon,
+    val buttons = remember(currentDestination, uiState.clickToAdd, uiState, isTwoPane, navIcon,
         indicatorCircle, indicatorBorderCorrection
     ) {
         listOfNotNull(
@@ -707,7 +662,7 @@ fun CellarBottomAppBar(
                 icon = R.drawable.table_view_old,
                 destination = HomeDestination,
                 onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
-                activeColor = if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon
+                activeColor = if (currentDestination == HomeDestination && !uiState.clickToAdd) onPrimaryLight else navIcon
             ),
             // 2. Stats
             BottomBarButtonData(
@@ -716,7 +671,7 @@ fun CellarBottomAppBar(
                 destination = StatsDestination,
                 onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
                 enabled = !uiState.databaseEmpty,
-                activeColor = if (currentDestination == StatsDestination && !clickToAdd) onPrimaryLight
+                activeColor = if (currentDestination == StatsDestination && !uiState.clickToAdd) onPrimaryLight
                 else if (uiState.databaseEmpty) navIcon.copy(alpha = 0.5f)
                 else navIcon
             ),
@@ -730,9 +685,9 @@ fun CellarBottomAppBar(
                 showIndicator = uiState.tinsReady,
                 indicatorColor = if (uiState.tinsReady) indicatorCircle else Color.Transparent,
                 borderColor = if (uiState.tinsReady) {
-                    if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight else navIcon
+                    if (currentDestination == DatesDestination && !uiState.clickToAdd) onPrimaryLight else navIcon
                 } else Color.Transparent,
-                activeColor = if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
+                activeColor = if (currentDestination == DatesDestination && !uiState.clickToAdd) onPrimaryLight
                 else if (uiState.datesExist) navIcon
                 else navIcon.copy(alpha = 0.5f)
             ),
@@ -763,8 +718,8 @@ fun CellarBottomAppBar(
             BottomBarButtonData(
                 title = "Add",
                 icon = R.drawable.add_circle,
-                onClick = { updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
-                activeColor = if (clickToAdd) onPrimaryLight else navIcon
+                onClick = { filterViewModel.updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
+                activeColor = if (uiState.clickToAdd) onPrimaryLight else navIcon
             )
         )
     }
@@ -872,6 +827,7 @@ fun FilterSheet(
                     WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
                 }
             }
+
             Box {
                 val density = LocalDensity.current
                 val navigation = WindowInsets.navigationBars.getBottom(density).times(1f)
@@ -1010,9 +966,7 @@ private fun PagerLayout(
                 val updateTotalDrag: (Float) -> Unit = { totalDrag = it }
 
                 detectHorizontalDragGestures(
-                    onDragStart = {
-                        updateTotalDrag(0f)
-                    },
+                    onDragStart = { updateTotalDrag(0f) },
                     onHorizontalDrag = { change, amount ->
                         change.consume()
                         val currentDrag = totalDrag
@@ -1046,7 +1000,6 @@ private fun PagerLayout(
             .fillMaxWidth()
             .height(383.dp),
         userScrollEnabled = !innerScrolling,
-        //    beyondViewportPageCount = 2,
         verticalAlignment = Alignment.Top,
     ) { page ->
         when (page) {
@@ -1054,7 +1007,7 @@ private fun PagerLayout(
             0 -> {
                 PageOne(
                     filterViewModel = filterViewModel,
-                    innerScrolling = { updateInnerScrolling(it) },
+                    innerScrolling = updateInnerScrolling,
                     modifier = Modifier
                 )
             }
@@ -1107,7 +1060,7 @@ private fun FilterFooter(
     filtersApplied: Boolean
 ) {
     TextButton(
-        onClick = { filterViewModel.resetFilter() },
+        onClick = filterViewModel::resetFilter,
         modifier = Modifier
             .offset(x = (-4).dp)
             .padding(top = 6.dp),
@@ -1146,7 +1099,7 @@ private fun PageOne(
             filterViewModel = filterViewModel,
             modifier = Modifier
                 .padding(6.dp),
-            innerScrolling = { innerScrolling(it) }
+            innerScrolling = innerScrolling
         )
         TypeFilterSection(
             filterViewModel = filterViewModel,
@@ -1166,11 +1119,6 @@ private fun PageTwo(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val subgenreData by filterViewModel.subgenreData.collectAsState()
-    val cutData by filterViewModel.cutData.collectAsState()
-    val componentData by filterViewModel.componentData.collectAsState()
-    val flavoringData by filterViewModel.flavoringData.collectAsState()
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1178,108 +1126,10 @@ private fun PageTwo(
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        FlowFilterSection(
-            label = "Subgenre",
-            nothingLabel = "No subgenres assigned to any blends.",
-            displayData = subgenreData,
-            updateSelectedOptions = { string, boolean ->
-                filterViewModel.updateSelectedSubgenre(string, boolean)
-            },
-            overflowCheck = { selected, avail, int ->
-                filterViewModel.overflowCheck(selected, avail, int)
-            },
-            noneField = "(Unassigned)",
-            clearAll = { filterViewModel.clearAllSelected("Subgenre") },
-            modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 0.dp)
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 8.dp, vertical = 5.dp)
-        )
-        FlowFilterSection(
-            label = "Cut",
-            nothingLabel = "No cuts assigned to any blends.",
-            displayData = cutData,
-            updateSelectedOptions = { string, boolean ->
-                filterViewModel.updateSelectedCut(string, boolean)
-            },
-            overflowCheck = { selected, avail, int ->
-                filterViewModel.overflowCheck(selected, avail, int)
-            },
-            noneField = "(Unassigned)",
-            clearAll = { filterViewModel.clearAllSelected("Cut") },
-            modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 0.dp)
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 8.dp, vertical = 5.dp),
-        )
-        FlowFilterSection(
-            label = "Components",
-            nothingLabel = "No components assigned to any blends.",
-            displayData = componentData,
-            updateSelectedOptions = { string, boolean ->
-                filterViewModel.updateSelectedComponent(string, boolean)
-            },
-            overflowCheck = { selected, avail, int ->
-                filterViewModel.overflowCheck(selected, avail, int)
-            },
-            noneField = "(None Assigned)",
-            modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 0.dp)
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 8.dp, vertical = 5.dp),
-            clearAll = { filterViewModel.clearAllSelected("Components") },
-            onMatchOptionChange = { filterViewModel.updateCompMatching(it) },
-        )
-        FlowFilterSection(
-            label = "Flavorings",
-            nothingLabel = "No flavorings assigned to any blends.",
-            displayData = flavoringData,
-            updateSelectedOptions = { string, boolean ->
-                filterViewModel.updateSelectedFlavoring(string, boolean)
-            },
-            overflowCheck = { selected, avail, int ->
-                filterViewModel.overflowCheck(selected, avail, int)
-            },
-            noneField = "(None Assigned)",
-            modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 0.dp)
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 8.dp, vertical = 5.dp),
-            clearAll = { filterViewModel.clearAllSelected("Flavorings") },
-            onMatchOptionChange = { filterViewModel.updateFlavorMatching(it) },
-        )
+        SubgenreSection(filterViewModel)
+        CutSection(filterViewModel)
+        ComponentSection(filterViewModel)
+        FlavoringSection(filterViewModel)
     }
 }
 
@@ -1288,86 +1138,17 @@ private fun PageThree(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
-    val containerData by filterViewModel.containerData.collectAsState()
-
-    val production by filterViewModel.sheetSelectedProduction.collectAsState()
-    val productionEnabled by filterViewModel.productionEnabled.collectAsState()
-    val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
-    val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()
-
-    val tins by filterViewModel.tinsExist.collectAsState()
-    val hasContainer = remember(containerData) { containerData.selected.isNotEmpty() }
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        TinsFilterSection(
-            filterViewModel = filterViewModel,
-            hasContainer = hasContainer,
-            tinsExist = tins,
-            modifier = Modifier
-                .padding(horizontal = 6.dp)
-        )
-        FlowFilterSection(
-            label = "Tin Containers",
-            nothingLabel = if (tins) "No containers assigned to any tins." else "No tins assigned to any blends.",
-            displayData = containerData,
-            updateSelectedOptions = { string, boolean ->
-                filterViewModel.updateSelectedContainer(string, boolean)
-            },
-            overflowCheck = { selected, avail, int ->
-                filterViewModel.overflowCheck(selected, avail, int)
-            },
-            noneField = "(Unassigned)",
-            clearAll = { filterViewModel.clearAllSelected("Container") },
-            modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 0.dp)
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 8.dp, vertical = 5.dp),
-        )
+        TinsFilterSection(filterViewModel)
 
-        // Production
-        Row(
-            modifier = Modifier
-                .border(
-                    width = Dp.Hairline,
-                    color = LocalCustomColors.current.sheetBoxBorder,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.sheetBox,
-                    RoundedCornerShape(8.dp)
-                )
-                .width(intrinsicSize = IntrinsicSize.Max),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            CheckboxWithLabel(
-                text = "In Production",
-                checked = production,
-                onCheckedChange = { filterViewModel.updateSelectedProduction(it) },
-                modifier = Modifier,
-                enabled = productionEnabled
-            )
-            CheckboxWithLabel(
-                text = "Discontinued",
-                checked = outOfProduction,
-                onCheckedChange = { filterViewModel.updateSelectedOutOfProduction(it) },
-                modifier = Modifier,
-                enabled = outOfProductionEnabled
-            )
-        }
+        ContainerFilterSection(filterViewModel)
+
+        ProductionFilterSection(filterViewModel)
     }
 }
 
@@ -1391,10 +1172,8 @@ fun BrandFilterSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CustomFilterTextField(
-                value = brandSearchText,  // filteringState.brandSearchText,
-                onValueChange = { text ->
-                    filterViewModel.updateBrandSearchText(text)
-                },
+                value = brandSearchText,
+                onValueChange = filterViewModel::updateBrandSearchText,
                 modifier = Modifier
                     .weight(1f, false),
                 placeholder = "Search Brands",
@@ -1408,34 +1187,34 @@ fun BrandFilterSection(
             )
             // Brand include/exclude button
             IncludeExcludeSwitch(
-                filteringState.excludeSwitch,
-                { filterViewModel.updateSelectedExcludeBrandsSwitch(!filteringState.excludeSwitch) },
-                Modifier
+                excluded = filteringState.excludeSwitch,
+                onClick = filterViewModel::updateSelectedExcludeBrandsSwitch,
+                modifier = Modifier
             )
         }
 
         // Selectable brands row //
         SelectableBrandsRow(
-            filteringState.filteredBrands,
-            filteringState.unselectedBrands,
-            filteringState.excludeSwitch,
-            innerScrolling,
-            { brand -> filterViewModel.updateSelectedExcludedBrands(brand, true) },
-            { brand -> filterViewModel.updateSelectedBrands(brand, true) },
-            { text -> filterViewModel.updateBrandSearchText(text) },
-            filteringState.brandEnabled,
-            Modifier.fillMaxWidth()
+            filteredBrands = filteringState.filteredBrands,
+            unselectedBrands = filteringState.unselectedBrands,
+            excludeSwitch = filteringState.excludeSwitch,
+            innerScrolling = innerScrolling,
+            updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
+            updateSelectedBrands = filterViewModel::updateSelectedBrands,
+            updateBrandSearchText = filterViewModel::updateBrandSearchText,
+            brandEnabled = filteringState.brandEnabled,
+            modifier = Modifier.fillMaxWidth()
         )
 
 
         // Selected brands chip box //
         SelectedBrandChipBox(
-            filteringState.selectedBrands,
-            filteringState.excludeSwitch,
-            { brand -> filterViewModel.updateSelectedExcludedBrands(brand, false) },
-            { brand -> filterViewModel.updateSelectedBrands(brand, false) },
-            { filterViewModel.clearAllSelectedBrands() },
-            Modifier.fillMaxWidth()
+            selectedBrands = filteringState.selectedBrands,
+            excludeSwitch = filteringState.excludeSwitch,
+            updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
+            updateSelectedBrands = filterViewModel::updateSelectedBrands,
+            clearAllSelectedBrands = filterViewModel::clearAllSelectedBrands,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
@@ -1496,8 +1275,8 @@ private fun SelectableBrandsRow(
     unselectedBrands: List<String>,
     excludeSwitch: Boolean,
     innerScrolling: (Boolean) -> Unit,
-    updateSelectedExcludedBrands: (String) -> Unit,
-    updateSelectedBrands: (String) -> Unit,
+    updateSelectedExcludedBrands: (String, Boolean) -> Unit,
+    updateSelectedBrands: (String, Boolean) -> Unit,
     updateBrandSearchText: (String) -> Unit,
     brandEnabled: Map<String, Boolean>,
     modifier: Modifier = Modifier
@@ -1535,9 +1314,9 @@ private fun SelectableBrandsRow(
                 val clickAction = remember(excludeSwitch, brand) {
                     {
                         if (excludeSwitch) {
-                            updateSelectedExcludedBrands(brand)
+                            updateSelectedExcludedBrands(brand, false)
                         } else {
-                            updateSelectedBrands(brand)
+                            updateSelectedBrands(brand, false)
                         }
                         updateBrandSearchText("")
                     }
@@ -1582,8 +1361,8 @@ private fun BrandTextButton(
 private fun SelectedBrandChipBox(
     selectedBrands: List<String>,
     excludeSwitch: Boolean,
-    updateSelectedExcludedBrands: (String) -> Unit,
-    updateSelectedBrands: (String) -> Unit,
+    updateSelectedExcludedBrands: (String, Boolean) -> Unit,
+    updateSelectedBrands: (String, Boolean) -> Unit,
     clearAllSelectedBrands: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1612,14 +1391,11 @@ private fun SelectedBrandChipBox(
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(
-                            width = Dp.Hairline,
-                            color = LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .background(
-                            LocalCustomColors.current.sheetBox,
+                            Dp.Hairline,
+                            LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
                             RoundedCornerShape(8.dp)
                         )
+                        .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
                         .height(96.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
@@ -1628,9 +1404,9 @@ private fun SelectedBrandChipBox(
                         val onRemoved = remember(brand, excludeSwitch) {
                             {
                                 if (excludeSwitch) {
-                                    updateSelectedExcludedBrands(brand)
+                                    updateSelectedExcludedBrands(brand, false)
                                 } else {
-                                    updateSelectedBrands(brand)
+                                    updateSelectedBrands(brand, false)
                                 }
                             }
                         }
@@ -1688,113 +1464,134 @@ private fun SelectedBrandChipBox(
                 }
             }
             if (showOverflowPopup) {
-                AlertDialog(
-                    onDismissRequest = { showOverflowPopup = false },
-                    title = {
-                        Text(
-                            text = if (excludeSwitch) "Excluded Brands" else "Included Brands",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    modifier = Modifier,
-                    text = {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
-                        ) {
-                            GlowBox(
-                                color = GlowColor(MaterialTheme.colorScheme.background),
-                                size = GlowSize(vertical = 10.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 0.dp, max = 280.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(2),
-                                    modifier = Modifier
-                                        .heightIn(min = 0.dp, max = 280.dp),
-                                    userScrollEnabled = true,
-                                    contentPadding = PaddingValues(bottom = 10.dp),
-                                    verticalArrangement = Arrangement.spacedBy((-6).dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    items(selectedBrands) { brand ->
-                                        val onRemoved = remember(brand, excludeSwitch) {
-                                            {
-                                                if (excludeSwitch) {
-                                                    updateSelectedExcludedBrands(brand)
-                                                } else {
-                                                    updateSelectedBrands(brand)
-                                                }
-                                            }
-                                        }
-                                        Chip(
-                                            text = brand,
-                                            onChipClicked = { },
-                                            onChipRemoved = onRemoved,
-                                            colors = AssistChipDefaults.assistChipColors(
-                                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                containerColor = MaterialTheme.colorScheme.background,
-                                            ),
-                                            border = AssistChipDefaults.assistChipBorder(
-                                                enabled = true,
-                                                borderColor = MaterialTheme.colorScheme.outline
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        clearAllSelectedBrands()
-                                        updateShowOverflow(false)
-                                    },
-                                    modifier = Modifier
-                                        .offset(x = (-4).dp),
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.close),
-                                        contentDescription = "",
-                                        modifier = Modifier
-                                            .padding(end = 3.dp)
-                                            .size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Clear All",
-                                        modifier = Modifier,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        Button(onClick = { showOverflowPopup = false }) {
-                            Text("Close")
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    textContentColor = MaterialTheme.colorScheme.onBackground,
+                SelectedBrandOverflow(
+                    onDismiss = { updateShowOverflow(false) },
+                    excludeSwitch = excludeSwitch,
+                    selectedBrands = selectedBrands,
+                    updateSelectedExcludedBrands = updateSelectedExcludedBrands,
+                    updateSelectedBrands = updateSelectedBrands,
+                    clearAllSelectedBrands = clearAllSelectedBrands,
+                    modifier = Modifier
                 )
             }
         }
     }
+}
+
+@Composable
+private fun SelectedBrandOverflow(
+    onDismiss: () -> Unit,
+    excludeSwitch: Boolean,
+    selectedBrands: List<String>,
+    updateSelectedExcludedBrands: (String, Boolean) -> Unit,
+    updateSelectedBrands: (String, Boolean) -> Unit,
+    clearAllSelectedBrands: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
+        modifier = modifier,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
+            ) {
+                GlowBox(
+                    color = GlowColor(MaterialTheme.colorScheme.background),
+                    size = GlowSize(vertical = 10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 0.dp, max = 280.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .heightIn(min = 0.dp, max = 280.dp),
+                        userScrollEnabled = true,
+                        contentPadding = PaddingValues(bottom = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy((-6).dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(selectedBrands) { brand ->
+                            val onRemoved = remember(brand, excludeSwitch) {
+                                {
+                                    if (excludeSwitch) {
+                                        updateSelectedExcludedBrands(brand, false)
+                                    } else {
+                                        updateSelectedBrands(brand,  false)
+                                    }
+                                }
+                            }
+                            Chip(
+                                text = brand,
+                                onChipClicked = { },
+                                onChipRemoved = onRemoved,
+                                colors = AssistChipDefaults.assistChipColors(
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    containerColor = MaterialTheme.colorScheme.background,
+                                ),
+                                border = AssistChipDefaults.assistChipBorder(
+                                    enabled = true,
+                                    borderColor = MaterialTheme.colorScheme.outline
+                                )
+                            )
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    TextButton(
+                        onClick = {
+                            clearAllSelectedBrands()
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .offset(x = (-4).dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.close),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .padding(end = 3.dp)
+                                .size(20.dp)
+                        )
+                        Text(
+                            text = "Clear All",
+                            modifier = Modifier,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        titleContentColor = MaterialTheme.colorScheme.onBackground,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+    )
 }
 
 
@@ -1863,8 +1660,8 @@ fun OtherFiltersSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val otherState by filterViewModel.otherFiltersUiState.collectAsState()
-    var showRatingPop by rememberSaveable { mutableStateOf(false) }
+    val favDisExist by filterViewModel.favDisExist.collectAsState()
+    val ratingsExist by filterViewModel.ratingsExist.collectAsState()
 
     Row(
         modifier = modifier
@@ -1878,44 +1675,21 @@ fun OtherFiltersSection(
             Column(
                 modifier = Modifier
                     .border(
-                        width = Dp.Hairline,
-                        color = LocalCustomColors.current.sheetBoxBorder,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.sheetBox,
+                        Dp.Hairline,
+                        LocalCustomColors.current.sheetBoxBorder,
                         RoundedCornerShape(8.dp)
                     )
-                    .width(intrinsicSize = IntrinsicSize.Max)
+                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+                    .width(IntrinsicSize.Max)
                     .padding(vertical = 3.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                FavoriteDislikeFilters(
-                    filterViewModel,
-                    otherState.favoritesSelection,
-                    otherState.favoritesEnabled,
-                    otherState.dislikedsSelection,
-                    otherState.dislikedsEnabled,
-                    otherState.favDisExist,
-                    otherState.ratingsExist
-                )
+                FavoriteDislikeFilters(filterViewModel)
 
-                StarRatingFilters(
-                    otherState.rangeEnabled,
-                    otherState.ratingLow,
-                    otherState.ratingHigh,
-                    otherState.unchosen,
-                    otherState.favDisExist,
-                    otherState.ratingsExist,
-                    otherState.lowText,
-                    otherState.lowTextAlpha,
-                    otherState.highText,
-                    otherState.highTextAlpha,
-                    otherState.ratingRowEmptyAlpha,
-                ) { showRatingPop = it }
+                StarRatingFilters(filterViewModel)
             }
-            if (!otherState.favDisExist && !otherState.ratingsExist) {
+            if (!favDisExist && !ratingsExist) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -1942,78 +1716,52 @@ fun OtherFiltersSection(
             }
         }
 
-        if (showRatingPop) {
-            RatingRangePop(
-                unrated = otherState.unrated,
-                unratedEnabled = otherState.unratedEnabled,
-                selectedRange = Pair(otherState.ratingLow, otherState.ratingHigh),
-                ratingRangeEnabled = Pair(otherState.ratingLowEnabled, otherState.ratingHighEnabled),
-                updateSelectedUnrated = filterViewModel::updateSelectedUnrated,
-                updateSelectedRatingRange = { (min, max) ->
-                    filterViewModel.updateSelectedRatingRange(min, max)
-                },
-                onDismiss = { showRatingPop = false },
-                modifier = Modifier,
-            )
-        }
-
         // In Stock
-        InStockSection(
-            otherState.inStock,
-            otherState.inStockEnabled,
-            otherState.outOfStock,
-            otherState.outOfStockEnabled,
-            filterViewModel::updateSelectedInStock,
-            filterViewModel::updateSelectedOutOfStock,
-        )
+        InStockSection(filterViewModel)
     }
 }
 
 @Composable
 private fun FavoriteDislikeFilters(
-    filterViewModel: FilterViewModel,
-    favSelection: ToggleableState,
-    favEnabled: Boolean,
-    disSelection: ToggleableState,
-    disEnabled: Boolean,
-    favDisExist: Boolean,
-    ratingsExist: Boolean
+    filterViewModel: FilterViewModel
 ) {
+    val state by filterViewModel.favoriteDislikeUiState.collectAsState()
+
     Box {
         Row {
             TriStateCheckWithLabel(
                 text = "Favorites",
-                state = favSelection,
-                onClick = { filterViewModel.updateFavSelection() },
+                state = state.favoritesSelection,
+                onClick = filterViewModel::updateFavSelection,
                 colors = CheckboxDefaults.colors(
                     checkedColor =
-                        when (favSelection) {
+                        when (state.favoritesSelection) {
                             ToggleableState.On -> MaterialTheme.colorScheme.primary
                             ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
                             else -> Color.Transparent
                         },
                 ),
-                enabled = favEnabled,
+                enabled = state.favoritesEnabled,
                 maxLines = 1
             )
 
             TriStateCheckWithLabel(
                 text = "Dislikes",
-                state = disSelection,
-                onClick = { filterViewModel.updateDisSelection() },
+                state = state.dislikedsSelection,
+                onClick = filterViewModel::updateDisSelection,
                 colors = CheckboxDefaults.colors(
                     checkedColor =
-                        when (disSelection) {
+                        when (state.dislikedsSelection) {
                             ToggleableState.On -> MaterialTheme.colorScheme.primary
                             ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
                             else -> Color.Transparent
                         },
                 ),
-                enabled = disEnabled,
+                enabled = state.dislikedsEnabled,
                 maxLines = 1
             )
         }
-        if (!favDisExist && ratingsExist) {
+        if (!state.favDisExist && state.ratingsExist) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -2038,26 +1786,17 @@ private fun FavoriteDislikeFilters(
 
 @Composable
 private fun StarRatingFilters(
-    rangeEnabled: Boolean,
-    ratingLow: Double?,
-    ratingHigh: Double?,
-    unchosen: Boolean,
-    favDisExist: Boolean,
-    ratingsExist: Boolean,
-    lowText: String,
-    lowTextAlpha: Float,
-    highText: String,
-    highTextAlpha: Float,
-    ratingRowEmptyAlpha: Float,
-    showRatingPop: (Boolean) -> Unit
+    filterViewModel: FilterViewModel,
 ) {
+    val state by filterViewModel.starRatingUiState.collectAsState()
+
     Box {
         Row(
             modifier = Modifier
                 .height(36.dp)
                 .width(229.dp)
                 .padding(horizontal = 12.dp)
-                .alpha(if (!rangeEnabled) .38f else 1f),
+                .alpha(if (!state.rangeEnabled) .38f else 1f),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -2071,14 +1810,14 @@ private fun StarRatingFilters(
                     .clickable(
                         indication = null,
                         interactionSource = null,
-                        enabled = rangeEnabled,
-                    ) { showRatingPop(true) },
+                        enabled = state.rangeEnabled,
+                    ) { filterViewModel.onShowRatingPop(true) },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
             ) {
                 val unchosenColor = LocalCustomColors.current.starRating
                 val chosenColor = LocalContentColor.current
-                val emptyColor = remember(unchosen, ratingLow, ratingHigh) { if (unchosen || (ratingLow != null && ratingHigh == null)) unchosenColor else chosenColor }
+                val emptyColor = remember(state.unchosen, state.ratingLow, state.ratingHigh) { if (state.unchosen || (state.ratingLow != null && state.ratingHigh == null)) unchosenColor else chosenColor }
 
                 Box (contentAlignment = Alignment.CenterEnd) {
                     Text(
@@ -2088,15 +1827,15 @@ private fun StarRatingFilters(
                         color = Color.Transparent
                     )
                     Text(
-                        text = lowText,
+                        text = state.lowText,
                         modifier = Modifier,
                         fontSize = 13.sp,
                         maxLines = 1,
-                        color = LocalContentColor.current.copy(alpha = lowTextAlpha)
+                        color = LocalContentColor.current.copy(alpha = state.lowTextAlpha)
                     )
                 }
                 RatingRow(
-                    range = Pair(ratingLow, ratingHigh),
+                    range = Pair(state.ratingLow, state.ratingHigh),
                     modifier = Modifier
                         .padding(horizontal = 4.dp),
                     starSize = 18.dp,
@@ -2104,7 +1843,7 @@ private fun StarRatingFilters(
                     minColor = LocalContentColor.current,
                     minAlpha = .38f,
                     emptyColor = emptyColor,
-                    emptyAlpha = ratingRowEmptyAlpha
+                    emptyAlpha = state.ratingRowEmptyAlpha
                 )
                 Box (contentAlignment = Alignment.CenterStart) {
                     Text(
@@ -2114,16 +1853,16 @@ private fun StarRatingFilters(
                         color = Color.Transparent
                     )
                     Text(
-                        text = highText,
+                        text = state.highText,
                         modifier = Modifier,
                         fontSize = 13.sp,
                         maxLines = 1,
-                        color = LocalContentColor.current.copy(alpha = highTextAlpha)
+                        color = LocalContentColor.current.copy(alpha = state.highTextAlpha)
                     )
                 }
             }
         }
-        if (favDisExist && !ratingsExist) {
+        if (state.favDisExist && !state.ratingsExist) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -2144,16 +1883,29 @@ private fun StarRatingFilters(
             }
         }
     }
+
+    if (state.showRatingPop) {
+        RatingRangePop(
+            unrated = state.unrated,
+            unratedEnabled = state.unratedEnabled,
+            selectedRange = Pair(state.ratingLow, state.ratingHigh),
+            ratingRangeEnabled = Pair(state.ratingLowEnabled, state.ratingHighEnabled),
+            updateSelectedUnrated = filterViewModel::updateSelectedUnrated,
+            updateSelectedRatingRange = filterViewModel::updateSelectedRatingRange,
+            onDismiss = { filterViewModel.onShowRatingPop(false) },
+            modifier = Modifier,
+        )
+    }
 }
 
 @Composable
-fun RatingRangePop(
+private fun RatingRangePop(
     unrated: Boolean,
     unratedEnabled: Boolean,
     selectedRange: Pair<Double?, Double?>,
     ratingRangeEnabled: Pair<Double?, Double?>,
     updateSelectedUnrated: (Boolean) -> Unit,
-    updateSelectedRatingRange: (Pair<Double?, Double?>) -> Unit,
+    updateSelectedRatingRange: (Double?, Double?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -2208,7 +1960,7 @@ fun RatingRangePop(
                     checked = unrated,
                     onCheckedChange = {
                         updateSelectedUnrated(it)
-                        updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                        updateSelectedRatingRange(selectedLow, selectedHigh)
                     },
                     modifier = Modifier
                         .padding(bottom = 8.dp),
@@ -2258,9 +2010,10 @@ fun RatingRangePop(
                                 if (!it.isFocused) {
                                     if (ratingLowString != formatDecimal(selectedLow))
                                         ratingLowString = formatDecimal(selectedLow)
-                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                    updateSelectedRatingRange(selectedLow, selectedHigh)
                                 }
-                            },
+                            }
+                        ,
                         enabled = true,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -2269,7 +2022,8 @@ fun RatingRangePop(
                         ),
                         keyboardActions = KeyboardActions(
                             onDone = {
-                                updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                updateSelectedRatingRange(selectedLow, selectedHigh)
+                                this.defaultKeyboardAction(ImeAction.Done)
                             }
                         ),
                         colors = TextFieldDefaults.colors(
@@ -2340,9 +2094,10 @@ fun RatingRangePop(
                                 if (!it.isFocused) {
                                     if (ratingHighString != formatDecimal(selectedHigh))
                                         ratingHighString = formatDecimal(selectedHigh)
-                                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                    updateSelectedRatingRange(selectedLow, selectedHigh)
                                 }
-                            },
+                            }
+                        ,
                         enabled = true,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -2351,7 +2106,7 @@ fun RatingRangePop(
                         ),
                         keyboardActions = KeyboardActions(
                             onDone = {
-                                updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                                updateSelectedRatingRange(selectedLow, selectedHigh)
                                 this.defaultKeyboardAction(ImeAction.Done)
                             }
                         ),
@@ -2390,7 +2145,7 @@ fun RatingRangePop(
                             ) {
                                 ratingLowString = ""
                                 selectedLow = null
-                                updateSelectedRatingRange(Pair(null, selectedHigh))
+                                updateSelectedRatingRange(null, selectedHigh)
                             }
                             .padding(4.dp)
                             .size(20.dp)
@@ -2415,7 +2170,7 @@ fun RatingRangePop(
                             ) {
                                 ratingHighString = ""
                                 selectedHigh = null
-                                updateSelectedRatingRange(Pair(selectedLow, null))
+                                updateSelectedRatingRange(selectedLow, null)
                             }
                             .padding(4.dp)
                             .size(20.dp)
@@ -2436,7 +2191,7 @@ fun RatingRangePop(
                             ratingHighString = ""
                             selectedHigh = null
                             updateSelectedUnrated(false)
-                            updateSelectedRatingRange(Pair(null, null))
+                            updateSelectedRatingRange(null, null)
                         },
                         enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated,
                         modifier = Modifier
@@ -2462,7 +2217,7 @@ fun RatingRangePop(
         confirmButton = {
             TextButton(
                 onClick = {
-                    updateSelectedRatingRange(Pair(selectedLow, selectedHigh))
+                    updateSelectedRatingRange(selectedLow, selectedHigh)
                     onDismiss()
                 },
                 contentPadding = PaddingValues(12.dp, 4.dp),
@@ -2486,46 +2241,131 @@ fun RatingRangePop(
 }
 
 @Composable
-fun InStockSection(
-    inStock: Boolean,
-    inStockEnabled: Boolean,
-    outOfStock: Boolean,
-    outOfStockEnabled: Boolean,
-    updateSelectedInStock: (Boolean) -> Unit,
-    updateSelectedOutOfStock: (Boolean) -> Unit,
+private fun InStockSection(
+    filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val state by filterViewModel.inStockUiState.collectAsState()
+
     Column(
         modifier = modifier
-            .background(
-                LocalCustomColors.current.sheetBox,
-                RoundedCornerShape(8.dp)
-            )
-            .border(
-                width = Dp.Hairline,
-                color = LocalCustomColors.current.sheetBoxBorder,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .width(intrinsicSize = IntrinsicSize.Max)
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .width(IntrinsicSize.Max)
             .padding(vertical = 3.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.Start
     ) {
         CheckboxWithLabel(
             text = "In-stock",
-            checked = inStock,
-            onCheckedChange = { updateSelectedInStock(it) },
+            checked = state.inStock,
+            onCheckedChange = filterViewModel::updateSelectedInStock,
             modifier = Modifier,
-            enabled = inStockEnabled
+            enabled = state.inStockEnabled
         )
         CheckboxWithLabel(
             text = "Out",
-            checked = outOfStock,
-            onCheckedChange = { updateSelectedOutOfStock(it) },
+            checked = state.outOfStock,
+            onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
-            enabled = outOfStockEnabled
+            enabled = state.outOfStockEnabled
         )
     }
+}
+
+
+@Composable
+private fun SubgenreSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val subgenreData by filterViewModel.subgenreData.collectAsState()
+
+    FlowFilterSection(
+        label = "Subgenre",
+        nothingLabel = "No subgenres assigned to any blends.",
+        displayData = subgenreData,
+        updateSelectedOptions = filterViewModel::updateSelectedSubgenre,
+        overflowCheck = filterViewModel::overflowCheck,
+        noneField = "(Unassigned)",
+        clearAll = { filterViewModel.clearAllSelected("Subgenre") },
+        modifier = modifier
+            .padding(horizontal = 6.dp, vertical = 0.dp)
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp)
+    )
+}
+
+@Composable
+private fun CutSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val cutData by filterViewModel.cutData.collectAsState()
+
+    FlowFilterSection(
+        label = "Cut",
+        nothingLabel = "No cuts assigned to any blends.",
+        displayData = cutData,
+        updateSelectedOptions = filterViewModel::updateSelectedCut,
+        overflowCheck = filterViewModel::overflowCheck,
+        noneField = "(Unassigned)",
+        clearAll = { filterViewModel.clearAllSelected("Cut") },
+        modifier = modifier
+            .padding(horizontal = 6.dp, vertical = 0.dp)
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+    )
+}
+
+@Composable
+private fun ComponentSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val componentData by filterViewModel.componentData.collectAsState()
+
+    FlowFilterSection(
+        label = "Components",
+        nothingLabel = "No components assigned to any blends.",
+        displayData = componentData,
+        updateSelectedOptions = filterViewModel::updateSelectedComponent,
+        overflowCheck = filterViewModel::overflowCheck,
+        noneField = "(None Assigned)",
+        modifier = modifier
+            .padding(horizontal = 6.dp, vertical = 0.dp)
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        clearAll = { filterViewModel.clearAllSelected("Components") },
+        onMatchOptionChange = filterViewModel::updateCompMatching,
+    )
+}
+
+@Composable
+private fun FlavoringSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val flavoringData by filterViewModel.flavoringData.collectAsState()
+
+    FlowFilterSection(
+        label = "Flavorings",
+        nothingLabel = "No flavorings assigned to any blends.",
+        displayData = flavoringData,
+        updateSelectedOptions = filterViewModel::updateSelectedFlavoring,
+        overflowCheck = filterViewModel::overflowCheck,
+        noneField = "(None Assigned)",
+        modifier = modifier
+            .padding(horizontal = 6.dp, vertical = 0.dp)
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        clearAll = { filterViewModel.clearAllSelected("Flavorings") },
+        onMatchOptionChange = filterViewModel::updateFlavorMatching,
+    )
 }
 
 
@@ -2539,10 +2379,10 @@ fun FlowFilterSection(
     noneField: String,
     modifier: Modifier = Modifier,
     clearAll: () -> Unit = {},
-    onMatchOptionChange: (String) -> Unit = {},
+    onMatchOptionChange: (FlowMatchOption) -> Unit = {},
 ) {
     var showOverflowPopup by remember { mutableStateOf(false) }
-    val enableMatchOption = remember(displayData.matching) { !displayData.matching.isNullOrBlank() }
+    val enableMatchOption = remember(displayData.matching) { displayData.matching != null }
     val nothingAssigned = remember(displayData.available) { !displayData.available.any { it != noneField } }
 
     Column(
@@ -2568,7 +2408,7 @@ fun FlowFilterSection(
             )
             if (enableMatchOption) {
                 FlowFilterMatchOptions(
-                    nothingAssigned, displayData.matching, { onMatchOptionChange(it) },
+                    nothingAssigned, displayData.matching, displayData.matchOptionEnablement, { onMatchOptionChange(it) },
                     Modifier, Arrangement.End
                 )
             }
@@ -2621,20 +2461,26 @@ fun FlowFilterSection(
                     val overflowedSelected = overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
 
                     val labelColor =
-                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
-                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant
+                        if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
                         else MaterialTheme.colorScheme.onSurfaceVariant
+//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
+//                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
+//                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant
+//                        else MaterialTheme.colorScheme.onSurfaceVariant
                     val containerColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else if (!overflowEnabled) MaterialTheme.colorScheme.background
                         else MaterialTheme.colorScheme.background
+//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (!overflowEnabled) MaterialTheme.colorScheme.background
+//                        else MaterialTheme.colorScheme.background
                     val borderColor =
                         if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else if (!overflowEnabled) MaterialTheme.colorScheme.outlineVariant
                         else MaterialTheme.colorScheme.outlineVariant
+//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (!overflowEnabled) MaterialTheme.colorScheme.outlineVariant
+//                        else MaterialTheme.colorScheme.outlineVariant
 
 
                     Chip(
@@ -2657,134 +2503,19 @@ fun FlowFilterSection(
             )
 
             if (showOverflowPopup) {
-                AlertDialog(
-                    onDismissRequest = { showOverflowPopup = false },
-                    title = {
-                        Text(
-                            text = label,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp),
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    },
+                FlowFilterOverflowPopup(
+                    onDismiss = { showOverflowPopup = false },
+                    label = label,
+                    available = displayData.available,
+                    selected = displayData.selected,
+                    enabled = displayData.enabled,
+                    matching = displayData.matching,
+                    matchOptionEnablement = displayData.matchOptionEnablement,
+                    enableMatchOption = enableMatchOption,
+                    onMatchOptionChange = onMatchOptionChange,
+                    updateSelectedOptions = updateSelectedOptions,
+                    clearAll = clearAll,
                     modifier = Modifier
-                        .fillMaxWidth(.9f),
-                    properties = DialogProperties(
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true,
-                        usePlatformDefaultWidth = false
-                    ),
-                    shape = MaterialTheme.shapes.medium,
-                    text = {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                                .heightIn(min = 0.dp, max = 280.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
-                        ) {
-                            GlowBox(
-                                color = GlowColor(MaterialTheme.colorScheme.background),
-                                size = GlowSize(vertical = 10.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f, false),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .verticalScroll(rememberScrollState()),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Top
-                                ) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    // match options
-                                    if (enableMatchOption) {
-                                        FlowFilterMatchOptions(
-                                            false, displayData.matching, { onMatchOptionChange(it) },
-                                            Modifier.padding(bottom = 4.dp), Arrangement.Center
-                                        )
-                                    }
-
-                                    // Chips
-                                    FlowRow(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight(),
-                                        horizontalArrangement = Arrangement.spacedBy(
-                                            4.dp,
-                                            Alignment.Start
-                                        ),
-                                        verticalArrangement = Arrangement.spacedBy(
-                                            0.dp,
-                                            Alignment.Top
-                                        )
-                                    ) {
-                                        displayData.available.forEach {
-                                            FilterChip(
-                                                selected = displayData.selected.contains(it),
-                                                onClick = {
-                                                    updateSelectedOptions(
-                                                        it, !displayData.selected.contains(it)
-                                                    )
-                                                },
-                                                label = { Text(text = it, fontSize = 14.sp) },
-                                                modifier = Modifier
-                                                    .padding(0.dp),
-                                                shape = MaterialTheme.shapes.small,
-                                                colors = FilterChipDefaults.filterChipColors(
-                                                    containerColor = MaterialTheme.colorScheme.background
-                                                ),
-                                                enabled = displayData.enabled[it] ?: false
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        clearAll()
-                                        showOverflowPopup = false
-                                    },
-                                    modifier = Modifier
-                                        .offset(x = (-4).dp),
-                                    enabled = displayData.selected.isNotEmpty()
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.close),
-                                        contentDescription = "",
-                                        modifier = Modifier
-                                            .padding(end = 3.dp)
-                                            .size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Clear All",
-                                        modifier = Modifier,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        Button(onClick = { showOverflowPopup = false }) {
-                            Text("Close")
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    textContentColor = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
@@ -2794,8 +2525,9 @@ fun FlowFilterSection(
 @Composable
 fun FlowFilterMatchOptions(
     nothingAssigned: Boolean,
-    matching: String?,
-    onMatchOptionChange: (String) -> Unit,
+    matching: FlowMatchOption?,
+    matchOptionEnablement: Map<FlowMatchOption, Boolean>,
+    onMatchOptionChange: (FlowMatchOption) -> Unit,
     modifier: Modifier = Modifier,
     arrangement: Arrangement.Horizontal = Arrangement.Center,
 ) {
@@ -2811,124 +2543,202 @@ fun FlowFilterMatchOptions(
             modifier = Modifier,
             color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
         )
-        Box(
-            modifier = Modifier
-                .padding(0.dp)
-                .clickable(
-                    enabled = !nothingAssigned,
-                    indication = LocalIndication.current,
-                    interactionSource = null
-                ) { onMatchOptionChange("Any") },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Any",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Transparent,
-            )
-            Text(
-                text = "Any",
-                fontSize = 14.sp,
-                fontWeight = if (matching == "Any" && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
-                color = if (matching == "Any" && !nothingAssigned) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = .6f),
+
+        FlowMatchOption.entries.forEachIndexed { index, it ->
+            val enabled = !nothingAssigned && (matchOptionEnablement[it] ?: false)
+            Box(
                 modifier = Modifier
-            )
-        }
-        Text(
-            text = " / ",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
-            modifier = Modifier,
-            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
-        )
-        Box(
-            modifier = Modifier
-                .padding(0.dp)
-                .clickable(
-                    enabled = !nothingAssigned,
-                    indication = LocalIndication.current,
-                    interactionSource = null
-                ) { onMatchOptionChange("All") },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "All",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Transparent,
-            )
-            Text(
-                text = "All",
-                fontSize = 14.sp,
-                fontWeight = if (matching == "All") FontWeight.Medium else FontWeight.Normal,
-                color = if (matching == "All") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                    alpha = .6f
-                ),
-                modifier = Modifier
-            )
-        }
-        Text(
-            text = " / ",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
-            modifier = Modifier,
-            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
-        )
-        Box(
-            modifier = Modifier
-                .padding(0.dp)
-                .clickable(
-                    enabled = !nothingAssigned,
-                    indication = LocalIndication.current,
-                    interactionSource = null
-                ) { onMatchOptionChange("Only") },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Only",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Transparent,
-            )
-            Text(
-                text = "Only",
-                fontSize = 14.sp,
-                fontWeight = if (matching == "Only") FontWeight.Medium else FontWeight.Normal,
-                color = if (matching == "Only") MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(
-                    alpha = .6f
-                ),
-                modifier = Modifier
-            )
+                    .padding(0.dp)
+                    .clickable(
+                        enabled = enabled,
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { onMatchOptionChange(it) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = it.value,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Transparent,
+                )
+                Text(
+                    text = it.value,
+                    fontSize = 14.sp,
+                    fontWeight = if (matching == it && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
+                    color = if (matching == it && !nothingAssigned) MaterialTheme.colorScheme.primary else if (enabled) LocalContentColor.current.copy(alpha = .6f) else LocalContentColor.current.copy(alpha = .38f),
+                    modifier = Modifier
+                )
+            }
+            if (index != FlowMatchOption.entries.lastIndex) {
+                Text(
+                    text = " / ",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier,
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                )
+            }
         }
     }
 }
+
+@Composable
+fun FlowFilterOverflowPopup(
+    onDismiss: () -> Unit,
+    label: String,
+    available: List<String>,
+    selected: List<String>,
+    enabled: Map<String, Boolean>,
+    enableMatchOption: Boolean,
+    matching: FlowMatchOption?,
+    matchOptionEnablement: Map<FlowMatchOption, Boolean>,
+    onMatchOptionChange: (FlowMatchOption) -> Unit,
+    updateSelectedOptions: (String, Boolean) -> Unit,
+    clearAll: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = label,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
+        modifier = modifier
+            .fillMaxWidth(.9f),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        ),
+        shape = MaterialTheme.shapes.medium,
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
+            ) {
+                GlowBox(
+                    color = GlowColor(MaterialTheme.colorScheme.background),
+                    size = GlowSize(vertical = 10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(0.dp, 280.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(0.dp, 280.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        // match options
+                        if (enableMatchOption) {
+                            FlowFilterMatchOptions(
+                                false, matching, matchOptionEnablement, { onMatchOptionChange(it) },
+                                Modifier.padding(bottom = 4.dp), Arrangement.Center
+                            )
+                        }
+
+                        // Chips
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                4.dp,
+                                Alignment.Start
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(
+                                0.dp,
+                                Alignment.Top
+                            )
+                        ) {
+                            available.forEach {
+                                FilterChip(
+                                    selected = selected.contains(it),
+                                    onClick = {
+                                        updateSelectedOptions(it, !selected.contains(it))
+                                    },
+                                    label = { Text(text = it, fontSize = 14.sp) },
+                                    modifier = Modifier
+                                        .padding(0.dp),
+                                    shape = MaterialTheme.shapes.small,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        containerColor = MaterialTheme.colorScheme.background
+                                    ),
+                                    enabled = enabled[it] ?: false
+                                )
+                            }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    TextButton(
+                        onClick = {
+                            clearAll()
+                        },
+                        modifier = Modifier
+                            .offset(x = (-4).dp),
+                        enabled = selected.isNotEmpty()
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.close),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .padding(end = 3.dp)
+                                .size(20.dp)
+                        )
+                        Text(
+                            text = "Clear All",
+                            modifier = Modifier,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onDismiss() }) {
+                Text("Close")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        titleContentColor = MaterialTheme.colorScheme.onBackground,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+    )
+}
+
 
 
 @Composable
 fun TinsFilterSection(
     filterViewModel: FilterViewModel,
-    hasContainer: Boolean,
-    tinsExist: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
-    val hasEnabled by filterViewModel.hasTinsEnabled.collectAsState()
-    val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
-    val noEnabled by filterViewModel.noTinsEnabled.collectAsState()
-    val opened by filterViewModel.sheetSelectedOpened.collectAsState()
-    val openedEnabled by filterViewModel.openedEnabled.collectAsState()
-    val unopened by filterViewModel.sheetSelectedUnopened.collectAsState()
-    val unopenedEnabled by filterViewModel.unopenedEnabled.collectAsState()
-    val finished by filterViewModel.sheetSelectedFinished.collectAsState()
-    val finishedEnabled by filterViewModel.finishedEnabled.collectAsState()
-    val unfinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
-    val unfinishedEnabled by filterViewModel.unfinishedEnabled.collectAsState()
-
+    val state by filterViewModel.tinsFilterUiState.collectAsState()
 
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top)
     ) {
@@ -2936,18 +2746,13 @@ fun TinsFilterSection(
         Box{
             Row(
                 modifier = Modifier
-                    .border(
-                        Dp.Hairline,
-                        LocalCustomColors.current.sheetBoxBorder,
-                        RoundedCornerShape(8.dp)
-                    )
+                    .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
                     .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
                     .fillMaxWidth()
                     .padding(vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val implicitHas = remember(hasTins, opened, unopened, finished, unfinished, hasContainer) { !hasTins && (opened || unopened || finished || unfinished || hasContainer) }
 
                 // Has Tins
                 Column(
@@ -2958,7 +2763,7 @@ fun TinsFilterSection(
                     Box {
                         CheckboxWithLabel(
                             text = "",
-                            checked = implicitHas,
+                            checked = state.implicitHas,
                             onCheckedChange = { },
                             modifier = Modifier,
                             colors = CheckboxDefaults.colors(
@@ -2970,20 +2775,20 @@ fun TinsFilterSection(
                         )
                         CheckboxWithLabel(
                             text = "Has tins",
-                            checked = hasTins,
+                            checked = state.hasTins,
                             onCheckedChange = { filterViewModel.updateSelectedTins("has", it) },
                             modifier = Modifier,
-                            enabled = tinsExist && hasEnabled,
-                            fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                            enabled = state.tinsExist && state.hasEnabled,
+                            fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
                         )
                     }
                     CheckboxWithLabel(
                         text = "No tins",
-                        checked = noTins,
+                        checked = state.noTins,
                         onCheckedChange = { filterViewModel.updateSelectedTins("no", it) },
                         modifier = Modifier,
-                        enabled = tinsExist && noEnabled,
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = state.tinsExist && state.noEnabled,
+                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
 
@@ -2995,19 +2800,19 @@ fun TinsFilterSection(
                 ) {
                     CheckboxWithLabel(
                         text = "Opened",
-                        checked = opened,
+                        checked = state.opened,
                         onCheckedChange = { filterViewModel.updateSelectedTins("opened", it) },
                         modifier = Modifier,
-                        enabled = tinsExist && openedEnabled,
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = state.tinsExist && state.openedEnabled,
+                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unopened",
-                        checked = unopened,
+                        checked = state.unopened,
                         onCheckedChange = { filterViewModel.updateSelectedTins("unopened", it) },
                         modifier = Modifier,
-                        enabled = tinsExist && unopenedEnabled,
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = state.tinsExist && state.unopenedEnabled,
+                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
 
@@ -3019,23 +2824,23 @@ fun TinsFilterSection(
                 ) {
                     CheckboxWithLabel(
                         text = "Finished",
-                        checked = finished,
+                        checked = state.finished,
                         onCheckedChange = { filterViewModel.updateSelectedTins("finished", it) },
                         modifier = Modifier,
-                        enabled = tinsExist && finishedEnabled,
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = state.tinsExist && state.finishedEnabled,
+                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unfinished",
-                        checked = unfinished,
+                        checked = state.unfinished,
                         onCheckedChange = { filterViewModel.updateSelectedTins("unfinished", it) },
                         modifier = Modifier,
-                        enabled = tinsExist && unfinishedEnabled,
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = state.tinsExist && state.unfinishedEnabled,
+                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
             }
-            if (!tinsExist) {
+            if (!state.tinsExist) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -3071,6 +2876,63 @@ fun TinsFilterSection(
     }
 }
 
+
+@Composable
+private fun ContainerFilterSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val containerData by filterViewModel.containerData.collectAsState()
+    val tinsExist by filterViewModel.tinsExist.collectAsState()
+
+    FlowFilterSection(
+        label = "Tin Containers",
+        nothingLabel = if (tinsExist) "No containers assigned to any tins." else "No tins assigned to any blends.",
+        displayData = containerData,
+        updateSelectedOptions = filterViewModel::updateSelectedContainer,
+        overflowCheck = filterViewModel::overflowCheck,
+        noneField = "(Unassigned)",
+        clearAll = { filterViewModel.clearAllSelected("Container") },
+        modifier = modifier
+            .padding(horizontal = 6.dp, vertical = 0.dp)
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+    )
+}
+
+
+@Composable
+private fun ProductionFilterSection(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val state by filterViewModel.productionFilterUiState.collectAsState()
+
+    Row(
+        modifier = modifier
+            .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+            .width(IntrinsicSize.Max),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        CheckboxWithLabel(
+            text = "In Production",
+            checked = state.production,
+            onCheckedChange = filterViewModel::updateSelectedProduction,
+            modifier = Modifier,
+            enabled = state.productionEnabled
+        )
+        CheckboxWithLabel(
+            text = "Discontinued",
+            checked = state.outOfProduction,
+            onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
+            modifier = Modifier,
+            enabled = state.outOfProductionEnabled
+        )
+    }
+}
 
 /** Custom composables for sheet **/
 @Composable
