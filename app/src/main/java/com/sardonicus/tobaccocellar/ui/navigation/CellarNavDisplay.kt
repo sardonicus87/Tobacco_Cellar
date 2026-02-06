@@ -84,8 +84,6 @@ fun CellarNavigation(
     val itemsRepository: ItemsRepository = app.container.itemsRepository
     val csvHelper: CsvHelper = app.csvHelper
 
-    val currentFrom = remember(navigationState.cameFrom) { if (navigationState.cameFrom != null) navigationState.cameFrom!!::class.simpleName else null }
-
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
 
@@ -117,7 +115,7 @@ fun CellarNavigation(
 
         val twoPaneSlide: Map<String, ContentTransform> = mapOf(
             TwoPaneScene.PANE_ENTER to
-                    if (currentFrom == "BlendDetailsDestination") {
+                    if (navigationState.cameFrom is BlendDetailsDestination) {
                         slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it }
                     } else {
                         slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
