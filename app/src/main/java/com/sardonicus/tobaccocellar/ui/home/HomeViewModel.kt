@@ -643,34 +643,47 @@ class HomeViewModel(
                     1 -> filteredItems.sortedBy { it.items.blend }
                     2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                     3 -> filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                    4 -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
+                    4 -> filteredItems.sortedByDescending {
+                        it.items.rating ?: 0.0
+                    }
                     7 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
                 }.let {
-                    if (tableSorting.sortAscending) it else it.reversed()
+                    if (tableSorting.sortAscending) it
+                    else it.let {
+                        if (tableSorting.columnIndex == 4) {
+                            it.sortedBy { item -> item.items.rating ?: 10.0 }
+                        }
+                        else it.reversed()
+                    }
                 }
             } else {
-                when (listSorting.option.value) {
-                    "Default" -> filteredItems.sortedBy { it.items.id }
-                    "Blend" -> filteredItems.sortedBy { it.items.blend }
-                    "Brand" -> filteredItems.sortedBy { it.items.brand }
-                    "Type" -> {
+                when (listSorting.option) {
+                    ListSortOption.DEFAULT -> filteredItems.sortedBy { it.items.id }
+                    ListSortOption.BLEND -> filteredItems.sortedBy { it.items.blend }
+                    ListSortOption.BRAND -> filteredItems.sortedBy { it.items.brand }
+                    ListSortOption.TYPE -> {
                         if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
                             filteredItems.sortedBy { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
                         }
                         else filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                     }
-                    "Subgenre" -> {
+                    ListSortOption.SUBGENRE -> {
                         if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
                             filteredItems.sortedBy { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
                         }
                         else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
                     }
-                    "Rating" -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
-                    "Quantity" -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                    else -> filteredItems
+                    ListSortOption.RATING -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
+                    ListSortOption.QUANTITY -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                 }.let {
-                    if (listSorting.listAscending) it else it.reversed()
+                    if (listSorting.listAscending) it
+                    else it.let {
+                        if (listSorting.option == ListSortOption.RATING) {
+                            it.sortedBy { item -> item.items.rating ?: 10.0 }
+                        }
+                        else it.reversed()
+                    }
                 }
             }
         } else emptyList()
