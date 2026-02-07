@@ -1314,9 +1314,9 @@ private fun SelectableBrandsRow(
                 val clickAction = remember(excludeSwitch, brand) {
                     {
                         if (excludeSwitch) {
-                            updateSelectedExcludedBrands(brand, false)
+                            updateSelectedExcludedBrands(brand, true)
                         } else {
-                            updateSelectedBrands(brand, false)
+                            updateSelectedBrands(brand, true)
                         }
                         updateBrandSearchText("")
                     }
