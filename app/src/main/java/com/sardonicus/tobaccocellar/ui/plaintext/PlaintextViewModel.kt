@@ -167,10 +167,23 @@ class PlaintextViewModel (
                 PlaintextSortOption.QUANTITY.value -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                 PlaintextSortOption.RATING.value -> filteredItems.sortedByDescending { items -> items.items.rating.let { it ?: 0.0 } }
                 else -> filteredItems.sortedBy { it.items.id }
-            }.let {
-                if (sortState.ascending) { it } else { it.reversed() }
+            }.let { sortedList ->
+                if (sortState.ascending) sortedList
+                else sortedList.let { toReverse ->
+                    when (sortState.value) {
+                        PlaintextSortOption.RATING.value -> toReverse.sortedBy { item -> item.items.rating ?: 10.0 }
+                        PlaintextSortOption.QUANTITY.value -> {
+                            toReverse.sortedWith(
+                                compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
+                                    .thenBy { sortQuantity[it.items.id] }
+                            )
+                        }
+                        else -> toReverse.reversed()
+                    }
+                }
             }
         } else emptyList()
+
         val sortedTins = if (filteredTins.isNotEmpty()) {
             when (sortState.value) {
                 PlaintextSortOption.TIN_LABEL.value -> filteredTins.sortedWith (
@@ -673,11 +686,6 @@ class PlaintextViewModel (
         val tinSublistReplacements = mutableMapOf<String, String>()
         var tempId = -1
         var lineWithoutTins = processedLine
-        val hasTinSublistPattern = processedLine.contains("{")
-                && processedLine.contains("}")
-                && listOf(
-            "@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished"
-        ).any { processedLine.contains(it) }
 
         lineWithoutTins = tinSublist.replace(lineWithoutTins) {
             val original = it.value
@@ -687,7 +695,7 @@ class PlaintextViewModel (
             placeholder
         }
 
-        var conditionalsProcessed = conditionalProcessing(lineWithoutTins, itemData, tinData, formattedQuantities, hasTinSublistPattern)
+        var conditionalsProcessed = conditionalProcessing(lineWithoutTins, itemData, tinData, formattedQuantities)
 
         tinSublistReplacements.forEach { (placeholder, original) ->
             conditionalsProcessed = conditionalsProcessed.replace(placeholder, original)
@@ -742,6 +750,7 @@ class PlaintextViewModel (
         // Main item processing
         if (itemData != null) {
             val ratingRegex = Regex("@rating_(\\d+)(?:_(\\d))?")
+
             processedLine = ratingRegex.replace(processedLine) { result ->
                 val max = result.groupValues[1].toIntOrNull() ?: 5
                 val rounding = result.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
@@ -794,7 +803,6 @@ class PlaintextViewModel (
         itemData: ItemsComponentsAndTins?,
         tinData: Tins?,
         formattedQuantities: Map<Int, String>,
-        hasTinSublist: Boolean = false,
     ): String {
         var processedLine = inputLine
         var lineBeforeThisPass: String
@@ -807,35 +815,35 @@ class PlaintextViewModel (
                 val placeholderScan = Regex("""@\w+(?!\w)""")
                 val allPlaceholders = placeholderScan.findAll(innerContent).toList()
 
-                if (hasTinSublist) {
+                var content = innerContent
+                var anyResolved = false
+
+                if (innerContent.contains("%TIN")) {
                     if (itemData != null && itemData.tins.isNotEmpty()) {
-                        innerContent
-                    } else { "" }
-                } else {
-                    if (allPlaceholders.isNotEmpty()) {
-                        var content = innerContent
-                        var anyResolved = false
-
-                        allPlaceholders.forEach {
-                            val placeholder = it.value
-                            val resolved =
-                                resolveSinglePlace(
-                                    placeholder,
-                                    itemData,
-                                    tinData,
-                                    formattedQuantities
-                                )
-
-                            if (resolved.isNotBlank() && resolved != placeholder) {
-                                anyResolved = true
-                            }
-                            content = content.replace(placeholder, resolved)
-                        }
-                        if (anyResolved) {
-                            content
-                        } else { "" }
-                    } else { "" }
+                        anyResolved = true
+                    }
                 }
+
+                if (allPlaceholders.isNotEmpty()) {
+                    allPlaceholders.forEach {
+                        val placeholder = it.value
+                        val resolved =
+                            resolveSinglePlace(
+                                placeholder,
+                                itemData,
+                                tinData,
+                                formattedQuantities
+                            )
+
+                        if (resolved.isNotBlank() && resolved != placeholder) {
+                            anyResolved = true
+                        }
+                        content = content.replace(placeholder, resolved)
+                    }
+                }
+                if (anyResolved) {
+                    content
+                } else { "" }
             }
         } while (processedLine != lineBeforeThisPass)
         return processedLine
