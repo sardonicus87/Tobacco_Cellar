@@ -643,18 +643,23 @@ class HomeViewModel(
                     1 -> filteredItems.sortedBy { it.items.blend }
                     2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                     3 -> filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                    4 -> filteredItems.sortedByDescending {
-                        it.items.rating ?: 0.0
-                    }
+                    4 -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
                     7 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
                     else -> filteredItems
-                }.let {
-                    if (tableSorting.sortAscending) it
-                    else it.let {
-                        if (tableSorting.columnIndex == 4) {
-                            it.sortedBy { item -> item.items.rating ?: 10.0 }
+                }.let { sortedList ->
+                    if (tableSorting.sortAscending) sortedList
+                    else sortedList.let { toReverse ->
+                        when (tableSorting.columnIndex) {
+                            4 -> toReverse.sortedBy { item -> item.items.rating ?: 10.0 }
+                            7 -> {
+                                toReverse.sortedWith(
+                                    compareBy<ItemsComponentsAndTins> {
+                                        if (sortQuantity[it.items.id] == 0.0) 1 else 0
+                                    }.thenBy { sortQuantity[it.items.id] }
+                                )
+                            }
+                            else -> toReverse.reversed()
                         }
-                        else it.reversed()
                     }
                 }
             } else {
@@ -676,13 +681,19 @@ class HomeViewModel(
                     }
                     ListSortOption.RATING -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
                     ListSortOption.QUANTITY -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                }.let {
-                    if (listSorting.listAscending) it
-                    else it.let {
-                        if (listSorting.option == ListSortOption.RATING) {
-                            it.sortedBy { item -> item.items.rating ?: 10.0 }
+                }.let { sortedList ->
+                    if (listSorting.listAscending) sortedList
+                    else sortedList.let { toReverse ->
+                        when (listSorting.option) {
+                            ListSortOption.RATING -> toReverse.sortedBy { item -> item.items.rating ?: 10.0 }
+                            ListSortOption.QUANTITY -> {
+                                toReverse.sortedWith(
+                                    compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
+                                        .thenBy { sortQuantity[it.items.id] }
+                                )
+                            }
+                            else -> toReverse.reversed()
                         }
-                        else it.reversed()
                     }
                 }
             }
