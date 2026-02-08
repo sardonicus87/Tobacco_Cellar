@@ -191,64 +191,47 @@ class SettingsViewModel(
             supervisorScope {
                 // Theme Setting
                 launch {
-                    preferencesRepo.themeSetting.collect {
-                        _themeSetting.value = it
-                    }
+                    preferencesRepo.themeSetting.collect { _themeSetting.value = it }
                 }
                 // Ratings Visibility
                 launch {
-                    preferencesRepo.showRating.collect {
-                        _showRatings.value = it
-                    }
+                    preferencesRepo.showRating.collect { _showRatings.value = it }
                 }
                 // Type/Genre Display
                 launch {
-                    preferencesRepo.typeGenreOption.collect {
-                        _typeGenreOption.value = it
-                    }
+                    preferencesRepo.typeGenreOption.collect { _typeGenreOption.value = it }
                 }
                 // Quantity Display
                 launch {
-                    preferencesRepo.quantityOption.collect {
-                        _quantityOption.value = it
-                    }
+                    preferencesRepo.quantityOption.collect { _quantityOption.value = it }
                 }
                 //Parse Links
                 launch {
-                    preferencesRepo.parseLinks.collect {
-                        _parseLinks.value = it
-                    }
+                    preferencesRepo.parseLinks.collect { _parseLinks.value = it }
                 }
                 // Device Sync
                 launch {
-                    preferencesRepo.crossDeviceAcknowledged.collect {
-                        _deviceSyncAcknowledgement.value = it
-                    }
-                    preferencesRepo.crossDeviceSync.collect {
-                        _crossDeviceSync.value = it
-                    }
-                    preferencesRepo.signedInUserEmail.collect {
-                        _userEmail.value = it
-                    }
-                    preferencesRepo.allowMobileData.collect {
-                        _allowMobileData.value = it
-                    }
+                    preferencesRepo.crossDeviceAcknowledged.collect { _deviceSyncAcknowledgement.value = it }
+                }
+                launch {
+                    preferencesRepo.crossDeviceSync.collect { _crossDeviceSync.value = it }
+                }
+                launch {
+                    preferencesRepo.signedInUserEmail.collect { _userEmail.value = it }
+                }
+                launch {
+                    preferencesRepo.allowMobileData.collect { _allowMobileData.value = it }
                 }
                 // Tin Conversion Rates
                 launch {
-                    preferencesRepo.tinOzConversionRate.collect {
-                        _tinOzConversionRate.value = it
-                    }
-
-                    preferencesRepo.tinGramsConversionRate.collect {
-                        _tinGramsConversionRate.value = it
-                    }
+                    preferencesRepo.tinOzConversionRate.collect { _tinOzConversionRate.value = it }
+                }
+                launch {
+                    preferencesRepo.tinGramsConversionRate.collect { _tinGramsConversionRate.value = it }
                 }
                 // Default sync tins
                 launch {
-                    preferencesRepo.defaultSyncOption.collect {
-                        _defaultSyncOption.value = it
-                    }
+                    preferencesRepo.defaultSyncOption.collect { _defaultSyncOption.value = it }
                 }
             }
         }
@@ -334,10 +317,10 @@ class SettingsViewModel(
 
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
+            preferencesRepo.saveCrossDeviceSync(enable)
             if (enable) {
                 EventBus.emit(SignInEvent)
             } else {
-                preferencesRepo.saveCrossDeviceSync(false)
                 stopWorkers()
             }
         }
