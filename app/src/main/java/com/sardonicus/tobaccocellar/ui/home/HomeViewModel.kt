@@ -107,9 +107,7 @@ class HomeViewModel(
             supervisorScope {
                 // everything flow
                 launch {
-                    filterViewModel.everythingFlow.collect {
-                        _allItems.value = it
-                    }
+                    filterViewModel.everythingFlow.collect { _allItems.value = it }
                 }
                 // Table Sorting
                 launch {
@@ -136,9 +134,7 @@ class HomeViewModel(
                 }
                 // Table View
                 launch {
-                    preferencesRepo.isTableView.collect {
-                        _isTableView.value = it
-                    }
+                    preferencesRepo.isTableView.collect { _isTableView.value = it }
                 }
                 // Important alerts
                 launch {

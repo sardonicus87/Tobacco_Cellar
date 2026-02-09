@@ -118,7 +118,6 @@ import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.HomeScrollState
-import com.sardonicus.tobaccocellar.ui.SearchState
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -160,8 +159,6 @@ fun HomeScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val homeUiState by viewModel.homeUiState.collectAsState()
-    val searchState by filterViewModel.searchState.collectAsState()
-    val menuState by viewModel.menuState.collectAsState()
 
     val showSnackbar by viewModel.showSnackbar.collectAsState()
     if (showSnackbar) {
@@ -181,20 +178,7 @@ fun HomeScreen(
         }
     }
 
-    BackHandler(searchState.searchFocused || searchState.searchPerformed) {
-        if (searchState.searchFocused) {
-            focusManager.clearFocus()
-            filterViewModel.updateSearchFocused(false)
-        } else {
-            filterViewModel.updateSearchText("")
-            filterViewModel.onSearch("")
-            if (searchState.searchPerformed) {
-                coroutineScope.launch {
-                    EventBus.emit(SearchClearedEvent)
-                }
-            }
-        }
-    }
+    HomeBackHandler(viewModel, filterViewModel)
 
     // Important Alert stuff
     val importantAlertState by viewModel.importantAlertState.collectAsState()
@@ -262,7 +246,7 @@ fun HomeScreen(
         ) {
             HomeHeader(
                 viewModel = viewModel,
-                searchState = searchState,
+                filterViewModel = filterViewModel,
                 updateSearchText = filterViewModel::updateSearchText,
                 onSearch = filterViewModel::onSearch,
                 updateSearchFocused = filterViewModel::updateSearchFocused,
@@ -282,11 +266,6 @@ fun HomeScreen(
                 coroutineScope = { coroutineScope },
                 onDetailsClick = navigateToBlendDetails,
                 onEditClick = navigateToEditEntry,
-                isMenuShown = { menuState.isMenuShown },
-                activeMenuId = { menuState.activeMenuId },
-                getPositionTrigger = filterViewModel::getPositionTrigger,
-                searchFocused = { searchState.searchFocused },
-                searchPerformed = { searchState.searchPerformed },
                 shouldScrollUp = filterViewModel::shouldScrollUp,
                 modifier = modifier
                     .fillMaxWidth()
@@ -296,12 +275,40 @@ fun HomeScreen(
     }
 }
 
+@Composable
+private fun HomeBackHandler(
+    viewModel: HomeViewModel,
+    filterViewModel: FilterViewModel,
+) {
+    val menuState by viewModel.menuState.collectAsState()
+    val searchState by filterViewModel.searchState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+
+    BackHandler(menuState.activeMenuId != null) { viewModel.onDismissMenu() }
+
+    BackHandler(searchState.searchFocused || searchState.searchPerformed) {
+        if (searchState.searchFocused) {
+            focusManager.clearFocus()
+            filterViewModel.updateSearchFocused(false)
+        } else {
+            filterViewModel.updateSearchText("")
+            filterViewModel.onSearch("")
+            if (searchState.searchPerformed) {
+                coroutineScope.launch {
+                    EventBus.emit(SearchClearedEvent)
+                }
+            }
+        }
+    }
+}
+
 
 /** Header stuff **/
 @Composable
 private fun HomeHeader(
     viewModel: HomeViewModel,
-    searchState: SearchState,
+    filterViewModel: FilterViewModel,
     updateSearchText: (String) -> Unit,
     onSearch: (String) -> Unit,
     updateSearchFocused: (Boolean) -> Unit,
@@ -339,7 +346,7 @@ private fun HomeHeader(
                 .weight(1f, false),
         ) {
             SearchField(
-                state = searchState,
+                filterViewModel = filterViewModel,
                 updateSearchText = updateSearchText,
                 onSearch = onSearch,
                 updateSearchFocused = updateSearchFocused,
@@ -414,7 +421,7 @@ private fun ViewSelect(
 
 @Composable
 private fun SearchField (
-    state: SearchState,
+    filterViewModel: FilterViewModel,
     updateSearchText: (String) -> Unit,
     onSearch: (String) -> Unit,
     updateSearchFocused: (Boolean) -> Unit,
@@ -423,6 +430,8 @@ private fun SearchField (
     onExpandSearchMenu: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val state by filterViewModel.searchState.collectAsState()
+
     val coroutineScope = rememberCoroutineScope()
 
     CustomBlendSearch(
@@ -750,12 +759,7 @@ private fun HomeBody(
     coroutineScope: () -> CoroutineScope,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
-    isMenuShown: () -> Boolean,
-    activeMenuId: () -> Int?,
-    getPositionTrigger: () -> Unit,
     shouldScrollUp: () -> Unit,
-    searchFocused: () -> Boolean,
-    searchPerformed: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     val columnState = rememberLazyListState()
@@ -772,9 +776,8 @@ private fun HomeBody(
 
     Box {
         BodyContent(
-            viewModel, isTableView, columnState, sortedItems, onDetailsClick, onEditClick,
-            isMenuShown, activeMenuId, getPositionTrigger, searchFocused,
-            searchPerformed, shouldScrollUp, modifier
+            viewModel, filterViewModel, isTableView, columnState, sortedItems, onDetailsClick,
+            onEditClick, shouldScrollUp, modifier
         )
 
         if (showLoading()) { LoadingIndicator() }
@@ -793,7 +796,6 @@ private fun HomeBody(
         JumpToButton(
             columnState = columnState,
             itemCountPass = { itemsCountPass },
-            coroutineScope = coroutineScope(),
             onScrollToTop = { coroutineScope().launch { columnState.scrollToItem(0) } },
             onScrollToBottom = { coroutineScope().launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
             modifier = Modifier
@@ -802,8 +804,7 @@ private fun HomeBody(
         )
 
         HomeScrollHandler(
-            columnState, sortedItems, { itemsCount }, scrollState, filterViewModel,
-            searchPerformed(), coroutineScope(),
+            columnState, sortedItems, { itemsCount }, scrollState, filterViewModel, coroutineScope(),
         )
     }
 }
@@ -811,16 +812,12 @@ private fun HomeBody(
 @Composable
 private fun BodyContent(
     viewModel: HomeViewModel,
+    filterViewModel: FilterViewModel,
     isTableView: () -> Boolean,
     columnState: LazyListState,
     sortedItems: ItemsList,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
-    isMenuShown: () -> Boolean,
-    activeMenuId: () -> Int?,
-    getPositionTrigger: () -> Unit,
-    searchFocused: () -> Boolean,
-    searchPerformed: () -> Boolean,
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -854,22 +851,19 @@ private fun BodyContent(
     } else {
         if (isTableView()) {
             TableViewMode(
+                viewModel = viewModel,
+                filterViewModel = filterViewModel,
                 sortedItems = sortedItems,
                 columnState = columnState,
                 shadowAlpha = { tableShadow },
                 tableLayoutData = tableLayoutData,
                 sorting = tableSorting,
                 updateSorting = viewModel::updateSorting,
-                searchFocused = searchFocused,
-                searchPerformed = searchPerformed,
                 onDetailsClick = onDetailsClick,
                 onEditClick = onEditClick,
-                getPositionTrigger = getPositionTrigger,
                 shouldScrollUp = shouldScrollUp,
                 onShowMenu = viewModel::onShowMenu,
                 onDismissMenu = viewModel::onDismissMenu,
-                isMenuShown = isMenuShown,
-                activeMenuId = activeMenuId,
                 modifier = Modifier
                     .padding(0.dp)
                     .fillMaxWidth()
@@ -880,17 +874,14 @@ private fun BodyContent(
                 size = GlowSize(top =  listShadow)
             ) {
                 ListViewMode(
+                    viewModel = viewModel,
+                    filterViewModel = filterViewModel,
                     sortedItems = sortedItems,
                     columnState = columnState,
-                    searchFocused = searchFocused,
-                    searchPerformed = searchPerformed,
                     onDetailsClick = onDetailsClick,
                     onEditClick = onEditClick,
-                    getPositionTrigger = getPositionTrigger,
                     onShowMenu = viewModel::onShowMenu,
                     onDismissMenu = viewModel::onDismissMenu,
-                    isMenuShown = isMenuShown,
-                    activeMenuId = activeMenuId,
                     modifier = Modifier
                         .padding(0.dp)
                         .fillMaxWidth()
@@ -907,13 +898,13 @@ private fun HomeScrollHandler(
     itemsCount: () -> Int,
     scrollState: HomeScrollState,
     filterViewModel: FilterViewModel,
-    searchPerformed: Boolean,
     coroutineScope: CoroutineScope,
 ) {
     val currentItemsList by rememberUpdatedState(sortedItems.list)
     val savedItemIndex = remember(sortedItems.list, scrollState.savedItemId) {
         sortedItems.list.indexOfFirst { it.itemId == scrollState.savedItemId }
     }
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
 
     // Scroll to Positions //
     LaunchedEffect(currentItemsList) {
@@ -971,7 +962,6 @@ private fun HomeScrollHandler(
 private fun JumpToButton(
     columnState: LazyListState,
     itemCountPass: () -> Boolean,
-    coroutineScope: CoroutineScope,
     onScrollToTop: () -> Unit,
     onScrollToBottom: () -> Unit,
     modifier: Modifier = Modifier,
@@ -986,13 +976,11 @@ private fun JumpToButton(
     ) {
         FloatingActionButton(
             onClick = {
-                coroutineScope.launch {
-                    jumpToState.second.value
-                    if (jumpToState.second.value == ScrollDirection.DOWN) {
-                        onScrollToBottom()
-                    } else {
-                        onScrollToTop()
-                    }
+                jumpToState.second.value
+                if (jumpToState.second.value == ScrollDirection.DOWN) {
+                    onScrollToBottom()
+                } else {
+                    onScrollToTop()
                 }
             },
             shape = CircleShape,
@@ -1100,19 +1088,51 @@ private fun ItemMenu(
 /** List View Mode **/
 @Composable
 fun ListViewMode(
+    viewModel: HomeViewModel,
+    filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
     columnState: LazyListState,
-    searchPerformed: () -> Boolean,
-    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
-    getPositionTrigger: () -> Unit,
     onShowMenu: (Int) -> Unit,
-    isMenuShown: () -> Boolean,
-    activeMenuId: () -> Int?,
     onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
+    val haptics = LocalHapticFeedback.current
+
+    val activeMenuId by viewModel.activeMenuId.collectAsState()
+
+    val onClick = remember {
+        { itemId: Int ->
+            if (filterViewModel.searchFocused.value) {
+                focusManager.clearFocus()
+            } else {
+                if (activeMenuId == itemId) { // currentMenuId
+                    // do nothing
+                }
+                else if (activeMenuId != null) {
+                    onDismissMenu()
+                }
+                else {
+                    if (!filterViewModel.searchPerformed.value) {
+                        filterViewModel.getPositionTrigger()
+                    }
+                    onDetailsClick(itemId)
+                }
+            }
+        }
+    }
+    val onLongClick = remember {
+        { itemId: Int ->
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (!filterViewModel.searchPerformed.value) {
+                filterViewModel.getPositionTrigger()
+            }
+            onShowMenu(itemId)
+        }
+    }
+
     Box(
         modifier = Modifier
             .padding(0.dp)
@@ -1126,10 +1146,7 @@ fun ListViewMode(
             state = columnState,
         ) {
             items(items = sortedItems.list, key = { it.itemId }) { item ->
-                val haptics = LocalHapticFeedback.current
-                val focusManager = LocalFocusManager.current
-
-                BackHandler(isMenuShown() && activeMenuId() == item.itemId) { onDismissMenu() }
+                val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
 
                 ListItem(
                     brand = { item.item.items.brand },
@@ -1144,36 +1161,13 @@ fun ListViewMode(
                     onEditClick = { onEditClick(item.itemId) },
                     modifier = Modifier
                         .combinedClickable(
-                            onClick = {
-                                if (searchFocused()) {
-                                    focusManager.clearFocus()
-                                } else {
-                                    if (isMenuShown() && activeMenuId() == item.itemId) {
-                                        // do nothing
-                                    } else {
-                                        if (isMenuShown()) {
-                                            onDismissMenu()
-                                        } else {
-                                            if (!searchPerformed()) {
-                                                getPositionTrigger()
-                                            }
-                                            onDetailsClick(item.itemId)
-                                        }
-                                    }
-                                }
-                            },
-                            onLongClick = {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                if (!searchPerformed()) {
-                                    getPositionTrigger()
-                                }
-                                onShowMenu(item.itemId)
-                            },
+                            onClick = { onClick(item.itemId) },
+                            onLongClick = { onLongClick(item.itemId) },
                             indication = null,
                             interactionSource = null
                         ),
                     onMenuDismiss = onDismissMenu,
-                    showMenu = { isMenuShown() && activeMenuId() == item.itemId },
+                    showMenu = { openMenu },
                     filteredTins = item.tins,
                 )
             }
@@ -1588,19 +1582,16 @@ fun ColumnVisibilityPopup(
 
 @Composable
 fun TableViewMode(
+    viewModel: HomeViewModel,
+    filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
     columnState: LazyListState,
     shadowAlpha: () -> Float,
     tableLayoutData: TableLayoutData,
     sorting: TableSorting,
-    searchPerformed: () -> Boolean,
-    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
-    getPositionTrigger: () -> Unit,
-    activeMenuId: () -> Int?,
     onShowMenu: (Int) -> Unit,
-    isMenuShown: () -> Boolean,
     onDismissMenu: () -> Unit,
     updateSorting: (Int) -> Unit,
     shouldScrollUp: () -> Unit,
@@ -1608,13 +1599,48 @@ fun TableViewMode(
 ) {
     val horizontalScroll = rememberScrollState()
 
+    val focusManager = LocalFocusManager.current
+    val haptics = LocalHapticFeedback.current
+
+    val activeMenuId by viewModel.activeMenuId.collectAsState()
+
+    val onClick = remember {
+        { itemId: Int ->
+            if (filterViewModel.searchFocused.value) {
+                focusManager.clearFocus()
+            } else {
+                if (activeMenuId == itemId) { // currentMenuId
+                    // do nothing
+                }
+                else if (activeMenuId != null) {
+                    onDismissMenu()
+                }
+                else {
+                    if (!filterViewModel.searchPerformed.value) {
+                        filterViewModel.getPositionTrigger()
+                    }
+                    onDetailsClick(itemId)
+                }
+            }
+        }
+    }
+    val onLongClick = remember {
+        { itemId: Int ->
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (!filterViewModel.searchPerformed.value) {
+                filterViewModel.getPositionTrigger()
+            }
+            onShowMenu(itemId)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize(),
     ) {
         // Items
         LazyColumn(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .horizontalScroll(horizontalScroll, overscrollEffect = null),
             state = columnState,
@@ -1622,14 +1648,13 @@ fun TableViewMode(
         ) {
             stickyHeader {
                 TableHeaderRow(
-                    tableLayoutData,
-                    updateSorting,
-                    sorting,
-                    shouldScrollUp,
-                    isMenuShown,
-                    activeMenuId,
-                    onDismissMenu,
-                    searchFocused,
+                    viewModel = viewModel,
+                    filterViewModel = filterViewModel,
+                    layoutData = tableLayoutData,
+                    updateSorting = updateSorting,
+                    sorting = sorting,
+                    shouldScrollUp = shouldScrollUp,
+                    onDismissMenu = onDismissMenu,
                     Modifier
                         .fillMaxWidth()
                         .zIndex(1f)
@@ -1646,51 +1671,22 @@ fun TableViewMode(
             }
 
             items(items = sortedItems.list, key = { it.itemId }) { item ->
-
-                BackHandler(isMenuShown() && activeMenuId() == item.itemId) { onDismissMenu() }
-
-                val haptics = LocalHapticFeedback.current
-                val focusManager = LocalFocusManager.current
+                val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
 
                 TableItem(
                     item = item,
                     layoutData = tableLayoutData,
                     horizontalScroll = horizontalScroll,
-                    showMenu = { isMenuShown() && activeMenuId() == item.itemId },
+                    showMenu = { openMenu },
                     onEditClick = { onEditClick(item.itemId) },
                     onDismissMenu = onDismissMenu,
-                    modifier
+                    modifier = Modifier
                         .fillMaxWidth()
                         .height(intrinsicSize = IntrinsicSize.Min)
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .combinedClickable(
-                            onClick = {
-                                if (searchFocused()) {
-                                    focusManager.clearFocus()
-                                } else {
-                                    if (isMenuShown() && activeMenuId() == item.itemId) {
-                                        // do nothing
-                                    } else {
-                                        if (isMenuShown()) {
-                                            onDismissMenu()
-                                        } else {
-                                            if (!searchPerformed()) {
-                                                getPositionTrigger()
-                                            }
-                                            onDetailsClick(item.itemId)
-                                        }
-                                    }
-                                }
-                            },
-                            onLongClick = {
-                                haptics.performHapticFeedback(
-                                    HapticFeedbackType.LongPress
-                                )
-                                if (!searchPerformed()) {
-                                    getPositionTrigger()
-                                }
-                                onShowMenu(item.itemId)
-                            },
+                            onClick = { onClick(item.itemId) },
+                            onLongClick = { onLongClick(item.itemId) },
                             indication = null,
                             interactionSource = null
                         )
@@ -1713,38 +1709,40 @@ fun TableViewMode(
 
 @Composable
 fun TableHeaderRow(
+    viewModel: HomeViewModel,
+    filterViewModel: FilterViewModel,
     layoutData: TableLayoutData,
     updateSorting: (Int) -> Unit,
     sorting: TableSorting,
     shouldScrollUp: () -> Unit,
-    isMenuShown: () -> Boolean,
-    activeMenuId: () -> Int?,
     onDismissMenu: () -> Unit,
-    searchFocused: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
+    val searchFocused by filterViewModel.searchFocused.collectAsState()
+    val activeMenuId by viewModel.activeMenuId.collectAsState()
+
+    val onClick = remember {
+        { columnIndex: Int ->
+            if (searchFocused) {
+                focusManager.clearFocus()
+            } else {
+                if (activeMenuId != null) {
+                    onDismissMenu()
+                } else {
+                    updateSorting(columnIndex)
+                    shouldScrollUp()
+                }
+            }
+        }
+    }
+
     Row(
         modifier = modifier
             .height(intrinsicSize = IntrinsicSize.Min)
             .background(MaterialTheme.colorScheme.primaryContainer)
     ) {
         for (columnIndex in layoutData.columnMinWidths.values.indices) {
-            val focusManager = LocalFocusManager.current
-            val onClick = remember(searchFocused(), isMenuShown(), activeMenuId()) {
-                {
-                    if (searchFocused()) {
-                        focusManager.clearFocus()
-                    } else {
-                        if (isMenuShown() && activeMenuId() != null) {
-                            onDismissMenu()
-                        } else {
-                            updateSorting(columnIndex)
-                            shouldScrollUp()
-                        }
-                    }
-                }
-            }
-
             Box(
                 modifier = Modifier
                     .width(layoutData.columnMinWidths.values[columnIndex])
@@ -1759,21 +1757,7 @@ fun TableHeaderRow(
                         Box(
                             modifier = Modifier
                                 .clickable(
-                                    enabled = layoutData.columnMinWidths.values[columnIndex] > 0.dp,
-                                    onClick = onClick
-//                                        {
-//                                        if (searchFocused()) {
-//                                            focusManager.clearFocus()
-//                                        } else {
-//                                            if (isMenuShown() && activeMenuId() != null) {
-//                                                onDismissMenu()
-//                                            } else {
-//                                                updateSorting(columnIndex)
-//                                                shouldScrollUp()
-//                                            }
-//                                        }
-//                                    }
-                                    ,
+                                    onClick = { onClick(columnIndex) },
                                     indication = null,
                                     interactionSource = null
                                 )
@@ -1804,21 +1788,7 @@ fun TableHeaderRow(
                         Box(
                             modifier = Modifier
                                 .clickable(
-                                    enabled = layoutData.columnMinWidths.values[columnIndex] > 0.dp,
-                                    onClick = onClick
-//                                        {
-//                                        if (searchFocused()) {
-//                                            focusManager.clearFocus()
-//                                        } else {
-//                                            if (isMenuShown() && activeMenuId() != null) {
-//                                                onDismissMenu()
-//                                            } else {
-//                                                updateSorting(columnIndex)
-//                                                shouldScrollUp()
-//                                            }
-//                                        }
-//                                    }
-                                    ,
+                                    onClick = { onClick(columnIndex) },
                                     indication = null,
                                     interactionSource = null
                                 )
@@ -1907,7 +1877,6 @@ fun TableItem(
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     contentAlignment = layoutData.alignment.values[columnIndex]
                 ) {
-
                     when (columnIndex) {
                         0, 1, 2, 3, 4 -> { // brand, blend, type, subgenre, rating
                             Text(
