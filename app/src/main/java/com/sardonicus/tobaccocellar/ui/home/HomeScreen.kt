@@ -117,7 +117,6 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.HomeScrollState
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -763,7 +762,6 @@ private fun HomeBody(
     modifier: Modifier = Modifier,
 ) {
     val columnState = rememberLazyListState()
-    val scrollState by filterViewModel.homeScrollState.collectAsState()
     val sortedItems by viewModel.itemsListState.collectAsState()
     val itemsCount by viewModel.itemsCount.collectAsState()
     val showColumnMenu by viewModel.showColumnMenu.collectAsState()
@@ -804,7 +802,7 @@ private fun HomeBody(
         )
 
         HomeScrollHandler(
-            columnState, sortedItems, { itemsCount }, scrollState, filterViewModel, coroutineScope(),
+            columnState, sortedItems, { itemsCount }, filterViewModel, coroutineScope(),
         )
     }
 }
@@ -896,10 +894,10 @@ private fun HomeScrollHandler(
     columnState: LazyListState,
     sortedItems: ItemsList,
     itemsCount: () -> Int,
-    scrollState: HomeScrollState,
     filterViewModel: FilterViewModel,
     coroutineScope: CoroutineScope,
 ) {
+    val scrollState by filterViewModel.homeScrollState.collectAsState()
     val currentItemsList by rememberUpdatedState(sortedItems.list)
     val savedItemIndex = remember(sortedItems.list, scrollState.savedItemId) {
         sortedItems.list.indexOfFirst { it.itemId == scrollState.savedItemId }
