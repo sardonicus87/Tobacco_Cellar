@@ -317,10 +317,10 @@ class SettingsViewModel(
 
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
-            preferencesRepo.saveCrossDeviceSync(enable)
             if (enable) {
                 EventBus.emit(SignInEvent)
             } else {
+                preferencesRepo.saveCrossDeviceSync(false)
                 stopWorkers()
             }
         }
