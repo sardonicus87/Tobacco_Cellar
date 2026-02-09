@@ -12,6 +12,62 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "5.0.0",
+        buildDate = "8 Feb, 2026",
+        changes = listOf(
+            "Multi-device sync option (enable on settings screen). This option allows multiple " +
+                    "devices that are all signed-in to the same Google account to update " +
+                    "automatically when changes are made on one or the other to entries.",
+            "Blend Details screen, URLs in notes text are now converted to clickable links. Any " +
+                    "link must start with \"http://\", \"https://\" or \"www.\". Whatever you " +
+                    "enter is assumed to be a valid URL (there is no validation). Feature is " +
+                    "optional and on by default (change in settings).",
+            "Adaptive Layout for large screen devices (tablets) now takes advantage of larger " +
+                    "area on some screens. Cellar, Stats and Dates now split into two panes with " +
+                    "the main content on the left and filtering or Blend Details on the right. " +
+                    "More app sections to be made adaptive in the future (it's a lot of work). " +
+                    "These layouts are a work in progress."
+        ),
+        improvements = listOf(
+            "Filter sheet performance improvements (UI responsiveness), as well as some other " +
+                    "screen loading performance.",
+            "Filtering improvements: Component and Flavoring match options \"All\" and \"Only\" " +
+                    "now become disabled if choosing that strictness with the given filters would " +
+                    "result in no entries returned.",
+            "Filtering improvements: filter selection history kept for rolling back selected " +
+                    "filters if an edit to an entry would result in no returns (rolls back most " +
+                    "recent selected filter until at least 1 entry returned).",
+            "Settings Screen: made UI and settings dialogs more consistent.",
+            "Selectable text (any screen that has it), clearing text selection cleaner/smoother " +
+                    "and more stable.",
+            "Cellar and Dates loading speed, performance and stability improved.",
+            "Cellar List/Table Sorting: sorting by rating (or quantity) now shows rated or (in-" +
+                    "stock) entries first and unrated (or out-of-stock) entries last, regardless " +
+                    "of ascending/descending order. This change also applies to the Plaintext " +
+                    "output screen.",
+            "General stability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "Android AutoBackup might not have been setup properly, now tested, system automatic " +
+                    "backup is confirmed to work correctly.",
+            "Filtering bug: when selecting both Favorites and Dislikes together, other filtering " +
+                    "options that still should have been selectable were being disabled. Also " +
+                    "fixed another minor bug related to dislikes filtering.",
+            "Restore Database: fixed sometimes when restoring the database, data was correctly " +
+                    "imported, but the app wasn't displaying the actual data correctly unless " +
+                    "something forced it to refresh (cold restart app, add new item, etc).",
+            "Cellar screen, fixed sorting indicator direction for list and table views being " +
+                    "backwards for the Rating and Quantity options.",
+            "Fixed a minor rounding issue where rounded numbers only rounded toward even numbers.",
+            "Fixed minor Light theme bug where opening filter sheet caused text and navigation to " +
+                    "\"disappear\".",
+            "Fixed a minor bug in Plaintext Export where conditional statements were not " +
+                    "evaluated separately when tins as a sublist was present in the format string.",
+            "Other minor UI tweaks and bug fixes."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "4.1.0",
         buildDate = "4 Dec, 2025",
         changes = listOf(
