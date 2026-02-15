@@ -40,11 +40,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -96,6 +96,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -141,7 +142,6 @@ import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOW
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomBarButtonData
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
-import com.sardonicus.tobaccocellar.ui.FilterSectionData
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.FlowMatchOption
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -858,8 +858,6 @@ fun FilterLayout(
     sheetLayout: Boolean = true,
     pagerState: PagerState = rememberPagerState { 3 },
 ) {
-    val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
-
     Column (
         modifier = modifier
             .fillMaxWidth()
@@ -875,7 +873,7 @@ fun FilterLayout(
         if (sheetLayout) { PagerLayout(filterViewModel, pagerState) }
         else { PaneLayout(filterViewModel) }
 
-        FilterFooter(filterViewModel, filtersApplied)
+        FilterFooter(filterViewModel)
 
     }
 }
@@ -1057,8 +1055,9 @@ private fun PaneLayout(
 @Composable
 private fun FilterFooter(
     filterViewModel: FilterViewModel,
-    filtersApplied: Boolean
 ) {
+    val filtersApplied by filterViewModel.isFilterApplied.collectAsState()
+
     TextButton(
         onClick = filterViewModel::resetFilter,
         modifier = Modifier
@@ -1159,8 +1158,7 @@ fun BrandFilterSection(
     innerScrolling: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val filteringState by filterViewModel.brandFilterUiState.collectAsState()
-    val brandSearchText by filterViewModel.brandSearchText.collectAsState()
+    val excludeSwitch by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
 
     Column(
         modifier = modifier
@@ -1171,23 +1169,14 @@ fun BrandFilterSection(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CustomFilterTextField(
-                value = brandSearchText,
-                onValueChange = filterViewModel::updateBrandSearchText,
+            BrandFilterSearch(
+                filterViewModel = filterViewModel,
                 modifier = Modifier
-                    .weight(1f, false),
-                placeholder = "Search Brands",
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.None,
-                ),
-                singleLine = true,
-                maxLines = 1,
+                    .weight(1f, false)
             )
-            // Brand include/exclude button
+
             IncludeExcludeSwitch(
-                excluded = filteringState.excludeSwitch,
+                excluded = { excludeSwitch },
                 onClick = filterViewModel::updateSelectedExcludeBrandsSwitch,
                 modifier = Modifier
             )
@@ -1195,22 +1184,18 @@ fun BrandFilterSection(
 
         // Selectable brands row //
         SelectableBrandsRow(
-            filteredBrands = filteringState.filteredBrands,
-            unselectedBrands = filteringState.unselectedBrands,
-            excludeSwitch = filteringState.excludeSwitch,
+            filterViewModel = filterViewModel,
             innerScrolling = innerScrolling,
             updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
             updateSelectedBrands = filterViewModel::updateSelectedBrands,
             updateBrandSearchText = filterViewModel::updateBrandSearchText,
-            brandEnabled = filteringState.brandEnabled,
             modifier = Modifier.fillMaxWidth()
         )
 
 
         // Selected brands chip box //
         SelectedBrandChipBox(
-            selectedBrands = filteringState.selectedBrands,
-            excludeSwitch = filteringState.excludeSwitch,
+            filterViewModel = filterViewModel,
             updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
             updateSelectedBrands = filterViewModel::updateSelectedBrands,
             clearAllSelectedBrands = filterViewModel::clearAllSelectedBrands,
@@ -1220,8 +1205,74 @@ fun BrandFilterSection(
 }
 
 @Composable
+private fun BrandFilterSearch(
+    filterViewModel: FilterViewModel,
+    modifier: Modifier = Modifier
+) {
+    val brandSearchText by filterViewModel.brandSearchText.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+    var hasFocus by remember { mutableStateOf(false) }
+    val showCursor by remember(hasFocus) { mutableStateOf(hasFocus) }
+
+    BasicTextField(
+        value = brandSearchText,
+        onValueChange = filterViewModel::updateBrandSearchText,
+        modifier = modifier
+            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(6.dp))
+            .height(48.dp)
+            .onFocusChanged { focusState ->
+                hasFocus = focusState.hasFocus
+                if (!focusState.hasFocus) {
+                    focusManager.clearFocus()
+                }
+            }
+            .padding(horizontal = 16.dp),
+        textStyle = LocalTextStyle.current.copy(
+            color = LocalContentColor.current,
+            fontSize = TextUnit.Unspecified,
+            lineHeight = TextUnit.Unspecified,
+        ),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.None,
+        ),
+        singleLine = true,
+        maxLines = 1,
+        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
+            else { SolidColor(Color.Transparent) },
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (brandSearchText.isEmpty() && !hasFocus) {
+                        Text(
+                            text = "Search Brands",
+                            style = LocalTextStyle.current.copy(
+                                color = LocalContentColor.current.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        }
+    )
+}
+
+@Composable
 private fun IncludeExcludeSwitch(
-    excluded: Boolean,
+    excluded: () -> Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1253,8 +1304,8 @@ private fun IncludeExcludeSwitch(
             modifier = Modifier
                 .padding(0.dp)
                 .offset(y = 3.dp),
-            color = if (!excluded) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-            fontWeight = if (!excluded) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (!excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            fontWeight = if (!excluded()) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 14.sp
         )
         Text(
@@ -1262,8 +1313,8 @@ private fun IncludeExcludeSwitch(
             modifier = Modifier
                 .padding(0.dp)
                 .offset(y = (-3).dp),
-            color = if (excluded) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-            fontWeight = if (excluded) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            fontWeight = if (excluded()) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 14.sp
         )
     }
@@ -1271,17 +1322,30 @@ private fun IncludeExcludeSwitch(
 
 @Composable
 private fun SelectableBrandsRow(
-    filteredBrands: List<String>,
-    unselectedBrands: List<String>,
-    excludeSwitch: Boolean,
+    filterViewModel: FilterViewModel,
     innerScrolling: (Boolean) -> Unit,
     updateSelectedExcludedBrands: (String, Boolean) -> Unit,
     updateSelectedBrands: (String, Boolean) -> Unit,
     updateBrandSearchText: (String) -> Unit,
-    brandEnabled: Map<String, Boolean>,
     modifier: Modifier = Modifier
 ) {
     val lazyListState = rememberLazyListState()
+
+    val excludeSwitch by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
+    val filteredBrands by filterViewModel.filteredBrands.collectAsState()
+    val unselectedBrands by filterViewModel.unselectedBrands.collectAsState()
+    val brandEnabled by filterViewModel.brandEnabled.collectAsState()
+
+    val clickAction = remember(excludeSwitch) {
+        { brand: String ->
+            if (excludeSwitch) {
+                updateSelectedExcludedBrands(brand, true)
+            } else {
+                updateSelectedBrands(brand, true)
+            }
+            updateBrandSearchText("")
+        }
+    }
 
     GlowBox(
         color = GlowColor(MaterialTheme.colorScheme.background),
@@ -1309,23 +1373,13 @@ private fun SelectableBrandsRow(
             verticalAlignment = Alignment.CenterVertically,
             state = lazyListState
         ) {
-            items(unselectedBrands.size, key = { index -> unselectedBrands[index] }) { index ->
-                val brand = unselectedBrands[index]
-                val clickAction = remember(excludeSwitch, brand) {
-                    {
-                        if (excludeSwitch) {
-                            updateSelectedExcludedBrands(brand, true)
-                        } else {
-                            updateSelectedBrands(brand, true)
-                        }
-                        updateBrandSearchText("")
-                    }
-                }
+            items(unselectedBrands, key = { it }) { brand ->
+                val enabled by remember(brand) { derivedStateOf { brandEnabled[brand] ?: true } }
 
                 BrandTextButton(
-                    brand = brand,
-                    onClickAction = clickAction,
-                    enabled = brandEnabled[brand] ?: false,
+                    brand = { brand },
+                    onClickAction = { clickAction(brand) },
+                    enabled = { enabled },
                     modifier = Modifier
                 )
             }
@@ -1338,47 +1392,46 @@ private fun SelectableBrandsRow(
 
 @Composable
 private fun BrandTextButton(
-    brand: String,
+    brand: () -> String,
     onClickAction: () -> Unit,
-    enabled: Boolean,
+    enabled: () -> Boolean,
     modifier: Modifier = Modifier
 ) {
     TextButton(
         onClick = onClickAction,
-        modifier = modifier
-            .wrapContentSize(),
-        enabled = enabled,
+        modifier = modifier,
+          //  .wrapContentSize(),
+        enabled = enabled(),
     ) {
         Text(
-            text = brand,
+            text = brand(),
             modifier = Modifier
-                .wrapContentSize()
+              //  .wrapContentSize()
         )
     }
 }
 
 @Composable
 private fun SelectedBrandChipBox(
-    selectedBrands: List<String>,
-    excludeSwitch: Boolean,
+    filterViewModel: FilterViewModel,
     updateSelectedExcludedBrands: (String, Boolean) -> Unit,
     updateSelectedBrands: (String, Boolean) -> Unit,
     clearAllSelectedBrands: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showOverflowPopup by remember { mutableStateOf(false) }
-    val updateShowOverflow: (Boolean) -> Unit = { showOverflowPopup = it }
+    val excludeSwitch by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
+    val selectedBrands by filterViewModel.selectedBrand.collectAsState()
+    val showBrandChipOverflow by filterViewModel.showBrandChipOverflow.collectAsState()
+    val maxWidth by filterViewModel.chipMaxWidth.collectAsState()
 
-    var chipBoxWidth by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
+
     Box (
         modifier = Modifier
-            .onGloballyPositioned { chipBoxWidth = with(density) { it.size.width.toDp() } }
+            .onGloballyPositioned {
+                filterViewModel.updateChipBoxWidth(with(density) { it.size.width.toDp() })
+            }
     ) {
-        val maxWidth = (chipBoxWidth * 0.32f) - 4.dp
-        val chipCountToShow = 5
-        val overflowCount = selectedBrands.size - chipCountToShow
-
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -1400,7 +1453,9 @@ private fun SelectedBrandChipBox(
                     horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                 ) {
-                    selectedBrands.take(chipCountToShow).forEach { brand ->
+                    val overflowCount by remember { derivedStateOf { selectedBrands.size - 5 } }
+
+                    selectedBrands.take(5).forEach { brand ->
                         val onRemoved = remember(brand, excludeSwitch) {
                             {
                                 if (excludeSwitch) {
@@ -1410,6 +1465,7 @@ private fun SelectedBrandChipBox(
                                 }
                             }
                         }
+
                         Chip(
                             text = brand,
                             onChipClicked = { },
@@ -1430,10 +1486,11 @@ private fun SelectedBrandChipBox(
                             )
                         )
                     }
+
                     if (overflowCount > 0) {
                         Chip(
                             text = "+$overflowCount",
-                            onChipClicked = { updateShowOverflow(true) },
+                            onChipClicked = { filterViewModel.showBrandOverflow() },
                             onChipRemoved = { },
                             trailingIcon = false,
                             modifier = Modifier,
@@ -1451,23 +1508,24 @@ private fun SelectedBrandChipBox(
                 }
 
                 Box {
-                    if (selectedBrands.isEmpty()) // && selectedExcludedBrands.isEmpty())
-                        Text(
-                            text = if (excludeSwitch) "Excluded Brands" else "Included Brands",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            color = if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center
-                        )
+                    val nothingSelected by remember { derivedStateOf { selectedBrands.isNotEmpty() } }
+                    //   if (selectedBrands.isEmpty())
+                    Text(
+                        text = if (nothingSelected) "" else if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                        modifier = Modifier
+                            .padding(0.dp),
+                        color = if (nothingSelected) Color.Transparent else if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
-            if (showOverflowPopup) {
+            if (showBrandChipOverflow) {
                 SelectedBrandOverflow(
-                    onDismiss = { updateShowOverflow(false) },
-                    excludeSwitch = excludeSwitch,
-                    selectedBrands = selectedBrands,
+                    onDismiss = filterViewModel::showBrandOverflow,
+                    excludeSwitch = { excludeSwitch },
+                    selectedBrands = { selectedBrands },
                     updateSelectedExcludedBrands = updateSelectedExcludedBrands,
                     updateSelectedBrands = updateSelectedBrands,
                     clearAllSelectedBrands = clearAllSelectedBrands,
@@ -1481,8 +1539,8 @@ private fun SelectedBrandChipBox(
 @Composable
 private fun SelectedBrandOverflow(
     onDismiss: () -> Unit,
-    excludeSwitch: Boolean,
-    selectedBrands: List<String>,
+    excludeSwitch: () -> Boolean,
+    selectedBrands: () -> List<String>,
     updateSelectedExcludedBrands: (String, Boolean) -> Unit,
     updateSelectedBrands: (String, Boolean) -> Unit,
     clearAllSelectedBrands: () -> Unit,
@@ -1492,7 +1550,7 @@ private fun SelectedBrandOverflow(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                text = if (excludeSwitch()) "Excluded Brands" else "Included Brands",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(0.dp),
@@ -1527,10 +1585,10 @@ private fun SelectedBrandOverflow(
                         verticalArrangement = Arrangement.spacedBy((-6).dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(selectedBrands) { brand ->
+                        items(selectedBrands()) { brand ->
                             val onRemoved = remember(brand, excludeSwitch) {
                                 {
-                                    if (excludeSwitch) {
+                                    if (excludeSwitch()) {
                                         updateSelectedExcludedBrands(brand, false)
                                     } else {
                                         updateSelectedBrands(brand,  false)
@@ -1599,13 +1657,22 @@ private fun SelectedBrandOverflow(
 fun TypeFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
+    types: List<String> = listOf("Aromatic", "English", "Burley", "Virginia", "Other", "(Unassigned)"),
 ) {
-    val typeState by filterViewModel.typeFilterUiState.collectAsState()
+    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
+    val enabled by filterViewModel.typesEnabled.collectAsState()
+    val typesExist by filterViewModel.typesExist.collectAsState()
+
+    val onClick = remember {
+        { type: String ->
+            filterViewModel.updateSelectedTypes(type, !selectedTypes.contains(type))
+        }
+    }
 
     Column(
         modifier = modifier
     ) {
-        if (typeState.nothingAssigned) {
+        if (!typesExist) {
             Row(
                 modifier = Modifier
                     .border(
@@ -1636,10 +1703,13 @@ fun TypeFilterSection(
                 horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                typeState.types.forEach {
+                types.forEach {
+                    val selected by remember(types) { derivedStateOf { selectedTypes.contains(it) } } // selectedTypes
+                    val typeEnabled by remember(types) { derivedStateOf { enabled[it] ?: false } }
+
                     FilterChip(
-                        selected = typeState.selectedTypes.contains(it),
-                        onClick = { filterViewModel.updateSelectedTypes(it, !typeState.selectedTypes.contains(it)) },
+                        selected = selected,
+                        onClick = { onClick(it) },
                         label = { Text(it, fontSize = 14.sp) },
                         modifier = Modifier
                             .padding(0.dp),
@@ -1647,7 +1717,7 @@ fun TypeFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background,
                         ),
-                        enabled = typeState.enabled[it] ?: false
+                        enabled = typeEnabled
                     )
                 }
             }
@@ -1680,14 +1750,18 @@ fun OtherFiltersSection(
                         RoundedCornerShape(8.dp)
                     )
                     .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-                    .width(IntrinsicSize.Max)
+                    .width(229.dp)
                     .padding(vertical = 3.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                FavoriteDislikeFilters(filterViewModel)
+                FavoriteDislikeFilters(filterViewModel, { favDisExist }, { ratingsExist })
 
-                StarRatingFilters(filterViewModel)
+                StarRatingFilters(
+                    filterViewModel = filterViewModel,
+                    favDisExist = { favDisExist },
+                    ratingsExist = { ratingsExist }
+                )
             }
             if (!favDisExist && !ratingsExist) {
                 Box(
@@ -1717,51 +1791,56 @@ fun OtherFiltersSection(
         }
 
         // In Stock
-        InStockSection(filterViewModel)
+        Box(Modifier.width(IntrinsicSize.Max)) { InStockSection(filterViewModel) }
     }
 }
 
 @Composable
 private fun FavoriteDislikeFilters(
-    filterViewModel: FilterViewModel
+    filterViewModel: FilterViewModel,
+    favDisExist: () -> Boolean,
+    ratingsExist: () -> Boolean
 ) {
-    val state by filterViewModel.favoriteDislikeUiState.collectAsState()
+    val favoritesSelection by filterViewModel.favoriteSelection.collectAsState()
+    val dislikedsSelection by filterViewModel.dislikedSelection.collectAsState()
+    val favoritesEnabled by filterViewModel.favoritesEnabled.collectAsState()
+    val dislikedsEnabled by filterViewModel.dislikedsEnabled.collectAsState()
 
     Box {
         Row {
             TriStateCheckWithLabel(
                 text = "Favorites",
-                state = state.favoritesSelection,
+                state = favoritesSelection,
                 onClick = filterViewModel::updateFavSelection,
                 colors = CheckboxDefaults.colors(
                     checkedColor =
-                        when (state.favoritesSelection) {
+                        when (favoritesSelection) {
                             ToggleableState.On -> MaterialTheme.colorScheme.primary
                             ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
                             else -> Color.Transparent
                         },
                 ),
-                enabled = state.favoritesEnabled,
-                maxLines = 1
+                enabled = favoritesEnabled,
+                maxLines = 1,
             )
 
             TriStateCheckWithLabel(
                 text = "Dislikes",
-                state = state.dislikedsSelection,
+                state = dislikedsSelection,
                 onClick = filterViewModel::updateDisSelection,
                 colors = CheckboxDefaults.colors(
                     checkedColor =
-                        when (state.dislikedsSelection) {
+                        when (dislikedsSelection) {
                             ToggleableState.On -> MaterialTheme.colorScheme.primary
                             ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
                             else -> Color.Transparent
                         },
                 ),
-                enabled = state.dislikedsEnabled,
-                maxLines = 1
+                enabled = dislikedsEnabled,
+                maxLines = 1,
             )
         }
-        if (!state.favDisExist && state.ratingsExist) {
+        if (!favDisExist() && ratingsExist()) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -1787,16 +1866,34 @@ private fun FavoriteDislikeFilters(
 @Composable
 private fun StarRatingFilters(
     filterViewModel: FilterViewModel,
+    favDisExist: () -> Boolean,
+    ratingsExist: () -> Boolean
 ) {
-    val state by filterViewModel.starRatingUiState.collectAsState()
+    val rangeEnabled by filterViewModel.rangeEnabled.collectAsState()
+    val ratingLowEnabled by filterViewModel.ratingLowEnabled.collectAsState()
+    val ratingHighEnabled by filterViewModel.ratingHighEnabled.collectAsState()
+    val unratedEnabled by filterViewModel.unratedEnabled.collectAsState()
+
+    val unchosen by filterViewModel.rangeUnchosen.collectAsState()
+    val unrated by filterViewModel.sheetSelectedUnrated.collectAsState()
+    val ratingLow by filterViewModel.sheetSelectedRatingLow.collectAsState()
+    val ratingHigh by filterViewModel.sheetSelectedRatingHigh.collectAsState()
+
+    val lowText by filterViewModel.rangeLowText.collectAsState()
+    val highText by filterViewModel.rangeHighText.collectAsState()
+    val lowTextAlpha by filterViewModel.rangeLowTextAlpha.collectAsState()
+    val highTextAlpha by filterViewModel.rangeHighTextAlpha.collectAsState()
+    val ratingRowEmptyAlpha by filterViewModel.ratingRowEmptyAlpha.collectAsState()
+
+    val showRatingPop by filterViewModel.showRatingPop.collectAsState()
 
     Box {
         Row(
             modifier = Modifier
                 .height(36.dp)
-                .width(229.dp)
+                .fillMaxWidth()
                 .padding(horizontal = 12.dp)
-                .alpha(if (!state.rangeEnabled) .38f else 1f),
+                .alpha(if (rangeEnabled) 1f else .38f),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -1807,62 +1904,59 @@ private fun StarRatingFilters(
             )
             Row(
                 modifier = Modifier
+                    .weight(1f)
                     .clickable(
                         indication = null,
                         interactionSource = null,
-                        enabled = state.rangeEnabled,
-                    ) { filterViewModel.onShowRatingPop(true) },
+                        enabled = rangeEnabled,
+                        onClick = filterViewModel::onShowRatingPop
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
             ) {
-                val unchosenColor = LocalCustomColors.current.starRating
-                val chosenColor = LocalContentColor.current
-                val emptyColor = remember(state.unchosen, state.ratingLow, state.ratingHigh) { if (state.unchosen || (state.ratingLow != null && state.ratingHigh == null)) unchosenColor else chosenColor }
-
-                Box (contentAlignment = Alignment.CenterEnd) {
+                Box (
+                    contentAlignment = Alignment.CenterEnd,
+                    modifier = Modifier
+                        .width(20.dp)
+                ) {
                     Text(
-                        text = "4.5",
-                        modifier = Modifier,
-                        fontSize = 13.sp,
-                        color = Color.Transparent
-                    )
-                    Text(
-                        text = state.lowText,
+                        text = lowText,
                         modifier = Modifier,
                         fontSize = 13.sp,
                         maxLines = 1,
-                        color = LocalContentColor.current.copy(alpha = state.lowTextAlpha)
+                        textAlign = TextAlign.End,
+                        color = LocalContentColor.current.copy(alpha = lowTextAlpha)
                     )
                 }
                 RatingRow(
-                    range = Pair(state.ratingLow, state.ratingHigh),
+                    range = Pair(ratingLow, ratingHigh),
                     modifier = Modifier
-                        .padding(horizontal = 4.dp),
+                        .padding(horizontal = 5.dp),
                     starSize = 18.dp,
                     showDivider = true,
                     minColor = LocalContentColor.current,
                     minAlpha = .38f,
-                    emptyColor = emptyColor,
-                    emptyAlpha = state.ratingRowEmptyAlpha
+                    emptyColor = if (unchosen || (ratingLow != null && ratingHigh == null)) LocalCustomColors.current.starRating else LocalContentColor.current,
+                    emptyAlpha = ratingRowEmptyAlpha
                 )
-                Box (contentAlignment = Alignment.CenterStart) {
+                Box (
+                    contentAlignment = Alignment.CenterStart,
+                    modifier = Modifier
+                        .width(20.dp)
+                ) {
                     Text(
-                        text = "4.5",
-                        modifier = Modifier,
-                        fontSize = 13.sp,
-                        color = Color.Transparent
-                    )
-                    Text(
-                        text = state.highText,
+                        text = highText,
                         modifier = Modifier,
                         fontSize = 13.sp,
                         maxLines = 1,
-                        color = LocalContentColor.current.copy(alpha = state.highTextAlpha)
+                        textAlign = TextAlign.Start,
+                        color = LocalContentColor.current.copy(alpha = highTextAlpha)
                     )
                 }
             }
         }
-        if (state.favDisExist && !state.ratingsExist) {
+
+        if (favDisExist() && !ratingsExist()) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -1884,15 +1978,17 @@ private fun StarRatingFilters(
         }
     }
 
-    if (state.showRatingPop) {
+    if (showRatingPop) {
         RatingRangePop(
-            unrated = state.unrated,
-            unratedEnabled = state.unratedEnabled,
-            selectedRange = Pair(state.ratingLow, state.ratingHigh),
-            ratingRangeEnabled = Pair(state.ratingLowEnabled, state.ratingHighEnabled),
+            unrated = { unrated },
+            unratedEnabled = { unratedEnabled },
+            ratingLow = { ratingLow },
+            ratingLowEnabled = { ratingLowEnabled },
+            ratingHigh = { ratingHigh },
+            ratingHighEnabled = { ratingHighEnabled },
             updateSelectedUnrated = filterViewModel::updateSelectedUnrated,
             updateSelectedRatingRange = filterViewModel::updateSelectedRatingRange,
-            onDismiss = { filterViewModel.onShowRatingPop(false) },
+            onDismiss = filterViewModel::onShowRatingPop,
             modifier = Modifier,
         )
     }
@@ -1900,22 +1996,24 @@ private fun StarRatingFilters(
 
 @Composable
 private fun RatingRangePop(
-    unrated: Boolean,
-    unratedEnabled: Boolean,
-    selectedRange: Pair<Double?, Double?>,
-    ratingRangeEnabled: Pair<Double?, Double?>,
+    unrated: () -> Boolean,
+    unratedEnabled: () -> Boolean,
+    ratingLow: () -> Double?,
+    ratingLowEnabled: () -> Double?,
+    ratingHigh: () -> Double?,
+    ratingHighEnabled: () -> Double?,
     updateSelectedUnrated: (Boolean) -> Unit,
     updateSelectedRatingRange: (Double?, Double?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var ratingLowString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.first)) }
-    var selectedLow by rememberSaveable { mutableStateOf(selectedRange.first) }
-    val minRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.first) }
+    var ratingLowString by rememberSaveable { mutableStateOf(formatDecimal(ratingLow())) }
+    var selectedLow by rememberSaveable { mutableStateOf(ratingLow()) }
+    val minRating by rememberSaveable { mutableStateOf(ratingLowEnabled()) }
 
-    var ratingHighString by rememberSaveable { mutableStateOf(formatDecimal(selectedRange.second)) }
-    var selectedHigh by rememberSaveable { mutableStateOf(selectedRange.second) }
-    val maxRating by rememberSaveable { mutableStateOf(ratingRangeEnabled.second) }
+    var ratingHighString by rememberSaveable { mutableStateOf(formatDecimal(ratingHigh())) }
+    var selectedHigh by rememberSaveable { mutableStateOf(ratingHigh()) }
+    val maxRating by rememberSaveable { mutableStateOf(ratingHighEnabled()) }
 
     val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
     val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
@@ -1957,15 +2055,15 @@ private fun RatingRangePop(
             ) {
                 CheckboxWithLabel(
                     text = "Unrated",
-                    checked = unrated,
+                    checked = unrated(),
                     onCheckedChange = {
                         updateSelectedUnrated(it)
                         updateSelectedRatingRange(selectedLow, selectedHigh)
                     },
                     modifier = Modifier
                         .padding(bottom = 8.dp),
-                    enabled = unratedEnabled,
-                    fontColor = if (!unratedEnabled) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
+                    enabled = unratedEnabled(),
+                    fontColor = if (!unratedEnabled()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
                 )
                 // Rating Range //
                 Row(
@@ -2012,8 +2110,7 @@ private fun RatingRangePop(
                                         ratingLowString = formatDecimal(selectedLow)
                                     updateSelectedRatingRange(selectedLow, selectedHigh)
                                 }
-                            }
-                        ,
+                            },
                         enabled = true,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -2096,8 +2193,7 @@ private fun RatingRangePop(
                                         ratingHighString = formatDecimal(selectedHigh)
                                     updateSelectedRatingRange(selectedLow, selectedHigh)
                                 }
-                            }
-                        ,
+                            },
                         enabled = true,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -2193,7 +2289,7 @@ private fun RatingRangePop(
                             updateSelectedUnrated(false)
                             updateSelectedRatingRange(null, null)
                         },
-                        enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated,
+                        enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated(),
                         modifier = Modifier
                             .offset(x = (-4).dp),
                     ) {
@@ -2245,30 +2341,35 @@ private fun InStockSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val state by filterViewModel.inStockUiState.collectAsState()
+    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
+    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
+    val inStockEnabled by filterViewModel.inStockEnabled.collectAsState()
+    val outOfStockEnabled by filterViewModel.outOfStockEnabled.collectAsState()
 
     Column(
         modifier = modifier
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
-            .width(IntrinsicSize.Max)
+            //    .width(112.dp)  // IntrinsicSize.Max
             .padding(vertical = 3.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.Start
     ) {
         CheckboxWithLabel(
             text = "In-stock",
-            checked = state.inStock,
+            checked = inStock,
             onCheckedChange = filterViewModel::updateSelectedInStock,
             modifier = Modifier,
-            enabled = state.inStockEnabled
+            enabled = inStockEnabled,
+            allowResize = true
         )
         CheckboxWithLabel(
             text = "Out",
-            checked = state.outOfStock,
+            checked = outOfStock,
             onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
-            enabled = state.outOfStockEnabled
+            enabled = outOfStockEnabled,
+            allowResize = false
         )
     }
 }
@@ -2279,15 +2380,19 @@ private fun SubgenreSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val subgenreData by filterViewModel.subgenreData.collectAsState()
+    val available by filterViewModel.subgenreAvailable.collectAsState()
+    val selected by filterViewModel.sheetSelectedSubgenres.collectAsState()
+    val enabled by filterViewModel.subgenresEnabled.collectAsState()
 
     FlowFilterSection(
-        label = "Subgenre",
-        nothingLabel = "No subgenres assigned to any blends.",
-        displayData = subgenreData,
+        label = { "Subgenre" },
+        nothingLabel = { "No subgenres assigned to any blends." },
+        available = { available },
+        selected = { selected },
+        enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedSubgenre,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = "(Unassigned)",
+        noneField = { "(Unassigned)" },
         clearAll = { filterViewModel.clearAllSelected("Subgenre") },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -2302,15 +2407,19 @@ private fun CutSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val cutData by filterViewModel.cutData.collectAsState()
+    val available by filterViewModel.cutAvailable.collectAsState()
+    val selected by filterViewModel.sheetSelectedCuts.collectAsState()
+    val enabled by filterViewModel.cutsEnabled.collectAsState()
 
     FlowFilterSection(
-        label = "Cut",
-        nothingLabel = "No cuts assigned to any blends.",
-        displayData = cutData,
+        label = { "Cut" },
+        nothingLabel = { "No cuts assigned to any blends." },
+        available = { available },
+        selected = { selected },
+        enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedCut,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = "(Unassigned)",
+        noneField = { "(Unassigned)" },
         clearAll = { filterViewModel.clearAllSelected("Cut") },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -2325,15 +2434,23 @@ private fun ComponentSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val componentData by filterViewModel.componentData.collectAsState()
+    val available by filterViewModel.componentAvailable.collectAsState()
+    val selected by filterViewModel.sheetSelectedComponents.collectAsState()
+    val enabled by filterViewModel.componentsEnabled.collectAsState()
+    val matching by filterViewModel.sheetSelectedCompMatching.collectAsState()
+    val matchEnablement by filterViewModel.compMatchingEnabled.collectAsState()
 
     FlowFilterSection(
-        label = "Components",
-        nothingLabel = "No components assigned to any blends.",
-        displayData = componentData,
+        label = { "Components" },
+        nothingLabel = { "No components assigned to any blends." },
+        available = { available },
+        selected = { selected },
+        enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedComponent,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = "(None Assigned)",
+        noneField = { "(None Assigned)" },
+        matching = { matching },
+        matchOptionEnablement = { matchEnablement },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
@@ -2349,15 +2466,23 @@ private fun FlavoringSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val flavoringData by filterViewModel.flavoringData.collectAsState()
+    val available by filterViewModel.flavoringAvailable.collectAsState()
+    val selected by filterViewModel.sheetSelectedFlavorings.collectAsState()
+    val enabled by filterViewModel.flavoringsEnabled.collectAsState()
+    val matching by filterViewModel.sheetSelectedFlavorMatching.collectAsState()
+    val matchEnablement by filterViewModel.flavorMatchingEnabled.collectAsState()
 
     FlowFilterSection(
-        label = "Flavorings",
-        nothingLabel = "No flavorings assigned to any blends.",
-        displayData = flavoringData,
+        label = { "Flavorings" },
+        nothingLabel = { "No flavorings assigned to any blends." },
+        available = { available },
+        selected = { selected },
+        enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedFlavoring,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = "(None Assigned)",
+        noneField = { "(None Assigned)" },
+        matching = { matching },
+        matchOptionEnablement = { matchEnablement },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
@@ -2371,25 +2496,28 @@ private fun FlavoringSection(
 
 @Composable
 fun FlowFilterSection(
-    label: String,
-    nothingLabel: String,
-    displayData: FilterSectionData,
+    label: () -> String,
+    nothingLabel: () -> String,
+    available: () -> List<String>,
+    selected: () -> List<String>,
+    enabled: () -> Map<String, Boolean>,
     updateSelectedOptions: (String, Boolean) -> Unit,
     overflowCheck: (List<String>, List<String>, Int) -> Boolean,
-    noneField: String,
+    noneField: () -> String,
     modifier: Modifier = Modifier,
+    matching: () -> FlowMatchOption? = { null },
+    matchOptionEnablement: () -> Map<FlowMatchOption, Boolean> = { mapOf() },
     clearAll: () -> Unit = {},
     onMatchOptionChange: (FlowMatchOption) -> Unit = {},
 ) {
-    var showOverflowPopup by remember { mutableStateOf(false) }
-    val enableMatchOption = remember(displayData.matching) { displayData.matching != null }
-    val nothingAssigned = remember(displayData.available) { !displayData.available.any { it != noneField } }
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
+        var showOverflowPopup by remember { mutableStateOf(false) }
+        val enableMatchOption = remember(matching()) { matching() != null }
+        val nothingAssigned = remember(available()) { available().none { it != noneField() } }
 
         // Header and Match options
         Row(
@@ -2400,7 +2528,7 @@ fun FlowFilterSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = label,
+                text = label(),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier,
@@ -2408,7 +2536,7 @@ fun FlowFilterSection(
             )
             if (enableMatchOption) {
                 FlowFilterMatchOptions(
-                    nothingAssigned, displayData.matching, displayData.matchOptionEnablement, { onMatchOptionChange(it) },
+                    { nothingAssigned }, matching, matchOptionEnablement, { onMatchOptionChange(it) },
                     Modifier, Arrangement.End
                 )
             }
@@ -2423,7 +2551,7 @@ fun FlowFilterSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = nothingLabel,
+                    text = nothingLabel(),
                     modifier = Modifier
                         .padding(0.dp),
                     fontSize = 14.sp,
@@ -2434,18 +2562,18 @@ fun FlowFilterSection(
             }
         } else {
             OverflowRow(
-                itemCount = displayData.available.size,
+                itemCount = available().size,
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(Alignment.Top)
                     .padding(horizontal = 4.dp),
                 itemSpacing = 6.dp,
                 itemContent = {
-                    val option = displayData.available[it]
+                    val option = available()[it]
 
                     FilterChip(
-                        selected = displayData.selected.contains(option),
-                        onClick = { updateSelectedOptions(option, !displayData.selected.contains(option)) },
+                        selected = selected().contains(option),
+                        onClick = { updateSelectedOptions(option, !selected().contains(option)) },
                         label = { Text(text = option, fontSize = 14.sp) },
                         modifier = Modifier
                             .padding(0.dp),
@@ -2453,12 +2581,12 @@ fun FlowFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background
                         ),
-                        enabled = displayData.enabled[option] ?: false,
+                        enabled = enabled()[option] ?: false,
                     )
                 },
-                enabledAtIndex = { displayData.enabled[displayData.available[it]] ?: true },
+                enabledAtIndex = { enabled()[available()[it]] ?: true },
                 overflowIndicator = { overflowCount, enabledCount, overflowEnabled -> // overflowEnabled means count > 0
-                    val overflowedSelected = overflowCheck(displayData.selected, displayData.available, displayData.available.size - overflowCount)
+                    val overflowedSelected = overflowCheck(selected(), available(), available().size - overflowCount)
 
                     val labelColor =
                         if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
@@ -2506,12 +2634,12 @@ fun FlowFilterSection(
                 FlowFilterOverflowPopup(
                     onDismiss = { showOverflowPopup = false },
                     label = label,
-                    available = displayData.available,
-                    selected = displayData.selected,
-                    enabled = displayData.enabled,
-                    matching = displayData.matching,
-                    matchOptionEnablement = displayData.matchOptionEnablement,
-                    enableMatchOption = enableMatchOption,
+                    available = available,
+                    selected = selected,
+                    enabled = enabled,
+                    matching = matching,
+                    matchOptionEnablement = matchOptionEnablement,
+                    enableMatchOption = { enableMatchOption },
                     onMatchOptionChange = onMatchOptionChange,
                     updateSelectedOptions = updateSelectedOptions,
                     clearAll = clearAll,
@@ -2524,9 +2652,9 @@ fun FlowFilterSection(
 
 @Composable
 fun FlowFilterMatchOptions(
-    nothingAssigned: Boolean,
-    matching: FlowMatchOption?,
-    matchOptionEnablement: Map<FlowMatchOption, Boolean>,
+    nothingAssigned: () -> Boolean,
+    matching: () -> FlowMatchOption?,
+    matchOptionEnablement: () -> Map<FlowMatchOption, Boolean>,
     onMatchOptionChange: (FlowMatchOption) -> Unit,
     modifier: Modifier = Modifier,
     arrangement: Arrangement.Horizontal = Arrangement.Center,
@@ -2541,11 +2669,11 @@ fun FlowFilterMatchOptions(
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier,
-            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
+            color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
         )
 
         FlowMatchOption.entries.forEachIndexed { index, it ->
-            val enabled = !nothingAssigned && (matchOptionEnablement[it] ?: false)
+            val enabled = !nothingAssigned() && (matchOptionEnablement()[it] ?: false)
             Box(
                 modifier = Modifier
                     .padding(0.dp)
@@ -2565,8 +2693,8 @@ fun FlowFilterMatchOptions(
                 Text(
                     text = it.value,
                     fontSize = 14.sp,
-                    fontWeight = if (matching == it && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
-                    color = if (matching == it && !nothingAssigned) MaterialTheme.colorScheme.primary else if (enabled) LocalContentColor.current.copy(alpha = .6f) else LocalContentColor.current.copy(alpha = .38f),
+                    fontWeight = if (matching() == it && !nothingAssigned()) FontWeight.Medium else FontWeight.Normal,
+                    color = if (matching() == it && !nothingAssigned()) MaterialTheme.colorScheme.primary else if (enabled) LocalContentColor.current.copy(alpha = .6f) else LocalContentColor.current.copy(alpha = .38f),
                     modifier = Modifier
                 )
             }
@@ -2576,7 +2704,7 @@ fun FlowFilterMatchOptions(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     modifier = Modifier,
-                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                    color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
                 )
             }
         }
@@ -2586,13 +2714,13 @@ fun FlowFilterMatchOptions(
 @Composable
 fun FlowFilterOverflowPopup(
     onDismiss: () -> Unit,
-    label: String,
-    available: List<String>,
-    selected: List<String>,
-    enabled: Map<String, Boolean>,
-    enableMatchOption: Boolean,
-    matching: FlowMatchOption?,
-    matchOptionEnablement: Map<FlowMatchOption, Boolean>,
+    label: () -> String,
+    available: () -> List<String>,
+    selected: () -> List<String>,
+    enabled: () -> Map<String, Boolean>,
+    enableMatchOption: () -> Boolean,
+    matching: () -> FlowMatchOption?,
+    matchOptionEnablement: () -> Map<FlowMatchOption, Boolean>,
     onMatchOptionChange: (FlowMatchOption) -> Unit,
     updateSelectedOptions: (String, Boolean) -> Unit,
     clearAll: () -> Unit,
@@ -2602,7 +2730,7 @@ fun FlowFilterOverflowPopup(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = label,
+                text = label(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(0.dp),
@@ -2645,9 +2773,9 @@ fun FlowFilterOverflowPopup(
                     ) {
                         Spacer(modifier = Modifier.height(4.dp))
                         // match options
-                        if (enableMatchOption) {
+                        if (enableMatchOption()) {
                             FlowFilterMatchOptions(
-                                false, matching, matchOptionEnablement, { onMatchOptionChange(it) },
+                                { false }, matching, matchOptionEnablement, { onMatchOptionChange(it) },
                                 Modifier.padding(bottom = 4.dp), Arrangement.Center
                             )
                         }
@@ -2666,11 +2794,11 @@ fun FlowFilterOverflowPopup(
                                 Alignment.Top
                             )
                         ) {
-                            available.forEach {
+                            available().forEach {
                                 FilterChip(
-                                    selected = selected.contains(it),
+                                    selected = selected().contains(it),
                                     onClick = {
-                                        updateSelectedOptions(it, !selected.contains(it))
+                                        updateSelectedOptions(it, !selected().contains(it))
                                     },
                                     label = { Text(text = it, fontSize = 14.sp) },
                                     modifier = Modifier
@@ -2679,7 +2807,7 @@ fun FlowFilterOverflowPopup(
                                     colors = FilterChipDefaults.filterChipColors(
                                         containerColor = MaterialTheme.colorScheme.background
                                     ),
-                                    enabled = enabled[it] ?: false
+                                    enabled = enabled()[it] ?: false
                                 )
                             }
                         }
@@ -2696,7 +2824,7 @@ fun FlowFilterOverflowPopup(
                         },
                         modifier = Modifier
                             .offset(x = (-4).dp),
-                        enabled = selected.isNotEmpty()
+                        enabled = selected().isNotEmpty()
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
@@ -2727,13 +2855,27 @@ fun FlowFilterOverflowPopup(
 }
 
 
-
 @Composable
 fun TinsFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val state by filterViewModel.tinsFilterUiState.collectAsState()
+    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+    val implicitHas by filterViewModel.implicitHasTins.collectAsState()
+    val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
+    val opened by filterViewModel.sheetSelectedOpened.collectAsState()
+    val unopened by filterViewModel.sheetSelectedUnopened.collectAsState()
+    val finished by filterViewModel.sheetSelectedFinished.collectAsState()
+    val unfinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
+
+    val hasEnabled by filterViewModel.hasTinsEnabled.collectAsState()
+    val noEnabled by filterViewModel.noTinsEnabled.collectAsState()
+    val openedEnabled by filterViewModel.openedEnabled.collectAsState()
+    val unopenedEnabled by filterViewModel.unopenedEnabled.collectAsState()
+    val finishedEnabled by filterViewModel.finishedEnabled.collectAsState()
+    val unfinishedEnabled by filterViewModel.unfinishedEnabled.collectAsState()
+
+    val tinsExist by filterViewModel.tinsExist.collectAsState()
 
     Column(
         modifier = modifier
@@ -2746,7 +2888,11 @@ fun TinsFilterSection(
         Box{
             Row(
                 modifier = Modifier
-                    .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
+                    .border(
+                        Dp.Hairline,
+                        LocalCustomColors.current.sheetBoxBorder,
+                        RoundedCornerShape(8.dp)
+                    )
                     .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
                     .fillMaxWidth()
                     .padding(vertical = 3.dp),
@@ -2763,7 +2909,7 @@ fun TinsFilterSection(
                     Box {
                         CheckboxWithLabel(
                             text = "",
-                            checked = state.implicitHas,
+                            checked = implicitHas,
                             onCheckedChange = { },
                             modifier = Modifier,
                             colors = CheckboxDefaults.colors(
@@ -2775,20 +2921,20 @@ fun TinsFilterSection(
                         )
                         CheckboxWithLabel(
                             text = "Has tins",
-                            checked = state.hasTins,
+                            checked = hasTins,
                             onCheckedChange = { filterViewModel.updateSelectedTins("has", it) },
                             modifier = Modifier,
-                            enabled = state.tinsExist && state.hasEnabled,
-                            fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                            enabled = hasEnabled,
+                            fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
                         )
                     }
                     CheckboxWithLabel(
                         text = "No tins",
-                        checked = state.noTins,
+                        checked = noTins,
                         onCheckedChange = { filterViewModel.updateSelectedTins("no", it) },
                         modifier = Modifier,
-                        enabled = state.tinsExist && state.noEnabled,
-                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = noEnabled,
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
 
@@ -2800,19 +2946,19 @@ fun TinsFilterSection(
                 ) {
                     CheckboxWithLabel(
                         text = "Opened",
-                        checked = state.opened,
+                        checked = opened,
                         onCheckedChange = { filterViewModel.updateSelectedTins("opened", it) },
                         modifier = Modifier,
-                        enabled = state.tinsExist && state.openedEnabled,
-                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = openedEnabled,
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unopened",
-                        checked = state.unopened,
+                        checked = unopened,
                         onCheckedChange = { filterViewModel.updateSelectedTins("unopened", it) },
                         modifier = Modifier,
-                        enabled = state.tinsExist && state.unopenedEnabled,
-                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = unopenedEnabled,
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
 
@@ -2824,23 +2970,23 @@ fun TinsFilterSection(
                 ) {
                     CheckboxWithLabel(
                         text = "Finished",
-                        checked = state.finished,
+                        checked = finished,
                         onCheckedChange = { filterViewModel.updateSelectedTins("finished", it) },
                         modifier = Modifier,
-                        enabled = state.tinsExist && state.finishedEnabled,
-                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = finishedEnabled,
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
                         text = "Unfinished",
-                        checked = state.unfinished,
+                        checked = unfinished,
                         onCheckedChange = { filterViewModel.updateSelectedTins("unfinished", it) },
                         modifier = Modifier,
-                        enabled = state.tinsExist && state.unfinishedEnabled,
-                        fontColor = if (!state.tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        enabled = unfinishedEnabled,
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
             }
-            if (!state.tinsExist) {
+            if (!tinsExist) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -2882,16 +3028,21 @@ private fun ContainerFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val containerData by filterViewModel.containerData.collectAsState()
+    val available by filterViewModel.containerAvailable.collectAsState()
+    val selected by filterViewModel.sheetSelectedContainer.collectAsState()
+    val enabled by filterViewModel.containerEnabled.collectAsState()
     val tinsExist by filterViewModel.tinsExist.collectAsState()
 
     FlowFilterSection(
-        label = "Tin Containers",
-        nothingLabel = if (tinsExist) "No containers assigned to any tins." else "No tins assigned to any blends.",
-        displayData = containerData,
+        label = { "Tin Containers" },
+        nothingLabel = { if (tinsExist) "No containers assigned to any tins." else "No tins assigned to any blends." },
+        available = { available },
+        selected = { selected },
+        enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedContainer,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = "(Unassigned)",
+        noneField = { "(Unassigned)" },
+    //    nothingAssigned = available.any { it != "(Unassigned)" },
         clearAll = { filterViewModel.clearAllSelected("Container") },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -2907,7 +3058,11 @@ private fun ProductionFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val state by filterViewModel.productionFilterUiState.collectAsState()
+    val production by filterViewModel.sheetSelectedProduction.collectAsState()
+    val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+
+    val productionEnabled by filterViewModel.productionEnabled.collectAsState()
+    val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()
 
     Row(
         modifier = modifier
@@ -2919,17 +3074,17 @@ private fun ProductionFilterSection(
     ) {
         CheckboxWithLabel(
             text = "In Production",
-            checked = state.production,
+            checked = production,
             onCheckedChange = filterViewModel::updateSelectedProduction,
             modifier = Modifier,
-            enabled = state.productionEnabled
+            enabled = productionEnabled
         )
         CheckboxWithLabel(
             text = "Discontinued",
-            checked = state.outOfProduction,
+            checked = outOfProduction,
             onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
             modifier = Modifier,
-            enabled = state.outOfProductionEnabled
+            enabled = outOfProductionEnabled
         )
     }
 }
@@ -2947,6 +3102,8 @@ fun CheckboxWithLabel(
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
     colors: CheckboxColors = CheckboxDefaults.colors(),
+    allowResize: Boolean = false,
+    interactionSource: MutableInteractionSource? = remember { MutableInteractionSource() }
 ) {
     Row(
         modifier = modifier
@@ -2956,36 +3113,71 @@ fun CheckboxWithLabel(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier
-                .padding(0.dp),
-            enabled = enabled,
-            colors = colors,
-            interactionSource = remember { MutableInteractionSource() }
-        )
         Box(
+            modifier = Modifier,
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource
+            )
+        }
+        Text(
+            text = text,
+            style = LocalTextStyle.current.copy(
+                color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
+                lineHeight = lineHeight
+            ),
             modifier = Modifier
                 .offset(x = (-4).dp)
                 .padding(end = 6.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = text,
-                style = LocalTextStyle.current.copy(
-                    color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
-                    lineHeight = lineHeight
-                ),
-                modifier = Modifier,
-                maxLines = 1,
-                autoSize = TextAutoSize.StepBased(
+            maxLines = 1,
+            fontSize = if (!allowResize) fontSize else TextUnit.Unspecified,
+            autoSize = if (!allowResize) { null } else {
+                TextAutoSize.StepBased(
                     maxFontSize = fontSize,
                     minFontSize = 9.sp,
                     stepSize = .2.sp
                 )
-            )
-        }
+            }
+        )
+
+
+//        Checkbox(
+//            checked = checked,
+//            onCheckedChange = onCheckedChange,
+//            modifier = Modifier
+//                .padding(0.dp),
+//            enabled = enabled,
+//            colors = colors,
+//            interactionSource = interactionSource
+//        )
+//        Box(
+//            modifier = Modifier
+//                .offset(x = (-4).dp)
+//                .padding(end = 6.dp),
+//            contentAlignment = Alignment.CenterStart
+//        ) {
+//            Text(
+//                text = text,
+//                style = LocalTextStyle.current.copy(
+//                    color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
+//                    lineHeight = lineHeight
+//                ),
+//                modifier = Modifier,
+//                maxLines = 1,
+//                autoSize = TextAutoSize.StepBased(
+//                    maxFontSize = fontSize,
+//                    minFontSize = 9.sp,
+//                    stepSize = .2.sp
+//                )
+//            )
+//        }
     }
 }
 
@@ -2998,7 +3190,8 @@ fun TriStateCheckWithLabel(
     enabled: Boolean = true,
     fontColor: Color = LocalContentColor.current,
     maxLines: Int = Int.MAX_VALUE,
-    colors: CheckboxColors = CheckboxDefaults.colors()
+    colors: CheckboxColors = CheckboxDefaults.colors(),
+    interactionSource: MutableInteractionSource? = remember { MutableInteractionSource() }
 ) {
     Row(
         modifier = modifier
@@ -3016,7 +3209,7 @@ fun TriStateCheckWithLabel(
                     .padding(0.dp),
                 enabled = enabled,
                 colors = colors,
-                interactionSource = remember { MutableInteractionSource() }
+                interactionSource = interactionSource
             )
         }
         Text(
@@ -3031,71 +3224,6 @@ fun TriStateCheckWithLabel(
     }
 }
 
-@Composable
-private fun CustomFilterTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "",
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int. MAX_VALUE,
-) {
-    var showCursor by remember { mutableStateOf(false) }
-    var hasFocus by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .background(color = LocalCustomColors.current.textField, RoundedCornerShape(6.dp))
-            .height(48.dp)
-            .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus
-                showCursor = focusState.hasFocus
-                if (!focusState.hasFocus) {
-                    focusManager.clearFocus()
-                }
-            }
-            .padding(horizontal = 16.dp),
-        textStyle = LocalTextStyle.current.copy(
-            color = LocalContentColor.current,
-            fontSize = TextUnit.Unspecified,
-            lineHeight = TextUnit.Unspecified,
-        ),
-        keyboardOptions = keyboardOptions,
-        singleLine = singleLine,
-        maxLines = maxLines,
-        cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
-            else { SolidColor(Color.Transparent) },
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (value.isEmpty() && !hasFocus) {
-                        Text(
-                            text = placeholder,
-                            style = LocalTextStyle.current.copy(
-                                color = LocalContentColor.current.copy(alpha = 0.5f)
-                            )
-                        )
-                    }
-                    innerTextField()
-                }
-            }
-        }
-    )
-}
 
 @Composable
 fun Chip(
