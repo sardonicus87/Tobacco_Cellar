@@ -216,7 +216,8 @@ class FilterViewModel (
 
         (container.isNotEmpty() || opened || unopened || finished || unfinished) || (isTinSearch && searchPerformed)
 
-    }.stateIn(
+    }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
@@ -1968,6 +1969,23 @@ class FilterViewModel (
             initialValue = ToggleableState.Off
         )
 
+    init {
+        viewModelScope.launch {
+            favoritesEnabled.collect { enabled ->
+                if (!enabled && sheetSelectedExcludeFavorites.value) {
+                    updateSelectedExcludeFavorites(false)
+                }
+            }
+        }
+        viewModelScope.launch {
+            dislikedsEnabled.collect { enabled ->
+                if (!enabled && sheetSelectedExcludeDislikeds.value) {
+                    updateSelectedExcludeDislikeds(false)
+                }
+            }
+        }
+    }
+
 
     private val _showRatingPop = MutableStateFlow(false)
     val showRatingPop = _showRatingPop.asStateFlow()
@@ -2514,17 +2532,6 @@ class FilterViewModel (
 
 
     // Tins filtering //
-    fun updateSelectedTins(string: String, it: Boolean) {
-        when (string) {
-            "has" -> updateSelectedHasTins(it)
-            "no" -> updateSelectedNoTins(it)
-            "opened" -> updateSelectedOpened(it)
-            "unopened" -> updateSelectedUnopened(it)
-            "finished" -> updateSelectedFinished(it)
-            "unfinished" -> updateSelectedUnfinished(it)
-        }
-    }
-
     fun updateSelectedHasTins(isSelected: Boolean) {
         if (isSelected) {
             sheetSelectedNoTins.value = false
@@ -2665,23 +2672,23 @@ class FilterViewModel (
         return selected.any { overflowedItems.contains(it) }
     }
 
-    fun clearAllSelected(field: String) {
+    fun clearAllSelected(field: ClearAll) {
         when (field) {
-            "Subgenre" -> {
+            ClearAll.SUBGENRE -> {
                 sheetSelectedSubgenres.value = emptyList()
                 _selectedSubgenre.value = emptyList()
                 _selectedSubgenre.value.forEach {
                     trackSelection(FilterCategory.SUBGENRE, it, false)
                 }
             }
-            "Cut" -> {
+            ClearAll.CUT -> {
                 sheetSelectedCuts.value = emptyList()
                 _selectedCut.value = emptyList()
                 _selectedCut.value.forEach {
                     trackSelection(FilterCategory.CUT, it, false)
                 }
             }
-            "Components" -> {
+            ClearAll.COMPONENT -> {
                 sheetSelectedComponents.value = emptyList()
                 _selectedComponents.value = emptyList()
                 _compMatching.value = FlowMatchOption.ANY
@@ -2690,7 +2697,7 @@ class FilterViewModel (
                     trackSelection(FilterCategory.COMPONENT, it, false)
                 }
             }
-            "Flavorings" -> {
+            ClearAll.FLAVORING -> {
                 sheetSelectedFlavorings.value = emptyList()
                 _selectedFlavorings.value = emptyList()
                 _flavorMatching.value = FlowMatchOption.ANY
@@ -2699,7 +2706,7 @@ class FilterViewModel (
                     trackSelection(FilterCategory.FLAVORING, it, false)
                 }
             }
-            "Container" -> {
+            ClearAll.CONTAINER -> {
                 sheetSelectedContainer.value = emptyList()
                 _selectedContainer.value = emptyList()
                 _selectedContainer.value.forEach {
@@ -2806,6 +2813,7 @@ enum class FilterCategory {
 
 enum class FlowMatchOption(val value: String) { ANY("Any"), ALL("All"), ONLY("Only") }
 
+enum class ClearAll { SUBGENRE, CUT, COMPONENT, FLAVORING, CONTAINER }
 
 @Stable
 data class SheetSelections(

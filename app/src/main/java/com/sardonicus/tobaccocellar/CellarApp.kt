@@ -142,6 +142,7 @@ import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOW
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomBarButtonData
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
+import com.sardonicus.tobaccocellar.ui.ClearAll
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.FlowMatchOption
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -1725,6 +1726,7 @@ fun TypeFilterSection(
     }
 }
 
+
 @Composable
 fun OtherFiltersSection(
     filterViewModel: FilterViewModel,
@@ -1757,11 +1759,7 @@ fun OtherFiltersSection(
             ) {
                 FavoriteDislikeFilters(filterViewModel, { favDisExist }, { ratingsExist })
 
-                StarRatingFilters(
-                    filterViewModel = filterViewModel,
-                    favDisExist = { favDisExist },
-                    ratingsExist = { ratingsExist }
-                )
+                StarRatingFilters(filterViewModel, { favDisExist }, { ratingsExist })
             }
             if (!favDisExist && !ratingsExist) {
                 Box(
@@ -1791,7 +1789,9 @@ fun OtherFiltersSection(
         }
 
         // In Stock
-        Box(Modifier.width(IntrinsicSize.Max)) { InStockSection(filterViewModel) }
+        Box {
+            InStockSection(filterViewModel)
+        }
     }
 }
 
@@ -2350,7 +2350,7 @@ private fun InStockSection(
         modifier = modifier
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
-            //    .width(112.dp)  // IntrinsicSize.Max
+            .width(IntrinsicSize.Max)
             .padding(vertical = 3.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.Start
@@ -2393,7 +2393,7 @@ private fun SubgenreSection(
         updateSelectedOptions = filterViewModel::updateSelectedSubgenre,
         overflowCheck = filterViewModel::overflowCheck,
         noneField = { "(Unassigned)" },
-        clearAll = { filterViewModel.clearAllSelected("Subgenre") },
+        clearAll = { filterViewModel.clearAllSelected(ClearAll.SUBGENRE) },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
@@ -2420,7 +2420,7 @@ private fun CutSection(
         updateSelectedOptions = filterViewModel::updateSelectedCut,
         overflowCheck = filterViewModel::overflowCheck,
         noneField = { "(Unassigned)" },
-        clearAll = { filterViewModel.clearAllSelected("Cut") },
+        clearAll = { filterViewModel.clearAllSelected(ClearAll.CUT) },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
@@ -2456,7 +2456,7 @@ private fun ComponentSection(
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 5.dp),
-        clearAll = { filterViewModel.clearAllSelected("Components") },
+        clearAll = { filterViewModel.clearAllSelected(ClearAll.COMPONENT) },
         onMatchOptionChange = filterViewModel::updateCompMatching,
     )
 }
@@ -2488,7 +2488,7 @@ private fun FlavoringSection(
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 5.dp),
-        clearAll = { filterViewModel.clearAllSelected("Flavorings") },
+        clearAll = { filterViewModel.clearAllSelected(ClearAll.FLAVORING) },
         onMatchOptionChange = filterViewModel::updateFlavorMatching,
     )
 }
@@ -2922,7 +2922,7 @@ fun TinsFilterSection(
                         CheckboxWithLabel(
                             text = "Has tins",
                             checked = hasTins,
-                            onCheckedChange = { filterViewModel.updateSelectedTins("has", it) },
+                            onCheckedChange = filterViewModel::updateSelectedHasTins,
                             modifier = Modifier,
                             enabled = hasEnabled,
                             fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
@@ -2931,7 +2931,7 @@ fun TinsFilterSection(
                     CheckboxWithLabel(
                         text = "No tins",
                         checked = noTins,
-                        onCheckedChange = { filterViewModel.updateSelectedTins("no", it) },
+                        onCheckedChange = filterViewModel::updateSelectedNoTins,
                         modifier = Modifier,
                         enabled = noEnabled,
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
@@ -2947,7 +2947,7 @@ fun TinsFilterSection(
                     CheckboxWithLabel(
                         text = "Opened",
                         checked = opened,
-                        onCheckedChange = { filterViewModel.updateSelectedTins("opened", it) },
+                        onCheckedChange = filterViewModel::updateSelectedOpened,
                         modifier = Modifier,
                         enabled = openedEnabled,
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
@@ -2955,7 +2955,7 @@ fun TinsFilterSection(
                     CheckboxWithLabel(
                         text = "Unopened",
                         checked = unopened,
-                        onCheckedChange = { filterViewModel.updateSelectedTins("unopened", it) },
+                        onCheckedChange = filterViewModel::updateSelectedUnopened,
                         modifier = Modifier,
                         enabled = unopenedEnabled,
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
@@ -2971,7 +2971,7 @@ fun TinsFilterSection(
                     CheckboxWithLabel(
                         text = "Finished",
                         checked = finished,
-                        onCheckedChange = { filterViewModel.updateSelectedTins("finished", it) },
+                        onCheckedChange = filterViewModel::updateSelectedFinished,
                         modifier = Modifier,
                         enabled = finishedEnabled,
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
@@ -2979,7 +2979,7 @@ fun TinsFilterSection(
                     CheckboxWithLabel(
                         text = "Unfinished",
                         checked = unfinished,
-                        onCheckedChange = { filterViewModel.updateSelectedTins("unfinished", it) },
+                        onCheckedChange = filterViewModel::updateSelectedUnfinished,
                         modifier = Modifier,
                         enabled = unfinishedEnabled,
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
@@ -3043,7 +3043,7 @@ private fun ContainerFilterSection(
         overflowCheck = filterViewModel::overflowCheck,
         noneField = { "(Unassigned)" },
     //    nothingAssigned = available.any { it != "(Unassigned)" },
-        clearAll = { filterViewModel.clearAllSelected("Container") },
+        clearAll = { filterViewModel.clearAllSelected(ClearAll.CONTAINER) },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
