@@ -1711,43 +1711,6 @@ class FilterViewModel (
     val clickToAdd = _clickToAdd.asStateFlow()
     fun updateClickToAdd(clicked: Boolean) { _clickToAdd.value = clicked }
 
-    val bottomAppBarState = combine(
-        bottomSheetState,
-        isFilterApplied,
-        searchPerformed,
-        datesExist,
-        emptyDatabase,
-        tinsReady,
-        clickToAdd
-    ) { values: Array<Any?> ->
-        val sheetState = values[0] as BottomSheetState
-        val filterApplied = values[1] as Boolean
-        val searchPerformed = values[2] as Boolean
-        val datesExist = values[3] as Boolean
-        val databaseEmpty = values[4] as Boolean
-        val tinsReady = values[5] as Boolean
-        val clickToAdd = values[6] as Boolean
-
-        val sheetOpen = sheetState == BottomSheetState.OPENED
-
-        BottomAppBarState(
-            sheetState,
-            sheetOpen,
-            filterApplied,
-            searchPerformed,
-            datesExist,
-            databaseEmpty,
-            tinsReady,
-            clickToAdd
-        )
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = BottomAppBarState()
-        )
-
 
     // HomeScreen stuff
     val searchState = combine(
@@ -2173,7 +2136,6 @@ class FilterViewModel (
             started = SharingStarted.WhileSubscribed(5000L),
             initialValue = false
         )
-
 
 
     // filter selection update functions //
@@ -2860,18 +2822,6 @@ data class ExportCsvState(
     val exportRatingString: Pair<String, String> = Pair("", ""),
     val allItems: Boolean = true,
     val selectedIndex: Int = 0
-)
-
-@Stable
-data class BottomAppBarState(
-    val sheetState: BottomSheetState = BottomSheetState.CLOSED,
-    val sheetOpen: Boolean = false,
-    val filteringApplied: Boolean = false,
-    val searchPerformed: Boolean = false,
-    val datesExist: Boolean = true,
-    val databaseEmpty: Boolean = false,
-    val tinsReady: Boolean = false,
-    val clickToAdd: Boolean = false
 )
 
 @Stable
