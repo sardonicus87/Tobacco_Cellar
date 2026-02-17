@@ -648,13 +648,21 @@ fun CellarBottomAppBar(
 ) {
     LaunchedEffect(Unit) { filterViewModel.updateClickToAdd(false) }
 
-    val uiState by filterViewModel.bottomAppBarState.collectAsState()
+    val sheetState by filterViewModel.bottomSheetState.collectAsState()
+    val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+    val datesExist by filterViewModel.datesExist.collectAsState()
+    val databaseEmpty by filterViewModel.emptyDatabase.collectAsState()
+    val tinsReady by filterViewModel.tinsReady.collectAsState()
+    val clickToAdd by filterViewModel.clickToAdd.collectAsState()
+
+    val sheetOpen by remember(sheetState) { derivedStateOf { sheetState == BottomSheetState.OPENED } }
 
     val navIcon = LocalCustomColors.current.navIcon
     val indicatorCircle = LocalCustomColors.current.indicatorCircle
     val indicatorBorderCorrection = LocalCustomColors.current.indicatorBorderCorrection
 
-    val buttons = remember(currentDestination, uiState.clickToAdd, uiState, isTwoPane, navIcon,
+    val buttons = remember(currentDestination, clickToAdd, isTwoPane, navIcon,
         indicatorCircle, indicatorBorderCorrection
     ) {
         listOfNotNull(
@@ -663,7 +671,7 @@ fun CellarBottomAppBar(
                 icon = R.drawable.table_view_old,
                 destination = HomeDestination,
                 onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
-                activeColor = if (currentDestination == HomeDestination && !uiState.clickToAdd) onPrimaryLight else navIcon
+                activeColor = if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon
             ),
             // 2. Stats
             BottomBarButtonData(
@@ -671,9 +679,9 @@ fun CellarBottomAppBar(
                 icon = R.drawable.bar_chart,
                 destination = StatsDestination,
                 onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
-                enabled = !uiState.databaseEmpty,
-                activeColor = if (currentDestination == StatsDestination && !uiState.clickToAdd) onPrimaryLight
-                else if (uiState.databaseEmpty) navIcon.copy(alpha = 0.5f)
+                enabled = !databaseEmpty,
+                activeColor = if (currentDestination == StatsDestination && !clickToAdd) onPrimaryLight
+                else if (databaseEmpty) navIcon.copy(alpha = 0.5f)
                 else navIcon
             ),
             // 3. Dates
@@ -682,14 +690,14 @@ fun CellarBottomAppBar(
                 icon = R.drawable.calendar_month,
                 destination = DatesDestination,
                 onClick = { filterViewModel.getPositionTrigger(); navigateToDates() },
-                enabled = uiState.datesExist,
-                showIndicator = uiState.tinsReady,
-                indicatorColor = if (uiState.tinsReady) indicatorCircle else Color.Transparent,
-                borderColor = if (uiState.tinsReady) {
-                    if (currentDestination == DatesDestination && !uiState.clickToAdd) onPrimaryLight else navIcon
+                enabled = datesExist,
+                showIndicator = tinsReady,
+                indicatorColor = if (tinsReady) indicatorCircle else Color.Transparent,
+                borderColor = if (tinsReady) {
+                    if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight else navIcon
                 } else Color.Transparent,
-                activeColor = if (currentDestination == DatesDestination && !uiState.clickToAdd) onPrimaryLight
-                else if (uiState.datesExist) navIcon
+                activeColor = if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
+                else if (datesExist) navIcon
                 else navIcon.copy(alpha = 0.5f)
             ),
             // 4. Filtering
@@ -697,30 +705,30 @@ fun CellarBottomAppBar(
                 title = "Filter",
                 icon = R.drawable.filter_24,
                 onClick = filterViewModel::openBottomSheet,
-                enabled = if (currentDestination == HomeDestination && !uiState.databaseEmpty) !uiState.searchPerformed else !uiState.databaseEmpty,
-                showIndicator = uiState.filteringApplied,
-                indicatorColor = if (uiState.filteringApplied) {
-                    if (uiState.searchPerformed && currentDestination == HomeDestination) {
+                enabled = if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty,
+                showIndicator = filteringApplied,
+                indicatorColor = if (filteringApplied) {
+                    if (searchPerformed && currentDestination == HomeDestination) {
                         indicatorCircle.copy(alpha = 0.5f)
                     } else indicatorCircle
                 } else Color.Transparent,
-                borderColor = if (uiState.filteringApplied) {
-                    if (uiState.searchPerformed && currentDestination == HomeDestination) {
+                borderColor = if (filteringApplied) {
+                    if (searchPerformed && currentDestination == HomeDestination) {
                         indicatorBorderCorrection
                     } else {
-                        if (uiState.sheetOpen) {
+                        if (sheetOpen) {
                             onPrimaryLight
                         } else navIcon
                     }
                 } else Color.Transparent,
-                activeColor = if (uiState.sheetOpen) onPrimaryLight else navIcon
+                activeColor = if (sheetOpen) onPrimaryLight else navIcon
             ) else null,
             // 5. Add
             BottomBarButtonData(
                 title = "Add",
                 icon = R.drawable.add_circle,
                 onClick = { filterViewModel.updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
-                activeColor = if (uiState.clickToAdd) onPrimaryLight else navIcon
+                activeColor = if (clickToAdd) onPrimaryLight else navIcon
             )
         )
     }
@@ -1401,13 +1409,11 @@ private fun BrandTextButton(
     TextButton(
         onClick = onClickAction,
         modifier = modifier,
-          //  .wrapContentSize(),
         enabled = enabled(),
     ) {
         Text(
             text = brand(),
             modifier = Modifier
-              //  .wrapContentSize()
         )
     }
 }
@@ -1734,6 +1740,7 @@ fun OtherFiltersSection(
 ) {
     val favDisExist by filterViewModel.favDisExist.collectAsState()
     val ratingsExist by filterViewModel.ratingsExist.collectAsState()
+    val rangeEnabled by filterViewModel.rangeEnabled.collectAsState()
 
     Row(
         modifier = modifier
@@ -1759,7 +1766,7 @@ fun OtherFiltersSection(
             ) {
                 FavoriteDislikeFilters(filterViewModel, { favDisExist }, { ratingsExist })
 
-                StarRatingFilters(filterViewModel, { favDisExist }, { ratingsExist })
+                StarRatingFilters(filterViewModel, rangeEnabled, { favDisExist }, { ratingsExist })
             }
             if (!favDisExist && !ratingsExist) {
                 Box(
@@ -1866,10 +1873,11 @@ private fun FavoriteDislikeFilters(
 @Composable
 private fun StarRatingFilters(
     filterViewModel: FilterViewModel,
+    rangeEnabled: Boolean,
     favDisExist: () -> Boolean,
     ratingsExist: () -> Boolean
 ) {
-    val rangeEnabled by filterViewModel.rangeEnabled.collectAsState()
+//    val rangeEnabled by filterViewModel.rangeEnabled.collectAsState()
     val ratingLowEnabled by filterViewModel.ratingLowEnabled.collectAsState()
     val ratingHighEnabled by filterViewModel.ratingHighEnabled.collectAsState()
     val unratedEnabled by filterViewModel.unratedEnabled.collectAsState()
@@ -2383,6 +2391,7 @@ private fun SubgenreSection(
     val available by filterViewModel.subgenreAvailable.collectAsState()
     val selected by filterViewModel.sheetSelectedSubgenres.collectAsState()
     val enabled by filterViewModel.subgenresEnabled.collectAsState()
+    val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(Unassigned)" } } }
 
     FlowFilterSection(
         label = { "Subgenre" },
@@ -2392,7 +2401,7 @@ private fun SubgenreSection(
         enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedSubgenre,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = { "(Unassigned)" },
+        nothingAssigned = { nothingAssigned },
         clearAll = { filterViewModel.clearAllSelected(ClearAll.SUBGENRE) },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -2410,6 +2419,7 @@ private fun CutSection(
     val available by filterViewModel.cutAvailable.collectAsState()
     val selected by filterViewModel.sheetSelectedCuts.collectAsState()
     val enabled by filterViewModel.cutsEnabled.collectAsState()
+    val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(Unassigned)" } } }
 
     FlowFilterSection(
         label = { "Cut" },
@@ -2419,7 +2429,7 @@ private fun CutSection(
         enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedCut,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = { "(Unassigned)" },
+        nothingAssigned = { nothingAssigned },
         clearAll = { filterViewModel.clearAllSelected(ClearAll.CUT) },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
@@ -2439,6 +2449,7 @@ private fun ComponentSection(
     val enabled by filterViewModel.componentsEnabled.collectAsState()
     val matching by filterViewModel.sheetSelectedCompMatching.collectAsState()
     val matchEnablement by filterViewModel.compMatchingEnabled.collectAsState()
+    val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(None Assigned)" } } }
 
     FlowFilterSection(
         label = { "Components" },
@@ -2448,7 +2459,7 @@ private fun ComponentSection(
         enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedComponent,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = { "(None Assigned)" },
+        nothingAssigned = { nothingAssigned },
         matching = { matching },
         matchOptionEnablement = { matchEnablement },
         modifier = modifier
@@ -2471,6 +2482,7 @@ private fun FlavoringSection(
     val enabled by filterViewModel.flavoringsEnabled.collectAsState()
     val matching by filterViewModel.sheetSelectedFlavorMatching.collectAsState()
     val matchEnablement by filterViewModel.flavorMatchingEnabled.collectAsState()
+    val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(None Assigned)" } } }
 
     FlowFilterSection(
         label = { "Flavorings" },
@@ -2480,7 +2492,7 @@ private fun FlavoringSection(
         enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedFlavoring,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = { "(None Assigned)" },
+        nothingAssigned = { nothingAssigned },
         matching = { matching },
         matchOptionEnablement = { matchEnablement },
         modifier = modifier
@@ -2503,7 +2515,7 @@ fun FlowFilterSection(
     enabled: () -> Map<String, Boolean>,
     updateSelectedOptions: (String, Boolean) -> Unit,
     overflowCheck: (List<String>, List<String>, Int) -> Boolean,
-    noneField: () -> String,
+    nothingAssigned: () -> Boolean,
     modifier: Modifier = Modifier,
     matching: () -> FlowMatchOption? = { null },
     matchOptionEnablement: () -> Map<FlowMatchOption, Boolean> = { mapOf() },
@@ -2516,8 +2528,6 @@ fun FlowFilterSection(
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
         var showOverflowPopup by remember { mutableStateOf(false) }
-        val enableMatchOption = remember(matching()) { matching() != null }
-        val nothingAssigned = remember(available()) { available().none { it != noneField() } }
 
         // Header and Match options
         Row(
@@ -2532,17 +2542,17 @@ fun FlowFilterSection(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier,
-                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
+                color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
             )
-            if (enableMatchOption) {
+            if (matching() != null) {
                 FlowFilterMatchOptions(
-                    { nothingAssigned }, matching, matchOptionEnablement, { onMatchOptionChange(it) },
+                    nothingAssigned, matching, matchOptionEnablement, { onMatchOptionChange(it) },
                     Modifier, Arrangement.End
                 )
             }
         }
 
-        if (nothingAssigned) {
+        if (nothingAssigned()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2561,73 +2571,13 @@ fun FlowFilterSection(
                 )
             }
         } else {
-            OverflowRow(
-                itemCount = available().size,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(Alignment.Top)
-                    .padding(horizontal = 4.dp),
-                itemSpacing = 6.dp,
-                itemContent = {
-                    val option = available()[it]
-
-                    FilterChip(
-                        selected = selected().contains(option),
-                        onClick = { updateSelectedOptions(option, !selected().contains(option)) },
-                        label = { Text(text = option, fontSize = 14.sp) },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        shape = MaterialTheme.shapes.small,
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.background
-                        ),
-                        enabled = enabled()[option] ?: false,
-                    )
-                },
-                enabledAtIndex = { enabled()[available()[it]] ?: true },
-                overflowIndicator = { overflowCount, enabledCount, overflowEnabled -> // overflowEnabled means count > 0
-                    val overflowedSelected = overflowCheck(selected(), available(), available().size - overflowCount)
-
-                    val labelColor =
-                        if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
-//                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
-//                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant
-//                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    val containerColor =
-                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.background
-//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-//                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
-//                        else if (!overflowEnabled) MaterialTheme.colorScheme.background
-//                        else MaterialTheme.colorScheme.background
-                    val borderColor =
-                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.outlineVariant
-//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
-//                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
-//                        else if (!overflowEnabled) MaterialTheme.colorScheme.outlineVariant
-//                        else MaterialTheme.colorScheme.outlineVariant
-
-
-                    Chip(
-                        text = "+$enabledCount",  // "+$overflowCount"
-                        onChipClicked = { showOverflowPopup = true },
-                        onChipRemoved = { },
-                        enabled = true,
-                        trailingIcon = false,
-                        modifier = Modifier,
-                        colors = AssistChipDefaults.assistChipColors(
-                            labelColor = labelColor,
-                            containerColor = containerColor
-                        ),
-                        border = AssistChipDefaults.assistChipBorder(
-                            enabled = true,
-                            borderColor = borderColor
-                        ),
-                    )
-                },
+            OverflowWrapper(
+                available = available(),
+                selected = selected(),
+                enabled = enabled(),
+                updateSelectedOptions = updateSelectedOptions,
+                overflowCheck = overflowCheck,
+                showOverflowPopup = { showOverflowPopup = it }
             )
 
             if (showOverflowPopup) {
@@ -2639,7 +2589,7 @@ fun FlowFilterSection(
                     enabled = enabled,
                     matching = matching,
                     matchOptionEnablement = matchOptionEnablement,
-                    enableMatchOption = { enableMatchOption },
+                    enableMatchOption = { matching() != null },
                     onMatchOptionChange = onMatchOptionChange,
                     updateSelectedOptions = updateSelectedOptions,
                     clearAll = clearAll,
@@ -2648,6 +2598,110 @@ fun FlowFilterSection(
             }
         }
     }
+}
+
+@Composable
+fun OverflowWrapper(
+    available: List<String>,
+    selected: List<String>,
+    enabled: Map<String, Boolean>,
+    updateSelectedOptions: (String, Boolean) -> Unit,
+    overflowCheck: (List<String>, List<String>, Int) -> Boolean,
+    showOverflowPopup: (Boolean) -> Unit,
+) {
+    OverflowRow(
+        items = available,
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(Alignment.Top)
+            .padding(horizontal = 4.dp),
+        itemSpacing = 6.dp,
+        itemContent = {
+            val isSelected = selected.contains(it)
+
+            FilterChipWrapper(
+                label = { it },
+                selected = { isSelected },
+                enabled = { enabled[it] ?: false },
+                onClick = { updateSelectedOptions(it, !isSelected) },
+                modifier = Modifier
+                    .widthIn(max = 140.dp)
+            )
+        },
+        enabledAtIndex = { enabled[available[it]] ?: true },
+        overflowIndicator = { overflowCount, enabledCount, overflowEnabled -> // overflowEnabled means count > 0
+            val overflowedSelected = overflowCheck(selected, available, available.size - overflowCount)
+
+            val labelColor =
+                if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant
+//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.onSecondaryContainer
+//                        else if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer
+//                        else if (!overflowEnabled) MaterialTheme.colorScheme.onSurfaceVariant
+//                        else MaterialTheme.colorScheme.onSurfaceVariant
+            val containerColor =
+                if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+                else MaterialTheme.colorScheme.background
+//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (!overflowEnabled) MaterialTheme.colorScheme.background
+//                        else MaterialTheme.colorScheme.background
+            val borderColor =
+                if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+                else MaterialTheme.colorScheme.outlineVariant
+//                        if (overflowedSelected && overflowEnabled) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (overflowedSelected) MaterialTheme.colorScheme.secondaryContainer
+//                        else if (!overflowEnabled) MaterialTheme.colorScheme.outlineVariant
+//                        else MaterialTheme.colorScheme.outlineVariant
+
+
+            Chip(
+                text = "+$enabledCount",  // "+$overflowCount"
+                onChipClicked = { showOverflowPopup(true) },
+                onChipRemoved = { },
+                enabled = true,
+                trailingIcon = false,
+                modifier = Modifier,
+                colors = AssistChipDefaults.assistChipColors(
+                    labelColor = labelColor,
+                    containerColor = containerColor
+                ),
+                border = AssistChipDefaults.assistChipBorder(
+                    enabled = true,
+                    borderColor = borderColor
+                ),
+            )
+        },
+    )
+}
+
+@Composable
+fun FilterChipWrapper(
+    label: () -> String,
+    selected: () -> Boolean,
+    enabled: () -> Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilterChip(
+        selected = selected(),
+        onClick = onClick,
+        label = {
+            Text(
+                text = label(),
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        modifier = modifier
+            .padding(0.dp),
+        shape = MaterialTheme.shapes.small,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.background
+        ),
+        enabled = enabled()
+    )
 }
 
 @Composable
@@ -3032,17 +3086,22 @@ private fun ContainerFilterSection(
     val selected by filterViewModel.sheetSelectedContainer.collectAsState()
     val enabled by filterViewModel.containerEnabled.collectAsState()
     val tinsExist by filterViewModel.tinsExist.collectAsState()
+    val nothingLabel by remember(tinsExist) {
+        derivedStateOf {
+            if (tinsExist) "No containers assigned to any tins." else "No tins assigned to any blends."
+        }
+    }
+    val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(Unassigned)" } } }
 
     FlowFilterSection(
         label = { "Tin Containers" },
-        nothingLabel = { if (tinsExist) "No containers assigned to any tins." else "No tins assigned to any blends." },
+        nothingLabel = { nothingLabel },
         available = { available },
         selected = { selected },
         enabled = { enabled },
         updateSelectedOptions = filterViewModel::updateSelectedContainer,
         overflowCheck = filterViewModel::overflowCheck,
-        noneField = { "(Unassigned)" },
-    //    nothingAssigned = available.any { it != "(Unassigned)" },
+        nothingAssigned = { nothingAssigned },
         clearAll = { filterViewModel.clearAllSelected(ClearAll.CONTAINER) },
         modifier = modifier
             .padding(horizontal = 6.dp, vertical = 0.dp)
