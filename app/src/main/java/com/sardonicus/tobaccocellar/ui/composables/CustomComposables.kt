@@ -729,9 +729,9 @@ fun CustomDropdownMenuItem(
 
 /** Replacement stuff for ContextualFlowRow */
 @Composable
-fun OverflowRow(
-    itemCount: Int,
-    itemContent: @Composable (index: Int) -> Unit,
+fun <T> OverflowRow(
+    items: List<T>,
+    itemContent: @Composable (item: T) -> Unit,
     overflowIndicator: @Composable (
         overflowCount: Int,
         enabledOverflowCount: Int,
@@ -746,6 +746,7 @@ fun OverflowRow(
         remember(itemSpacing, density) { with(density) { itemSpacing.toPx() } }.toInt()
 
     SubcomposeLayout(modifier = modifier) { constraints ->
+        val itemCount = items.size
         val maxWidth = constraints.maxWidth
         if (itemCount == 0) {
             return@SubcomposeLayout layout(0, 0) {}
@@ -765,7 +766,7 @@ fun OverflowRow(
         var lineMaxHeight = 0
 
         val allItemMeasurables = subcompose("items_measure") {
-            for (i in 0 until itemCount) itemContent(i)
+            for (i in 0 until itemCount) itemContent(items[i])
         }
 
         for (i in 0 until itemCount) {
@@ -830,7 +831,8 @@ fun OverflowRow(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(itemSpacing)
             ) {
-                for (i in 0 until visibleItemCount) { itemContent(i) }
+                repeat(visibleItemCount) { i -> itemContent(items[i]) }
+
                 if (showOver) { overflowIndicator(actualOverCount, enabledOverflowCount, anyOverflowedEnabled) }
             }
         }.map { it.measure(constraints) }
