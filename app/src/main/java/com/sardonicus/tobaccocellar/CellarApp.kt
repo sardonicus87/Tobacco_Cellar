@@ -140,7 +140,6 @@ import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
-import com.sardonicus.tobaccocellar.ui.BottomBarButtonData
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.ClearAll
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -662,77 +661,6 @@ fun CellarBottomAppBar(
     val indicatorCircle = LocalCustomColors.current.indicatorCircle
     val indicatorBorderCorrection = LocalCustomColors.current.indicatorBorderCorrection
 
-    val buttons = remember(currentDestination, clickToAdd, isTwoPane, navIcon,
-        indicatorCircle, indicatorBorderCorrection
-    ) {
-        listOfNotNull(
-            BottomBarButtonData(
-                title = "Cellar",
-                icon = R.drawable.table_view_old,
-                destination = HomeDestination,
-                onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
-                activeColor = if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon
-            ),
-            // 2. Stats
-            BottomBarButtonData(
-                title = "Stats",
-                icon = R.drawable.bar_chart,
-                destination = StatsDestination,
-                onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
-                enabled = !databaseEmpty,
-                activeColor = if (currentDestination == StatsDestination && !clickToAdd) onPrimaryLight
-                else if (databaseEmpty) navIcon.copy(alpha = 0.5f)
-                else navIcon
-            ),
-            // 3. Dates
-            BottomBarButtonData(
-                title = "Dates",
-                icon = R.drawable.calendar_month,
-                destination = DatesDestination,
-                onClick = { filterViewModel.getPositionTrigger(); navigateToDates() },
-                enabled = datesExist,
-                showIndicator = tinsReady,
-                indicatorColor = if (tinsReady) indicatorCircle else Color.Transparent,
-                borderColor = if (tinsReady) {
-                    if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight else navIcon
-                } else Color.Transparent,
-                activeColor = if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
-                else if (datesExist) navIcon
-                else navIcon.copy(alpha = 0.5f)
-            ),
-            // 4. Filtering
-            if (!isTwoPane) BottomBarButtonData(
-                title = "Filter",
-                icon = R.drawable.filter_24,
-                onClick = filterViewModel::openBottomSheet,
-                enabled = if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty,
-                showIndicator = filteringApplied,
-                indicatorColor = if (filteringApplied) {
-                    if (searchPerformed && currentDestination == HomeDestination) {
-                        indicatorCircle.copy(alpha = 0.5f)
-                    } else indicatorCircle
-                } else Color.Transparent,
-                borderColor = if (filteringApplied) {
-                    if (searchPerformed && currentDestination == HomeDestination) {
-                        indicatorBorderCorrection
-                    } else {
-                        if (sheetOpen) {
-                            onPrimaryLight
-                        } else navIcon
-                    }
-                } else Color.Transparent,
-                activeColor = if (sheetOpen) onPrimaryLight else navIcon
-            ) else null,
-            // 5. Add
-            BottomBarButtonData(
-                title = "Add",
-                icon = R.drawable.add_circle,
-                onClick = { filterViewModel.updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
-                activeColor = if (clickToAdd) onPrimaryLight else navIcon
-            )
-        )
-    }
-
     BottomAppBar(
         modifier = modifier
             .fillMaxWidth()
@@ -752,9 +680,92 @@ fun CellarBottomAppBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                buttons.forEach { button ->
-                    BottomBarButton(button, Modifier.weight(1f))
+                // Home
+                BottomBarButton(
+                    title = { "Cellar" },
+                    icon = { R.drawable.table_view_old },
+                //    destination = { HomeDestination },
+                    onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
+                    activeColor = { if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Stats
+                BottomBarButton(
+                    title = { "Stats" },
+                    icon = { R.drawable.bar_chart },
+                //    destination = StatsDestination,
+                    onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
+                    enabled = { !databaseEmpty },
+                    activeColor = {
+                        if (currentDestination == StatsDestination && !clickToAdd) onPrimaryLight
+                        else if (databaseEmpty) navIcon.copy(alpha = 0.5f)
+                        else navIcon
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // 3. Dates
+                BottomBarButton(
+                    title = { "Dates" },
+                    icon = { R.drawable.calendar_month },
+                //    destination = DatesDestination,
+                    onClick = { filterViewModel.getPositionTrigger(); navigateToDates() },
+                    enabled = { datesExist },
+                    showIndicator = { tinsReady },
+                    indicatorColor = { if (tinsReady) indicatorCircle else Color.Transparent },
+                    borderColor =  {
+                        if (tinsReady) {
+                            if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight else navIcon
+                        } else Color.Transparent
+                    },
+                    activeColor = {
+                        if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
+                        else if (datesExist) navIcon
+                        else navIcon.copy(alpha = 0.5f)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // 4. Filtering
+                if (!isTwoPane) {
+                    BottomBarButton(
+                        title = { "Filter" },
+                        icon = { R.drawable.filter_24 },
+                        onClick = filterViewModel::openBottomSheet,
+                        enabled = { if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty },
+                        showIndicator = { filteringApplied },
+                        indicatorColor = {
+                            if (filteringApplied) {
+                                if (searchPerformed && currentDestination == HomeDestination) {
+                                    indicatorCircle.copy(alpha = 0.5f)
+                                } else indicatorCircle
+                            } else Color.Transparent
+                        },
+                        borderColor = {
+                            if (filteringApplied) {
+                                if (searchPerformed && currentDestination == HomeDestination) {
+                                    indicatorBorderCorrection
+                                } else {
+                                    if (sheetOpen) {
+                                        onPrimaryLight
+                                    } else navIcon
+                                }
+                            } else Color.Transparent
+                        },
+                        activeColor = { if (sheetOpen) onPrimaryLight else navIcon },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
+
+                // 5. Add
+                BottomBarButton(
+                    title = { "Add" },
+                    icon = { R.drawable.add_circle },
+                    onClick = { filterViewModel.updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
+                    activeColor = { if (clickToAdd) onPrimaryLight else navIcon },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -763,8 +774,15 @@ fun CellarBottomAppBar(
 @Stable
 @Composable
 private fun BottomBarButton(
-    data: BottomBarButtonData,
-    modifier: Modifier = Modifier
+    title: () -> String,
+    icon: () -> Int,
+    onClick: () -> Unit,
+    activeColor: () -> Color,
+    modifier: Modifier = Modifier,
+    enabled: () -> Boolean = { true },
+    showIndicator: () -> Boolean = { false },
+    indicatorColor: () -> Color = { Color.Transparent },
+    borderColor: () -> Color = { Color.Transparent },
 ) {
     Box(
         modifier = modifier
@@ -772,38 +790,38 @@ private fun BottomBarButton(
         contentAlignment = Alignment.Center,
     ) {
         // The Indicator
-        if (data.showIndicator) {
+        if (showIndicator()) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
                     .offset(x = 13.dp, y = (-17).dp)
                     .clip(CircleShape)
-                    .border(1.5.dp, data.borderColor, CircleShape)
-                    .background(data.indicatorColor)
+                    .border(1.5.dp, borderColor(), CircleShape)
+                    .background(indicatorColor())
             )
         }
 
         IconButton(
-            onClick = data.onClick,
-            enabled = data.enabled,
+            onClick = onClick,
+            enabled = enabled(),
             modifier = Modifier.padding(0.dp)
         ) {
             Icon(
-                painter = painterResource(id = data.icon),
-                contentDescription = data.title,
+                painter = painterResource(id = icon()),
+                contentDescription = title(),
                 modifier = Modifier
                     .size(26.dp)
                     .offset(y = (-8).dp),
-                tint = data.activeColor
+                tint = activeColor()
             )
         }
 
         Text(
-            text = data.title,
+            text = title(),
             modifier = Modifier.offset(y = 13.dp),
             fontSize = 11.sp,
-            fontWeight = if (data.activeColor == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
-            color = data.activeColor
+            fontWeight = if (activeColor() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
+            color = activeColor()
         )
     }
 }

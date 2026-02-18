@@ -1,13 +1,11 @@
 package com.sardonicus.tobaccocellar.ui
 
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation3.runtime.NavKey
 import com.sardonicus.tobaccocellar.ExportType
 import com.sardonicus.tobaccocellar.MenuState
 import com.sardonicus.tobaccocellar.data.Components
@@ -218,10 +216,10 @@ class FilterViewModel (
 
     }
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = false
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     private val _selectedContainer = MutableStateFlow<List<String>>(emptyList())
     val selectedContainer: StateFlow<List<String>> = _selectedContainer
@@ -2822,19 +2820,6 @@ data class ExportCsvState(
     val exportRatingString: Pair<String, String> = Pair("", ""),
     val allItems: Boolean = true,
     val selectedIndex: Int = 0
-)
-
-@Stable
-data class BottomBarButtonData(
-    val title: String,
-    val icon: Int,
-    val destination: NavKey? = null,
-    val onClick: () -> Unit,
-    val enabled: Boolean = true,
-    val showIndicator: Boolean = false,
-    val indicatorColor: Color = Color.Transparent,
-    val borderColor: Color = Color.Transparent,
-    val activeColor: Color
 )
 
 @Stable
