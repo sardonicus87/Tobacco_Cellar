@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.data
 
-import android.content.Context
 import android.graphics.Color
 import android.graphics.pdf.PdfDocument
 import android.os.Bundle
@@ -18,7 +17,6 @@ import java.io.FileOutputStream
 import kotlin.math.roundToInt
 
 class PrintHelper(
-    private val context: Context,
     private val documentName: String,
     private val content: String,
     private val fontSize: Float = 12f,
@@ -180,7 +178,7 @@ class PrintHelper(
         val pdfDocument = PdfDocument()
 
         try {
-            for (pageIndex in 0 until calculatedTotalPages) {
+            repeat(calculatedTotalPages) { pageIndex ->
                 if (cancellationSignal?.isCanceled == true) {
                     callback.onWriteCancelled()
                     return

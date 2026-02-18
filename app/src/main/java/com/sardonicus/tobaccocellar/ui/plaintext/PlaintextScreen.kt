@@ -555,7 +555,7 @@ fun PlaintextBody(
                 val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
                 val jobName = "Plaintext Output"
 
-                printManager?.print(jobName, PrintHelper(context, jobName, printList, font, margin), null)
+                printManager?.print(jobName, PrintHelper(jobName, printList, font, margin), null)
                 savePrintOptions(font, margin)
                 showPrintDialog(false)
             },
