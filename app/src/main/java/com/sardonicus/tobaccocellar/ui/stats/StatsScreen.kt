@@ -37,8 +37,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -104,17 +104,7 @@ fun StatsScreen(
     val selectionFocused by viewModel.selectionFocused.collectAsState()
     val selectionKey by viewModel.selectionKey.collectAsState()
 
-    var showLoading by remember { mutableStateOf(false) }
-    val updateLoading: (Boolean) -> Unit = { showLoading = it }
-
-    LaunchedEffect(Unit, rawStats.rawLoading, filteredStats.filteredLoading) {
-        delay(10)
-        updateLoading(true)
-
-        if (!rawStats.rawLoading && !filteredStats.filteredLoading) {
-            updateLoading(false)
-        }
-    }
+    val showLoading by viewModel.showLoading.collectAsState()
 
     BackHandler(selectionFocused) {
         if (selectionFocused) {
@@ -131,7 +121,11 @@ fun StatsScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
+            .clickable(
+                indication = null,
+                interactionSource = null,
+                onClick = viewModel::resetSelection
+            ),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.stats_title),
@@ -166,8 +160,8 @@ fun StatsScreen(
                     rawStats = rawStats,
                     filteredStats = filteredStats,
                     availableSections = availableSections,
-                    viewmodel = viewModel,
-                    selectionKey = selectionKey,
+                    viewModel = viewModel,
+                    selectionKey = { selectionKey },
                     selectionFocused = viewModel::updateFocused,
                     modifier = modifier
                         .fillMaxSize(),
@@ -182,27 +176,26 @@ private fun StatsBody(
     rawStats: RawStats,
     filteredStats: FilteredStats,
     availableSections: AvailableSections,
-    viewmodel: StatsViewModel,
-    selectionKey: Int,
+    viewModel: StatsViewModel,
+    selectionKey: () -> Int,
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val separatorColor = colorScheme.secondary
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val expanded = viewmodel.expanded
-
+    val expanded by viewModel.expanded.collectAsState()
     val contract = {
         scope.launch {
             lazyListState.scrollToItem(0)
             while (lazyListState.canScrollBackward) {
                 delay(5)
             }
-            viewmodel.updateExpanded(false)
+            viewModel.updateExpanded(false)
             delay(10)
         }
     }
 
+    val showValue by viewModel.showValue.collectAsState()
 
     LazyColumn(
         state = lazyListState,
@@ -210,119 +203,31 @@ private fun StatsBody(
             .fillMaxWidth(),
         verticalArrangement = Arrangement.Top
     ) {
+        item { Header("Quick Stats", Modifier.padding(top = 1.dp)) }
+
+        item { Spacer(Modifier.height(10.dp)) }
+
         item {
-            Column {
-                Spacer(Modifier.height(1.dp))
-
-                // Quick Stats //
-                Box {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(color = LocalCustomColors.current.backgroundVariant)
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.quick_stats),
-                            modifier = Modifier
-                                .padding(start = 8.dp),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Start,
-                            color = colorScheme.onBackground
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .drawBehind {
-                                val strokeWidth = Dp.Hairline.toPx()
-                                val yOffset = size.height - strokeWidth / 2
-
-                                drawLine(
-                                    color = separatorColor,
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, strokeWidth),
-                                    strokeWidth = strokeWidth
-                                )
-
-                                drawLine(
-                                    color = separatorColor,
-                                    start = Offset(0f, yOffset),
-                                    end = Offset(size.width, yOffset),
-                                    strokeWidth = strokeWidth
-                                )
-                            }
-                    )
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                QuickStatsSection(
-                    rawStats = rawStats,
-                    filteredStats = filteredStats,
-                    availableSections = availableSections,
-                    selectionKey = selectionKey,
-                    selectionFocused = selectionFocused,
-                    contracted = { if (it) contract() },
-                    expanded = expanded,
-                    updateExpanded = { viewmodel.updateExpanded(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(start = 24.dp),
-                )
-            }
+            QuickStatsSection(
+                rawStats = rawStats,
+                filteredStats = filteredStats,
+                availableSections = availableSections,
+                selectionKey = selectionKey,
+                selectionFocused = selectionFocused,
+                contracted = { if (it) contract() },
+                expanded = expanded,
+                updateExpanded = { viewModel.updateExpanded(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(start = 24.dp),
+            )
         }
 
         item { Spacer(Modifier.height(10.dp)) }
 
         // Charts //
-        item {
-            Box {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(color = LocalCustomColors.current.backgroundVariant)
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                ) {
-                    Text(
-                        text = "Charts",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Start,
-                        color = colorScheme.onBackground
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .drawBehind {
-                            val strokeWidth = Dp.Hairline.toPx()
-                            val yOffset = size.height - strokeWidth / 2
-
-                            drawLine(
-                                color = separatorColor,
-                                start = Offset(0f, 0f),
-                                end = Offset(size.width, strokeWidth),
-                                strokeWidth = strokeWidth
-                            )
-
-                            drawLine(
-                                color = separatorColor,
-                                start = Offset(0f, yOffset),
-                                end = Offset(size.width, yOffset),
-                                strokeWidth = strokeWidth
-                            )
-                        }
-                )
-            }
-        } // label
+        item { Header("Charts") }
 
         item {
             Column(
@@ -359,12 +264,13 @@ private fun StatsBody(
             ) {
                 ChartsFormat(
                     label = "Brands by Number of Entries",
-                    chartData = filteredStats.brandsByEntries
+                    chartData = { filteredStats.brandsByEntries },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                 )
             }
         }
 
-        // TODO make a map for these sections like quick stats and do items {} loop?
         if (filteredStats.brandsByQuantity.count() > 1) {
             item {
                 HorizontalDivider(
@@ -374,7 +280,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Brands by \"No. of Tins\"",
-                    chartData = filteredStats.brandsByQuantity,
+                    chartData = { filteredStats.brandsByQuantity },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -388,7 +296,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Types by Entries",
-                    chartData = filteredStats.typesByEntries,
+                    chartData = { filteredStats.typesByEntries },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -402,7 +312,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Types by \"No. of Tins\"",
-                    chartData = filteredStats.typesByQuantity,
+                    chartData = { filteredStats.typesByQuantity },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -417,7 +329,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Ratings Distribution",
-                    histogramData = filteredStats.ratingsDistribution,
+                    histogramData = { filteredStats.ratingsDistribution },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     showHistogram = true,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
@@ -432,7 +346,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Fav/Dislike by Entries",
-                    chartData = filteredStats.favDisByEntries,
+                    chartData = { filteredStats.favDisByEntries },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -446,7 +362,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Subgenres by Entries",
-                    chartData = filteredStats.subgenresByEntries,
+                    chartData = { filteredStats.subgenresByEntries },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -460,7 +378,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Subgenres by \"No. of Tins\"",
-                    chartData = filteredStats.subgenresByQuantity,
+                    chartData = { filteredStats.subgenresByQuantity },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -474,7 +394,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Cuts by Entries",
-                    chartData = filteredStats.cutsByEntries,
+                    chartData = { filteredStats.cutsByEntries },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -490,7 +412,9 @@ private fun StatsBody(
                 )
                 ChartsFormat(
                     label = "Cuts by \"No. of Tins\"",
-                    chartData = filteredStats.cutsByQuantity,
+                    chartData = { filteredStats.cutsByQuantity },
+                    showValue = { showValue },
+                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -502,12 +426,63 @@ private fun StatsBody(
     }
 }
 
+
 @Composable
-fun QuickStatsSection(
+private fun Header(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        val separatorColor = colorScheme.secondary
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = LocalCustomColors.current.backgroundVariant)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                modifier = Modifier
+                    .padding(start = 8.dp),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Start,
+                color = colorScheme.onBackground
+            )
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .drawBehind {
+                    val strokeWidth = Dp.Hairline.toPx()
+                    val yOffset = size.height - strokeWidth / 2
+
+                    drawLine(
+                        color = separatorColor,
+                        start = Offset(0f, 0f),
+                        end = Offset(size.width, strokeWidth),
+                        strokeWidth = strokeWidth
+                    )
+
+                    drawLine(
+                        color = separatorColor,
+                        start = Offset(0f, yOffset),
+                        end = Offset(size.width, yOffset),
+                        strokeWidth = strokeWidth
+                    )
+                }
+        )
+    }
+}
+
+@Composable
+private fun QuickStatsSection(
     rawStats: RawStats,
     filteredStats: FilteredStats,
     availableSections: AvailableSections,
-    selectionKey: Int,
+    selectionKey: () -> Int,
     selectionFocused: (Boolean) -> Unit,
     contracted: (Boolean) -> Unit,
     expanded: Boolean,
@@ -554,18 +529,12 @@ fun QuickStatsSection(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            key(selectionKey) { SelectionContainer(Modifier
+            key(selectionKey()) { SelectionContainer(Modifier
                 .weight(1f)
-                .onFocusChanged {
-                    if (it.isFocused) {
-                        selectionFocused(true)
-                    } else {
-                        selectionFocused(false)
-                    }
-                }
+                .onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
-                    text = "${rawStats.itemsCount} blends, ${rawStats.brandsCount} brands\n" +
+                    text = "${rawStats.blendsCount} blends, ${rawStats.brandsCount} brands\n" +
                             if (rawStats.averageRating.isNotBlank()) { "${rawStats.averageRating} average rating\n" } else { "" } +
                             "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
                             "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
@@ -581,18 +550,12 @@ fun QuickStatsSection(
                 )
             } }
             Spacer(Modifier.width(8.dp))
-            key(selectionKey) { SelectionContainer(Modifier
+            key(selectionKey()) { SelectionContainer(Modifier
                 .weight(1f)
-                .onFocusChanged {
-                    if (it.isFocused) {
-                        selectionFocused(true)
-                    } else {
-                        selectionFocused(false)
-                    }
-                }
+                .onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
-                    text = "${filteredStats.itemsCount} blends, ${filteredStats.brandsCount} brands\n" +
+                    text = "${filteredStats.blendsCount} blends, ${filteredStats.brandsCount} brands\n" +
                             if (rawStats.averageRating.isNotBlank()) { "${filteredStats.averageRating} average rating\n" } else { "" } +
                             "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
                             "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
@@ -699,7 +662,7 @@ private fun StatSubSection(
     label: String,
     rawField: Map<String, Int>,
     filteredField: Map<String, Int>,
-    selectionKey: Int,
+    selectionKey: () -> Int,
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -734,16 +697,10 @@ private fun StatSubSection(
                 HorizontalDivider(Modifier
                     .padding(bottom = 20.dp)
                     .fillMaxWidth(.65f), 1.dp)
-                key(selectionKey) { SelectionContainer(
+                key(selectionKey()) { SelectionContainer(
                     Modifier
                         .fillMaxWidth()
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                selectionFocused(true)
-                            } else {
-                                selectionFocused(false)
-                            }
-                        }
+                        .onFocusChanged { selectionFocused(it.isFocused) }
                 ) {
                     Row(
                         modifier = Modifier
@@ -817,14 +774,8 @@ private fun StatSubSection(
                 HorizontalDivider(Modifier
                     .padding(bottom = 20.dp)
                     .fillMaxWidth(.65f), 1.dp)
-                key(selectionKey) { SelectionContainer(
-                    Modifier.onFocusChanged {
-                        if (it.isFocused) {
-                            selectionFocused(true)
-                        } else {
-                            selectionFocused(false)
-                        }
-                    }
+                key(selectionKey()) { SelectionContainer(
+                    Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                 ) {
                     Row(
                         modifier = Modifier
@@ -936,13 +887,18 @@ private fun StatSubSection(
 @Composable
 private fun ChartsFormat(
     label: String,
+    showValue: () -> Boolean,
+    onShowValue: () -> Unit,
     modifier: Modifier = Modifier,
-    chartData: Map<String, Int> = mapOf(),
-    histogramData: RatingsDistribution = RatingsDistribution(),
+    chartData: () -> Map<String, Int> = { mapOf() },
+    histogramData: () -> RatingsDistribution = { RatingsDistribution() },
     showHistogram: Boolean = false
 ) {
-    val countVal = if (!showHistogram) chartData.values.sum() else histogramData.distribution.values.sum()
-    val showValue = remember { mutableStateOf(false) }
+    val countVal by remember(showHistogram) {
+        derivedStateOf {
+            if (!showHistogram) chartData().values.sum() else histogramData().distribution.values.sum()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -970,12 +926,12 @@ private fun ChartsFormat(
                 textAlign = TextAlign.Start
             )
             Text(
-                text = if (!showValue.value) "Show Values" else "Hide Values",
+                text = if (!showValue()) "Show Values" else "Hide Values",
                 modifier = Modifier
                     .clickable(
                         indication = LocalIndication.current,
                         interactionSource = null
-                    ) { showValue.value = !showValue.value }
+                    ) { onShowValue() }
                     .width(75.dp),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -991,10 +947,10 @@ private fun ChartsFormat(
         }
         if (!showHistogram) {
             PieChart(
-                data = chartData,
+                data = chartData(),
                 showLabels = true,
                 showPercentages = true,
-                showValues = showValue.value,
+                showValues = showValue(),
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
                     .fillMaxWidth(0.7f),
@@ -1008,8 +964,8 @@ private fun ChartsFormat(
             )
         } else {
             HistogramChart(
-                data = histogramData,
-                showValues = showValue.value,
+                data = histogramData(),
+                showValues = showValue(),
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
                     .fillMaxWidth(0.7f)
@@ -1429,10 +1385,7 @@ private fun HistogramChart(
     modifier: Modifier = Modifier,
     showValues: Boolean = false,
 ) {
-    val distribution = data.distribution
-    val unratedCount = data.unratedCount
-
-    val maxCount = (distribution.values.maxOrNull() ?: 0).coerceAtLeast(1)
+    val maxCount = (data.distribution.values.maxOrNull() ?: 0).coerceAtLeast(1)
 
     val density = LocalDensity.current
     var currentWidth by remember { mutableStateOf(0.dp) }
@@ -1458,7 +1411,7 @@ private fun HistogramChart(
                     .padding(bottom = 16.dp)
             ) {
                 ratingSteps.forEach {
-                    val count = distribution.getOrDefault(it, 0)
+                    val count = data.distribution.getOrDefault(it, 0)
                     val barHeight = count.toFloat() / maxCount
 
                     Column(
@@ -1537,9 +1490,9 @@ private fun HistogramChart(
             }
 
             // null count
-            if (unratedCount > 0) {
+            if (data.unratedCount > 0) {
                 Text(
-                    text = "(Unrated: $unratedCount)",
+                    text = "(Unrated: ${data.unratedCount})",
                     color = LocalContentColor.current,
                     fontSize = 12.sp,
                     modifier = Modifier
