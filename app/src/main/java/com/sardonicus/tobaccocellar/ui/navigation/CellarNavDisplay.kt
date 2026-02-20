@@ -41,7 +41,7 @@ import com.sardonicus.tobaccocellar.ui.dates.DatesScreen
 import com.sardonicus.tobaccocellar.ui.dates.DatesViewModel
 import com.sardonicus.tobaccocellar.ui.details.BlendDetailsScreen
 import com.sardonicus.tobaccocellar.ui.details.BlendDetailsViewModel
-import com.sardonicus.tobaccocellar.ui.home.FilterPane
+import com.sardonicus.tobaccocellar.ui.filtering.FilterPane
 import com.sardonicus.tobaccocellar.ui.home.HelpScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
