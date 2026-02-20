@@ -1765,6 +1765,10 @@ class FilterViewModel (
 
 
     // Final filter sections UI states //
+    private val _totalDrag = MutableStateFlow(0f)
+    val totalDrag = _totalDrag.asStateFlow()
+    fun updateTotalDrag(drag: Float) { _totalDrag.value = drag }
+
     val filteredBrands = combine(
         brandSearchText,
         availableBrands
@@ -1953,11 +1957,8 @@ class FilterViewModel (
     fun onShowRatingPop() { _showRatingPop.value = !_showRatingPop.value }
 
 
-    val rangeEnabled = combine(
-        ratingLowEnabled,
-        ratingHighEnabled
-    ) { low, high ->
-        low != null && high != null
+    val rangeEnabled = unifiedFilteredItems.map {
+        it.any { item -> item.items.rating != null }
     }
         .flowOn(Dispatchers.Default)
         .stateIn(
