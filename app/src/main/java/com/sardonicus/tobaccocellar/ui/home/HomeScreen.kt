@@ -114,9 +114,9 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarBottomAppBar
 import com.sardonicus.tobaccocellar.CellarTopAppBar
-import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -999,7 +999,7 @@ private fun JumpToButton(
 }
 
 @Composable
-fun rememberJumpToState(
+private fun rememberJumpToState(
     lazyListState: LazyListState,
 ): Pair<State<Boolean>, State<ScrollDirection>> {
     val scrollDirection = produceState(initialValue = ScrollDirection.UP, key1 = lazyListState) {
@@ -1085,7 +1085,7 @@ private fun ItemMenu(
 
 /** List View Mode **/
 @Composable
-fun ListViewMode(
+private fun ListViewMode(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
@@ -1522,7 +1522,7 @@ enum class TableColumn(val title: String) {
 }
 
 @Composable
-fun ColumnVisibilityPopup(
+private fun ColumnVisibilityPopup(
     viewModel: HomeViewModel,
     onVisibilityChange: (TableColumn, Boolean) -> Unit,
     onDismiss: () -> Unit,
@@ -1579,7 +1579,7 @@ fun ColumnVisibilityPopup(
 }
 
 @Composable
-fun TableViewMode(
+private fun TableViewMode(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
@@ -1706,7 +1706,7 @@ fun TableViewMode(
 
 
 @Composable
-fun TableHeaderRow(
+private fun TableHeaderRow(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
     layoutData: TableLayoutData,
@@ -1849,7 +1849,7 @@ fun TableHeaderRow(
 }
 
 @Composable
-fun TableItem(
+private fun TableItem(
     item: ItemsListState,
     layoutData: TableLayoutData,
     horizontalScroll: ScrollState,
@@ -1957,7 +1957,7 @@ fun TableItem(
 }
 
 @Composable
-fun TableTinsList(
+private fun TableTinsList(
     filteredTins: TinsList,
     modifier: Modifier = Modifier
 ) {
@@ -2045,7 +2045,7 @@ fun TableTinsList(
 
 
 @Composable
-fun ImportantAlertDialog(
+private fun ImportantAlertDialog(
     importantAlertState: ImportantAlertState,
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier
