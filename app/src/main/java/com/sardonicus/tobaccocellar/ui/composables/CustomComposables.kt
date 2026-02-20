@@ -23,11 +23,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxColors
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
@@ -53,7 +55,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +86,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
@@ -92,7 +94,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.ceil
 
 /** Fade effect boxes. If you want a set height and scrolling effect, add scroll modifier to
@@ -849,43 +850,62 @@ fun <T> OverflowRow(
 }
 
 
-/** pager indicator **/
-data class IndicatorSizes(val current: Dp, val other: Dp)
-
 @Composable
-fun PagerIndicator(
-    pagerState: PagerState,
+fun CheckboxWithLabel(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    indicatorSize: IndicatorSizes = IndicatorSizes(current = 8.dp, other = 7.dp),
+    fontSize: TextUnit = 15.sp,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    height: Dp = 36.dp,
+    enabled: Boolean = true,
+    fontColor: Color = LocalContentColor.current,
+    colors: CheckboxColors = CheckboxDefaults.colors(),
+    allowResize: Boolean = false,
+    interactionSource: MutableInteractionSource? = remember { MutableInteractionSource() }
 ) {
-    val animationScope = rememberCoroutineScope()
-
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier
+            .padding(0.dp)
+            .height(height)
+            .offset(x = (-2).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
-        repeat(pagerState.pageCount) {
-            val color = if (pagerState.currentPage == it) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
-            }
-            val size =
-                if (pagerState.currentPage == it) indicatorSize.current else indicatorSize.other
-
-            Box(
+        Box(
+            modifier = Modifier,
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
                 modifier = Modifier
-                    .padding(2.dp)
-                    .clip(CircleShape)
-                    .background(color)
-                    .size(size)
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { animationScope.launch { pagerState.animateScrollToPage(it) } }
+                    .padding(0.dp),
+                enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource
             )
         }
+        Text(
+            text = text,
+            style = LocalTextStyle.current.copy(
+                color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
+                lineHeight = lineHeight
+            ),
+            modifier = Modifier
+                .offset(x = (-4).dp)
+                .padding(end = 6.dp),
+            maxLines = 1,
+            fontSize = if (!allowResize) fontSize else TextUnit.Unspecified,
+            autoSize = if (!allowResize) { null } else {
+                TextAutoSize.StepBased(
+                    maxFontSize = fontSize,
+                    minFontSize = 9.sp,
+                    stepSize = .2.sp
+                )
+            }
+        )
     }
 }
 

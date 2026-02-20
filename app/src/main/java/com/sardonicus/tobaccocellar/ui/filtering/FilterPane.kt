@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.home
+package com.sardonicus.tobaccocellar.ui.filtering
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
-import com.sardonicus.tobaccocellar.FilterLayout
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
