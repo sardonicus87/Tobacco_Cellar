@@ -1843,6 +1843,11 @@ class FilterViewModel (
             initialValue = emptyList()
         )
 
+    private val _clearBrandTrigger = MutableStateFlow(0)
+    val clearBrandTrigger = _clearBrandTrigger.asStateFlow()
+    fun updateClearBrandTrigger() { _clearBrandTrigger.value++ }
+
+
     private val _chipBoxWidth = MutableStateFlow(0.dp)
     val chipBoxWidth = _chipBoxWidth.asStateFlow()
     fun updateChipBoxWidth(width: Dp) { _chipBoxWidth.value = width }
@@ -2691,6 +2696,8 @@ class FilterViewModel (
         sheetSelectedExcludeBrands.value = emptyList()
         _selectedExcludeBrands.value = emptyList()
 
+        updateClearBrandTrigger()
+
         _shouldScrollUp.value = true
     }
 
@@ -2756,6 +2763,8 @@ class FilterViewModel (
         _selectedUnfinished.value = false
 
         _selectionHistory.value = emptyList()
+
+        updateClearBrandTrigger()
 
         _shouldScrollUp.value = true
     }

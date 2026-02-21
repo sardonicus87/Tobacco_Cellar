@@ -278,6 +278,7 @@ private fun SelectableBrandsRow(
     val filteredBrands by filterViewModel.filteredBrands.collectAsState()
     val unselectedBrands by filterViewModel.unselectedBrands.collectAsState()
     val brandEnabled by filterViewModel.brandEnabled.collectAsState()
+    val clearTrigger by filterViewModel.clearBrandTrigger.collectAsState()
 
     val clickAction = remember {
         { brand: String ->
@@ -319,8 +320,7 @@ private fun SelectableBrandsRow(
             }
         }
 
-        LaunchedEffect(filteredBrands) { lazyListState.scrollToItem(0) }
-        LaunchedEffect(brandEnabled) { lazyListState.scrollToItem(0) }
+        LaunchedEffect(filteredBrands, brandEnabled, clearTrigger) { lazyListState.scrollToItem(0) }
     }
 }
 
@@ -441,7 +441,6 @@ private fun SelectedBrandChipBox(
 
                 Box {
                     val nothingSelected by remember { derivedStateOf { selectedBrands.isNotEmpty() } }
-                    //   if (selectedBrands.isEmpty())
                     Text(
                         text = if (nothingSelected) "" else if (excludeSwitch) "Excluded Brands" else "Included Brands",
                         modifier = Modifier
