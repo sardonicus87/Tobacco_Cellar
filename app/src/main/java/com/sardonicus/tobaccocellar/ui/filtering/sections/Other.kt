@@ -8,7 +8,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,11 +22,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +58,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -152,35 +155,39 @@ private fun FavoriteDislikeFilters(
     Box {
         Row {
             TriStateCheckWithLabel(
-                text = "Favorites",
-                state = favoritesSelection,
+                text = { "Favorites" },
+                state = { favoritesSelection },
                 onClick = filterViewModel::updateFavSelection,
-                colors = CheckboxDefaults.colors(
-                    checkedColor =
-                        when (favoritesSelection) {
-                            ToggleableState.On -> MaterialTheme.colorScheme.primary
-                            ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
-                            else -> Color.Transparent
-                        },
-                ),
-                enabled = favoritesEnabled,
-                maxLines = 1,
+                colors = {
+                    CheckboxDefaults.colors(
+                        checkedColor =
+                            when (favoritesSelection) {
+                                ToggleableState.On -> MaterialTheme.colorScheme.primary
+                                ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
+                                else -> Color.Transparent
+                            },
+                    )
+                },
+                enabled = { favoritesEnabled },
+                maxLines = { 1 },
             )
 
             TriStateCheckWithLabel(
-                text = "Dislikes",
-                state = dislikedsSelection,
+                text = { "Dislikes" },
+                state = { dislikedsSelection },
                 onClick = filterViewModel::updateDisSelection,
-                colors = CheckboxDefaults.colors(
-                    checkedColor =
-                        when (dislikedsSelection) {
-                            ToggleableState.On -> MaterialTheme.colorScheme.primary
-                            ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
-                            else -> Color.Transparent
-                        },
-                ),
-                enabled = dislikedsEnabled,
-                maxLines = 1,
+                colors = {
+                    CheckboxDefaults.colors(
+                        checkedColor =
+                            when (dislikedsSelection) {
+                                ToggleableState.On -> MaterialTheme.colorScheme.primary
+                                ToggleableState.Indeterminate -> MaterialTheme.colorScheme.error
+                                else -> Color.Transparent
+                            },
+                    )
+                },
+                enabled = { dislikedsEnabled },
+                maxLines = { 1 },
             )
         }
         if (!favDisExist() && ratingsExist()) {
@@ -693,40 +700,39 @@ private fun InStockSection(
         modifier = modifier
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
-            .width(IntrinsicSize.Max)
             .padding(vertical = 3.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        CheckboxWithLabel(
-            text = "In-stock",
-            checked = inStock,
+        LocalCheckboxWithLabel(
+            text = { "In-stock" },
+            checked = { inStock },
             onCheckedChange = filterViewModel::updateSelectedInStock,
             modifier = Modifier,
-            enabled = inStockEnabled,
-            allowResize = true
+            enabled = { inStockEnabled },
+            allowResize = { true }
         )
-        CheckboxWithLabel(
-            text = "Out",
-            checked = outOfStock,
+        LocalCheckboxWithLabel(
+            text = { "Out" },
+            checked = { outOfStock },
             onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
-            enabled = outOfStockEnabled,
-            allowResize = false
+            enabled = { outOfStockEnabled },
+            allowResize = { false }
         )
     }
 }
 
+
 @Composable
 private fun TriStateCheckWithLabel(
-    text: String,
-    state: ToggleableState,
+    text: () -> String,
+    state: () -> ToggleableState,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    fontColor: Color = LocalContentColor.current,
-    maxLines: Int = Int.MAX_VALUE,
-    colors: CheckboxColors = CheckboxDefaults.colors(),
+    enabled: () -> Boolean = { true },
+    maxLines: () -> Int = { 1 },
+    colors: @Composable () -> CheckboxColors = { CheckboxDefaults.colors() },
     interactionSource: MutableInteractionSource? = remember { MutableInteractionSource() }
 ) {
     Row(
@@ -739,23 +745,78 @@ private fun TriStateCheckWithLabel(
     ) {
         Box {
             TriStateCheckbox(
-                state = state,
+                state = state(),
                 onClick = onClick,
                 modifier = Modifier
                     .padding(0.dp),
-                enabled = enabled,
-                colors = colors,
+                enabled = enabled(),
+                colors = colors(),
                 interactionSource = interactionSource
             )
         }
         Text(
-            text = text,
+            text = text(),
             modifier = Modifier
                 .offset(x = (-4).dp)
                 .padding(end = 6.dp),
-            color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
+            color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
             fontSize = 15.sp,
-            maxLines = maxLines,
+            maxLines = maxLines(),
+        )
+    }
+}
+
+
+@Composable
+fun LocalCheckboxWithLabel(
+    text: () -> String,
+    checked: () -> Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: () -> Boolean = { true },
+    allowResize: () -> Boolean = { false },
+    interactionSource: MutableInteractionSource? = remember { MutableInteractionSource() }
+) {
+    Row(
+        modifier = modifier
+            .padding(0.dp)
+            .height(36.dp)
+            .offset(x = (-2).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier,
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Checkbox(
+                checked = checked(),
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier
+                    .padding(0.dp),
+                enabled = enabled(),
+                colors = CheckboxDefaults.colors(),
+                interactionSource = interactionSource
+            )
+        }
+        Text(
+            text = text(),
+            style = LocalTextStyle.current.copy(
+                color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
+                lineHeight = TextUnit.Unspecified
+            ),
+            modifier = Modifier
+                .offset(x = (-4).dp)
+                .padding(end = 6.dp),
+            maxLines = 1,
+            fontSize = if (!allowResize()) 15.sp else TextUnit.Unspecified,
+            autoSize = if (!allowResize()) { null } else {
+                TextAutoSize.StepBased(
+                    maxFontSize = 15.sp,
+                    minFontSize = 9.sp,
+                    stepSize = .2.sp
+                )
+            }
         )
     }
 }
