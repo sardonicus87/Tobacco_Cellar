@@ -356,11 +356,11 @@ fun isMetricLocale(): Boolean {
     }
 }
 
-fun formatDecimal(number: Double?, places: Int = 2): String {
+fun formatDecimal(number: Double?, places: Int = 2, drop: Boolean = true): String {
     if (number == null) return ""
 
     val formatted = NumberFormat.getNumberInstance(Locale.getDefault())
-    formatted.minimumFractionDigits = 0
+    formatted.minimumFractionDigits = if (drop) 0 else (places)
     formatted.maximumFractionDigits = places
     formatted.roundingMode = java.math.RoundingMode.HALF_UP
 
