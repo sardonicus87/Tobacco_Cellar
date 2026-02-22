@@ -226,6 +226,27 @@ class StatsViewModel(
                 .entries
                 .sortedByDescending { it.value }
                 .let { reduceToTen(it) },
+            brandsByRating = filteredItems
+                .filter { it.items.rating != null }
+                .groupBy { it.items.brand }
+                .mapValues { (_, items) ->
+                    val count = items.size
+                    val average = items.sumOf { it.items.rating!! } / count
+
+                    val m = 2
+                    val globalAverage = averageRating ?: 0.0
+                    val weighted = ((count * average) + (m * globalAverage)) / (count + m)
+
+                    BrandRatingStats(
+                        averageRating = average,
+                        weightedRating = weighted,
+                        ratingsCount = count
+                    )
+                }
+                .toList()
+                .sortedByDescending { it.second.weightedRating }
+                .take(10)
+                .toMap(),
             typesByEntries = filteredItems.groupingBy {
                 it.items.type.ifBlank { "Unassigned" } }
                 .eachCount()
@@ -495,6 +516,7 @@ data class FilteredStats(
 
     val brandsByEntries: Map<String, Int> = emptyMap(),
     val brandsByQuantity: Map<String, Int> = emptyMap(),
+    val brandsByRating: Map<String, BrandRatingStats> = emptyMap(),
     val typesByEntries: Map<String, Int> = emptyMap(),
     val typesByQuantity: Map<String, Int> = emptyMap(),
     val ratingsDistribution: RatingsDistribution = RatingsDistribution(),
@@ -503,6 +525,13 @@ data class FilteredStats(
     val subgenresByQuantity: Map<String, Int> = emptyMap(),
     val cutsByEntries: Map<String, Int> = emptyMap(),
     val cutsByQuantity: Map<String, Int> = emptyMap(),
+)
+
+@Stable
+data class BrandRatingStats(
+    val averageRating: Double = 0.0,
+    val weightedRating: Double = 0.0,
+    val ratingsCount: Int = 0,
 )
 
 @Stable

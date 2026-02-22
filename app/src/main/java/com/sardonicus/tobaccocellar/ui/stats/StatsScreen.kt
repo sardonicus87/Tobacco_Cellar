@@ -288,6 +288,101 @@ private fun StatsBody(
                 )
             }
         }
+
+        if (filteredStats.brandsByRating.count() > 3) {
+            item {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    thickness = 1.dp,
+                )
+
+                Column(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val countVal = filteredStats.brandsByRating.values.sumOf { it.ratingsCount }
+                    Text(
+                        text = "Brands by Average Rating",
+                        modifier = Modifier,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "(Data Total: $countVal)",
+                        modifier = Modifier,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Start
+                    )
+                    Column (
+                        modifier = Modifier
+                            .padding(top = 20.dp, bottom = 44.dp)
+                            .fillMaxWidth(0.7f),
+                        verticalArrangement = Arrangement.Top,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "Avg Rating (Weighted Avg - Count)",
+                            fontSize = 12.sp,
+                            color = LocalContentColor.current.copy(alpha = 0.75f),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+                        ) {
+                            Column(Modifier.width(IntrinsicSize.Max)) {
+                                filteredStats.brandsByRating.forEach {
+                                    val index = filteredStats.brandsByRating.keys.indexOf(it.key)
+                                    Text(
+                                        text = "${index + 1}.",
+                                        modifier = Modifier,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                            Column(Modifier.weight(1f)) {
+                                filteredStats.brandsByRating.forEach {
+                                    Text(
+                                        text = it.key,
+                                        modifier = Modifier,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            Column(Modifier.width(IntrinsicSize.Max)) {
+                                filteredStats.brandsByRating.forEach {
+                                    Text(
+                                        text = formatDecimal(it.value.averageRating),
+                                        modifier = Modifier,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                            Column(Modifier.width(IntrinsicSize.Max)) {
+                                filteredStats.brandsByRating.forEach {
+                                    Text(
+                                        text = "(" + formatDecimal(it.value.weightedRating, drop = false) + " - ${it.value.ratingsCount})",
+                                        modifier = Modifier,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (filteredStats.typesByEntries.count() > 1) {
             item {
                 HorizontalDivider(
