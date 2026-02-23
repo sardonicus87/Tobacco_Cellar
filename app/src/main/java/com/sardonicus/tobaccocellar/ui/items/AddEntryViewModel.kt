@@ -19,6 +19,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -51,6 +52,14 @@ class AddEntryViewModel(
         private set
 
     val autoCompleteData = filterViewModel.autoComplete.value
+
+    private val _selectedTabIndex = MutableStateFlow(0)
+    val selectedTabIndex = _selectedTabIndex.asStateFlow()
+    fun updateSelectedTab(index: Int) {
+        _selectedTabIndex.value = index
+        updateUiState(itemUiState.itemDetails)
+    //    updateTinDetails(tinDetailsState)
+    }
 
     /** update item state **/
     fun updateUiState(itemDetails: ItemDetails) {
@@ -152,6 +161,7 @@ class AddEntryViewModel(
     fun removeTin(tinIndex: Int) {
         tinDetailsList = tinDetailsList.toMutableList()
             .also { it.removeAt(tinIndex) }
+        updateUiState(itemUiState.itemDetails)
     }
 
     private val _labelInvalid = MutableStateFlow(false)

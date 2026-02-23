@@ -73,6 +73,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -150,7 +151,7 @@ fun AddEntryScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-
+    val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
 
     Scaffold(
         modifier = modifier
@@ -175,10 +176,12 @@ fun AddEntryScreen(
                 .padding(innerPadding)
         ) {
             AddEntryBody(
+                selectedTabIndex = selectedTabIndex,
+                updateSelectedTab = viewModel::updateSelectedTab,
                 itemUiState = viewModel.itemUiState,
                 componentUiState = viewModel.componentList,
                 flavoringUiState = viewModel.flavoringList,
-                tinDetails = viewModel.tinDetailsState,
+       //         tinDetails = viewModel.tinDetailsState,
                 tinDetailsList = viewModel.tinDetailsList,
                 tabErrorState = viewModel.tabErrorState,
                 syncedTins = viewModel.calculateSyncTins(),
@@ -219,10 +222,12 @@ fun AddEntryScreen(
 
 @Composable
 fun AddEntryBody(
+    selectedTabIndex: Int,
+    updateSelectedTab: (Int) -> Unit,
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
     flavoringUiState: FlavoringList,
-    tinDetails: TinDetails,
+//    tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tabErrorState: TabErrorState,
     syncedTins: Int,
@@ -254,11 +259,13 @@ fun AddEntryBody(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ItemInputForm(
+            selectedTabIndex = selectedTabIndex,
+            updateSelectedTab = updateSelectedTab,
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
             componentUiState = componentUiState,
             flavoringUiState = flavoringUiState,
-            tinDetails = tinDetails,
+        //    tinDetails = tinDetails,
             tinDetailsList = tinDetailsList,
             tabErrorState = tabErrorState,
             syncedTins = syncedTins,
@@ -414,11 +421,13 @@ private fun DeleteConfirmationDialog(
 /** Body Elements **/
 @Composable
 fun ItemInputForm(
+    selectedTabIndex: Int,
+    updateSelectedTab: (Int) -> Unit,
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
     flavoringUiState: FlavoringList,
-    tinDetails: TinDetails,
+ //   tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tabErrorState: TabErrorState,
     syncedTins: Int,
@@ -435,7 +444,7 @@ fun ItemInputForm(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+  //  var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val titles = listOf("Details", "Notes", "Tins")
 
     Column(
@@ -471,12 +480,12 @@ fun ItemInputForm(
                     else -> MaterialTheme.colorScheme.outline
                 }
 
-                LaunchedEffect(index){ onValueChange(itemUiState.itemDetails) }
+            //    LaunchedEffect(index) { onValueChange(itemUiState.itemDetails) }
 
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
                         selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
+                        onClick = { updateSelectedTab(index) },
                         modifier = Modifier
                             .background(
                                 if (selectedTabIndex == index) MaterialTheme.colorScheme.background
@@ -529,7 +538,7 @@ fun ItemInputForm(
                         )
 
                     2 -> TinsEntry(
-                            tinDetails = tinDetails,
+                    //        tinDetails = tinDetails,
                             tinDetailsList = tinDetailsList,
                             onTinValueChange = onTinValueChange,
                             isTinLabelValid = isTinLabelValid,
@@ -1281,7 +1290,7 @@ fun NotesEntry(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(itemDetails) { onValueChange(itemDetails) }
+ //   LaunchedEffect(itemDetails) { onValueChange(itemDetails) }
 
     Column(
         modifier = modifier
@@ -1349,7 +1358,7 @@ fun NotesEntry(
 
 @Composable
 fun TinsEntry(
-    tinDetails: TinDetails,
+//    tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
@@ -1359,7 +1368,7 @@ fun TinsEntry(
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(tinDetailsList) { onTinValueChange(tinDetails) }
+ //   LaunchedEffect(tinDetailsList) { onTinValueChange(tinDetails) }
 
     Spacer(Modifier.height(7.dp))
 
@@ -2552,7 +2561,7 @@ fun CustomDropDown(
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val onExpandChange: (Boolean) -> Unit = { expanded = it }
+    val onExpandChange = remember { { it: Boolean -> expanded = it } }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
