@@ -108,11 +108,11 @@ fun GlowBox(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
-        modifier = Modifier,
+        modifier = modifier,
         contentAlignment = contentAlignment
     ) {
         Column (
-            modifier = modifier,
+            modifier = Modifier,
             content = content
         )
         Box(
