@@ -260,6 +260,7 @@ private fun SelectableBrandsRow(
 ) {
     val nestedScroll = remember {
         object : NestedScrollConnection {
+            @Suppress("Unused")
             override fun onPostScroll(
                 consumed: Offset,
                 available: Offset,
@@ -268,6 +269,7 @@ private fun SelectableBrandsRow(
                 return (Offset(x = available.x, y = 0f))
             }
 
+            @Suppress("Unused")
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
                 return Velocity(x = available.x, y = 0f)
             }
@@ -504,13 +506,13 @@ private fun SelectedBrandOverflow(
                     size = GlowSize(vertical = 10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 0.dp, max = 280.dp),
+                        .heightIn(max = 280.dp)
+                        .weight(1f, false),
                     contentAlignment = Alignment.Center
                 ) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
-                        modifier = Modifier
-                            .heightIn(min = 0.dp, max = 280.dp),
+                        modifier = Modifier,
                         userScrollEnabled = true,
                         contentPadding = PaddingValues(bottom = 10.dp),
                         verticalArrangement = Arrangement.spacedBy((-6).dp),
@@ -544,7 +546,9 @@ private fun SelectedBrandOverflow(
                 }
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max)
+                    ,
                     horizontalArrangement = Arrangement.Center
                 ) {
                     TextButton(

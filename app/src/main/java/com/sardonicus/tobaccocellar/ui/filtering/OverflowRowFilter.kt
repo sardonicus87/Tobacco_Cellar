@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +32,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +73,7 @@ fun OverflowFilterSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
-        var showOverflowPopup by remember { mutableStateOf(false) }
+        var showOverflowPopup by rememberSaveable { mutableStateOf(false) }
 
         // Header and Match options
         Row(
@@ -338,8 +339,7 @@ private fun FlowFilterOverflowPopup(
                 textAlign = TextAlign.Center
             )
         },
-        modifier = modifier
-            .fillMaxWidth(.9f),
+        modifier = modifier,
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -359,13 +359,13 @@ private fun FlowFilterOverflowPopup(
                     size = GlowSize(vertical = 10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(0.dp, 280.dp),
+                        .heightIn(max = 280.dp)
+                        .weight(1f, false),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(0.dp, 280.dp)
                             .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Top
@@ -384,14 +384,8 @@ private fun FlowFilterOverflowPopup(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                4.dp,
-                                Alignment.Start
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(
-                                0.dp,
-                                Alignment.Top
-                            )
+                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
+                            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
                         ) {
                             available().forEach {
                                 FilterChip(
@@ -414,7 +408,8 @@ private fun FlowFilterOverflowPopup(
                 }
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     TextButton(
