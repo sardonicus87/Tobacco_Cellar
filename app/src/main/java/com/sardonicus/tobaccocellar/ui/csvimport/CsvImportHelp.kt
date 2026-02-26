@@ -42,7 +42,7 @@ fun CsvHelpScreen (
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = "Changelog",
+                title = "CSV Import Help",
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
