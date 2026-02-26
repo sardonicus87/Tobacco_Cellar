@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.items
 
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -51,7 +50,6 @@ class EditEntryViewModel(
     fun updateSelectedTab(index: Int) {
         _selectedTabIndex.value = index
         updateUiState(itemUiState.itemDetails)
-      //  updateTinDetails(tinDetailsState)
     }
 
     var originalItem by mutableStateOf(OriginalItem())
@@ -199,8 +197,8 @@ class EditEntryViewModel(
     }
 
     /** Popup and menu control **/
-    private val _showRatingPop = mutableStateOf(false)
-    val showRatingPop: State<Boolean> = _showRatingPop
+    private val _showRatingPop = MutableStateFlow(false)
+    val showRatingPop = _showRatingPop.asStateFlow()
 
     fun onShowRatingPop(show: Boolean) { _showRatingPop.value = show }
 

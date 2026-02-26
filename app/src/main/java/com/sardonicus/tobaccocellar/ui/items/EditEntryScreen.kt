@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +24,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
@@ -41,6 +46,9 @@ fun EditEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
+    val showRatingPop by viewModel.showRatingPop.collectAsState()
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
 
     Scaffold(
         modifier = modifier
@@ -66,6 +74,7 @@ fun EditEntryScreen(
         ) {
             Box {
                 AddEntryBody(
+                    isLargeScreen = { isLargeScreen },
                     selectedTabIndex = selectedTabIndex,
                     updateSelectedTab = viewModel::updateSelectedTab,
                     itemUiState = viewModel.itemUiState,
@@ -82,7 +91,7 @@ fun EditEntryScreen(
                     onFlavoringChange = viewModel::updateFlavoringList,
                     addTin = viewModel::addTin,
                     removeTin = viewModel::removeTin,
-                    showRatingPop = viewModel.showRatingPop.value,
+                    showRatingPop = showRatingPop,
                     onShowRatingPop = viewModel::onShowRatingPop,
                     isTinLabelValid = viewModel::isTinLabelValid,
                     onSaveClick = {

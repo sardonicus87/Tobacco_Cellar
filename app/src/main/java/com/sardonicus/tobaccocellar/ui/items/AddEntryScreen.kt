@@ -69,11 +69,14 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,6 +94,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -110,6 +116,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
@@ -152,6 +160,9 @@ fun AddEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
+    val showRatingPop by viewModel.showRatingPop.collectAsState()
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
 
     Scaffold(
         modifier = modifier
@@ -176,12 +187,12 @@ fun AddEntryScreen(
                 .padding(innerPadding)
         ) {
             AddEntryBody(
+                isLargeScreen = { isLargeScreen },
                 selectedTabIndex = selectedTabIndex,
                 updateSelectedTab = viewModel::updateSelectedTab,
                 itemUiState = viewModel.itemUiState,
                 componentUiState = viewModel.componentList,
                 flavoringUiState = viewModel.flavoringList,
-       //         tinDetails = viewModel.tinDetailsState,
                 tinDetailsList = viewModel.tinDetailsList,
                 tabErrorState = viewModel.tabErrorState,
                 syncedTins = viewModel.calculateSyncTins(),
@@ -193,7 +204,7 @@ fun AddEntryScreen(
                 onFlavoringChange = viewModel::updateFlavoringList,
                 addTin = viewModel::addTin,
                 removeTin = viewModel::removeTin,
-                showRatingPop = viewModel.showRatingPop.value,
+                showRatingPop = showRatingPop,
                 onShowRatingPop = viewModel::onShowRatingPop,
                 isTinLabelValid = viewModel::isTinLabelValid,
                 onSaveClick = {
@@ -222,12 +233,12 @@ fun AddEntryScreen(
 
 @Composable
 fun AddEntryBody(
+    isLargeScreen: () -> Boolean,
     selectedTabIndex: Int,
     updateSelectedTab: (Int) -> Unit,
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
     flavoringUiState: FlavoringList,
-//    tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tabErrorState: TabErrorState,
     syncedTins: Int,
@@ -259,13 +270,13 @@ fun AddEntryBody(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ItemInputForm(
+            isLargeScreen = isLargeScreen,
             selectedTabIndex = selectedTabIndex,
             updateSelectedTab = updateSelectedTab,
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
             componentUiState = componentUiState,
             flavoringUiState = flavoringUiState,
-        //    tinDetails = tinDetails,
             tinDetailsList = tinDetailsList,
             tabErrorState = tabErrorState,
             syncedTins = syncedTins,
@@ -421,13 +432,13 @@ private fun DeleteConfirmationDialog(
 /** Body Elements **/
 @Composable
 fun ItemInputForm(
+    isLargeScreen: () -> Boolean,
     selectedTabIndex: Int,
     updateSelectedTab: (Int) -> Unit,
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
     flavoringUiState: FlavoringList,
- //   tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tabErrorState: TabErrorState,
     syncedTins: Int,
@@ -444,45 +455,349 @@ fun ItemInputForm(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-  //  var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-    val titles = listOf("Details", "Notes", "Tins")
+    val isLarge = isLargeScreen()
+    var lastLeftTab by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex < 2) lastLeftTab = selectedTabIndex
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth(),
         verticalArrangement = Arrangement.Top
     ) {
-        SecondaryTabRow(
+        AdaptiveTabRow(
+            isLarge = isLarge,
             selectedTabIndex = selectedTabIndex,
-            modifier = Modifier
-                .padding(bottom = 1.dp),
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = LocalContentColor.current,
-            indicator = {
-                SecondaryIndicator(
+            tabErrorState = tabErrorState,
+            updateSelectedTab = updateSelectedTab
+        )
+        if (isLarge) {
+            Row(Modifier.fillMaxHeight(.7f)) {
+                GlowBox(
+                    color = GlowColor(MaterialTheme.colorScheme.background),
+                    size = GlowSize(vertical = 3.dp),
                     modifier = Modifier
-                        .tabIndicatorOffset(selectedTabIndex),
-                    color = MaterialTheme.colorScheme.inversePrimary
-                )
-            },
-            divider = {
-                HorizontalDivider(
-                    modifier = Modifier,
-                    thickness = Dp.Hairline,
-                    color = DividerDefaults.color,
-                )
-            },
-        ) {
-            titles.forEachIndexed { index, title ->
-                val textColor = when (index) {
-                    0 -> if (tabErrorState.detailsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
-                    2 -> if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
-                    else -> MaterialTheme.colorScheme.outline
+                        .weight(1f)
+                        .padding(top = 1.dp)
+                       // .fillMaxHeight(.7f)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .onFocusChanged {
+                                if (it.hasFocus && selectedTabIndex == 2) updateSelectedTab(
+                                    lastLeftTab
+                                )
+                            }
+                            .pointerInput(lastLeftTab, selectedTabIndex) {
+                                if (selectedTabIndex == 2) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event =
+                                                awaitPointerEvent(pass = PointerEventPass.Initial)
+                                            if (event.changes.any { it.changedToDown() }) {
+                                                updateSelectedTab(lastLeftTab)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                    ) {
+                        if (lastLeftTab == 0) {
+                            DetailsEntry(
+                                itemDetails = itemDetails,
+                                itemUiState = itemUiState,
+                                syncedTins = syncedTins,
+                                isEditEntry = isEditEntry,
+                                onValueChange = onValueChange,
+                                componentList = componentUiState,
+                                onComponentChange = onComponentChange,
+                                flavoringList = flavoringUiState,
+                                onFlavoringChange = onFlavoringChange,
+                                showRatingPop = showRatingPop,
+                                onShowRatingPop = onShowRatingPop,
+                                modifier = Modifier,
+                            )
+                        } else {
+                            NotesEntry(
+                                itemDetails = itemDetails,
+                                onValueChange = onValueChange,
+                                modifier = Modifier
+                            )
+                        }
+                    }
                 }
 
-            //    LaunchedEffect(index) { onValueChange(itemUiState.itemDetails) }
+                VerticalDivider(
+                    thickness = Dp.Hairline,
+                    color = DividerDefaults.color.copy(alpha = .5f)
+                )
 
-                CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                GlowBox(
+                    color = GlowColor(MaterialTheme.colorScheme.background),
+                    size = GlowSize(vertical = 3.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 1.dp)
+               //         .fillMaxHeight(.7f)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                            .onFocusChanged {
+                                if (it.hasFocus && selectedTabIndex != 2) updateSelectedTab(
+                                    2
+                                )
+                            }
+                            .pointerInput(selectedTabIndex) {
+                                if (selectedTabIndex != 2) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event =
+                                                awaitPointerEvent(pass = PointerEventPass.Initial)
+                                            if (event.changes.any { it.changedToDown() }) {
+                                                updateSelectedTab(2)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                    ) {
+                        TinsEntry(
+                            tinDetailsList = tinDetailsList,
+                            onTinValueChange = onTinValueChange,
+                            isTinLabelValid = isTinLabelValid,
+                            addTin = addTin,
+                            removeTin = removeTin,
+                            itemUiState = itemUiState,
+                            validateDates = validateDates,
+                            modifier = Modifier
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        } else {
+            GlowBox(
+                color = GlowColor(MaterialTheme.colorScheme.background),
+                size = GlowSize(vertical = 3.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 1.dp)
+                    .fillMaxHeight(.7f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    when (selectedTabIndex) {
+                        0 ->
+                            DetailsEntry(
+                                itemDetails = itemDetails,
+                                itemUiState = itemUiState,
+                                syncedTins = syncedTins,
+                                isEditEntry = isEditEntry,
+                                onValueChange = onValueChange,
+                                componentList = componentUiState,
+                                onComponentChange = onComponentChange,
+                                flavoringList = flavoringUiState,
+                                onFlavoringChange = onFlavoringChange,
+                                showRatingPop = showRatingPop,
+                                onShowRatingPop = onShowRatingPop,
+                                modifier = Modifier,
+                            )
+
+                        1 ->
+                            NotesEntry(
+                                itemDetails = itemDetails,
+                                onValueChange = onValueChange,
+                                modifier = Modifier
+                            )
+
+                        2 ->
+                            TinsEntry(
+                                tinDetailsList = tinDetailsList,
+                                onTinValueChange = onTinValueChange,
+                                isTinLabelValid = isTinLabelValid,
+                                addTin = addTin,
+                                removeTin = removeTin,
+                                itemUiState = itemUiState,
+                                validateDates = validateDates,
+                                modifier = Modifier
+                            )
+
+                        else -> throw IllegalArgumentException("Invalid tab position")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveTabRow(
+    isLarge: Boolean,
+    selectedTabIndex: Int,
+    tabErrorState: TabErrorState,
+    updateSelectedTab: (Int) -> Unit,
+) {
+    val titles = listOf("Details", "Notes", "Tins")
+
+    CompositionLocalProvider(LocalRippleConfiguration provides null) {
+        if (isLarge) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                SecondaryTabRow(
+                    selectedTabIndex = if (selectedTabIndex < 2) selectedTabIndex else -1,
+                    modifier = Modifier
+                        .weight(1f),
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentColor = LocalContentColor.current,
+                    indicator = {
+                        if (selectedTabIndex < 2) {
+                            SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(selectedTabIndex),
+                                color = MaterialTheme.colorScheme.inversePrimary
+                            )
+                        }
+                    },
+                    divider = {
+                        HorizontalDivider(
+                            modifier = Modifier,
+                            thickness = Dp.Hairline,
+                            color = DividerDefaults.color,
+                        )
+                    },
+                ) {
+                    Tab(
+                        selected = selectedTabIndex == 0,
+                        onClick = { updateSelectedTab(0) },
+                        text = {
+                            Text(
+                                text = titles[0],
+                                fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.SemiBold,
+                            )
+                        },
+                        modifier = Modifier
+                            .background(
+                                if (selectedTabIndex == 0) MaterialTheme.colorScheme.background
+                                else LocalCustomColors.current.backgroundUnselected
+                            ),
+                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                        unselectedContentColor =
+                            if (tabErrorState.detailsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                            else MaterialTheme.colorScheme.outline,
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 1,
+                        onClick = { updateSelectedTab(1) },
+                        text = {
+                            Text(
+                                text = titles[1],
+                                fontWeight =
+                                    if (selectedTabIndex == 1) FontWeight.Bold
+                                    else FontWeight.SemiBold,
+                            )
+                        },
+                        modifier = Modifier
+                            .background(
+                                if (selectedTabIndex == 1) MaterialTheme.colorScheme.background
+                                else LocalCustomColors.current.backgroundUnselected
+                            ),
+                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                        unselectedContentColor = MaterialTheme.colorScheme.outline,
+                    )
+                }
+
+                SecondaryTabRow(
+                    selectedTabIndex = if (selectedTabIndex == 2) 0 else -1,
+                    modifier = Modifier
+                        .weight(1f),
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentColor = LocalContentColor.current,
+                    indicator = {
+                        if (selectedTabIndex == 2) {
+                            SecondaryIndicator(
+                                modifier = Modifier
+                                    .tabIndicatorOffset(0),
+                                color = MaterialTheme.colorScheme.inversePrimary
+                            )
+                        }
+                    },
+                    divider = {
+                        HorizontalDivider(
+                            modifier = Modifier,
+                            thickness = Dp.Hairline,
+                            color = DividerDefaults.color,
+                        )
+                    }
+                ) {
+                    Tab(
+                        selected = selectedTabIndex == 2,
+                        onClick = { updateSelectedTab(2) },
+                        text = {
+                            Text(
+                                text = titles[2],
+                                fontWeight =
+                                    if (selectedTabIndex == 2) FontWeight.Bold
+                                    else FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .weight(1f)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                        },
+                        modifier = Modifier
+                            .background(
+                                if (selectedTabIndex == 2) MaterialTheme.colorScheme.background
+                                else LocalCustomColors.current.backgroundUnselected
+                            ),
+                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                        unselectedContentColor =
+                            if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                            else MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
+        } else {
+            SecondaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier,
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = LocalContentColor.current,
+                indicator = {
+                    SecondaryIndicator(
+                        modifier = Modifier
+                            .tabIndicatorOffset(selectedTabIndex),
+                        color = MaterialTheme.colorScheme.inversePrimary
+                    )
+                },
+                divider = {
+                    HorizontalDivider(
+                        modifier = Modifier,
+                        thickness = Dp.Hairline,
+                        color = DividerDefaults.color,
+                    )
+                },
+            ) {
+                titles.forEachIndexed { index, title ->
+                    val textColor = when (index) {
+                        0 ->
+                            if (tabErrorState.detailsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                            else MaterialTheme.colorScheme.outline
+                        2 ->
+                            if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                            else MaterialTheme.colorScheme.outline
+                        else -> MaterialTheme.colorScheme.outline
+                    }
+
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = { updateSelectedTab(index) },
@@ -501,55 +816,6 @@ fun ItemInputForm(
                         unselectedContentColor = textColor,
                         interactionSource = remember { MutableInteractionSource() }
                     )
-                }
-            }
-        }
-        GlowBox(
-            color = GlowColor(MaterialTheme.colorScheme.background),
-            size = GlowSize(vertical = 3.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxWidth()
-                    .fillMaxHeight(.65f)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                when (selectedTabIndex) {
-                    0 -> DetailsEntry(
-                            itemDetails = itemDetails,
-                            itemUiState = itemUiState,
-                            syncedTins = syncedTins,
-                            isEditEntry = isEditEntry,
-                            onValueChange = onValueChange,
-                            componentList = componentUiState,
-                            onComponentChange = onComponentChange,
-                            flavoringList = flavoringUiState,
-                            onFlavoringChange = onFlavoringChange,
-                            showRatingPop = showRatingPop,
-                            onShowRatingPop = onShowRatingPop,
-                            modifier = Modifier,
-                        )
-
-                    1 -> NotesEntry(
-                            itemDetails = itemDetails,
-                            onValueChange = onValueChange,
-                            modifier = Modifier
-                        )
-
-                    2 -> TinsEntry(
-                    //        tinDetails = tinDetails,
-                            tinDetailsList = tinDetailsList,
-                            onTinValueChange = onTinValueChange,
-                            isTinLabelValid = isTinLabelValid,
-                            addTin = addTin,
-                            removeTin = removeTin,
-                            itemUiState = itemUiState,
-                            validateDates = validateDates,
-                            modifier = Modifier
-                        )
-
-                    else -> throw IllegalArgumentException("Invalid tab position")
                 }
             }
         }
@@ -1280,7 +1546,6 @@ fun DetailsEntry(
             }
         )
     }
-
 }
 
 
@@ -1290,8 +1555,6 @@ fun NotesEntry(
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
- //   LaunchedEffect(itemDetails) { onValueChange(itemDetails) }
-
     Column(
         modifier = modifier
             .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
@@ -1358,7 +1621,6 @@ fun NotesEntry(
 
 @Composable
 fun TinsEntry(
-//    tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
@@ -1368,8 +1630,6 @@ fun TinsEntry(
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier
 ) {
- //   LaunchedEffect(tinDetailsList) { onTinValueChange(tinDetails) }
-
     Spacer(Modifier.height(7.dp))
 
     Column(
