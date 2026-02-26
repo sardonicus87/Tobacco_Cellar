@@ -63,6 +63,20 @@ class CsvImportViewModel(
         )
     }
 
+    private val _showErrorDialog = MutableStateFlow(false)
+    val showErrorDialog = _showErrorDialog.asStateFlow()
+
+    private val _csvErrorMessage = MutableStateFlow("")
+    val csvErrorMessage = _csvErrorMessage.asStateFlow()
+
+    fun onShowError (show: Boolean) {
+        _showErrorDialog.value = show
+    }
+
+    fun onCsvError(message: String?) {
+        _csvErrorMessage.value = message ?: ""
+    }
+
     private fun String.truncate(maxLength: Int): String {
         return if (length > maxLength) {
             substring(0, minOf(8, maxLength - 3)) + "..."

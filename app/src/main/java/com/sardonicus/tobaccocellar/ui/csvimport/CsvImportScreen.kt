@@ -172,8 +172,7 @@ fun CsvImportBody(
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
-    var showErrorDialog by rememberSaveable { mutableStateOf(false) }
-    val onShowError: (Boolean) -> Unit = { showErrorDialog = it }
+    val showErrorDialog by viewModel.showErrorDialog.collectAsState()
     val importStatus by viewModel.importStatus.collectAsState()
     val overwriteSelections by viewModel.overwriteSelections.collectAsState()
     val context = LocalContext.current
@@ -205,26 +204,32 @@ fun CsvImportBody(
                             }
 
                             is CsvResult.Error -> {
-                                onShowError(true)
+                                viewModel.onShowError(true)
+                                viewModel.onCsvError(result.exception.message)
                             }
 
                             is CsvResult.Empty -> {
-                                onShowError(true)
+                                viewModel.onShowError(true)
+                                viewModel.onCsvError("CSV appears empty.")
                             }
                         }
 
                     }
                 }
             } catch (_: Exception) {
-                onShowError(true)
+                viewModel.onShowError(true)
             }
         }
     }
 
     if (showErrorDialog) {
         LoadErrorDialog(
+            viewModel = viewModel,
             modifier = Modifier,
-            confirmError = { onShowError(false) }
+            confirmError = {
+                viewModel.onShowError(false)
+                viewModel.onCsvError("")
+            },
         )
     }
 
@@ -1104,13 +1109,35 @@ fun CsvImportBody(
 /** Body Elements */
 @Composable
 fun LoadErrorDialog(
+    viewModel: CsvImportViewModel,
     confirmError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val errorMessage by viewModel.csvErrorMessage.collectAsState()
+
     AlertDialog(
         onDismissRequest = { /* Do nothing */ },
         title = { Text(stringResource(R.string.attention)) },
-        text = { Text(stringResource(R.string.csv_import_error)) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.Top
+            ) {
+                Text(
+                    text = stringResource(R.string.csv_import_error),
+                    fontSize = 15.sp,
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Reported error message:",
+                    fontSize = 15.sp
+                )
+                Text(
+                    text = errorMessage,
+                    fontSize = 15.sp,
+                )
+            }
+        },
         modifier = modifier,
         confirmButton = {
             TextButton(onClick = confirmError) {
