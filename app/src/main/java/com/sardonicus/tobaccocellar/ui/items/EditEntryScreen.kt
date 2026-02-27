@@ -46,6 +46,7 @@ fun EditEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
+    val currentLeftTab by viewModel.currentLeftTab.collectAsState()
     val showRatingPop by viewModel.showRatingPop.collectAsState()
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
@@ -75,12 +76,12 @@ fun EditEntryScreen(
             Box {
                 AddEntryBody(
                     isLargeScreen = { isLargeScreen },
-                    selectedTabIndex = selectedTabIndex,
+                    selectedTabIndex = { selectedTabIndex },
+                    currentLeftTab = { currentLeftTab },
                     updateSelectedTab = viewModel::updateSelectedTab,
                     itemUiState = viewModel.itemUiState,
                     componentUiState = viewModel.componentList,
                     flavoringUiState = viewModel.flavoringList,
-                //    tinDetails = viewModel.tinDetailsState,
                     tinDetailsList = viewModel.tinDetailsList,
                     tabErrorState = viewModel.tabErrorState,
                     syncedTins = viewModel.calculateSyncTins(),

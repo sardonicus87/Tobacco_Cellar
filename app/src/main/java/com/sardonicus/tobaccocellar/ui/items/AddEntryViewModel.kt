@@ -54,8 +54,15 @@ class AddEntryViewModel(
 
     private val _selectedTabIndex = MutableStateFlow(0)
     val selectedTabIndex = _selectedTabIndex.asStateFlow()
+
+    private val _currentLeftTab = MutableStateFlow(0)
+    val currentLeftTab = _currentLeftTab.asStateFlow()
+
     fun updateSelectedTab(index: Int) {
         _selectedTabIndex.value = index
+        if (index < 2) {
+            _currentLeftTab.value = index
+        }
         updateUiState(itemUiState.itemDetails)
     }
 

@@ -47,6 +47,10 @@ class EditEntryViewModel(
 
     private val _selectedTabIndex = MutableStateFlow(0)
     val selectedTabIndex = _selectedTabIndex.asStateFlow()
+
+    private val _currentLeftTab = MutableStateFlow(0)
+    val currentLeftTab = _currentLeftTab.asStateFlow()
+
     fun updateSelectedTab(index: Int) {
         _selectedTabIndex.value = index
         updateUiState(itemUiState.itemDetails)

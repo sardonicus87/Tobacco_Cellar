@@ -160,6 +160,7 @@ fun AddEntryScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
+    val currentLeftTab by viewModel.currentLeftTab.collectAsState()
     val showRatingPop by viewModel.showRatingPop.collectAsState()
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
@@ -188,7 +189,8 @@ fun AddEntryScreen(
         ) {
             AddEntryBody(
                 isLargeScreen = { isLargeScreen },
-                selectedTabIndex = selectedTabIndex,
+                selectedTabIndex = { selectedTabIndex },
+                currentLeftTab = { currentLeftTab },
                 updateSelectedTab = viewModel::updateSelectedTab,
                 itemUiState = viewModel.itemUiState,
                 componentUiState = viewModel.componentList,
@@ -234,7 +236,8 @@ fun AddEntryScreen(
 @Composable
 fun AddEntryBody(
     isLargeScreen: () -> Boolean,
-    selectedTabIndex: Int,
+    selectedTabIndex: () -> Int,
+    currentLeftTab: () -> Int,
     updateSelectedTab: (Int) -> Unit,
     itemUiState: ItemUiState,
     componentUiState: ComponentList,
@@ -258,7 +261,7 @@ fun AddEntryBody(
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier,
     navigateToEditEntry: (Int) -> Unit = {},
-    resetExistState: () -> Unit = {},
+    resetExistState: () -> Unit = {}
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -272,6 +275,7 @@ fun AddEntryBody(
         ItemInputForm(
             isLargeScreen = isLargeScreen,
             selectedTabIndex = selectedTabIndex,
+            currentLeftTab = currentLeftTab,
             updateSelectedTab = updateSelectedTab,
             itemDetails = itemUiState.itemDetails,
             itemUiState = itemUiState,
@@ -347,93 +351,13 @@ fun AddEntryBody(
 }
 
 
-/** Dialogs **/
-@Composable
-fun ItemExistsDialog(
-    onItemExistsConfirm: () -> Unit,
-    onItemExistsCancel: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = { },
-        title = { Text(stringResource(R.string.attention)) },
-        text = { Text(stringResource(R.string.item_exists)) },
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large,
-        dismissButton = {
-            TextButton(onClick = onItemExistsCancel) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onItemExistsConfirm) {
-                Text(stringResource(R.string.yes))
-            }
-        }
-    )
-}
-
-@Composable
-fun ItemExistsEditDialog(
-    onItemExistsConfirm: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = { },
-        title = { Text(stringResource(R.string.attention)) },
-        text = {
-            Text(
-                text = "An entry already exists with this combination of Brand and Blend—the combination of Brand and Blend must be unique for each entry.",
-                softWrap = true,
-            )
-        },
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large,
-        confirmButton = {
-            TextButton(onClick = onItemExistsConfirm) {
-                Text(stringResource(R.string.ok))
-            }
-        }
-    )
-}
-
-@Composable
-private fun DeleteConfirmationDialog(
-    onDeleteConfirm: () -> Unit,
-    onDeleteCancel: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
-        title = { Text(stringResource(R.string.delete_entry)) },
-        text = { Text(stringResource(R.string.delete_question)) },
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large,
-        dismissButton = {
-            TextButton(onClick = onDeleteCancel) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDeleteConfirm) {
-                Text(stringResource(R.string.yes))
-            }
-        }
-    )
-}
-
 
 /** Body Elements **/
 @Composable
 fun ItemInputForm(
     isLargeScreen: () -> Boolean,
-    selectedTabIndex: Int,
+    selectedTabIndex: () -> Int,
+    currentLeftTab: () -> Int,
     updateSelectedTab: (Int) -> Unit,
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
@@ -456,10 +380,14 @@ fun ItemInputForm(
     modifier: Modifier = Modifier
 ) {
     val isLarge = isLargeScreen()
-    var lastLeftTab by rememberSaveable { mutableIntStateOf(0) }
+    val preSafe = selectedTabIndex()
+    val currentLeftTab = currentLeftTab()
+    val selectedTabIndex = remember(preSafe) { preSafe.coerceIn(0, 2) }
 
-    LaunchedEffect(selectedTabIndex) {
-        if (selectedTabIndex < 2) lastLeftTab = selectedTabIndex
+    if (preSafe != selectedTabIndex) {
+        LaunchedEffect(Unit) {
+            updateSelectedTab(0)
+        }
     }
 
     Column(
@@ -481,31 +409,30 @@ fun ItemInputForm(
                     modifier = Modifier
                         .weight(1f)
                         .padding(top = 1.dp)
-                       // .fillMaxHeight(.7f)
                 ) {
                     Column(
                         modifier = Modifier
                             .verticalScroll(rememberScrollState())
                             .onFocusChanged {
                                 if (it.hasFocus && selectedTabIndex == 2) updateSelectedTab(
-                                    lastLeftTab
+                                    currentLeftTab
                                 )
                             }
-                            .pointerInput(lastLeftTab, selectedTabIndex) {
-                                if (selectedTabIndex == 2) {
+                            .pointerInput(currentLeftTab, selectedTabIndex) {
+                                if (selectedTabIndex() == 2) {
                                     awaitPointerEventScope {
                                         while (true) {
                                             val event =
                                                 awaitPointerEvent(pass = PointerEventPass.Initial)
                                             if (event.changes.any { it.changedToDown() }) {
-                                                updateSelectedTab(lastLeftTab)
+                                                updateSelectedTab(currentLeftTab)
                                             }
                                         }
                                     }
                                 }
                             }
                     ) {
-                        if (lastLeftTab == 0) {
+                        if (currentLeftTab == 0) {
                             DetailsEntry(
                                 itemDetails = itemDetails,
                                 itemUiState = itemUiState,
@@ -541,7 +468,6 @@ fun ItemInputForm(
                     modifier = Modifier
                         .weight(1f)
                         .padding(top = 1.dp)
-               //         .fillMaxHeight(.7f)
                 ) {
                     Column(
                         modifier = Modifier
@@ -631,7 +557,7 @@ fun ItemInputForm(
                                 modifier = Modifier
                             )
 
-                        else -> throw IllegalArgumentException("Invalid tab position")
+                        else -> updateSelectedTab(0)
                     }
                 }
             }
@@ -647,123 +573,147 @@ private fun AdaptiveTabRow(
     updateSelectedTab: (Int) -> Unit,
 ) {
     val titles = listOf("Details", "Notes", "Tins")
+    val scope = rememberCoroutineScope()
+    val showAdditional = rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex == 2) {
+            scope.launch {
+                delay(50)
+                showAdditional.value = true
+            }
+        } else {
+            scope.launch {
+                delay(5)
+                showAdditional.value = false
+            }
+        }
+    }
 
     CompositionLocalProvider(LocalRippleConfiguration provides null) {
         if (isLarge) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                SecondaryTabRow(
-                    selectedTabIndex = if (selectedTabIndex < 2) selectedTabIndex else -1,
-                    modifier = Modifier
-                        .weight(1f),
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = LocalContentColor.current,
-                    indicator = {
-                        if (selectedTabIndex < 2) {
+            Column {
+                Box(Modifier.fillMaxWidth()) {
+                    SecondaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        containerColor = MaterialTheme.colorScheme.background,
+                        contentColor = LocalContentColor.current,
+                        indicator = {
+                            val offset = if (selectedTabIndex == 2) 3 else selectedTabIndex
                             SecondaryIndicator(
-                                modifier = Modifier.tabIndicatorOffset(selectedTabIndex),
+                                modifier = Modifier.tabIndicatorOffset(offset),
                                 color = MaterialTheme.colorScheme.inversePrimary
                             )
-                        }
-                    },
-                    divider = {
-                        HorizontalDivider(
-                            modifier = Modifier,
-                            thickness = Dp.Hairline,
-                            color = DividerDefaults.color,
-                        )
-                    },
-                ) {
-                    Tab(
-                        selected = selectedTabIndex == 0,
-                        onClick = { updateSelectedTab(0) },
-                        text = {
-                            Text(
-                                text = titles[0],
-                                fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.SemiBold,
-                            )
-                        },
-                        modifier = Modifier
-                            .background(
-                                if (selectedTabIndex == 0) MaterialTheme.colorScheme.background
-                                else LocalCustomColors.current.backgroundUnselected
-                            ),
-                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                        unselectedContentColor =
-                            if (tabErrorState.detailsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                            else MaterialTheme.colorScheme.outline,
-                    )
-                    Tab(
-                        selected = selectedTabIndex == 1,
-                        onClick = { updateSelectedTab(1) },
-                        text = {
-                            Text(
-                                text = titles[1],
-                                fontWeight =
-                                    if (selectedTabIndex == 1) FontWeight.Bold
-                                    else FontWeight.SemiBold,
-                            )
-                        },
-                        modifier = Modifier
-                            .background(
-                                if (selectedTabIndex == 1) MaterialTheme.colorScheme.background
-                                else LocalCustomColors.current.backgroundUnselected
-                            ),
-                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                        unselectedContentColor = MaterialTheme.colorScheme.outline,
-                    )
-                }
 
-                SecondaryTabRow(
-                    selectedTabIndex = if (selectedTabIndex == 2) 0 else -1,
-                    modifier = Modifier
-                        .weight(1f),
-                    containerColor = MaterialTheme.colorScheme.background,
-                    contentColor = LocalContentColor.current,
-                    indicator = {
-                        if (selectedTabIndex == 2) {
-                            SecondaryIndicator(
-                                modifier = Modifier
-                                    .tabIndicatorOffset(0),
-                                color = MaterialTheme.colorScheme.inversePrimary
+                            if (showAdditional.value) {
+                                SecondaryIndicator(
+                                    modifier = Modifier.tabIndicatorOffset(2),
+                                    color = MaterialTheme.colorScheme.inversePrimary
+                                )
+                            }
+
+                        },
+                        divider = {
+                            HorizontalDivider(
+                                modifier = Modifier,
+                                thickness = Dp.Hairline,
+                                color = DividerDefaults.color,
                             )
-                        }
-                    },
-                    divider = {
-                        HorizontalDivider(
-                            modifier = Modifier,
-                            thickness = Dp.Hairline,
-                            color = DividerDefaults.color,
+                        },
+                    ) {
+                        Tab(
+                            selected = selectedTabIndex == 0,
+                            onClick = { updateSelectedTab(0) },
+                            text = {
+                                Text(
+                                    text = titles[0],
+                                    fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.SemiBold,
+                                )
+                            },
+                            modifier = Modifier
+                                .background(
+                                    if (selectedTabIndex == 0) MaterialTheme.colorScheme.background
+                                    else LocalCustomColors.current.backgroundUnselected
+                                ),
+                            selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                            unselectedContentColor =
+                                if (tabErrorState.detailsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                else MaterialTheme.colorScheme.outline,
+                        )
+                        Tab(
+                            selected = selectedTabIndex == 1,
+                            onClick = { updateSelectedTab(1) },
+                            text = {
+                                Text(
+                                    text = titles[1],
+                                    fontWeight =
+                                        if (selectedTabIndex == 1) FontWeight.Bold
+                                        else FontWeight.SemiBold,
+                                )
+                            },
+                            modifier = Modifier
+                                .background(
+                                    if (selectedTabIndex == 1) MaterialTheme.colorScheme.background
+                                    else LocalCustomColors.current.backgroundUnselected
+                                ),
+                            selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                            unselectedContentColor = MaterialTheme.colorScheme.outline,
+                        )
+                        Tab(
+                            selected = selectedTabIndex == 2,
+                            onClick = { updateSelectedTab(2) },
+                            text = { },
+                            modifier = Modifier
+                                .background(
+                                    if (selectedTabIndex == 2) MaterialTheme.colorScheme.background
+                                    else LocalCustomColors.current.backgroundUnselected
+                                )
+                        )
+                        Tab(
+                            selected = selectedTabIndex == 2,
+                            onClick = { updateSelectedTab(2) },
+                            text = { },
+                            modifier = Modifier
+                                .background(
+                                    if (selectedTabIndex == 2) MaterialTheme.colorScheme.background
+                                    else LocalCustomColors.current.backgroundUnselected
+                                )
                         )
                     }
-                ) {
-                    Tab(
-                        selected = selectedTabIndex == 2,
-                        onClick = { updateSelectedTab(2) },
-                        text = {
-                            Text(
-                                text = titles[2],
-                                fontWeight =
-                                    if (selectedTabIndex == 2) FontWeight.Bold
-                                    else FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .weight(1f)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                        },
+
+
+                    SecondaryTabRow(
+                        selectedTabIndex = if (selectedTabIndex == 2) 0 else -1,
                         modifier = Modifier
-                            .background(
-                                if (selectedTabIndex == 2) MaterialTheme.colorScheme.background
-                                else LocalCustomColors.current.backgroundUnselected
-                            ),
-                        selectedContentColor = MaterialTheme.colorScheme.onBackground,
-                        unselectedContentColor =
-                            if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                            else MaterialTheme.colorScheme.outline,
-                    )
+                            .fillMaxWidth(.5f)
+                            .align(Alignment.CenterEnd),
+                        containerColor = Color.Transparent,
+                        contentColor = LocalContentColor.current,
+                        indicator = { },
+                        divider = { }
+                    ) {
+                        Tab(
+                            selected = selectedTabIndex == 2,
+                            onClick = { updateSelectedTab(2) },
+                            text = {
+                                Text(
+                                    text = titles[2],
+                                    fontWeight =
+                                        if (selectedTabIndex == 2) FontWeight.Bold
+                                        else FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                )
+                            },
+                            modifier = Modifier,
+                            selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                            unselectedContentColor =
+                                if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                else MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         } else {
@@ -2796,6 +2746,88 @@ fun RatingPopup(
                     .heightIn(32.dp, 32.dp)
             ) {
                 Text(text = "Cancel")
+            }
+        }
+    )
+}
+
+
+/** Dialogs **/
+@Composable
+fun ItemExistsDialog(
+    onItemExistsConfirm: () -> Unit,
+    onItemExistsCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { },
+        title = { Text(stringResource(R.string.attention)) },
+        text = { Text(stringResource(R.string.item_exists)) },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        dismissButton = {
+            TextButton(onClick = onItemExistsCancel) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onItemExistsConfirm) {
+                Text(stringResource(R.string.yes))
+            }
+        }
+    )
+}
+
+@Composable
+fun ItemExistsEditDialog(
+    onItemExistsConfirm: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { },
+        title = { Text(stringResource(R.string.attention)) },
+        text = {
+            Text(
+                text = "An entry already exists with this combination of Brand and Blend—the combination of Brand and Blend must be unique for each entry.",
+                softWrap = true,
+            )
+        },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        confirmButton = {
+            TextButton(onClick = onItemExistsConfirm) {
+                Text(stringResource(R.string.ok))
+            }
+        }
+    )
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    onDeleteConfirm: () -> Unit,
+    onDeleteCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(stringResource(R.string.delete_entry)) },
+        text = { Text(stringResource(R.string.delete_question)) },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        dismissButton = {
+            TextButton(onClick = onDeleteCancel) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDeleteConfirm) {
+                Text(stringResource(R.string.yes))
             }
         }
     )
