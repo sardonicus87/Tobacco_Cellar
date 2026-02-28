@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -379,6 +381,30 @@ fun ItemInputForm(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex()) { 3 }
+    LaunchedEffect(narrowPagerState.currentPage) {
+        if (narrowPagerState.currentPage != selectedTabIndex()) {
+            updateSelectedTab(narrowPagerState.currentPage)
+        }
+    }
+    LaunchedEffect(selectedTabIndex()) {
+        if (narrowPagerState.currentPage != selectedTabIndex()) {
+            narrowPagerState.animateScrollToPage(selectedTabIndex())
+        }
+    }
+
+    val largePagerState = rememberPagerState(initialPage = currentLeftTab()) { 2 }
+    LaunchedEffect(largePagerState.currentPage) {
+        if (largePagerState.currentPage != currentLeftTab()) {
+            updateSelectedTab(largePagerState.currentPage)
+        }
+    }
+    LaunchedEffect(currentLeftTab()) {
+        if (largePagerState.currentPage != currentLeftTab()) {
+            largePagerState.animateScrollToPage(currentLeftTab())
+        }
+    }
+
     val isLarge = isLargeScreen()
     val preSafe = selectedTabIndex()
     val currentLeftTab = currentLeftTab()
@@ -410,49 +436,56 @@ fun ItemInputForm(
                         .weight(1f)
                         .padding(top = 1.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(rememberScrollState())
-                            .onFocusChanged {
-                                if (it.hasFocus && selectedTabIndex == 2) updateSelectedTab(
-                                    currentLeftTab
-                                )
-                            }
-                            .pointerInput(currentLeftTab, selectedTabIndex) {
-                                if (selectedTabIndex() == 2) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            val event =
-                                                awaitPointerEvent(pass = PointerEventPass.Initial)
-                                            if (event.changes.any { it.changedToDown() }) {
-                                                updateSelectedTab(currentLeftTab)
+                    HorizontalPager(
+                        state = largePagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = true,
+                        verticalAlignment = Alignment.Top
+                    ) { targetIndex ->
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(rememberScrollState())
+                                .onFocusChanged {
+                                    if (it.hasFocus && selectedTabIndex == 2) updateSelectedTab(
+                                        currentLeftTab
+                                    )
+                                }
+                                .pointerInput(currentLeftTab, selectedTabIndex) {
+                                    if (selectedTabIndex() == 2) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                val event =
+                                                    awaitPointerEvent(pass = PointerEventPass.Initial)
+                                                if (event.changes.any { it.changedToDown() }) {
+                                                    updateSelectedTab(currentLeftTab)
+                                                }
                                             }
                                         }
                                     }
                                 }
+                        ) {
+                            if (targetIndex == 0) {
+                                DetailsEntry(
+                                    itemDetails = itemDetails,
+                                    itemUiState = itemUiState,
+                                    syncedTins = syncedTins,
+                                    isEditEntry = isEditEntry,
+                                    onValueChange = onValueChange,
+                                    componentList = componentUiState,
+                                    onComponentChange = onComponentChange,
+                                    flavoringList = flavoringUiState,
+                                    onFlavoringChange = onFlavoringChange,
+                                    showRatingPop = showRatingPop,
+                                    onShowRatingPop = onShowRatingPop,
+                                    modifier = Modifier,
+                                )
+                            } else {
+                                NotesEntry(
+                                    itemDetails = itemDetails,
+                                    onValueChange = onValueChange,
+                                    modifier = Modifier
+                                )
                             }
-                    ) {
-                        if (currentLeftTab == 0) {
-                            DetailsEntry(
-                                itemDetails = itemDetails,
-                                itemUiState = itemUiState,
-                                syncedTins = syncedTins,
-                                isEditEntry = isEditEntry,
-                                onValueChange = onValueChange,
-                                componentList = componentUiState,
-                                onComponentChange = onComponentChange,
-                                flavoringList = flavoringUiState,
-                                onFlavoringChange = onFlavoringChange,
-                                showRatingPop = showRatingPop,
-                                onShowRatingPop = onShowRatingPop,
-                                modifier = Modifier,
-                            )
-                        } else {
-                            NotesEntry(
-                                itemDetails = itemDetails,
-                                onValueChange = onValueChange,
-                                modifier = Modifier
-                            )
                         }
                     }
                 }
@@ -502,7 +535,7 @@ fun ItemInputForm(
                             validateDates = validateDates,
                             modifier = Modifier
                         )
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(Modifier.weight(1f))
                     }
                 }
             }
@@ -515,49 +548,70 @@ fun ItemInputForm(
                     .padding(top = 1.dp)
                     .fillMaxHeight(.7f)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    when (selectedTabIndex) {
-                        0 ->
-                            DetailsEntry(
-                                itemDetails = itemDetails,
-                                itemUiState = itemUiState,
-                                syncedTins = syncedTins,
-                                isEditEntry = isEditEntry,
-                                onValueChange = onValueChange,
-                                componentList = componentUiState,
-                                onComponentChange = onComponentChange,
-                                flavoringList = flavoringUiState,
-                                onFlavoringChange = onFlavoringChange,
-                                showRatingPop = showRatingPop,
-                                onShowRatingPop = onShowRatingPop,
-                                modifier = Modifier,
-                            )
+                HorizontalPager(
+                    state = narrowPagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    userScrollEnabled = true,
+                    verticalAlignment = Alignment.Top
+                ) { targetIndex ->
+                    Column(
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        when (targetIndex) {
+                            0 ->
+                                DetailsEntry(
+                                    itemDetails = itemDetails,
+                                    itemUiState = itemUiState,
+                                    syncedTins = syncedTins,
+                                    isEditEntry = isEditEntry,
+                                    onValueChange = onValueChange,
+                                    componentList = componentUiState,
+                                    onComponentChange = onComponentChange,
+                                    flavoringList = flavoringUiState,
+                                    onFlavoringChange = onFlavoringChange,
+                                    showRatingPop = showRatingPop,
+                                    onShowRatingPop = onShowRatingPop,
+                                    modifier = Modifier,
+                                )
 
-                        1 ->
-                            NotesEntry(
-                                itemDetails = itemDetails,
-                                onValueChange = onValueChange,
-                                modifier = Modifier
-                            )
+                            1 ->
+                                NotesEntry(
+                                    itemDetails = itemDetails,
+                                    onValueChange = onValueChange,
+                                    modifier = Modifier
+                                )
 
-                        2 ->
-                            TinsEntry(
-                                tinDetailsList = tinDetailsList,
-                                onTinValueChange = onTinValueChange,
-                                isTinLabelValid = isTinLabelValid,
-                                addTin = addTin,
-                                removeTin = removeTin,
-                                itemUiState = itemUiState,
-                                validateDates = validateDates,
-                                modifier = Modifier
-                            )
+                            2 ->
+                                TinsEntry(
+                                    tinDetailsList = tinDetailsList,
+                                    onTinValueChange = onTinValueChange,
+                                    isTinLabelValid = isTinLabelValid,
+                                    addTin = addTin,
+                                    removeTin = removeTin,
+                                    itemUiState = itemUiState,
+                                    validateDates = validateDates,
+                                    modifier = Modifier
+                                )
 
-                        else -> updateSelectedTab(0)
+                            else ->
+                                DetailsEntry(
+                                    itemDetails = itemDetails,
+                                    itemUiState = itemUiState,
+                                    syncedTins = syncedTins,
+                                    isEditEntry = isEditEntry,
+                                    onValueChange = onValueChange,
+                                    componentList = componentUiState,
+                                    onComponentChange = onComponentChange,
+                                    flavoringList = flavoringUiState,
+                                    onFlavoringChange = onFlavoringChange,
+                                    showRatingPop = showRatingPop,
+                                    onShowRatingPop = onShowRatingPop,
+                                    modifier = Modifier,
+                                )
+                        }
                     }
                 }
             }
@@ -1581,7 +1635,6 @@ fun TinsEntry(
     modifier: Modifier = Modifier
 ) {
     Spacer(Modifier.height(7.dp))
-
     Column(
         modifier = modifier
             .fillMaxWidth()
