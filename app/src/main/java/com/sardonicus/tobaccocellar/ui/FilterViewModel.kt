@@ -1765,10 +1765,6 @@ class FilterViewModel (
 
 
     // Final filter sections UI states //
-    private val _totalDrag = MutableStateFlow(0f)
-    val totalDrag = _totalDrag.asStateFlow()
-    fun updateTotalDrag(drag: Float) { _totalDrag.value = drag }
-
     val filteredBrands = combine(
         brandSearchText,
         availableBrands

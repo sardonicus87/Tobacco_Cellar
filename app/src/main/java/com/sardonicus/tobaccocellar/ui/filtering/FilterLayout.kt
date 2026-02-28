@@ -207,7 +207,6 @@ private fun PagerLayout(
     filterViewModel: FilterViewModel,
     pagerState: PagerState
 ) {
-    val totalDrag by filterViewModel.totalDrag.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     Row(
@@ -215,12 +214,12 @@ private fun PagerLayout(
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .pointerInput(pagerState) {
+                var totalDrag = 0f
                 detectHorizontalDragGestures(
-                    onDragStart = { filterViewModel.updateTotalDrag(0f) },
+                    onDragStart = { totalDrag = 0f },
                     onHorizontalDrag = { change, amount ->
                         change.consume()
-                        val currentDrag = totalDrag
-                        filterViewModel.updateTotalDrag(currentDrag + amount)
+                        totalDrag += amount
                     },
                     onDragEnd = {
                         coroutineScope.launch {
