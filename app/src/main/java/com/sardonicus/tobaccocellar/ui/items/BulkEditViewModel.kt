@@ -1,7 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -56,14 +55,15 @@ class BulkEditViewModel (
     var editingState by mutableStateOf(EditingState())
         private set
 
-    var tabIndex by mutableIntStateOf(0)
+    private val _tabIndex = MutableStateFlow(0)
+    val tabIndex = _tabIndex.asStateFlow()
+
+    fun updateTabIndex(index: Int) { _tabIndex.value = index }
 
     private val _showSnackbar = MutableStateFlow(false)
     val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()
 
-    fun snackbarShown() {
-        _showSnackbar.value = false
-    }
+    fun snackbarShown() { _showSnackbar.value = false }
 
     fun onValueChange(editing: EditingState) {
         editingState = EditingState(
@@ -121,9 +121,7 @@ class BulkEditViewModel (
         return anyFieldSelected
     }
 
-    private fun resetEditingState() {
-        editingState = EditingState()
-    }
+    private fun resetEditingState() { editingState = EditingState() }
 
     fun resetSelectedItems() {
         editingState = editingState.copy(
@@ -135,10 +133,6 @@ class BulkEditViewModel (
         editingState = editingState.copy(
             selectedItems = bulkEditUiState.value.items
         )
-    }
-
-    private fun resetTabIndex() {
-        tabIndex = 0
     }
 
 
@@ -316,7 +310,7 @@ class BulkEditViewModel (
             setLoadingState(false)
             itemsRepository.triggerUploadWorker()
             resetEditingState()
-            resetTabIndex()
+            updateTabIndex(0)
             _showSnackbar.value = true
         }
     }
