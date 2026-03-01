@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.Context
 import android.print.PrintManager
@@ -203,6 +204,7 @@ fun PlaintextScreen(
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun PlaintextBody(
     plaintextState: PlaintextListState,
@@ -229,7 +231,7 @@ fun PlaintextBody(
     val printList = plaintextState.plainList
 
     val setTemplateText = if (templateView) "See List" else "Set Format"
-    val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }.dp
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
     var printDialog by rememberSaveable { mutableStateOf(false) }
     val showPrintDialog: (Boolean) -> Unit = { printDialog = it }

@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -90,7 +91,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -1848,6 +1848,7 @@ private fun TableHeaderRow(
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun TableItem(
     item: ItemsListState,
@@ -1933,10 +1934,8 @@ private fun TableItem(
                     .matchParentSize()
                     .padding(0.dp)
             ) {
-                val screenWidth = with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp }
-            //    val currentScrollOffset by remember { derivedStateOf { horizontalScroll.value } }
+                val screenWidth = LocalConfiguration.current.screenWidthDp
                 val switch = remember(screenWidth, layoutData.totalWidth) { screenWidth.dp >= layoutData.totalWidth }
-            //    val width = remember(switch) { if (switch) layoutData.totalWidth.value.dp else screenWidth.dp }
 
                 Box (
                     modifier = Modifier
