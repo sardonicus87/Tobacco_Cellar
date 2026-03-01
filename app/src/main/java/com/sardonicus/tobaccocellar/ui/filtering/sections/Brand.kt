@@ -258,9 +258,9 @@ private fun SelectableBrandsRow(
     updateBrandSearchText: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    @Suppress("unused")
     val nestedScroll = remember {
         object : NestedScrollConnection {
-            @Suppress("Unused")
             override fun onPostScroll(
                 consumed: Offset,
                 available: Offset,
