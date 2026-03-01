@@ -88,9 +88,9 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
-import com.sardonicus.tobaccocellar.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
@@ -186,8 +186,8 @@ fun SettingsScreen(
                     },
                     tinOzConversionRate = ozRate,
                     tinGramsConversionRate = gramsRate,
-                    updateTinSync = { viewModel.updateTinSync() },
-                    optimizeDatabase = { viewModel.optimizeDatabase() },
+                    updateTinSync = viewModel::updateTinSync,
+                    optimizeDatabase = viewModel::optimizeDatabase,
                     onDeleteAllClick = {
                         coroutineScope.launch {
                             viewModel.deleteAllItems()
@@ -301,7 +301,7 @@ private fun SettingsBody(
 
         item {
             AboutSection(
-                navigateToChangelog = { navigateToChangelog(it) },
+                navigateToChangelog = navigateToChangelog,
                 selectionKey = selectionKey,
                 selectionFocused = viewModel::updateFocused,
                 modifier = Modifier
@@ -324,41 +324,41 @@ private fun SettingsBody(
         // Display settings
         DialogType.Theme -> {
             ThemeDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 themeSetting = themeSetting,
-                onThemeSelected = { viewModel.saveThemeSetting(it) }
+                onThemeSelected = viewModel::saveThemeSetting
             )
         }
         DialogType.Ratings -> {
             RatingsDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 showRatings = showRatings,
-                onRatingsOption = { viewModel.saveShowRatingOption(it) },
+                onRatingsOption = viewModel::saveShowRatingOption,
                 modifier = Modifier,
             )
         }
         DialogType.TypeGenre -> {
             TypeGenreDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 typeGenreOption = typeGenreOption,
                 optionEnablement = typeGenreEnablement,
-                onTypeGenreOption = { viewModel.saveTypeGenreOption(it) },
+                onTypeGenreOption = viewModel::saveTypeGenreOption,
                 modifier = Modifier
             )
         }
         DialogType.QuantityDisplay -> {
             QuantityDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 quantityOption = quantityOption,
-                onQuantityOption = { viewModel.saveQuantityOption(it) },
+                onQuantityOption = viewModel::saveQuantityOption,
                 modifier = Modifier
             )
         }
         DialogType.ParseLinks -> {
             ParseLinksDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 parseLinks = parseLinks,
-                onParseLinksOption = { viewModel.saveParseLinksOption(it) },
+                onParseLinksOption = viewModel::saveParseLinksOption,
                 modifier = Modifier
             )
         }
@@ -367,46 +367,43 @@ private fun SettingsBody(
         DialogType.DeviceSync -> {
             if (!loading) {
                 DeviceSyncDialog(
-                    onDismiss = { viewModel.dismissDialog() },
+                    onDismiss = viewModel::dismissDialog,
                     acknowledgement = acknowledgement,
                     connectionEnabled = connectionEnabled,
-                    confirmAcknowledgement = { viewModel.saveCrossDeviceAcknowledged() },
+                    confirmAcknowledgement = viewModel::saveCrossDeviceAcknowledged,
                     deviceSync = deviceSync,
-                    onDeviceSync = { viewModel.saveCrossDeviceSync(it) },
+                    onDeviceSync = viewModel::saveCrossDeviceSync,
                     email = email,
                     hasScope = hasScope,
                     allowMobileData = allowMobileData,
-                    onAllowMobileData = { viewModel.saveAllowMobileData(it) },
-                    onManualSync = { viewModel.manualSync() },
-                    clearRemoteData = { viewModel.clearRemoteData() },
-                    clearLoginState = { viewModel.clearLoginState() },
+                    onAllowMobileData = viewModel::saveAllowMobileData,
+                    onManualSync = viewModel::manualSync,
+                    clearRemoteData = viewModel::clearRemoteData,
+                    clearLoginState = viewModel::clearLoginState,
                     modifier = Modifier
                 )
             }
         }
         DialogType.TinRates -> {
             TinRatesDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 ozRate = tinOzConversionRate,
                 gramsRate = tinGramsConversionRate,
-                onSave = { ozRate, gramsRate ->
-                    viewModel.setTinConversionRates(ozRate, gramsRate)
-                    viewModel.dismissDialog()
-                },
+                onSave = viewModel::setTinConversionRates,
                 modifier = Modifier
             )
         }
         DialogType.TinSyncDefault -> {
             TinSyncDefaultDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 defaultSyncOption = defaultSyncOption,
-                onDefaultSync = { viewModel.setDefaultSyncOption(it) },
+                onDefaultSync = viewModel::setDefaultSyncOption,
                 modifier = Modifier
             )
         }
         DialogType.DbOperations -> {
             DbOperationsDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 updateTinSync = updateTinSync,
                 optimizeDatabase = optimizeDatabase,
                 modifier = Modifier
@@ -414,7 +411,7 @@ private fun SettingsBody(
         }
         DialogType.BackupRestore -> {
             BackupRestoreDialog(
-                onDismiss = { viewModel.dismissDialog() },
+                onDismiss = viewModel::dismissDialog,
                 onSave = {
                     launcher.launch(it)
                     viewModel.dismissDialog()
@@ -433,7 +430,7 @@ private fun SettingsBody(
                     onDeleteAllClick()
                     viewModel.dismissDialog()
                 },
-                onDeleteCancel = { viewModel.dismissDialog() },
+                onDeleteCancel = viewModel::dismissDialog,
                 modifier = Modifier
                     .padding(0.dp)
             )
@@ -1076,7 +1073,7 @@ fun DeviceSyncDialog(
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "To auto synchronize collection changes across devices, you " +
+                            text = "To auto-synchronize collection changes across devices, you " +
                                     "must enable this option and sign-in with the same Google " +
                                     "account to authorize Google Drive access on each device (you " +
                                     "do not need the Google Drive app for this functionality to " +
@@ -1106,8 +1103,8 @@ fun DeviceSyncDialog(
                             text = "Data does not count toward your Google Drive storage quota, " +
                                     "and is checked once at every app start, and cyclically once " +
                                     "every 12 hours as long as the device is powered on. The app " +
-                                    "start check and 12-hour cycled downloads respect your " +
-                                    "settings regarding mobile data or WIFI only.",
+                                    "start check and 12-hour cycled checks respect your settings " +
+                                    "regarding mobile data or WIFI only.",
                             modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
@@ -1227,7 +1224,7 @@ fun DeviceSyncDialog(
                                     )
                                 }
                             }
-                            if (!connectionEnabled) {
+                            if (deviceSync && !connectionEnabled) {
                                 Box (
                                     modifier = Modifier
                                         .width(IntrinsicSize.Min)
@@ -1262,8 +1259,9 @@ fun DeviceSyncDialog(
                                 .heightIn(28.dp, 28.dp)
                         ) {
                             Text(
-                                text = "Clear Login",
+                                text = "Sign-Out",
                                 fontSize = 15.sp,
+                                color = if (accountLinked) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
                         }
                     }
@@ -1485,6 +1483,7 @@ fun TinRatesDialog(
                         tinOzRate.toDoubleOrNull() ?: ozRate,
                         tinGramsRate.toDoubleOrNull() ?: gramsRate
                     )
+                    onDismiss()
                 },
                 modifier = Modifier
             ) {
