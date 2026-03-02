@@ -9,9 +9,11 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +55,9 @@ class EditEntryViewModel(
 
     fun updateSelectedTab(index: Int) {
         _selectedTabIndex.value = index
+        if (index < 2) {
+            _currentLeftTab.value = index
+        }
         updateUiState(itemUiState.itemDetails)
     }
 
@@ -179,7 +184,9 @@ class EditEntryViewModel(
                 .also { copyOriginalDetails(it) }
             val components = initialDetails.components.toComponentList()
             val flavoring = initialDetails.flavoring.toFlavoringList()
-            val tins = initialDetails.tins.mapIndexed { index, it ->
+            val tins = initialDetails.tins
+                .sortedBy { it.tinId }
+                .mapIndexed { index, it ->
                 it.toTinDetails().copy(tempTinId = index + 1)
             }. also {
                 copyOriginalTins(it)
@@ -396,8 +403,6 @@ class EditEntryViewModel(
         if (validateInput(itemUiState.itemDetails)) {
             SyncStateManager.schedulingPaused = true
 
-            val lastModified = System.currentTimeMillis()
-
             val previousComps = itemsRepository.getComponentsForItemStream(itemsId).first()
             val previousCompsSet = previousComps.map { it.componentName.lowercase() }
             val editedComps = componentList.toComponents(autoCompleteData.components)
@@ -417,6 +422,10 @@ class EditEntryViewModel(
             val updatedTins = tinDetailsList.filter { existingTinIds.contains(it.tinId) }.filter {
                 it.toOriginalTin() != originalTins.find { originalTin -> originalTin.tinId == it.tinId }
             }
+            val conflictingTins = originalTins.filter { tin ->
+                // check for label conflicts in the event of swapped tin labels
+                tinDetailsList.any { it.tinId != tin.tinId && it.tinLabel == tin.tinLabel }
+            }
             val tinsToDelete = existingTinIds.filter { tinId -> !tinDetailsList.map { it.tinId }.contains(tinId) }
 
             val actuallyUpdated = (itemUiState.itemDetails.toOriginalItem() != originalItem) ||
@@ -424,7 +433,7 @@ class EditEntryViewModel(
                     flavorToAdd.isNotEmpty() || flavorToRemove.isNotEmpty() ||
                     newTins.isNotEmpty() || updatedTins.isNotEmpty() || tinsToDelete.isNotEmpty()
 
-            val itemDetails = itemUiState.itemDetails.copy(lastModified = lastModified)
+            val itemDetails = itemUiState.itemDetails.copy(lastModified = System.currentTimeMillis())
 
             if (actuallyUpdated) { itemsRepository.updateItem(itemDetails.toItem()) }
 
@@ -464,16 +473,35 @@ class EditEntryViewModel(
                 }
             }
 
-            newTins.forEach {
-                val tin = it.copy(lastModified = lastModified).toTin(itemsId)
-                itemsRepository.insertTin(tin)
-            }
-            updatedTins.forEach {
-                val tin = it.copy(lastModified = lastModified).toTin(itemsId)
-                itemsRepository.updateTin(tin)
-            }
             tinsToDelete.forEach {
                 itemsRepository.deleteTin(it)
+            }
+            delay(1)
+            conflictingTins.forEach { blocker ->
+                val tempTin = Tins(
+                    tinId = blocker.tinId,
+                    itemsId = blocker.itemsId,
+                    tinLabel = "${blocker.tinLabel}_temp_${System.currentTimeMillis()}",
+                    container = blocker.container,
+                    tinQuantity = blocker.tinQuantity,
+                    unit = blocker.unit,
+                    manufactureDate = blocker.manufactureDate,
+                    cellarDate = blocker.cellarDate,
+                    openDate = blocker.openDate,
+                    finished = blocker.finished,
+                    lastModified = System.currentTimeMillis()
+                )
+                itemsRepository.updateTin(tempTin)
+            }
+            delay(1)
+            updatedTins.forEach {
+                val tin = it.copy(lastModified = System.currentTimeMillis()).toTin(itemsId)
+                itemsRepository.updateTin(tin)
+            }
+            delay(1)
+            newTins.forEach {
+                val tin = it.copy(lastModified = System.currentTimeMillis()).toTin(itemsId)
+                itemsRepository.insertTin(tin)
             }
 
             SyncStateManager.schedulingPaused = false
