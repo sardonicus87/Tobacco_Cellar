@@ -381,40 +381,41 @@ fun ItemInputForm(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex()) { 3 }
-    LaunchedEffect(narrowPagerState.currentPage) {
-        if (narrowPagerState.currentPage != selectedTabIndex()) {
-            updateSelectedTab(narrowPagerState.currentPage)
-        }
-    }
-    LaunchedEffect(selectedTabIndex()) {
-        if (narrowPagerState.currentPage != selectedTabIndex()) {
-            narrowPagerState.animateScrollToPage(selectedTabIndex())
-        }
-    }
+    val isLarge = isLargeScreen()
+    val currentLeftTab = currentLeftTab()
+    val selectedTabIndex = remember(selectedTabIndex()) { selectedTabIndex().coerceIn(0, 2) }
 
     val largePagerState = rememberPagerState(initialPage = currentLeftTab()) { 2 }
-    LaunchedEffect(largePagerState.currentPage) {
-        if (largePagerState.currentPage != currentLeftTab()) {
-            updateSelectedTab(largePagerState.currentPage)
+    val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex()) { 3 }
+
+    if (isLarge) {
+        LaunchedEffect(largePagerState.currentPage) {
+            if (largePagerState.currentPage == largePagerState.targetPage) {
+                if (largePagerState.currentPage != currentLeftTab()) {
+                    updateSelectedTab(largePagerState.currentPage)
+                }
+            }
         }
-    }
-    LaunchedEffect(currentLeftTab()) {
-        if (largePagerState.currentPage != currentLeftTab()) {
-            largePagerState.animateScrollToPage(currentLeftTab())
+        LaunchedEffect(currentLeftTab()) {
+            if (largePagerState.currentPage != currentLeftTab()) {
+                largePagerState.animateScrollToPage(currentLeftTab())
+            }
+        }
+    } else {
+        LaunchedEffect(narrowPagerState.currentPage) {
+            if (narrowPagerState.currentPage == narrowPagerState.targetPage) {
+                if (narrowPagerState.currentPage != selectedTabIndex()) {
+                    updateSelectedTab(narrowPagerState.currentPage)
+                }
+            }
+        }
+        LaunchedEffect(selectedTabIndex()) {
+            if (narrowPagerState.currentPage != selectedTabIndex()) {
+                narrowPagerState.animateScrollToPage(selectedTabIndex())
+            }
         }
     }
 
-    val isLarge = isLargeScreen()
-    val preSafe = selectedTabIndex()
-    val currentLeftTab = currentLeftTab()
-    val selectedTabIndex = remember(preSafe) { preSafe.coerceIn(0, 2) }
-
-    if (preSafe != selectedTabIndex) {
-        LaunchedEffect(Unit) {
-            updateSelectedTab(0)
-        }
-    }
 
     Column(
         modifier = modifier
