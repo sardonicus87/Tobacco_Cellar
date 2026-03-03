@@ -269,7 +269,6 @@ private fun SelectableBrandsRow(
                 return (Offset(x = available.x, y = 0f))
             }
 
-            @Suppress("Unused")
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
                 return Velocity(x = available.x, y = 0f)
             }
