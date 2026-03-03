@@ -125,7 +125,7 @@ class BlendDetailsViewModel(
                         ),
                         rating = item.items.rating,
                         notes = item.items.notes,
-                        tinsDetails = item.tins.associateWith { tin ->
+                        tinsDetails = item.tins.sortedBy { it.tinId }.associateWith { tin ->
                             buildSet {
                                 buildDetailsString("Container: ", tin.container)?.let { add(DetailLine(it)) }
                                 buildDetailsString("Quantity: ", if (tin.unit.isNotBlank()) { formatDecimal(tin.tinQuantity) + " ${tin.unit}" } else "")
@@ -133,19 +133,19 @@ class BlendDetailsViewModel(
 
                                 if (tin.manufactureDate != null) {
                                     val primary = buildDetailsString("Manufacture Date: ", formatMediumDate(tin.manufactureDate))!!
-                                    val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, " manufacture ")})", 12.sp)
+                                    val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, DateField.MANUFACTURE)})", 12.sp)
                                     add(DetailLine(primary, secondary))
                                 }
 
                                 if (tin.cellarDate != null) {
                                     val primary = buildDetailsString("Cellar Date: ", formatMediumDate(tin.cellarDate))!!
-                                    val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, " cellar ")})", 12.sp)
+                                    val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, DateField.CELLAR)})", 12.sp)
                                     add(DetailLine(primary, secondary))
                                 }
 
                                 if (tin.openDate != null) {
                                     val primary = buildDetailsString("Open Date: ", formatMediumDate(tin.openDate))!!
-                                    val secondary = if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, " open ")})", 12.sp) } else { buildDetailsString("", "finished", 12.sp)}
+                                    val secondary = if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, DateField.OPEN)})", 12.sp) } else { buildDetailsString("", "finished", 12.sp)}
                                     add(DetailLine(primary, secondary))
                                 }
                             }
@@ -313,7 +313,7 @@ data class DetailLine(
     val secondary: AnnotatedString? = null
 )
 
-fun calculateAge(date: Long?, field: String): String {
+fun calculateAge(date: Long?, field: DateField? = null): String {
     if (date == null) { return "" }
 
     val now = LocalDate.now()
@@ -337,9 +337,9 @@ fun calculateAge(date: Long?, field: String): String {
     }
 
     val end = when (field) {
-        "manufacture" -> if (then < now) { " old" } else { " until made/available?" }
-        "cellar" -> if (then < now) { " in cellar" } else { " until adding/available?" }
-        "open" -> if (then < now) { " open" } else { " until opening" }
+        DateField.MANUFACTURE -> if (then < now) { " old" } else { " until available" }
+        DateField.CELLAR -> if (then < now) { " in cellar" } else { " until available" }
+        DateField.OPEN -> if (then < now) { " open" } else { " until opening" }
         else -> ""
     }
 
@@ -366,3 +366,5 @@ fun formatDecimal(number: Double?, places: Int = 2, drop: Boolean = true): Strin
 
     return formatted.format(number)
 }
+
+enum class DateField { MANUFACTURE, CELLAR, OPEN }

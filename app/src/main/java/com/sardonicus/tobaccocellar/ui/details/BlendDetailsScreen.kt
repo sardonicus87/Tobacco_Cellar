@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +40,8 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
@@ -437,10 +440,7 @@ fun BlendDetailsBody(
                                         details?.forEach { detailLine ->
                                             Column(
                                                 horizontalAlignment = Alignment.Start,
-                                                verticalArrangement = Arrangement.spacedBy(
-                                                    0.dp,
-                                                    Alignment.Top
-                                                ),
+                                                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                                                 modifier = Modifier
                                                     .padding(start = 12.dp)
                                             ) {
@@ -449,11 +449,14 @@ fun BlendDetailsBody(
                                                     modifier = Modifier,
                                                 )
                                                 detailLine.secondary?.let {
+                                                    val color = Color.Gray.copy(alpha = .5f).compositeOver(LocalContentColor.current)
                                                     Text(
                                                         text = it,
-                                                        lineHeight = 12.sp,
+                                                        lineHeight = 13.sp,
+                                                        color = color,
                                                         modifier = Modifier
-                                                            .padding(start = 16.dp),
+                                                            .padding(start = 16.dp)
+                                                            .offset(y = (-2).dp),
                                                     )
                                                 }
                                             }
