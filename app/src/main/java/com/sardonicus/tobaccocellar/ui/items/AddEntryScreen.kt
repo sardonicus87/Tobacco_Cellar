@@ -429,7 +429,7 @@ fun ItemInputForm(
             updateSelectedTab = updateSelectedTab
         )
         if (isLarge) {
-            Row(Modifier.fillMaxHeight(.7f)) {
+            Row(Modifier.fillMaxHeight(.75f)) {
                 GlowBox(
                     color = GlowColor(MaterialTheme.colorScheme.background),
                     size = GlowSize(vertical = 3.dp),
@@ -547,7 +547,7 @@ fun ItemInputForm(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 1.dp)
-                    .fillMaxHeight(.7f)
+                    .fillMaxHeight(.75f)
             ) {
                 HorizontalPager(
                     state = narrowPagerState,
