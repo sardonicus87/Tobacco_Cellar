@@ -96,6 +96,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
@@ -127,8 +128,7 @@ fun BulkEditScreen(
     val saveIndicator by viewModel.saveIndicator.collectAsState()
     val tabIndex by viewModel.tabIndex.collectAsState()
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) } }
-    //  isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)    isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
+    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
 
     if (showSnackbar) {
         LaunchedEffect(Unit) {
@@ -225,8 +225,10 @@ fun BulkEditBody(
 ) {
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
     LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage != tabIndex) {
-            onTabChange(pagerState.currentPage)
+        if (pagerState.currentPage == pagerState.targetPage) {
+            if (pagerState.currentPage != tabIndex) {
+                onTabChange(pagerState.currentPage)
+            }
         }
     }
     LaunchedEffect(tabIndex) {
