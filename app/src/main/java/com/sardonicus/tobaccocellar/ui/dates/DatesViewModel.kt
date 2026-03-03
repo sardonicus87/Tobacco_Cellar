@@ -144,7 +144,7 @@ class DatesViewModel(
                         blend = item.items.blend,
                         tinLabel = it.tinLabel,
                         date = formatMediumDate(originalMillis),
-                        time = calculateAge(originalMillis, ""),
+                        time = calculateAge(originalMillis),
                     ),
                     originalMillis
                 )
@@ -261,7 +261,7 @@ class DatesViewModel(
                             blend = item.items.blend,
                             tinLabel = it.tinLabel,
                             date = formatMediumDate(originalMillis),
-                            time = calculateAge(originalMillis, ""),
+                            time = calculateAge(originalMillis),
                         ),
                         originalMillis
                     )
