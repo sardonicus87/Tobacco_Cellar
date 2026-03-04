@@ -123,7 +123,7 @@ import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOW
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
-import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
+import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
@@ -1383,7 +1383,7 @@ fun DetailsEntry(
                                 .offset(x = 0.dp, y = 1.dp),
                             fontSize = 14.sp,
                         )
-                        CustomCheckBox(
+                        CustomCheckbox(
                             checked = itemDetails.syncTins,
                             onCheckedChange = {
                                 onValueChange(itemDetails.copy(syncTins = it))
@@ -1457,7 +1457,7 @@ fun DetailsEntry(
                     modifier = Modifier
                         .offset(x = 0.dp, y = 1.dp)
                 )
-                CustomCheckBox(
+                CustomCheckbox(
                     checked = itemDetails.favorite,
                     onCheckedChange = {
                         if (itemDetails.favorite) {
@@ -1491,7 +1491,7 @@ fun DetailsEntry(
                     modifier = Modifier
                         .offset(x = 0.dp, y = 1.dp)
                 )
-                CustomCheckBox(
+                CustomCheckbox(
                     checked = itemDetails.disliked,
                     onCheckedChange = {
                         if (itemDetails.disliked) {
@@ -1529,7 +1529,7 @@ fun DetailsEntry(
                 modifier = Modifier
                     .offset(x = 0.dp, y = 1.dp)
             )
-            CustomCheckBox(
+            CustomCheckbox(
                 checked = itemDetails.inProduction,
                 onCheckedChange = {
                     onValueChange(itemDetails.copy(inProduction = it))
@@ -2495,7 +2495,7 @@ fun IndividualTin(
                                 .alpha(if (disabled) 0.5f else 1f),
                             fontSize = 14.sp,
                         )
-                        CustomCheckBox(
+                        CustomCheckbox(
                             checked = tinDetails.finished,
                             onCheckedChange = {
                                 onTinValueChange(tinDetails.copy(finished = it))

@@ -104,7 +104,7 @@ import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
-import com.sardonicus.tobaccocellar.ui.composables.CustomCheckBox
+import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -1075,7 +1075,7 @@ fun BulkEditing(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
                                 )
-                                CustomCheckBox(
+                                CustomCheckbox(
                                     checked = editingState.favorite,
                                     onCheckedChange = {
                                         if (editingState.favorite) {
@@ -1114,7 +1114,7 @@ fun BulkEditing(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
                                 )
-                                CustomCheckBox(
+                                CustomCheckbox(
                                     checked = editingState.disliked,
                                     onCheckedChange = {
                                         if (editingState.disliked) {
@@ -1201,7 +1201,7 @@ fun BulkEditing(
                                     alpha = 0.50f
                                 ) else LocalContentColor.current,
                             )
-                            CustomCheckBox(
+                            CustomCheckbox(
                                 checked = editingState.inProduction,
                                 onCheckedChange = {
                                     onValueChange(editingState.copy(inProduction = it))
@@ -1274,7 +1274,7 @@ fun BulkEditing(
                                     alpha = 0.50f
                                 ) else LocalContentColor.current
                             )
-                            CustomCheckBox(
+                            CustomCheckbox(
                                 checked = editingState.syncTins,
                                 onCheckedChange = {
                                     onValueChange(editingState.copy(syncTins = it))
