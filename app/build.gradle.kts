@@ -21,8 +21,8 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 36
-            versionCode = 38
-            versionName = "5.0.0"
+            versionCode = 39
+            versionName = "5.1.0"
 
             vectorDrawables {
                 useSupportLibrary = true

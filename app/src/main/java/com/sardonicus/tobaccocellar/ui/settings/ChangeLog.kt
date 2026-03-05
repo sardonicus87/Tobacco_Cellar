@@ -12,6 +12,43 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "5.1.0",
+        buildDate = "5 Mar, 2026",
+        changes = listOf(
+            "Continued large screen support: Add/Edit Entry screens now adapt to large screens " +
+                    "with a left column containing the Details and Notes tabs and a right column " +
+                    "for the Tins tab. The Bulk Edit screen now also now adapts into a two column " +
+                    "layout for large screens.",
+            "Stats screen: new chart for seeing [up-to] the top ten brands by average blend rating " +
+                    "(weighted by total number of rated entries)."
+        ),
+        improvements = listOf(
+            "Screens with Tab Layouts (Add/Edit, Bulk Edit): tabs can now be switched with a " +
+                    "flick/drag gesture on the body of the tab. Tab changes are also now " +
+                    "animated (slide).",
+            "Blend Details and Edit Entry Tins lists: ensure that they always appear in the same " +
+                    "order (the order in which they were added).",
+            "Refined Auto-Complete text fields: eliminated some UI jank and made expansion of " +
+                    "suggestions more consistent.",
+            "Plaintext Screen: in the Save/Load Preset dialogs, the currently loaded preset is " +
+                    "now indicated by a border highlight.",
+            "General stability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "Filter Sheet crash: fixed a crash that could happen when re-opening the filter sheet " +
+                    "after deleting a subgenre, cut, component, flavoring or tin container (if it " +
+                    "were the last one of it's field).",
+            "Filter Sheet Overflow Dialogs: fixed \"Clear All\" button not appearing in various " +
+                    "overflow dialogs under certain height conditions, as well as some dialogs " +
+                    "being dismissed on screen rotation.",
+            "CSV Import Help: fixed incorrect page title.",
+            "Edit Entry: fixed a bug that could lead to a crash when updating an item if tin " +
+                    "labels were swapped between different tins when saving.",
+            "Other minor bug fixes (UI related)."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "5.0.0",
         buildDate = "8 Feb, 2026",
         changes = listOf(
