@@ -139,6 +139,9 @@ fun PlaintextScreen(
     val printOptions by viewModel.printOptions.collectAsState()
     val selectionKey by viewModel.selectionKey.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
+//    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+//    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) } }
+    // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
     BackHandler(selectionFocused) {
         if (selectionFocused) {
@@ -180,17 +183,13 @@ fun PlaintextScreen(
                 .padding(innerPadding)
         ) {
             PlaintextBody(
+                viewModel = viewModel,
                 plaintextState = plaintextState,
                 formatString = formatString,
                 delimiter = delimiter,
                 printOptions = printOptions,
                 filterViewModel = filterViewModel,
                 saveFormatString = viewModel::saveFormatString,
-                sortMenuState = viewModel.sortMenuState,
-                updateSortMenuState = viewModel::updateSortMenuState,
-                updateSorting = viewModel::updateSorting,
-                updateSubSorting = viewModel::updateSubSorting,
-                setTemplateView = viewModel::setTemplateView,
                 savePrintOptions = viewModel::savePrintOptions,
                 savePreset = viewModel::savePreset,
                 templateView = templateView,
@@ -207,17 +206,13 @@ fun PlaintextScreen(
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun PlaintextBody(
+    viewModel: PlaintextViewModel,
     plaintextState: PlaintextListState,
     formatString: String,
     delimiter: String,
     printOptions: PrintOptions,
     filterViewModel: FilterViewModel,
     saveFormatString: (String, String) -> Unit,
-    sortMenuState: SortMenuState,
-    updateSortMenuState: (SortMenuState) -> Unit,
-    updateSorting: (String, Boolean) -> Unit,
-    updateSubSorting: (String) -> Unit,
-    setTemplateView: (Boolean) -> Unit,
     savePrintOptions: (Float, Double) -> Unit,
     savePreset: (Int, String, String) -> Unit,
     templateView: Boolean,
@@ -226,289 +221,21 @@ fun PlaintextBody(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val clipboard = LocalClipboard.current
     val printList = plaintextState.plainList
 
-    val setTemplateText = if (templateView) "See List" else "Set Format"
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-
-    var printDialog by rememberSaveable { mutableStateOf(false) }
-    val showPrintDialog: (Boolean) -> Unit = { printDialog = it }
-
-    BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
-        if (sortMenuState.mainMenu) {
-            updateSortMenuState(sortMenuState.copy(mainMenu = false))
-        }
-        if (sortMenuState.subMenu) {
-            updateSortMenuState(sortMenuState.copy(subMenu = false))
-        }
-    }
+    val printDialog by viewModel.printDialog.collectAsState()
 
     Column(
         modifier = modifier
             .fillMaxWidth(),
     ){
         // Header
-        Row(
+        PlaintextHeader(
+            viewModel = viewModel,
+            filterViewModel = filterViewModel,
+            context = context,
             modifier = Modifier
-                .background(LocalCustomColors.current.homeHeaderBg)
-                .padding(horizontal = 12.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Set templateView switch
-            Box {
-                TextButton(
-                    onClick = { setTemplateView(!templateView) },
-                    modifier = Modifier
-                        .heightIn(40.dp, 40.dp),
-                    contentPadding = PaddingValues(8.dp, 2.dp),
-                ) {
-                    Box(
-                        modifier = Modifier,
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Set Format", color = Color.Transparent)
-                        Text(setTemplateText)
-                    }
-                }
-            }
-
-            // Open filter sheet
-            Box(contentAlignment = Alignment.Center) {
-                val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
-                val borderColor = if (filteringApplied) LocalContentColor.current else Color.Transparent
-                val indicatorColor = if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
-
-                TextButton(
-                    onClick = { filterViewModel.openBottomSheet() },
-                    modifier = Modifier
-                        .heightIn(40.dp, 40.dp),
-                    contentPadding = PaddingValues(8.dp, 2.dp),
-                ) { Text("Filter") }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(7.dp)
-                        .offset((-5).dp, (-5).dp)
-                        .clip(CircleShape)
-                        .border(0.5.dp, borderColor, CircleShape)
-                        .background(indicatorColor)
-                )
-            }
-
-            // Sorting
-            Box {
-                var reverse: Boolean
-
-                val hasSubOptions = listOf(
-                    PlaintextSortOption.TIN_LABEL.value,
-                    PlaintextSortOption.TIN_CONTAINER.value,
-                    PlaintextSortOption.TIN_QUANTITY.value
-                )
-                val subOptionsList = listOf(
-                    PlaintextSortOption.DEFAULT.value,
-                    PlaintextSortOption.TIN_DEFAULT.value,
-                    PlaintextSortOption.BRAND.value,
-                    PlaintextSortOption.BLEND.value
-                )
-
-                val density = LocalDensity.current
-                var yPositions by remember { mutableStateOf(mapOf<String, Dp>()) }
-                var mainWidth by remember { mutableStateOf(0.dp) }
-                var mainPosition by remember { mutableStateOf(0.dp) }
-                val alteredColor = Color.Black.copy(alpha = .1f).compositeOver(LocalCustomColors.current.textField)
-                val color = if (sortMenuState.subMenu) alteredColor else LocalCustomColors.current.textField
-
-                TextButton(
-                    onClick = { updateSortMenuState(sortMenuState.copy(mainMenu = !sortMenuState.mainMenu)) },
-                    enabled = plaintextState.sortOptions.isNotEmpty(),
-                    modifier = Modifier
-                        .heightIn(40.dp, 40.dp),
-                    contentPadding = PaddingValues(8.dp, 2.dp),
-                ) { Text("Sorting") }
-
-                // Main options
-                DropdownMenu(
-                    expanded = sortMenuState.mainMenu,
-                    onDismissRequest = { updateSortMenuState(sortMenuState.copy(mainMenu = false)) },
-                    modifier = Modifier
-                        .onGloballyPositioned {
-                            mainWidth = with(density) { it.size.width.toDp() }
-                            mainPosition = with(density) { it.positionOnScreen().x.toDp() }
-                        },
-                    containerColor = color,
-                    shadowElevation = 6.dp
-                ) {
-                    plaintextState.sortOptions.forEach { option ->
-                        var yPosition by remember { mutableStateOf(0.dp) }
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Start,
-                                ) {
-                                    Text(
-                                        text = option.value,
-                                        modifier = Modifier
-                                            .padding(end = 2.dp),
-                                        color = LocalContentColor.current.copy(alpha = if (sortMenuState.subMenu) 0.85f else 1.0f)
-                                    )
-                                    // Sort indicator and/or submenu
-                                    if (plaintextState.sortState.value == option.value) {
-                                        Box {
-                                            Image(
-                                                painter = painterResource(id = plaintextState.sortState.icon),
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .size(20.dp)
-                                                    .padding(0.dp),
-                                                colorFilter = ColorFilter.tint(
-                                                    LocalContentColor.current
-                                                )
-                                            )
-                                        }
-                                    } else if (option.value in hasSubOptions) {
-                                        Box {
-                                            Image(
-                                                painter = painterResource(R.drawable.arrow_right),
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .size(20.dp),
-                                                colorFilter = ColorFilter.tint(
-                                                    LocalContentColor.current.copy(alpha = 0.5f)
-                                                )
-                                            )
-                                        }
-                                    } else {
-                                        Spacer(Modifier.width(20.dp))
-                                    }
-                                }
-                            },
-                            onClick = {
-                                if (option.value in hasSubOptions) {
-                                    updateSortMenuState(
-                                        sortMenuState.copy(
-                                            subMenu = true,
-                                            mainSelection = option.value,
-                                        )
-                                    )
-                                }
-                                else { updateSorting(option.value, true) }
-                            },
-                            modifier = Modifier
-                                .onGloballyPositioned {
-                                    yPosition = with(density) { (it.positionInParent().y).toDp() }
-                                }
-                        )
-
-                        yPositions = yPositions + (option.value to yPosition)
-
-                    }
-                }
-
-                // Sub sorting menu
-                var subWidth by remember { mutableStateOf(0.dp) }
-                val yOffset = yPositions[sortMenuState.mainSelection]
-                val mainRightEdge = mainPosition + mainWidth
-                val remainingSpace = screenWidth - mainRightEdge
-                val xOffset = if (subWidth < (remainingSpace * 1.05f)) mainWidth else -(subWidth)
-
-                DropdownMenu(
-                    expanded = sortMenuState.subMenu,
-                    onDismissRequest = { updateSortMenuState(sortMenuState.copy(subMenu = false)) },
-                    containerColor = LocalCustomColors.current.textField,
-                    modifier = Modifier
-                        .onGloballyPositioned{
-                            subWidth = with(density) { it.size.width.toDp() }
-                        },
-                    offset = DpOffset(xOffset, yOffset ?: 0.dp),
-                    shadowElevation = 6.dp
-                ) {
-                    subOptionsList.forEach {
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Start,
-                                ) {
-                                    Text(
-                                        text = it,
-                                        modifier = Modifier
-                                            .padding(end = 8.dp)
-                                    )
-                                    val color = if (sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection) {
-                                            LocalContentColor.current } else Color.Transparent
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .clip(CircleShape)
-                                            .background(color)
-                                    )
-                                }
-                            },
-                            onClick = {
-                                reverse = sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection
-                                updateSortMenuState(sortMenuState.copy(subSelection = it))
-                                updateSorting(sortMenuState.mainSelection, reverse)
-                                updateSubSorting(it)
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Copy
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plaintextState.plainList)))
-
-                        Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier
-                    .padding(0.dp)
-                    .size(40.dp),
-                enabled = plaintextState.plainList.isNotBlank(),
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-                )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.copy_icon),
-                    contentDescription = "Copy",
-                    modifier = Modifier
-                        .padding(0.dp),
-                )
-            }
-
-            // Print
-            IconButton(
-                onClick = { printDialog = true },
-                modifier = Modifier
-                    .padding(0.dp)
-                    .size(40.dp),
-                enabled = plaintextState.plainList.isNotBlank(),
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-                )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.print_icon),
-                    contentDescription = "Print",
-                    modifier = Modifier
-                        .padding(0.dp),
-                )
-            }
-        }
+        )
 
         // Main body
         GlowBox(
@@ -559,17 +286,304 @@ fun PlaintextBody(
 
                 printManager?.print(jobName, PrintHelper(jobName, printList, font, margin), null)
                 savePrintOptions(font, margin)
-                showPrintDialog(false)
+                viewModel.showPrintDialog(false)
             },
             onPrintCancel = { font, margin ->
                 savePrintOptions(font, margin)
-                showPrintDialog(false)
+                viewModel.showPrintDialog(false)
             },
         )
     }
 
 }
 
+
+@SuppressLint("ConfigurationScreenWidthHeight")
+@Composable
+private fun PlaintextHeader(
+    viewModel: PlaintextViewModel,
+    filterViewModel: FilterViewModel,
+    context: Context,
+    modifier: Modifier = Modifier
+) {
+    val plaintextState by viewModel.listState.collectAsState()
+    val templateView by viewModel.setTemplateView.collectAsState()
+    val sortMenuState by viewModel.sortMenuState.collectAsState()
+
+    val coroutineScope = rememberCoroutineScope()
+    val clipboard = LocalClipboard.current
+    val setTemplateText = if (templateView) "See List" else "Set Format"
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
+    BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
+        if (sortMenuState.mainMenu) {
+            viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = false))
+        }
+        if (sortMenuState.subMenu) {
+            viewModel.updateSortMenuState(sortMenuState.copy(subMenu = false))
+        }
+    }
+
+    Row(
+        modifier = modifier
+            .background(LocalCustomColors.current.homeHeaderBg)
+            .padding(horizontal = 12.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Set templateView switch
+        Box {
+            TextButton(
+                onClick = viewModel::setTemplateView,
+                modifier = Modifier
+                    .heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(8.dp, 2.dp),
+            ) {
+                Box(
+                    modifier = Modifier,
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Set Format", color = Color.Transparent)
+                    Text(setTemplateText)
+                }
+            }
+        }
+
+        // Open filter sheet
+        Box(contentAlignment = Alignment.Center) {
+            val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
+            val borderColor = if (filteringApplied) LocalContentColor.current else Color.Transparent
+            val indicatorColor = if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
+
+            TextButton(
+                onClick = { filterViewModel.openBottomSheet() },
+                modifier = Modifier
+                    .heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(8.dp, 2.dp),
+            ) { Text("Filter") }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(7.dp)
+                    .offset((-5).dp, (-5).dp)
+                    .clip(CircleShape)
+                    .border(0.5.dp, borderColor, CircleShape)
+                    .background(indicatorColor)
+            )
+        }
+
+        // Sorting
+        Box {
+            var reverse: Boolean
+
+            val hasSubOptions = listOf(
+                PlaintextSortOption.TIN_LABEL.value,
+                PlaintextSortOption.TIN_CONTAINER.value,
+                PlaintextSortOption.TIN_QUANTITY.value
+            )
+            val subOptionsList = listOf(
+                PlaintextSortOption.DEFAULT.value,
+                PlaintextSortOption.TIN_DEFAULT.value,
+                PlaintextSortOption.BRAND.value,
+                PlaintextSortOption.BLEND.value
+            )
+
+            val density = LocalDensity.current
+            var yPositions by remember { mutableStateOf(mapOf<String, Dp>()) }
+            var mainWidth by remember { mutableStateOf(0.dp) }
+            var mainPosition by remember { mutableStateOf(0.dp) }
+            val alteredColor = Color.Black.copy(alpha = .1f).compositeOver(LocalCustomColors.current.textField)
+            val color = if (sortMenuState.subMenu) alteredColor else LocalCustomColors.current.textField
+
+            TextButton(
+                onClick = { viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = !sortMenuState.mainMenu)) },
+                enabled = plaintextState.sortOptions.isNotEmpty(),
+                modifier = Modifier
+                    .heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(8.dp, 2.dp),
+            ) { Text("Sorting") }
+
+            // Main options
+            DropdownMenu(
+                expanded = sortMenuState.mainMenu,
+                onDismissRequest = { viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = false)) },
+                modifier = Modifier
+                    .onGloballyPositioned {
+                        mainWidth = with(density) { it.size.width.toDp() }
+                        mainPosition = with(density) { it.positionOnScreen().x.toDp() }
+                    },
+                containerColor = color,
+                shadowElevation = 6.dp
+            ) {
+                plaintextState.sortOptions.forEach { option ->
+                    var yPosition by remember { mutableStateOf(0.dp) }
+
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier,
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Start,
+                            ) {
+                                Text(
+                                    text = option.value,
+                                    modifier = Modifier
+                                        .padding(end = 2.dp),
+                                    color = LocalContentColor.current.copy(alpha = if (sortMenuState.subMenu) 0.85f else 1.0f)
+                                )
+                                // Sort indicator and/or submenu
+                                if (plaintextState.sortState.value == option.value) {
+                                    Box {
+                                        Image(
+                                            painter = painterResource(id = plaintextState.sortState.icon),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .padding(0.dp),
+                                            colorFilter = ColorFilter.tint(
+                                                LocalContentColor.current
+                                            )
+                                        )
+                                    }
+                                } else if (option.value in hasSubOptions) {
+                                    Box {
+                                        Image(
+                                            painter = painterResource(R.drawable.arrow_right),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(20.dp),
+                                            colorFilter = ColorFilter.tint(
+                                                LocalContentColor.current.copy(alpha = 0.5f)
+                                            )
+                                        )
+                                    }
+                                } else {
+                                    Spacer(Modifier.width(20.dp))
+                                }
+                            }
+                        },
+                        onClick = {
+                            if (option.value in hasSubOptions) {
+                                viewModel.updateSortMenuState(
+                                    sortMenuState.copy(
+                                        subMenu = true,
+                                        mainSelection = option.value,
+                                    )
+                                )
+                            }
+                            else { viewModel.updateSorting(option.value, true) }
+                        },
+                        modifier = Modifier
+                            .onGloballyPositioned {
+                                yPosition = with(density) { (it.positionInParent().y).toDp() }
+                            }
+                    )
+
+                    yPositions = yPositions + (option.value to yPosition)
+
+                }
+            }
+
+            // Sub sorting menu
+            var subWidth by remember { mutableStateOf(0.dp) }
+            val yOffset = yPositions[sortMenuState.mainSelection]
+            val mainRightEdge = mainPosition + mainWidth
+            val remainingSpace = screenWidth - mainRightEdge
+            val xOffset = if (subWidth < (remainingSpace * 1.05f)) mainWidth else -(subWidth)
+
+            DropdownMenu(
+                expanded = sortMenuState.subMenu,
+                onDismissRequest = { viewModel.updateSortMenuState(sortMenuState.copy(subMenu = false)) },
+                containerColor = LocalCustomColors.current.textField,
+                modifier = Modifier
+                    .onGloballyPositioned{
+                        subWidth = with(density) { it.size.width.toDp() }
+                    },
+                offset = DpOffset(xOffset, yOffset ?: 0.dp),
+                shadowElevation = 6.dp
+            ) {
+                subOptionsList.forEach {
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                modifier = Modifier,
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Start,
+                            ) {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                )
+                                val color = if (sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection) {
+                                    LocalContentColor.current } else Color.Transparent
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                )
+                            }
+                        },
+                        onClick = {
+                            reverse = sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection
+                            viewModel.updateSortMenuState(sortMenuState.copy(subSelection = it))
+                            viewModel.updateSorting(sortMenuState.mainSelection, reverse)
+                            viewModel.updateSubSorting(it)
+                        }
+                    )
+                }
+            }
+        }
+
+        // Copy
+        IconButton(
+            onClick = {
+                coroutineScope.launch {
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plaintextState.plainList)))
+
+                    Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                }
+            },
+            modifier = Modifier
+                .padding(0.dp)
+                .size(40.dp),
+            enabled = plaintextState.plainList.isNotBlank(),
+            colors = IconButtonDefaults.iconButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
+            )
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.copy_icon),
+                contentDescription = "Copy",
+                modifier = Modifier
+                    .padding(0.dp),
+            )
+        }
+
+        // Print
+        IconButton(
+            onClick = { viewModel.showPrintDialog(true) },
+            modifier = Modifier
+                .padding(0.dp)
+                .size(40.dp),
+            enabled = plaintextState.plainList.isNotBlank(),
+            colors = IconButtonDefaults.iconButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
+            )
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.print_icon),
+                contentDescription = "Print",
+                modifier = Modifier
+                    .padding(0.dp),
+            )
+        }
+    }
+}
 
 @Composable
 fun PlaintextList(
@@ -1107,6 +1121,8 @@ fun PlaintextFormatting(
         if (loadDialog) {
             LoadDialog(
                 savedPresets = plaintextState.presets,
+                formatString = formatString,
+                delimiter = delimiter,
                 onLoadConfirm = { string, delimiter ->
                     saveFormatString(string, delimiter)
                 },
@@ -1476,6 +1492,7 @@ fun SaveDialog(
                 (0..4).forEach {
                     val preset = savedPresets[it]
                     val isSelected = selectedSlot == it
+                    val presetExists = preset.formatString == formatString && preset.delimiter == delimiter
                     val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .07f).compositeOver(LocalCustomColors.current.darkNeutral)
 
                     Row (
@@ -1485,7 +1502,7 @@ fun SaveDialog(
                             .clip(RoundedCornerShape(4.dp))
                             .border(
                                 width = 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else if (presetExists) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .background(
@@ -1605,6 +1622,8 @@ fun SaveDialog(
 @Composable
 fun LoadDialog(
     savedPresets: List<PlaintextPreset>,
+    formatString: String,
+    delimiter: String,
     onLoadConfirm: (String, String) -> Unit,
     onLoadCancel: () -> Unit,
     onDeleteConfirm: (Int) -> Unit,
@@ -1652,6 +1671,7 @@ fun LoadDialog(
                 (0..4).forEach {
                     val preset = savedPresets[it]
                     val isSelected = selectedSlot == it
+                    val presetLoaded = preset.formatString == formatString && preset.delimiter == delimiter
                     val disabled = preset.formatString.isBlank()
                     val selectedColor = MaterialTheme.colorScheme.primary.copy(alpha = .07f).compositeOver(LocalCustomColors.current.darkNeutral)
 
@@ -1663,7 +1683,7 @@ fun LoadDialog(
                             .clip(RoundedCornerShape(4.dp))
                             .border(
                                 width = Dp.Hairline,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else if (presetLoaded) MaterialTheme.colorScheme.secondary else Color.Transparent,
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .background(

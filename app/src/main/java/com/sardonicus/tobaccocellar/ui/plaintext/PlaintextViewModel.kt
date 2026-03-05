@@ -1,8 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
@@ -40,13 +37,17 @@ class PlaintextViewModel (
     private val _setTemplateView = MutableStateFlow(false)
     val setTemplateView: StateFlow<Boolean> = _setTemplateView.asStateFlow()
 
-    var sortMenuState by mutableStateOf(SortMenuState())
+    private val _sortMenuState = MutableStateFlow(SortMenuState())
+    val sortMenuState = _sortMenuState.asStateFlow()
 
     private val _sortState = MutableStateFlow(PlaintextSortOption())
     val sortState: StateFlow<PlaintextSortOption> = _sortState.asStateFlow()
 
     private val _subSortOption = MutableStateFlow("")
     val subSortOption: StateFlow<String> = _subSortOption.asStateFlow()
+
+    private val _printDialog = MutableStateFlow(false)
+    val printDialog = _printDialog.asStateFlow()
 
     private val _printOptions = MutableStateFlow(PrintOptions())
     val printOptions: StateFlow<PrintOptions> = _printOptions.asStateFlow()
@@ -446,9 +447,7 @@ class PlaintextViewModel (
         updateFocused(false)
     }
 
-    fun updateFocused(focused: Boolean) {
-        _selectionFocused.update { focused }
-    }
+    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
 
     private fun tinNormalizedWeight(tin: Tins): Double {
         if (tin.finished) return 0.0
@@ -462,12 +461,12 @@ class PlaintextViewModel (
         }
     }
 
-    fun setTemplateView(set: Boolean) { _setTemplateView.value = set }
+    fun setTemplateView() { _setTemplateView.value = !_setTemplateView.value }
 
     fun updateSortMenuState(sortMenu: SortMenuState) {
         val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
 
-        sortMenuState = SortMenuState(
+        _sortMenuState.value = SortMenuState(
             mainMenu = sortMenu.mainMenu,
             subMenu = subMenuOverride,
             mainSelection = sortMenu.mainSelection,
@@ -511,6 +510,8 @@ class PlaintextViewModel (
             preferencesRepo.savePlaintextPreset(slot, format, delimiter)
         }
     }
+
+    fun showPrintDialog(show: Boolean) { _printDialog.value = show }
 
     fun savePrintOptions(font: Float, margin: Double) {
         _printOptions.value = PrintOptions(font, margin)
