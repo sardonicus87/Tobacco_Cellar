@@ -988,20 +988,16 @@ class FilterViewModel (
             if (ignoreCategory == FilterCategory.TYPE) true
             else selections.types.isEmpty() || (selections.types.contains(item.items.type.ifBlank { "(Unassigned)" }))
         val favoriteMatch =
-            if (!favDisExist.value) false
-            else if (favDisGroup) true
+            if (favDisGroup) true
             else !selections.favorites || (if (selections.dislikeds) (item.items.disliked || item.items.favorite) else item.items.favorite)
         val excludeLikeMatch =
-            if (!favDisExist.value) false
-            else if (favDisGroup) true
+            if (favDisGroup) true
             else !selections.excludeFavorites || !item.items.favorite
         val dislikedMatch =
-            if (!favDisExist.value) false
-            else if (favDisGroup) true
+            if (favDisGroup) true
             else !selections.dislikeds || (if (selections.favorites) (item.items.disliked || item.items.favorite) else item.items.disliked)
         val excludeDislikeMatch =
-            if (!favDisExist.value) false
-            else if (favDisGroup) true
+            if (favDisGroup) true
             else !selections.excludeDislikeds || !item.items.disliked
         val ratingsMatch =
             if (ratingGroup) true
@@ -1050,28 +1046,22 @@ class FilterViewModel (
                 else -> selections.flavorings.isEmpty() || ((selections.flavorings.contains("(None Assigned)") && item.flavoring.isEmpty()) || item.flavoring.map { it.flavoringName }.any { selections.flavorings.contains(it) })
             }
         val hasTinsMatch =
-            if (!tinsExist.value) false
-            else if (tinCheck) true
+            if (tinCheck) true
             else !selections.hasTins || item.tins.isNotEmpty()
         val noTinsMatch =
-            if (!tinsExist.value) false
-            else if (tinCheck) true
+            if (tinCheck) true
             else !selections.noTins || item.tins.isEmpty()
         val openedMatch =
-            if (!tinsExist.value) false
-            else if (openCheck) true
+            if (openCheck) true
             else !selections.opened || item.tins.any { it.openDate != null && it.openDate < System.currentTimeMillis() }
         val unopenedMatch =
-            if (!tinsExist.value) false
-            else if (openCheck) true
+            if (openCheck) true
             else !selections.unopened || item.tins.any { (it.openDate == null || it.openDate >= System.currentTimeMillis()) && !it.finished }
         val finishedMatch =
-            if (!tinsExist.value) false
-            else if (finishedCheck) true
+            if (finishedCheck) true
             else (!selections.finished) || item.tins.any { it.finished }
         val unfinishedMatch =
-            if (!tinsExist.value) false
-            else if (finishedCheck) true
+            if (finishedCheck) true
             else !selections.unfinished || item.tins.any { !it.finished }
         val containerMatch =
             if (ignoreCategory == FilterCategory.CONTAINER) true
