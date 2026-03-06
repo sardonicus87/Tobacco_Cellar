@@ -12,6 +12,19 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "5.1.1",
+        buildDate = "6 Mar, 2026",
+        changes = listOf(),
+        improvements = listOf(),
+        bugFixes = listOf(
+            "Filtering Bug fixed, previous update inadvertently caused all filter options to be " +
+                    "disabled if tins and/or favorites/dislikes fields were unused by any items.",
+            "Edit Entry, fixed a bug introduced by the last update that would cause a crash when " +
+                    "trying to delete a tin."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "5.1.0",
         buildDate = "5 Mar, 2026",
         changes = listOf(
