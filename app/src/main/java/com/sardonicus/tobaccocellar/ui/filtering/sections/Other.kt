@@ -168,7 +168,7 @@ private fun FavoriteDislikeFilters(
                             },
                     )
                 },
-                enabled = { favoritesEnabled },
+                enabled = { favoritesEnabled && favDisExist() },
                 maxLines = { 1 },
             )
 
@@ -186,7 +186,7 @@ private fun FavoriteDislikeFilters(
                             },
                     )
                 },
-                enabled = { dislikedsEnabled },
+                enabled = { dislikedsEnabled && favDisExist() },
                 maxLines = { 1 },
             )
         }
