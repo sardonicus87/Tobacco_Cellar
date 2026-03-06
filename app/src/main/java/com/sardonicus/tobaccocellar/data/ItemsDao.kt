@@ -162,10 +162,10 @@ interface ItemsDao {
     fun getTinByTinIdStream(tinId: Int): Flow<Tins?>
 
     @Query("SELECT * FROM tins WHERE tinId = :tinId")
-    fun getTinByTinId(tinId: Int): Tins?
+    suspend fun getTinByTinId(tinId: Int): Tins?
 
     @Query("SELECT * FROM tins WHERE itemsId = :itemsId AND tinLabel = :tinLabel")
-    fun getTinByLabel(itemsId: Int, tinLabel: String): Tins?
+    suspend fun getTinByLabel(itemsId: Int, tinLabel: String): Tins?
 
 
     // Get tins by item id //
@@ -191,6 +191,6 @@ interface ItemsDao {
 
     /** Get any BY value **/
     @Query("SELECT * FROM items WHERE brand = :brand AND blend = :blend")
-    fun getItemByIndex(brand: String, blend: String): Items?
+    suspend fun getItemByIndex(brand: String, blend: String): Items?
 
 }

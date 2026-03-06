@@ -415,21 +415,21 @@ class OfflineItemsRepository(
 
 
     /** Get single item **/
-    override fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?> = itemsDao.getItemDetailsStream(id)
+    override suspend fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?> = itemsDao.getItemDetailsStream(id)
 
     override suspend fun getItemById(id: Int): Items? = itemsDao.getItemById(id)
 
-    override fun getComponentsForItemStream(id: Int): Flow<List<Components>> = itemsDao.getComponentsForItemStream(id)
+    override suspend fun getComponentsForItemStream(id: Int): Flow<List<Components>> = itemsDao.getComponentsForItemStream(id)
 
     override suspend fun getComponentById(id: Int): Components? = itemsDao.getComponentById(id)
 
-    override fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>> = itemsDao.getFlavoringForItemStream(id)
+    override suspend fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>> = itemsDao.getFlavoringForItemStream(id)
 
     override suspend fun getFlavoringById(id: Int): Flavoring? = itemsDao.getFlavoringById(id)
 
-    override fun getTinsForItemStream(id: Int): Flow<List<Tins>> = itemsDao.getTinsForItemStream(id)
+    override suspend fun getTinsForItemStream(id: Int): Flow<List<Tins>> = itemsDao.getTinsForItemStream(id)
 
-    override fun getTinDetailsStream(tinId: Int): Flow<Tins?> = itemsDao.getTinByTinIdStream(tinId)
+    override suspend fun getTinDetailsStream(tinId: Int): Flow<Tins?> = itemsDao.getTinByTinIdStream(tinId)
 
     override suspend fun getTinById(tinId: Int): Tins? = itemsDao.getTinByTinId(tinId)
 
@@ -449,12 +449,12 @@ class OfflineItemsRepository(
 
 
     /** Get any by value **/
-    override fun getItemByIndex(brand: String, blend: String): Items? = itemsDao.getItemByIndex(brand, blend)
+    override suspend fun getItemByIndex(brand: String, blend: String): Items? = itemsDao.getItemByIndex(brand, blend)
 
 
 
     /** Cloud-sync **/
-    override fun getPendingSyncOperationDao(): PendingSyncOperationDao = this.pendingSyncOperationDao
+    override suspend fun getPendingSyncOperationDao(): PendingSyncOperationDao = this.pendingSyncOperationDao
 
     override suspend fun triggerUploadWorker() {
         scheduleSyncUpload()

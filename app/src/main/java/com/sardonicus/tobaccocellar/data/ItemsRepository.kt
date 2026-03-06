@@ -65,21 +65,21 @@ interface ItemsRepository {
 
 
     /** Get single item **/
-    fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
+    suspend fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
 
     suspend fun getItemById(id: Int): Items?
 
-    fun getComponentsForItemStream(id: Int): Flow<List<Components>>
+    suspend fun getComponentsForItemStream(id: Int): Flow<List<Components>>
 
     suspend fun getComponentById(id: Int): Components?
 
-    fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>>
+    suspend fun getFlavoringForItemStream(id: Int): Flow<List<Flavoring>>
 
     suspend fun getFlavoringById(id: Int): Flavoring?
 
-    fun getTinsForItemStream(id: Int): Flow<List<Tins>>
+    suspend fun getTinsForItemStream(id: Int): Flow<List<Tins>>
 
-    fun getTinDetailsStream(tinId: Int): Flow<Tins?>
+    suspend fun getTinDetailsStream(tinId: Int): Flow<Tins?>
 
     suspend fun getTinById(tinId: Int): Tins?
 
@@ -97,11 +97,11 @@ interface ItemsRepository {
 
 
     /** Get any by value **/
-    fun getItemByIndex(brand: String, blend: String): Items?
+    suspend fun getItemByIndex(brand: String, blend: String): Items?
 
 
     /** Cloud sync **/
-    fun getPendingSyncOperationDao(): PendingSyncOperationDao
+   suspend fun getPendingSyncOperationDao(): PendingSyncOperationDao
 
     suspend fun triggerUploadWorker()
 
