@@ -72,13 +72,11 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -118,8 +116,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
-import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
@@ -156,6 +152,7 @@ fun AddEntryScreen(
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
+    isLargeScreen: Boolean = false,
     viewModel: AddEntryViewModel = viewModel(),
 ){
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -164,8 +161,6 @@ fun AddEntryScreen(
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
     val currentLeftTab by viewModel.currentLeftTab.collectAsState()
     val showRatingPop by viewModel.showRatingPop.collectAsState()
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
 
     Scaffold(
         modifier = modifier
