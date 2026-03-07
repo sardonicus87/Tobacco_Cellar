@@ -32,25 +32,36 @@ class PreferencesRepo(
     applicationScope: CoroutineScope
 ) {
     private companion object {
-        val IS_TABLE_VIEW = booleanPreferencesKey("is_table_view")
-        val TABLE_COLUMNS_HIDDEN = stringPreferencesKey("table_columns_hidden")
-        val THEME_SETTING = stringPreferencesKey("theme_setting")
-        val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
-        val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
+        val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
+        val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
+        val SEARCH_SETTING = stringPreferencesKey("search_setting")
         val MAX_RATING = intPreferencesKey("max_rating")
         val RATING_ROUND = intPreferencesKey("rating_round")
+
+        val IS_TABLE_VIEW = booleanPreferencesKey("is_table_view")
+        val TABLE_COLUMNS_HIDDEN = stringPreferencesKey("table_columns_hidden")
         val SORT_COLUMN_INDEX = intPreferencesKey("sort_column_index")
         val SORT_ASCENDING = booleanPreferencesKey("sort_ascending")
+        val LIST_SORTING = stringPreferencesKey("list_sorting")
+        val LIST_ASCENDING = booleanPreferencesKey("list_ascending")
+
+        val THEME_SETTING = stringPreferencesKey("theme_setting")
+        val SHOW_RATING = booleanPreferencesKey("show_rating")
+        val TYPE_GENRE_OPTION = stringPreferencesKey("type_genre_option")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
         val PARSE_LINKS = booleanPreferencesKey("parse_links")
 
-        val SHOW_RATING = booleanPreferencesKey("show_rating")
-        val TYPE_GENRE_OPTION = stringPreferencesKey("type_genre_option")
-        val LIST_SORTING = stringPreferencesKey("list_sorting")
-        val LIST_ASCENDING = booleanPreferencesKey("list_ascending")
-        val SEARCH_SETTING = stringPreferencesKey("search_setting")
-        val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
-        val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
+        val GLOBAL_TWO_PANE = booleanPreferencesKey("two_pane_global")
+
+        val CROSS_DEVICE_ACKNOWLEDGED = booleanPreferencesKey("cross_device_acknowledged")
+        val CROSS_DEVICE_SYNC = booleanPreferencesKey("cross_device_sync")
+        val ALLOW_MOBILE_DATA = booleanPreferencesKey("allow_mobile_data")
+        val SIGNED_IN_ACCOUNT = stringPreferencesKey("signed_in_account")
+        val HAS_DRIVE_SCOPE = booleanPreferencesKey("has_drive_scope")
+        val PROCESSED_SYNC_FILES = stringPreferencesKey("processed_sync_files")
+        val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
+        val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
+        val DEFAULT_SYNC = booleanPreferencesKey("default_sync")
 
         val PLAINTEXT_FORMAT_STRING = stringPreferencesKey("plaintext_format_string")
         val PLAINTEXT_DELIMITER = stringPreferencesKey("plaintext_delimiter")
@@ -70,22 +81,100 @@ class PreferencesRepo(
         val PLAINTEXT_PRESET_FORMAT5 = stringPreferencesKey("plaintext_preset_format5")
         val PLAINTEXT_PRESET_DELIMITER5 = stringPreferencesKey("plaintext_preset_delimiter5")
 
-        val CROSS_DEVICE_ACKNOWLEDGED = booleanPreferencesKey("cross_device_acknowledged")
-        val CROSS_DEVICE_SYNC = booleanPreferencesKey("cross_device_sync")
-        val ALLOW_MOBILE_DATA = booleanPreferencesKey("allow_mobile_data")
-        val SIGNED_IN_ACCOUNT = stringPreferencesKey("signed_in_account")
-        val HAS_DRIVE_SCOPE = booleanPreferencesKey("has_drive_scope")
-        val PROCESSED_SYNC_FILES = stringPreferencesKey("processed_sync_files")
-
-        val DEFAULT_SYNC = booleanPreferencesKey("default_sync")
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
         val SYNC_SETTINGS_MIGRATED = booleanPreferencesKey("sync_settings_migrated")
 
         const val TAG = "PreferencesRepo"
     }
 
-    /** Setting HomeScreen view options **/
-    // setting list/table view //
+    /** Misc options and saved "last value" **/
+    val lastAlertFlow: Flow<Int> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading alert preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[LAST_ALERT_SHOWN] ?: 1
+        }
+
+    suspend fun saveAlertShown(alertId: Int) {
+        dataStore.edit {
+            it[LAST_ALERT_SHOWN] = alertId
+        }
+    }
+
+    val datesSeen: StateFlow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading dates indicator preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[DATES_SEEN_LIST] ?: ""
+        }.stateIn (
+            scope = applicationScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
+
+    suspend fun setDatesSeen(seen: String) {
+        dataStore.edit {
+            it[DATES_SEEN_LIST] = seen
+        }
+    }
+
+    val searchSetting: Flow<SearchSetting> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading search preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            when (it[SEARCH_SETTING]) {
+                SearchSetting.Blend.value -> SearchSetting.Blend
+                SearchSetting.Notes.value -> SearchSetting.Notes
+                SearchSetting.TinLabel.value -> SearchSetting.TinLabel
+                else -> SearchSetting.Blend
+            }
+        }
+
+    suspend fun setSearchSetting(setting: String) {
+        dataStore.edit {
+            it[SEARCH_SETTING] = setting
+        }
+    }
+
+    val exportRating: Flow<ExportRating> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading rating preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            val maxRating = it[MAX_RATING] ?: 5
+            val rounding = it[RATING_ROUND] ?: 2
+            ExportRating(maxRating, rounding)
+        }
+
+    suspend fun saveExportRating(rating: Int, rounding: Int) {
+        dataStore.edit {
+            it[MAX_RATING] = rating
+            it[RATING_ROUND] = rounding
+            ExportRating(rating, rounding)
+        }
+    }
+
+
+    /** Cellar table and list specific options and sorting **/
     val isTableView: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -104,7 +193,155 @@ class PreferencesRepo(
         }
     }
 
-    // setting quantity, rating, etc display options //
+    // Cellar table view specific options //
+    val tableColumnsHidden: Flow<Set<String>> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading table sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet()
+        }
+
+    suspend fun saveTableColumnsHidden(columnsHidden: Set<String>) {
+        dataStore.edit {
+            it[TABLE_COLUMNS_HIDDEN] = columnsHidden.joinToString(",")
+        }
+    }
+
+    val sortColumnIndex: Flow<Int> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading table sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[SORT_COLUMN_INDEX] ?: -1
+        }
+
+    val sortAscending: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading table sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[SORT_ASCENDING] ?: true
+        }
+
+    suspend fun saveTableSortingPreferences(columnIndex: Int, ascending: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SORT_COLUMN_INDEX] = columnIndex
+            preferences[SORT_ASCENDING] = ascending
+        }
+    }
+
+    // Cellar list view specific options //
+    val listSorting: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading list sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[LIST_SORTING] ?: ListSortOption.DEFAULT.value
+        }
+
+    val listAscending: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading list sort preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[LIST_ASCENDING] ?: true
+        }
+
+    suspend fun saveListSorting(listSorting: String, ascending: Boolean) {
+        dataStore.edit {
+            it[LIST_SORTING] = listSorting
+            it[LIST_ASCENDING] = ascending
+        }
+    }
+
+
+    /** Display Settings **/
+    val themeSetting: StateFlow<ThemeSetting> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading theme preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            val savedValue = it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
+            when (savedValue) {
+                ThemeSetting.LIGHT.value -> ThemeSetting.LIGHT
+                ThemeSetting.DARK.value -> ThemeSetting.DARK
+                ThemeSetting.SYSTEM.value -> ThemeSetting.SYSTEM
+                else -> ThemeSetting.SYSTEM
+            }
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = ThemeSetting.SYSTEM
+        )
+
+    suspend fun saveThemeSetting(themeSetting: String) {
+        dataStore.edit { preferences ->
+            preferences[THEME_SETTING] = themeSetting
+        }
+    }
+
+    val showRating: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading rating preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[SHOW_RATING] ?: true
+        }
+
+    suspend fun saveShowRatingOption(showRating: Boolean) {
+        dataStore.edit {
+            it[SHOW_RATING] = showRating
+        }
+    }
+
+    val typeGenreOption: Flow<TypeGenreOption> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading genre preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            val savedValue = preferences[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
+            TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
+        }
+
+    suspend fun saveTypeGenreOption(option: String) {
+        dataStore.edit {
+            it[TYPE_GENRE_OPTION] = option
+        }
+    }
+
     val quantityOption: Flow<QuantityOption> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -147,504 +384,31 @@ class PreferencesRepo(
         }
     }
 
-    val showRating: Flow<Boolean> = dataStore.data
+    val globalTwoPane: StateFlow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
-                Log.e(TAG, "Error reading rating preferences.", it)
+                Log.e(TAG, "Error reading two-pane preferences.", it)
                 emit(emptyPreferences())
             } else {
                 throw it
             }
         }.map {
-            it[SHOW_RATING] ?: true
-        }
-
-    suspend fun saveShowRatingOption(showRating: Boolean) {
-        dataStore.edit {
-            it[SHOW_RATING] = showRating
-        }
-    }
-
-    val typeGenreOption: Flow<TypeGenreOption> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading genre preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            val savedValue = preferences[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
-            TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
-        }
-
-    suspend fun saveTypeGenreOption(option: String) {
-        dataStore.edit {
-            it[TYPE_GENRE_OPTION] = option
-        }
-    }
-
-
-    /** Setting table and list specific options and sorting **/
-    // setting table options //
-    val sortColumnIndex: Flow<Int> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading table sort preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[SORT_COLUMN_INDEX] ?: -1
-        }
-
-    val sortAscending: Flow<Boolean> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading table sort preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[SORT_ASCENDING] ?: true
-        }
-
-    suspend fun saveTableSortingPreferences(columnIndex: Int, ascending: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SORT_COLUMN_INDEX] = columnIndex
-            preferences[SORT_ASCENDING] = ascending
-        }
-    }
-
-    val tableColumnsHidden: Flow<Set<String>> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading table sort preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet()
-        }
-
-    suspend fun saveTableColumnsHidden(columnsHidden: Set<String>) {
-        dataStore.edit {
-            it[TABLE_COLUMNS_HIDDEN] = columnsHidden.joinToString(",")
-        }
-    }
-
-    // setting list sort options //
-    val listSorting: Flow<String> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading list sort preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LIST_SORTING] ?: ListSortOption.DEFAULT.value
-        }
-
-    val listAscending: Flow<Boolean> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading list sort preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LIST_ASCENDING] ?: true
-        }
-
-    suspend fun saveListSorting(listSorting: String, ascending: Boolean) {
-        dataStore.edit {
-            it[LIST_SORTING] = listSorting
-            it[LIST_ASCENDING] = ascending
-        }
-    }
-
-
-    /** Setting theme options **/
-    val themeSetting: StateFlow<ThemeSetting> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading theme preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            val savedValue = it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
-            when (savedValue) {
-                ThemeSetting.LIGHT.value -> ThemeSetting.LIGHT
-                ThemeSetting.DARK.value -> ThemeSetting.DARK
-                ThemeSetting.SYSTEM.value -> ThemeSetting.SYSTEM
-                else -> ThemeSetting.SYSTEM
-            }
+            it[GLOBAL_TWO_PANE] ?: true
         }.stateIn(
             scope = applicationScope,
             started = SharingStarted.Eagerly,
-            initialValue = ThemeSetting.SYSTEM
+            initialValue = true
         )
 
-    suspend fun saveThemeSetting(themeSetting: String) {
-        dataStore.edit { preferences ->
-            preferences[THEME_SETTING] = themeSetting
-        }
-    }
-
-
-    /** Setting Data preferences **/
-    val tinOzConversionRate: Flow<Double> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading conversion preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[TIN_OZ_CONVERSION_RATE] ?: 1.75
-        }
-
-    suspend fun setTinOzConversionRate(rate: Double) {
-        dataStore.edit { preferences ->
-            preferences[TIN_OZ_CONVERSION_RATE] = rate
-        }
-    }
-
-    val tinGramsConversionRate: Flow<Double> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading conversion preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[TIN_GRAMS_CONVERSION_RATE] ?: 50.0
-        }
-
-    suspend fun setTinGramsConversionRate(rate: Double) {
-        dataStore.edit { preferences ->
-            preferences[TIN_GRAMS_CONVERSION_RATE] = rate
-        }
-    }
-
-    val exportRating: Flow<ExportRating> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading rating preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            val maxRating = it[MAX_RATING] ?: 5
-            val rounding = it[RATING_ROUND] ?: 2
-            ExportRating(maxRating, rounding)
-        }
-
-    suspend fun saveExportRating(rating: Int, rounding: Int) {
+    suspend fun saveGlobalTwoPane(global: Boolean) {
         dataStore.edit {
-            it[MAX_RATING] = rating
-            it[RATING_ROUND] = rounding
-            ExportRating(rating, rounding)
+            it[GLOBAL_TWO_PANE] = global
         }
     }
 
 
-    /** Sync status **/
-    fun getItemSyncState(itemId: Int): Flow<Boolean> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading sync state.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }
-        .map { preferences ->
-            preferences[itemsSyncKey(itemId)] ?: false
-        }
-
-    val syncSettingsMigrated: Flow<Boolean> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading sync state.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-        it[SYNC_SETTINGS_MIGRATED] ?: false
-    }
-
-    suspend fun setSyncSettingsMigrated() {
-        dataStore.edit { it[SYNC_SETTINGS_MIGRATED] = true }
-    }
-
-    // set default sync selected //
-    val defaultSyncOption: Flow<Boolean> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading sync state.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[DEFAULT_SYNC] ?: false
-        }
-
-    suspend fun saveDefaultSyncOption(sync: Boolean) {
-        dataStore.edit {
-            it[DEFAULT_SYNC] = sync
-        }
-    }
-
-
-    /** Home header search setting **/
-    val searchSetting: Flow<SearchSetting> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading search preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            when (it[SEARCH_SETTING]) {
-                SearchSetting.Blend.value -> SearchSetting.Blend
-                SearchSetting.Notes.value -> SearchSetting.Notes
-                SearchSetting.TinLabel.value -> SearchSetting.TinLabel
-                else -> SearchSetting.Blend
-            }
-        }
-
-    suspend fun setSearchSetting(setting: String) {
-        dataStore.edit {
-            it[SEARCH_SETTING] = setting
-        }
-    }
-
-
-    /** Alert shown **/
-    val lastAlertFlow: Flow<Int> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading alert preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LAST_ALERT_SHOWN] ?: 1
-        }
-
-    suspend fun saveAlertShown(alertId: Int) {
-        dataStore.edit {
-            it[LAST_ALERT_SHOWN] = alertId
-        }
-    }
-
-
-    /** Dates indicator seen **/
-    val datesSeen: StateFlow<String> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading dates indicator preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[DATES_SEEN_LIST] ?: ""
-        }.stateIn (
-            scope = applicationScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
-        )
-
-    suspend fun setDatesSeen(seen: String) {
-        dataStore.edit {
-            it[DATES_SEEN_LIST] = seen
-        }
-    }
-
-
-    /** Plaintext options **/
-    val plaintextFormatString: Flow<String> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_FORMAT_STRING] ?: ""
-        }
-
-    val plaintextDelimiter: Flow<String> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_DELIMITER] ?: ""
-        }
-
-    val plaintextSorting: Flow<String> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_SORTING] ?: PlaintextSortOption.DEFAULT.value
-        }
-
-    val plaintextSortAscending: Flow<Boolean> = dataStore.data
-        .catch{
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_SORT_ASCENDING] ?: true
-        }
-
-    val plaintextSubSorting: Flow<String> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_SUBSORTING] ?: ""
-        }
-
-    val plaintextPrintFontSize: Flow<Float> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_PRINT_FONT] ?: 12f
-        }
-
-    val plaintextPrintMargin: Flow<Double> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_PRINT_MARGIN] ?: 1.0
-        }
-
-    suspend fun setPlaintextFormatString(format: String) {
-        dataStore.edit {
-            it[PLAINTEXT_FORMAT_STRING] = format
-        }
-    }
-
-    suspend fun setPlaintextDelimiter(delimiter: String) {
-        dataStore.edit {
-            it[PLAINTEXT_DELIMITER] = delimiter
-        }
-    }
-
-    suspend fun setPlaintextSorting(sorting: String, ascending: Boolean) {
-        dataStore.edit {
-            it[PLAINTEXT_SORTING] = sorting
-            it[PLAINTEXT_SORT_ASCENDING] = ascending
-        }
-    }
-
-    suspend fun setPlaintextSubSorting(subSorting: String) {
-        dataStore.edit {
-            it[PLAINTEXT_SUBSORTING] = subSorting
-        }
-    }
-
-    suspend fun setPlaintextPrintOptions(font: Float, margin: Double) {
-        dataStore.edit {
-            it[PLAINTEXT_PRINT_FONT] = font
-            it[PLAINTEXT_PRINT_MARGIN] = margin
-        }
-    }
-
-    val plaintextPresetsFlow: Flow<List<PlaintextPreset>> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            (0..4).map {
-                val format = preferences[plaintextPresetFormatKey(it)] ?: ""
-                val delimiter = preferences[plaintextPresetDelimiterKey(it)] ?: ""
-                PlaintextPreset(
-                    slot = it,
-                    formatString = format,
-                    delimiter = delimiter
-                )
-            }
-        }
-
-    suspend fun savePlaintextPreset(slot: Int, format: String, delimiter: String) {
-        dataStore.edit {
-            it[plaintextPresetFormatKey(slot)] = format
-            it[plaintextPresetDelimiterKey(slot)] = delimiter
-        }
-    }
-
-    private fun plaintextPresetFormatKey(slot: Int): Preferences.Key<String> {
-        return when (slot) {
-            0 -> PLAINTEXT_PRESET_FORMAT1
-            1 -> PLAINTEXT_PRESET_FORMAT2
-            2 -> PLAINTEXT_PRESET_FORMAT3
-            3 -> PLAINTEXT_PRESET_FORMAT4
-            4 -> PLAINTEXT_PRESET_FORMAT5
-            else -> throw IllegalArgumentException("Invalid slot: $slot")
-        }
-    }
-
-    private fun plaintextPresetDelimiterKey(slot: Int): Preferences.Key<String> {
-        return when (slot) {
-            0 -> PLAINTEXT_PRESET_DELIMITER1
-            1 -> PLAINTEXT_PRESET_DELIMITER2
-            2 -> PLAINTEXT_PRESET_DELIMITER3
-            3 -> PLAINTEXT_PRESET_DELIMITER4
-            4 -> PLAINTEXT_PRESET_DELIMITER5
-            else -> throw IllegalArgumentException("Invalid slot: $slot")
-        }
-    }
-
-    // sign in stuff for sync //
+    /** Database Settings **/
+    // multi-device sync settings
     val crossDeviceAcknowledged: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
@@ -742,7 +506,7 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-                    } else {
+            } else {
                 throw it
             }
         }.map {
@@ -753,6 +517,258 @@ class PreferencesRepo(
         dataStore.edit { preferences ->
             preferences[PROCESSED_SYNC_FILES] = filesIds.joinToString(",")
         }
+    }
+
+    val tinOzConversionRate: Flow<Double> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[TIN_OZ_CONVERSION_RATE] ?: 1.75
+        }
+
+    suspend fun setTinOzConversionRate(rate: Double) {
+        dataStore.edit { preferences ->
+            preferences[TIN_OZ_CONVERSION_RATE] = rate
+        }
+    }
+
+    val tinGramsConversionRate: Flow<Double> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            preferences[TIN_GRAMS_CONVERSION_RATE] ?: 50.0
+        }
+
+    suspend fun setTinGramsConversionRate(rate: Double) {
+        dataStore.edit { preferences ->
+            preferences[TIN_GRAMS_CONVERSION_RATE] = rate
+        }
+    }
+
+    val defaultSyncOption: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[DEFAULT_SYNC] ?: false
+        }
+
+    suspend fun saveDefaultSyncOption(sync: Boolean) {
+        dataStore.edit {
+            it[DEFAULT_SYNC] = sync
+        }
+    }
+
+
+    /** Plaintext Options **/
+    val plaintextFormatString: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_FORMAT_STRING] ?: ""
+        }
+
+    suspend fun setPlaintextFormatString(format: String) {
+        dataStore.edit {
+            it[PLAINTEXT_FORMAT_STRING] = format
+        }
+    }
+
+    val plaintextDelimiter: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_DELIMITER] ?: ""
+        }
+
+    suspend fun setPlaintextDelimiter(delimiter: String) {
+        dataStore.edit {
+            it[PLAINTEXT_DELIMITER] = delimiter
+        }
+    }
+
+    val plaintextSorting: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_SORTING] ?: PlaintextSortOption.DEFAULT.value
+        }
+
+    val plaintextSortAscending: Flow<Boolean> = dataStore.data
+        .catch{
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_SORT_ASCENDING] ?: true
+        }
+
+    val plaintextSubSorting: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_SUBSORTING] ?: ""
+        }
+
+    suspend fun setPlaintextSorting(sorting: String, ascending: Boolean) {
+        dataStore.edit {
+            it[PLAINTEXT_SORTING] = sorting
+            it[PLAINTEXT_SORT_ASCENDING] = ascending
+        }
+    }
+
+    suspend fun setPlaintextSubSorting(subSorting: String) {
+        dataStore.edit {
+            it[PLAINTEXT_SUBSORTING] = subSorting
+        }
+    }
+
+    val plaintextPrintFontSize: Flow<Float> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_PRINT_FONT] ?: 12f
+        }
+
+    val plaintextPrintMargin: Flow<Double> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[PLAINTEXT_PRINT_MARGIN] ?: 1.0
+        }
+
+    suspend fun setPlaintextPrintOptions(font: Float, margin: Double) {
+        dataStore.edit {
+            it[PLAINTEXT_PRINT_FONT] = font
+            it[PLAINTEXT_PRINT_MARGIN] = margin
+        }
+    }
+
+    val plaintextPresetsFlow: Flow<List<PlaintextPreset>> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map { preferences ->
+            (0..4).map {
+                val format = preferences[plaintextPresetFormatKey(it)] ?: ""
+                val delimiter = preferences[plaintextPresetDelimiterKey(it)] ?: ""
+                PlaintextPreset(
+                    slot = it,
+                    formatString = format,
+                    delimiter = delimiter
+                )
+            }
+        }
+
+    suspend fun savePlaintextPreset(slot: Int, format: String, delimiter: String) {
+        dataStore.edit {
+            it[plaintextPresetFormatKey(slot)] = format
+            it[plaintextPresetDelimiterKey(slot)] = delimiter
+        }
+    }
+
+    private fun plaintextPresetFormatKey(slot: Int): Preferences.Key<String> {
+        return when (slot) {
+            0 -> PLAINTEXT_PRESET_FORMAT1
+            1 -> PLAINTEXT_PRESET_FORMAT2
+            2 -> PLAINTEXT_PRESET_FORMAT3
+            3 -> PLAINTEXT_PRESET_FORMAT4
+            4 -> PLAINTEXT_PRESET_FORMAT5
+            else -> throw IllegalArgumentException("Invalid slot: $slot")
+        }
+    }
+
+    private fun plaintextPresetDelimiterKey(slot: Int): Preferences.Key<String> {
+        return when (slot) {
+            0 -> PLAINTEXT_PRESET_DELIMITER1
+            1 -> PLAINTEXT_PRESET_DELIMITER2
+            2 -> PLAINTEXT_PRESET_DELIMITER3
+            3 -> PLAINTEXT_PRESET_DELIMITER4
+            4 -> PLAINTEXT_PRESET_DELIMITER5
+            else -> throw IllegalArgumentException("Invalid slot: $slot")
+        }
+    }
+
+
+    /** One-time and migrational stuff **/
+    fun getItemSyncState(itemId: Int): Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }
+        .map { preferences ->
+            preferences[itemsSyncKey(itemId)] ?: false
+        }
+
+    val syncSettingsMigrated: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+        it[SYNC_SETTINGS_MIGRATED] ?: false
+    }
+
+    suspend fun setSyncSettingsMigrated() {
+        dataStore.edit { it[SYNC_SETTINGS_MIGRATED] = true }
     }
 
 }

@@ -86,6 +86,9 @@ class SettingsViewModel(
     private val _parseLinks = MutableStateFlow(true)
     val parseLinks: StateFlow<Boolean> = _parseLinks.asStateFlow()
 
+    private val _globalTwoPane = MutableStateFlow(true)
+    val globalTwoPane: StateFlow<Boolean> = _globalTwoPane.asStateFlow()
+
 
     /** App & Database settings */
     private val _deviceSyncAcknowledgement = MutableStateFlow(false)
@@ -146,11 +149,12 @@ class SettingsViewModel(
 
 
     val displaySettings = listOf(
-        SettingsDialog("Theme", "Change the theme of the app", DialogType.Theme),
-        SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list", DialogType.Ratings),
-        SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list", DialogType.TypeGenre),
-        SettingsDialog("Cellar Quantity Display", "Change quantity display in list", DialogType.QuantityDisplay),
-        SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes", DialogType.ParseLinks)
+        SettingsDialog("Theme", "Change the theme of the app.", DialogType.Theme),
+        SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list.", DialogType.Ratings),
+        SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list.", DialogType.TypeGenre),
+        SettingsDialog("Cellar Quantity Display", "Change quantity display in list.", DialogType.QuantityDisplay),
+        SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes.", DialogType.ParseLinks),
+        SettingsDialog("Dual Pane Layouts", "Enable/disable dual-pane layout globally.", DialogType.GlobalTwoPane)
     )
 
     val databaseSettings = listOf(
@@ -208,6 +212,9 @@ class SettingsViewModel(
                 //Parse Links
                 launch {
                     preferencesRepo.parseLinks.collect { _parseLinks.value = it }
+                }
+                launch {
+                    preferencesRepo.globalTwoPane.collect { _globalTwoPane.value = it }
                 }
                 // Device Sync
                 launch {
@@ -306,6 +313,13 @@ class SettingsViewModel(
             preferencesRepo.saveParseLinksOption(option)
         }
     }
+
+    fun saveGlobalTwoPane(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveGlobalTwoPane(option)
+        }
+    }
+
 
 
     /** Database Settings **/
@@ -1027,6 +1041,7 @@ sealed class DialogType {
     object TypeGenre : DialogType()
     object QuantityDisplay : DialogType()
     object ParseLinks : DialogType()
+    object GlobalTwoPane: DialogType()
 
     object DeviceSync : DialogType()
     object BackupRestore: DialogType()

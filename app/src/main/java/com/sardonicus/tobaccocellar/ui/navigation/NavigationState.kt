@@ -26,7 +26,8 @@ import androidx.savedstate.compose.serialization.serializers.MutableStateSeriali
 fun rememberNavigationState(
     startRoute: NavKey,
     topLevelRoutes: Set<NavKey>,
-    largeScreen: Boolean = false
+    largeScreen: Boolean = false,
+    globalTwoPane: Boolean = true
 ): NavigationState {
 
     val topLevelRoute = rememberSerializable(
@@ -34,12 +35,10 @@ fun rememberNavigationState(
         serializer = MutableStateSerializer(NavKeySerializer())
     ) { mutableStateOf(startRoute) }
 
-    val backStacks = topLevelRoutes.associateWith {
-        rememberNavBackStack(it)
-    }
+    val backStacks = topLevelRoutes.associateWith { rememberNavBackStack(it) }
 
-    LaunchedEffect(largeScreen, topLevelRoutes, mainSecondaryMap) {
-        if (largeScreen) {
+    LaunchedEffect(largeScreen, topLevelRoutes, mainSecondaryMap, globalTwoPane) {
+        if (largeScreen && globalTwoPane) {
             val currentStack = backStacks.getValue(topLevelRoute.value)
             val currentTop = topLevelRoute.value
             if (currentTop in mainSecondaryMap) {
@@ -60,12 +59,13 @@ fun rememberNavigationState(
         }
     }
 
-    return remember(startRoute, topLevelRoutes, largeScreen) {
+    return remember(startRoute, topLevelRoutes, largeScreen, globalTwoPane) {
         NavigationState(
             startRoute = startRoute,
             topLevelRoute = topLevelRoute,
             backStacks = backStacks,
-            largeScreen = largeScreen
+            largeScreen = largeScreen,
+            globalTwoPane = globalTwoPane
         )
     }
 }
@@ -75,7 +75,8 @@ class NavigationState(
     val startRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
     val backStacks: Map<NavKey, NavBackStack<NavKey>>,
-    val largeScreen: Boolean = false
+    val largeScreen: Boolean = false,
+    val globalTwoPane: Boolean = true
 ) {
     var topLevelRoute: NavKey by topLevelRoute
 
@@ -102,6 +103,8 @@ class NavigationState(
 
     val isTwoPane: Boolean
         get() {
+            if (!globalTwoPane) return false
+
             val currentStack = backStacks.getValue(topLevelRoute)
         //    val main = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
         //    val second = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.SECOND }
@@ -142,7 +145,7 @@ fun NavigationState.toEntries(
         .flatMap { stackKey ->
             val stackEntries = decoratedEntries[stackKey] ?: emptyList()
 
-            if (largeScreen) {
+            if (largeScreen && globalTwoPane) {
                 if (stackKey in mainSecondaryMap) {
                     val defaultSecond = mainSecondaryMap.getValue(stackKey)
                     val needsDefaultSecond = stackEntries.none { it == defaultSecond }

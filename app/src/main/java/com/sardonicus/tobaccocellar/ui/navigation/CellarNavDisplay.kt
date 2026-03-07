@@ -67,6 +67,7 @@ fun CellarNavigation(
     navigationState: NavigationState,
     isGestureNav: Boolean,
     largeScreen: Boolean,
+    globalTwoPane: Boolean,
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -253,6 +254,7 @@ fun CellarNavigation(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
+                    isLargeScreen = largeScreen && globalTwoPane,
                     viewModel = viewModel
                 )
             }
@@ -275,6 +277,7 @@ fun CellarNavigation(
                 EditEntryScreen(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
+                    isLargeScreen = largeScreen && globalTwoPane,
                     viewModel = viewModel
                 )
             }
@@ -436,7 +439,7 @@ fun CellarNavigation(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack).then(SinglePaneSceneStrategy()),
+        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane).then(SinglePaneSceneStrategy()),
         transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         predictivePopTransitionSpec = {

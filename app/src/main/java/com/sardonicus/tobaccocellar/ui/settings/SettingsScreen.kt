@@ -246,6 +246,7 @@ private fun SettingsBody(
     val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
     val quantityOption by viewModel.quantityOption.collectAsState()
     val parseLinks by viewModel.parseLinks.collectAsState()
+    val globalTwoPane by viewModel.globalTwoPane.collectAsState()
 
     val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
     val deviceSync by viewModel.crossDeviceSync.collectAsState()
@@ -359,6 +360,14 @@ private fun SettingsBody(
                 onDismiss = viewModel::dismissDialog,
                 parseLinks = parseLinks,
                 onParseLinksOption = viewModel::saveParseLinksOption,
+                modifier = Modifier
+            )
+        }
+        DialogType.GlobalTwoPane -> {
+            GlobalTwoPaneDialog(
+                onDismiss = viewModel::dismissDialog,
+                globalTwoPane = globalTwoPane,
+                onGlobalTwoPane = viewModel::saveGlobalTwoPane,
                 modifier = Modifier
             )
         }
@@ -987,8 +996,7 @@ fun ParseLinksDialog(
                             modifier = Modifier
                                 .requiredHeight(20.dp)
                                 .scale(.6f),
-                            colors = SwitchDefaults.colors(
-                            )
+                            colors = SwitchDefaults.colors()
                         )
                     }
                     Text(
@@ -996,6 +1004,79 @@ fun ParseLinksDialog(
                         modifier = Modifier,
                         fontSize = 14.sp,
                         fontWeight = if (parseLinks) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(onAlpha)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .padding(0.dp)
+            ) {
+                Text("Done")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+fun GlobalTwoPaneDialog(
+    onDismiss: () -> Unit,
+    globalTwoPane: Boolean,
+    onGlobalTwoPane: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        modifier = modifier
+            .padding(0.dp),
+        text = {
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Globally enable/disable the dual pane layout (large screens).",
+                    modifier = Modifier,
+                    fontSize = 15.sp,
+                    color = LocalContentColor.current
+                )
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val offAlpha = if (!globalTwoPane) 1f else .5f
+                    val onAlpha = if (globalTwoPane) 1f else .5f
+                    Text(
+                        text = "Off",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (!globalTwoPane) FontWeight.SemiBold else FontWeight.Normal,
+                        color = LocalContentColor.current.copy(alpha = offAlpha)
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = globalTwoPane,
+                            onCheckedChange = { onGlobalTwoPane(!globalTwoPane) },
+                            modifier = Modifier
+                                .requiredHeight(20.dp)
+                                .scale(.6f),
+                            colors = SwitchDefaults.colors()
+                        )
+                    }
+                    Text(
+                        text = "On",
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        fontWeight = if (globalTwoPane) FontWeight.SemiBold else FontWeight.Normal,
                         color = LocalContentColor.current.copy(onAlpha)
                     )
                 }
