@@ -28,10 +28,7 @@ import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
-import com.sardonicus.tobaccocellar.data.CsvHelper
-import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
-import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvHelpScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
@@ -60,7 +57,6 @@ import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
 import java.util.UUID
 
-
 @Composable
 fun CellarNavigation(
     navigator: Navigator,
@@ -80,10 +76,14 @@ fun CellarNavigation(
         }
     }
 
+    LaunchedEffect(navigationState.isTwoPaneBottomBar) {
+        filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
+    }
+
     val app = LocalCellarApplication.current
-    val preferencesRepo: PreferencesRepo = app.preferencesRepo
-    val itemsRepository: ItemsRepository = app.container.itemsRepository
-    val csvHelper: CsvHelper = app.csvHelper
+    val preferencesRepo = app.preferencesRepo
+    val itemsRepository = app.container.itemsRepository
+    val csvHelper = app.csvHelper
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
@@ -150,7 +150,6 @@ fun CellarNavigation(
                     navigateToSettings = { navigator.navigate(SettingsDestination) },
                     navigateToHelp = { navigator.navigate(HelpDestination) },
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
-                    isTwoPane = navigationState.isTwoPane,
                     filterViewModel = filterViewModel,
                     viewModel = viewModel
                 )
@@ -200,7 +199,6 @@ fun CellarNavigation(
                     navigateToHome = { navigator.navigate(HomeDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
-                    isTwoPane = navigationState.isTwoPane,
                     modifier = Modifier,
                     viewModel = viewModel
                 )
@@ -223,7 +221,6 @@ fun CellarNavigation(
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToDetails = { navigator.navigate(BlendDetailsDestination(it)) },
-                    isTwoPane = navigationState.isTwoPane,
                     modifier = Modifier,
                     viewModel = viewModel
                 )
@@ -439,7 +436,7 @@ fun CellarNavigation(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane).then(SinglePaneSceneStrategy()),
+        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane, filterViewModel).then(SinglePaneSceneStrategy()),
         transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         predictivePopTransitionSpec = {
