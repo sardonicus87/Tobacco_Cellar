@@ -94,7 +94,6 @@ fun StatsScreen(
     navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
     modifier: Modifier = Modifier,
-    isTwoPane: Boolean,
     viewModel: StatsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -142,7 +141,6 @@ fun StatsScreen(
                 navigateToDates = { viewModel.resetSelection(); navigateToDates() },
                 navigateToAddEntry = { viewModel.resetSelection(); navigateToAddEntry() },
                 currentDestination = StatsDestination,
-                isTwoPane = isTwoPane
             )
         },
     ) { innerPadding ->

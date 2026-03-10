@@ -148,7 +148,6 @@ fun HomeScreen(
     navigateToHelp: () -> Unit,
     navigateToPlaintext: () -> Unit,
     filterViewModel: FilterViewModel,
-    isTwoPane: Boolean,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
 ) {
@@ -218,7 +217,6 @@ fun HomeScreen(
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
-                isTwoPane = isTwoPane
             )
         },
         snackbarHost = {
