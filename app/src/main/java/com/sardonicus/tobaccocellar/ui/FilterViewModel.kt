@@ -1199,6 +1199,7 @@ class FilterViewModel (
             )
     }
 
+    // filter selection enablement states
     val brandsEnabled: StateFlow<Map<String, Boolean>> = createMapEnabledFlow(
         availableBrands,
         { name -> { it.items.brand == name } },
@@ -1495,6 +1496,7 @@ class FilterViewModel (
         }
     }
 
+    // recover from empty
     init {
         viewModelScope.launch(Dispatchers.Default) {
             unifiedFilteredItems.collectLatest { items ->
@@ -1612,6 +1614,12 @@ class FilterViewModel (
 
 
     /** Final UI States and hoisted states for other stuff **/
+    // TwoPane stuff
+    private val _secondPaneExpanded = MutableStateFlow(true)
+    val secondPaneExpanded = _secondPaneExpanded.asStateFlow()
+    fun toggleSecondPane() { _secondPaneExpanded.value = !_secondPaneExpanded.value }
+    fun setSecondPaneExpansion(expanded: Boolean) { _secondPaneExpanded.value = expanded }
+
     // top app bar
     val menuExpanded = MutableStateFlow(false)
     val menuState = MutableStateFlow(MenuState.MAIN)
@@ -1693,8 +1701,11 @@ class FilterViewModel (
         preferencesRepo.saveExportRating(max, roundingInt)
     }
 
-
     // Bottom app bar
+    private val _twoPaneState = MutableStateFlow(false)
+    val twoPaneState = _twoPaneState.asStateFlow()
+    fun updateTwoPaneState(state: Boolean) { _twoPaneState.value = state }
+
     private val _clickToAdd = MutableStateFlow(false)
     val clickToAdd = _clickToAdd.asStateFlow()
     fun updateClickToAdd(clicked: Boolean) { _clickToAdd.value = clicked }
