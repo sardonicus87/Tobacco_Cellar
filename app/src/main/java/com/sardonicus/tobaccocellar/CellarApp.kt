@@ -69,6 +69,7 @@ import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -91,12 +92,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun CellarApp(
     isGestureNav: Boolean,
+    globalTwoPane: Boolean,
     windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
-    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }, // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)  // isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
+    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) }, // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)  // isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
     navigationState: NavigationState = rememberNavigationState(
         startRoute = HomeDestination,
         topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination),
-        largeScreen = isLarge
+        largeScreen = isLarge,
+        globalTwoPane = globalTwoPane
     ),
     navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge) },
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
@@ -106,6 +109,7 @@ fun CellarApp(
         navigationState = navigationState,
         isGestureNav = isGestureNav,
         largeScreen = isLarge,
+        globalTwoPane = globalTwoPane,
         filterViewModel = filterViewModel
     )
 
@@ -561,11 +565,11 @@ fun CellarBottomAppBar(
     navigateToStats: () -> Unit = {},
     navigateToAddEntry: () -> Unit = {},
     navigateToDates: () -> Unit = {},
-    isTwoPane: Boolean = false,
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     LaunchedEffect(Unit) { filterViewModel.updateClickToAdd(false) }
 
+    val isTwoPane by filterViewModel.twoPaneState.collectAsState()
     val sheetState by filterViewModel.bottomSheetState.collectAsState()
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
     val searchPerformed by filterViewModel.searchPerformed.collectAsState()
