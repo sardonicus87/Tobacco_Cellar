@@ -13,6 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
+import kotlinx.coroutines.delay
 import java.util.UUID
 
 @Composable
@@ -71,13 +73,17 @@ fun CellarNavigation(
         derivedStateOf { largeScreen && navigationState.isTwoPane }
     }
     LaunchedEffect(shouldCloseSheet) {
-        if (shouldCloseSheet) {
-            filterViewModel.closeBottomSheet()
-        }
+        if (shouldCloseSheet) { filterViewModel.closeBottomSheet() }
     }
 
-    LaunchedEffect(navigationState.isTwoPaneBottomBar) {
-        filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
+    val twoPaneState by filterViewModel.twoPaneState.collectAsState()
+    LaunchedEffect(navigationState.isTwoPane, twoPaneState, navigationState.currentStack.size) {
+        if (twoPaneState && !navigationState.isTwoPane && navigationState.currentStack.size > 1) {
+            delay(500)
+            filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
+        } else {
+            filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
+        }
     }
 
     val app = LocalCellarApplication.current

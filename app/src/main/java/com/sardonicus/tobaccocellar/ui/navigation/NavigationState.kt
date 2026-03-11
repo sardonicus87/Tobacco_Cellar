@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -22,7 +21,6 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
-import kotlinx.coroutines.delay
 
 @Composable
 fun rememberNavigationState(
@@ -61,7 +59,7 @@ fun rememberNavigationState(
         }
     }
 
-    val navigationState = remember(startRoute, topLevelRoutes, largeScreen, globalTwoPane) {
+    return remember(startRoute, topLevelRoutes, largeScreen, globalTwoPane) {
         NavigationState(
             startRoute = startRoute,
             topLevelRoute = topLevelRoute,
@@ -70,15 +68,6 @@ fun rememberNavigationState(
             globalTwoPane = globalTwoPane
         )
     }
-
-    LaunchedEffect(navigationState, largeScreen, globalTwoPane) {
-        snapshotFlow { navigationState.calculateUpdate() }.collect {
-            if (navigationState.isTwoPaneBottomBar && !it) { delay(500) }
-            navigationState.updateTwoPaneBottomBar(it)
-        }
-    }
-
-    return navigationState
 }
 
 
@@ -122,14 +111,6 @@ class NavigationState(
 
             return largeScreen && startCompatible && lastCompatible
         }
-
-    private var _isTwoPaneBottomBar by mutableStateOf(false)
-    val isTwoPaneBottomBar: Boolean get() = _isTwoPaneBottomBar
-
-    init { _isTwoPaneBottomBar = calculateUpdate() }
-
-    fun updateTwoPaneBottomBar(value: Boolean) { _isTwoPaneBottomBar = value }
-    fun calculateUpdate(): Boolean { return isTwoPane }
 
     val interceptBack: Boolean
         get() {
