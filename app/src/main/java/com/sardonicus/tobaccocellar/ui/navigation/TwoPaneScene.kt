@@ -1,42 +1,38 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
-import android.R.attr.label
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,20 +41,15 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
@@ -90,19 +81,15 @@ data class TwoPaneScene<T : Any>(
     override val content: @Composable (() -> Unit) = {
 
         BackHandler(enabled = interceptBack, onBack = onBack)
+
         val secondExpanded by filterViewModel.secondPaneExpanded.collectAsState()
+
+        BackHandler(!secondExpanded, filterViewModel::toggleSecondPane)
 
         val configuration = LocalConfiguration.current
         val expandedWidth = configuration.screenWidthDp.dp / 2
-        val screenHeight = LocalWindowInfo.current.containerSize.height.dp // configuration.screenHeightDp.dp
-        val expansionTween = 700 // 300
-
-        // Animate the weight of the second pane to ensure the main pane "keeps up" smoothly
-//        val paneWeight by animateFloatAsState(
-//            targetValue = if (secondExpanded) 0.5f else 0f,
-//            animationSpec = tween(expansionTween),
-//            label = "PaneWeight"
-//        )
+        val screenHeight = LocalWindowInfo.current.containerSize.height.dp
+        val expansionTween = 300
 
         val paneWidth by animateDpAsState(
             targetValue = if (secondExpanded) expandedWidth else 32.dp,
@@ -115,26 +102,12 @@ data class TwoPaneScene<T : Any>(
         LaunchedEffect(showButton, secondExpanded) {
             if (showButton) {
                 if (secondExpanded) {
-                  //  snapshotFlow { paneWeight }.first { it >= 0.5f }
                     snapshotFlow { paneWidth }.first { it >= expandedWidth }
-                    delay(2500)
+                    delay(3000)
                     showButton = false
                 }
-//                else {
-//                   // snapshotFlow { paneWeight }.first { it <= .0001f }
-//                    snapshotFlow { paneWidth }.first { it <= 32.dp }
-//                    delay(2500)
-//                 //   showButton = false
-//                }
             }
         }
-
-        val buttonVisible = showButton  //  || !secondExpanded
-
-
-        // Calculate the horizontal bias for the button to follow the divider
-        // Bias 0.0 is center (expanded), Bias 1.0 is end (collapsed)
-        val dividerBias = (1f - 2 * (paneWidth / (expandedWidth * 2))).coerceIn(-1f, 1f) // (1f - (paneWeight * 2f)).coerceIn(0f, 1f)
 
         val buttonHorizontalOffset by animateDpAsState(
             targetValue = if (secondExpanded) (-12).dp else 0.dp,
@@ -152,7 +125,7 @@ data class TwoPaneScene<T : Any>(
             label = "ButtonHeight"
         )
         val buttonAlpha by animateFloatAsState(
-            targetValue = if (secondExpanded) .45f else (if (showButton) .7f else .1f),
+            targetValue = if (secondExpanded) .6f else .75f,
             animationSpec = tween(expansionTween),
             label = "ButtonAlpha"
         )
@@ -161,18 +134,8 @@ data class TwoPaneScene<T : Any>(
             animationSpec = tween(expansionTween),
             label = "ButtonCorner"
         )
-        val iconRotation by animateFloatAsState(
-            targetValue = if (secondExpanded) 0f else -180f,
-            animationSpec = tween(expansionTween),
-            label = "ButtonRotation"
-        )
-        val blockingAlpha by animateFloatAsState(
-            targetValue = if (secondExpanded) 0f else 1f,
-            animationSpec = tween(expansionTween),
-            label = "BlockingAlpha"
-        )
         val borderAlpha by animateFloatAsState(
-            targetValue = if (secondExpanded) .3f else .01f,
+            targetValue = if (secondExpanded) .3f else 0f,
             animationSpec = tween(expansionTween),
             label = "BorderAlpha"
         )
@@ -183,21 +146,7 @@ data class TwoPaneScene<T : Any>(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        //.weight((1f - paneWeight).coerceAtLeast(0.1f))
-//                        .pointerInput(secondExpanded) {
-//                            if (!secondExpanded) {
-//                                awaitPointerEventScope {
-//                                    while (true) {
-//                                        val event =
-//                                            awaitPointerEvent(pass = PointerEventPass.Initial)
-//                                        if (event.changes.any { it.changedToDown() }) {
-//                                            showButton = true
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-                ) { //if (secondExpanded) 0.5f else 1f
+                ) {
                     val mainPaneState = remember { SeekableTransitionState(mainEntry) }
                     val mainTransition = rememberTransition(mainPaneState)
 
@@ -236,7 +185,6 @@ data class TwoPaneScene<T : Any>(
                 // Second pane
                 Box(
                     modifier = Modifier
-                        // .weight(paneWeight.coerceAtLeast(0.0001f))
                         .width(paneWidth)
                         .graphicsLayer { clip = true }
                         .pointerInput(Unit) {
@@ -309,33 +257,27 @@ data class TwoPaneScene<T : Any>(
                             }
                         }
                     }
-                    Box(
-                        Modifier
-                        .matchParentSize()
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = blockingAlpha))
-                    )
                 }
             }
             AnimatedVisibility(
-                visible = buttonVisible,
+                visible = showButton,
                 enter = fadeIn(tween(150)),
                 exit = fadeOut(tween(150)),
                 modifier = Modifier
-                    .align(BiasAlignment(horizontalBias = 1f, verticalBias = -1f))  // horizontalBias = dividerBias
-                    .offset(x = buttonHorizontalOffset, y = buttonVerticalOffset) // x = buttonOffset
+                    .align(BiasAlignment(horizontalBias = 1f, verticalBias = -1f))
+                    .offset(x = buttonHorizontalOffset, y = buttonVerticalOffset)
             ) {
                 Box(
                     modifier = Modifier
-                        //   .size(32.dp)
                         .width(32.dp)
                         .height(buttonHeight)
                         .background(
-                            LocalCustomColors.current.whiteBlackInverted.copy(alpha = buttonAlpha),
+                            LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha),
                             RoundedCornerShape(buttonCorner)
                         )
                         .border(
-                            Dp.Hairline,
-                            LocalCustomColors.current.whiteBlack.copy(alpha = borderAlpha), // .3f
+                            1.dp,
+                            LocalCustomColors.current.whiteBlackInverted.copy(alpha = borderAlpha),
                             RoundedCornerShape(buttonCorner)
                         )
                         .clickable(
@@ -344,26 +286,35 @@ data class TwoPaneScene<T : Any>(
                         ) { filterViewModel.toggleSecondPane() },
                     contentAlignment = Alignment.Center
                 ) {
-//                    val icon = if (secondExpanded) {
-//                        if (paneWeight >= 0.5f) R.drawable.arrow_right else R.drawable.arrow_left
-//                    } else { if (paneWeight <= .0001f) R.drawable.arrow_left else R.drawable.arrow_right }
-                    val icon = if (secondExpanded) {
-                        if (paneWidth >= expandedWidth) R.drawable.arrow_right else R.drawable.arrow_left
-                    } else { if (paneWidth <= 32.dp) R.drawable.arrow_left else R.drawable.arrow_right }
-                    Icon(
-                        painter = painterResource(id = R.drawable.arrow_right), // icon
-                        contentDescription = null,
-                        tint = LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha), // .45f
+                    AnimatedVisibility(
+                        visible = !secondExpanded,
+                        enter = fadeIn(tween(expansionTween)) + expandVertically(tween(expansionTween), Alignment.CenterVertically),
+                        exit = fadeOut(tween(expansionTween)) + shrinkVertically(tween(expansionTween), Alignment.CenterVertically),
                         modifier = Modifier
-                            .rotate(iconRotation)
-                    )
-//                    Image(
-//                        painter = painterResource(id = icon),
-//                        alignment = Alignment.Center,
-//                        contentDescription = null,
-//                        contentScale = ContentScale.FillBounds,
-//                        colorFilter = ColorFilter.tint(LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha)) // 0.45f
-//                    )
+                            .fillMaxSize()
+                            .align(Alignment.CenterStart)
+                    ) {
+                        GlowBox(
+                            color = GlowColor(end = LocalCustomColors.current.whiteBlackInverted.copy(alpha = .15f)),
+                            size = GlowSize(end = 4.dp),
+                            contentAlignment = Alignment.CenterStart,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            Spacer(modifier = Modifier.width(32.dp))
+                        }
+                    }
+                    AnimatedContent(
+                        targetState = if (secondExpanded) R.drawable.arrow_right else R.drawable.arrow_left,
+                        transitionSpec = { fadeIn(tween(expansionTween)) togetherWith fadeOut(tween(expansionTween)) },
+                        label = "IconCrossfade"
+                    ) {
+                        Icon(
+                            painter = painterResource(id = it),
+                            contentDescription = null,
+                            tint = LocalCustomColors.current.whiteBlackInverted.copy(alpha = buttonAlpha),
+                            modifier = Modifier
+                        )
+                    }
                 }
             }
         }
