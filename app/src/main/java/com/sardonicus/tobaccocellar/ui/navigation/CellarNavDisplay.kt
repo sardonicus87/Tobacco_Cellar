@@ -91,6 +91,8 @@ fun CellarNavigation(
     val itemsRepository = app.container.itemsRepository
     val csvHelper = app.csvHelper
 
+    val twoColumnTabs by preferencesRepo.twoColumnTabs.collectAsState()
+
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
 
@@ -257,7 +259,7 @@ fun CellarNavigation(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
-                    isLargeScreen = largeScreen && globalTwoPane,
+                    isLargeScreen = largeScreen && twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -280,7 +282,7 @@ fun CellarNavigation(
                 EditEntryScreen(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
-                    isLargeScreen = largeScreen && globalTwoPane,
+                    isLargeScreen = largeScreen && twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -300,6 +302,7 @@ fun CellarNavigation(
 
                 BulkEditScreen(
                     onNavigateUp = { navigator.goBack() },
+                    isLargeScreen = largeScreen && twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -346,6 +349,7 @@ fun CellarNavigation(
 
                 PlaintextScreen(
                     onNavigateUp = { navigator.goBack() },
+                    isLargeScreen = largeScreen && twoColumnTabs,
                     viewModel = viewModel
                 )
             }
