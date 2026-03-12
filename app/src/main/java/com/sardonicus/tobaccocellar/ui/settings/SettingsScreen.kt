@@ -247,6 +247,7 @@ private fun SettingsBody(
     val quantityOption by viewModel.quantityOption.collectAsState()
     val parseLinks by viewModel.parseLinks.collectAsState()
     val globalTwoPane by viewModel.globalTwoPane.collectAsState()
+    val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
 
     val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
     val deviceSync by viewModel.crossDeviceSync.collectAsState()
@@ -367,7 +368,9 @@ private fun SettingsBody(
             GlobalTwoPaneDialog(
                 onDismiss = viewModel::dismissDialog,
                 globalTwoPane = globalTwoPane,
+                twoColumnTabs = twoColumnTabs,
                 onGlobalTwoPane = viewModel::saveGlobalTwoPane,
+                onTwoColumnTabs = viewModel::saveTwoColumnTabs,
                 modifier = Modifier
             )
         }
@@ -1028,7 +1031,9 @@ fun ParseLinksDialog(
 fun GlobalTwoPaneDialog(
     onDismiss: () -> Unit,
     globalTwoPane: Boolean,
+    twoColumnTabs: Boolean,
     onGlobalTwoPane: (Boolean) -> Unit,
+    onTwoColumnTabs: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
@@ -1039,46 +1044,67 @@ fun GlobalTwoPaneDialog(
             Column(
                 modifier = Modifier
                     .padding(bottom = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Globally enable/disable the dual pane layout (large screens).",
-                    modifier = Modifier,
+                    text = "Adaptive layout options for large screens:",
+                    modifier = Modifier
+                        .padding(bottom = 10.dp),
                     fontSize = 15.sp,
                     color = LocalContentColor.current
                 )
                 Row(
                     modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        .fillMaxWidth()
+                        .height(28.dp)
+                        .padding(start = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val offAlpha = if (!globalTwoPane) 1f else .5f
-                    val onAlpha = if (globalTwoPane) 1f else .5f
                     Text(
-                        text = "Off",
+                        text = "Dual Pane Layouts:",
                         modifier = Modifier,
-                        fontSize = 14.sp,
-                        fontWeight = if (!globalTwoPane) FontWeight.SemiBold else FontWeight.Normal,
-                        color = LocalContentColor.current.copy(alpha = offAlpha)
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = LocalContentColor.current
                     )
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                         Switch(
                             checked = globalTwoPane,
-                            onCheckedChange = { onGlobalTwoPane(!globalTwoPane) },
+                            onCheckedChange = { onGlobalTwoPane(it) },
                             modifier = Modifier
-                                .requiredHeight(20.dp)
-                                .scale(.6f),
+                                .scale(.6f)
+                                .padding(start = 10.dp),
                             colors = SwitchDefaults.colors()
                         )
                     }
+                }
+
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .height(28.dp)
+                        .padding(start = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "On",
+                        text = "Two Column Tabs:",
                         modifier = Modifier,
-                        fontSize = 14.sp,
-                        fontWeight = if (globalTwoPane) FontWeight.SemiBold else FontWeight.Normal,
-                        color = LocalContentColor.current.copy(onAlpha)
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = LocalContentColor.current
                     )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = twoColumnTabs,
+                            onCheckedChange = { onTwoColumnTabs(it) },
+                            modifier = Modifier
+                                .scale(.6f)
+                                .padding(start = 10.dp),
+                            colors = SwitchDefaults.colors()
+                        )
+                    }
                 }
             }
         },

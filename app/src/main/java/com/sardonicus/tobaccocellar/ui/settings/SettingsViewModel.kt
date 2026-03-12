@@ -89,6 +89,9 @@ class SettingsViewModel(
     private val _globalTwoPane = MutableStateFlow(true)
     val globalTwoPane: StateFlow<Boolean> = _globalTwoPane.asStateFlow()
 
+    private val _twoColumnTabs = MutableStateFlow(true)
+    val twoColumnTabs: StateFlow<Boolean> = _twoColumnTabs.asStateFlow()
+
 
     /** App & Database settings */
     private val _deviceSyncAcknowledgement = MutableStateFlow(false)
@@ -154,7 +157,7 @@ class SettingsViewModel(
         SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list.", DialogType.TypeGenre),
         SettingsDialog("Cellar Quantity Display", "Change quantity display in list.", DialogType.QuantityDisplay),
         SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes.", DialogType.ParseLinks),
-        SettingsDialog("Dual Pane Layouts", "Enable/disable dual-pane layout globally.", DialogType.GlobalTwoPane)
+        SettingsDialog("Large Screen Options", "Large screen adaptive layout options.", DialogType.GlobalTwoPane)
     )
 
     val databaseSettings = listOf(
@@ -213,9 +216,14 @@ class SettingsViewModel(
                 launch {
                     preferencesRepo.parseLinks.collect { _parseLinks.value = it }
                 }
+                // Large Screen Options
                 launch {
                     preferencesRepo.globalTwoPane.collect { _globalTwoPane.value = it }
                 }
+                launch {
+                    preferencesRepo.twoColumnTabs.collect { _twoColumnTabs.value = it }
+                }
+
                 // Device Sync
                 launch {
                     preferencesRepo.crossDeviceAcknowledged.collect { _deviceSyncAcknowledgement.value = it }
@@ -317,6 +325,12 @@ class SettingsViewModel(
     fun saveGlobalTwoPane(option: Boolean) {
         viewModelScope.launch {
             preferencesRepo.saveGlobalTwoPane(option)
+        }
+    }
+
+    fun saveTwoColumnTabs(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveTwoColumnTabs(option)
         }
     }
 
@@ -1227,6 +1241,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first().toString()
     val processedSync = preferencesRepo.processedSyncFiles.first().joinToString(", ") { it }
     val datesLastSeen = preferencesRepo.datesSeen.first()
+    val globalTwoPane = preferencesRepo.globalTwoPane.first().toString()
+    val twoColumnTabs = preferencesRepo.twoColumnTabs.first().toString()
 
     return """
             tableView=$tableView
@@ -1248,6 +1264,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             syncAcknowledgement=$syncAcknowledgement
             processedSync=$processedSync
             datesLastSeen=$datesLastSeen
+            globalTwoPane=$globalTwoPane
+            twoColumnTabs=$twoColumnTabs
         """.trimIndent()
 }
 
@@ -1317,6 +1335,8 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     preferencesRepo.saveProcessedSyncFiles(files)
                 }
                 "datesLastSeen" -> preferencesRepo.setDatesSeen(value)
+                "globalTwoPane" -> preferencesRepo.saveGlobalTwoPane(value.toBoolean())
+                "twoColumnTabs" -> preferencesRepo.saveTwoColumnTabs(value.toBoolean())
             }
         }
     }
