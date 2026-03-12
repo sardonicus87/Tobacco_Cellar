@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,13 +59,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -96,8 +95,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
-import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
@@ -117,6 +114,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 fun BulkEditScreen(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit,
+    isLargeScreen: Boolean,
     canNavigateBack: Boolean = true,
     viewModel: BulkEditViewModel = viewModel(),
 ){
@@ -127,8 +125,6 @@ fun BulkEditScreen(
     val showSnackbar by viewModel.showSnackbar.collectAsState()
     val saveIndicator by viewModel.saveIndicator.collectAsState()
     val tabIndex by viewModel.tabIndex.collectAsState()
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) } }
 
     if (showSnackbar) {
         LaunchedEffect(Unit) {
@@ -224,6 +220,14 @@ fun BulkEditBody(
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
+    var textFieldFocused by remember { mutableStateOf(false) }
+
+    val focusManager = LocalFocusManager.current
+    var anythingFocused by remember { mutableStateOf(false) }
+    val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
+
+    BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
+
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
             if (pagerState.currentPage != tabIndex) {
@@ -239,7 +243,8 @@ fun BulkEditBody(
 
     Column(
         modifier = modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .onFocusChanged { updateFocused(it.hasFocus) },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -320,6 +325,7 @@ fun BulkEditBody(
                                 autoCuts = autoCuts,
                                 autoComps = autoComps,
                                 autoFlavor = autoFlavor,
+                                fieldFocused = { textFieldFocused = it },
                                 modifier = Modifier
                             )
                         }
@@ -373,7 +379,7 @@ fun BulkEditBody(
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = true,
+                        userScrollEnabled = !textFieldFocused,
                         verticalAlignment = Alignment.Top
                     ) { targetIndex ->
                         Column(
@@ -403,6 +409,7 @@ fun BulkEditBody(
                                         autoCuts = autoCuts,
                                         autoComps = autoComps,
                                         autoFlavor = autoFlavor,
+                                        fieldFocused = { textFieldFocused = it },
                                         modifier = Modifier
                                     )
 
@@ -520,6 +527,7 @@ fun BulkEditing(
     autoCuts: List<String>,
     autoComps: List<String>,
     autoFlavor: List<String>,
+    fieldFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
@@ -536,6 +544,7 @@ fun BulkEditing(
                     .fillMaxWidth()
                     .fillMaxHeight(.7f)
                     .padding(horizontal = 12.dp)
+                    .onFocusChanged { fieldFocused(it.hasFocus) }
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)

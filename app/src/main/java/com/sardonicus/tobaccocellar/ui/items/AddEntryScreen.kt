@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.items
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -261,10 +262,16 @@ fun AddEntryBody(
     resetExistState: () -> Unit = {}
 ) {
     var deleteConfirm by rememberSaveable { mutableStateOf(false) }
+    var anythingFocused by remember { mutableStateOf(false) }
+    val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
+    val focusManager = LocalFocusManager.current
+
+    BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .onFocusChanged { updateFocused(it.hasFocus) }
             .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -376,6 +383,7 @@ fun ItemInputForm(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var textFieldFocused by remember { mutableStateOf(false) }
     val isLarge = isLargeScreen()
     val currentLeftTab = currentLeftTab()
     val selectedTabIndex = remember(selectedTabIndex()) { selectedTabIndex().coerceIn(0, 2) }
@@ -435,7 +443,7 @@ fun ItemInputForm(
                     HorizontalPager(
                         state = largePagerState,
                         modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = true,
+                        userScrollEnabled = !textFieldFocused,
                         verticalAlignment = Alignment.Top
                     ) { targetIndex ->
                         Column(
@@ -473,6 +481,7 @@ fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
+                                    fieldFocused = { textFieldFocused = it },
                                     modifier = Modifier,
                                 )
                             } else {
@@ -547,7 +556,7 @@ fun ItemInputForm(
                 HorizontalPager(
                     state = narrowPagerState,
                     modifier = Modifier.fillMaxSize(),
-                    userScrollEnabled = true,
+                    userScrollEnabled = !textFieldFocused,
                     verticalAlignment = Alignment.Top
                 ) { targetIndex ->
                     Column(
@@ -570,6 +579,7 @@ fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
+                                    fieldFocused = { textFieldFocused = it },
                                     modifier = Modifier,
                                 )
 
@@ -605,6 +615,7 @@ fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
+                                    fieldFocused = { textFieldFocused = it },
                                     modifier = Modifier,
                                 )
                         }
@@ -836,11 +847,13 @@ fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     showRatingPop: Boolean,
     onShowRatingPop: (Boolean) -> Unit,
+    fieldFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .onFocusChanged { fieldFocused(it.hasFocus) }
             .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
