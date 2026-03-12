@@ -273,7 +273,7 @@ fun AddEntryBody(
             .fillMaxWidth()
             .onFocusChanged { updateFocused(it.hasFocus) }
             .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ItemInputForm(
@@ -300,57 +300,67 @@ fun AddEntryBody(
             isEditEntry = isEditEntry,
             validateDates = validateDates,
             modifier = Modifier
-                .fillMaxWidth()
+                .weight(1f)
         )
-        Button(
-            onClick = { onSaveClick() },
-            enabled = itemUiState.isEntryValid,
-            shape = MaterialTheme.shapes.small,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 0.dp),
+                .height(IntrinsicSize.Min)
+                .padding(horizontal = 24.dp)
+                .padding(top = 24.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
-        }
-        if (existState.existCheck) {
-            ItemExistsDialog(
-                onItemExistsConfirm = {
-                    resetExistState()
-                    navigateToEditEntry(existState.transferId)
-                },
-                onItemExistsCancel = { resetExistState() },
-            )
-        }
-        if (isEditEntry) {
             Button(
-                onClick = { deleteConfirm = true },
-                enabled = true,
+                onClick = { onSaveClick() },
+                enabled = itemUiState.isEntryValid,
                 shape = MaterialTheme.shapes.small,
-                colors = ButtonColors(
-                    containerColor = LocalCustomColors.current.deleteButton,
-                    contentColor = Color.White,
-                    disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
-                    disabledContentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 0.dp, bottom = 0.dp)
+                    .fillMaxWidth(),
             ) {
-                Icon(painter = painterResource(id = R.drawable.delete_forever), contentDescription = null)
-                Text(text = stringResource(R.string.delete))
+                Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
             }
-            if (deleteConfirm) {
-                DeleteConfirmationDialog(
-                    onDeleteConfirm = {
-                        deleteConfirm = false
-                        onDeleteClick()
-                    },
-                    onDeleteCancel = { deleteConfirm = false },
+            if (isEditEntry) {
+                Button(
+                    onClick = { deleteConfirm = true },
+                    enabled = true,
+                    shape = MaterialTheme.shapes.small,
+                    colors = ButtonColors(
+                        containerColor = LocalCustomColors.current.deleteButton,
+                        contentColor = Color.White,
+                        disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
+                        disabledContentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
                     modifier = Modifier
-                        .padding(0.dp)
-                )
-            }
+                        .fillMaxWidth()
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete_forever),
+                        contentDescription = null
+                    )
+                    Text(text = stringResource(R.string.delete))
+                }
+                if (deleteConfirm) {
+                    DeleteConfirmationDialog(
+                        onDeleteConfirm = {
+                            deleteConfirm = false
+                            onDeleteClick()
+                        },
+                        onDeleteCancel = { deleteConfirm = false },
+                        modifier = Modifier
+                            .padding(0.dp)
+                    )
+                }
+            } else { Spacer(Modifier.height(40.dp)) }
         }
+    }
+
+    if (existState.existCheck) {
+        ItemExistsDialog(
+            onItemExistsConfirm = {
+                resetExistState()
+                navigateToEditEntry(existState.transferId)
+            },
+            onItemExistsCancel = { resetExistState() },
+        )
     }
 }
 
@@ -432,7 +442,7 @@ fun ItemInputForm(
             updateSelectedTab = updateSelectedTab
         )
         if (isLarge) {
-            Row(Modifier.fillMaxHeight(.75f)) {
+            Row(Modifier.fillMaxHeight()) {
                 GlowBox(
                     color = GlowColor(MaterialTheme.colorScheme.background),
                     size = GlowSize(vertical = 3.dp),
@@ -551,7 +561,7 @@ fun ItemInputForm(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 1.dp)
-                    .fillMaxHeight(.75f)
+                    .fillMaxHeight()
             ) {
                 HorizontalPager(
                     state = narrowPagerState,
