@@ -412,7 +412,7 @@ class PreferencesRepo(
             it[TWO_COLUMN_TABS] ?: true
         }.stateIn(
             scope = applicationScope,
-            started = SharingStarted.Lazily,
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = true
         )
 
