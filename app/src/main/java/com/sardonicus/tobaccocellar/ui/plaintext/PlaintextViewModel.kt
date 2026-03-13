@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,11 +60,19 @@ class PlaintextViewModel (
     private val _delimiter = MutableStateFlow("")
     val delimiter: StateFlow<String> = _delimiter.asStateFlow()
 
+    private val _presets = MutableStateFlow(emptyList<PlaintextPreset>())
+    val presets: StateFlow<List<PlaintextPreset>> = _presets.asStateFlow()
+
     private val _selectionFocused = MutableStateFlow(false)
     val selectionFocused = _selectionFocused.asStateFlow()
 
     private val _selectionKey = MutableStateFlow(0)
     val selectionKey = _selectionKey.asStateFlow()
+
+    private val _tabIndex = MutableStateFlow(0)
+    val tabIndex = _tabIndex.asStateFlow()
+
+    fun updateTabIndex(index: Int) { _tabIndex.value = index }
 
 
     init {
@@ -99,6 +109,11 @@ class PlaintextViewModel (
                 _printOptions.value = it
             }
         }
+        viewModelScope.launch {
+            preferencesRepo.plaintextPresetsFlow.collect {
+                _presets.value = it
+            }
+        }
     }
 
 
@@ -125,6 +140,39 @@ class PlaintextViewModel (
         val presets = array[7] as List<PlaintextPreset>
         val ozRate = array[8] as Double
         val gramsRate = array[9] as Double
+
+        PlaintextListState(
+            formatString = formatString,
+            delimiter = delimiter,
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = PlaintextListState()
+        )
+
+    @Suppress("UNCHECKED_CAST")
+    val plainList = combine(
+        filterViewModel.unifiedFilteredItems,
+        filterViewModel.unifiedFilteredTins,
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate,
+        preferencesRepo.plaintextFormatString,
+        preferencesRepo.plaintextDelimiter,
+        sortState,
+        subSortOption
+    ) { values ->
+        val filteredItems = values[0] as List<ItemsComponentsAndTins>
+        val filteredTins = values[1] as List<Tins>
+        val quantityOption = values[2] as QuantityOption
+        val ozRate = values[3] as Double
+        val gramsRate = values[4] as Double
+        val formatString = values[5] as String
+        val delimiter = values[6] as String
+        val sortState = values[7] as PlaintextSortOption
+        val subSortOption = values[8] as String
 
         val sortQuantity = filteredItems.associate { items ->
             items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
@@ -202,7 +250,16 @@ class PlaintextViewModel (
             }
         } else emptyList()
 
-        val sortOptions = if (formatString.isNotBlank()) {
+        generateListString(sortedItems, sortedTins, sortState, formattedQuantities, formatString, delimiter)
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = ""
+        )
+
+    val sortOptions = preferencesRepo.plaintextFormatString.map { formatString ->
+        if (formatString.isNotBlank()) {
             val options = mutableListOf(PlaintextSortOption.DEFAULT)
             val itemOptionMap = mapOf(
                 "@brand" to PlaintextSortOption.BRAND,
@@ -236,32 +293,27 @@ class PlaintextViewModel (
 
             options.distinctBy { it.value }
         } else emptyList()
-
-        val formatGuide = mapOf(
-            "Brand" to "@brand",
-            "Blend" to "@blend",
-            "Type" to "@type",
-            "Subgenre" to "@subgenre",
-            "Cut" to "@cut",
-            "Components" to "@comps",
-            "Flavoring" to "@flavors",
-            "Quantity" to "@qty",
-            "Rating" to "@rating_0_0",
-            "Production" to "@prod",
-            "Tin Label" to "@label",
-            "Tin Container" to "@container",
-            "Tin Quantity" to "@T_qty",
-            "Manufacture" to "@manufacture",
-            "Cellar Date" to "@cellar",
-            "Open Date" to "@open",
-            "Finished" to "@finished",
-            "New Line" to "_n_",
-            "Number" to "#",
-            "Escape char" to "'",
-            "Conditional" to "[...]",
-            "Tin sublist" to "{...}",
-            "Sublist delim." to "~"
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyList()
         )
+
+    val formatPreview = combine(
+        sortState,
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate,
+        preferencesRepo.plaintextFormatString,
+        preferencesRepo.plaintextDelimiter
+    ) { values ->
+        val sortState = values[0] as PlaintextSortOption
+        val quantityOption = values[1] as QuantityOption
+        val ozRate = values[2] as Double
+        val gramsRate = values[3] as Double
+        val formatString = values[4] as String
+        val delimiter = values[5] as String
 
         val previewItems = listOf(
             Items(
@@ -421,26 +473,17 @@ class PlaintextViewModel (
             items.items.id to formatQuantity(calculateTotalQuantity(items, items.tins.filter { it in previewTins }, quantityOption, ozRate, gramsRate), quantityOption, items.tins.filter { it in previewTins })
         }
 
-        val listString = generateListString(sortedItems, sortedTins, sortState, formattedQuantities, formatString, delimiter)
-        val formatPreview = generateListString(previewData, previewTins, sortState, previewFormattedQuantities, formatString, delimiter)
-
-        PlaintextListState(
-            formatString = formatString,
-            delimiter = delimiter,
-            preview = formatPreview,
-            plainList = listString,
-            formattedQuantities = formattedQuantities,
-            sortState = sortState,
-            sortOptions = sortOptions,
-            formatGuide = formatGuide,
-            presets = presets,
-        )
+        generateListString(previewData, previewTins, sortState, previewFormattedQuantities, formatString, delimiter)
     }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = PlaintextListState()
+            initialValue = ""
         )
+
+
+
+
 
     fun resetSelection() {
         _selectionKey.update { it + 1 }
@@ -901,13 +944,6 @@ class PlaintextViewModel (
 data class PlaintextListState(
     val formatString: String = "",
     val delimiter: String = "",
-    val preview: String = "",
-    val plainList: String = "",
-    val formattedQuantities: Map<Int, String> = emptyMap(),
-    val sortState: PlaintextSortOption = PlaintextSortOption(),
-    val sortOptions: List<PlaintextSortOption> = emptyList(),
-    val formatGuide: Map<String, String> = emptyMap(),
-    val presets: List<PlaintextPreset> = emptyList(),
 )
 
 @Serializable
@@ -917,6 +953,7 @@ data class PlaintextPreset(
     val delimiter: String = "",
 )
 
+@Stable
 data class PrintOptions(
     val font: Float = 12f,
     val margin: Double = 1.0,

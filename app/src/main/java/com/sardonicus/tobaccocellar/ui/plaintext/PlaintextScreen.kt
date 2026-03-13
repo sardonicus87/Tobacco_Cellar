@@ -14,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,16 +41,22 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -55,7 +64,9 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -77,6 +88,9 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionOnScreen
@@ -126,6 +140,7 @@ import kotlin.math.roundToInt
 @Composable
 fun PlaintextScreen(
     onNavigateUp: () -> Unit,
+    isLargeScreen: Boolean,
     modifier: Modifier = Modifier,
     viewModel: PlaintextViewModel = viewModel()
 ) {
@@ -139,9 +154,7 @@ fun PlaintextScreen(
     val printOptions by viewModel.printOptions.collectAsState()
     val selectionKey by viewModel.selectionKey.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
-//    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-//    val isLargeScreen by remember(windowSizeClass) { derivedStateOf { windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND) } }
-    // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
+    val tabIndex by viewModel.tabIndex.collectAsState()
 
     BackHandler(selectionFocused) {
         if (selectionFocused) {
@@ -184,6 +197,9 @@ fun PlaintextScreen(
         ) {
             PlaintextBody(
                 viewModel = viewModel,
+                largeScreen = isLargeScreen,
+                tabIndex = tabIndex,
+                onTabChange = viewModel::updateTabIndex,
                 plaintextState = plaintextState,
                 formatString = formatString,
                 delimiter = delimiter,
@@ -207,6 +223,9 @@ fun PlaintextScreen(
 @Composable
 fun PlaintextBody(
     viewModel: PlaintextViewModel,
+    largeScreen: Boolean,
+    tabIndex: Int,
+    onTabChange: (Int) -> Unit,
     plaintextState: PlaintextListState,
     formatString: String,
     delimiter: String,
@@ -220,39 +239,128 @@ fun PlaintextBody(
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val printList = plaintextState.plainList
+    var anythingFocused by remember { mutableStateOf(false) }
+    val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
+    val focusManager = LocalFocusManager.current
 
+    BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
+
+    val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
+
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage == pagerState.targetPage) {
+            if (pagerState.currentPage != tabIndex) {
+                onTabChange(pagerState.currentPage)
+            }
+        }
+    }
+    LaunchedEffect(tabIndex) {
+        if (pagerState.currentPage != tabIndex) {
+            pagerState.animateScrollToPage(tabIndex)
+        }
+    }
+
+    val plainList by viewModel.plainList.collectAsState()
+    val context = LocalContext.current
     val printDialog by viewModel.printDialog.collectAsState()
 
     Column(
         modifier = modifier
-            .fillMaxWidth(),
-    ){
-        // Header
-        PlaintextHeader(
-            viewModel = viewModel,
-            filterViewModel = filterViewModel,
-            context = context,
-            modifier = Modifier
-        )
+            .fillMaxSize()
+            .onFocusChanged { updateFocused(it.hasFocus) },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        val titles = listOf("List", "Format")
 
-        // Main body
-        GlowBox(
-            color = GlowColor(Color.Black.copy(alpha = 0.3f)),
-            size = GlowSize(top = 3.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(Modifier.height(16.dp))
-                if (templateView) {
+        if (largeScreen) {
+            Row(Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged {
+                            if (it.hasFocus && tabIndex == 1) {
+                                onTabChange(0)
+                            }
+                        }
+                        .pointerInput(tabIndex) {
+                            if (tabIndex == 1) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event =
+                                            awaitPointerEvent(pass = PointerEventPass.Initial)
+                                        if (event.changes.any { it.changedToDown() }) {
+                                            onTabChange(0)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        PlaintextActionRow(
+                            viewModel = viewModel,
+                            filterViewModel = filterViewModel,
+                            plainList = { plainList },
+                            context = context,
+                            modifier = Modifier
+                        )
+                    }
+                    GlowBox(
+                        color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                        size = GlowSize(top = 3.dp),
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        PlaintextList(
+                            viewModel = viewModel,
+                            filterViewModel = filterViewModel,
+                            context = context,
+                            plainList = { plainList },
+                            plaintextState = plaintextState,
+                            selectionKey = selectionKey,
+                            selectionFocused = selectionFocused,
+                            modifier = Modifier
+                                .clickable(indication = null, interactionSource = null) {
+                                    viewModel.resetSelection()
+                                }
+                        )
+                    }
+                }
+                VerticalDivider()
+
+                GlowBox(
+                    color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                    size = GlowSize(top = 3.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged {
+                            if (it.hasFocus && tabIndex == 0) {
+                                onTabChange(1)
+                            }
+                        }
+                        .pointerInput(tabIndex) {
+                            if (tabIndex == 0) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event =
+                                            awaitPointerEvent(pass = PointerEventPass.Initial)
+                                        if (event.changes.any { it.changedToDown() }) {
+                                            onTabChange(1)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(horizontal = 12.dp)
+                ) {
                     PlaintextFormatting(
+                        viewModel = viewModel,
+                        largeScreen = largeScreen,
                         plaintextState = plaintextState,
                         formatString = formatString,
                         delimiter = delimiter,
@@ -261,20 +369,173 @@ fun PlaintextBody(
                         selectionKey = selectionKey,
                         selectionFocused = selectionFocused,
                         modifier = Modifier
-                            .fillMaxWidth()
                     )
-                } else {
-                    PlaintextList(
-                        plaintextState = plaintextState,
-                        selectionKey = selectionKey,
-                        selectionFocused = selectionFocused,
+                }
+
+            }
+        } else {
+            SecondaryTabRow(
+                selectedTabIndex = tabIndex,
+                modifier = Modifier
+                    .padding(bottom = 1.dp),
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = LocalContentColor.current,
+                indicator = {
+                    SecondaryIndicator(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .tabIndicatorOffset(tabIndex),
+                        color = MaterialTheme.colorScheme.inversePrimary
                     )
+                },
+                divider = {
+                    HorizontalDivider(
+                        modifier = Modifier,
+                        thickness = Dp.Hairline,
+                        color = DividerDefaults.color,
+                    )
+                },
+            ) {
+                titles.forEachIndexed { index, title ->
+                    CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                        Tab(
+                            selected = tabIndex == index,
+                            onClick = { onTabChange(index) },
+                            modifier = Modifier
+                                .background(
+                                    if (tabIndex == index) MaterialTheme.colorScheme.background
+                                    else LocalCustomColors.current.backgroundUnselected
+                                ),
+                            text = {
+                                Text(
+                                    text = title,
+                                    fontWeight = if (tabIndex == index) FontWeight.Bold else FontWeight.SemiBold,
+                                )
+                            },
+                            selectedContentColor = MaterialTheme.colorScheme.onBackground,
+                            unselectedContentColor = MaterialTheme.colorScheme.outline,
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                    }
+                }
+            }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = !anythingFocused,
+                verticalAlignment = Alignment.Top
+            ) { targetIndex ->
+                GlowBox(
+                    color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                    size = GlowSize(top = 3.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                ) {
+                    when (targetIndex) {
+                        0 ->
+                            PlaintextList(
+                                viewModel = viewModel,
+                                filterViewModel = filterViewModel,
+                                context = context,
+                                plainList = { plainList },
+                                plaintextState = plaintextState,
+                                selectionKey = selectionKey,
+                                selectionFocused = selectionFocused,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(indication = null, interactionSource = null) {
+                                        viewModel.resetSelection()
+                                    }
+                            )
+                        1 ->
+                            PlaintextFormatting(
+                                viewModel = viewModel,
+                                largeScreen = largeScreen,
+                                plaintextState = plaintextState,
+                                formatString = formatString,
+                                delimiter = delimiter,
+                                saveFormatString = saveFormatString,
+                                savePreset = savePreset,
+                                selectionKey = selectionKey,
+                                selectionFocused = selectionFocused,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            )
+                        else ->
+                            PlaintextList(
+                                viewModel = viewModel,
+                                filterViewModel = filterViewModel,
+                                context = context,
+                                plainList = { plainList },
+                                plaintextState = plaintextState,
+                                selectionKey = selectionKey,
+                                selectionFocused = selectionFocused,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(indication = null, interactionSource = null) {
+                                        viewModel.resetSelection()
+                                    }
+                            )
+                    }
                 }
             }
         }
     }
+
+//    Column(
+//        modifier = modifier
+//            .fillMaxWidth(),
+//    ){
+//
+//        // Header
+//        PlaintextActionRow(
+//            viewModel = viewModel,
+//            filterViewModel = filterViewModel,
+//            plainList = { plainList },
+//            context = context,
+//            modifier = Modifier
+//        )
+
+        // Main body
+//        GlowBox(
+//            color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+//            size = GlowSize(top = 3.dp)
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .verticalScroll(rememberScrollState())
+//                    .padding(horizontal = 12.dp),
+//                verticalArrangement = Arrangement.Top,
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                Spacer(Modifier.height(16.dp))
+//                if (templateView) {
+//                    PlaintextFormatting(
+//                        viewModel = viewModel,
+//                        plaintextState = plaintextState,
+//                        formatString = formatString,
+//                        delimiter = delimiter,
+//                        saveFormatString = saveFormatString,
+//                        savePreset = savePreset,
+//                        selectionKey = selectionKey,
+//                        selectionFocused = selectionFocused,
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                    )
+//                } else {
+//                    PlaintextList(
+//                        viewModel = viewModel,
+//                        plainList = { plainList },
+//                        plaintextState = plaintextState,
+//                        selectionKey = selectionKey,
+//                        selectionFocused = selectionFocused,
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                    )
+//                }
+//            }
+//        }
+//    }
 
     if (printDialog) {
         PrintDialog(
@@ -284,7 +545,7 @@ fun PlaintextBody(
                 val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
                 val jobName = "Plaintext Output"
 
-                printManager?.print(jobName, PrintHelper(jobName, printList, font, margin), null)
+                printManager?.print(jobName, PrintHelper(jobName, plainList, font, margin), null)
                 savePrintOptions(font, margin)
                 viewModel.showPrintDialog(false)
             },
@@ -300,19 +561,20 @@ fun PlaintextBody(
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
-private fun PlaintextHeader(
+private fun PlaintextActionRow(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
+    plainList: () -> String,
     context: Context,
     modifier: Modifier = Modifier
 ) {
-    val plaintextState by viewModel.listState.collectAsState()
+    val sortState by viewModel.sortState.collectAsState()
+    val sortOptions by viewModel.sortOptions.collectAsState()
     val templateView by viewModel.setTemplateView.collectAsState()
     val sortMenuState by viewModel.sortMenuState.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val clipboard = LocalClipboard.current
-    val setTemplateText = if (templateView) "See List" else "Set Format"
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
     BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
@@ -326,47 +588,38 @@ private fun PlaintextHeader(
 
     Row(
         modifier = modifier
-            .background(LocalCustomColors.current.homeHeaderBg)
-            .padding(horizontal = 12.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .background(LocalCustomColors.current.homeHeaderBg, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Set templateView switch
-        Box {
-            TextButton(
-                onClick = viewModel::setTemplateView,
-                modifier = Modifier
-                    .heightIn(40.dp, 40.dp),
-                contentPadding = PaddingValues(8.dp, 2.dp),
-            ) {
-                Box(
-                    modifier = Modifier,
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Set Format", color = Color.Transparent)
-                    Text(setTemplateText)
-                }
-            }
-        }
-
         // Open filter sheet
         Box(contentAlignment = Alignment.Center) {
             val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
-            val borderColor = if (filteringApplied) LocalContentColor.current else Color.Transparent
+            val borderColor = if (filteringApplied) MaterialTheme.colorScheme.primary else Color.Transparent
             val indicatorColor = if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
 
-            TextButton(
-                onClick = { filterViewModel.openBottomSheet() },
+            IconButton (
+                onClick = filterViewModel::openBottomSheet,
+                enabled = sortOptions.isNotEmpty(),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
+                ),
                 modifier = Modifier
-                    .heightIn(40.dp, 40.dp),
-                contentPadding = PaddingValues(8.dp, 2.dp),
-            ) { Text("Filter") }
+                    .padding(0.dp)
+                    .size(40.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.filter_24),
+                    contentDescription = "Filter"
+                )
+            }
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .size(7.dp)
-                    .offset((-5).dp, (-5).dp)
+                    .offset((-5).dp, (-9).dp)
                     .clip(CircleShape)
                     .border(0.5.dp, borderColor, CircleShape)
                     .background(indicatorColor)
@@ -396,13 +649,22 @@ private fun PlaintextHeader(
             val alteredColor = Color.Black.copy(alpha = .1f).compositeOver(LocalCustomColors.current.textField)
             val color = if (sortMenuState.subMenu) alteredColor else LocalCustomColors.current.textField
 
-            TextButton(
+            IconButton (
                 onClick = { viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = !sortMenuState.mainMenu)) },
-                enabled = plaintextState.sortOptions.isNotEmpty(),
+                enabled = sortOptions.isNotEmpty(),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
+                ),
                 modifier = Modifier
-                    .heightIn(40.dp, 40.dp),
-                contentPadding = PaddingValues(8.dp, 2.dp),
-            ) { Text("Sorting") }
+                    .padding(0.dp)
+                    .size(40.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.sort_bars),
+                    contentDescription = "Sorting"
+                )
+            }
 
             // Main options
             DropdownMenu(
@@ -416,7 +678,7 @@ private fun PlaintextHeader(
                 containerColor = color,
                 shadowElevation = 6.dp
             ) {
-                plaintextState.sortOptions.forEach { option ->
+                sortOptions.forEach { option ->
                     var yPosition by remember { mutableStateOf(0.dp) }
 
                     DropdownMenuItem(
@@ -433,10 +695,10 @@ private fun PlaintextHeader(
                                     color = LocalContentColor.current.copy(alpha = if (sortMenuState.subMenu) 0.85f else 1.0f)
                                 )
                                 // Sort indicator and/or submenu
-                                if (plaintextState.sortState.value == option.value) {
+                                if (sortState.value == option.value) {
                                     Box {
                                         Image(
-                                            painter = painterResource(id = plaintextState.sortState.icon),
+                                            painter = painterResource(id = sortState.icon),
                                             contentDescription = null,
                                             modifier = Modifier
                                                 .size(20.dp)
@@ -516,7 +778,7 @@ private fun PlaintextHeader(
                                     modifier = Modifier
                                         .padding(end = 8.dp)
                                 )
-                                val color = if (sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection) {
+                                val color = if (sortMenuState.subSelection == it && sortState.value == sortMenuState.mainSelection) {
                                     LocalContentColor.current } else Color.Transparent
                                 Box(
                                     modifier = Modifier
@@ -527,7 +789,7 @@ private fun PlaintextHeader(
                             }
                         },
                         onClick = {
-                            reverse = sortMenuState.subSelection == it && plaintextState.sortState.value == sortMenuState.mainSelection
+                            reverse = sortMenuState.subSelection == it && sortState.value == sortMenuState.mainSelection
                             viewModel.updateSortMenuState(sortMenuState.copy(subSelection = it))
                             viewModel.updateSorting(sortMenuState.mainSelection, reverse)
                             viewModel.updateSubSorting(it)
@@ -541,19 +803,18 @@ private fun PlaintextHeader(
         IconButton(
             onClick = {
                 coroutineScope.launch {
-                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plaintextState.plainList)))
-
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plainList())))
                     Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier
-                .padding(0.dp)
-                .size(40.dp),
-            enabled = plaintextState.plainList.isNotBlank(),
+            enabled = plainList().isNotBlank(),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary,
                 disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-            )
+            ),
+            modifier = Modifier
+                .padding(0.dp)
+                .size(40.dp),
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.copy_icon),
@@ -566,14 +827,14 @@ private fun PlaintextHeader(
         // Print
         IconButton(
             onClick = { viewModel.showPrintDialog(true) },
-            modifier = Modifier
-                .padding(0.dp)
-                .size(40.dp),
-            enabled = plaintextState.plainList.isNotBlank(),
+            enabled = plainList().isNotBlank(),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary,
                 disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-            )
+            ),
+            modifier = Modifier
+                .padding(0.dp)
+                .size(40.dp)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.print_icon),
@@ -587,16 +848,22 @@ private fun PlaintextHeader(
 
 @Composable
 fun PlaintextList(
+    viewModel: PlaintextViewModel,
+    filterViewModel: FilterViewModel,
+    context: Context,
+    plainList: () -> String,
     plaintextState: PlaintextListState,
     selectionKey: Int,
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
+        Spacer(Modifier.height(12.dp))
         if (plaintextState.formatString.isBlank()) {
             Text(
                 text = "Please set a format string.",
@@ -607,6 +874,7 @@ fun PlaintextList(
                     .padding(top = 32.dp)
             )
         } else {
+
             key(selectionKey) { SelectionContainer(
                 modifier = Modifier
                     .onFocusChanged{
@@ -618,7 +886,7 @@ fun PlaintextList(
                     }
             ) {
                 Text(
-                    text = plaintextState.plainList,
+                    text = plainList(),
                     fontSize = 15.sp,
                     modifier = Modifier
                         .padding(bottom = 32.dp)
@@ -631,6 +899,8 @@ fun PlaintextList(
 
 @Composable
 fun PlaintextFormatting(
+    viewModel: PlaintextViewModel,
+    largeScreen: Boolean,
     plaintextState: PlaintextListState,
     formatString: String,
     delimiter: String,
@@ -640,20 +910,44 @@ fun PlaintextFormatting(
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val formatPreview by viewModel.formatPreview.collectAsState()
+    val presets by viewModel.presets.collectAsState()
+
     var saveDialog by rememberSaveable { mutableStateOf(false) }
     var loadDialog by rememberSaveable { mutableStateOf(false) }
 
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
     ) {
         // Format
-        Text(
-            text = "Format Output:",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-            fontWeight = FontWeight.SemiBold
-        )
+
+        if (largeScreen) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Format Output:",
+                    modifier = Modifier,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+        else {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "Format Output:",
+                modifier = Modifier
+                    .padding(bottom = 8.dp),
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -788,7 +1082,7 @@ fun PlaintextFormatting(
             Spacer(Modifier.weight(.2f))
             TextButton(
                 onClick = { loadDialog = true },
-                enabled = plaintextState.presets.any { it.formatString.isNotBlank() },
+                enabled = presets.any { it.formatString.isNotBlank() },
                 modifier = Modifier
                     .heightIn(40.dp, 40.dp),
                 contentPadding = PaddingValues(8.dp, 2.dp),
@@ -826,7 +1120,7 @@ fun PlaintextFormatting(
                 .padding(vertical = 8.dp, horizontal = 12.dp)
         ) {
             Text(
-                text = plaintextState.preview,
+                text = formatPreview,
                 modifier = Modifier,
                 minLines = 6,
                 maxLines = 6,
@@ -883,8 +1177,34 @@ fun PlaintextFormatting(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top
             ) {
-                val firstHalf = plaintextState.formatGuide.entries.take((plaintextState.formatGuide.size / 2.0).roundToInt())
-                val secondHalf = plaintextState.formatGuide.entries.drop(firstHalf.size)
+                val formatGuide = mapOf(
+                    "Brand" to "@brand",
+                    "Blend" to "@blend",
+                    "Type" to "@type",
+                    "Subgenre" to "@subgenre",
+                    "Cut" to "@cut",
+                    "Components" to "@comps",
+                    "Flavoring" to "@flavors",
+                    "Quantity" to "@qty",
+                    "Rating" to "@rating_0_0",
+                    "Production" to "@prod",
+                    "Tin Label" to "@label",
+                    "Tin Container" to "@container",
+                    "Tin Quantity" to "@T_qty",
+                    "Manufacture" to "@manufacture",
+                    "Cellar Date" to "@cellar",
+                    "Open Date" to "@open",
+                    "Finished" to "@finished",
+                    "New Line" to "_n_",
+                    "Number" to "#",
+                    "Escape char" to "'",
+                    "Conditional" to "[...]",
+                    "Tin sublist" to "{...}",
+                    "Sublist delim." to "~"
+                )
+
+                val firstHalf = formatGuide.entries.take((formatGuide.size / 2.0).roundToInt())
+                val secondHalf = formatGuide.entries.drop(firstHalf.size)
                 val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
 
                 // first half
@@ -1108,7 +1428,7 @@ fun PlaintextFormatting(
 
         if (saveDialog) {
             SaveDialog(
-                savedPresets = plaintextState.presets,
+                savedPresets = presets,
                 formatString = formatString,
                 delimiter = delimiter,
                 onSaveConfirm = { slot, formatString, delimiter ->
@@ -1120,7 +1440,7 @@ fun PlaintextFormatting(
         }
         if (loadDialog) {
             LoadDialog(
-                savedPresets = plaintextState.presets,
+                savedPresets = presets,
                 formatString = formatString,
                 delimiter = delimiter,
                 onLoadConfirm = { string, delimiter ->
