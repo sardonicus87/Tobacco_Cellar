@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -537,12 +536,13 @@ fun BulkEditing(
     Column {
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
-            size = GlowSize(vertical = 8.dp)
+            size = GlowSize(vertical = 8.dp),
+            modifier = Modifier
+                .weight(1f)
         ) {
             Column(
                 modifier = modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(.7f)
                     .padding(horizontal = 12.dp)
                     .onFocusChanged { fieldFocused(it.hasFocus) }
                     .verticalScroll(rememberScrollState()),
@@ -1302,13 +1302,13 @@ fun BulkEditing(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
 
         // Batch edit confirm //
         Button(
             onClick = { confirmEdit = true },
             modifier = Modifier
-                .padding(horizontal = 28.dp)
+                .padding(horizontal = 24.dp)
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally),
             enabled = selectedItems.isNotEmpty() && batchEditValidation(),
@@ -1319,6 +1319,8 @@ fun BulkEditing(
                 modifier = Modifier
             )
         }
+
+        Spacer(Modifier.height(if (isLargeScreen) 24.dp else 80.dp))
 
         if (confirmEdit) {
             ConfirmEditDialog(
