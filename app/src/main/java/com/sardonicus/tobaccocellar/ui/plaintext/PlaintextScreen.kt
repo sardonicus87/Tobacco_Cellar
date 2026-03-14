@@ -146,13 +146,7 @@ fun PlaintextScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
-    val plaintextState by viewModel.listState.collectAsState()
     val filterViewModel = LocalCellarApplication.current.filterViewModel
-    val templateView by viewModel.setTemplateView.collectAsState()
-    val formatString by viewModel.formatStringEntry.collectAsState()
-    val delimiter by viewModel.delimiter.collectAsState()
-    val printOptions by viewModel.printOptions.collectAsState()
-    val selectionKey by viewModel.selectionKey.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
     val tabIndex by viewModel.tabIndex.collectAsState()
 
@@ -197,20 +191,15 @@ fun PlaintextScreen(
         ) {
             PlaintextBody(
                 viewModel = viewModel,
+                filterViewModel = filterViewModel,
                 largeScreen = isLargeScreen,
+                selectionFocused = selectionFocused,
                 tabIndex = tabIndex,
                 onTabChange = viewModel::updateTabIndex,
-                plaintextState = plaintextState,
-                formatString = formatString,
-                delimiter = delimiter,
-                printOptions = printOptions,
-                filterViewModel = filterViewModel,
                 saveFormatString = viewModel::saveFormatString,
                 savePrintOptions = viewModel::savePrintOptions,
                 savePreset = viewModel::savePreset,
-                templateView = templateView,
-                selectionKey = selectionKey,
-                selectionFocused = viewModel::updateFocused,
+                updateSelectionFocused = viewModel::updateFocused,
                 modifier = Modifier
                     .fillMaxSize()
 
@@ -223,30 +212,24 @@ fun PlaintextScreen(
 @Composable
 fun PlaintextBody(
     viewModel: PlaintextViewModel,
+    filterViewModel: FilterViewModel,
     largeScreen: Boolean,
+    selectionFocused: Boolean,
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
-    plaintextState: PlaintextListState,
-    formatString: String,
-    delimiter: String,
-    printOptions: PrintOptions,
-    filterViewModel: FilterViewModel,
     saveFormatString: (String, String) -> Unit,
     savePrintOptions: (Float, Double) -> Unit,
     savePreset: (Int, String, String) -> Unit,
-    templateView: Boolean,
-    selectionKey: Int,
-    selectionFocused: (Boolean) -> Unit,
+    updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var anythingFocused by remember { mutableStateOf(false) }
     val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
     val focusManager = LocalFocusManager.current
 
-    BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
+    BackHandler(enabled = anythingFocused && !selectionFocused) { focusManager.clearFocus() }
 
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
-
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
             if (pagerState.currentPage != tabIndex) {
@@ -261,8 +244,13 @@ fun PlaintextBody(
     }
 
     val plainList by viewModel.plainList.collectAsState()
+    val selectionKey by viewModel.selectionKey.collectAsState()
+    val formatString by viewModel.formatStringEntry.collectAsState()
+    val delimiter by viewModel.delimiter.collectAsState()
+
     val context = LocalContext.current
     val printDialog by viewModel.printDialog.collectAsState()
+    val printOptions by viewModel.printOptions.collectAsState()
 
     Column(
         modifier = modifier
@@ -297,19 +285,7 @@ fun PlaintextBody(
                             }
                         }
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        PlaintextActionRow(
-                            viewModel = viewModel,
-                            filterViewModel = filterViewModel,
-                            plainList = { plainList },
-                            context = context,
-                            modifier = Modifier
-                        )
-                    }
+
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = 0.3f)),
                         size = GlowSize(top = 3.dp),
@@ -320,10 +296,10 @@ fun PlaintextBody(
                             viewModel = viewModel,
                             filterViewModel = filterViewModel,
                             context = context,
-                            plainList = { plainList },
-                            plaintextState = plaintextState,
+                            plainList = plainList,
+                            formatString = formatString,
                             selectionKey = selectionKey,
-                            selectionFocused = selectionFocused,
+                            updateSelectionFocused = updateSelectionFocused,
                             modifier = Modifier
                                 .clickable(indication = null, interactionSource = null) {
                                     viewModel.resetSelection()
@@ -361,14 +337,16 @@ fun PlaintextBody(
                     PlaintextFormatting(
                         viewModel = viewModel,
                         largeScreen = largeScreen,
-                        plaintextState = plaintextState,
                         formatString = formatString,
                         delimiter = delimiter,
                         saveFormatString = saveFormatString,
                         savePreset = savePreset,
                         selectionKey = selectionKey,
-                        selectionFocused = selectionFocused,
+                        updateSelectionFocused = updateSelectionFocused,
                         modifier = Modifier
+                            .clickable(indication = null, interactionSource = null) {
+                                viewModel.resetSelection()
+                            }
                     )
                 }
 
@@ -393,7 +371,7 @@ fun PlaintextBody(
                         thickness = Dp.Hairline,
                         color = DividerDefaults.color,
                     )
-                },
+                }
             ) {
                 titles.forEachIndexed { index, title ->
                     CompositionLocalProvider(LocalRippleConfiguration provides null) {
@@ -422,6 +400,7 @@ fun PlaintextBody(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 userScrollEnabled = !anythingFocused,
+                beyondViewportPageCount = 1,
                 verticalAlignment = Alignment.Top
             ) { targetIndex ->
                 GlowBox(
@@ -436,10 +415,10 @@ fun PlaintextBody(
                                 viewModel = viewModel,
                                 filterViewModel = filterViewModel,
                                 context = context,
-                                plainList = { plainList },
-                                plaintextState = plaintextState,
+                                plainList = plainList,
+                                formatString = formatString,
                                 selectionKey = selectionKey,
-                                selectionFocused = selectionFocused,
+                                updateSelectionFocused = updateSelectionFocused,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(indication = null, interactionSource = null) {
@@ -450,25 +429,27 @@ fun PlaintextBody(
                             PlaintextFormatting(
                                 viewModel = viewModel,
                                 largeScreen = largeScreen,
-                                plaintextState = plaintextState,
                                 formatString = formatString,
                                 delimiter = delimiter,
                                 saveFormatString = saveFormatString,
                                 savePreset = savePreset,
                                 selectionKey = selectionKey,
-                                selectionFocused = selectionFocused,
+                                updateSelectionFocused = updateSelectionFocused,
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable(indication = null, interactionSource = null) {
+                                        viewModel.resetSelection()
+                                    }
                             )
                         else ->
                             PlaintextList(
                                 viewModel = viewModel,
                                 filterViewModel = filterViewModel,
                                 context = context,
-                                plainList = { plainList },
-                                plaintextState = plaintextState,
+                                plainList = plainList,
+                                formatString = formatString,
                                 selectionKey = selectionKey,
-                                selectionFocused = selectionFocused,
+                                updateSelectionFocused = updateSelectionFocused,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(indication = null, interactionSource = null) {
@@ -481,61 +462,6 @@ fun PlaintextBody(
         }
     }
 
-//    Column(
-//        modifier = modifier
-//            .fillMaxWidth(),
-//    ){
-//
-//        // Header
-//        PlaintextActionRow(
-//            viewModel = viewModel,
-//            filterViewModel = filterViewModel,
-//            plainList = { plainList },
-//            context = context,
-//            modifier = Modifier
-//        )
-
-        // Main body
-//        GlowBox(
-//            color = GlowColor(Color.Black.copy(alpha = 0.3f)),
-//            size = GlowSize(top = 3.dp)
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .verticalScroll(rememberScrollState())
-//                    .padding(horizontal = 12.dp),
-//                verticalArrangement = Arrangement.Top,
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                Spacer(Modifier.height(16.dp))
-//                if (templateView) {
-//                    PlaintextFormatting(
-//                        viewModel = viewModel,
-//                        plaintextState = plaintextState,
-//                        formatString = formatString,
-//                        delimiter = delimiter,
-//                        saveFormatString = saveFormatString,
-//                        savePreset = savePreset,
-//                        selectionKey = selectionKey,
-//                        selectionFocused = selectionFocused,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                    )
-//                } else {
-//                    PlaintextList(
-//                        viewModel = viewModel,
-//                        plainList = { plainList },
-//                        plaintextState = plaintextState,
-//                        selectionKey = selectionKey,
-//                        selectionFocused = selectionFocused,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                    )
-//                }
-//            }
-//        }
-//    }
 
     if (printDialog) {
         PrintDialog(
@@ -552,7 +478,7 @@ fun PlaintextBody(
             onPrintCancel = { font, margin ->
                 savePrintOptions(font, margin)
                 viewModel.showPrintDialog(false)
-            },
+            }
         )
     }
 
@@ -564,13 +490,12 @@ fun PlaintextBody(
 private fun PlaintextActionRow(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
-    plainList: () -> String,
+    plainList: String,
     context: Context,
     modifier: Modifier = Modifier
 ) {
     val sortState by viewModel.sortState.collectAsState()
     val sortOptions by viewModel.sortOptions.collectAsState()
-    val templateView by viewModel.setTemplateView.collectAsState()
     val sortMenuState by viewModel.sortMenuState.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
@@ -803,11 +728,11 @@ private fun PlaintextActionRow(
         IconButton(
             onClick = {
                 coroutineScope.launch {
-                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plainList())))
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plainList)))
                     Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
                 }
             },
-            enabled = plainList().isNotBlank(),
+            enabled = plainList.isNotBlank(),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary,
                 disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
@@ -827,7 +752,7 @@ private fun PlaintextActionRow(
         // Print
         IconButton(
             onClick = { viewModel.showPrintDialog(true) },
-            enabled = plainList().isNotBlank(),
+            enabled = plainList.isNotBlank(),
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary,
                 disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
@@ -851,10 +776,10 @@ fun PlaintextList(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
     context: Context,
-    plainList: () -> String,
-    plaintextState: PlaintextListState,
+    plainList: String,
+    formatString: String,
     selectionKey: Int,
-    selectionFocused: (Boolean) -> Unit,
+    updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -863,30 +788,37 @@ fun PlaintextList(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        Spacer(Modifier.height(12.dp))
-        if (plaintextState.formatString.isBlank()) {
+        if (formatString.isBlank()) {
             Text(
                 text = "Please set a format string.",
                 fontSize = 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 32.dp)
+                    .padding(top = 44.dp)
             )
         } else {
-
+            PlaintextActionRow(
+                viewModel = viewModel,
+                filterViewModel = filterViewModel,
+                plainList = plainList,
+                context = context,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 12.dp)
+            )
             key(selectionKey) { SelectionContainer(
                 modifier = Modifier
                     .onFocusChanged{
                         if (it.isFocused) {
-                            selectionFocused(true)
+                            updateSelectionFocused(true)
                         } else {
-                            selectionFocused(false)
+                            updateSelectionFocused(false)
                         }
                     }
             ) {
                 Text(
-                    text = plainList(),
+                    text = plainList,
                     fontSize = 15.sp,
                     modifier = Modifier
                         .padding(bottom = 32.dp)
@@ -901,13 +833,12 @@ fun PlaintextList(
 fun PlaintextFormatting(
     viewModel: PlaintextViewModel,
     largeScreen: Boolean,
-    plaintextState: PlaintextListState,
     formatString: String,
     delimiter: String,
     saveFormatString: (String, String) -> Unit,
     savePreset: (Int, String, String) -> Unit,
     selectionKey: Int,
-    selectionFocused: (Boolean) -> Unit,
+    updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val formatPreview by viewModel.formatPreview.collectAsState()
@@ -927,7 +858,7 @@ fun PlaintextFormatting(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp),
+                    .height(52.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1069,7 +1000,7 @@ fun PlaintextFormatting(
             Spacer(Modifier.weight(.2f))
             TextButton(
                 onClick = { saveDialog = true },
-                enabled = plaintextState.formatString.isNotBlank(),
+                enabled = formatString.isNotBlank(),
                 modifier = Modifier
                     .heightIn(40.dp, 40.dp),
                 contentPadding = PaddingValues(8.dp, 2.dp),
@@ -1137,26 +1068,6 @@ fun PlaintextFormatting(
                 .padding(bottom = 8.dp),
             fontWeight = FontWeight.Bold,
         )
-        Text(
-            text = "Anything typed in the format string will show in the text. To reference " +
-                    "specific fields, use the placeholders below. Sorting options are generated " +
-                    "based on the format string placeholders (set format string before sorting). " +
-                    "Using the delimiter field will automatically remove the delimiter from the " +
-                    "last line.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "Use the delimiter line for how to separate records in the generated string. " +
-                    "Anything typed here will show up in-between each record. So, to separate " +
-                    "each record by a blank line, you would need to enter \"_n__n_\". When tins " +
-                    "are passed as a sublist, mark the start of the tins sublist delimiter with " +
-                    "a tilde (~) at the end of the tins-sublist formatting, inside the closing " +
-                    "tins as sublist bracket (e.g.: {@label~, } or {@label~_n_}.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-
         // Formatting Options
         key(selectionKey) { SelectionContainer(
             modifier = Modifier
@@ -1165,264 +1076,51 @@ fun PlaintextFormatting(
                 .padding(bottom = 16.dp)
                 .onFocusChanged {
                     if (it.isFocused) {
-                        selectionFocused(true)
+                        updateSelectionFocused(true)
                     } else {
-                        selectionFocused(false)
+                        updateSelectionFocused(false)
                     }
                 }
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Top
-            ) {
-                val formatGuide = mapOf(
-                    "Brand" to "@brand",
-                    "Blend" to "@blend",
-                    "Type" to "@type",
-                    "Subgenre" to "@subgenre",
-                    "Cut" to "@cut",
-                    "Components" to "@comps",
-                    "Flavoring" to "@flavors",
-                    "Quantity" to "@qty",
-                    "Rating" to "@rating_0_0",
-                    "Production" to "@prod",
-                    "Tin Label" to "@label",
-                    "Tin Container" to "@container",
-                    "Tin Quantity" to "@T_qty",
-                    "Manufacture" to "@manufacture",
-                    "Cellar Date" to "@cellar",
-                    "Open Date" to "@open",
-                    "Finished" to "@finished",
-                    "New Line" to "_n_",
-                    "Number" to "#",
-                    "Escape char" to "'",
-                    "Conditional" to "[...]",
-                    "Tin sublist" to "{...}",
-                    "Sublist delim." to "~"
-                )
-
-                val firstHalf = formatGuide.entries.take((formatGuide.size / 2.0).roundToInt())
-                val secondHalf = formatGuide.entries.drop(firstHalf.size)
-                val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
-
-                // first half
-                Column(
-                    modifier = Modifier
-                        .weight(1f),
-                    verticalArrangement = Arrangement.Top,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(IntrinsicSize.Min)
-                                .padding(end = 8.dp),
-                        ) {
-                            firstHalf.forEach {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(height),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        text = "${it.key}:",
-                                        modifier = Modifier,
-                                        style = TextStyle(
-                                            color = LocalContentColor.current,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        maxLines = 1,
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 10.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = 0.25.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                        Column(
-                            modifier = Modifier,
-                        ) {
-                            firstHalf.forEach {
-                                Box(
-                                    modifier = Modifier
-                                        .height(height),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        text = it.value,
-                                        modifier = Modifier,
-                                        style = TextStyle(
-                                            color = LocalContentColor.current,
-                                        ),
-                                        maxLines = 1,
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 10.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = 0.25.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(36.dp))
-
-                // second half
-                Column(
-                    modifier = Modifier
-                        .weight(1f),
-                    verticalArrangement = Arrangement.Top,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(IntrinsicSize.Min)
-                                .padding(end = 8.dp),
-                        ) {
-                            secondHalf.forEach {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(height),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        text = "${it.key}:",
-                                        modifier = Modifier,
-                                        style = TextStyle(
-                                            color = LocalContentColor.current,
-                                            fontWeight = FontWeight.SemiBold
-                                        ),
-                                        maxLines = 1,
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 10.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = 0.25.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                        Column(
-                            modifier = Modifier,
-                        ) {
-                            secondHalf.forEach {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(height),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
-                                        text = it.value,
-                                        modifier = Modifier,
-                                        style = TextStyle(
-                                            color = LocalContentColor.current,
-                                        ),
-                                        maxLines = 1,
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 10.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = 0.25.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            FormattingGuide()
         } }
 
         Text(
-            text = "The \"@rating_0_0\" tag is to be used in a specific way. The first zero should " +
-                    "be replaced with the desired max rating (for scaling). The second \"_0\" is " +
-                    "optional for the number of decimal places to be rounded to (max of 2, enter " +
-                    "0 to round to the nearest whole number). For example, to pass the rating on " +
-                    "a scale of 1-4 with whole number rounding, enter \"@rating_4_0\" into the " +
-                    "formatting. More advanced examples might be:\n" +
-                    "\"[@rating_10_0 stars]\" (of 10, whole number) or \"[@rating_4_2/4]\" (of 4, " +
-                    "two places)",
+            text = "Formatting Help",
             modifier = Modifier
                 .padding(bottom = 8.dp),
+            fontWeight = FontWeight.Bold
         )
-        Text(
-            text = "\"Number\" is a special tag that counts each record in the given sort order " +
-                    "(use multiple # to include leading 0's).",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "In order to output raw text rather than special characters, escape the " +
-                    "special character with the escape character. For example, to output # in the " +
-                    "string, enter: '#. Likewise for example, to output brackets around a field, " +
-                    "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
-                    "need to be escaped unless you're trying to use it before an escapable " +
-                    "character (e.g to render: '01' you would need to input ''##').",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "Use the square brackets ([ ]) when you only want the text within them " +
-                    "to appear if one or more placeholders (also inside the brackets) are " +
-                    "found. For instance, if you want the type shown on a new line, but " +
-                    "don't want an extra line for a blank type, enter: [_n_@type]. These " +
-                    "conditional brackets can also be nested.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "When sorting by items, if you want the tins organized as a sublist " +
-                    "per each item, use the curly braces around the formatting you want for " +
-                    "tins (e.g. {@label (@T_qty)}). Conditional brackets can also be used " +
-                    "inside the curly braces.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
-                    "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
-                    "just before the desired delimiter, followed by delimiter. For example, to " +
-                    "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "A more advanced example might be to pass the list of tins only if tins exist " +
-                    "for that blend and passing the quantity in brackets. For example, entering...",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Text(
-            text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-            fontSize = 14.sp,
-        )
-        Text(
-            text = "... would result in:",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-        )
-        Box {
-            Text(
-                text = "Lane Limited - \"Very Cherry\"\n    - Lot 1 [2 oz]\n    - Lot 2 [50 grams]",
-                modifier = Modifier,
-                fontSize = 14.sp,
-            )
+        var expanded by remember { mutableStateOf(false) }
+
+        if (!expanded) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .padding(horizontal = 12.dp)
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { expanded = true }
+            ) {
+                HorizontalDivider(Modifier.weight(1f), 1.dp)
+                Text(
+                    text = "Click to Expand",
+                    fontSize = 14.sp,
+                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                )
+                HorizontalDivider(Modifier.weight(1f), 1.dp)
+            }
+
+        } else {
+            FormattingHelp({expanded = false})
         }
+
 
         Spacer(Modifier.height(24.dp))
 
@@ -1454,9 +1152,309 @@ fun PlaintextFormatting(
 }
 
 
+@Composable
+private fun FormattingGuide(
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Top
+    ) {
+        val formatGuide = mapOf(
+            "Brand" to "@brand",
+            "Blend" to "@blend",
+            "Type" to "@type",
+            "Subgenre" to "@subgenre",
+            "Cut" to "@cut",
+            "Components" to "@comps",
+            "Flavoring" to "@flavors",
+            "Quantity" to "@qty",
+            "Rating" to "@rating_0_0",
+            "Production" to "@prod",
+            "Tin Label" to "@label",
+            "Tin Container" to "@container",
+            "Tin Quantity" to "@T_qty",
+            "Manufacture" to "@manufacture",
+            "Cellar Date" to "@cellar",
+            "Open Date" to "@open",
+            "Finished" to "@finished",
+            "New Line" to "_n_",
+            "Number" to "#",
+            "Escape char" to "'",
+            "Conditional" to "[...]",
+            "Tin sublist" to "{...}",
+            "Sublist delim." to "~"
+        )
+
+        val firstHalf = formatGuide.entries.take((formatGuide.size / 2.0).roundToInt())
+        val secondHalf = formatGuide.entries.drop(firstHalf.size)
+        val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
+
+        // first half
+        Column(
+            modifier = Modifier
+                .weight(1f),
+            verticalArrangement = Arrangement.Top,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .padding(end = 8.dp),
+                ) {
+                    firstHalf.forEach {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(height),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = "${it.key}:",
+                                modifier = Modifier,
+                                style = TextStyle(
+                                    color = LocalContentColor.current,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 10.sp,
+                                    maxFontSize = 14.sp,
+                                    stepSize = 0.25.sp
+                                )
+                            )
+                        }
+                    }
+                }
+                Column(
+                    modifier = Modifier,
+                ) {
+                    firstHalf.forEach {
+                        Box(
+                            modifier = Modifier
+                                .height(height),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = it.value,
+                                modifier = Modifier,
+                                style = TextStyle(
+                                    color = LocalContentColor.current,
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 10.sp,
+                                    maxFontSize = 14.sp,
+                                    stepSize = 0.25.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.width(36.dp))
+
+        // second half
+        Column(
+            modifier = Modifier
+                .weight(1f),
+            verticalArrangement = Arrangement.Top,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Min)
+                        .padding(end = 8.dp),
+                ) {
+                    secondHalf.forEach {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(height),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = "${it.key}:",
+                                modifier = Modifier,
+                                style = TextStyle(
+                                    color = LocalContentColor.current,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 10.sp,
+                                    maxFontSize = 14.sp,
+                                    stepSize = 0.25.sp
+                                )
+                            )
+                        }
+                    }
+                }
+                Column(
+                    modifier = Modifier,
+                ) {
+                    secondHalf.forEach {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(height),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = it.value,
+                                modifier = Modifier,
+                                style = TextStyle(
+                                    color = LocalContentColor.current,
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 10.sp,
+                                    maxFontSize = 14.sp,
+                                    stepSize = 0.25.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FormattingHelp(
+    hide: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = "Anything typed in the format string will show in the text. To reference " +
+                    "specific fields, use the placeholders above. Sorting options are generated " +
+                    "based on the format string placeholders (set format string before sorting). " +
+                    "Using the delimiter field will automatically remove the delimiter from the " +
+                    "last line.",
+            modifier = Modifier
+        )
+        Text(
+            text = "Use the delimiter line for how to separate records in the generated string. " +
+                    "Anything typed here will show up in-between each record. So, to separate " +
+                    "each record by a blank line, you would need to enter \"_n__n_\". When tins " +
+                    "are passed as a sublist, mark the start of the tins sublist delimiter with " +
+                    "a tilde (~) at the end of the tins-sublist formatting, inside the closing " +
+                    "tins as sublist bracket (e.g.: {@label~, } or {@label~_n_}.",
+            modifier = Modifier
+        )
+        Text(
+            text = "The \"@rating_0_0\" tag is to be used in a specific way. The first zero should " +
+                    "be replaced with the desired max rating (for scaling). The second \"_0\" is " +
+                    "optional for the number of decimal places to be rounded to (max of 2, enter " +
+                    "0 to round to the nearest whole number). For example, to pass the rating on " +
+                    "a scale of 1-4 with whole number rounding, enter \"@rating_4_0\" into the " +
+                    "formatting. More advanced examples might be:\n" +
+                    "\"[@rating_10_0 stars]\" (of 10, whole number) or \"[@rating_4_2/4]\" (of 4, " +
+                    "two places)",
+            modifier = Modifier
+        )
+        Text(
+            text = "\"Number\" is a special tag that counts each record in the given sort order " +
+                    "(use multiple # to include leading 0's).",
+            modifier = Modifier
+        )
+        Text(
+            text = "In order to output raw text rather than special characters, escape the " +
+                    "special character with the escape character. For example, to output # in the " +
+                    "string, enter: '#. Likewise for example, to output brackets around a field, " +
+                    "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
+                    "need to be escaped unless you're trying to use it before an escapable " +
+                    "character (e.g. to render: '01' you would need to input ''##').",
+            modifier = Modifier
+        )
+        Text(
+            text = "Use the square brackets ([ ]) when you only want the text within them " +
+                    "to appear if one or more placeholders (also inside the brackets) are " +
+                    "found. For instance, if you want the type shown on a new line, but " +
+                    "don't want an extra line for a blank type, enter: [_n_@type]. These " +
+                    "conditional brackets can also be nested.",
+            modifier = Modifier
+        )
+        Text(
+            text = "When sorting by items, if you want the tins organized as a sublist " +
+                    "per each item, use the curly braces around the formatting you want for " +
+                    "tins (e.g. {@label (@T_qty)}). Conditional brackets can also be used " +
+                    "inside the curly braces.",
+            modifier = Modifier
+        )
+        Text(
+            text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
+                    "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
+                    "just before the desired delimiter, followed by delimiter. For example, to " +
+                    "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
+            modifier = Modifier
+        )
+        Text(
+            text = "A more advanced example might be to pass the list of tins only if tins exist " +
+                    "for that blend and passing the quantity in brackets. For example, entering...",
+            modifier = Modifier
+        )
+        Text(
+            text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
+            modifier = Modifier,
+            fontSize = 14.sp,
+        )
+        Text(
+            text = "... would result in:",
+            modifier = Modifier
+        )
+        Box {
+            Text(
+                text = "Lane Limited - \"Very Cherry\"\n        - Lot 1 [2 oz]\n        - Lot 2 [50 grams]",
+                modifier = Modifier,
+                fontSize = 14.sp,
+            )
+        }
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .padding(horizontal = 12.dp)
+                .clickable(
+                    indication = LocalIndication.current,
+                    interactionSource = null
+                ) { hide() }
+        ) {
+            HorizontalDivider(Modifier.weight(1f), 1.dp)
+            Text(
+                text = "Click to Hide",
+                fontSize = 14.sp,
+                color = LocalContentColor.current.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+            )
+            HorizontalDivider(Modifier.weight(1f), 1.dp)
+        }
+    }
+}
+
 /** Dialogs **/
 @Composable
-fun PrintDialog(
+private fun PrintDialog(
     savedFontSize: Float,
     savedMargin: Double,
     onPrintConfirm: (Float, Double) -> Unit,
@@ -1760,7 +1758,7 @@ fun PrintDialog(
 
 
 @Composable
-fun SaveDialog(
+private fun SaveDialog(
     savedPresets: List<PlaintextPreset>,
     formatString: String,
     delimiter: String,
@@ -1940,7 +1938,7 @@ fun SaveDialog(
 
 
 @Composable
-fun LoadDialog(
+private fun LoadDialog(
     savedPresets: List<PlaintextPreset>,
     formatString: String,
     delimiter: String,

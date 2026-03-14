@@ -36,9 +36,6 @@ class PlaintextViewModel (
     val preferencesRepo: PreferencesRepo
 ) : ViewModel() {
 
-    private val _setTemplateView = MutableStateFlow(false)
-    val setTemplateView: StateFlow<Boolean> = _setTemplateView.asStateFlow()
-
     private val _sortMenuState = MutableStateFlow(SortMenuState())
     val sortMenuState = _sortMenuState.asStateFlow()
 
@@ -116,41 +113,6 @@ class PlaintextViewModel (
         }
     }
 
-
-    @Suppress("UNCHECKED_CAST")
-    val listState = combine(
-        filterViewModel.unifiedFilteredItems,
-        filterViewModel.unifiedFilteredTins,
-        preferencesRepo.quantityOption,
-        preferencesRepo.plaintextFormatString,
-        preferencesRepo.plaintextDelimiter,
-        sortState,
-        subSortOption,
-        preferencesRepo.plaintextPresetsFlow,
-        preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate
-    ) { array ->
-        val filteredItems = array[0] as List<ItemsComponentsAndTins>
-        val filteredTins = array[1] as List<Tins>
-        val quantityOption = array[2] as QuantityOption
-        val formatString = array[3] as String
-        val delimiter = array[4] as String
-        val sortState = array[5] as PlaintextSortOption
-        val subSortOption = array[6] as String
-        val presets = array[7] as List<PlaintextPreset>
-        val ozRate = array[8] as Double
-        val gramsRate = array[9] as Double
-
-        PlaintextListState(
-            formatString = formatString,
-            delimiter = delimiter,
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = PlaintextListState()
-        )
 
     @Suppress("UNCHECKED_CAST")
     val plainList = combine(
@@ -482,9 +444,6 @@ class PlaintextViewModel (
         )
 
 
-
-
-
     fun resetSelection() {
         _selectionKey.update { it + 1 }
         updateFocused(false)
@@ -504,7 +463,6 @@ class PlaintextViewModel (
         }
     }
 
-    fun setTemplateView() { _setTemplateView.value = !_setTemplateView.value }
 
     fun updateSortMenuState(sortMenu: SortMenuState) {
         val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
@@ -941,12 +899,8 @@ class PlaintextViewModel (
 
 }
 
-data class PlaintextListState(
-    val formatString: String = "",
-    val delimiter: String = "",
-)
-
 @Serializable
+@Stable
 data class PlaintextPreset(
     val slot: Int = 0,
     val formatString: String = "",
