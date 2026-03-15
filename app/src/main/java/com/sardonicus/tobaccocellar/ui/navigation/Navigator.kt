@@ -57,7 +57,7 @@ class Navigator(
             // duplicate
             if (isLarge && route is PaneInfo && route.paneType == PaneType.SECOND) {
                 val currentStack = state.backStacks.getValue(state.topLevelRoute)
-                val duplicate = currentStack.find { it::class == route::class && it != route }
+                val duplicate = currentStack.take(currentStack.size - 1).find { it::class == route::class }
 
                 if (duplicate != null) currentStack.remove(duplicate)
             }
