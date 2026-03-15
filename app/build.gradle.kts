@@ -11,9 +11,9 @@ ksp {
 
 
 kotlin {
-//    compilerOptions {
-//        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-//    }
+    compilerOptions {
+        freeCompilerArgs.add("-Xlambdas=class")
+    }
     android {
         compileSdk = 36
 
@@ -21,19 +21,13 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 36
-            versionCode = 40
-            versionName = "5.1.1"
+            versionCode = 41
+            versionName = "5.1.2"
 
             vectorDrawables {
                 useSupportLibrary = true
             }
         }
-
-//    sourceSets.all {
-//        val variantName = name
-//        kotlin.directories += "generated/ksp/$variantName/kotlin"
-//        java.directories += "generated/ksp/$variantName/java"
-//    }
 
         sourceSets.all {
             val variantName = name
@@ -156,16 +150,11 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.ui)
     implementation(libs.ui.tooling)
-   // implementation(libs.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore.preferences)
-  //  implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-  //  implementation(libs.androidx.viewpager2)
     runtimeOnly(libs.kotlinx.coroutines.android)
     implementation(libs.commons.csv)
-  //  implementation(libs.material)
-  //  implementation(libs.accompanist.system.ui.controller)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.core)
@@ -190,6 +179,5 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.ui.text.google.fonts)
     ksp(libs.androidx.room.compiler)
-  //  implementation(libs.androidx.room.ktx)
 
 }

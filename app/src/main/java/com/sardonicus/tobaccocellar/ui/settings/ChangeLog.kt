@@ -12,6 +12,38 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "5.1.2",
+        buildDate = "",
+        changes = listOf(
+            "Dual Pane Layouts (large screens): the secondary pane can now be temporarily " +
+                    "collapsed/expanded. Tap anywhere on the secondary pane to show a button in " +
+                    "the top right corner to collapse. Tap the now large button to re-expand. " +
+                    "Pane automatically re-expands on navigation actions.",
+            "Settings, Large Screen layouts: new options in settings to enable/disable the dual " +
+                    "pane layouts (Cellar, Dates, Stats screens) and two column tabbed layouts " +
+                    "(Add/Edit, Batch Edit, and Plaintext screens)",
+            "Plaintext Screen: now adapts to large screen as well by splitting the list view " +
+                    "and formatting view into two columns. Standard phone layout also redesigned " +
+                    "with tabbed layout."
+        ),
+        improvements = listOf(
+            "Tabbed Layouts: prevent swipe to change tabs when a text input field is selected or " +
+                    "when text is selected (copy/paste)—prevents accidentally swipe changing tabs " +
+                    "while trying to select text or scroll inside a text field.",
+            "Screens with text entry: system back navigation now clears text field focus before " +
+                    "allowing back navigation.",
+            "Edit Entry screens: fixed an issue where landscape view would cut-off the delete " +
+                    "button. Also adapts better height to large devices.",
+            "Fixed a few random bits of minor UI jank.",
+            "General stability and performance improvements."
+        ),
+        bugFixes = listOf(
+            "Two Pane layouts, fixed minor navigational bug: clicking the same entry a second " +
+                    "time would lead to two copies on the navigation stack."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "5.1.1",
         buildDate = "6 Mar, 2026",
         changes = listOf(),
@@ -30,13 +62,13 @@ val changelogEntries = listOf(
         changes = listOf(
             "Continued large screen support: Add/Edit Entry screens now adapt to large screens " +
                     "with a left column containing the Details and Notes tabs and a right column " +
-                    "for the Tins tab. The Bulk Edit screen now also now adapts into a two column " +
+                    "for the Tins tab. The Batch Edit screen now also now adapts into a two column " +
                     "layout for large screens.",
             "Stats screen: new chart for seeing [up-to] the top ten brands by average blend rating " +
                     "(weighted by total number of rated entries)."
         ),
         improvements = listOf(
-            "Screens with Tab Layouts (Add/Edit, Bulk Edit): tabs can now be switched with a " +
+            "Screens with Tab Layouts (Add/Edit, Batch Edit): tabs can now be switched with a " +
                     "flick/drag gesture on the body of the tab. Tab changes are also now " +
                     "animated (slide).",
             "Blend Details and Edit Entry Tins lists: ensure that they always appear in the same " +
@@ -184,7 +216,7 @@ val changelogEntries = listOf(
         versionNumber = "4.0.0",
         buildDate = "4 Nov, 2025",
         changes = listOf(
-            "Star Ratings added. Can be added via Add/Edit, CSV Import and Bulk Edit. Is also a " +
+            "Star Ratings added. Can be added via Add/Edit, CSV Import and Batch Edit. Is also a " +
                     "sortable (if displayed) and filterable field. Can always ben seen on Blend " +
                     "Details screens. Also exports to CSV (set scaling and rounding options at " +
                     "the moment of exporting).",
@@ -406,7 +438,7 @@ val changelogEntries = listOf(
                     "clear a previously selected date.",
             "Add/Edit Entry screens, the down arrow for \"No. of Tins\" now sets the value to 0 " +
                     "if the field is blank.",
-            "Drop-down selection menus (Add/Edit, CSV Import, Bulk Edit), added a label to the " +
+            "Drop-down selection menus (Add/Edit, CSV Import, Batch Edit), added a label to the " +
                     "\"blank/clear\" option for more clarity (\"(Blank)\").",
             "CSV Import screen, added a header to the mapping columns for clarity.",
             "Updated the Help/FAQ due to various changes over time and made it more concise.",
@@ -688,7 +720,7 @@ val changelogEntries = listOf(
                     "status.",
             "Tins now have an additional option to mark as being finished, which has also been " +
                     "added to Add/Edit screens and CSV import field.",
-            "Flavoring field now added to items and to CSV Import, Add/Edit/Bulk Edit screens, " +
+            "Flavoring field now added to items and to CSV Import, Add/Edit/Batch Edit screens, " +
                     "and filtering sheet.",
             "Stats screen, added an estimated weight statistic (based on \"No. of Tins\" field), " +
                     "and number of open tins (based on tins with an open date and not marked as " +
