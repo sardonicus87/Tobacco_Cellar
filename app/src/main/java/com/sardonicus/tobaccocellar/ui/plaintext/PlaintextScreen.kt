@@ -165,8 +165,8 @@ fun PlaintextScreen(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .clickable(indication = null, interactionSource = null) {
-                viewModel.resetSelection()
-                focusManager.clearFocus()
+                if (selectionFocused) viewModel.resetSelection()
+                else focusManager.clearFocus()
             },
         topBar = {
             CellarTopAppBar(
@@ -202,6 +202,10 @@ fun PlaintextScreen(
                 updateSelectionFocused = viewModel::updateFocused,
                 modifier = Modifier
                     .fillMaxSize()
+                    .clickable(indication = null, interactionSource = null) {
+                        if (selectionFocused) viewModel.resetSelection()
+                        else focusManager.clearFocus()
+                    }
 
             )
         }
@@ -285,7 +289,6 @@ fun PlaintextBody(
                             }
                         }
                 ) {
-
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = 0.3f)),
                         size = GlowSize(top = 3.dp),
@@ -301,9 +304,6 @@ fun PlaintextBody(
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
                             modifier = Modifier
-                                .clickable(indication = null, interactionSource = null) {
-                                    viewModel.resetSelection()
-                                }
                         )
                     }
                 }
@@ -344,9 +344,6 @@ fun PlaintextBody(
                         selectionKey = selectionKey,
                         updateSelectionFocused = updateSelectionFocused,
                         modifier = Modifier
-                            .clickable(indication = null, interactionSource = null) {
-                                viewModel.resetSelection()
-                            }
                     )
                 }
 
@@ -421,9 +418,6 @@ fun PlaintextBody(
                                 updateSelectionFocused = updateSelectionFocused,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(indication = null, interactionSource = null) {
-                                        viewModel.resetSelection()
-                                    }
                             )
                         1 ->
                             PlaintextFormatting(
@@ -437,9 +431,6 @@ fun PlaintextBody(
                                 updateSelectionFocused = updateSelectionFocused,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(indication = null, interactionSource = null) {
-                                        viewModel.resetSelection()
-                                    }
                             )
                         else ->
                             PlaintextList(
@@ -452,9 +443,6 @@ fun PlaintextBody(
                                 updateSelectionFocused = updateSelectionFocused,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(indication = null, interactionSource = null) {
-                                        viewModel.resetSelection()
-                                    }
                             )
                     }
                 }
@@ -503,7 +491,7 @@ private fun PlaintextActionRow(
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
     BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
-        if (sortMenuState.mainMenu) {
+        if (sortMenuState.mainMenu && !sortMenuState.subMenu) {
             viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = false))
         }
         if (sortMenuState.subMenu) {
