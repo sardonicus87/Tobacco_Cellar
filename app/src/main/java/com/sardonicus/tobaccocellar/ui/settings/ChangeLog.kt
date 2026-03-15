@@ -13,7 +13,7 @@ val changelogEntries = listOf(
 
     ChangelogEntryData(
         versionNumber = "5.1.2",
-        buildDate = "",
+        buildDate = "15 Mar, 2026",
         changes = listOf(
             "Dual Pane Layouts (large screens): the secondary pane can now be temporarily " +
                     "collapsed/expanded. Tap anywhere on the secondary pane to show a button in " +
