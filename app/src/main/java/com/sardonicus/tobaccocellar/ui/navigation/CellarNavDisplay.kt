@@ -146,6 +146,7 @@ fun CellarNavigation(
                         }
                     }
                 )
+                val secondPaneExpanded by filterViewModel.secondPaneExpanded.collectAsState()
 
                 HomeScreen (
                     navigateToStats = { navigator.navigate(StatsDestination) },
@@ -153,7 +154,10 @@ fun CellarNavigation(
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
                     navigateToBulkEdit = { navigator.navigate(BulkEditDestination) },
-                    navigateToBlendDetails = { navigator.navigate(BlendDetailsDestination(it)) },
+                    navigateToBlendDetails = {
+                        navigator.navigate(BlendDetailsDestination(it))
+                        if (navigationState.isTwoPane && !secondPaneExpanded ) { filterViewModel.setSecondPaneExpansion(true) }
+                    },
                     navigateToCsvImport = { navigator.navigate(CsvFlowDestination) },
                     navigateToSettings = { navigator.navigate(SettingsDestination) },
                     navigateToHelp = { navigator.navigate(HelpDestination) },
@@ -446,7 +450,7 @@ fun CellarNavigation(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane, filterViewModel).then(SinglePaneSceneStrategy()),
+        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane).then(SinglePaneSceneStrategy()),
         transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         predictivePopTransitionSpec = {
