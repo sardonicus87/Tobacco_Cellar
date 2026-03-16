@@ -12,6 +12,21 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionNumber = "5.1.3",
+        buildDate = "16 Mar, 2026",
+        changes = listOf(),
+        improvements = listOf(
+            "Cellar large screen dual pane layouts, if the second pane is collapsed on a Blend " +
+                    "Details screen and the same entry is tapped again, the second pane will " +
+                    "re-expand."
+        ),
+        bugFixes = listOf(
+            "Adaptive Layout bug, accidentally forgot to reset the size points for large screens " +
+                    "screens, resulting in nearly all phones doing adaptive large screen layouts."
+        ),
+    ),
+
+    ChangelogEntryData(
         versionNumber = "5.1.2",
         buildDate = "15 Mar, 2026",
         changes = listOf(
