@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import android.content.res.Configuration
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
@@ -99,6 +100,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -265,6 +267,7 @@ fun AddEntryBody(
     var anythingFocused by remember { mutableStateOf(false) }
     val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
     val focusManager = LocalFocusManager.current
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
 
@@ -306,7 +309,7 @@ fun AddEntryBody(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
                 .padding(horizontal = 24.dp)
-                .padding(top = 24.dp, bottom = 40.dp),
+                .padding(top = 24.dp, bottom = if (!isLargeScreen() && landscape) 24.dp else 40.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Button(
@@ -559,9 +562,8 @@ fun ItemInputForm(
                 color = GlowColor(MaterialTheme.colorScheme.background),
                 size = GlowSize(vertical = 3.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(top = 1.dp)
-                    .fillMaxHeight()
             ) {
                 HorizontalPager(
                     state = narrowPagerState,

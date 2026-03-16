@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.items
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -79,6 +80,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -1320,7 +1322,9 @@ fun BulkEditing(
             )
         }
 
-        Spacer(Modifier.height(if (isLargeScreen) 24.dp else 80.dp))
+        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        Spacer(Modifier.height(if (isLargeScreen || landscape) 24.dp else 80.dp))
 
         if (confirmEdit) {
             ConfirmEditDialog(
