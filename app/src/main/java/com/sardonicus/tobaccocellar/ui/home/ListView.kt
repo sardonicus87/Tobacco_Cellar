@@ -1,5 +1,9 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -158,89 +162,93 @@ private fun ListItem(
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row (
-        modifier = Modifier
+    Box(
+        modifier = modifier
             .fillMaxWidth()
+            .padding(bottom = 1.dp)
     ) {
-        Box(
-            modifier = modifier
-                .padding(bottom = 1.dp)
-        ) {
-            // main details
-            Column {
-                Row(
+        // main details
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Entry info
+                MainDetails(
+                    brand = brand,
+                    blend = blend,
+                    favorite = favorite,
+                    disliked = disliked,
+                    notes = notes,
+                    rating = rating,
+                    typeGenreText = typeGenreText,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Entry info
-                    MainDetails(
-                        brand = brand,
-                        blend = blend,
-                        favorite = favorite,
-                        disliked = disliked,
-                        notes = notes,
-                        rating = rating,
-                        typeGenreText = typeGenreText,
-                        modifier = Modifier
-                            .weight(1f, false)
-                    )
+                        .weight(1f, false)
+                )
 
-                    // Quantity
-                    Column(
+                // Quantity
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Max)
+                        .padding(0.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.End
+                ) {
+                    QuantityColumn(
+                        formattedQuantity = formattedQuantity,
+                        outOfStock = outOfStock,
                         modifier = Modifier
-                            .width(IntrinsicSize.Max)
-                            .padding(0.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.End
+                    )
+                }
+            }
+
+            // Tins
+            if (filteredTins.tins.isNotEmpty()) {
+                GlowBox(
+                    color = GlowColor(Color.Black.copy(alpha = .5f)),
+                    size = GlowSize(top = 3.dp),
+                    modifier = Modifier
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top
                     ) {
-                        QuantityColumn(
-                            formattedQuantity = formattedQuantity,
-                            outOfStock = outOfStock,
+                        TinList(
+                            filteredTins = filteredTins,
                             modifier = Modifier
                         )
                     }
                 }
-
-                // Tins
-                if (filteredTins.tins.isNotEmpty()) {
-                    GlowBox(
-                        color = GlowColor(Color.Black.copy(alpha = .5f)),
-                        size = GlowSize(top = 3.dp),
-                        modifier = Modifier
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 12.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            TinList(
-                                filteredTins = filteredTins,
-                                modifier = Modifier
-                            )
-                        }
-                    }
-                }
             }
+        }
 
-            if (showMenu()) {
-                Box(
+        val visible = showMenu()
+
+        AnimatedVisibility(
+            visible = visible,
+            modifier = Modifier
+                .matchParentSize(),
+            enter = fadeIn(tween(150)),
+            exit = fadeOut(tween(150)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(0.dp)
+            ) {
+                ItemMenu(
+                    onMenuDismiss = onMenuDismiss,
+                    onEditClick = onEditClick,
                     modifier = Modifier
-                        .matchParentSize()
-                        .padding(0.dp)
-                ) {
-                    ItemMenu(
-                        onMenuDismiss = onMenuDismiss,
-                        onEditClick = onEditClick,
-                        modifier = Modifier
-                            .height(54.dp)
-                    )
-                }
+                        .height(54.dp)
+                )
             }
         }
     }
