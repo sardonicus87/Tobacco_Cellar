@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.items
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -137,9 +138,12 @@ fun BulkEditScreen(
         }
     }
 
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.snackbarShown()
+            if (activity?.isChangingConfigurations == false) {
+                viewModel.snackbarShown()
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.home
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -71,10 +72,13 @@ fun HomeScreen(
         }
     }
 
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.snackbarShown()
-            viewModel.onDismissMenu()
+            if (activity?.isChangingConfigurations == false) {
+                viewModel.snackbarShown()
+                viewModel.onDismissMenu()
+            }
         }
     }
 

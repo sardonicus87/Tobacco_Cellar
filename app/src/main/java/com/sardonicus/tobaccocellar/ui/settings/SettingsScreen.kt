@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
@@ -130,11 +131,14 @@ fun SettingsScreen(
 
     BackHandler(selectionFocused) { viewModel.resetSelection() }
 
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.resetSelection()
-            viewModel.snackbarShown()
-            viewModel.dismissDialog()
+            if (activity?.isChangingConfigurations == false) {
+                viewModel.resetSelection()
+                viewModel.snackbarShown()
+                viewModel.dismissDialog()
+            }
         }
     }
 

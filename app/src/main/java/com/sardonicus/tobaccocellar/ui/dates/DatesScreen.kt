@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.dates
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -86,9 +87,13 @@ fun DatesScreen(
             viewModel.resetSelection()
         }
     }
+
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.resetSelection()
+            if (activity?.isChangingConfigurations == false) {
+                viewModel.resetSelection()
+            }
         }
     }
 

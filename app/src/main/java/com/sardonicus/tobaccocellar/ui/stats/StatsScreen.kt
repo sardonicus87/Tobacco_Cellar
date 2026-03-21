@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -110,9 +111,13 @@ fun StatsScreen(
             viewModel.resetSelection()
         }
     }
+
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.resetSelection()
+            if (activity?.isChangingConfigurations == false) {
+                viewModel.resetSelection()
+            }
         }
     }
 

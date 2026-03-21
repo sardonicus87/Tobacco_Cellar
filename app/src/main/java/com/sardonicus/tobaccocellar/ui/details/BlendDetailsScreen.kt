@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.details
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -87,9 +88,14 @@ fun BlendDetailsScreen(
             viewModel.resetSelection()
         }
     }
+
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.resetSelection()
+            if (activity?.isChangingConfigurations == false) {
+
+                viewModel.resetSelection()
+            }
         }
     }
 

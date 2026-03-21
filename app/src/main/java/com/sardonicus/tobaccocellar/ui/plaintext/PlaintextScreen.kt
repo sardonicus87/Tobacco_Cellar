@@ -7,6 +7,7 @@ import android.print.PrintManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -155,9 +156,13 @@ fun PlaintextScreen(
             viewModel.resetSelection()
         }
     }
+
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.resetSelection()
+            if (activity?.isChangingConfigurations == false) {
+                viewModel.resetSelection()
+            }
         }
     }
 
