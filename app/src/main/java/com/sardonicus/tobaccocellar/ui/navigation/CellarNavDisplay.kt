@@ -148,7 +148,7 @@ fun CellarNavigation(
                 )
                 val secondPaneExpanded by filterViewModel.secondPaneExpanded.collectAsState()
 
-                HomeScreen (
+                HomeScreen(
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
@@ -259,7 +259,7 @@ fun CellarNavigation(
                 )
 
 
-                AddEntryScreen (
+                AddEntryScreen(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
