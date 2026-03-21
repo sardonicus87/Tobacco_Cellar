@@ -11,7 +11,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,18 +25,15 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
@@ -60,77 +56,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-
-enum class TableColumn(val title: String) {
-    BRAND("Brand"),
-    BLEND("Blend"),
-    TYPE("Type"),
-    SUBGENRE("Subgenre"),
-    RATING("Rating"),
-    FAV_DIS("Fav/Dis"),
-    NOTE("Notes"),
-    QTY("Quantity")
-}
-
-@Composable
-fun ColumnVisibilityPopup(
-    viewModel: HomeViewModel,
-    onVisibilityChange: (TableColumn, Boolean) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val columns = TableColumn.entries.filter { it != TableColumn.BRAND && it != TableColumn.BLEND }
-    val visibilityMap by viewModel.tableColumnVisibility.collectAsState()
-    val columnVisibilityEnablement by viewModel.columnVisibilityEnablement.collectAsState()
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        text = {
-            LazyColumn (
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                items(columns) { column ->
-                    Row (
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                    ) {
-                        CheckboxWithLabel(
-                            text = column.title,
-                            checked = visibilityMap[column] ?: true,
-                            onCheckedChange = {
-                                val visible = visibilityMap[column] ?: true
-                                onVisibilityChange(column, !visible)
-                            },
-                            enabled = columnVisibilityEnablement[column] ?: true,
-                            modifier = Modifier
-                        )
-                    }
-                }
-            }
-        },
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        shape = MaterialTheme.shapes.large,
-        confirmButton = {
-            TextButton(onClick = { onDismiss() }
-            ) {
-                Text(
-                    text = "Done"
-                )
-            }
-        }
-    )
-}
 
 @Composable
 fun TableViewMode(
@@ -223,7 +150,7 @@ fun TableViewMode(
             }
 
             items(items = sortedItems.list, key = { it.itemId }) { item ->
-                val openMenu by rememberSaveable(item.itemId, activeMenuId) { mutableStateOf(activeMenuId == item.itemId) }
+                val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
 
                 TableItem(
                     item = item,
@@ -258,6 +185,113 @@ fun TableViewMode(
     }
 }
 
+
+@SuppressLint("ConfigurationScreenWidthHeight")
+@Composable
+private fun TableItem(
+    item: ItemsListState,
+    layoutData: TableLayoutData,
+    horizontalScroll: ScrollState,
+    showMenu: () -> Boolean,
+    onEditClick: () -> Unit,
+    onDismissMenu: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // item
+    Box(Modifier) {
+        Row(
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+        ) {
+            for (columnIndex in layoutData.columnMinWidths.values.indices) {
+
+                Box(
+                    modifier = Modifier
+                        .width(layoutData.columnMinWidths.values[columnIndex])
+                        .fillMaxHeight()
+                        .align(Alignment.CenterVertically)
+                        .border(Dp.Hairline, LocalCustomColors.current.tableBorder)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = layoutData.alignment.values[columnIndex]
+                ) {
+                    when (columnIndex) {
+                        0, 1, 2, 3, 4 -> { // brand, blend, type, subgenre, rating
+                            Text(
+                                text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        } // brand, blend, type, subgenre, rating
+                        5 -> { // fav/disliked
+                            val favDisValue = layoutData.columnMapping.values[columnIndex](item.item.items) as Int
+                            if (favDisValue != 0) {
+                                Image(
+                                    painter = painterResource(if (favDisValue == 1) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(20.dp),
+                                    colorFilter = ColorFilter.tint(if (favDisValue == 1) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart)
+                                )
+                            }
+                        } // fav/disliked
+                        6 -> { // notes
+                            if (layoutData.columnMapping.values[columnIndex](item.item.items)?.toString()?.isNotEmpty() == true) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.notes_24),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(20.dp),
+                                    colorFilter =  ColorFilter.tint(MaterialTheme.colorScheme.tertiary)
+                                )
+                            }
+                        } // notes
+                        7 -> { // quantity
+                            Text(
+                                text = item.formattedQuantity,
+                                color = if (item.outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        } // quantity
+                        else -> {
+                            Text(
+                                text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
+                                modifier = Modifier,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        if (showMenu()) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(0.dp)
+            ) {
+                val screenWidth = LocalConfiguration.current.screenWidthDp
+                val switch = remember(screenWidth, layoutData.totalWidth) { screenWidth.dp >= layoutData.totalWidth }
+
+                Box (
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(if (switch) layoutData.totalWidth.value.dp else screenWidth.dp)
+                        .offset { IntOffset(if (switch) 0 else horizontalScroll.value, 0) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    ItemMenu(
+                        onMenuDismiss = onDismissMenu,
+                        onEditClick = onEditClick,
+                        modifier = Modifier
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun TableHeaderRow(
@@ -402,112 +436,6 @@ private fun TableHeaderRow(
     }
 }
 
-@SuppressLint("ConfigurationScreenWidthHeight")
-@Composable
-private fun TableItem(
-    item: ItemsListState,
-    layoutData: TableLayoutData,
-    horizontalScroll: ScrollState,
-    showMenu: () -> Boolean,
-    onEditClick: () -> Unit,
-    onDismissMenu: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // item
-    Box(Modifier) {
-        Row(
-            modifier = modifier
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            for (columnIndex in layoutData.columnMinWidths.values.indices) {
-
-                Box(
-                    modifier = Modifier
-                        .width(layoutData.columnMinWidths.values[columnIndex])
-                        .fillMaxHeight()
-                        .align(Alignment.CenterVertically)
-                        .border(Dp.Hairline, LocalCustomColors.current.tableBorder)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    contentAlignment = layoutData.alignment.values[columnIndex]
-                ) {
-                    when (columnIndex) {
-                        0, 1, 2, 3, 4 -> { // brand, blend, type, subgenre, rating
-                            Text(
-                                text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        } // brand, blend, type, subgenre, rating
-                        5 -> { // fav/disliked
-                            val favDisValue = layoutData.columnMapping.values[columnIndex](item.item.items) as Int
-                            if (favDisValue != 0) {
-                                Image(
-                                    painter = painterResource(if (favDisValue == 1) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(20.dp),
-                                    colorFilter = ColorFilter.tint(if (favDisValue == 1) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart)
-                                )
-                            }
-                        } // fav/disliked
-                        6 -> { // notes
-                            if (layoutData.columnMapping.values[columnIndex](item.item.items)?.toString()?.isNotEmpty() == true) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.notes_24),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(20.dp),
-                                    colorFilter =  ColorFilter.tint(MaterialTheme.colorScheme.tertiary)
-                                )
-                            }
-                        } // notes
-                        7 -> { // quantity
-                            Text(
-                                text = item.formattedQuantity,
-                                color = if (item.outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        } // quantity
-                        else -> {
-                            Text(
-                                text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
-                                modifier = Modifier,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        if (showMenu()) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(0.dp)
-            ) {
-                val screenWidth = LocalConfiguration.current.screenWidthDp
-                val switch = remember(screenWidth, layoutData.totalWidth) { screenWidth.dp >= layoutData.totalWidth }
-
-                Box (
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(if (switch) layoutData.totalWidth.value.dp else screenWidth.dp)
-                        .offset { IntOffset(if (switch) 0 else horizontalScroll.value, 0) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    ItemMenu(
-                        onMenuDismiss = onDismissMenu,
-                        onEditClick = onEditClick,
-                        modifier = Modifier
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun TableTinsList(
@@ -594,4 +522,15 @@ private fun TableTinsList(
             }
         }
     }
+}
+
+enum class TableColumn(val title: String) {
+    BRAND("Brand"),
+    BLEND("Blend"),
+    TYPE("Type"),
+    SUBGENRE("Subgenre"),
+    RATING("Rating"),
+    FAV_DIS("Fav/Dis"),
+    NOTE("Notes"),
+    QTY("Quantity")
 }
