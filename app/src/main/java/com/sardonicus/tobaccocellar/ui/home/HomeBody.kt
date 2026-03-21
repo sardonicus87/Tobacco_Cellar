@@ -3,14 +3,20 @@ package com.sardonicus.tobaccocellar.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -92,74 +99,6 @@ fun HomeBody(
         )
     }
 }
-
-
-@Composable
-private fun HomeScrollHandler(
-    columnState: LazyListState,
-    sortedItems: ItemsList,
-    itemsCount: () -> Int,
-    filterViewModel: FilterViewModel,
-    coroutineScope: CoroutineScope,
-) {
-    val scrollState by filterViewModel.homeScrollState.collectAsState()
-    val currentItemsList by rememberUpdatedState(sortedItems.list)
-    val savedItemIndex = remember(sortedItems.list, scrollState.savedItemId) {
-        sortedItems.list.indexOfFirst { it.itemId == scrollState.savedItemId }
-    }
-    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
-
-    // Scroll to Positions //
-    LaunchedEffect(currentItemsList) {
-        snapshotFlow { columnState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
-
-        if (savedItemIndex != -1) {
-            withFrameNanos {
-                coroutineScope.launch {
-                    if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
-                        val offset =
-                            (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-                        columnState.scrollToItem(savedItemIndex, offset)
-                    } else {
-                        columnState.scrollToItem(savedItemIndex)
-                    }
-                }
-            }
-            filterViewModel.resetScroll()
-        }
-        if (scrollState.shouldScrollUp) {
-            columnState.scrollToItem(0)
-            filterViewModel.resetScroll()
-        }
-        if (scrollState.shouldReturn && !searchPerformed && !scrollState.shouldScrollUp) {
-            val index = scrollState.currentPosition[0]
-            val offset = scrollState.currentPosition[1]
-
-            if (index != null && offset != null) {
-                withFrameNanos {
-                    coroutineScope.launch {
-                        columnState.scrollToItem(index, offset)
-                    }
-                }
-                filterViewModel.resetScroll()
-            }
-        }
-    }
-
-    // Save positions //
-    LaunchedEffect(scrollState.getPosition) {
-        if (scrollState.getPosition > 0 && !searchPerformed) {
-            val layoutInfo = columnState.layoutInfo
-            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
-
-            if (firstVisibleItem != null) {
-                filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
-            }
-        }
-    }
-}
-
-
 
 
 @Composable
@@ -242,4 +181,128 @@ private fun BodyContent(
             }
         }
     }
+}
+
+
+@Composable
+private fun HomeScrollHandler(
+    columnState: LazyListState,
+    sortedItems: ItemsList,
+    itemsCount: () -> Int,
+    filterViewModel: FilterViewModel,
+    coroutineScope: CoroutineScope,
+) {
+    val scrollState by filterViewModel.homeScrollState.collectAsState()
+    val currentItemsList by rememberUpdatedState(sortedItems.list)
+    val savedItemIndex = remember(sortedItems.list, scrollState.savedItemId) {
+        sortedItems.list.indexOfFirst { it.itemId == scrollState.savedItemId }
+    }
+    val searchPerformed by filterViewModel.searchPerformed.collectAsState()
+
+    // Scroll to Positions //
+    LaunchedEffect(currentItemsList) {
+        snapshotFlow { columnState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
+
+        if (savedItemIndex != -1) {
+            withFrameNanos {
+                coroutineScope.launch {
+                    if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
+                        val offset =
+                            (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                        columnState.scrollToItem(savedItemIndex, offset)
+                    } else {
+                        columnState.scrollToItem(savedItemIndex)
+                    }
+                }
+            }
+            filterViewModel.resetScroll()
+        }
+        if (scrollState.shouldScrollUp) {
+            columnState.scrollToItem(0)
+            filterViewModel.resetScroll()
+        }
+        if (scrollState.shouldReturn && !searchPerformed && !scrollState.shouldScrollUp) {
+            val index = scrollState.currentPosition[0]
+            val offset = scrollState.currentPosition[1]
+
+            if (index != null && offset != null) {
+                withFrameNanos {
+                    coroutineScope.launch {
+                        columnState.scrollToItem(index, offset)
+                    }
+                }
+                filterViewModel.resetScroll()
+            }
+        }
+    }
+
+    // Save positions //
+    LaunchedEffect(scrollState.getPosition) {
+        if (scrollState.getPosition > 0 && !searchPerformed) {
+            val layoutInfo = columnState.layoutInfo
+            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+
+            if (firstVisibleItem != null) {
+                filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun ColumnVisibilityPopup(
+    viewModel: HomeViewModel,
+    onVisibilityChange: (TableColumn, Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val columns = TableColumn.entries.filter { it != TableColumn.BRAND && it != TableColumn.BLEND }
+    val visibilityMap by viewModel.tableColumnVisibility.collectAsState()
+    val columnVisibilityEnablement by viewModel.columnVisibilityEnablement.collectAsState()
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        text = {
+            LazyColumn (
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                items(columns) { column ->
+                    Row (
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                    ) {
+                        CheckboxWithLabel(
+                            text = column.title,
+                            checked = visibilityMap[column] ?: true,
+                            onCheckedChange = {
+                                val visible = visibilityMap[column] ?: true
+                                onVisibilityChange(column, !visible)
+                            },
+                            enabled = columnVisibilityEnablement[column] ?: true,
+                            modifier = Modifier
+                        )
+                    }
+                }
+            }
+        },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large,
+        confirmButton = {
+            TextButton(onClick = { onDismiss() }
+            ) {
+                Text(
+                    text = "Done"
+                )
+            }
+        }
+    )
 }
