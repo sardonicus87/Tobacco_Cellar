@@ -1019,7 +1019,7 @@ private fun ChartsFormat(
     histogramData: () -> RatingsDistribution = { RatingsDistribution() },
     showHistogram: Boolean = false
 ) {
-    val countVal by remember(showHistogram) {
+    val countVal by remember(showHistogram, chartData(), histogramData()) {
         derivedStateOf {
             if (!showHistogram) chartData().values.sum() else histogramData().distribution.values.sum()
         }
