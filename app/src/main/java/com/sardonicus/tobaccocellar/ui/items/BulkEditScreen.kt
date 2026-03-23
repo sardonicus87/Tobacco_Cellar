@@ -1108,6 +1108,7 @@ fun BulkEditing(
                                     uncheckedIcon = R.drawable.heart_outline_24,
                                     modifier = Modifier
                                         .padding(0.dp),
+                                    size = 34.dp,
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.favHeart,
                                     ),
@@ -1147,6 +1148,7 @@ fun BulkEditing(
                                     uncheckedIcon = R.drawable.heartbroken_outlined_24,
                                     modifier = Modifier
                                         .padding(0.dp),
+                                    size = 34.dp,
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.disHeart,
                                     ),
@@ -1225,6 +1227,7 @@ fun BulkEditing(
                                 uncheckedIcon = R.drawable.check_box_outline_24,
                                 modifier = Modifier
                                     .padding(0.dp),
+                                size = 34.dp,
                                 enabled = editingState.productionSelected
                             )
                         }
@@ -1298,6 +1301,7 @@ fun BulkEditing(
                                 uncheckedIcon = R.drawable.check_box_outline_24,
                                 modifier = Modifier
                                     .padding(0.dp),
+                                size = 34.dp,
                                 enabled = editingState.syncTinsSelected
                             )
                         }

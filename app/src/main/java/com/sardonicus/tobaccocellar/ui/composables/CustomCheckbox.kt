@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 
 @Composable
 fun CustomCheckbox(
@@ -18,6 +18,7 @@ fun CustomCheckbox(
     checkedIcon: Int,
     uncheckedIcon: Int,
     modifier: Modifier = Modifier,
+    size: Dp = Dp.Unspecified,
     colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(),
     enabled: Boolean = true,
 ) {
@@ -25,14 +26,14 @@ fun CustomCheckbox(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
         modifier = modifier
-            .size(34.dp),
+            .size(size),
         colors = colors,
         enabled = enabled
     ) {
         Icon(
-            imageVector = if (checked) {
-                ImageVector.vectorResource(id = checkedIcon)
-            } else ImageVector.vectorResource(id = uncheckedIcon),
+            imageVector =
+                if (checked) { ImageVector.vectorResource(id = checkedIcon) }
+                else ImageVector.vectorResource(id = uncheckedIcon),
             contentDescription = null,
             modifier = Modifier.Companion
         )

@@ -371,7 +371,7 @@ fun AddEntryBody(
 
 /** Body Elements **/
 @Composable
-fun ItemInputForm(
+private fun ItemInputForm(
     isLargeScreen: () -> Boolean,
     selectedTabIndex: () -> Int,
     currentLeftTab: () -> Int,
@@ -847,7 +847,7 @@ private fun AdaptiveTabRow(
 
 
 @Composable
-fun DetailsEntry(
+private fun DetailsEntry(
     itemDetails: ItemDetails,
     itemUiState: ItemUiState,
     syncedTins: Int,
@@ -1408,6 +1408,7 @@ fun DetailsEntry(
                             onCheckedChange = {
                                 onValueChange(itemDetails.copy(syncTins = it))
                             },
+                            size = 34.dp,
                             checkedIcon = R.drawable.check_box_24,
                             uncheckedIcon = R.drawable.check_box_outline_24,
                             modifier = Modifier
@@ -1493,6 +1494,7 @@ fun DetailsEntry(
                     },
                     checkedIcon = R.drawable.heart_filled_24,
                     uncheckedIcon = R.drawable.heart_outline_24,
+                    size = 34.dp,
                     modifier = Modifier
                         .padding(0.dp),
                     colors = IconButtonDefaults.iconToggleButtonColors(
@@ -1527,6 +1529,7 @@ fun DetailsEntry(
                     },
                     checkedIcon = R.drawable.heartbroken_filled_24,
                     uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                    size = 34.dp,
                     modifier = Modifier
                         .padding(0.dp),
                     colors = IconButtonDefaults.iconToggleButtonColors(
@@ -1555,6 +1558,7 @@ fun DetailsEntry(
                     onValueChange(itemDetails.copy(inProduction = it))
                 },
                 checkedIcon = R.drawable.check_box_24,
+                size = 34.dp,
                 uncheckedIcon = R.drawable.check_box_outline_24,
                 modifier = Modifier
             )
@@ -1575,7 +1579,7 @@ fun DetailsEntry(
 
 
 @Composable
-fun NotesEntry(
+private fun NotesEntry(
     itemDetails: ItemDetails,
     onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
@@ -1645,7 +1649,7 @@ fun NotesEntry(
 
 
 @Composable
-fun TinsEntry(
+private fun TinsEntry(
     tinDetailsList: List<TinDetails>,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
@@ -1720,7 +1724,7 @@ fun TinsEntry(
 }
 
 @Composable
-fun IndividualTin(
+private fun IndividualTin(
     tinDetails: TinDetails,
     tinDetailsList: List<TinDetails>,
     tempTinId: Int,
@@ -2520,11 +2524,11 @@ fun IndividualTin(
                             onCheckedChange = {
                                 onTinValueChange(tinDetails.copy(finished = it))
                             },
+                            size = 22.dp,
                             checkedIcon = R.drawable.check_box_24,
                             uncheckedIcon = R.drawable.check_box_outline_24,
                             enabled = !disabled,
                             modifier = Modifier
-                                .size(22.dp)
                         )
                     }
                 }
