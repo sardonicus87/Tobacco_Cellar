@@ -77,7 +77,7 @@ val surfaceContainerHighDark = Color(0xFF252B28)
 val surfaceContainerHighestDark = Color(0xFF303632)
 
 // custom colors //
-val listMenuScrimLight = Color(0xBFFFFFFF)
+val listMenuScrimLight = Color(0xCCFFFFFF)
 val deleteButtonLight = Color(0xFF93000A)
 val favHeartLight = Color(0xFFBB0000)
 val disHeartLight = Color(0xFF03B1FF)
@@ -97,7 +97,7 @@ val whiteBlackLight = Color(0xFFFFFFFF)
 val whiteBlackInvertedLight = Color(0xFF000000)
 val starRatingLight = Color(0xFFE6C017) // original 0xFFFDD835
 
-val listMenuScrimDark = Color(0xBF000000)
+val listMenuScrimDark = Color(0xCC000000) // BF
 val deleteButtonDark = Color(0xFF990000)
 val favHeartDark = Color(0xFFCF0000)
 val disHeartDark = Color(0xFF03B1FF)
