@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
@@ -69,24 +70,20 @@ fun ListViewMode(
     val focusManager = LocalFocusManager.current
     val haptics = LocalHapticFeedback.current
 
-    val activeMenuId by viewModel.activeMenuId.collectAsState()
-
     val onClick = remember {
-        { itemId: Int ->
+        { itemId: Int, activeMenuId: Int? ->
             if (filterViewModel.searchFocused.value) {
                 focusManager.clearFocus()
             } else {
-                if (activeMenuId == itemId) {
-                    // do nothing
-                }
-                else if (activeMenuId != null) {
-                    onDismissMenu()
-                }
-                else {
-                    if (!filterViewModel.searchPerformed.value) {
-                        filterViewModel.getPositionTrigger()
+                when {
+                    (activeMenuId == itemId) -> { }
+                    (activeMenuId != null) -> { onDismissMenu() }
+                    else -> {
+                        if (!filterViewModel.searchPerformed.value) {
+                            filterViewModel.getPositionTrigger()
+                        }
+                        onDetailsClick(itemId)
                     }
-                    onDetailsClick(itemId)
                 }
             }
         }
@@ -114,9 +111,13 @@ fun ListViewMode(
             state = columnState,
         ) {
             items(items = sortedItems.list, key = { it.itemId }) { item ->
+                val activeMenuId by viewModel.activeMenuId.collectAsState()
                 val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
+                val view = LocalView.current
 
                 ListItem(
+                    viewModel = viewModel,
+                    itemId = { item.itemId },
                     brand = { item.item.items.brand },
                     blend = { item.item.items.blend },
                     favorite = { item.item.items.favorite },
@@ -129,8 +130,11 @@ fun ListViewMode(
                     onEditClick = { onEditClick(item.itemId) },
                     modifier = Modifier
                         .combinedClickable(
-                            onClick = { onClick(item.itemId) },
-                            onLongClick = { onLongClick(item.itemId) },
+                            onClick = { onClick(item.itemId, activeMenuId) },
+                            onLongClick = {
+                                view.isHapticFeedbackEnabled = !openMenu
+                                onLongClick(item.itemId)
+                            },
                             indication = null,
                             interactionSource = null
                         ),
@@ -146,6 +150,8 @@ fun ListViewMode(
 
 @Composable
 private fun ListItem(
+    viewModel: HomeViewModel,
+    itemId: () -> Int,
     brand: () -> String,
     blend: () -> String,
     favorite: () -> Boolean,
@@ -243,6 +249,8 @@ private fun ListItem(
                     .padding(0.dp)
             ) {
                 ItemMenu(
+                    viewModel = viewModel,
+                    activeItemId = itemId,
                     onMenuDismiss = onMenuDismiss,
                     onEditClick = onEditClick,
                     modifier = Modifier

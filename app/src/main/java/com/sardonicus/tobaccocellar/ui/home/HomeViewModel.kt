@@ -15,11 +15,13 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
+import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TinExportData
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
+import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
@@ -29,6 +31,7 @@ import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,6 +53,7 @@ import kotlin.math.floor
 
 class HomeViewModel(
     private val preferencesRepo: PreferencesRepo,
+    private val itemsRepository: ItemsRepository,
     filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
     application: Application
@@ -305,7 +309,7 @@ class HomeViewModel(
             }
         }
 
-        ListColumnMenuState(
+        ListSortingMenuState(
             isTableView = isTableView,
             sortingOptions = SortingOptionsList(sortingOptions),
             listSorting = listSorting
@@ -315,7 +319,7 @@ class HomeViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = ListColumnMenuState()
+            initialValue = ListSortingMenuState()
         )
 
     val menuState = combine(
@@ -612,7 +616,13 @@ class HomeViewModel(
 
 
     /** Item menu overlay and expand details **/
+    private val _quickEditState = MutableStateFlow(QuickEditItem())
+    val quickEditState: StateFlow<QuickEditItem> = _quickEditState.asStateFlow()
+
+    private var dismissJob: Job? = null
+
     fun onShowMenu(itemId: Int) {
+        dismissJob?.cancel()
         _itemMenuShown.value = true
         _activeMenuId.value = itemId
     }
@@ -620,6 +630,73 @@ class HomeViewModel(
     fun onDismissMenu() {
         _itemMenuShown.value = false
         _activeMenuId.value = null
+        dismissJob = viewModelScope.launch {
+            delay(150)
+            setQuickEditItem(null)
+        }
+    }
+
+
+    fun setQuickEditItem(itemId: Int?) {
+        if (itemId != null) {
+            val item = _allItems.value.first { it.items.id == itemId }
+            val active = QuickEditItem(
+                rating = item.items.rating,
+                favorite = item.items.favorite,
+                disliked = item.items.disliked,
+            )
+            _quickEditState.value = active
+        } else {
+            _quickEditState.value = QuickEditItem()
+        }
+    }
+
+    fun updateQuickFavorite(fav: Boolean) {
+        _quickEditState.value = _quickEditState.value.copy(
+            favorite = fav,
+            disliked = if (fav) false else _quickEditState.value.disliked
+        )
+    }
+
+    fun updateQuickDislike(dis: Boolean) {
+        _quickEditState.value = _quickEditState.value.copy(
+            disliked = dis,
+            favorite = if (dis) false else _quickEditState.value.favorite
+        )
+    }
+
+    fun updateQuickRating(rating: Double?) {
+        _quickEditState.value = _quickEditState.value.copy(
+            rating = rating
+        )
+    }
+
+    fun saveQuickEdits() {
+        val itemId = _activeMenuId.value ?: return
+        val pending = _quickEditState.value
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val original = itemsRepository.getItemById(itemId) ?: return@launch
+
+            val actuallyUpdated = original.rating != pending.rating ||
+                    original.favorite != pending.favorite ||
+                    original.disliked != pending.disliked
+
+            if (actuallyUpdated) {
+                val updatedItem = original.copy(
+                    rating = pending.rating,
+                    favorite = pending.favorite,
+                    disliked = pending.disliked,
+                    lastModified = System.currentTimeMillis()
+                )
+                itemsRepository.updateItem(updatedItem)
+                EventBus.emit(ItemUpdatedEvent())
+            }
+
+            launch(Dispatchers.Main) {
+                onDismissMenu()
+            }
+        }
     }
 
 
@@ -1002,23 +1079,34 @@ data class ViewSelect(
 )
 
 @Stable
-data class ListColumnMenuState(
-    val isTableView: Boolean = false,
-    val sortingOptions: SortingOptionsList = SortingOptionsList(),
-    val listSorting: ListSorting = ListSorting()
-)
-
-@Stable
 data class MenuState(
     val isMenuShown: Boolean = false,
     val activeMenuId: Int? = null
 )
 
 @Stable
-data class ImportantAlertState(
-    val show: Boolean = false,
-    val alertToDisplay: OneTimeAlert? = null,
-    val isCurrentAlert: Boolean = false
+data class QuickEditItem(
+    val rating: Double? = null,
+    val favorite: Boolean = false,
+    val disliked: Boolean = false,
+)
+
+@Stable
+data class ListSortingMenuState(
+    val isTableView: Boolean = false,
+    val sortingOptions: SortingOptionsList = SortingOptionsList(),
+    val listSorting: ListSorting = ListSorting()
+)
+
+@Stable
+data class ListSorting(
+    val option: ListSortOption = ListSortOption.DEFAULT,
+    val listAscending: Boolean = true,
+    val listIcon: Int =
+        when (option) {
+            ListSortOption.RATING, ListSortOption.QUANTITY -> if (listAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
+            else -> if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        }
 )
 
 @Stable
@@ -1054,14 +1142,10 @@ data class ColumnMapping(val values: List<(Items) -> Any?> = emptyList())
 data class HeaderText(val values: List<String> = emptyList())
 
 @Stable
-data class ListSorting(
-    val option: ListSortOption = ListSortOption.DEFAULT,
-    val listAscending: Boolean = true,
-    val listIcon: Int =
-        when (option) {
-            ListSortOption.RATING, ListSortOption.QUANTITY -> if (listAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
-            else -> if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
-        }
+data class ImportantAlertState(
+    val show: Boolean = false,
+    val alertToDisplay: OneTimeAlert? = null,
+    val isCurrentAlert: Boolean = false
 )
 
 @Immutable

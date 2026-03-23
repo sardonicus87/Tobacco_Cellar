@@ -45,6 +45,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,24 +82,20 @@ fun TableViewMode(
     val focusManager = LocalFocusManager.current
     val haptics = LocalHapticFeedback.current
 
-    val activeMenuId by viewModel.activeMenuId.collectAsState()
-
     val onClick = remember {
-        { itemId: Int ->
+        { itemId: Int, activeMenuId: Int? ->
             if (filterViewModel.searchFocused.value) {
                 focusManager.clearFocus()
             } else {
-                if (activeMenuId == itemId) { // currentMenuId
-                    // do nothing
-                }
-                else if (activeMenuId != null) {
-                    onDismissMenu()
-                }
-                else {
-                    if (!filterViewModel.searchPerformed.value) {
-                        filterViewModel.getPositionTrigger()
+                when {
+                    activeMenuId == itemId -> { }
+                    activeMenuId != null -> { onDismissMenu() }
+                    else -> {
+                        if (!filterViewModel.searchPerformed.value) {
+                            filterViewModel.getPositionTrigger()
+                        }
+                        onDetailsClick(itemId)
                     }
-                    onDetailsClick(itemId)
                 }
             }
         }
@@ -150,9 +147,12 @@ fun TableViewMode(
             }
 
             items(items = sortedItems.list, key = { it.itemId }) { item ->
+                val activeMenuId by viewModel.activeMenuId.collectAsState()
                 val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
+                val view = LocalView.current
 
                 TableItem(
+                    viewModel = viewModel,
                     item = item,
                     layoutData = tableLayoutData,
                     horizontalScroll = horizontalScroll,
@@ -164,8 +164,11 @@ fun TableViewMode(
                         .height(intrinsicSize = IntrinsicSize.Min)
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .combinedClickable(
-                            onClick = { onClick(item.itemId) },
-                            onLongClick = { onLongClick(item.itemId) },
+                            onClick = { onClick(item.itemId, activeMenuId) },
+                            onLongClick = {
+                                view.isHapticFeedbackEnabled = !openMenu
+                                onLongClick(item.itemId)
+                            },
                             indication = null,
                             interactionSource = null
                         )
@@ -189,6 +192,7 @@ fun TableViewMode(
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun TableItem(
+    viewModel: HomeViewModel,
     item: ItemsListState,
     layoutData: TableLayoutData,
     horizontalScroll: ScrollState,
@@ -266,6 +270,7 @@ private fun TableItem(
                 }
             }
         }
+
         if (showMenu()) {
             Box(
                 modifier = Modifier
@@ -283,9 +288,11 @@ private fun TableItem(
                     contentAlignment = Alignment.Center
                 ) {
                     ItemMenu(
+                        viewModel = viewModel,
+                        activeItemId = { item.item.items.id },
                         onMenuDismiss = onDismissMenu,
                         onEditClick = onEditClick,
-                        modifier = Modifier
+                        modifier = Modifier,
                     )
                 }
             }
