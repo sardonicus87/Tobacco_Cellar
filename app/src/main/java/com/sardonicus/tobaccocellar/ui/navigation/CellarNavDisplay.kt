@@ -139,6 +139,7 @@ fun CellarNavigation(
                         initializer {
                             HomeViewModel(
                                 preferencesRepo,
+                                itemsRepository,
                                 filterViewModel,
                                 csvHelper,
                                 app
