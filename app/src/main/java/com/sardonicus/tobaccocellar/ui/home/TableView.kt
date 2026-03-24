@@ -1,8 +1,11 @@
 package com.sardonicus.tobaccocellar.ui.home
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,6 +63,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun TableViewMode(
     viewModel: HomeViewModel,
@@ -78,12 +82,16 @@ fun TableViewMode(
     modifier: Modifier = Modifier
 ) {
     val horizontalScroll = rememberScrollState()
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val switch by remember(screenWidth, tableLayoutData.totalWidth) { derivedStateOf { screenWidth.dp >= tableLayoutData.totalWidth } }
 
     val focusManager = LocalFocusManager.current
     val haptics = LocalHapticFeedback.current
 
+    val activeMenuId by viewModel.activeMenuId.collectAsState()
+
     val onClick = remember {
-        { itemId: Int, activeMenuId: Int? ->
+        { itemId: Int ->
             if (filterViewModel.searchFocused.value) {
                 focusManager.clearFocus()
             } else {
@@ -131,7 +139,7 @@ fun TableViewMode(
                     sorting = sorting,
                     shouldScrollUp = shouldScrollUp,
                     onDismissMenu = onDismissMenu,
-                    Modifier
+                    modifier = Modifier
                         .fillMaxWidth()
                         .zIndex(1f)
                         .dropShadow(
@@ -147,32 +155,51 @@ fun TableViewMode(
             }
 
             items(items = sortedItems.list, key = { it.itemId }) { item ->
-                val activeMenuId by viewModel.activeMenuId.collectAsState()
                 val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
                 val view = LocalView.current
 
-                TableItem(
-                    viewModel = viewModel,
-                    item = item,
-                    layoutData = tableLayoutData,
-                    horizontalScroll = horizontalScroll,
-                    showMenu = { openMenu },
-                    onEditClick = { onEditClick(item.itemId) },
-                    onDismissMenu = onDismissMenu,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(intrinsicSize = IntrinsicSize.Min)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .combinedClickable(
-                            onClick = { onClick(item.itemId, activeMenuId) },
-                            onLongClick = {
-                                view.isHapticFeedbackEnabled = !openMenu
-                                onLongClick(item.itemId)
-                            },
-                            indication = null,
-                            interactionSource = null
-                        )
-                )
+                Box {
+                    TableItem(
+                        item = item,
+                        layoutData = tableLayoutData,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(intrinsicSize = IntrinsicSize.Min)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .combinedClickable(
+                                onClick = { onClick(item.itemId) },
+                                onLongClick = {
+                                    view.isHapticFeedbackEnabled = !openMenu
+                                    onLongClick(item.itemId)
+                                },
+                                indication = null,
+                                interactionSource = null
+                            )
+                    )
+
+                    Box (
+                        modifier = Modifier
+                            .matchParentSize()
+                    ) {
+                        AnimatedVisibility(
+                            visible = openMenu,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(if (switch) tableLayoutData.totalWidth.value.dp else screenWidth.dp)
+                                .offset { IntOffset(if (switch) 0 else horizontalScroll.value, 0) },
+                            enter = fadeIn(tween(150)),
+                            exit = fadeOut(tween(150))
+                        ) {
+                            ItemMenu(
+                                viewModel = viewModel,
+                                activeItemId = { item.itemId },
+                                onMenuDismiss = onDismissMenu,
+                                onEditClick = { onEditClick(item.itemId) },
+                                modifier = Modifier,
+                            )
+                        }
+                    }
+                }
 
                 // tins
                 if (item.tins.tins.isNotEmpty()) {
@@ -189,16 +216,10 @@ fun TableViewMode(
 }
 
 
-@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun TableItem(
-    viewModel: HomeViewModel,
     item: ItemsListState,
     layoutData: TableLayoutData,
-    horizontalScroll: ScrollState,
-    showMenu: () -> Boolean,
-    onEditClick: () -> Unit,
-    onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // item
@@ -208,7 +229,6 @@ private fun TableItem(
                 .background(MaterialTheme.colorScheme.secondaryContainer)
         ) {
             for (columnIndex in layoutData.columnMinWidths.values.indices) {
-
                 Box(
                     modifier = Modifier
                         .width(layoutData.columnMinWidths.values[columnIndex])
@@ -267,33 +287,6 @@ private fun TableItem(
                             )
                         }
                     }
-                }
-            }
-        }
-
-        if (showMenu()) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(0.dp)
-            ) {
-                val screenWidth = LocalConfiguration.current.screenWidthDp
-                val switch = remember(screenWidth, layoutData.totalWidth) { screenWidth.dp >= layoutData.totalWidth }
-
-                Box (
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(if (switch) layoutData.totalWidth.value.dp else screenWidth.dp)
-                        .offset { IntOffset(if (switch) 0 else horizontalScroll.value, 0) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    ItemMenu(
-                        viewModel = viewModel,
-                        activeItemId = { item.item.items.id },
-                        onMenuDismiss = onDismissMenu,
-                        onEditClick = onEditClick,
-                        modifier = Modifier,
-                    )
                 }
             }
         }

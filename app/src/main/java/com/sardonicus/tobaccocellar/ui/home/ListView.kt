@@ -70,8 +70,10 @@ fun ListViewMode(
     val focusManager = LocalFocusManager.current
     val haptics = LocalHapticFeedback.current
 
+    val activeMenuId by viewModel.activeMenuId.collectAsState()
+
     val onClick = remember {
-        { itemId: Int, activeMenuId: Int? ->
+        { itemId: Int ->
             if (filterViewModel.searchFocused.value) {
                 focusManager.clearFocus()
             } else {
@@ -111,37 +113,50 @@ fun ListViewMode(
             state = columnState,
         ) {
             items(items = sortedItems.list, key = { it.itemId }) { item ->
-                val activeMenuId by viewModel.activeMenuId.collectAsState()
                 val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
                 val view = LocalView.current
 
-                ListItem(
-                    viewModel = viewModel,
-                    itemId = { item.itemId },
-                    brand = { item.item.items.brand },
-                    blend = { item.item.items.blend },
-                    favorite = { item.item.items.favorite },
-                    disliked = { item.item.items.disliked },
-                    notes = { item.item.items.notes },
-                    typeGenreText = { item.formattedTypeGenre },
-                    formattedQuantity = { item.formattedQuantity },
-                    outOfStock = { item.outOfStock },
-                    rating = { item.rating },
-                    onEditClick = { onEditClick(item.itemId) },
-                    modifier = Modifier
-                        .combinedClickable(
-                            onClick = { onClick(item.itemId, activeMenuId) },
-                            onLongClick = {
-                                view.isHapticFeedbackEnabled = !openMenu
-                                onLongClick(item.itemId)
-                            },
-                            indication = null,
-                            interactionSource = null
-                        ),
-                    onMenuDismiss = onDismissMenu,
-                    showMenu = { openMenu },
-                    filteredTins = item.tins,
-                )
+                Box {
+                    ListItem(
+                        brand = { item.item.items.brand },
+                        blend = { item.item.items.blend },
+                        favorite = { item.item.items.favorite },
+                        disliked = { item.item.items.disliked },
+                        notes = { item.item.items.notes },
+                        typeGenreText = { item.formattedTypeGenre },
+                        formattedQuantity = { item.formattedQuantity },
+                        outOfStock = { item.outOfStock },
+                        rating = { item.rating },
+                        modifier = Modifier
+                            .combinedClickable(
+                                onClick = { onClick(item.itemId) },
+                                onLongClick = {
+                                    view.isHapticFeedbackEnabled = !openMenu
+                                    onLongClick(item.itemId)
+                                },
+                                indication = null,
+                                interactionSource = null
+                            ),
+                        filteredTins = item.tins,
+                    )
+
+                    AnimatedVisibility(
+                        visible = openMenu,
+                        modifier = Modifier
+                            .matchParentSize(),
+                        enter = fadeIn(tween(150)),
+                        exit = fadeOut(tween(150))
+                    ) {
+                        ItemMenu(
+                            viewModel = viewModel,
+                            activeItemId = { item.itemId },
+                            onMenuDismiss = onDismissMenu,
+                            onEditClick = { onEditClick(item.itemId) },
+                            modifier = Modifier
+                                .height(54.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -150,8 +165,6 @@ fun ListViewMode(
 
 @Composable
 private fun ListItem(
-    viewModel: HomeViewModel,
-    itemId: () -> Int,
     brand: () -> String,
     blend: () -> String,
     favorite: () -> Boolean,
@@ -162,9 +175,6 @@ private fun ListItem(
     outOfStock: () -> Boolean,
     rating: () -> String,
     filteredTins: TinsList,
-    onMenuDismiss: () -> Unit,
-    showMenu: () -> Boolean,
-    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -231,31 +241,6 @@ private fun ListItem(
                         )
                     }
                 }
-            }
-        }
-
-        val visible = showMenu()
-
-        AnimatedVisibility(
-            visible = visible,
-            modifier = Modifier
-                .matchParentSize(),
-            enter = fadeIn(tween(150)),
-            exit = fadeOut(tween(150)),
-        ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(0.dp)
-            ) {
-                ItemMenu(
-                    viewModel = viewModel,
-                    activeItemId = itemId,
-                    onMenuDismiss = onMenuDismiss,
-                    onEditClick = onEditClick,
-                    modifier = Modifier
-                        .height(54.dp)
-                )
             }
         }
     }
