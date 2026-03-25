@@ -621,6 +621,17 @@ class HomeViewModel(
 
     private var dismissJob: Job? = null
 
+    init {
+        viewModelScope.launch {
+            sortedItems.collect {
+                val ids = it.map { item -> item.items.id }
+                if (_activeMenuId.value != null && _activeMenuId.value !in ids) {
+                    onDismissMenu()
+                }
+            }
+        }
+    }
+
     fun onShowMenu(itemId: Int) {
         dismissJob?.cancel()
         _itemMenuShown.value = true
@@ -635,7 +646,6 @@ class HomeViewModel(
             setQuickEditItem(null)
         }
     }
-
 
     fun setQuickEditItem(itemId: Int?) {
         if (itemId != null) {
