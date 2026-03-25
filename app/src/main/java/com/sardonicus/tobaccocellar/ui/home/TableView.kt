@@ -132,9 +132,9 @@ fun TableViewMode(
         ) {
             stickyHeader {
                 TableHeaderRow(
-                    viewModel = viewModel,
                     filterViewModel = filterViewModel,
                     layoutData = tableLayoutData,
+                    activeMenuId = { activeMenuId },
                     updateSorting = updateSorting,
                     sorting = sorting,
                     shouldScrollUp = shouldScrollUp,
@@ -165,7 +165,6 @@ fun TableViewMode(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(intrinsicSize = IntrinsicSize.Min)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
                             .combinedClickable(
                                 onClick = { onClick(item.itemId) },
                                 onLongClick = {
@@ -204,8 +203,8 @@ fun TableViewMode(
                 // tins
                 if (item.tins.tins.isNotEmpty()) {
                     TableTinsList(
-                        item.tins,
-                        modifier
+                        filteredTins = item.tins,
+                        modifier = modifier
                             .width(tableLayoutData.totalWidth)
                             .padding(start = 12.dp)
                     )
@@ -266,7 +265,7 @@ private fun TableItem(
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(20.dp),
-                                    colorFilter =  ColorFilter.tint(MaterialTheme.colorScheme.tertiary)
+                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary)
                                 )
                             }
                         } // notes
@@ -295,9 +294,9 @@ private fun TableItem(
 
 @Composable
 private fun TableHeaderRow(
-    viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
     layoutData: TableLayoutData,
+    activeMenuId: () -> Int?,
     updateSorting: (Int) -> Unit,
     sorting: TableSorting,
     shouldScrollUp: () -> Unit,
@@ -305,15 +304,13 @@ private fun TableHeaderRow(
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    val searchFocused by filterViewModel.searchFocused.collectAsState()
-    val activeMenuId by viewModel.activeMenuId.collectAsState()
 
     val onClick = remember {
         { columnIndex: Int ->
-            if (searchFocused) {
+            if (filterViewModel.searchFocused.value) {
                 focusManager.clearFocus()
             } else {
-                if (activeMenuId != null) {
+                if (activeMenuId() != null) {
                     onDismissMenu()
                 } else {
                     updateSorting(columnIndex)
