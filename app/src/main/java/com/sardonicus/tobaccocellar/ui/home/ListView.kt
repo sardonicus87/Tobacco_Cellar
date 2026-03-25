@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -137,7 +136,6 @@ fun ListViewMode(
                                 indication = null,
                                 interactionSource = null
                             ),
-                        filteredTins = item.tins,
                     )
 
                     AnimatedVisibility(
@@ -153,8 +151,27 @@ fun ListViewMode(
                             onMenuDismiss = onDismissMenu,
                             onEditClick = { onEditClick(item.itemId) },
                             modifier = Modifier
-                                .height(54.dp)
                         )
+                    }
+                }
+                if (item.tins.tins.isNotEmpty()) {
+                    GlowBox(
+                        color = GlowColor(Color.Black.copy(alpha = .25f)),
+                        size = GlowSize(top = 3.dp),
+                        modifier = Modifier
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            TinList(
+                                filteredTins = item.tins,
+                                modifier = Modifier
+                            )
+                        }
                     }
                 }
             }
@@ -174,7 +191,6 @@ private fun ListItem(
     formattedQuantity: () -> String,
     outOfStock: () -> Boolean,
     rating: () -> String,
-    filteredTins: TinsList,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -183,64 +199,40 @@ private fun ListItem(
             .padding(bottom = 1.dp)
     ) {
         // main details
-        Column {
-            Row(
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Entry info
+            MainDetails(
+                brand = brand,
+                blend = blend,
+                favorite = favorite,
+                disliked = disliked,
+                notes = notes,
+                rating = rating,
+                typeGenreText = typeGenreText,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f, false)
+            )
+
+            // Quantity
+            Column(
+                modifier = Modifier
+                    .width(IntrinsicSize.Max)
+                    .padding(0.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.End
             ) {
-                // Entry info
-                MainDetails(
-                    brand = brand,
-                    blend = blend,
-                    favorite = favorite,
-                    disliked = disliked,
-                    notes = notes,
-                    rating = rating,
-                    typeGenreText = typeGenreText,
+                QuantityColumn(
+                    formattedQuantity = formattedQuantity,
+                    outOfStock = outOfStock,
                     modifier = Modifier
-                        .weight(1f, false)
                 )
-
-                // Quantity
-                Column(
-                    modifier = Modifier
-                        .width(IntrinsicSize.Max)
-                        .padding(0.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.End
-                ) {
-                    QuantityColumn(
-                        formattedQuantity = formattedQuantity,
-                        outOfStock = outOfStock,
-                        modifier = Modifier
-                    )
-                }
-            }
-
-            // Tins
-            if (filteredTins.tins.isNotEmpty()) {
-                GlowBox(
-                    color = GlowColor(Color.Black.copy(alpha = .5f)),
-                    size = GlowSize(top = 3.dp),
-                    modifier = Modifier
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 12.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        TinList(
-                            filteredTins = filteredTins,
-                            modifier = Modifier
-                        )
-                    }
-                }
             }
         }
     }
