@@ -128,7 +128,7 @@ fun NavigationState.toEntries(
     val decoratedEntries = backStacks.mapValues { (_, stack) ->
         val decorators: List<NavEntryDecorator<NavKey>> = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(removeViewModelStoreOnPop = { true } ),
         )
         rememberDecoratedNavEntries(
             backStack = stack,
@@ -142,31 +142,20 @@ fun NavigationState.toEntries(
         .flatMap { stackKey ->
             val stackEntries = decoratedEntries[stackKey] ?: emptyList()
 
-            if (largeScreen && globalTwoPane) {
-                if (stackKey in mainSecondaryMap) {
-                    val defaultSecond = mainSecondaryMap.getValue(stackKey)
-                    val needsDefaultSecond = stackEntries.none { it == defaultSecond }
-                    if (needsDefaultSecond) {
-                        val temp = stackEntries.toMutableList()
-                        temp.add(1, entryProvider(defaultSecond))
-                        temp
-                    } else {
-                        stackEntries
-                    }
+            if (largeScreen && globalTwoPane && stackKey in mainSecondaryMap) {
+                val defaultSecond = mainSecondaryMap.getValue(stackKey)
+                val stack = backStacks[stackKey]
+                val needsDefault = stack?.contains(defaultSecond) == false
+
+                if (needsDefault) {
+                    val temp = stackEntries.toMutableList()
+                    temp.add(1, entryProvider(defaultSecond))
+                    temp
                 } else {
                     stackEntries
                 }
             } else {
-                if (stackKey in mainSecondaryMap) {
-                    val defaultSecond = mainSecondaryMap.getValue(stackKey)
-                    if (stackEntries.size > 1 && stackEntries[1] == defaultSecond) {
-                        stackEntries.filterIndexed { index, _ -> index != 1 }
-                    } else {
-                        stackEntries
-                    }
-                } else {
-                    stackEntries
-                }
+                stackEntries
             }
         }
         .toMutableStateList()
