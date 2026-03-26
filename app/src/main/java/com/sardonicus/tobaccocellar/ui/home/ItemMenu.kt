@@ -77,8 +77,9 @@ fun ItemMenu(
             .background(LocalCustomColors.current.listMenuScrim)
     ) { quickMenu ->
         Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.spacedBy(0.dp, alignment = Alignment.CenterHorizontally),
+            modifier = Modifier
+                .fillMaxHeight(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!quickMenu) {
@@ -87,8 +88,8 @@ fun ItemMenu(
                         onEditClick()
                         onMenuDismiss()
                     },
-                    modifier = Modifier
-                        .padding(end = 8.dp),
+                    modifier = Modifier,
+                     //   .padding(end = 8.dp),
                 ) {
                     Text(
                         text = "Edit Item",
@@ -114,10 +115,9 @@ fun ItemMenu(
             } else {
                 Box (
                     modifier = Modifier
-                        .padding(end = 6.dp)
                         .clip(RoundedCornerShape(50))
                         .clickable { onQuickEdit() }
-                        .padding(4.dp),
+                        .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -134,20 +134,21 @@ fun ItemMenu(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
                     modifier = Modifier
                         .fillMaxHeight()
-                        .padding(vertical = 8.dp)
-                        .clip(RoundedCornerShape(50))
-                        .clickable { onShowRatingPop(true) }
-                        .padding(horizontal = 6.dp, vertical = 0.dp)
+                        .padding(horizontal = 4.dp)
                 ) {
-                    Box(
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                         modifier = Modifier
                             .fillMaxHeight()
-                            .padding(vertical = 2.dp),
-                        contentAlignment = Alignment.Center
-                    ){
+                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(50))
+                            .clickable { onShowRatingPop(true) }
+                            .padding(horizontal = 6.dp, vertical = 0.dp)
+                    ) {
                         Text(
                             text = rating.ifBlank { "-.-" },
                             autoSize = TextAutoSize.StepBased(10.sp, 14.sp, 0.1.sp),
@@ -155,42 +156,42 @@ fun ItemMenu(
                             fontWeight = FontWeight.SemiBold,
                             lineHeight = 1.em
                         )
+
+                        Image(
+                            painter = painterResource(id = R.drawable.star_filled),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
+                            alignment = Alignment.Center,
+                            contentScale = ContentScale.FillHeight,
+                            modifier = Modifier,
+                        )
+
                     }
-
-                    Image(
-                        painter = painterResource(id = R.drawable.star_filled),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
-                        alignment = Alignment.Center,
-                        contentScale = ContentScale.FillHeight,
-                        modifier = Modifier,
-                    )
-
-                }
-                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                    CustomCheckbox(
-                        checked = quickEditState.favorite,
-                        onCheckedChange = viewModel::updateQuickFavorite,
-                        checkedIcon = R.drawable.heart_filled_24,
-                        uncheckedIcon = R.drawable.heart_outline_24,
-                        modifier = Modifier
-                            .padding(vertical = 8.dp),
-                        colors = IconButtonDefaults.iconToggleButtonColors(
-                            checkedContentColor = LocalCustomColors.current.favHeart,
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                        CustomCheckbox(
+                            checked = quickEditState.favorite,
+                            onCheckedChange = viewModel::updateQuickFavorite,
+                            checkedIcon = R.drawable.heart_filled_24,
+                            uncheckedIcon = R.drawable.heart_outline_24,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp),
+                            colors = IconButtonDefaults.iconToggleButtonColors(
+                                checkedContentColor = LocalCustomColors.current.favHeart,
+                            )
                         )
-                    )
 
-                    CustomCheckbox(
-                        checked = quickEditState.disliked,
-                        onCheckedChange = viewModel::updateQuickDislike,
-                        checkedIcon = R.drawable.heartbroken_filled_24,
-                        uncheckedIcon = R.drawable.heartbroken_outlined_24,
-                        modifier = Modifier
-                            .padding(vertical = 8.dp),
-                        colors = IconButtonDefaults.iconToggleButtonColors(
-                            checkedContentColor = LocalCustomColors.current.disHeart,
+                        CustomCheckbox(
+                            checked = quickEditState.disliked,
+                            onCheckedChange = viewModel::updateQuickDislike,
+                            checkedIcon = R.drawable.heartbroken_filled_24,
+                            uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp),
+                            colors = IconButtonDefaults.iconToggleButtonColors(
+                                checkedContentColor = LocalCustomColors.current.disHeart,
+                            )
                         )
-                    )
+                    }
                 }
 
                 TextButton(
