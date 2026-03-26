@@ -236,7 +236,7 @@ fun PlaintextBody(
     val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
     val focusManager = LocalFocusManager.current
 
-    BackHandler(enabled = anythingFocused && !selectionFocused) { focusManager.clearFocus() }
+    BackHandler(anythingFocused && !selectionFocused) { focusManager.clearFocus() }
 
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
     LaunchedEffect(pagerState.currentPage) {
@@ -354,6 +354,8 @@ fun PlaintextBody(
 
             }
         } else {
+            BackHandler(pagerState.currentPage != 0 && !anythingFocused) { onTabChange(0) }
+
             SecondaryTabRow(
                 selectedTabIndex = tabIndex,
                 modifier = Modifier

@@ -231,7 +231,7 @@ fun BulkEditBody(
     var anythingFocused by remember { mutableStateOf(false) }
     val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
 
-    BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
+    BackHandler(anythingFocused) { focusManager.clearFocus() }
 
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
@@ -337,6 +337,8 @@ fun BulkEditBody(
                     }
 
                 } else {
+                    BackHandler(pagerState.currentPage != 0 && !anythingFocused) { onTabChange(0) }
+
                     SecondaryTabRow(
                         selectedTabIndex = tabIndex,
                         modifier = Modifier

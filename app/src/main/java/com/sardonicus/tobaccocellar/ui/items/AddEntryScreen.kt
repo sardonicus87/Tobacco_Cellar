@@ -397,6 +397,7 @@ private fun ItemInputForm(
     modifier: Modifier = Modifier
 ) {
     var textFieldFocused by remember { mutableStateOf(false) }
+    val fieldFocused: (Boolean) -> Unit = { textFieldFocused = it }
     val isLarge = isLargeScreen()
     val currentLeftTab = currentLeftTab()
     val selectedTabIndex = remember(selectedTabIndex()) { selectedTabIndex().coerceIn(0, 2) }
@@ -435,7 +436,8 @@ private fun ItemInputForm(
 
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .onFocusChanged { fieldFocused(it.hasFocus) },
         verticalArrangement = Arrangement.Top
     ) {
         AdaptiveTabRow(
@@ -494,7 +496,6 @@ private fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
-                                    fieldFocused = { textFieldFocused = it },
                                     modifier = Modifier,
                                 )
                             } else {
@@ -558,6 +559,10 @@ private fun ItemInputForm(
                 }
             }
         } else {
+            BackHandler(narrowPagerState.currentPage != 0 && !textFieldFocused) {
+                updateSelectedTab(0)
+            }
+
             GlowBox(
                 color = GlowColor(MaterialTheme.colorScheme.background),
                 size = GlowSize(vertical = 3.dp),
@@ -591,7 +596,6 @@ private fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
-                                    fieldFocused = { textFieldFocused = it },
                                     modifier = Modifier,
                                 )
 
@@ -627,7 +631,6 @@ private fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
-                                    fieldFocused = { textFieldFocused = it },
                                     modifier = Modifier,
                                 )
                         }
@@ -859,13 +862,11 @@ private fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     showRatingPop: Boolean,
     onShowRatingPop: (Boolean) -> Unit,
-    fieldFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .onFocusChanged { fieldFocused(it.hasFocus) }
             .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
