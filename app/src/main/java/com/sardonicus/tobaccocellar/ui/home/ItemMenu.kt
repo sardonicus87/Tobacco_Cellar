@@ -10,18 +10,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -34,13 +42,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
@@ -63,6 +76,9 @@ fun ItemMenu(
 
     var showRatingPop by rememberSaveable { mutableStateOf(false) }
     val onShowRatingPop: (Boolean) -> Unit = { showRatingPop = it }
+
+    var showNotePop by rememberSaveable { mutableStateOf(false) }
+    val onShowNotePop: (Boolean) -> Unit = { showNotePop = it }
 
     LaunchedEffect(Unit) {
         delay(150)
@@ -192,10 +208,30 @@ fun ItemMenu(
                             )
                         )
                     }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(vertical = 9.dp)
+                            .clip(RoundedCornerShape(50))
+                            .clickable { onShowNotePop(true) }
+                            .padding(horizontal = 6.dp)
+                    ) {
+                        val icon = if (quickEditState.notes.isNotBlank()) R.drawable.notes_24 else R.drawable.notes_outline_24
+                        Image(
+                            painter = painterResource(id = icon),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(if (quickEditState.notes.isNotBlank()) MaterialTheme.colorScheme.tertiary else LocalContentColor.current),
+                            alignment = Alignment.Center,
+                            contentScale = ContentScale.FillHeight,
+                            modifier = Modifier
+                        )
+                    }
                 }
 
                 TextButton(
                     onClick = viewModel::saveQuickEdits,
+                    enabled = quickEditState.saveEnabled,
                     modifier = Modifier,
                 ) {
                     Text(
@@ -203,7 +239,6 @@ fun ItemMenu(
                         modifier = Modifier,
                         color = LocalContentColor.current,
                         fontWeight = FontWeight.SemiBold,
-                      //  fontSize = 14.sp
                     )
                 }
             }
@@ -219,5 +254,111 @@ fun ItemMenu(
                 }
             )
         }
+
+        if (showNotePop) {
+            EditNotePop(
+                currentNote = quickEditState.notes,
+                onDismiss = { onShowNotePop(false) },
+                onNoteEdited = {
+                    viewModel.updateQuickNotes(it)
+                    onShowNotePop(false)
+                }
+            )
+        }
     }
+}
+
+@Composable
+private fun EditNotePop(
+    currentNote: String,
+    onDismiss: () -> Unit,
+    onNoteEdited: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var textFieldState by rememberSaveable { mutableStateOf(currentNote) }
+    val updateTextField: (String) -> Unit = { textFieldState = it }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .wrapContentHeight(),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+        ),
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.small,
+        title = {
+            Text(
+                text = "Notes",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                modifier = Modifier
+            )
+        },
+        text = {
+            TextField(
+                value = textFieldState,
+                onValueChange = {
+                    var updatedText = it
+                    if (it.contains("\n")) {
+                        val lines = it.lines()
+                        if (lines.size > 1) {
+                            val lastLine = lines[lines.size - 2]
+                            val currentLine = lines.last()
+                            val lastWord = lastLine.substringAfterLast(" ")
+                            if (currentLine.startsWith(lastWord) && currentLine.length > 1) {
+                                updatedText = if (currentLine.length == lastWord.length + 1) {
+                                    it.dropLast(lastWord.length + 1)
+                                } else {
+                                    it.dropLast(lastWord.length)
+                                }
+                            }
+                        }
+                    }
+                    updateTextField(updatedText)
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.None,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedContainerColor = LocalCustomColors.current.textField,
+                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                    disabledContainerColor = LocalCustomColors.current.textField,
+                ),
+                shape = MaterialTheme.shapes.extraSmall,
+                singleLine = false,
+                maxLines = 8,
+                minLines = 8,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onNoteEdited(textFieldState) },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Done")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDismiss() },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Cancel")
+            }
+        }
+    )
 }

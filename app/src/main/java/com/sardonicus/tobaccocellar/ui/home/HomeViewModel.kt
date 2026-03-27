@@ -609,9 +609,24 @@ class HomeViewModel(
     private val _quickEditState = MutableStateFlow(QuickEditItem())
     val quickEditState: StateFlow<QuickEditItem> = _quickEditState.asStateFlow()
 
+    private val _originalItem = MutableStateFlow<Items?>(null)
+
     private var dismissJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            combine(
+                _originalItem,
+                _quickEditState,
+            ) { original, pending ->
+                original?.rating != pending.rating ||
+                        original?.favorite != pending.favorite ||
+                        original.disliked != pending.disliked ||
+                        original.notes != pending.notes
+            }.collect {
+                _quickEditState.value = _quickEditState.value.copy(saveEnabled = it)
+            }
+        }
         viewModelScope.launch {
             sortedItems.collect {
                 val ids = it.map { item -> item.items.id }
@@ -644,10 +659,13 @@ class HomeViewModel(
                 rating = item.items.rating,
                 favorite = item.items.favorite,
                 disliked = item.items.disliked,
+                notes = item.items.notes
             )
             _quickEditState.value = active
+            _originalItem.value = item.items
         } else {
             _quickEditState.value = QuickEditItem()
+            _originalItem.value = null
         }
     }
 
@@ -671,6 +689,12 @@ class HomeViewModel(
         )
     }
 
+    fun updateQuickNotes(notes: String) {
+        _quickEditState.value = _quickEditState.value.copy(
+            notes = notes
+        )
+    }
+
     fun saveQuickEdits() {
         val itemId = _activeMenuId.value ?: return
         val pending = _quickEditState.value
@@ -680,13 +704,15 @@ class HomeViewModel(
 
             val actuallyUpdated = original.rating != pending.rating ||
                     original.favorite != pending.favorite ||
-                    original.disliked != pending.disliked
+                    original.disliked != pending.disliked ||
+                    original.notes != pending.notes
 
             if (actuallyUpdated) {
                 val updatedItem = original.copy(
                     rating = pending.rating,
                     favorite = pending.favorite,
                     disliked = pending.disliked,
+                    notes = pending.notes,
                     lastModified = System.currentTimeMillis()
                 )
                 itemsRepository.updateItem(updatedItem)
@@ -1089,6 +1115,8 @@ data class QuickEditItem(
     val rating: Double? = null,
     val favorite: Boolean = false,
     val disliked: Boolean = false,
+    val notes: String = "",
+    val saveEnabled: Boolean = false
 )
 
 @Stable
