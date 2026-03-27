@@ -1216,7 +1216,7 @@ private fun DrawScope.drawLabels(
         tempAngle += sweep
     }
 
-    val moveToBottom = firstOutsideLabelAngle in 180f..225f
+    val moveToBottom = firstOutsideLabelAngle in 180f..235f
 
     val thinPercentMeasures = mutableMapOf<String, Float>()
     var tempMeasureAngle = startAngle
