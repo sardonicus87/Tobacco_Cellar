@@ -464,17 +464,7 @@ class HomeViewModel(
         val columnVisibility: Map<TableColumn, Boolean> = TableColumn.entries.associateWith { column ->
             column.name !in tableColumnsHidden
         }
-        val columnOrder = listOf(
-            TableColumn.BRAND,
-            TableColumn.BLEND,
-            TableColumn.TYPE,
-            TableColumn.SUBGENRE,
-            TableColumn.RATING,
-            TableColumn.FAV_DIS,
-            TableColumn.NOTE,
-            TableColumn.QTY
-        )
-        val columnMinWidths = columnOrder.map {
+        val columnMinWidths = TableColumn.entries.map {
             val visible = columnVisibility[it] ?: true
             if (visible) {
                 when (it) {
@@ -495,7 +485,7 @@ class HomeViewModel(
 
         val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
         val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
-        val columnMapping = columnOrder.map {
+        val columnMapping = TableColumn.entries.map {
             when (it) {
                 TableColumn.BRAND -> { item: Items -> item.brand }
                 TableColumn.BLEND -> { item: Items -> item.blend }
