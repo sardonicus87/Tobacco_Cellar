@@ -249,6 +249,7 @@ private fun SearchField (
                 onDismissRequest = { onExpandSearchMenu(false) },
                 modifier = Modifier,
                 containerColor = LocalCustomColors.current.textField,
+                shadowElevation = 4.dp,
                 offset = DpOffset((-2).dp, 2.dp)
             ) {
                 state.settingsList.settings.forEach {
