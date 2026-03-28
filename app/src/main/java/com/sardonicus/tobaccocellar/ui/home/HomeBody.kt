@@ -206,8 +206,7 @@ private fun HomeScrollHandler(
             withFrameNanos {
                 coroutineScope.launch {
                     if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
-                        val offset =
-                            (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                        val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                         columnState.scrollToItem(savedItemIndex, offset)
                     } else {
                         columnState.scrollToItem(savedItemIndex)
@@ -216,20 +215,18 @@ private fun HomeScrollHandler(
             }
             filterViewModel.resetScroll()
         }
+
         if (scrollState.shouldScrollUp) {
             columnState.scrollToItem(0)
             filterViewModel.resetScroll()
         }
+
         if (scrollState.shouldReturn && !searchPerformed && !scrollState.shouldScrollUp) {
             val index = scrollState.currentPosition[0]
             val offset = scrollState.currentPosition[1]
 
             if (index != null && offset != null) {
-                withFrameNanos {
-                    coroutineScope.launch {
-                        columnState.scrollToItem(index, offset)
-                    }
-                }
+                withFrameNanos { coroutineScope.launch { columnState.scrollToItem(index, offset) } }
                 filterViewModel.resetScroll()
             }
         }
