@@ -32,6 +32,7 @@ class PreferencesRepo(
     applicationScope: CoroutineScope
 ) {
     private companion object {
+        val RELEASE_NOTES = intPreferencesKey("release_notes")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
         val SEARCH_SETTING = stringPreferencesKey("search_setting")
@@ -89,6 +90,24 @@ class PreferencesRepo(
     }
 
     /** Misc options and saved "last value" **/
+    val releaseNotesSeen: Flow<Int> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading release notes preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[RELEASE_NOTES] ?: 0
+        }
+
+    suspend fun saveReleaseNotesSeen(appVersion: Int) {
+        dataStore.edit {
+            it[RELEASE_NOTES] = appVersion
+        }
+    }
+
     val lastAlertFlow: Flow<Int> = dataStore.data
         .catch {
             if (it is IOException) {

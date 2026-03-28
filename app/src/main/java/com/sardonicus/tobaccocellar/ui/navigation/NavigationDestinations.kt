@@ -67,7 +67,10 @@ data object SettingsDestination : NavKey, PaneInfo {
 }
 
 @Serializable
-data class ChangelogDestination(val changelogEntries: List<ChangelogEntryData>) : NavKey, PaneInfo {
+data class ChangelogDestination(
+    val changelogEntries: List<ChangelogEntryData>,
+    val targetVersion: Int? = null
+) : NavKey, PaneInfo {
     override val paneType = PaneType.NONE // maybe second if settings main and dialogs moved to second
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.Items
@@ -23,10 +24,12 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
+import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
+import com.sardonicus.tobaccocellar.ui.settings.changelogEntries
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
@@ -67,6 +70,9 @@ class HomeViewModel(
 
     private val _isTableView = MutableStateFlow(false)
     val isTableView: StateFlow<Boolean> = _isTableView.asStateFlow()
+
+    private val _releaseNotesState = MutableStateFlow(ReleaseNotesState())
+    val releaseNotesState = _releaseNotesState.asStateFlow()
 
     private val _importantAlertState = MutableStateFlow(ImportantAlertState())
     val importantAlertState = _importantAlertState.asStateFlow()
@@ -139,6 +145,22 @@ class HomeViewModel(
                 // Table View
                 launch {
                     preferencesRepo.isTableView.collect { _isTableView.value = it }
+                }
+                // Release notes
+                launch{
+                    preferencesRepo.releaseNotesSeen.collect { savedVersion ->
+                        val latestReleaseNotes = changelogEntries
+                            .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() }
+                            .sortedByDescending { it.versionCode }
+                            .take(3)
+
+                        if ((latestReleaseNotes.firstOrNull()?.versionCode ?: 1) > savedVersion) {
+                            _releaseNotesState.value = ReleaseNotesState(
+                                show = true,
+                                changelogData = latestReleaseNotes
+                            )
+                        } else { _releaseNotesState.value = ReleaseNotesState() }
+                    }
                 }
                 // Important alerts
                 launch {
@@ -597,7 +619,14 @@ class HomeViewModel(
         )
 
 
-    /** One-Time Alerts **/
+    /** Release Notes && One-Time Alerts **/
+    fun saveReleaseNotesSeen() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val versionCode = BuildConfig.VERSION_CODE
+            preferencesRepo.saveReleaseNotesSeen(versionCode)
+        }
+    }
+
     fun saveAlertSeen(alertId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             preferencesRepo.saveAlertShown(alertId)
@@ -1168,6 +1197,12 @@ data class ColumnMapping(val values: List<(Items) -> Any?> = emptyList())
 
 @Stable
 data class HeaderText(val values: List<String> = emptyList())
+
+@Stable
+data class ReleaseNotesState(
+    val show: Boolean = false,
+    val changelogData: List<ChangelogEntryData> = emptyList()
+)
 
 @Stable
 data class ImportantAlertState(

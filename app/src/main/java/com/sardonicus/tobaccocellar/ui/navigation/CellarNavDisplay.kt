@@ -163,6 +163,9 @@ fun CellarNavigation(
                     navigateToSettings = { navigator.navigate(SettingsDestination) },
                     navigateToHelp = { navigator.navigate(HelpDestination) },
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
+                    navigateToChangelog = { data, target ->
+                        navigator.navigate(ChangelogDestination(data, target))
+                    },
                     filterViewModel = filterViewModel,
                     viewModel = viewModel
                 )
@@ -336,7 +339,8 @@ fun CellarNavigation(
             is ChangelogDestination -> NavEntry(key, metadata = slideTransition + twoPaneSlide + paneInfo) {
                 ChangelogScreen(
                     onNavigateUp = { navigator.goBack() },
-                    changelogEntries = key.changelogEntries
+                    changelogEntries = key.changelogEntries,
+                    targetVersion = key.targetVersion
                 )
             }
 

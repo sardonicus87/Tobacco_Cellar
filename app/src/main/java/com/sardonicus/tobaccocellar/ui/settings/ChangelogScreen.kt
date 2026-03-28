@@ -19,10 +19,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,16 +34,31 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangelogScreen (
     onNavigateUp: () -> Unit,
     changelogEntries: List<ChangelogEntryData>,
+    targetVersion: Int?,
     modifier: Modifier = Modifier
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+
+    val listState = rememberLazyListState()
+    if (targetVersion != null) {
+        LaunchedEffect(targetVersion) {
+            delay(550)
+            val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion }
+            val offset = with(density) { -16.dp.roundToPx() }
+            if (index != -1) {
+                listState.animateScrollToItem(index + 1, offset)
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier
@@ -72,7 +89,7 @@ fun ChangelogScreen (
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(0.dp),
-                    state = rememberLazyListState(),
+                    state = listState,
                     userScrollEnabled = true,
                 ) {
                     item { Spacer(Modifier.height(12.dp)) }

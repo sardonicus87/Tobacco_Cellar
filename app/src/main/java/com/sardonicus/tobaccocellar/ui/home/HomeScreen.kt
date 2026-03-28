@@ -34,6 +34,8 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
+import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
+import com.sardonicus.tobaccocellar.ui.settings.changelogEntries
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.launch
 
@@ -50,6 +52,7 @@ fun HomeScreen(
     navigateToSettings: () -> Unit,
     navigateToHelp: () -> Unit,
     navigateToPlaintext: () -> Unit,
+    navigateToChangelog: (List<ChangelogEntryData>, Int?) -> Unit,
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
@@ -90,6 +93,19 @@ fun HomeScreen(
         ImportantAlertDialog(
             importantAlertState = importantAlertState,
             viewModel = viewModel
+        )
+    }
+
+    // Release Notes
+    val releaseNotesState by viewModel.releaseNotesState.collectAsState()
+    if (releaseNotesState.show && !importantAlertState.show) {
+        ReleaseNotesDialog(
+            releaseNotesState = releaseNotesState,
+            viewModel = viewModel,
+            onNavigateToChangelog = {
+                viewModel.saveReleaseNotesSeen()
+                navigateToChangelog(changelogEntries, it)
+            }
         )
     }
 
