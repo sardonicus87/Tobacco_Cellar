@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,7 +40,9 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,16 +56,20 @@ fun ChangelogScreen (
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
 
+    var scrolling by remember { mutableStateOf(false) }
+
     val listState = rememberLazyListState()
-    if (targetVersion != null) {
-        LaunchedEffect(targetVersion) {
-            delay(550)
-            val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion }
+    LaunchedEffect(targetVersion) {
+        if (targetVersion != null) {
+            scrolling = true
+            delay(600)
+            val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion } + 1
             val offset = with(density) { -16.dp.roundToPx() }
-            if (index != -1) {
-                listState.animateScrollToItem(index + 1, offset)
-            }
+            if (index != -1) { listState.animateScrollToItem(index, offset) }
+            snapshotFlow { listState.isScrollInProgress }.first { !it }
+            delay(50)
         }
+        scrolling = false
     }
 
     Scaffold(
@@ -73,42 +85,49 @@ fun ChangelogScreen (
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            GlowBox(
-                color = GlowColor(Color.Black.copy(alpha = 0.68f)),
-                size = GlowSize(top = 4.dp)
+        Box {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Top
             ) {
-                // log entries
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(0.dp),
-                    state = listState,
-                    userScrollEnabled = true,
+                GlowBox(
+                    color = GlowColor(Color.Black.copy(alpha = 0.68f)),
+                    size = GlowSize(top = 4.dp)
                 ) {
-                    item { Spacer(Modifier.height(12.dp)) }
-
-                    items(
-                        items = changelogEntries, key = { it.versionNumber }
+                    // log entries
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp),
+                        state = listState,
+                        userScrollEnabled = true,
                     ) {
-                        if (it.versionNumber.isNotBlank()) {
-                            ChangeLogEntryLayout(
-                                versionNumber = it.versionNumber,
-                                buildDate = it.buildDate,
-                                changes = it.changes,
-                                improvements = it.improvements,
-                                bugFixes = it.bugFixes,
-                                modifier = Modifier
-                            )
+                        item { Spacer(Modifier.height(12.dp)) }
+
+                        items(
+                            items = changelogEntries, key = { it.versionCode }
+                        ) {
+                            if (it.versionNumber.isNotBlank()) {
+                                ChangeLogEntryLayout(
+                                    versionNumber = it.versionNumber,
+                                    buildDate = it.buildDate,
+                                    changes = it.changes,
+                                    improvements = it.improvements,
+                                    bugFixes = it.bugFixes,
+                                    modifier = Modifier
+                                )
+                            }
                         }
                     }
                 }
+            }
+            if (scrolling) {
+                LoadingIndicator(
+                    scrimColor = Color.Black.copy(alpha = 0.38f),
+                )
             }
         }
     }
