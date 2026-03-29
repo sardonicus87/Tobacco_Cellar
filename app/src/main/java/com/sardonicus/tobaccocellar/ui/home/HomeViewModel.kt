@@ -119,6 +119,7 @@ class HomeViewModel(
                 launch {
                     filterViewModel.everythingFlow.collect { _allItems.value = it }
                 }
+
                 // Table Sorting
                 launch {
                     combine(
@@ -130,6 +131,7 @@ class HomeViewModel(
                         _tableTableSorting.value = it
                     }
                 }
+
                 // List Sorting
                 launch {
                     combine(
@@ -142,19 +144,21 @@ class HomeViewModel(
                         _listSorting.value = it
                     }
                 }
+
                 // Table View
                 launch {
                     preferencesRepo.isTableView.collect { _isTableView.value = it }
                 }
+
                 // Release notes
                 launch{
                     preferencesRepo.releaseNotesSeen.collect { savedVersion ->
                         val latestReleaseNotes = changelogEntries
-                            .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() }
+                            .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
                             .sortedByDescending { it.versionCode }
                             .take(3)
 
-                        if ((latestReleaseNotes.firstOrNull()?.versionCode ?: 1) > savedVersion) {
+                        if (latestReleaseNotes.isNotEmpty()) {
                             _releaseNotesState.value = ReleaseNotesState(
                                 show = true,
                                 changelogData = latestReleaseNotes
@@ -162,6 +166,7 @@ class HomeViewModel(
                         } else { _releaseNotesState.value = ReleaseNotesState() }
                     }
                 }
+
                 // Important alerts
                 launch {
                     preferencesRepo.lastAlertFlow.collect { lastShown ->
@@ -184,6 +189,7 @@ class HomeViewModel(
                         )
                     }
                 }
+
                 // Ensure Brand and Blend columns never get hidden, unhide them if so
                 launch(Dispatchers.IO) {
                     preferencesRepo.tableColumnsHidden.collect {
@@ -195,6 +201,7 @@ class HomeViewModel(
                         }
                     }
                 }
+
                 // Type/Subgenre visibility, default to Type if an option becomes disabled
                 launch(Dispatchers.IO) {
                     combine(
