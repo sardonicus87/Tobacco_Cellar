@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.home
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,6 +41,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 fun ReleaseNotesDialog(
     releaseNotesState: ReleaseNotesState,
     viewModel: HomeViewModel,
+    tempHide: Boolean,
     onNavigateToChangelog: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -50,7 +52,7 @@ fun ReleaseNotesDialog(
     val maxWidth = if (landscape) LocalWindowInfo.current.containerDpSize.width * .5f else Dp.Unspecified
 
     AlertDialog(
-        onDismissRequest = viewModel::saveReleaseNotesSeen,
+        onDismissRequest = if (!tempHide) viewModel::saveReleaseNotesSeen else { { } },
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -141,8 +143,9 @@ fun ReleaseNotesDialog(
         confirmButton = {
             TextButton(
                 onClick = viewModel::saveReleaseNotesSeen,
+                contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier
-                    .padding(0.dp)
+                    .heightIn(32.dp, 32.dp)
             ) {
                 Text("OK")
             }
@@ -153,7 +156,9 @@ fun ReleaseNotesDialog(
                     viewModel.saveReleaseNotesSeen()
                     onNavigateToChangelog(null)
                 },
+                contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
             ) {
                 Text("Full Changelog")
             }
