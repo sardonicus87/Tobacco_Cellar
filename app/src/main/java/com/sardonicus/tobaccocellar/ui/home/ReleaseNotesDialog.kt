@@ -1,11 +1,13 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -17,12 +19,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -35,16 +40,25 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 fun ReleaseNotesDialog(
     releaseNotesState: ReleaseNotesState,
     viewModel: HomeViewModel,
-    onNavigateToChangelog: (Int) -> Unit,
+    onNavigateToChangelog: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val divisor = if (landscape) .9f else .5f
+    val maxHeight = LocalWindowInfo.current.containerDpSize.height * divisor
+    val minWidth = if (landscape) 280.dp else Dp.Unspecified
+    val maxWidth = if (landscape) LocalWindowInfo.current.containerDpSize.width * .5f else Dp.Unspecified
+
     AlertDialog(
         onDismissRequest = viewModel::saveReleaseNotesSeen,
         properties = DialogProperties(
             dismissOnBackPress = true,
-            dismissOnClickOutside = true
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = !landscape
         ),
-        modifier = modifier,
+        modifier = modifier
+            .heightIn(max = maxHeight)
+            .widthIn(minWidth, maxWidth),
         containerColor = LocalCustomColors.current.darkNeutral,
         shape = RoundedCornerShape(8.dp),
         tonalElevation = 4.dp,
@@ -69,7 +83,6 @@ fun ReleaseNotesDialog(
                 color = GlowColor(LocalCustomColors.current.darkNeutral),
                 size = GlowSize(vertical = 6.dp),
                 modifier = Modifier
-                    .fillMaxHeight(.45f)
             ) {
                 Column(
                     modifier = Modifier
@@ -132,6 +145,17 @@ fun ReleaseNotesDialog(
                     .padding(0.dp)
             ) {
                 Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    viewModel.saveReleaseNotesSeen()
+                    onNavigateToChangelog(null)
+                },
+                modifier = Modifier
+            ) {
+                Text("Full Changelog")
             }
         }
     )
