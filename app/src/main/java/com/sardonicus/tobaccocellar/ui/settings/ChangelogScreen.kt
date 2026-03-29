@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -57,17 +58,22 @@ fun ChangelogScreen (
     val density = LocalDensity.current
 
     var scrolling by remember { mutableStateOf(false) }
-
+    var scrollingFinished by rememberSaveable(targetVersion) { mutableStateOf(false) }
     val listState = rememberLazyListState()
+
     LaunchedEffect(targetVersion) {
-        if (targetVersion != null) {
+        if (targetVersion != null && !scrollingFinished) {
             scrolling = true
             delay(600)
-            val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion } + 1
+
+            val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion }
             val offset = with(density) { -16.dp.roundToPx() }
-            if (index != -1) { listState.animateScrollToItem(index, offset) }
+
+            if (index != -1) { listState.animateScrollToItem(index + 1, offset) }
+
             snapshotFlow { listState.isScrollInProgress }.first { !it }
             delay(50)
+            scrollingFinished = true
         }
         scrolling = false
     }
