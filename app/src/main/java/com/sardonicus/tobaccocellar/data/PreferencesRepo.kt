@@ -90,7 +90,7 @@ class PreferencesRepo(
     }
 
     /** Misc options and saved "last value" **/
-    val releaseNotesSeen: Flow<Int> = dataStore.data
+    val releaseNotesSeen: Flow<Int?> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading release notes preferences.", it)
@@ -99,7 +99,7 @@ class PreferencesRepo(
                 throw it
             }
         }.map {
-            it[RELEASE_NOTES] ?: 0
+            it[RELEASE_NOTES]
         }
 
     suspend fun saveReleaseNotesSeen(appVersion: Int) {

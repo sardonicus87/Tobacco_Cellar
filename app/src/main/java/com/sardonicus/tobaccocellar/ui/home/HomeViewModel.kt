@@ -153,17 +153,23 @@ class HomeViewModel(
                 // Release notes
                 launch{
                     preferencesRepo.releaseNotesSeen.collect { savedVersion ->
-                        val latestReleaseNotes = changelogEntries
-                            .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
-                            .sortedByDescending { it.versionCode }
-                            .take(3)
+                        if (savedVersion == null) {
+                            preferencesRepo.saveReleaseNotesSeen(0) // saveReleaseNotesSeen()
+                        } else {
+                            val latestReleaseNotes = changelogEntries
+                                .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
+                                .sortedByDescending { it.versionCode }
+                                .take(3)
 
-                        if (latestReleaseNotes.isNotEmpty()) {
-                            _releaseNotesState.value = ReleaseNotesState(
-                                show = true,
-                                changelogData = latestReleaseNotes
-                            )
-                        } else { _releaseNotesState.value = ReleaseNotesState() }
+                            if (latestReleaseNotes.isNotEmpty()) {
+                                _releaseNotesState.value = ReleaseNotesState(
+                                    show = true,
+                                    changelogData = latestReleaseNotes
+                                )
+                            } else {
+                                _releaseNotesState.value = ReleaseNotesState()
+                            }
+                        }
                     }
                 }
 
@@ -629,8 +635,7 @@ class HomeViewModel(
     /** Release Notes && One-Time Alerts **/
     fun saveReleaseNotesSeen() {
         viewModelScope.launch(Dispatchers.IO) {
-            val versionCode = BuildConfig.VERSION_CODE
-            preferencesRepo.saveReleaseNotesSeen(versionCode)
+            preferencesRepo.saveReleaseNotesSeen(BuildConfig.VERSION_CODE)
         }
     }
 
