@@ -20,10 +20,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -39,7 +37,6 @@ import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
 import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
 import com.sardonicus.tobaccocellar.ui.settings.changelogEntries
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,23 +98,13 @@ fun HomeScreen(
 
     // Release Notes
     val releaseNotesState by viewModel.releaseNotesState.collectAsState()
-    var tempHide by remember { mutableStateOf(false) }
-    val override = tempHide
 
-    LaunchedEffect(tempHide) {
-        if (tempHide) {
-            delay(600)
-            tempHide = false
-        }
-    }
-
-    if (releaseNotesState.show && !importantAlertState.show && !tempHide) {
+    if (releaseNotesState.show && !importantAlertState.show) {
         ReleaseNotesDialog(
             releaseNotesState = releaseNotesState,
             viewModel = viewModel,
-            tempHide = override,
             onNavigateToChangelog = {
-                tempHide = true
+                viewModel.saveReleaseNotesSeen()
                 navigateToChangelog(changelogEntries, it)
             }
         )

@@ -41,7 +41,6 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 fun ReleaseNotesDialog(
     releaseNotesState: ReleaseNotesState,
     viewModel: HomeViewModel,
-    tempHide: Boolean,
     onNavigateToChangelog: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -52,7 +51,7 @@ fun ReleaseNotesDialog(
     val maxWidth = if (landscape) LocalWindowInfo.current.containerDpSize.width * .5f else Dp.Unspecified
 
     AlertDialog(
-        onDismissRequest = if (!tempHide) viewModel::saveReleaseNotesSeen else { { } },
+        onDismissRequest = viewModel::saveReleaseNotesSeen,
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
