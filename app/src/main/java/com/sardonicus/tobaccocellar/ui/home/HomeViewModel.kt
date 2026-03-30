@@ -650,6 +650,9 @@ class HomeViewModel(
     private val _quickEditState = MutableStateFlow(QuickEditItem())
     val quickEditState: StateFlow<QuickEditItem> = _quickEditState.asStateFlow()
 
+    private val _quickChanges = MutableStateFlow(QuickEditChanges())
+    val quickChanges: StateFlow<QuickEditChanges> = _quickChanges.asStateFlow()
+
     private val _originalItem = MutableStateFlow<Items?>(null)
 
     private var dismissJob: Job? = null
@@ -660,14 +663,20 @@ class HomeViewModel(
                 _originalItem,
                 _quickEditState,
             ) { original, pending ->
-                original?.rating != pending.rating ||
-                        original?.favorite != pending.favorite ||
-                        original.disliked != pending.disliked ||
-                        original.notes != pending.notes
+                QuickEditChanges (
+                    rating = original?.rating != pending.rating,
+                    favorite = original?.favorite != pending.favorite,
+                    disliked = original?.disliked != pending.disliked,
+                    notes = original?.notes != pending.notes,
+                    quantity = original?.quantity != pending.quantity
+                )
             }.collect {
-                _quickEditState.value = _quickEditState.value.copy(saveEnabled = it)
+                val anythingChanged = it.rating || it.favorite || it.disliked || it.notes || it.quantity
+                _quickEditState.value = _quickEditState.value.copy(saveEnabled = anythingChanged)
+                _quickChanges.value = it
             }
         }
+
         viewModelScope.launch {
             sortedItems.collect {
                 val ids = it.map { item -> item.items.id }
@@ -700,7 +709,9 @@ class HomeViewModel(
                 rating = item.items.rating,
                 favorite = item.items.favorite,
                 disliked = item.items.disliked,
-                notes = item.items.notes
+                notes = item.items.notes,
+                quantity = item.items.quantity,
+                syncTins = item.items.syncTins
             )
             _quickEditState.value = active
             _originalItem.value = item.items
@@ -736,6 +747,12 @@ class HomeViewModel(
         )
     }
 
+    fun updateQuickQuantity(quantity: Int) {
+        _quickEditState.value = _quickEditState.value.copy(
+            quantity = quantity
+        )
+    }
+
     fun saveQuickEdits() {
         val itemId = _activeMenuId.value ?: return
         val pending = _quickEditState.value
@@ -743,17 +760,13 @@ class HomeViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val original = itemsRepository.getItemById(itemId) ?: return@launch
 
-            val actuallyUpdated = original.rating != pending.rating ||
-                    original.favorite != pending.favorite ||
-                    original.disliked != pending.disliked ||
-                    original.notes != pending.notes
-
-            if (actuallyUpdated) {
+            if (pending.saveEnabled) {
                 val updatedItem = original.copy(
                     rating = pending.rating,
                     favorite = pending.favorite,
                     disliked = pending.disliked,
                     notes = pending.notes,
+                    quantity = pending.quantity,
                     lastModified = System.currentTimeMillis()
                 )
                 itemsRepository.updateItem(updatedItem)
@@ -1157,7 +1170,18 @@ data class QuickEditItem(
     val favorite: Boolean = false,
     val disliked: Boolean = false,
     val notes: String = "",
+    val quantity: Int = 0,
+    val syncTins: Boolean = false,
     val saveEnabled: Boolean = false
+)
+
+@Stable
+data class QuickEditChanges(
+    val rating: Boolean = false,
+    val favorite: Boolean = false,
+    val disliked: Boolean = false,
+    val notes: Boolean = false,
+    val quantity: Boolean = false
 )
 
 @Stable
