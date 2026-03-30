@@ -654,6 +654,22 @@ class HomeViewModel(
     val quickChanges: StateFlow<QuickEditChanges> = _quickChanges.asStateFlow()
 
     private val _originalItem = MutableStateFlow<Items?>(null)
+    val originalState: StateFlow<QuickEditItem> = _originalItem.map {
+            QuickEditItem(
+                rating = it?.rating,
+                favorite = it?.favorite ?: false,
+                disliked = it?.disliked ?: false,
+                notes = it?.notes ?: "",
+                quantity = it?.quantity ?: 0,
+            )
+    }
+        .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000L),
+        initialValue = QuickEditItem()
+    )
+
+
 
     private var dismissJob: Job? = null
 
