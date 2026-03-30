@@ -478,7 +478,7 @@ fun BulkSelections(
             ) { Text("Clear Selections") }
             Box (contentAlignment = Alignment.Center) {
                 val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
-                val borderColor = if (filteringApplied) LocalContentColor.current else Color.Transparent
+                val borderColor = if (filteringApplied) MaterialTheme.colorScheme.primary else Color.Transparent
                 val indicatorColor = if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
 
                 TextButton(
