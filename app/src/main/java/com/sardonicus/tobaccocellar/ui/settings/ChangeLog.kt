@@ -4,14 +4,59 @@ import kotlinx.serialization.Serializable
 
 val changelogEntries = listOf(
     ChangelogEntryData(
+        versionCode = 0,
         versionNumber = "",
         buildDate = "",
         changes = listOf(),
         improvements = listOf(),
         bugFixes = listOf(),
+        releaseNotes = listOf(),
     ),
 
     ChangelogEntryData(
+        versionCode = 43,
+        versionNumber = "5.2.0",
+        buildDate = "30 Mar, 2026",
+        changes = listOf(
+            "Cellar Screen new feature Quick Edits, the long-press entry menu now has a second " +
+                    "option called \"Quick Edits\" which allows to you update an entry's star " +
+                    "rating, favorite or dislike status without having to go to the full Edit " +
+                    "Entry screen.",
+            "New \"Release Notes\" dialog when first opening the app after an update. I realise " +
+                    "most users never read changelogs or release notes, and many probably don't " +
+                    "even realise when an app updates if they have automatic updates on. The " +
+                    "new release notes dialog will only show when there are significant changes."
+        ),
+        improvements = listOf(
+            "Cellar Screen entry menu behavior improved, a bunch of minor things like, long press " +
+                    "on an entry with an already open menu no longer triggers haptic feedback.",
+            "Tabbed Layouts on phones: device back navigation will now switch to the first tab " +
+                    "before performing a back navigation. Back actions order: clear selection, " +
+                    "switch to first tab, navigate to previous screen.",
+            "Stats Screen: minor adjustment to when the outside listed slice labels get moved to " +
+                    "align to the bottom (some cases there was overlap of these labels with the " +
+                    "percentage labels).",
+            "Add/Edit Entry screen: added a tooltip to the \"Sync?\" option to explain what it " +
+                    "does."
+        ),
+        bugFixes = listOf(
+            "Cellar Screen: fixed a minor bug where an entry menu was being incorrectly dismissed " +
+                    "on device rotation. Actually several screens had this bug and they're all " +
+                    "now fixed.",
+            "Stats Screen: fixed a bug where the \"Data Total\" wasn't updating on filtering " +
+                    "until scrolled away and returned to.",
+            "Add/Edit Entry: fixed a minor bug where I forgot to include Notes text box and any " +
+                    "Tins text boxes being focused to prevent swipe scrolling between tabs."
+        ),
+        releaseNotes = listOf(
+            "New feature Quick Edit option in entry long-press menu.",
+            "Release notes added as a dialog on update (this dialog).",
+            "Minor bug fixes and improvements. See full changelog for details."
+        )
+    ),
+
+    ChangelogEntryData(
+        versionCode = 42,
         versionNumber = "5.1.3",
         buildDate = "16 Mar, 2026",
         changes = listOf(),
@@ -23,10 +68,11 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Adaptive Layout bug, accidentally forgot to reset the size points for large screens " +
                     "screens, resulting in nearly all phones doing adaptive large screen layouts."
-        ),
+        )
     ),
 
     ChangelogEntryData(
+        versionCode = 41,
         versionNumber = "5.1.2",
         buildDate = "15 Mar, 2026",
         changes = listOf(
@@ -45,7 +91,7 @@ val changelogEntries = listOf(
             "Tabbed Layouts: prevent swipe to change tabs when a text input field is selected or " +
                     "when text is selected (copy/paste)—prevents accidentally swipe changing tabs " +
                     "while trying to select text or scroll inside a text field.",
-            "Screens with text entry: system back navigation now clears text field focus before " +
+            "Screens with text entry: device back navigation now clears text field focus before " +
                     "allowing back navigation.",
             "Edit Entry screens: fixed an issue where landscape view would cut-off the delete " +
                     "button. Also adapts better height to large devices.",
@@ -59,6 +105,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 40,
         versionNumber = "5.1.1",
         buildDate = "6 Mar, 2026",
         changes = listOf(),
@@ -72,6 +119,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 39,
         versionNumber = "5.1.0",
         buildDate = "5 Mar, 2026",
         changes = listOf(
@@ -106,9 +154,15 @@ val changelogEntries = listOf(
                     "labels were swapped between different tins when saving.",
             "Other minor bug fixes (UI related)."
         ),
+        releaseNotes = listOf(
+            "Continued adapting more app sections for large screen devices.",
+            "Tabbed layout screens improved, see full changelog for details.",
+            "Multiple quality of life improvements and bug fixes."
+        )
     ),
 
     ChangelogEntryData(
+        versionCode = 38,
         versionNumber = "5.0.0",
         buildDate = "8 Feb, 2026",
         changes = listOf(
@@ -145,7 +199,7 @@ val changelogEntries = listOf(
             "General stability and performance improvements."
         ),
         bugFixes = listOf(
-            "Android AutoBackup might not have been setup properly, now tested, system automatic " +
+            "Android AutoBackup might not have been setup properly, now tested, device automatic " +
                     "backup is confirmed to work correctly.",
             "Filtering bug: when selecting both Favorites and Dislikes together, other filtering " +
                     "options that still should have been selectable were being disabled. Also " +
@@ -162,9 +216,17 @@ val changelogEntries = listOf(
                     "evaluated separately when tins as a sublist was present in the format string.",
             "Other minor UI tweaks and bug fixes."
         ),
+        releaseNotes = listOf(
+            "New feature multi-device sync, see changelog for full details.",
+            "Large screen support started.",
+            "Blend Details screen, URLs in notes text are now clickable.",
+            "Filtering improvements.",
+            "Multiple bug fixes and other improvements."
+        )
     ),
 
     ChangelogEntryData(
+        versionCode = 37,
         versionNumber = "4.1.0",
         buildDate = "4 Dec, 2025",
         changes = listOf(
@@ -210,6 +272,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 36,
         versionNumber = "4.0.1",
         buildDate = "6 Nov, 2025",
         changes = listOf(),
@@ -228,6 +291,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 35,
         versionNumber = "4.0.0",
         buildDate = "4 Nov, 2025",
         changes = listOf(
@@ -283,6 +347,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 34,
         versionNumber = "3.3.2",
         buildDate = "1 Oct, 2025",
         changes = listOf(),
@@ -305,6 +370,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 33,
         versionNumber = "3.3.1",
         buildDate = "23 Sept, 2025",
         changes = listOf(),
@@ -316,6 +382,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 32,
         versionNumber = "3.3.0",
         buildDate = "22 Sept, 2025",
         changes = listOf(
@@ -342,6 +409,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 31,
         versionNumber = "3.2.1",
         buildDate = "28 Aug, 2025",
         changes = listOf(),
@@ -362,6 +430,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 30,
         versionNumber = "3.2.0",
         buildDate = "22 Aug, 2025",
         changes = listOf(
@@ -436,6 +505,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 29,
         versionNumber = "3.1.10",
         buildDate = "30 July, 2025",
         changes = listOf(
@@ -467,6 +537,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 28,
         versionNumber = "3.1.9",
         buildDate = "22 July, 2025",
         changes = listOf(),
@@ -480,6 +551,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 27,
         versionNumber = "3.1.8",
         buildDate = "22 July, 2025",
         changes = listOf(),
@@ -494,6 +566,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 26,
         versionNumber = "3.1.7",
         buildDate = "19 July, 2025",
         changes = listOf(),
@@ -505,7 +578,7 @@ val changelogEntries = listOf(
                     "when a new tin is ready in a week from the day of running the app.",
             "Refined the autocomplete suggestion fields once more for better control over when " +
                     "suggestions appear/dismiss and their offset above/below the input field. " +
-                    "Pressing the system back button now dismisses the keyboard, then the " +
+                    "Pressing the device back button now dismisses the keyboard, then the " +
                     "suggestions, then navigates back. The offset for the suggestions list when " +
                     "it appears above the input field has also been fixed. Suggestions are now " +
                     "also properly removed when matching entered text, and don't pop back up " +
@@ -519,6 +592,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 25,
         versionNumber = "3.1.6",
         buildDate = "14 July, 2025",
         changes = listOf(),
@@ -538,6 +612,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 24,
         versionNumber = "3.1.5",
         buildDate = "8 July, 2025",
         changes = listOf(),
@@ -552,6 +627,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 23,
         versionNumber = "3.1.4",
         buildDate = "2 June, 2025",
         changes = listOf(),
@@ -568,6 +644,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 22,
         versionNumber = "3.1.3",
         buildDate = "28 May, 2025",
         changes = listOf(),
@@ -603,6 +680,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 21,
         versionNumber = "3.1.2",
         buildDate = "22 May, 2025",
         changes = listOf(),
@@ -628,6 +706,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 20,
         versionNumber = "3.1.1",
         buildDate = "19 May, 2025",
         changes = listOf(),
@@ -639,6 +718,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 19,
         versionNumber = "3.1.0",
         buildDate = "19 May, 2025",
         changes = listOf(
@@ -679,6 +759,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 18,
         versionNumber = "3.0.2",
         buildDate = "7 May, 2025",
         changes = listOf(),
@@ -699,6 +780,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 17,
         versionNumber = "3.0.1",
         buildDate = "4 May, 2025",
         changes = listOf(),
@@ -722,6 +804,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 16,
         versionNumber = "3.0.0",
         buildDate = "1 May, 2025",
         changes = listOf(
@@ -792,6 +875,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 15,
         versionNumber = "2.7.0",
         buildDate = "27 Mar, 2025",
         changes = listOf(
@@ -859,6 +943,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 14,
         versionNumber = "2.6.1",
         buildDate = "16 Mar, 2025",
         changes = listOf(),
@@ -872,7 +957,7 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Minor error on new \"jump to top/bottom\" button where on a cold start, trying to " +
                     "scroll up when already at the top of the list showed the button.",
-            "Minor error on blend search system back navigation, if the blend search is re-focused " +
+            "Minor error on blend search device back navigation, if the blend search is re-focused " +
                     "after a search, the first back press should only clear the search field " +
                     "focus, then a second press to clear the blend search.",
             "Further fixing of list/table position being lost when using quick blend search. " +
@@ -889,6 +974,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 13,
         versionNumber = "2.6.0",
         buildDate = "13 Mar, 2025",
         changes = listOf(
@@ -915,11 +1001,12 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 12,
         versionNumber = "2.5.0",
         buildDate = "7 Mar, 2025",
         changes = listOf(
             "Added two more charts for Subgenres and Cuts \"... by No. of Tins\".",
-            "Clicking the system back button after having done a blend search will now clear the " +
+            "Clicking the device back button after having done a blend search will now clear the " +
                     "search.",
             "Added a conditional check to exclude quantities of 0 from charts \"... by Tins\".",
             "Added a total quantity to the Blend Details screen tins section (if there are any " +
@@ -953,6 +1040,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 11,
         versionNumber = "2.4.0",
         buildDate = "3 Mar, 2025",
         changes = listOf(
@@ -977,6 +1065,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 10,
         versionNumber = "2.3.0",
         buildDate = "18 Feb, 2025",
         changes = listOf(
@@ -1008,6 +1097,7 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 9,
         versionNumber = "2.2.0",
         buildDate = "11 Feb, 2025",
         changes = listOf(
@@ -1030,6 +1120,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 8,
         versionNumber = "2.1.0",
         buildDate = "8 Feb, 2025",
         changes = listOf(
@@ -1050,6 +1141,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 7,
         versionNumber = "2.0.1",
         buildDate = "4 Feb, 2025",
         changes = listOf(),
@@ -1059,6 +1151,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 6,
         versionNumber = "2.0.0",
         buildDate = "4 Feb, 2025",
         changes = listOf(
@@ -1106,6 +1199,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 5,
         versionNumber = "1.4.0",
         buildDate = "2 Jan, 2025",
         changes = listOf(
@@ -1129,6 +1223,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 4,
         versionNumber = "1.3.1",
         buildDate = "25 Dec, 2024",
         changes = listOf(
@@ -1149,6 +1244,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 3,
         versionNumber = "1.3.0",
         buildDate = "23 Dec, 2024",
         changes = listOf(
@@ -1165,6 +1261,7 @@ val changelogEntries = listOf(
         )
     ),
     ChangelogEntryData(
+        versionCode = 2,
         versionNumber = "1.2.0",
         buildDate = "11 Dec, 2024",
         changes = listOf(
@@ -1186,6 +1283,7 @@ val changelogEntries = listOf(
         ),
     ),
     ChangelogEntryData(
+        versionCode = 1,
         versionNumber = "1.0.0",
         buildDate = "20 Nov, 2024",
         changes = listOf(
@@ -1196,9 +1294,11 @@ val changelogEntries = listOf(
 
 @Serializable
 data class ChangelogEntryData(
+    val versionCode: Int,
     val versionNumber: String,
     val buildDate: String,
     val changes: List<String> = emptyList(),
     val improvements: List<String> = emptyList(),
     val bugFixes: List<String> = emptyList(),
+    val releaseNotes: List<String> = emptyList(),
 )
