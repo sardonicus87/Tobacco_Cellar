@@ -7,14 +7,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -51,11 +55,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -69,9 +76,12 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.items.RatingPopup
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
+import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
+import java.text.ParseException
+import java.util.Locale
 
 @Composable
 fun ItemMenu(
@@ -82,6 +92,7 @@ fun ItemMenu(
     modifier: Modifier = Modifier
 ) {
     val quickEditState by viewModel.quickEditState.collectAsState()
+    val originalState by viewModel.originalState.collectAsState()
     val changed by viewModel.quickChanges.collectAsState()
 
     var quickEdit by rememberSaveable { mutableStateOf(false) }
@@ -201,9 +212,12 @@ fun ItemMenu(
                             )
 
                             Image(
-                                painter = painterResource(id = R.drawable.star_filled),
+                                painter = painterResource(R.drawable.star_filled),
                                 contentDescription = null,
-                                colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
+                                colorFilter = ColorFilter.tint(
+                                    if (rating.isNotBlank()) { LocalCustomColors.current.starRating }
+                                    else { LocalContentColor.current }
+                                ),
                                 alignment = Alignment.Center,
                                 contentScale = ContentScale.FillHeight,
                                 modifier = Modifier,
@@ -304,21 +318,38 @@ fun ItemMenu(
             }
         }
 
+        var editRatingState by rememberSaveable { mutableStateOf(formatDecimal(quickEditState.rating)) }
+
         if (showRatingPop) {
-            RatingPopup(
-                currentRating = quickEditState.rating,
+            EditRatingPop(
+                textFieldState = editRatingState,
+                updateTextField = { editRatingState = it },
                 onDismiss = { onShowRatingPop(false) },
-                onRatingSelected = {
+                onCancel = {
+                    onShowRatingPop(false)
+                    editRatingState = formatDecimal(originalState.rating)
+                    viewModel.updateQuickRating(originalState.rating)
+                },
+                onRatingEdited = {
                     viewModel.updateQuickRating(it)
                     onShowRatingPop(false)
                 }
             )
+
         }
+
+        var editNoteState by rememberSaveable { mutableStateOf(quickEditState.notes) }
 
         if (showNotePop) {
             EditNotePop(
-                currentNote = quickEditState.notes,
+                textFieldState = editNoteState,
+                updateTextField = { editNoteState = it },
                 onDismiss = { onShowNotePop(false) },
+                onCancel = {
+                    onShowNotePop(false)
+                    editNoteState = originalState.notes
+                    viewModel.updateQuickNotes(originalState.notes)
+                },
                 onNoteEdited = {
                     viewModel.updateQuickNotes(it)
                     onShowNotePop(false)
@@ -326,10 +357,18 @@ fun ItemMenu(
             )
         }
 
+        var qtyState by rememberSaveable { mutableStateOf(quickEditState.quantity.toString()) }
+
         if (showQtyPop) {
             EditQuantityPop(
-                currentQty = quickEditState.quantity,
+                textFieldState = qtyState,
+                updateTextField = { qtyState = it },
                 onDismiss = { onShowQtyPop(false) },
+                onCancel = {
+                    onShowQtyPop(false)
+                    qtyState = originalState.quantity.toString()
+                    viewModel.updateQuickQuantity(originalState.quantity)
+                },
                 onQtyEdited = {
                     viewModel.updateQuickQuantity(it)
                     onShowQtyPop(false)
@@ -353,7 +392,7 @@ private fun QuickOption(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(6.dp)
-                .offset((-1).dp, (-7).dp)
+                .offset((-1).dp, (-8).dp)
                 .clip(CircleShape)
                 //.border(1.dp, borderColor, CircleShape)
                 .background(MaterialTheme.colorScheme.tertiary)
@@ -363,15 +402,184 @@ private fun QuickOption(
 }
 
 @Composable
-private fun EditNotePop(
-    currentNote: String,
+private fun EditRatingPop(
+    textFieldState: String,
+    updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
+    onCancel: () -> Unit,
+    onRatingEdited: (Double?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var parsedDouble by rememberSaveable { mutableStateOf<Double?>(null) }
+    val updateParsedDouble: (Double?) -> Unit = { parsedDouble = it }
+
+    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val decimalSeparator = symbols.decimalSeparator.toString()
+    val allowedPattern = remember(decimalSeparator) {
+        val ds = Regex.escape(decimalSeparator)
+        Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
+    }
+
+    fun parseDouble(it: String): Double? {
+        var parsed: Double?
+        try {
+            if (it.isNotBlank()) {
+                val preNumber = if (it.startsWith(decimalSeparator)) {
+                    "0$it"
+                } else it
+                val number = numberFormat.parse(preNumber)
+                parsed = number?.toDouble() ?: 0.0
+                if (parsed > 5.0) {
+                    parsed = 5.0
+                }
+            } else {
+                parsed = null
+            }
+
+        } catch (_: ParseException) {
+            return null
+        }
+        return parsed
+    }
+
+    LaunchedEffect(Unit) {
+        updateParsedDouble(parseDouble(textFieldState))
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+            .wrapContentHeight(),
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+        ),
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.small,
+        title = {
+            Text(
+                text = "Rating",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                modifier = Modifier
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Set a rating (maximum 5). To make an item unrated, make the field " +
+                            "blank. Supports fractional ratings (up to 2 decimal places).",
+                    fontSize = 15.sp,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(Modifier.width(6.dp))
+                    TextField(
+                        value = textFieldState,
+                        onValueChange = {
+                            if (it.matches(allowedPattern)) {
+                                updateTextField(it)
+                                updateParsedDouble(parseDouble(it))
+
+//                                try {
+//                                    if (it.isNotBlank()) {
+//                                        val preNumber = if (it.startsWith(decimalSeparator)) {
+//                                            "0$it"
+//                                        } else it
+//                                        val number = numberFormat.parse(preNumber)
+//                                        parsedDouble = number?.toDouble() ?: 0.0
+//                                        if (parsedDouble!! > 5.0) {
+//                                            parsedDouble = 5.0
+//                                        }
+//                                    } else {
+//                                        parsedDouble = null
+//                                    }
+//
+//                                } catch (e: ParseException) {
+//                                    Log.e("Rating", "Input: $it", e)
+//                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(80.dp)
+                            .padding(end = 8.dp),
+                        enabled = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            focusedContainerColor = LocalCustomColors.current.textField,
+                            unfocusedContainerColor = LocalCustomColors.current.textField,
+                            disabledContainerColor = LocalCustomColors.current.textField,
+                        ),
+                        shape = MaterialTheme.shapes.extraSmall
+                    )
+                    val alpha = if (textFieldState.isNotBlank()) .75f else 0.38f
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                        contentDescription = "Clear",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                indication = LocalIndication.current,
+                                interactionSource = null,
+                                enabled = textFieldState.isNotBlank()
+                            ) {
+                                updateTextField("")
+                                updateParsedDouble(null)
+                            }
+                            .padding(4.dp)
+                            .size(20.dp)
+                            .alpha(alpha)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onRatingEdited(parsedDouble) },
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Done")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onCancel,
+                contentPadding = PaddingValues(12.dp, 4.dp),
+                modifier = Modifier
+                    .heightIn(32.dp, 32.dp)
+            ) {
+                Text(text = "Undo")
+            }
+        }
+    )
+}
+
+@Composable
+private fun EditNotePop(
+    textFieldState: String,
+    updateTextField: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onCancel: () -> Unit,
     onNoteEdited: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var textFieldState by rememberSaveable { mutableStateOf(currentNote) }
-    val updateTextField: (String) -> Unit = { textFieldState = it }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier
@@ -446,12 +654,12 @@ private fun EditNotePop(
         },
         dismissButton = {
             TextButton(
-                onClick = { onDismiss() },
+                onClick = onCancel,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier
                     .heightIn(32.dp, 32.dp)
             ) {
-                Text(text = "Cancel")
+                Text(text = "Undo")
             }
         }
     )
@@ -459,18 +667,18 @@ private fun EditNotePop(
 
 @Composable
 private fun EditQuantityPop(
-    currentQty: Int,
+    textFieldState: String,
+    updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
+    onCancel: () -> Unit,
     onQtyEdited: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var textFieldState by rememberSaveable { mutableStateOf(currentQty.toString()) }
-    val updateTextField: (String) -> Unit = { textFieldState = it }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier
-            .wrapContentHeight(),
+            .wrapContentHeight()
+            .width(280.dp),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -495,6 +703,8 @@ private fun EditQuantityPop(
                     .height(IntrinsicSize.Min)
                     .fillMaxWidth()
             ) {
+                Spacer(Modifier.width(34.dp))
+
                 val pattern = remember { Regex("^(\\s*|\\d+)$") }
                 TextField(
                     value = textFieldState,
@@ -549,8 +759,6 @@ private fun EditQuantityPop(
                             }
                         }
                     },
-                    increaseEnabled = true,
-                    decreaseEnabled = true,
                     modifier = Modifier
                         .fillMaxHeight()
                 )
@@ -568,12 +776,12 @@ private fun EditQuantityPop(
         },
         dismissButton = {
             TextButton(
-                onClick = { onDismiss() },
+                onClick = onCancel,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier
                     .heightIn(32.dp, 32.dp)
             ) {
-                Text(text = "Cancel")
+                Text(text = "Undo")
             }
         }
     )
