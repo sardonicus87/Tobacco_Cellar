@@ -102,6 +102,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -1476,7 +1477,7 @@ private fun DetailsEntry(
                             Image(
                                 painter = painterResource(id = R.drawable.help_outline),
                                 contentDescription = "Help",
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary), // LocalContentColor.current
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
                                 modifier = Modifier
                                     .size(15.dp)
                                     .offset((-3).dp, (-9).dp)
