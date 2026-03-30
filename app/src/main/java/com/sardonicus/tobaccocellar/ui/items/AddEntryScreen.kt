@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.items
 import android.content.res.Configuration
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -61,6 +62,8 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RichTooltip
+import androidx.compose.material3.RichTooltipColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SelectableDates
@@ -72,9 +75,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TooltipAnchorPosition.Companion.Above
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -94,6 +101,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -103,6 +111,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -849,6 +858,7 @@ private fun AdaptiveTabRow(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailsEntry(
     itemDetails: ItemDetails,
@@ -1398,22 +1408,80 @@ private fun DetailsEntry(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
                     ) {
-                        Text(
-                            text = "Sync?",
-                            modifier = Modifier
-                                .offset(x = 0.dp, y = 1.dp),
-                            fontSize = 14.sp,
-                        )
-                        CustomCheckbox(
-                            checked = itemDetails.syncTins,
-                            onCheckedChange = {
-                                onValueChange(itemDetails.copy(syncTins = it))
+                        val tooltipState = rememberTooltipState(isPersistent = true)
+                        val width = LocalWindowInfo.current.containerDpSize.width
+
+                        LaunchedEffect(tooltipState.isVisible) {
+                            if (tooltipState.isVisible) {
+                                delay(5000)
+                                tooltipState.dismiss()
+                            }
+                        }
+                        BackHandler(tooltipState.isVisible) {
+                            tooltipState.dismiss()
+                        }
+
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(Above, 3.dp),
+                            tooltip = {
+                                RichTooltip(
+                                    maxWidth = width * .55f,
+                                    colors = RichTooltipColors(
+                                        containerColor = LocalCustomColors.current.darkNeutral,
+                                        contentColor = LocalContentColor.current,
+                                        titleContentColor = Color.Transparent,
+                                        actionContentColor = Color.Transparent
+                                    )
+                                ) { Text("Synchronize the \"No. of Tins\" field with the total " +
+                                        "quantities of unfinished tins in the \"Tins\" tab.")
+                                }
                             },
-                            size = 34.dp,
-                            checkedIcon = R.drawable.check_box_24,
-                            uncheckedIcon = R.drawable.check_box_outline_24,
+                            state = tooltipState,
                             modifier = Modifier
-                        )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
+                            ) {
+                                Text(
+                                    text = "Sync?",
+                                    modifier = Modifier
+                                        .offset(x = 0.dp, y = 1.dp),
+                                    fontSize = 14.sp,
+                                )
+                                CustomCheckbox(
+                                    checked = itemDetails.syncTins,
+                                    onCheckedChange = {
+                                        onValueChange(itemDetails.copy(syncTins = it))
+                                    },
+                                    size = 34.dp,
+                                    checkedIcon = R.drawable.check_box_24,
+                                    uncheckedIcon = R.drawable.check_box_outline_24,
+                                    modifier = Modifier
+                                )
+                            }
+                        }
+                        val coroutineScope = rememberCoroutineScope()
+                        Box(
+                            contentAlignment = Alignment.CenterStart,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(40.dp)
+                                .clickable(indication = null, interactionSource = null) {
+                                    coroutineScope.launch {
+                                        tooltipState.show()
+                                    }
+                                }
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.help_outline),
+                                contentDescription = "Help",
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary), // LocalContentColor.current
+                                modifier = Modifier
+                                    .size(15.dp)
+                                    .offset((-3).dp, (-9).dp)
+                            )
+                        }
                     }
                 }
             }
