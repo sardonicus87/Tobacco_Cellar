@@ -62,14 +62,14 @@ fun ChangelogScreen (
     val listState = rememberLazyListState()
 
     LaunchedEffect(targetVersion) {
-        if (targetVersion != null && !scrollingFinished) {
-            scrolling = true
-            delay(600)
+        val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion }
 
-            val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion }
+        if (targetVersion != null && index > 1 && !scrollingFinished) {
+            scrolling = true
             val offset = with(density) { -16.dp.roundToPx() }
 
-            if (index != -1) { listState.animateScrollToItem(index + 1, offset) }
+            delay(600)
+            listState.animateScrollToItem(index + 1, offset)
 
             snapshotFlow { listState.isScrollInProgress }.first { !it }
             delay(50)
