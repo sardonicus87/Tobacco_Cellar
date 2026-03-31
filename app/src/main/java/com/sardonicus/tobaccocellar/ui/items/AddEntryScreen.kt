@@ -9,7 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
@@ -77,6 +80,7 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TooltipAnchorPosition.Companion.Above
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
@@ -93,6 +97,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -143,8 +148,10 @@ import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
@@ -378,7 +385,6 @@ fun AddEntryBody(
 }
 
 
-
 /** Body Elements **/
 @Composable
 private fun ItemInputForm(
@@ -406,6 +412,7 @@ private fun ItemInputForm(
     onShowRatingPop: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var tooltipVisible by remember { mutableStateOf(false) }
     var textFieldFocused by remember { mutableStateOf(false) }
     val fieldFocused: (Boolean) -> Unit = { textFieldFocused = it }
     val isLarge = isLargeScreen()
@@ -473,7 +480,7 @@ private fun ItemInputForm(
                     ) { targetIndex ->
                         Column(
                             modifier = Modifier
-                                .verticalScroll(rememberScrollState())
+                                .verticalScroll(rememberScrollState(), !tooltipVisible)
                                 .onFocusChanged {
                                     if (it.hasFocus && selectedTabIndex == 2) updateSelectedTab(
                                         currentLeftTab
@@ -506,7 +513,8 @@ private fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
-                                    modifier = Modifier,
+                                    tooltipVisible = { tooltipVisible = it },
+                                    modifier = Modifier
                                 )
                             } else {
                                 NotesEntry(
@@ -583,14 +591,14 @@ private fun ItemInputForm(
                 HorizontalPager(
                     state = narrowPagerState,
                     modifier = Modifier.fillMaxSize(),
-                    userScrollEnabled = !textFieldFocused,
+                    userScrollEnabled = !textFieldFocused && !tooltipVisible,
                     verticalAlignment = Alignment.Top
                 ) { targetIndex ->
                     Column(
                         modifier = Modifier
                             .padding(0.dp)
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
+                            .verticalScroll(rememberScrollState(), !tooltipVisible),
                     ) {
                         when (targetIndex) {
                             0 ->
@@ -606,7 +614,8 @@ private fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
-                                    modifier = Modifier,
+                                    tooltipVisible = { tooltipVisible = it },
+                                    modifier = Modifier
                                 )
 
                             1 ->
@@ -641,7 +650,8 @@ private fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
-                                    modifier = Modifier,
+                                    tooltipVisible = { tooltipVisible = it },
+                                    modifier = Modifier
                                 )
                         }
                     }
@@ -873,6 +883,7 @@ private fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     showRatingPop: Boolean,
     onShowRatingPop: (Boolean) -> Unit,
+    tooltipVisible: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -1405,19 +1416,41 @@ private fun DetailsEntry(
                     // Sync Tins? //
                     Row(
                         modifier = Modifier
-                            .padding(start = 8.dp),
+                            .padding(start = 8.dp)
+                            .fillMaxHeight(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
                     ) {
                         val tooltipState = rememberTooltipState(isPersistent = true)
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val hovered by interactionSource.collectIsHoveredAsState()
+                        val pressed by interactionSource.collectIsPressedAsState()
                         val width = LocalWindowInfo.current.containerDpSize.width
 
                         LaunchedEffect(tooltipState.isVisible) {
+                            tooltipVisible(tooltipState.isVisible)
+
                             if (tooltipState.isVisible) {
-                                delay(5000)
+                                // 30-second overall timeout, dismiss no matter what
+                                withTimeoutOrNull(30000) {
+                                    // 5 seconds minimum of visibility (if user hasn't dismissed by other means
+                                    delay(5000)
+
+                                    // check now if we're holding to add 1 second after release
+                                    val held = hovered || pressed
+
+                                    // wait until hold is released, instant if we let go
+                                    // before 5 seconds or opened by clicking tip button
+                                    snapshotFlow { hovered || pressed }.first { !it }
+
+                                    // dismiss 1 second after release, will be false if we weren't
+                                    // holding/hovering at 5 seconds
+                                    if (held) { delay(500) }
+                                }
                                 tooltipState.dismiss()
                             }
                         }
+
                         BackHandler(tooltipState.isVisible) {
                             tooltipState.dismiss()
                         }
@@ -1432,9 +1465,12 @@ private fun DetailsEntry(
                                         contentColor = LocalContentColor.current,
                                         titleContentColor = Color.Transparent,
                                         actionContentColor = Color.Transparent
-                                    )
-                                ) { Text("Synchronize the \"No. of Tins\" field with the total " +
-                                        "quantities of unfinished tins in the \"Tins\" tab.")
+                                    ),
+                                    modifier = Modifier
+                                        .border(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant, TooltipDefaults.richTooltipContainerShape)
+                                ) {
+                                    Text("Synchronize the \"No. of Tins\" field with the total " +
+                                        "quantities of unfinished tins in the Tins tab.")
                                 }
                             },
                             state = tooltipState,
@@ -1442,7 +1478,10 @@ private fun DetailsEntry(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
+                                horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally),
+                                modifier = Modifier
+                                    .hoverable(interactionSource)
+                                    .clickable(interactionSource, null) { /* do nothing, press listener */ }
                             ) {
                                 Text(
                                     text = "Sync?",
