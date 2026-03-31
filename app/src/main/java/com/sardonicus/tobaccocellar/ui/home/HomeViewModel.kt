@@ -154,7 +154,7 @@ class HomeViewModel(
                 launch{
                     preferencesRepo.releaseNotesSeen.collect { savedVersion ->
                         if (savedVersion == null) {
-                            preferencesRepo.saveReleaseNotesSeen(0) // saveReleaseNotesSeen()
+                            saveReleaseNotesSeen()
                         } else {
                             val latestReleaseNotes = changelogEntries
                                 .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
@@ -635,6 +635,7 @@ class HomeViewModel(
     /** Release Notes && One-Time Alerts **/
     fun saveReleaseNotesSeen() {
         viewModelScope.launch(Dispatchers.IO) {
+            _releaseNotesState.value = _releaseNotesState.value.copy(show = false)
             preferencesRepo.saveReleaseNotesSeen(BuildConfig.VERSION_CODE)
         }
     }
