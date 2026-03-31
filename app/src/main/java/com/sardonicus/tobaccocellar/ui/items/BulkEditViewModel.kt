@@ -55,6 +55,19 @@ class BulkEditViewModel (
     var editingState by mutableStateOf(EditingState())
         private set
 
+    init {
+        viewModelScope.launch {
+            filterViewModel.unifiedFilteredItems.collect { filteredItems ->
+                val filteredSet = filteredItems.toSet()
+                val updatedSelection = editingState.selectedItems.filter { it in filteredSet }
+
+                if (updatedSelection.size != editingState.selectedItems.size) {
+                    editingState = editingState.copy(selectedItems = updatedSelection)
+                }
+            }
+        }
+    }
+
     private val _tabIndex = MutableStateFlow(0)
     val tabIndex = _tabIndex.asStateFlow()
 
