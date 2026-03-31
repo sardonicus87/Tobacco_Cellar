@@ -1433,7 +1433,7 @@ private fun DetailsEntry(
                             if (tooltipState.isVisible) {
                                 // 30-second overall timeout, dismiss no matter what
                                 withTimeoutOrNull(30000) {
-                                    // 5 seconds minimum of visibility (if user hasn't dismissed by other means
+                                    // 5 seconds minimum of visibility (if user hasn't dismissed manually)
                                     delay(5000)
 
                                     // check now if we're holding to add 1 second after release
