@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -138,27 +139,30 @@ fun ItemMenu(
                         onEditClick()
                         onMenuDismiss()
                     },
-                    modifier = Modifier,
-                     //   .padding(end = 8.dp),
+                    modifier = Modifier
                 ) {
                     Text(
                         text = "Edit Item",
-                        modifier = Modifier,
-                        color = LocalContentColor.current,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(25))
+                            .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
+                        lineHeight = 1.1.em,
                         fontSize = 14.sp
                     )
                 }
 
                 TextButton(
                     onClick = onQuickEdit,
-                    modifier = Modifier,
+                    modifier = Modifier
                 ) {
                     Text(
                         text = "Quick Edit",
-                        modifier = Modifier,
-                        color = LocalContentColor.current,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(25))
+                            .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
+                        lineHeight = 1.1.em,
                         fontSize = 14.sp
                     )
                 }
@@ -174,14 +178,12 @@ fun ItemMenu(
                     Image(
                         painter = painterResource(id = R.drawable.arrow_left),
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)),
+                        colorFilter = ColorFilter.tint(Color.Gray.copy(alpha = .25f).compositeOver(MaterialTheme.colorScheme.onBackground)),
                         alignment = Alignment.Center,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                     )
                 }
-
-                val rating = remember(quickEditState.rating) { formatDecimal(quickEditState.rating) }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -189,116 +191,116 @@ fun ItemMenu(
                     modifier = Modifier
                         .fillMaxHeight()
                         .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 3.dp)
+                        .padding(3.dp, 8.dp)
+                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(50))
                 ) {
-                    // Rating
-                    QuickOption(changed.rating) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(vertical = 8.dp)
-                                .clip(RoundedCornerShape(50))
-                                .clickable { onShowRatingPop(true) }
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            Text(
-                                text = rating.ifBlank { "-.-" },
-                                autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
-                                modifier = Modifier,
-                                fontWeight = FontWeight.SemiBold,
-                                lineHeight = 1.em
-                            )
-
-                            Image(
-                                painter = painterResource(R.drawable.star_filled),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(
-                                    if (rating.isNotBlank()) { LocalCustomColors.current.starRating }
-                                    else { LocalContentColor.current }
-                                ),
-                                alignment = Alignment.Center,
-                                contentScale = ContentScale.FillHeight,
-                                modifier = Modifier,
-                            )
-                        }
-                    }
-
-                    // Fav/Dis
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                        QuickOption(changed.favorite) {
-                            CustomCheckbox(
-                                checked = quickEditState.favorite,
-                                onCheckedChange = viewModel::updateQuickFavorite,
-                                checkedIcon = R.drawable.heart_filled_24,
-                                uncheckedIcon = R.drawable.heart_outline_24,
-                                modifier = Modifier
-                                    .padding(vertical = 8.dp),
-                                colors = IconButtonDefaults.iconToggleButtonColors(
-                                    checkedContentColor = LocalCustomColors.current.favHeart,
-                                )
-                            )
-                        }
-
-                        QuickOption(changed.disliked) {
-                            CustomCheckbox(
-                                checked = quickEditState.disliked,
-                                onCheckedChange = viewModel::updateQuickDislike,
-                                checkedIcon = R.drawable.heartbroken_filled_24,
-                                uncheckedIcon = R.drawable.heartbroken_outlined_24,
-                                modifier = Modifier
-                                    .padding(vertical = 8.dp),
-                                colors = IconButtonDefaults.iconToggleButtonColors(
-                                    checkedContentColor = LocalCustomColors.current.disHeart,
-                                )
-                            )
-                        }
-                    }
-
-                    // Notes
-                    QuickOption(changed.notes) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(vertical = 8.dp)
-                                .clip(RoundedCornerShape(50))
-                                .clickable { onShowNotePop(true) }
-                                .padding(vertical = 1.dp, horizontal = 8.dp)
-                        ) {
-                            val icon =
-                                if (quickEditState.notes.isNotBlank()) R.drawable.notes_24 else R.drawable.notes_outline_24
-                            Image(
-                                painter = painterResource(id = icon),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(if (quickEditState.notes.isNotBlank()) MaterialTheme.colorScheme.tertiary else LocalContentColor.current),
-                                alignment = Alignment.Center,
-                                contentScale = ContentScale.FillHeight,
-                                modifier = Modifier
-                            )
-                        }
-                    }
-
-                    // Quantity
-                    if (!quickEditState.syncTins) {
-                        QuickOption(changed.quantity) {
-                            Box(
-                                contentAlignment = Alignment.Center,
+                    CompositionLocalProvider(
+                        LocalContentColor provides MaterialTheme.colorScheme.primary.copy(alpha = 0.25f).compositeOver(MaterialTheme.colorScheme.onBackground)
+                    ) {
+                        // Rating
+                        QuickOption(changed.rating) {
+                            val rating = remember(quickEditState.rating) { formatDecimal(quickEditState.rating) }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 modifier = Modifier
                                     .fillMaxHeight()
-                                    .padding(vertical = 8.dp)
                                     .clip(RoundedCornerShape(50))
-                                    .clickable { onShowQtyPop(true) }
+                                    .clickable { onShowRatingPop(true) }
                                     .padding(horizontal = 8.dp)
                             ) {
                                 Text(
-                                    text = "Qty: ${quickEditState.quantity}",
+                                    text = rating.ifBlank { "-.-" },
                                     autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
                                     modifier = Modifier,
                                     fontWeight = FontWeight.SemiBold,
                                     lineHeight = 1.em
                                 )
+
+                                Image(
+                                    painter = painterResource(R.drawable.star_filled),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(
+                                        if (rating.isNotBlank()) LocalCustomColors.current.starRating
+                                        else LocalContentColor.current
+                                    ),
+                                    alignment = Alignment.Center,
+                                    contentScale = ContentScale.FillHeight,
+                                    modifier = Modifier,
+                                )
+                            }
+                        }
+
+                        // Fav/Dis
+                        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+                            QuickOption(changed.favorite) {
+                                CustomCheckbox(
+                                    checked = quickEditState.favorite,
+                                    onCheckedChange = viewModel::updateQuickFavorite,
+                                    checkedIcon = R.drawable.heart_filled_24,
+                                    uncheckedIcon = R.drawable.heart_outline_24,
+                                    modifier = Modifier,
+                                    colors = IconButtonDefaults.iconToggleButtonColors(
+                                        checkedContentColor = LocalCustomColors.current.favHeart,
+                                    )
+                                )
+                            }
+
+                            QuickOption(changed.disliked) {
+                                CustomCheckbox(
+                                    checked = quickEditState.disliked,
+                                    onCheckedChange = viewModel::updateQuickDislike,
+                                    checkedIcon = R.drawable.heartbroken_filled_24,
+                                    uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                                    modifier = Modifier,
+                                    colors = IconButtonDefaults.iconToggleButtonColors(
+                                        checkedContentColor = LocalCustomColors.current.disHeart,
+                                    )
+                                )
+                            }
+                        }
+
+                        // Notes
+                        QuickOption(changed.notes) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(50))
+                                    .clickable { onShowNotePop(true) }
+                                    .padding(horizontal = 8.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = if (quickEditState.notes.isNotBlank()) R.drawable.notes_24 else R.drawable.notes_outline_24),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(if (quickEditState.notes.isNotBlank()) MaterialTheme.colorScheme.tertiary else LocalContentColor.current),
+                                    alignment = Alignment.Center,
+                                    contentScale = ContentScale.FillHeight,
+                                    modifier = Modifier
+                                        .padding(vertical = 1.dp)
+                                )
+                            }
+                        }
+
+                        // Quantity
+                        if (!quickEditState.syncTins) {
+                            QuickOption(changed.quantity) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(50))
+                                        .clickable { onShowQtyPop(true) }
+                                        .padding(horizontal = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Qty: ${quickEditState.quantity}",
+                                        autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
+                                        modifier = Modifier,
+                                        fontWeight = FontWeight.SemiBold,
+                                        lineHeight = 1.em
+                                    )
+                                }
                             }
                         }
                     }
@@ -311,8 +313,11 @@ fun ItemMenu(
                 ) {
                     Text(
                         text = "Save",
-                        modifier = Modifier,
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(25))
+                            .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
+                        lineHeight = 1.1.em,
                     )
                 }
             }
