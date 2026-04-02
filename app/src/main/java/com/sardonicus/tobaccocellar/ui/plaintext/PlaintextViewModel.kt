@@ -69,6 +69,9 @@ class PlaintextViewModel (
     private val _tabIndex = MutableStateFlow(0)
     val tabIndex = _tabIndex.asStateFlow()
 
+    private val _actionRowExpanded = MutableStateFlow(false)
+    val actionRowExpanded = _actionRowExpanded.asStateFlow()
+
     fun updateTabIndex(index: Int) { _tabIndex.value = index }
 
 
@@ -463,6 +466,7 @@ class PlaintextViewModel (
         }
     }
 
+    fun toggleActionRow() { _actionRowExpanded.update { !it } }
 
     fun updateSortMenuState(sortMenu: SortMenuState) {
         val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
