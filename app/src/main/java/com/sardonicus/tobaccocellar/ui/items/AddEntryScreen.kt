@@ -669,6 +669,7 @@ private fun AdaptiveTabRow(
     updateSelectedTab: (Int) -> Unit,
 ) {
     val titles = listOf("Details", "Notes", "Tins")
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val showAdditional = rememberSaveable { mutableStateOf(false) }
 
@@ -721,7 +722,10 @@ private fun AdaptiveTabRow(
                     ) {
                         Tab(
                             selected = selectedTabIndex == 0,
-                            onClick = { updateSelectedTab(0) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                updateSelectedTab(0)
+                            },
                             text = {
                                 Text(
                                     text = titles[0],
@@ -740,7 +744,10 @@ private fun AdaptiveTabRow(
                         )
                         Tab(
                             selected = selectedTabIndex == 1,
-                            onClick = { updateSelectedTab(1) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                updateSelectedTab(1)
+                            },
                             text = {
                                 Text(
                                     text = titles[1],
@@ -759,7 +766,10 @@ private fun AdaptiveTabRow(
                         )
                         Tab(
                             selected = selectedTabIndex == 2,
-                            onClick = { updateSelectedTab(2) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                updateSelectedTab(2)
+                            },
                             text = { },
                             modifier = Modifier
                                 .background(
@@ -769,7 +779,10 @@ private fun AdaptiveTabRow(
                         )
                         Tab(
                             selected = selectedTabIndex == 2,
-                            onClick = { updateSelectedTab(2) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                updateSelectedTab(2)
+                            },
                             text = { },
                             modifier = Modifier
                                 .background(
@@ -792,7 +805,10 @@ private fun AdaptiveTabRow(
                     ) {
                         Tab(
                             selected = selectedTabIndex == 2,
-                            onClick = { updateSelectedTab(2) },
+                            onClick = {
+                                focusManager.clearFocus()
+                                updateSelectedTab(2)
+                            },
                             text = {
                                 Text(
                                     text = titles[2],
@@ -846,7 +862,10 @@ private fun AdaptiveTabRow(
 
                     Tab(
                         selected = selectedTabIndex == index,
-                        onClick = { updateSelectedTab(index) },
+                        onClick = {
+                            focusManager.clearFocus()
+                            updateSelectedTab(index)
+                        },
                         modifier = Modifier
                             .background(
                                 if (selectedTabIndex == index) MaterialTheme.colorScheme.background

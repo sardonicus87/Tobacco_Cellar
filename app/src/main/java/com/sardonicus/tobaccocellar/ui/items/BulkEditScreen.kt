@@ -364,7 +364,10 @@ fun BulkEditBody(
                             CompositionLocalProvider(LocalRippleConfiguration provides null) {
                                 Tab(
                                     selected = tabIndex == index,
-                                    onClick = { onTabChange(index) },
+                                    onClick = {
+                                        focusManager.clearFocus()
+                                        onTabChange(index)
+                                    },
                                     modifier = Modifier
                                         .background(
                                             if (tabIndex == index) MaterialTheme.colorScheme.background
