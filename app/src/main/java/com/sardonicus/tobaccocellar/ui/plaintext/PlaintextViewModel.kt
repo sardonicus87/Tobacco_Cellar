@@ -19,6 +19,7 @@ import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,11 @@ class PlaintextViewModel (
     filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo
 ) : ViewModel() {
+
+    private val _isInitialized = MutableStateFlow(false)
+
+    private val _loading = MutableStateFlow(true)
+    val loading = _loading.asStateFlow()
 
     private val _sortMenuState = MutableStateFlow(SortMenuState())
     val sortMenuState = _sortMenuState.asStateFlow()
@@ -76,6 +82,7 @@ class PlaintextViewModel (
 
 
     init {
+        // Sorting
         viewModelScope.launch {
             combine(
                 preferencesRepo.plaintextSorting,
@@ -91,6 +98,8 @@ class PlaintextViewModel (
                 _sortState.value = it
             }
         }
+
+        // Format string
         viewModelScope.launch {
             val format = preferencesRepo.plaintextFormatString.first()
             val delimiter = preferencesRepo.plaintextDelimiter.first()
@@ -98,7 +107,10 @@ class PlaintextViewModel (
             if (format.isNotBlank() || delimiter.isNotBlank()) {
                 saveFormatString(format, delimiter)
             }
+            _isInitialized.value = true
         }
+
+        // Print settings
         viewModelScope.launch {
             combine(
                 preferencesRepo.plaintextPrintFontSize,
@@ -109,6 +121,8 @@ class PlaintextViewModel (
                 _printOptions.value = it
             }
         }
+
+        // Presets loading
         viewModelScope.launch {
             preferencesRepo.plaintextPresetsFlow.collect {
                 _presets.value = it
@@ -222,6 +236,29 @@ class PlaintextViewModel (
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = ""
         )
+
+    init {
+        viewModelScope.launch {
+            combine(
+                plainList,
+                formatStringEntry,
+                _isInitialized
+            ) { list, format, initialized ->
+                when {
+                    !initialized -> true
+                    format.isBlank() -> false
+                    list.isNotBlank() -> {
+                        delay(25)
+                        false
+                    }
+                    else -> true
+                }
+            }. collect {
+                _loading.value = it
+            }
+        }
+    }
+
 
     val sortOptions = preferencesRepo.plaintextFormatString.map { formatString ->
         if (formatString.isNotBlank()) {

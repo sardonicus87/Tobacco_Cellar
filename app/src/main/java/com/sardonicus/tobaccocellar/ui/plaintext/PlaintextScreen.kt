@@ -137,8 +137,10 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
@@ -213,6 +215,7 @@ fun PlaintextScreen(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
                 largeScreen = isLargeScreen,
+                selectionFocused = selectionFocused,
                 anythingFocused = otherFocused,
                 tabIndex = tabIndex,
                 onTabChange = viewModel::updateTabIndex,
@@ -231,6 +234,7 @@ fun PlaintextBody(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
     largeScreen: Boolean,
+    selectionFocused: Boolean,
     anythingFocused: Boolean,
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
@@ -262,6 +266,7 @@ fun PlaintextBody(
     val delimiter by viewModel.delimiter.collectAsState()
 
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val printDialog by viewModel.printDialog.collectAsState()
     val printOptions by viewModel.printOptions.collectAsState()
 
@@ -386,7 +391,14 @@ fun PlaintextBody(
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
                         selected = tabIndex == index,
-                        onClick = { onTabChange(index) },
+                        onClick = {
+                            if (selectionFocused) {
+                                viewModel.resetSelection()
+                            } else {
+                                focusManager.clearFocus()
+                            }
+                            onTabChange(index)
+                        },
                         modifier = Modifier
                             .background(
                                 if (tabIndex == index) MaterialTheme.colorScheme.background
@@ -551,16 +563,14 @@ private fun PlaintextActionRow(
                 shape = RoundedCornerShape(25),
                 modifier = Modifier
                     .size(40.dp)
-                    .graphicsLayer {
-                        alpha = buttonAlpha
-                    },
+                    .graphicsLayer { alpha = buttonAlpha },
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = MaterialTheme.colorScheme.onBackground,
                     containerColor = buttonColor
                 )
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.arrow_left), // (if (expanded) R.drawable.arrow_right else R.drawable.arrow_left),
+                    painter = painterResource(R.drawable.arrow_left),
                     contentDescription = if (expanded) "Hide Action Row" else "Show Action Row",
                     modifier = Modifier
                         .rotate(iconRotation),
@@ -877,6 +887,15 @@ fun PlaintextList(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    val loading by viewModel.loading.collectAsState()
+    var showLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(loading) {
+        if (!loading) {
+            delay(25)
+            showLoading = false
+        }
+    }
 
     LaunchedEffect(actionRowExpanded()) {
         if (actionRowExpanded()) {
@@ -887,6 +906,11 @@ fun PlaintextList(
     }
 
     Box {
+        if (showLoading) {
+            Column (Modifier.fillMaxSize()) {
+                LoadingIndicator()
+            }
+        } else
         Column(
             modifier = modifier
                 .padding(horizontal = 12.dp)
@@ -1149,8 +1173,15 @@ fun PlaintextFormatting(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
-                .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
-                .background(LocalCustomColors.current.whiteBlack.copy(alpha = .2f), RoundedCornerShape(8.dp))
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    RoundedCornerShape(8.dp)
+                )
+                .background(
+                    LocalCustomColors.current.whiteBlack.copy(alpha = .2f),
+                    RoundedCornerShape(8.dp)
+                )
                 .padding(vertical = 8.dp, horizontal = 12.dp)
         ) {
             Text(
