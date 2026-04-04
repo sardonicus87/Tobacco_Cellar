@@ -910,56 +910,57 @@ fun PlaintextList(
             Column (Modifier.fillMaxSize()) {
                 LoadingIndicator()
             }
-        } else
-        Column(
-            modifier = modifier
-                .padding(horizontal = 12.dp)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            if (formatString.isBlank()) {
-                Text(
-                    text = "Please set a format string.",
-                    fontSize = 18.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 44.dp)
-                )
-            } else {
-                key(selectionKey) {
-                    SelectionContainer(
+        } else {
+            Column(
+                modifier = modifier
+                    .padding(horizontal = 12.dp)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                if (formatString.isBlank()) {
+                    Text(
+                        text = "Please set a format string.",
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    updateSelectionFocused(true)
-                                } else {
-                                    updateSelectionFocused(false)
-                                }
-                            }
-                    ) {
-                        Text(
-                            text = plainList,
-                            fontSize = 15.sp,
+                            .fillMaxWidth()
+                            .padding(top = 44.dp)
+                    )
+                } else {
+                    key(selectionKey) {
+                        SelectionContainer(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 6.dp, bottom = 32.dp)
-                        )
+                                .onFocusChanged {
+                                    if (it.isFocused) {
+                                        updateSelectionFocused(true)
+                                    } else {
+                                        updateSelectionFocused(false)
+                                    }
+                                }
+                        ) {
+                            Text(
+                                text = plainList,
+                                fontSize = 15.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp, bottom = 32.dp)
+                            )
+                        }
                     }
                 }
             }
+            PlaintextActionRow(
+                viewModel = viewModel,
+                filterViewModel = filterViewModel,
+                expanded = actionRowExpanded(),
+                plainList = plainList,
+                context = context,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 6.dp)
+            )
         }
-        PlaintextActionRow(
-            viewModel = viewModel,
-            filterViewModel = filterViewModel,
-            expanded = actionRowExpanded(),
-            plainList = plainList,
-            context = context,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 12.dp, end = 6.dp)
-        )
     }
 }
 
