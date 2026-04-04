@@ -33,10 +33,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.CellarTopAppBar
@@ -147,13 +156,13 @@ private fun HelpBody(
         }
         item {
             HelpSection(
-                title = "Adding Items",
+                title = "Adding Entries",
                 content = { AddingItems() }
             )
         }
         item {
             HelpSection(
-                title = "Editing Items",
+                title = "Editing Entries",
                 content = { EditingItems() }
             )
         }
@@ -167,6 +176,12 @@ private fun HelpBody(
             HelpSection(
                 title = "Settings",
                 content = { Settings() }
+            )
+        }
+        item {
+            HelpSection(
+                title = "Multi-Device Sync",
+                content = { MultiSync() }
             )
         }
         item { Spacer(Modifier.height(12.dp)) }
@@ -227,27 +242,28 @@ private fun CellarScreen(
         )
         Text(
             text = "In either view mode, tapping an entry will navigate to the details screen for " +
-                    "that entry, long-pressing will show a menu overlay with an option to edit. " +
-                    "Clear the menu overlay by tapping outside of it or using the system back " +
-                    "navigation.",
+                    "that entry, long-pressing will show a menu overlay with an option to edit or " +
+                    "quick edit. Quick edit swaps the menu to allow editing a select few things " +
+                    "without the need to navigate to the full Edit Entry screen. Clear the menu " +
+                    "overlay by tapping outside of it or using the system back navigation.",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Items can be sorted in list mode by tapping the sort button in the header. " +
                     "Tapping an option sorts ascending, tapping it again switches to descending. " +
-                    "Tap the sort icon again to close the list view sorting menu." +
-                    "In Table View, sorting is done by tapping the \"Brand\", \"Blend\", \"Type\"" +
-                    ", \"Rating\", or \"Qty\" column headers. Default sorting is the order the " +
-                    "entries were entered into the database. The first tap will sort the column " +
-                    "ascending, the second descending, and the third returns to the default sort order.",
+                    "Tap the sort icon again to close the list view sorting menu. In Table view, " +
+                    "sorting is done by tapping the \"Brand\", \"Blend\", \"Type\", \"Rating\", " +
+                    "or \"Qty\" column headers. Default sorting is the order the entries were " +
+                    "entered into the database. The first tap will sort the column ascending, " +
+                    "the second descending, and the third returns to the default sort order.",
             modifier = Modifier,
             softWrap = true,
         )
 
         Text(
             text = "The quantity displayed is the \"No. of Tins\" by default. There is an option " +
-                    "on the settings screen to change this being oz/lbs or grams based on the sum " +
+                    "on the Settings screen to change this to oz/lbs or grams based on the sum " +
                     "of the quantities entered for each tin. If no tins are given for an entry, " +
                     "the \"No. of Tins\" field will be used (converted by the tin conversion rates " +
                     "set on the settings screen.",
@@ -333,7 +349,7 @@ private fun DatesPage(
                     "is based on manufacturing date, time in cellar only on the cellar date, and " +
                     "time opened based on tins with open dates that aren't marked as finished. " +
                     "These calculations also do not factor future tins. Average wait time is " +
-                    "calculated based on all future dates.",
+                    "calculated based on all future set dates.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -367,9 +383,10 @@ private fun Filtering(
     ) {
         Text(
             text = "The \"Filter Sheet\" opens on top of the Cellar, Stats and Date screens. Any " +
-                    "filters persist through navigation around the app and affect all three of " +
-                    "these main screens (but have no effect on the quick search). If any filters " +
-                    "are applied, this icon will have an indicator dot.",
+                    "filters persist through navigation around the app and affect all screens " +
+                    "allow filtering (Cellar, Stats, Dates, Bulk Edit, Plaintext), but have no " +
+                    "effect on the Cellar screen quick search results. If any filters are " +
+                    "applied, this icon will have an indicator dot.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -384,7 +401,7 @@ private fun Filtering(
             fontSize = 16.sp,
         )
         Text(
-            text = "Multiple filters can be combined and these main screens will all react " +
+            text = "Multiple filters can be combined and any filterable screen will react " +
                     "instantly to changes. Once you have selected filters, the sheet can be " +
                     "dismissed by tapping outside of it, tapping the close button, or swiping it " +
                     "down.",
@@ -397,8 +414,8 @@ private fun Filtering(
             softWrap = true,
         )
         Text(
-            text = "The filter sheet has three pages, swipe/flick left/right to swap between pages, " +
-                    "or tap the page indicator dot at the top to swap to that page.",
+            text = "The filter sheet has three pages, swipe or flick left/right to swap between " +
+                    "pages, or tap the page indicator dot at the top to swap to that page.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -429,35 +446,34 @@ private fun Filtering(
         )
         Text(
             text = "To filter by type, tap one of the types to add it to the filtering, tap it " +
-                    "tap again to remove it. The \"Unassigned\" button will filter for entries " +
-                    "that have a blank blend type.",
+                    "again to remove it. The \"Unassigned\" button will filter for entries that " +
+                    "have a blank blend type.",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = "Filter \"Favorites\" or \"Dislikes\" by tapping the check boxes. Unchecked, " +
-                    "is no filtering by these, the first tap will return only those marked as " +
-                    "favorites or dislikes, tapping again will return all entries that are not in " +
-                    "that category. Check both to see only entries that are either favorite or " +
-                    "disliked or to exclude all favorites and dislikes.",
+            text = "Filter \"Favorites\" or \"Dislikes\" by tapping the check boxes. The first " +
+                    "tap will return only those marked as the chosen filter, tapping again will " +
+                    "return all entries that are not in that category. Both boxes can be set to " +
+                    "include/exclude to see only entries that are marked as being in one or the " +
+                    "other, or only entries that aren't marked as being in either.",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
             text = "Below this is the rating range filter, tapping the range display opens a " +
                     "popup for the range options. Unrated will return all entries that haven't " +
-                    "been rated. Entering a value in the left field will return all entries that " +
-                    "are rated at that amount or more, entering in the right field returns all  " +
-                    "entries that are rated at that value and below, while entering both fields " +
-                    "returns all entries that are rated between those values. The rating range is " +
-                    "not mutually exclusive with unrated (to see all items that are unrated and " +
-                    "that are rated below a certain level, tap both the unrated box and enter the " +
-                    "maximum rating in the right box).",
+                    "been rated. The left and right fields are for min/max rating, respectively. " +
+                    "Use one or the other to return all entries that are rated at least/most as " +
+                    "the chosen value, or use both to return all entries rated between the max/" +
+                    "min. The rating range can also be combined with the unrated option (to see " +
+                    "all items that are unrated and only those that are rated within the range).",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = "Filtering by in-stock/out is based on the \"No. of Tins\" field.",
+            text = "Filtering by in-stock/out is based on the \"No. of Tins\" field and returns " +
+                    "those entries with a value greater than 0 (or 0 for out-of-stock).",
             modifier = Modifier,
             softWrap = true,
         )
@@ -519,17 +535,19 @@ private fun AddingItems(
         )
         Text(
             text = "Most fields that are left blank will remain blank when clicking save, however " +
-                    "leaving the \"No. of Tins\" field blank will presume the quantity to be 1. " +
-                    "Next to this field, there are \"increase/decrease\" buttons for quickly " +
-                    "updating the number of tins.",
+                    "leaving the \"No. of Tins\" field blank will presume the quantity to be 1, " +
+                    "if you wish this quantity to be 0, you must enter 0. Next to this field, " +
+                    "there are \"increase/decrease\" buttons for quickly updating the number of " +
+                    "tins.",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = "The \"Sync?\" check box allows you to synchronize the No. of Tins field with " +
-                    "the total quantities of individual tins/containers. The total tins are " +
-                    "calculated based on the Tin Conversion Rates set in the settings screen (" +
-                    "default is 1.75 oz or 50g per tin).",
+            text = "The \"Sync?\" check box allows you to synchronize the \"No. of Tins\" field " +
+                    "with the total quantities of individual tins/containers (not counting those " +
+                    "tins marked as finished). The total tins are calculated based on the Tin " +
+                    "Conversion Rates set in the settings screen (default is 1 tin is equal to " +
+                    "1.75 oz or 50g).",
             modifier = Modifier,
             softWrap = true,
         )
@@ -561,10 +579,10 @@ private fun EditingItems(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = "Items can be edited by long-pressing the entry in the cellar screen, using " +
-                    "the bulk edit option in the top bar menu, tapping edit on the details screen, " +
+            text = "Entries can be edited by long-pressing the entry in the cellar screen, using " +
+                    "the batch edit option in the top bar menu, tapping edit on the details screen, " +
                     "or through a CSV import and selecting the \"Update\" or \"Overwrite\" option " +
-                    "(see help file on the CSV Import screen for more information).",
+                    "(see help on the CSV Import screen for more information).",
             modifier = Modifier,
             softWrap = true,
         )
@@ -577,10 +595,17 @@ private fun EditingItems(
         Text(
             text = "Batch editing is limited to a select few fields. The screen contains two " +
                     "tabs, one to select items to edit and another to make the edits. Select the " +
-                    "checkbox only for the fields you wish to edit. Selecting a field and leaving " +
-                    "it blank will result in erasing that field for the selected entries, with " +
-                    "exception of the components and flavoring fields.",
+                    "checkbox only for the fields you wish to edit.",
             modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "WARNING: Selecting a field and leaving it blank will result in erasing that " +
+                    "field for the selected entries (except for the components and flavoring " +
+                    "fields)!",
+            modifier = Modifier
+                .padding(horizontal = 12.dp),
+            color = MaterialTheme.colorScheme.error,
             softWrap = true,
         )
         Text(
@@ -610,16 +635,14 @@ private fun AddingTins(
         Text(
             text = "When adding or editing an entry, navigate to the Tins tab on the right and " +
                     "select the \"Add Tin\" button to add a tin. Add additional tins by tapping " +
-                    "the \"+\" button below the given tin. To remove a tin, tap the \"-\" icon " +
+                    "the \"+\" button below the last tin. To remove a tin, tap the \"-\" icon " +
                     "in the top right corner of the tin.",
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = "Each \"tin\" must have a unique label within a given entry. When collating " +
-                    "tins in CSV import, the label will be automatically generated as \"Lot __\". " +
-                    "The same label can be reused under different entries. All other fields are " +
-                    "optional.",
+            text = "Each \"tin\" within a given entry must have a unique label. The same label(s) " +
+                    "can be reused under different entries. All other fields are optional.",
             modifier = Modifier,
             softWrap = true,
         )
@@ -717,24 +740,32 @@ private fun Settings(
             modifier = Modifier,
             softWrap = true,
         )
+
+        // Multi-Device Sync
         Text(
-            text = "Tin Conversion Rates allows you to set the value of what constitutes one " +
-                    "\"tin\". You can set the value for ounces and grams separately. This " +
-                    "conversion rate is used when calculating the \"No. of Tins\" field when " +
-                    "adding individual tins and using the sync option. It is also used on the " +
-                    "Statistics screen.",
+            text = "Multi-Device Sync",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "This option allows you to synchronize changes to your database across " +
+                    "multiple devices if you have the app installed on more than one device. " +
+                    "Please see the more detailed subsection for this option.",
             modifier = Modifier,
             softWrap = true,
         )
+
+        // Backup/restore
         Text(
-            text = "Clean and Optimize Database cleans up the tables of any potentially orphaned " +
-                    "data (such as components that are no longer attached to any blends) and " +
-                    "also runs the SQL \"vacuum\" command. This option will have its greatest " +
-                    "effect if you have updated or deleted a lot of entries, otherwise it won't " +
-                    "have much of an effect beyond cleaning up orphaned data. You don't need to " +
-                    "use this very often, if ever (except to clean up orphaned components).",
-            modifier = Modifier,
-            softWrap = true,
+            text = "Backup/Restore",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
         )
         Text(
             text = "Backup and Restore both give you two options, \"Database\" and \"Settings\". " +
@@ -767,6 +798,63 @@ private fun Settings(
             modifier = Modifier,
             softWrap = true,
         )
+
+        // Conversion Rates
+        Text(
+            text = "Tin Conversion Rates",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "Tin Conversion Rates allows you to set the value of what constitutes one " +
+                    "\"tin\". You can set the value for ounces and grams separately. This " +
+                    "conversion rate is used when calculating the \"No. of Tins\" field when " +
+                    "adding individual tins and using the sync option. It is also used on the " +
+                    "Statistics screen. Changing the conversion rates will automatically update " +
+                    "the \"No. of Tins\" field for all entries with synchronized tins.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+
+        // Default sync
+        Text(
+            text = "Default \"Sync Tins?\" Option",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "This option sets the default value of the \"Sync?\" option on the Add Entry " +
+                    "screen.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+
+        // Other Db operations
+        Text(
+            text = "Other Db Operations",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "These settings should be unnecessary, but are provided nonetheless. Clean and " +
+                    "Optimize database can clear orphaned data, but the database mostly keeps " +
+                    "itself clean. The Fix/Update Tin Sync Quantity is provided in the event that " +
+                    "these were out of sync for some reason (an older version of the app didn't " +
+                    "automatically update the \"No. of Tins\" field for entries with synchronized " +
+                    "tins when tin conversion rates were changed for example, though this is " +
+                    "automatically done now for all entries when changing rates).",
+            modifier = Modifier,
+            softWrap = true,
+        )
         Text(
             text = "Delete Database will erase all entries in the database, and this cannot be " +
                     "undone.",
@@ -776,6 +864,176 @@ private fun Settings(
     }
 }
 
+@Composable
+private fun MultiSync(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
+    ) {
+        Text(
+            text = "This option allows you to synchronize changes to your database across " +
+                    "multiple devices if you have the app installed on more than one device. " +
+                    "This sync is bi-directional, so changes on any device with the option on " +
+                    "will be reflected on all other devices.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "For this option to work, each device must be running a version of the app " +
+                    "with the same Database Version (app version doesn't matter). The app must " +
+                    "also be linked to the same Google account on both devices (even if both " +
+                    "devices use a different primary Google account).",
+            modifier = Modifier,
+            softWrap = true,
+        )
+
+        // Explanation of account link/data safety
+        Text(
+            text = "Data Safety",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "Neither myself nor the app has any access to any of your personal data. " +
+                    "Authorization just links the app to your Google Account and grants access " +
+                    "to the drive associated with your account for the sole purpose of creating " +
+                    "an app-specific folder. The app cannot see anything else in your Google " +
+                    "Drive.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "To rescind this linking or drive permission, you must do so from your Google " +
+                    "Account settings. Logging out from the app just prevents transfer, but " +
+                    "unlinking can ONLY be done from your Google Account settings. This is a " +
+                    "Google requirement for safety.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "All data transfer is encrypted and no personal information is even accessed, " +
+                    "let alone shared. Database sync data is the only data transferred. I nor " +
+                    "any third-parties cannot access any of your data. The app likewise has no " +
+                    "access to any of your account or personal data, it has access only to it's " +
+                    "own app-specific folder in your Drive.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        val text = "Please see the Privacy Policy↗ and Managing Data↗ for more details."
+        val privacy = "Privacy Policy"
+        val data = "Managing Data"
+
+        val uriHandler = LocalUriHandler.current
+        val hapticFeedback = LocalHapticFeedback.current
+        val linkListener = LinkInteractionListener { link ->
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            (link as? LinkAnnotation.Url)?.let {
+                uriHandler.openUri(it.url)
+            }
+        }
+        val annotatedString = buildAnnotatedString {
+            append(text)
+            val privacyStart = text.indexOf(privacy)
+            val privacyEnd = privacyStart + privacy.length
+            val dataStart = text.indexOf(data)
+            val dataEnd = dataStart + data.length
+
+            if (privacyStart != -1) {
+                addLink(
+                    url = LinkAnnotation.Url(
+                        url = "https://www.tobacco-cellar.com/privacy-policy",
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        ),
+                        linkInteractionListener = linkListener
+                    ),
+                    start = privacyStart,
+                    end = privacyEnd
+                )
+            }
+            if (dataStart != -1) {
+                addLink(
+                    url = LinkAnnotation.Url(
+                        url = "https://www.tobacco-cellar.com/managing-data",
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        ),
+                        linkInteractionListener = linkListener
+                    ),
+                    start = dataStart,
+                    end = dataEnd
+                )
+            }
+        }
+
+        Text(
+            text = annotatedString,
+            softWrap = true,
+            modifier = Modifier
+        )
+
+        // How it Works
+        Text(
+            text = "How It Works",
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .align(Alignment.CenterHorizontally),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp,
+        )
+        Text(
+            text = "All Google accounts have a Google Drive associated with them (regardless of " +
+                    "whether or not you've used it). This device sync option will request access " +
+                    "to Google Drive. You do not need the Google Drive app installed for it to " +
+                    "work. Granting access allows the app to create an app-specific folder on " +
+                    "your Google Drive as a cloud location to transfer between devices. This app-" +
+                    "specific folder is the only folder the app will have access to, and this " +
+                    "folder will not count toward your Google Drive storage space.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "When you make changes to entries, those changes include a timestamp. The " +
+                    "changes will be uploaded to the drive folder according to your data settings " +
+                    "(it won't use mobile data unless you turn that option on). If it is unable " +
+                    "to upload, it will try again later when it can connect based on your settings.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "The app checks for sync data (if the option is on) whenever it is started, " +
+                    "and additionally checks twice per day (12-hour interval). If conflicting " +
+                    "data is found (the same entry was edited in both devices before either had " +
+                    "a chance to sync), only the option with the latest timestamp will be used. " +
+                    "The changes are considered per entry, so if on one device you write a note, " +
+                    "then on the other you change a component, the note will be lost (as the " +
+                    "timestamp for that note change is earlier than the timestamp for the " +
+                    "component change). The timestamp is per entry, not per logged change!",
+            modifier = Modifier,
+            softWrap = true,
+        )
+        Text(
+            text = "Remote data can only be cleared within the app. Please clear any data before " +
+                    "logging out if you wish to stop using the sync function.",
+            modifier = Modifier,
+            softWrap = true,
+        )
+    }
+}
 
 /** Components **/
 // Section  layout //
