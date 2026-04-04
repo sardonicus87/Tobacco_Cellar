@@ -21,8 +21,8 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
-import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
-import com.sardonicus.tobaccocellar.ui.items.formatMediumDate
+import com.sardonicus.tobaccocellar.ui.addEditItems.ItemUpdatedEvent
+import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.delay

@@ -19,8 +19,8 @@ import com.sardonicus.tobaccocellar.ui.home.SearchClearedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchPerformedEvent
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
-import com.sardonicus.tobaccocellar.ui.items.ItemSavedEvent
-import com.sardonicus.tobaccocellar.ui.items.ItemUpdatedEvent
+import com.sardonicus.tobaccocellar.ui.addEditItems.ItemSavedEvent
+import com.sardonicus.tobaccocellar.ui.addEditItems.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption

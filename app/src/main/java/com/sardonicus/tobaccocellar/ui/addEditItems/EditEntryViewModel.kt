@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.items
+package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

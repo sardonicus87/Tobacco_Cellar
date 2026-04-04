@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.items
+package com.sardonicus.tobaccocellar.ui.bulkEdit
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
@@ -109,6 +109,8 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
+import com.sardonicus.tobaccocellar.ui.addEditItems.CustomDropDown
+import com.sardonicus.tobaccocellar.ui.addEditItems.RatingPopup
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
 @OptIn(ExperimentalMaterial3Api::class)

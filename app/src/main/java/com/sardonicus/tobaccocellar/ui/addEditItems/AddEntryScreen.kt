@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.items
+package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import android.content.res.Configuration
 import android.util.Log
