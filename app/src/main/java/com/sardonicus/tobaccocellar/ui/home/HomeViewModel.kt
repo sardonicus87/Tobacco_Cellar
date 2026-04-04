@@ -173,6 +173,15 @@ class HomeViewModel(
                     }
                 }
 
+                // New User (may be used in the future)
+                launch {
+                    preferencesRepo.newUser.collect {
+                        if (it == null) {
+                            preferencesRepo.updateToExistingUser()
+                        }
+                    }
+                }
+
                 // Important alerts
                 launch {
                     preferencesRepo.lastAlertFlow.collect { lastShown ->

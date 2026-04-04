@@ -32,6 +32,7 @@ class PreferencesRepo(
     applicationScope: CoroutineScope
 ) {
     private companion object {
+        val NEW_USER = booleanPreferencesKey("new_user")
         val RELEASE_NOTES = intPreferencesKey("release_notes")
         val LAST_ALERT_SHOWN = intPreferencesKey("last_alert_shown")
         val DATES_SEEN_LIST = stringPreferencesKey("dates_seen_list")
@@ -90,6 +91,25 @@ class PreferencesRepo(
     }
 
     /** Misc options and saved "last value" **/
+    val newUser: Flow<Boolean?> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading new user preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[NEW_USER]
+        }
+
+    suspend fun updateToExistingUser() {
+        dataStore.edit {
+            it[NEW_USER] = false
+        }
+    }
+
+
     val releaseNotesSeen: Flow<Int?> = dataStore.data
         .catch {
             if (it is IOException) {
