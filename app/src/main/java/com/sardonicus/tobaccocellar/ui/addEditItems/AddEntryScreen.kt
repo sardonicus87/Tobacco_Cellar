@@ -136,6 +136,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
@@ -144,7 +145,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -1464,7 +1464,7 @@ private fun DetailsEntry(
 
                                     // dismiss 1 second after release, will be false if we weren't
                                     // holding/hovering at 5 seconds
-                                    if (held) { delay(500) }
+                                    if (held) { delay(250) }
                                 }
                                 tooltipState.dismiss()
                             }
@@ -1518,28 +1518,28 @@ private fun DetailsEntry(
                                     uncheckedIcon = R.drawable.check_box_outline_24,
                                     modifier = Modifier
                                 )
-                            }
-                        }
-                        val coroutineScope = rememberCoroutineScope()
-                        Box(
-                            contentAlignment = Alignment.CenterStart,
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .width(40.dp)
-                                .clickable(indication = null, interactionSource = null) {
-                                    coroutineScope.launch {
-                                        tooltipState.show()
-                                    }
+                                val coroutineScope = rememberCoroutineScope()
+                                Box(
+                                    contentAlignment = Alignment.CenterStart,
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(40.dp)
+                                        .clickable(indication = null, interactionSource = interactionSource) {
+                                            coroutineScope.launch {
+                                                tooltipState.show()
+                                            }
+                                        }
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.help_outline),
+                                        contentDescription = "Help",
+                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
+                                        modifier = Modifier
+                                            .size(15.dp)
+                                            .offset((-3).dp, (-9).dp)
+                                    )
                                 }
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.help_outline),
-                                contentDescription = "Help",
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
-                                modifier = Modifier
-                                    .size(15.dp)
-                                    .offset((-3).dp, (-9).dp)
-                            )
+                            }
                         }
                     }
                 }
