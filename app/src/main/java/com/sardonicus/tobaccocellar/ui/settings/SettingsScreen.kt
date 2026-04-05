@@ -92,6 +92,8 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
+import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
+import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator

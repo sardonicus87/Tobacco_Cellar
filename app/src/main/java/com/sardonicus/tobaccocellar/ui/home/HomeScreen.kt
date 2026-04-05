@@ -34,8 +34,8 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
-import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
-import com.sardonicus.tobaccocellar.ui.settings.changelogEntries
+import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
+import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.launch
 

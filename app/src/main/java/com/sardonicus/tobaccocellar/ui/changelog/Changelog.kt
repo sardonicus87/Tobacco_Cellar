@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.settings
+package com.sardonicus.tobaccocellar.ui.changelog
 
 import kotlinx.serialization.Serializable
 
@@ -10,7 +10,35 @@ val changelogEntries = listOf(
         changes = listOf(),
         improvements = listOf(),
         bugFixes = listOf(),
-        releaseNotes = listOf(),
+        releaseNotes = listOf()
+    ),
+
+    ChangelogEntryData(
+        versionCode = 44,
+        versionNumber = "5.2.1",
+        buildDate = "",
+        changes = listOf(),
+        improvements = listOf(
+            "Batch Edit: on filtering changes, deselects anything that was previously selected if " +
+                    "it has been filtered out.",
+            "Plaintext Screen: the action icon row on the List tab is now collapsable.",
+            "Add/Edit Entry Screen: adjusted tooltip behavior for Sync? option, stays visible a " +
+                    "maximum 30 seconds, disappears after 5 if not held, or half a second after " +
+                    "being released if held. Also put a border on it nd prevent scrolling/tab " +
+                    "changes while it's open.",
+            "Release Notes: the introductory period for release notes to be set up required that " +
+                    "new installs would see release notes. It's now complete and only updating " +
+                    "users who will see release notes.",
+            "Help/FAQ: updated some out-dated sections, added help for Multi-Sync, and set auto " +
+                    "scrolling to expanded sections.",
+            "Various minor UI tweaks (colors, positioning, sizing) and minor performance " +
+                    "improvements.",
+        ),
+        bugFixes = listOf(
+            "Tabbed Layouts: minor bug fix, if a field was selected and tab changes were made by " +
+                    "tapping on the tab, the field wasn't properly being deselected."
+        ),
+        releaseNotes = listOf()
     ),
 
     ChangelogEntryData(

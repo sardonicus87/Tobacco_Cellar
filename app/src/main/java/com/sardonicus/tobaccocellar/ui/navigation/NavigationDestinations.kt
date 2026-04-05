@@ -1,7 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
 import androidx.navigation3.runtime.NavKey
-import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
+import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
 import kotlinx.serialization.Serializable
 
 // Used for TwoPane strategy for large screens

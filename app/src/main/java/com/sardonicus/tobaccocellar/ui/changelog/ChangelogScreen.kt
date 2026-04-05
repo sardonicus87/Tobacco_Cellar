@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.settings
+package com.sardonicus.tobaccocellar.ui.changelog
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

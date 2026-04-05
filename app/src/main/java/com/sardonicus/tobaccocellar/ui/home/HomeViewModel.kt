@@ -24,12 +24,12 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
-import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
+import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
-import com.sardonicus.tobaccocellar.ui.settings.changelogEntries
+import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler

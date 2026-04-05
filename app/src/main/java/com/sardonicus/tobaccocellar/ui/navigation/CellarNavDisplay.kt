@@ -51,7 +51,7 @@ import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextScreen
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextViewModel
-import com.sardonicus.tobaccocellar.ui.settings.ChangelogScreen
+import com.sardonicus.tobaccocellar.ui.changelog.ChangelogScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
