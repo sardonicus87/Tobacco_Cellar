@@ -64,9 +64,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat

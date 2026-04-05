@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
 @SuppressLint("ConfigurationScreenWidthHeight")

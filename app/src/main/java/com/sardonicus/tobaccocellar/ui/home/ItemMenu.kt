@@ -74,9 +74,9 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import java.text.DecimalFormatSymbols

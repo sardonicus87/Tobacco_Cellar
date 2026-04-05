@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.details
+package com.sardonicus.tobaccocellar.ui.blendDetails
 
 import android.content.res.Configuration
 import android.content.res.Resources

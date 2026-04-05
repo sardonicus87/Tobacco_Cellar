@@ -30,7 +30,7 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor

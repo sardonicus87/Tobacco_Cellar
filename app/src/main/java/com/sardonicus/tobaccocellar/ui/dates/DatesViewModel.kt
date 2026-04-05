@@ -7,9 +7,9 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.details.calculateAge
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
+import com.sardonicus.tobaccocellar.ui.blendDetails.calculateAge
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

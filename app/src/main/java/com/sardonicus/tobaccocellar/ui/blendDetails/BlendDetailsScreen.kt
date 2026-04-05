@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.details
+package com.sardonicus.tobaccocellar.ui.blendDetails
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity

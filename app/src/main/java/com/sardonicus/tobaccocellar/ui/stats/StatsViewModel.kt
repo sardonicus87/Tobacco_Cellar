@@ -9,8 +9,8 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
-import com.sardonicus.tobaccocellar.ui.details.isMetricLocale
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
+import com.sardonicus.tobaccocellar.ui.blendDetails.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

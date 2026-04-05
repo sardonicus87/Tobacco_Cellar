@@ -21,9 +21,9 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.TinExportData
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.details.formatDecimal
 import com.sardonicus.tobaccocellar.ui.addEditItems.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
+import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.settings.ChangelogEntryData
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
