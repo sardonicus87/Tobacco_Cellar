@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -114,6 +115,18 @@ private fun HelpBody(
     val scope = rememberCoroutineScope()
     val delayMillis = 210L
 
+    val sections: List<Pair<String, @Composable () -> Unit>> = listOf(
+        "Cellar Screen" to { CellarScreen() },
+        "Stats Screen" to { StatsPage() },
+        "Dates Screen" to { DatesPage() },
+        "Filtering" to { Filtering() },
+        "Adding Entries" to { AddingItems() },
+        "Editing Entries" to { EditingItems() },
+        "Adding Tins" to { AddingTins() },
+        "Settings" to { Settings() },
+        "Multi-Device Sync" to { MultiSync() },
+    )
+
     LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
@@ -141,6 +154,7 @@ private fun HelpBody(
                 softWrap = true,
             )
         }
+
         // Help sections
         item {
             Text(
@@ -153,115 +167,20 @@ private fun HelpBody(
             )
         }
 
+        itemsIndexed(sections) { index, section ->
+            HelpSection(
+                title = section.first,
+                content = section.second,
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(index + 3)
+                    }
+                },
+                modifier = Modifier
+            )
+        }
 
-        item {
-            HelpSection(
-                title = "Cellar Screen",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(3)
-                    }
-                },
-                content = { CellarScreen() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Stats Screen",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(4)
-                    }
-                },
-                content = { StatsPage() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Dates Screen",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(5)
-                    }
-                },
-                content = { DatesPage() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Filtering",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(6)
-                    }
-                },
-                content = { Filtering() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Adding Entries",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(7)
-                    }
-                },
-                content = { AddingItems() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Editing Entries",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(8)
-                    }
-                },
-                content = { EditingItems() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Adding Tins",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(9)
-                    }
-                },
-                content = { AddingTins() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Settings",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(10)
-                    }
-                },
-                content = { Settings() }
-            )
-        }
-        item {
-            HelpSection(
-                title = "Multi-Device Sync",
-                onExpanded = {
-                    scope.launch {
-                        delay(delayMillis)
-                        columnState.animateScrollToItem(11)
-                    }
-                },
-                content = { MultiSync() }
-            )
-        }
         item { Spacer(Modifier.height(12.dp)) }
     }
 }
