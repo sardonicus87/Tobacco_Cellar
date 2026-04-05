@@ -1,5 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.home
 
+import android.content.ClipData
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -9,7 +11,10 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,38 +24,50 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,9 +110,14 @@ fun HelpScreen(
 private fun HelpBody(
     modifier: Modifier = Modifier,
 ) {
+    val columnState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val delayMillis = 210L
+
     LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
+        state = columnState,
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp)
@@ -130,57 +152,113 @@ private fun HelpBody(
                 fontSize = 20.sp,
             )
         }
+
+
         item {
             HelpSection(
                 title = "Cellar Screen",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(3)
+                    }
+                },
                 content = { CellarScreen() }
             )
         }
         item {
             HelpSection(
                 title = "Stats Screen",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(4)
+                    }
+                },
                 content = { StatsPage() }
             )
         }
         item {
             HelpSection(
                 title = "Dates Screen",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(5)
+                    }
+                },
                 content = { DatesPage() }
             )
         }
         item {
             HelpSection(
                 title = "Filtering",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(6)
+                    }
+                },
                 content = { Filtering() }
             )
         }
         item {
             HelpSection(
                 title = "Adding Entries",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(7)
+                    }
+                },
                 content = { AddingItems() }
             )
         }
         item {
             HelpSection(
                 title = "Editing Entries",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(8)
+                    }
+                },
                 content = { EditingItems() }
             )
         }
         item {
             HelpSection(
                 title = "Adding Tins",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(9)
+                    }
+                },
                 content = { AddingTins() }
             )
         }
         item {
             HelpSection(
                 title = "Settings",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(10)
+                    }
+                },
                 content = { Settings() }
             )
         }
         item {
             HelpSection(
                 title = "Multi-Device Sync",
+                onExpanded = {
+                    scope.launch {
+                        delay(delayMillis)
+                        columnState.animateScrollToItem(11)
+                    }
+                },
                 content = { MultiSync() }
             )
         }
@@ -931,12 +1009,8 @@ private fun MultiSync(
 
         val uriHandler = LocalUriHandler.current
         val hapticFeedback = LocalHapticFeedback.current
-        val linkListener = LinkInteractionListener { link ->
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-            (link as? LinkAnnotation.Url)?.let {
-                uriHandler.openUri(it.url)
-            }
-        }
+        var pressedRange by remember { mutableStateOf<TextRange?>(null) }
+
         val annotatedString = buildAnnotatedString {
             append(text)
             val privacyStart = text.indexOf(privacy)
@@ -945,46 +1019,147 @@ private fun MultiSync(
             val dataEnd = dataStart + data.length
 
             if (privacyStart != -1) {
-                addLink(
-                    url = LinkAnnotation.Url(
-                        url = "https://www.tobacco-cellar.com/privacy-policy",
-                        styles = TextLinkStyles(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                textDecoration = TextDecoration.Underline,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        ),
-                        linkInteractionListener = linkListener
+                addStringAnnotation(
+                    tag = "URL",
+                    annotation = "https://www.tobacco-cellar.com/privacy-policy",
+                    start = privacyStart,
+                    end = privacyEnd
+                )
+                addStyle(
+                    style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.SemiBold
                     ),
                     start = privacyStart,
                     end = privacyEnd
                 )
             }
             if (dataStart != -1) {
-                addLink(
-                    url = LinkAnnotation.Url(
-                        url = "https://www.tobacco-cellar.com/managing-data",
-                        styles = TextLinkStyles(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                textDecoration = TextDecoration.Underline,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        ),
-                        linkInteractionListener = linkListener
+                addStringAnnotation(
+                    tag = "URL",
+                    annotation = "https://www.tobacco-cellar.com/managing-data",
+                    start = dataStart,
+                    end = dataEnd
+                )
+                addStyle(
+                    style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.SemiBold
                     ),
                     start = dataStart,
                     end = dataEnd
                 )
             }
+
+            pressedRange?.let {
+                addStyle(
+                    style = SpanStyle(
+                        background = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    ),
+                    start = it.start,
+                    end = it.end
+                )
+            }
         }
 
-        Text(
-            text = annotatedString,
-            softWrap = true,
-            modifier = Modifier
-        )
+        var pressedUrl by remember { mutableStateOf<String?>(null) }
+        var tooltipPosition by remember { mutableStateOf(IntOffset.Zero) }
+        var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+        Box {
+            Text(
+                text = annotatedString,
+                softWrap = true,
+                onTextLayout = { layoutResult = it },
+                modifier = Modifier
+                    .pointerInput(annotatedString) {
+                        detectTapGestures(
+                            onTap = { offset ->
+                                layoutResult?.let { result ->
+                                    val index = result.getOffsetForPosition(offset)
+                                    annotatedString.getStringAnnotations("URL", index, index).firstOrNull()?.let { range ->
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        uriHandler.openUri(range.item)
+                                    }
+                                }
+                            },
+                            onLongPress = { offset ->
+                                layoutResult?.let { result ->
+                                    val index = result.getOffsetForPosition(offset)
+                                    annotatedString.getStringAnnotations("URL", index, index).firstOrNull()?.let { range ->
+                                        pressedUrl = range.item
+                                        pressedRange = TextRange(range.start, range.end)
+
+                                        val cursorRect = result.getCursorRect(index)
+                                        tooltipPosition = IntOffset(offset.x.toInt(), (cursorRect.top - 120).toInt())
+                                    }
+                                }
+                            },
+                        )
+                    }
+            )
+
+            if (pressedUrl != null) {
+                LaunchedEffect(Unit) {
+                    delay(30000)
+                    pressedUrl = null
+                    pressedRange = null
+                }
+
+                Popup (
+                    offset = tooltipPosition,
+                    onDismissRequest = {
+                        pressedUrl = null
+                        pressedRange = null
+                    }
+                ) {
+                    val context = LocalContext.current
+                    val coroutineScope = rememberCoroutineScope()
+                    val clipboard = LocalClipboard.current
+
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 4.dp,
+                        shadowElevation = 4.dp,
+                        modifier = Modifier
+                            .combinedClickable(
+                                onClick = {
+                                    uriHandler.openUri(pressedUrl!!)
+                                    pressedUrl = null
+                                    pressedRange = null
+                                },
+                                onLongClick = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    coroutineScope.launch {
+                                        clipboard.setClipEntry(
+                                            ClipEntry(
+                                                ClipData.newPlainText(
+                                                    "URL",
+                                                    pressedUrl!!
+                                                )
+                                            )
+                                        )
+                                        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                                        pressedUrl = null
+                                        pressedRange = null
+                                    }
+                                }
+                            )
+                    ) {
+                        Text(
+                            text = pressedUrl!!,
+                            modifier = Modifier.padding(8.dp),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    }
+                }
+            }
+        }
 
         // How it Works
         Text(
@@ -1041,6 +1216,7 @@ private fun MultiSync(
 private fun HelpSection(
     title: String,
     modifier: Modifier = Modifier,
+    onExpanded: () -> Unit = {},
     content: @Composable (() -> Unit),
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
@@ -1050,7 +1226,10 @@ private fun HelpSection(
             .clickable(
                 indication = LocalIndication.current,
                 interactionSource = null
-            ) { visible = !visible }
+            ) {
+                visible = !visible
+                if (visible) onExpanded()
+            }
             .fillMaxWidth()
             .background(color = LocalCustomColors.current.backgroundVariant),
         verticalAlignment = Alignment.CenterVertically,
