@@ -100,14 +100,14 @@ class SettingsViewModel(
     private val _crossDeviceSync = MutableStateFlow(false)
     val crossDeviceSync = _crossDeviceSync.asStateFlow()
 
+    private val _allowMobileData = MutableStateFlow(false)
+    val allowMobileData = _allowMobileData.asStateFlow()
+
     private val _userEmail = MutableStateFlow<String?>(null)
     val userEmail = _userEmail.asStateFlow()
 
     private val _hasScope = MutableStateFlow(false)
     val hasScope = _hasScope.asStateFlow()
-
-    private val _allowMobileData = MutableStateFlow(false)
-    val allowMobileData = _allowMobileData.asStateFlow()
 
     private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
     val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
@@ -115,14 +115,15 @@ class SettingsViewModel(
     private val _defaultSyncOption = MutableStateFlow(false)
     val defaultSyncOption = _defaultSyncOption.asStateFlow()
 
+
+
+    /** General UI control **/
     private val _selectionFocused = MutableStateFlow(false)
     val selectionFocused = _selectionFocused.asStateFlow()
 
     private val _selectionKey = MutableStateFlow(0)
     val selectionKey = _selectionKey.asStateFlow()
 
-
-    /** General UI control **/
     private val _openDialog = MutableStateFlow<DialogType?>(null)
     val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
 
@@ -135,61 +136,6 @@ class SettingsViewModel(
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    private val networkMonitor = NetworkMonitor(getApplication())
-
-    val networkEnabled: StateFlow<Boolean> = combine(
-        preferencesRepo.allowMobileData,
-        networkMonitor.isConnected,
-        networkMonitor.isWifi
-    ) { allowMobile, isConnected, isWifi ->
-        (allowMobile && isConnected) || isWifi
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
-
-
-    val displaySettings = listOf(
-        SettingsDialog("Theme", "Change the theme of the app.", DialogType.Theme),
-        SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list.", DialogType.Ratings),
-        SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list.", DialogType.TypeGenre),
-        SettingsDialog("Cellar Quantity Display", "Change quantity display in list.", DialogType.QuantityDisplay),
-        SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes.", DialogType.ParseLinks),
-        SettingsDialog("Large Screen Options", "Large screen adaptive layout options.", DialogType.GlobalTwoPane)
-    )
-
-    val databaseSettings = listOf(
-        SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync", DialogType.DeviceSync),
-        SettingsDialog("Backup/Restore", "Backup or restore database/settings", DialogType.BackupRestore),
-        SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", DialogType.TinRates),
-        SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option", DialogType.TinSyncDefault),
-        SettingsDialog("Other Db Operations", "Fix sync quantities and optimize database", DialogType.DbOperations),
-        SettingsDialog("Delete Database", "Delete all items", DialogType.DeleteAll)
-    )
-
-
-    fun showDialog(dialog: DialogType) {
-        _openDialog.value = dialog
-    }
-
-    fun dismissDialog() { _openDialog.value = null }
-
-    fun showSnackbar(message: String) { _snackbarState.value = SnackbarState(true, message) }
-
-    fun snackbarShown() { _snackbarState.value = SnackbarState(false, "") }
-
-    fun setLoadingState(loading: Boolean) { _loading.value = loading }
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
-    fun updateFocused(focused: Boolean) {
-        _selectionFocused.update { focused }
-    }
 
     // option initializations //
     init {
@@ -252,6 +198,93 @@ class SettingsViewModel(
         }
     }
 
+    private val networkMonitor = NetworkMonitor(getApplication())
+
+    val networkEnabled: StateFlow<Boolean> = combine(
+        preferencesRepo.allowMobileData,
+        networkMonitor.isConnected,
+        networkMonitor.isWifi
+    ) { allowMobile, isConnected, isWifi ->
+        (allowMobile && isConnected) || isWifi
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
+
+    val displaySettings = combine(
+        _themeSetting,
+        _showRatings,
+        _typeGenreOption,
+        _quantityOption,
+        _parseLinks
+    ) { theme, showRatings, typeGenre, quantity, parseLinks ->
+        listOf(
+            SettingsDialog("Theme", "Change the theme of the app.", theme.value, DialogType.Theme),
+            SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list.", showRatings.let { if (it) "On" else "Off" }, DialogType.Ratings),
+            SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list.", typeGenre.value, DialogType.TypeGenre),
+            SettingsDialog("Cellar Quantity Display", "Change quantity display in list.", quantity.let {
+                when (it) {
+                    QuantityOption.TINS -> "Tins"
+                    QuantityOption.OUNCES -> "Oz/lbs"
+                    QuantityOption.GRAMS -> "Grams"
+                }
+            }, DialogType.QuantityDisplay),
+            SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes.", parseLinks.let { if (it) "On" else "Off" }, DialogType.ParseLinks),
+            SettingsDialog("Large Screen Options", "Large screen adaptive layout options.", null, DialogType.GlobalTwoPane)
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val databaseSettings = combine (
+        _crossDeviceSync,
+        _allowMobileData,
+        _tinOzConversionRate,
+        _tinGramsConversionRate,
+        _defaultSyncOption,
+    ) { crossDeviceSync, mobileData, ozRate, gramsRate, defaultSync ->
+        listOf(
+            SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync", crossDeviceSync.let {
+                if (it) { "On (${if (mobileData) "mobile" else "WiFi"})" }
+                else "Off" },
+                DialogType.DeviceSync),
+            SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", "$ozRate oz/$gramsRate g", DialogType.TinRates),
+            SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
+            SettingsDialog("Backup/Restore", "Backup or restore database/settings", null, DialogType.BackupRestore),
+            SettingsDialog("Other Db Operations", "Fix sync quantities and optimize database", null, DialogType.DbOperations),
+            SettingsDialog("Delete Database", "Delete all items", null, DialogType.DeleteAll)
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+
+    fun showDialog(dialog: DialogType) { _openDialog.value = dialog }
+
+    fun dismissDialog() { _openDialog.value = null }
+
+    fun showSnackbar(message: String) { _snackbarState.value = SnackbarState(true, message) }
+
+    fun snackbarShown() { _snackbarState.value = SnackbarState(false, "") }
+
+    fun setLoadingState(loading: Boolean) { _loading.value = loading }
+
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
+    }
+
+    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
+
 
     /** Display Settings **/
     val typeGenreOptionEnablement: StateFlow<Map<TypeGenreOption, Boolean>> = combine(
@@ -265,17 +298,18 @@ class SettingsViewModel(
             TypeGenreOption.TYPE_FALLBACK to types,
             TypeGenreOption.SUB_FALLBACK to subgenres,
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = mapOf(
-            TypeGenreOption.TYPE to true,
-            TypeGenreOption.SUBGENRE to true,
-            TypeGenreOption.BOTH to true,
-            TypeGenreOption.TYPE_FALLBACK to true,
-            TypeGenreOption.SUB_FALLBACK to true,
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = mapOf(
+                TypeGenreOption.TYPE to true,
+                TypeGenreOption.SUBGENRE to true,
+                TypeGenreOption.BOTH to true,
+                TypeGenreOption.TYPE_FALLBACK to true,
+                TypeGenreOption.SUB_FALLBACK to true,
+            )
         )
-    )
 
     init {
         viewModelScope.launch {
@@ -1046,6 +1080,7 @@ class SettingsViewModel(
 data class SettingsDialog(
     val title: String,
     val description: String,
+    val currentSetting: String?,
     val dialogType: DialogType
 )
 

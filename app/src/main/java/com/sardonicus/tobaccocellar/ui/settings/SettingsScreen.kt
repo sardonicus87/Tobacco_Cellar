@@ -463,6 +463,8 @@ fun DisplaySettings(
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
+    val displaySettings by viewModel.displaySettings.collectAsState()
+
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -476,11 +478,31 @@ fun DisplaySettings(
                 .padding(bottom = 3.dp),
             fontSize = 16.sp
         )
-        viewModel.displaySettings.forEach {
-            SettingsButton(
-                text = it.title,
-                onClick = { viewModel.showDialog(it.dialogType) }
-            )
+        displaySettings.forEach {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SettingsButton(
+                    text = it.title,
+                    onClick = { viewModel.showDialog(it.dialogType) }
+                )
+                if (it.currentSetting != null) {
+                    Text(
+                        text = it.currentSetting,
+                        modifier = Modifier
+                            .clickable(
+                                indication = null,
+                                interactionSource = null
+                            ) { viewModel.showDialog(it.dialogType) },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
         }
     }
 }
@@ -490,6 +512,8 @@ fun DatabaseSettings(
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
+    val databaseSettings by viewModel.databaseSettings.collectAsState()
+
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -503,15 +527,35 @@ fun DatabaseSettings(
                 .padding(bottom = 3.dp),
             fontSize = 16.sp
         )
-        viewModel.databaseSettings.forEach {
+        databaseSettings.forEach {
             val color = if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.primary
 
-            SettingsButton(
-                text = it.title,
-                onClick = { viewModel.showDialog(it.dialogType) },
-                color = color
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SettingsButton(
+                    text = it.title,
+                    onClick = { viewModel.showDialog(it.dialogType) },
+                    color = color
+                )
+                if (it.currentSetting != null) {
+                    Text(
+                        text = it.currentSetting,
+                        modifier = Modifier
+                            .clickable(
+                                indication = null,
+                                interactionSource = null
+                            ) { viewModel.showDialog(it.dialogType) },
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
         }
     }
 }
