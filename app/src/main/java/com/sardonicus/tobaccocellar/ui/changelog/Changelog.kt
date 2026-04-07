@@ -16,12 +16,15 @@ val changelogEntries = listOf(
     ChangelogEntryData(
         versionCode = 44,
         versionNumber = "5.2.1",
-        buildDate = "",
+        buildDate = "7 Apr, 2026",
         changes = listOf(),
         improvements = listOf(
+            "Plaintext Screen: the action icon row on the List tab is now collapsable, with the " +
+                    "default state collapsed (tap the arrow button at the top right).",
+            "Settings Screen: the current setting options are now displayed to the right of the " +
+                    "setting button.",
             "Batch Edit: on filtering changes, deselects anything that was previously selected if " +
                     "it has been filtered out.",
-            "Plaintext Screen: the action icon row on the List tab is now collapsable.",
             "Add/Edit Entry Screen: adjusted tooltip behavior for Sync? option, stays visible a " +
                     "maximum 30 seconds, disappears after 5 if not held, or half a second after " +
                     "being released if held. Also put a border on it nd prevent scrolling/tab " +
@@ -48,8 +51,8 @@ val changelogEntries = listOf(
         changes = listOf(
             "Cellar Screen new feature Quick Edits, the long-press entry menu now has a second " +
                     "option called \"Quick Edits\" which allows to you update an entry's star " +
-                    "rating, favorite or dislike status without having to go to the full Edit " +
-                    "Entry screen.",
+                    "rating, favorite or dislike status, notes, or \"No. of Tins\" (if entry does " +
+                    "not use sync tins option) without having to go to the full Edit Entry screen.",
             "New \"Release Notes\" dialog when first opening the app after an update. I realise " +
                     "most users never read changelogs or release notes, and many probably don't " +
                     "even realise when an app updates if they have automatic updates on. The " +
