@@ -147,8 +147,7 @@ fun SettingsScreen(
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() }
-        ,
+            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.settings_title),
