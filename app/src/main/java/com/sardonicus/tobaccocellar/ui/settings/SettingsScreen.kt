@@ -498,6 +498,7 @@ fun DisplaySettings(
                             ) { viewModel.showDialog(it.dialogType) },
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
+                        maxLines = 1,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
@@ -551,6 +552,7 @@ fun DatabaseSettings(
                             ) { viewModel.showDialog(it.dialogType) },
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
+                        maxLines = 1,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
@@ -576,6 +578,7 @@ fun SettingsButton(
             text = text,
             modifier = Modifier,
             fontSize = 15.sp,
+            maxLines = 1,
             color = color
         )
     }
