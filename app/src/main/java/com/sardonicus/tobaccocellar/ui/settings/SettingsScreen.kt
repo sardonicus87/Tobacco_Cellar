@@ -1,18 +1,16 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
-import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,11 +26,11 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,46 +57,34 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
-import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
-import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
@@ -107,18 +93,13 @@ import java.util.Locale
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit,
-    navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
     canNavigateBack: Boolean = true,
     viewModel: SettingsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val coroutineScope = rememberCoroutineScope()
-    val ozRate by viewModel.tinOzConversionRate.collectAsState()
-    val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
     val snackbarState by viewModel.snackbarState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val loading by viewModel.loading.collectAsState()
-    val selectionFocused by viewModel.selectionFocused.collectAsState()
 
 
     if (snackbarState.show) {
@@ -131,31 +112,26 @@ fun SettingsScreen(
         }
     }
 
-    BackHandler(selectionFocused) { viewModel.resetSelection() }
-
     val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
             if (activity?.isChangingConfigurations == false) {
-                viewModel.resetSelection()
                 viewModel.snackbarShown()
                 viewModel.dismissDialog()
             }
         }
     }
 
+    DialogManager(viewModel = viewModel)
+
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.settings_title),
                 scrollBehavior = scrollBehavior,
-                navigateUp = {
-                    viewModel.resetSelection()
-                    onNavigateUp()
-                },
+                navigateUp = onNavigateUp,
                 canNavigateBack = canNavigateBack,
                 showMenu = false,
             )
@@ -185,20 +161,6 @@ fun SettingsScreen(
             Box {
                 SettingsBody(
                     viewModel = viewModel,
-                    navigateToChangelog = {
-                        viewModel.resetSelection()
-                        navigateToChangelog(it)
-                    },
-                    tinOzConversionRate = ozRate,
-                    tinGramsConversionRate = gramsRate,
-                    updateTinSync = viewModel::updateTinSync,
-                    optimizeDatabase = viewModel::optimizeDatabase,
-                    onDeleteAllClick = {
-                        coroutineScope.launch {
-                            viewModel.deleteAllItems()
-                        }
-                    },
-                    loading = loading,
                     modifier = modifier
                         .fillMaxSize(),
                 )
@@ -216,15 +178,143 @@ fun SettingsScreen(
 @Composable
 private fun SettingsBody(
     viewModel: SettingsViewModel,
-    loading: Boolean,
-    navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
-    tinOzConversionRate: Double,
-    tinGramsConversionRate: Double,
-    updateTinSync: () -> Unit,
-    optimizeDatabase: () -> Unit,
-    onDeleteAllClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val displaySettings by viewModel.displaySettings.collectAsState()
+    val databaseSettings by viewModel.databaseSettings.collectAsState()
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top,
+    ) {
+        item { Spacer(Modifier.height(20.dp)) }
+
+        item {
+            Text(
+                text = "Display Settings",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(start = 16.dp, bottom = 4.dp),
+                fontSize = 18.sp
+            )
+        }
+
+        items(displaySettings, key = { it.title }) {
+            SettingsRow(
+                item = it,
+                onClick = viewModel::showDialog,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+            )
+        }
+
+        item { Spacer(Modifier.height(24.dp)) }
+
+        item {
+            Text(
+                text = "App & Database Settings",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(start = 16.dp, bottom = 4.dp),
+                fontSize = 18.sp
+            )
+        }
+
+        items(databaseSettings, key = { it.title }) {
+            SettingsRow(
+                item = it,
+                onClick = viewModel::showDialog,
+                color =
+                    if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+            )
+        }
+
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsRow(
+    item: SettingsDialog,
+    onClick: (DialogType) -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .clip(RoundedCornerShape(8.dp))
+            .indication(
+                interactionSource = interactionSource,
+                indication = if (item.currentSetting != null) LocalIndication.current else null
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = item.title,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(
+                    indication = if (item.currentSetting == null) LocalIndication.current else null,
+                    interactionSource = interactionSource,
+                    onClickLabel = item.description,
+                ) { onClick(item.dialogType) }
+                .padding(8.dp, 6.dp)
+                .width(IntrinsicSize.Max),
+            fontSize = 16.sp,
+            maxLines = 1,
+            color = color
+        )
+
+        if (item.currentSetting != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f)
+                    .clickable(
+                        indication = null,
+                        interactionSource = interactionSource,
+                        onClickLabel = item.description,
+                    ) { onClick(item.dialogType) }
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.CenterEnd
+            ){
+                Text(
+                    text = item.currentSetting,
+                    modifier = Modifier,
+                    fontSize = 15.sp,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 12.sp,
+                        maxFontSize = 15.sp,
+                        stepSize = 0.1.sp
+                    ),
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun DialogManager(viewModel: SettingsViewModel) {
+    val openDialog by viewModel.openDialog.collectAsState()
+    val loading by viewModel.loading.collectAsState()
+
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -241,95 +331,11 @@ private fun SettingsBody(
         }
     }
 
-    val openDialog by viewModel.openDialog.collectAsState()
-    val connectionEnabled by viewModel.networkEnabled.collectAsState()
-    val selectionKey by viewModel.selectionKey.collectAsState()
-
-    val themeSetting by viewModel.themeSetting.collectAsState()
-    val showRatings by viewModel.showRatings.collectAsState()
-    val typeGenreOption by viewModel.typeGenreOption.collectAsState()
-    val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
-    val quantityOption by viewModel.quantityOption.collectAsState()
-    val parseLinks by viewModel.parseLinks.collectAsState()
-    val globalTwoPane by viewModel.globalTwoPane.collectAsState()
-    val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
-
-    val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
-    val deviceSync by viewModel.crossDeviceSync.collectAsState()
-    val email by viewModel.userEmail.collectAsState()
-    val hasScope by viewModel.hasScope.collectAsState()
-    val allowMobileData by viewModel.allowMobileData.collectAsState()
-    val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
-
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(0.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        item { Spacer(Modifier.height(16.dp)) }
-
-        item {
-            DisplaySettings(
-                viewModel = viewModel,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            )
-        }
-
-        item {
-            DatabaseSettings(
-                viewModel = viewModel,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            )
-        }
-
-        item {
-            AboutSection(
-                navigateToChangelog = navigateToChangelog,
-                selectionKey = selectionKey,
-                selectionFocused = viewModel::updateFocused,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(
-                        LocalCustomColors.current.darkNeutral.copy(alpha = .75f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            )
-        }
-    }
-
     when (openDialog) {
         // Display settings
         DialogType.Theme -> {
+            val themeSetting by viewModel.themeSetting.collectAsState()
+
             ThemeDialog(
                 onDismiss = viewModel::dismissDialog,
                 themeSetting = themeSetting,
@@ -337,6 +343,8 @@ private fun SettingsBody(
             )
         }
         DialogType.Ratings -> {
+            val showRatings by viewModel.showRatings.collectAsState()
+
             RatingsDialog(
                 onDismiss = viewModel::dismissDialog,
                 showRatings = showRatings,
@@ -345,6 +353,9 @@ private fun SettingsBody(
             )
         }
         DialogType.TypeGenre -> {
+            val typeGenreOption by viewModel.typeGenreOption.collectAsState()
+            val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
+
             TypeGenreDialog(
                 onDismiss = viewModel::dismissDialog,
                 typeGenreOption = typeGenreOption,
@@ -354,6 +365,8 @@ private fun SettingsBody(
             )
         }
         DialogType.QuantityDisplay -> {
+            val quantityOption by viewModel.quantityOption.collectAsState()
+
             QuantityDialog(
                 onDismiss = viewModel::dismissDialog,
                 quantityOption = quantityOption,
@@ -362,6 +375,8 @@ private fun SettingsBody(
             )
         }
         DialogType.ParseLinks -> {
+            val parseLinks by viewModel.parseLinks.collectAsState()
+
             ParseLinksDialog(
                 onDismiss = viewModel::dismissDialog,
                 parseLinks = parseLinks,
@@ -370,6 +385,9 @@ private fun SettingsBody(
             )
         }
         DialogType.GlobalTwoPane -> {
+            val globalTwoPane by viewModel.globalTwoPane.collectAsState()
+            val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
+
             GlobalTwoPaneDialog(
                 onDismiss = viewModel::dismissDialog,
                 globalTwoPane = globalTwoPane,
@@ -382,6 +400,13 @@ private fun SettingsBody(
 
         // App/Database Settings
         DialogType.DeviceSync -> {
+            val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
+            val email by viewModel.userEmail.collectAsState()
+            val hasScope by viewModel.hasScope.collectAsState()
+            val connectionEnabled by viewModel.networkEnabled.collectAsState()
+            val deviceSync by viewModel.crossDeviceSync.collectAsState()
+            val allowMobileData by viewModel.allowMobileData.collectAsState()
+
             if (!loading) {
                 DeviceSyncDialog(
                     onDismiss = viewModel::dismissDialog,
@@ -402,15 +427,20 @@ private fun SettingsBody(
             }
         }
         DialogType.TinRates -> {
+            val ozRate by viewModel.tinOzConversionRate.collectAsState()
+            val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
+
             TinRatesDialog(
                 onDismiss = viewModel::dismissDialog,
-                ozRate = tinOzConversionRate,
-                gramsRate = tinGramsConversionRate,
+                ozRate = ozRate,
+                gramsRate = gramsRate,
                 onSave = viewModel::setTinConversionRates,
                 modifier = Modifier
             )
         }
         DialogType.TinSyncDefault -> {
+            val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
+
             TinSyncDefaultDialog(
                 onDismiss = viewModel::dismissDialog,
                 defaultSyncOption = defaultSyncOption,
@@ -421,8 +451,8 @@ private fun SettingsBody(
         DialogType.DbOperations -> {
             DbOperationsDialog(
                 onDismiss = viewModel::dismissDialog,
-                updateTinSync = updateTinSync,
-                optimizeDatabase = optimizeDatabase,
+                updateTinSync = viewModel::updateTinSync,
+                optimizeDatabase = viewModel::optimizeDatabase,
                 modifier = Modifier
             )
         }
@@ -444,7 +474,7 @@ private fun SettingsBody(
         DialogType.DeleteAll -> {
             DeleteAllDialog(
                 onDeleteConfirm = {
-                    onDeleteAllClick()
+                    viewModel.deleteAllItems()
                     viewModel.dismissDialog()
                 },
                 onDeleteCancel = viewModel::dismissDialog,
@@ -453,282 +483,6 @@ private fun SettingsBody(
             )
         }
         null -> { }
-    }
-}
-
-
-@Composable
-fun DisplaySettings(
-    viewModel: SettingsViewModel,
-    modifier: Modifier = Modifier
-) {
-    val displaySettings by viewModel.displaySettings.collectAsState()
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
-        horizontalAlignment = Alignment.Start
-    ) {
-        Text(
-            text = "Display Settings",
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .padding(bottom = 3.dp),
-            fontSize = 16.sp
-        )
-        displaySettings.forEach {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                SettingsButton(
-                    text = it.title,
-                    onClick = { viewModel.showDialog(it.dialogType) }
-                )
-                if (it.currentSetting != null) {
-                    Text(
-                        text = it.currentSetting,
-                        modifier = Modifier
-                            .clickable(
-                                indication = null,
-                                interactionSource = null
-                            ) { viewModel.showDialog(it.dialogType) },
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DatabaseSettings(
-    viewModel: SettingsViewModel,
-    modifier: Modifier = Modifier
-) {
-    val databaseSettings by viewModel.databaseSettings.collectAsState()
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
-        horizontalAlignment = Alignment.Start
-    ) {
-        Text(
-            text = "App & Database Settings",
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .padding(bottom = 3.dp),
-            fontSize = 16.sp
-        )
-        databaseSettings.forEach {
-            val color = if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.primary
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                SettingsButton(
-                    text = it.title,
-                    onClick = { viewModel.showDialog(it.dialogType) },
-                    color = color
-                )
-                if (it.currentSetting != null) {
-                    Text(
-                        text = it.currentSetting,
-                        modifier = Modifier
-                            .clickable(
-                                indication = null,
-                                interactionSource = null
-                            ) { viewModel.showDialog(it.dialogType) },
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SettingsButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
-) {
-    TextButton(
-        onClick = onClick,
-        contentPadding = PaddingValues(8.dp, 3.dp),
-        modifier = modifier
-            .heightIn(28.dp, 28.dp),
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier,
-            fontSize = 15.sp,
-            maxLines = 1,
-            color = color
-        )
-    }
-}
-
-
-@Composable
-fun AboutSection(
-    navigateToChangelog: (List<ChangelogEntryData>) -> Unit,
-    selectionKey: Int,
-    selectionFocused: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val appVersion = BuildConfig.VERSION_NAME
-    val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
-
-    val contactString = buildAnnotatedString {
-        val emailStart = length
-        withStyle(style = SpanStyle(
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Normal,
-            textDecoration = TextDecoration.Underline
-        )) { append("sardonicus.notadev@gmail.com") }
-        val emailEnd = length
-        addStringAnnotation(
-            tag = "Email",
-            annotation = "mailto:sardonicus.notadev@gmail.com",
-            start = emailStart,
-            end = emailEnd
-        )
-    }
-
-    val versionInfo = buildAnnotatedString {
-        withStyle(style = SpanStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.SemiBold)
-        ) { append("App Version: ") }
-        withStyle(style = SpanStyle(
-            color = MaterialTheme.colorScheme.tertiary,
-            fontWeight = FontWeight.Medium)
-        ) { append(appVersion) }
-        withStyle(style = SpanStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.SemiBold)
-        ) { append("\nDatabase Version: ") }
-        withStyle(style = SpanStyle(
-            color = MaterialTheme.colorScheme.tertiary,
-            fontWeight = FontWeight.Medium)
-        ) { append(dbVersion) }
-    }
-
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.Start,
-    ) {
-        Text(
-            text = "About Tobacco Cellar",
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .padding(bottom = 4.dp),
-            fontSize = 16.sp
-        )
-        Column(
-            modifier = Modifier
-                .padding(start = 8.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text(
-                text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
-                        "Uses Apache Commons CSV for reading and writing CSV files.",
-                modifier = Modifier
-                    .padding(vertical = 2.dp),
-                fontSize = 14.sp,
-                softWrap = true,
-            )
-            FlowRow(
-                modifier = Modifier
-                    .padding(top = 6.dp, bottom = 4.dp),
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Text(
-                    text = "Contact me if you experience any bugs: ",
-                    modifier = Modifier,
-                    fontSize = 14.sp,
-                    softWrap = true,
-                )
-                key(selectionKey) { SelectionContainer(
-                    modifier = Modifier
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                selectionFocused(true)
-                            } else {
-                                selectionFocused(false)
-                            }
-                        }
-                ) {
-                    Text(
-                        text = contactString,
-                        modifier = Modifier
-                            .clickable(
-                                interactionSource = null,
-                                indication = LocalIndication.current,
-                            ) {
-                                val annotations =
-                                    contactString.getStringAnnotations("Email", 0, contactString.length)
-                                annotations
-                                    .firstOrNull()
-                                    ?.let {
-                                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                            data = it.item.toUri()
-                                            putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
-                                        }
-                                        context.startActivity(
-                                            Intent.createChooser(
-                                                emailIntent,
-                                                "Send Email"
-                                            )
-                                        )
-                                    }
-                            },
-                        fontSize = 14.sp,
-                        softWrap = true,
-                    )
-                } }
-            }
-            Spacer(Modifier.height(14.dp))
-            Text(
-                text = versionInfo,
-                modifier = Modifier
-                    .padding(top = 4.dp),
-                fontSize = 14.sp,
-                softWrap = true,
-            )
-            Text(
-                text = "Changelog ",
-                modifier = Modifier
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { navigateToChangelog(changelogEntries) }
-                    .padding(vertical = 1.dp),
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }
 
@@ -885,9 +639,12 @@ fun TypeGenreDialog(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 Text(
-                    text = "This option sets the display of Type, Subgenre or both in list view. " +
-                            "Fallback options displays the option and if it's unused on an entry, " +
-                            "fallback to the other (in parentheses).",
+                    text = "This option sets the display of Type, Subgenre or both on the Cellar " +
+                            "screen. Fallback options display the option and if it's unused on an " +
+                            "entry, fallback to the other (e.g. Subgenre (fallback) would display " +
+                            "the subgenre but if an entry has no subgenre, will instead show the " +
+                            "type value in parenthesis). This also affects table view when only " +
+                            "one or the other of Type or Subgenre columns are shown.",
                     modifier = Modifier
                         .padding(bottom = 12.dp),
                     fontSize = 15.sp,
@@ -1516,7 +1273,7 @@ fun TinRatesDialog(
                         val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
                         val allowedPattern = remember(symbols.decimalSeparator, symbols.groupingSeparator) {
                             val ds = Regex.escape(symbols.decimalSeparator.toString())
-                            Regex("^(\\s*|\\d+($ds\\d{0,2})?)$")
+                            Regex("^(\\s*|\\d{0,5}($ds\\d{0,2})?)$")
                         }
 
                         Row(
@@ -1551,10 +1308,11 @@ fun TinRatesDialog(
                                     disabledContainerColor = LocalCustomColors.current.textField,
                                     cursorColor = MaterialTheme.colorScheme.primary,
                                 ),
+                                minLines = 1,
                                 contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
                                 placeholder = {
                                     Text(
-                                        text = "($ozRate)",
+                                        text = "(${formatDecimal(ozRate)})",
                                         modifier = Modifier
                                             .fillMaxWidth(),
                                         style = LocalTextStyle.current.copy(
@@ -1603,10 +1361,11 @@ fun TinRatesDialog(
                                     disabledContainerColor = LocalCustomColors.current.textField,
                                     cursorColor = MaterialTheme.colorScheme.primary,
                                 ),
+                                maxLines = 1,
                                 contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
                                 placeholder = {
                                     Text(
-                                        text = "($gramsRate)",
+                                        text = "(${formatDecimal(gramsRate)})",
                                         modifier = Modifier
                                             .fillMaxWidth(),
                                         style = LocalTextStyle.current.copy(

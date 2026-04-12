@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -43,7 +44,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
@@ -118,12 +118,6 @@ class SettingsViewModel(
 
 
     /** General UI control **/
-    private val _selectionFocused = MutableStateFlow(false)
-    val selectionFocused = _selectionFocused.asStateFlow()
-
-    private val _selectionKey = MutableStateFlow(0)
-    val selectionKey = _selectionKey.asStateFlow()
-
     private val _openDialog = MutableStateFlow<DialogType?>(null)
     val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
 
@@ -223,9 +217,9 @@ class SettingsViewModel(
     ) { theme, showRatings, typeGenre, quantity, parseLinks ->
         listOf(
             SettingsDialog("Theme", "Change the theme of the app.", theme.value, DialogType.Theme),
-            SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list.", showRatings.let { if (it) "On" else "Off" }, DialogType.Ratings),
-            SettingsDialog("Cellar Type/Genre Display", "Set type/genre display in list.", typeGenre.value, DialogType.TypeGenre),
-            SettingsDialog("Cellar Quantity Display", "Change quantity display in list.", quantity.let {
+            SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list view.", showRatings.let { if (it) "On" else "Off" }, DialogType.Ratings),
+            SettingsDialog("Cellar Type/Genre Display", "Set type/genre display for Cellar screen.", typeGenre.value, DialogType.TypeGenre),
+            SettingsDialog("Cellar Quantity Display", "Change quantity display on Cellar screen.", quantity.let {
                 when (it) {
                     QuantityOption.TINS -> "Tins"
                     QuantityOption.OUNCES -> "Oz/lbs"
@@ -250,15 +244,15 @@ class SettingsViewModel(
         _defaultSyncOption,
     ) { crossDeviceSync, mobileData, ozRate, gramsRate, defaultSync ->
         listOf(
-            SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync", crossDeviceSync.let {
+            SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync.", crossDeviceSync.let {
                 if (it) { "On (${if (mobileData) "mobile" else "WiFi"})" }
                 else "Off" },
                 DialogType.DeviceSync),
-            SettingsDialog("Tin Conversion Rates", "Change tin conversion rates", "$ozRate oz/$gramsRate g", DialogType.TinRates),
-            SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
-            SettingsDialog("Backup/Restore", "Backup or restore database/settings", null, DialogType.BackupRestore),
-            SettingsDialog("Other Db Operations", "Fix sync quantities and optimize database", null, DialogType.DbOperations),
-            SettingsDialog("Delete Database", "Delete all items", null, DialogType.DeleteAll)
+            SettingsDialog("Tin Conversion Rates", "Change tin conversion rates.", "$ozRate oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
+            SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option.", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
+            SettingsDialog("Backup/Restore", "Backup or restore database and/or settings.", null, DialogType.BackupRestore),
+            SettingsDialog("Other Db Operations", "Fix sync quantities and optimize database.", null, DialogType.DbOperations),
+            SettingsDialog("Delete Database", "Delete all entries.", null, DialogType.DeleteAll)
         )
     }
         .stateIn(
@@ -277,13 +271,6 @@ class SettingsViewModel(
     fun snackbarShown() { _snackbarState.value = SnackbarState(false, "") }
 
     fun setLoadingState(loading: Boolean) { _loading.value = loading }
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
-    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
 
 
     /** Display Settings **/
@@ -631,10 +618,12 @@ class SettingsViewModel(
         }
     }
 
-    suspend fun deleteAllItems() {
-        itemsRepository.deleteAllItems()
-        saveTypeGenreOption(TypeGenreOption.TYPE.value)
-        showSnackbar("Database deleted!")
+    fun deleteAllItems() {
+        viewModelScope.launch(Dispatchers.IO) {
+            itemsRepository.deleteAllItems()
+            saveTypeGenreOption(TypeGenreOption.TYPE.value)
+            showSnackbar("Database deleted!")
+        }
     }
 
     private fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
@@ -1076,7 +1065,7 @@ class SettingsViewModel(
 
 }
 
-
+@Stable
 data class SettingsDialog(
     val title: String,
     val description: String,
@@ -1084,6 +1073,7 @@ data class SettingsDialog(
     val dialogType: DialogType
 )
 
+@Stable
 sealed class DialogType {
     object Theme : DialogType()
     object Ratings : DialogType()
