@@ -888,8 +888,8 @@ class HomeViewModel(
                         if (item.type.isNotEmpty() && item.subGenre.isNotEmpty()) { " - " } else { "" } +
                         item.subGenre
             }
-            TypeGenreOption.TYPE_FALLBACK -> item.type.ifBlank { item.subGenre }
-            TypeGenreOption.SUB_FALLBACK -> item.subGenre.ifBlank { item.type }
+            TypeGenreOption.TYPE_FALLBACK -> item.type.ifBlank { "(${item.subGenre})" }
+            TypeGenreOption.SUB_FALLBACK -> item.subGenre.ifBlank { "(${item.type})" }
         }
     }
 
