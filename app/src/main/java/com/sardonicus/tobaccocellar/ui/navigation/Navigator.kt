@@ -49,7 +49,7 @@ class Navigator(
             if (isLarge && route is PaneInfo && route.paneType == PaneType.MAIN && route in mainSecondaryMap) {
                 val defaultSecond = mainSecondaryMap.getValue(route)
                 if (!currentStack.contains(defaultSecond)) {
-                    currentStack.add(defaultSecond)
+                    currentStack.add(1, defaultSecond)
                 }
             }
 
