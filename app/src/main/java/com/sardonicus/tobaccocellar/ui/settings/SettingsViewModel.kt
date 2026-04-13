@@ -619,7 +619,7 @@ class SettingsViewModel(
     }
 
     fun deleteAllItems() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             itemsRepository.deleteAllItems()
             saveTypeGenreOption(TypeGenreOption.TYPE.value)
             showSnackbar("Database deleted!")
@@ -752,7 +752,7 @@ class SettingsViewModel(
 
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             setLoadingState(true)
 
             val workManager = WorkManager.getInstance(context)
@@ -1032,7 +1032,7 @@ class SettingsViewModel(
     }
 
     private fun restoreSettings(settingsBytes: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val settingsText = String(settingsBytes, Charset.forName("UTF-8"))
             parseSettingsText(settingsText, preferencesRepo)
         }
