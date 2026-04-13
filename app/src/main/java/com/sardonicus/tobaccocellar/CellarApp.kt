@@ -127,9 +127,10 @@ fun CellarTopAppBar(
     navigateUp: () -> Unit = {},
     navigateToBulkEdit: () -> Unit = {},
     navigateToCsvImport: () -> Unit = {},
-    navigateToSettings: () -> Unit = {},
-    navigateToHelp: () -> Unit = {},
     navigateToPlaintext: () -> Unit = {},
+    navigateToHelp: () -> Unit = {},
+    navigateToAbout: () -> Unit = {},
+    navigateToSettings: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     overrideBack: Boolean = false,
@@ -227,6 +228,7 @@ fun CellarTopAppBar(
                         navigateToCsvImport = navigateToCsvImport,
                         navigateToPlaintext = navigateToPlaintext,
                         navigateToHelp = navigateToHelp,
+                        navigateToAbout = navigateToAbout,
                         navigateToSettings = navigateToSettings,
                         exportCsvHandler = exportCsvHandler
                     )
@@ -263,6 +265,7 @@ fun TopBarMenu(
     navigateToCsvImport: () -> Unit = {},
     navigateToPlaintext: () -> Unit = {},
     navigateToHelp: () -> Unit = {},
+    navigateToAbout: () -> Unit = {},
     navigateToSettings: () -> Unit = {},
     exportCsvHandler: ExportCsvHandler? = null,
 ) {
@@ -342,7 +345,16 @@ fun TopBarMenu(
                         .padding(0.dp),
                     enabled = true,
                 )
-
+                DropdownMenuItem(
+                    text = { Text(text = "About") },
+                    onClick = {
+                        filterViewModel.showMenu(false)
+                        navigateToAbout()
+                    },
+                    modifier = Modifier
+                        .padding(0.dp),
+                    enabled = true,
+                )
                 DropdownMenuItem(
                     text = { Text(text = stringResource(R.string.settings)) },
                     onClick = {
@@ -372,7 +384,6 @@ fun TopBarMenu(
                         filterViewModel.changeExportType(ExportType.ITEMS)
                         filterViewModel.showExportCsv(true)
                         filterViewModel.showMenu(false)
-                    //    filterViewModel.changeMenuState(MenuState.MAIN)
                     },
                     modifier = Modifier
                         .padding(0.dp),
@@ -389,7 +400,6 @@ fun TopBarMenu(
                         filterViewModel.showMenu(false)
                         filterViewModel.changeExportType(ExportType.TINS)
                         filterViewModel.showExportCsv(true)
-                    //    filterViewModel.changeMenuState(MenuState.MAIN)
                     },
                     modifier = Modifier
                         .padding(0.dp),
