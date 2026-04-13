@@ -39,6 +39,9 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.BlendDetailsScreen
 import com.sardonicus.tobaccocellar.ui.blendDetails.BlendDetailsViewModel
 import com.sardonicus.tobaccocellar.ui.bulkEdit.BulkEditScreen
 import com.sardonicus.tobaccocellar.ui.bulkEdit.BulkEditViewModel
+import com.sardonicus.tobaccocellar.ui.changelog.AboutScreen
+import com.sardonicus.tobaccocellar.ui.changelog.ChangelogScreen
+import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvHelpScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
@@ -51,7 +54,6 @@ import com.sardonicus.tobaccocellar.ui.home.HomeScreen
 import com.sardonicus.tobaccocellar.ui.home.HomeViewModel
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextScreen
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextViewModel
-import com.sardonicus.tobaccocellar.ui.changelog.ChangelogScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
@@ -96,7 +98,7 @@ fun CellarNavigation(
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
 
-        val slideTransition = if (!largeScreen || (key is PaneInfo && key.paneType == PaneType.NONE)) {
+        val slideTransition = if (!navigationState.isTwoPane || (key is PaneInfo && key.paneType == PaneType.NONE)) {
             transitionSpec {
                 slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
             } + popTransitionSpec {
@@ -150,22 +152,21 @@ fun CellarNavigation(
                 val secondPaneExpanded by filterViewModel.secondPaneExpanded.collectAsState()
 
                 HomeScreen(
+                    navigateToBlendDetails = {
+                        navigator.navigate(BlendDetailsDestination(it))
+                        if (navigationState.isTwoPane && !secondPaneExpanded ) { filterViewModel.setSecondPaneExpansion(true) }
+                    },
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
                     navigateToBulkEdit = { navigator.navigate(BulkEditDestination) },
-                    navigateToBlendDetails = {
-                        navigator.navigate(BlendDetailsDestination(it))
-                        if (navigationState.isTwoPane && !secondPaneExpanded ) { filterViewModel.setSecondPaneExpansion(true) }
-                    },
                     navigateToCsvImport = { navigator.navigate(CsvFlowDestination) },
-                    navigateToSettings = { navigator.navigate(SettingsDestination) },
-                    navigateToHelp = { navigator.navigate(HelpDestination) },
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
-                    navigateToChangelog = { data, target ->
-                        navigator.navigate(ChangelogDestination(data, target))
-                    },
+                    navigateToHelp = { navigator.navigate(HelpDestination) },
+                    navigateToAbout = { navigator.navigate(AboutDestination) },
+                    navigateToSettings = { navigator.navigate(SettingsDestination) },
+                    navigateToChangelog = { navigator.navigate(ChangelogDestination(changelogEntries, it)) },
                     filterViewModel = filterViewModel,
                     viewModel = viewModel
                 )
@@ -193,9 +194,10 @@ fun CellarNavigation(
                 )
             }
 
-            is HelpDestination -> NavEntry(key, metadata = paneInfo) {
-                HelpScreen(
-                    onNavigateUp = { navigator.goBack() },
+            is FilterPaneDestination -> NavEntry(key, metadata = paneInfo) {
+                FilterPane(
+                    filterViewModel = filterViewModel,
+                    modifier = Modifier
                 )
             }
 
@@ -239,13 +241,6 @@ fun CellarNavigation(
                     navigateToDetails = { navigator.navigate(BlendDetailsDestination(it)) },
                     modifier = Modifier,
                     viewModel = viewModel
-                )
-            }
-
-            is FilterPaneDestination -> NavEntry(key, metadata = paneInfo) {
-                FilterPane(
-                    filterViewModel = filterViewModel,
-                    modifier = Modifier
                 )
             }
 
@@ -309,54 +304,6 @@ fun CellarNavigation(
                 )
 
                 BulkEditScreen(
-                    onNavigateUp = { navigator.goBack() },
-                    isLargeScreen = largeScreen && twoColumnTabs,
-                    viewModel = viewModel
-                )
-            }
-
-            is SettingsDestination -> NavEntry(key, metadata = paneInfo) {
-                val viewModel: SettingsViewModel = viewModel(
-                    factory = viewModelFactory {
-                        initializer {
-                            SettingsViewModel(
-                                app,
-                                itemsRepository,
-                                filterViewModel,
-                                preferencesRepo
-                            )
-                        }
-                    }
-                )
-
-                SettingsScreen(
-                    onNavigateUp = { navigator.goBack() },
-                    navigateToChangelog = { navigator.navigate(ChangelogDestination(it)) },
-                    viewModel = viewModel
-                )
-            }
-
-            is ChangelogDestination -> NavEntry(key, metadata = slideTransition + twoPaneSlide + paneInfo) {
-                ChangelogScreen(
-                    onNavigateUp = { navigator.goBack() },
-                    changelogEntries = key.changelogEntries,
-                    targetVersion = key.targetVersion
-                )
-            }
-
-            is PlaintextDestination -> NavEntry(key, metadata = paneInfo) {
-                val viewModel: PlaintextViewModel = viewModel(
-                    factory = viewModelFactory {
-                        initializer {
-                            PlaintextViewModel(
-                                filterViewModel,
-                                preferencesRepo
-                            )
-                        }
-                    }
-                )
-
-                PlaintextScreen(
                     onNavigateUp = { navigator.goBack() },
                     isLargeScreen = largeScreen && twoColumnTabs,
                     viewModel = viewModel
@@ -446,16 +393,77 @@ fun CellarNavigation(
                 }
             }
 
+            is PlaintextDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: PlaintextViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            PlaintextViewModel(
+                                filterViewModel,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
+                PlaintextScreen(
+                    onNavigateUp = { navigator.goBack() },
+                    isLargeScreen = largeScreen && twoColumnTabs,
+                    viewModel = viewModel
+                )
+            }
+
+            is HelpDestination -> NavEntry(key, metadata = paneInfo) {
+                HelpScreen(
+                    onNavigateUp = { navigator.goBack() },
+                )
+            }
+
+            is AboutDestination -> NavEntry(key, metadata = paneInfo) {
+                AboutScreen(
+                    onNavigateUp = { navigator.goBack() },
+                    navigateToChangelog = { navigator.navigate(ChangelogDestination(changelogEntries)) },
+                )
+            }
+
+            is ChangelogDestination -> NavEntry(key, metadata = slideTransition + twoPaneSlide + paneInfo) {
+                ChangelogScreen(
+                    onNavigateUp = { navigator.goBack() },
+                    changelogEntries = key.changelogEntries,
+                    targetVersion = key.targetVersion
+                )
+            }
+
+            is SettingsDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: SettingsViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            SettingsViewModel(
+                                app,
+                                itemsRepository,
+                                filterViewModel,
+                                preferencesRepo
+                            )
+                        }
+                    }
+                )
+
+                SettingsScreen(
+                    onNavigateUp = { navigator.goBack() },
+                    viewModel = viewModel
+                )
+            }
+
             else -> error("Unknown destination: $key")
         }
     }
 
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane)
 
     NavDisplay(
         entries = navigationState.toEntries(entryProvider),
         modifier = modifier,
         onBack = { navigator.goBack() },
-        sceneStrategy = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane).then(SinglePaneSceneStrategy()),
+        sceneStrategies = listOf(twoPaneScene, SinglePaneSceneStrategy()),
         transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
         predictivePopTransitionSpec = {
