@@ -173,7 +173,7 @@ class CsvImportViewModel(
     // components handling //
     private suspend fun componentSplitter(components: String): List<Components> {
         val componentsList = components.split(",").map { it.trim() }
-        val existingComps = withContext(Dispatchers.IO) { itemsRepository.getAllComponentsStream().first() }
+        val existingComps = withContext(Dispatchers.Default) { itemsRepository.getAllComponentsStream().first() }
         return componentsList.toComponents(existingComps.map { it.componentName })
     }
 
@@ -181,7 +181,7 @@ class CsvImportViewModel(
     // Flavoring handling //
     private suspend fun flavorSplitter(flavoring: String): List<Flavoring> {
         val flavoringList = flavoring.split(",").map { it.trim() }
-        val existingFlavors = withContext(Dispatchers.IO) { itemsRepository.getAllFlavoringStream().first() }
+        val existingFlavors = withContext(Dispatchers.Default) { itemsRepository.getAllFlavoringStream().first() }
         return flavoringList.toFlavoring(existingFlavors.map { it.flavoringName })
     }
 
@@ -392,7 +392,7 @@ class CsvImportViewModel(
                 lastModified = System.currentTimeMillis(),
             )
         }
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             itemsRepository.insertMultipleTins(tinsToInsert)
         }
     }
@@ -464,7 +464,7 @@ class CsvImportViewModel(
                 tinsFlagSet = true
                 if (importOption == ImportOption.OVERWRITE) {
                     if (brand.isNotBlank() && blend.isNotBlank()) {
-                        val existingItem = withContext(Dispatchers.IO) {
+                        val existingItem = withContext(Dispatchers.Default) {
                             itemsRepository.getItemByIndex(brand, blend)
                         }
                         if (existingItem != null) {
@@ -563,7 +563,7 @@ class CsvImportViewModel(
             if (brand.isBlank() || blend.isBlank()) {
                 null
             } else {
-                val existingItem = withContext(Dispatchers.IO) {
+                val existingItem = withContext(Dispatchers.Default) {
                     itemsRepository.getItemByIndex(brand, blend)
                 }
                 val componentsList = componentSplitter(components)
@@ -577,7 +577,7 @@ class CsvImportViewModel(
                             updatedFlagSet = true
                             val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
                             val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
-                            val existingTins = withContext(Dispatchers.IO) {
+                            val existingTins = withContext(Dispatchers.Default) {
                                 itemsRepository.getTinsForItemStream(existingItem.id).first()
                             }
 
@@ -647,7 +647,7 @@ class CsvImportViewModel(
                                 lastModified = existingItem.lastModified
                             )
 
-                            val existingComponents = withContext(Dispatchers.IO) {
+                            val existingComponents = withContext(Dispatchers.Default) {
                                 itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
                                     it.componentName
                                 }
@@ -664,7 +664,7 @@ class CsvImportViewModel(
                                 }
                             }
 
-                            val existingFlavoring = withContext(Dispatchers.IO) {
+                            val existingFlavoring = withContext(Dispatchers.Default) {
                                 itemsRepository.getFlavoringForItemStream(existingItem.id).first().map {
                                     it.flavoringName
                                 }
@@ -695,7 +695,7 @@ class CsvImportViewModel(
                             if (existingItem != updatedItem) {
                                 updatedCount++
                                 val updated = updatedItem.copy(lastModified = System.currentTimeMillis())
-                                withContext(Dispatchers.IO) { itemsRepository.updateItem(updated) }
+                                withContext(Dispatchers.Default) { itemsRepository.updateItem(updated) }
                             }
                             if (existingItem == updatedItem && (compsAdded || flavorAdded || tinsAddedToItem)) updatedCount++
 
@@ -708,7 +708,7 @@ class CsvImportViewModel(
                             val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
                             val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
                             // Should be empty in overwrite, but double check
-                            val existingTins = withContext(Dispatchers.IO) { itemsRepository.getTinsForItemStream(existingItem.id).first() }
+                            val existingTins = withContext(Dispatchers.Default) { itemsRepository.getTinsForItemStream(existingItem.id).first() }
 
                             val updatedItem = existingItem.copy(
                                 type = if (overwriteFields.contains(CsvField.Type) &&
@@ -780,7 +780,7 @@ class CsvImportViewModel(
                                 lastModified = existingItem.lastModified
                             )
 
-                            val existingComponents = withContext(Dispatchers.IO) {
+                            val existingComponents = withContext(Dispatchers.Default) {
                                 itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
                                     it.componentName
                                 }
@@ -790,7 +790,7 @@ class CsvImportViewModel(
                                 columnIndices[CsvField.Components] != null &&
                                 columnIndices[CsvField.Components]!! in record.indices
                             ) {
-                                withContext(Dispatchers.IO) {
+                                withContext(Dispatchers.Default) {
                                     itemsRepository.deleteComponentsCrossRefByItemId(existingItem.id)
                                 }
                                 componentsList.forEach {
@@ -801,7 +801,7 @@ class CsvImportViewModel(
                                     itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = existingItem.id, componentId = componentId))
                                 }
 
-                                val insertedComponents = withContext(Dispatchers.IO) {
+                                val insertedComponents = withContext(Dispatchers.Default) {
                                     itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
                                         it.componentName
                                     }
@@ -811,7 +811,7 @@ class CsvImportViewModel(
                                 }
                             }
 
-                            val existingFlavoring = withContext(Dispatchers.IO) {
+                            val existingFlavoring = withContext(Dispatchers.Default) {
                                 itemsRepository.getFlavoringForItemStream(existingItem.id).first().map {
                                     it.flavoringName
                                 }
@@ -821,7 +821,7 @@ class CsvImportViewModel(
                                 columnIndices[CsvField.Flavoring] != null &&
                                 columnIndices[CsvField.Flavoring]!! in record.indices
                             ) {
-                                withContext(Dispatchers.IO) {
+                                withContext(Dispatchers.Default) {
                                     itemsRepository.deleteFlavoringCrossRefByItemId(existingItem.id)
                                 }
                                 flavoringList.forEach {
@@ -832,7 +832,7 @@ class CsvImportViewModel(
                                     itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = existingItem.id, flavoringId = flavoringId))
                                 }
 
-                                val insertedFlavoring = withContext(Dispatchers.IO) {
+                                val insertedFlavoring = withContext(Dispatchers.Default) {
                                     itemsRepository.getFlavoringForItemStream(existingItem.id)
                                         .first().map {
                                             it.flavoringName
@@ -855,7 +855,7 @@ class CsvImportViewModel(
                             if (existingItem != updatedItem) {
                                 updatedCount++
                                 val updated = updatedItem.copy(lastModified = System.currentTimeMillis())
-                                withContext(Dispatchers.IO) { itemsRepository.updateItem(updated) }
+                                withContext(Dispatchers.Default) { itemsRepository.updateItem(updated) }
                             }
                             if (existingItem == updatedItem && (compsAdded || flavorAdded)) updatedCount++
 
@@ -936,9 +936,9 @@ class CsvImportViewModel(
         var insertions = 0
 
         try {
-            val insertedIds = withContext(Dispatchers.IO) { itemsRepository.insertMultipleItems(itemsToImport) }
+            val insertedIds = withContext(Dispatchers.Default) { itemsRepository.insertMultipleItems(itemsToImport) }
 
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.Default) {
                 itemsToImport.forEachIndexed { index, items ->
                     val itemId = insertedIds[index].toInt()
 

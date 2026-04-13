@@ -206,7 +206,7 @@ class HomeViewModel(
                 }
 
                 // Ensure Brand and Blend columns never get hidden, unhide them if so
-                launch(Dispatchers.IO) {
+                launch {
                     preferencesRepo.tableColumnsHidden.collect {
                         if (it.contains(TableColumn.BRAND.name)) {
                             updateColumnVisibility(TableColumn.BRAND, true)
@@ -218,7 +218,7 @@ class HomeViewModel(
                 }
 
                 // Type/Subgenre visibility, default to Type if an option becomes disabled
-                launch(Dispatchers.IO) {
+                launch {
                     combine(
                         preferencesRepo.typeGenreOption,
                         filterViewModel.typesExist,
@@ -643,14 +643,14 @@ class HomeViewModel(
 
     /** Release Notes && One-Time Alerts **/
     fun saveReleaseNotesSeen() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             _releaseNotesState.value = _releaseNotesState.value.copy(show = false)
             preferencesRepo.saveReleaseNotesSeen(BuildConfig.VERSION_CODE)
         }
     }
 
     fun saveAlertSeen(alertId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             preferencesRepo.saveAlertShown(alertId)
         }
     }
@@ -783,7 +783,7 @@ class HomeViewModel(
         val itemId = _activeMenuId.value ?: return
         val pending = _quickEditState.value
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val original = itemsRepository.getItemById(itemId) ?: return@launch
 
             if (pending.saveEnabled) {
@@ -896,7 +896,7 @@ class HomeViewModel(
 
     /** UI functions **/
     fun selectView() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             preferencesRepo.saveViewPreference(!_isTableView.value)
         }
     }
@@ -912,7 +912,7 @@ class HomeViewModel(
 
         _listSorting.value = newListSorting
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             preferencesRepo.saveListSorting(newListSorting.option.value, newListSorting.listAscending)
         }
     }
@@ -952,7 +952,7 @@ class HomeViewModel(
         )
 
     fun updateColumnVisibility(column: TableColumn, visible: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val currentHidden = preferencesRepo.tableColumnsHidden.first()
             val newHidden = if (visible) {
                 currentHidden - column.name
@@ -1005,7 +1005,7 @@ class HomeViewModel(
 
     // make columns not visible automatically if they become disabled
     init {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             columnVisibilityEnablement.collect { visibilityMap ->
                 val disabled = visibilityMap.filterValues { !it }.keys
                 disabled.forEach {
@@ -1025,7 +1025,7 @@ class HomeViewModel(
     val filteredItems = filterViewModel.homeScreenFilteredItems.value
 
     override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val data = if (allItems) _allItems.value else filteredItems
             val maxRating = exportRating.maxRating
             val rounding = exportRating.rounding
@@ -1048,7 +1048,7 @@ class HomeViewModel(
     }
 
     override fun onTinsExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val maxRating = exportRating.maxRating
             val rounding = exportRating.rounding
             val data: List<TinExportData> = if (allItems) {

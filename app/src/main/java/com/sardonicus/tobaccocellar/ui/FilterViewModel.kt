@@ -73,7 +73,7 @@ class FilterViewModel (
     fun setSearchMenuExpanded(expanded: Boolean) { _searchMenuExpanded.value = expanded }
 
     fun saveSearchSetting(setting: String) {
-        viewModelScope.launch(Dispatchers.IO) { preferencesRepo.setSearchSetting(setting) }
+        viewModelScope.launch(Dispatchers.Default) { preferencesRepo.setSearchSetting(setting) }
     }
 
     private val _searchTextDisplay = MutableStateFlow("")
