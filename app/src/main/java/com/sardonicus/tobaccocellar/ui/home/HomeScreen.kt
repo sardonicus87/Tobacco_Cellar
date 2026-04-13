@@ -34,25 +34,24 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
-import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
-import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    navigateToBlendDetails: (Int) -> Unit,
     navigateToStats: () -> Unit,
     navigateToDates: () -> Unit,
     navigateToAddEntry: () -> Unit,
-    navigateToBlendDetails: (Int) -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     navigateToBulkEdit: () -> Unit,
     navigateToCsvImport: () -> Unit,
-    navigateToSettings: () -> Unit,
-    navigateToHelp: () -> Unit,
     navigateToPlaintext: () -> Unit,
-    navigateToChangelog: (List<ChangelogEntryData>, Int?) -> Unit,
+    navigateToHelp: () -> Unit,
+    navigateToAbout: () -> Unit,
+    navigateToSettings: () -> Unit,
+    navigateToChangelog: (Int?) -> Unit,
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
@@ -105,7 +104,7 @@ fun HomeScreen(
             viewModel = viewModel,
             onNavigateToChangelog = {
                 viewModel.saveReleaseNotesSeen()
-                navigateToChangelog(changelogEntries, it)
+                navigateToChangelog(it)
             }
         )
     }
@@ -125,9 +124,10 @@ fun HomeScreen(
                 canNavigateBack = false,
                 navigateToBulkEdit = navigateToBulkEdit,
                 navigateToCsvImport = navigateToCsvImport,
-                navigateToSettings = navigateToSettings,
-                navigateToHelp = navigateToHelp,
                 navigateToPlaintext = navigateToPlaintext,
+                navigateToHelp = navigateToHelp,
+                navigateToAbout = navigateToAbout,
+                navigateToSettings = navigateToSettings,
                 showMenu = true,
                 currentDestination = HomeDestination,
                 exportCsvHandler = viewModel,
