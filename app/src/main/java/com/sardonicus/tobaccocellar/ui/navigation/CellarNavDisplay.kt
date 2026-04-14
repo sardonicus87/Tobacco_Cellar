@@ -58,6 +58,7 @@ import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
+import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.delay
 import java.util.UUID
 
@@ -92,6 +93,7 @@ fun CellarNavigation(
     val preferencesRepo = app.preferencesRepo
     val itemsRepository = app.container.itemsRepository
     val csvHelper = app.csvHelper
+    val networkMonitor = remember { NetworkMonitor(app) }
 
     val twoColumnTabs by preferencesRepo.twoColumnTabs.collectAsState()
 
@@ -438,10 +440,11 @@ fun CellarNavigation(
                     factory = viewModelFactory {
                         initializer {
                             SettingsViewModel(
-                                app,
                                 itemsRepository,
                                 filterViewModel,
-                                preferencesRepo
+                                preferencesRepo,
+                                networkMonitor,
+                                app
                             )
                         }
                     }
