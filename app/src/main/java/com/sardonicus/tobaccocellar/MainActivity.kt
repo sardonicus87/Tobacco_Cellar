@@ -52,10 +52,12 @@ import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.drive.DriveScopes
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.ui.settings.SignInCancelled
 import com.sardonicus.tobaccocellar.ui.settings.SignInEvent
 import com.sardonicus.tobaccocellar.ui.settings.SignOutEvent
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
@@ -192,14 +194,19 @@ class MainActivity : ComponentActivity() {
 
     private fun signIn() {
         lifecycleScope.launch {
-            val googleIdOption = GetGoogleIdOption.Builder()  // GetSignInWithGoogleOption.Builder(getString(R.string.web_client_id))
+            val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(getString(R.string.web_client_id))
                 .setAutoSelectEnabled(false)
                 .build()
 
+            val signInOption = GetSignInWithGoogleOption.Builder(
+                serverClientId = getString(R.string.web_client_id),
+            ).build()
+
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(googleIdOption)
+                .addCredentialOption(signInOption)
                 .build()
 
             try {
@@ -212,10 +219,12 @@ class MainActivity : ComponentActivity() {
                 authorizeDrive()
 
             } catch (_: NoCredentialException) {
-                Toast.makeText(this@MainActivity, "No Google accounts found on this device", Toast.LENGTH_SHORT).show()
+                EventBus.emit(SignInCancelled)
+                Toast.makeText(this@MainActivity, "Sign-in failed", Toast.LENGTH_SHORT).show()
             } catch (_: GetCredentialCancellationException) {
-            //    Toast.makeText(this@MainActivity, "Sign-in canceled", Toast.LENGTH_SHORT).show()
+                EventBus.emit(SignInCancelled)
             } catch (_: GetCredentialException) {
+                EventBus.emit(SignInCancelled)
                 Toast.makeText(this@MainActivity, "Sign-in failed", Toast.LENGTH_SHORT).show()
             }
         }
