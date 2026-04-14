@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.compose.runtime.Stable
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -64,11 +64,12 @@ import java.util.zip.ZipOutputStream
 import kotlin.math.roundToInt
 
 class SettingsViewModel(
-    application: Application,
     private val itemsRepository: ItemsRepository,
     val filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
-): AndroidViewModel(application) {
+    private val networkMonitor: NetworkMonitor,
+    private val application: Application
+): ViewModel() {
 
     /** Display Settings */
     private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM)
@@ -99,6 +100,9 @@ class SettingsViewModel(
 
     private val _crossDeviceSync = MutableStateFlow(false)
     val crossDeviceSync = _crossDeviceSync.asStateFlow()
+
+    private val _signingIn = MutableStateFlow(false)
+    val signingIn = _signingIn.asStateFlow()
 
     private val _allowMobileData = MutableStateFlow(false)
     val allowMobileData = _allowMobileData.asStateFlow()
@@ -169,7 +173,12 @@ class SettingsViewModel(
                     preferencesRepo.crossDeviceAcknowledged.collect { _deviceSyncAcknowledgement.value = it }
                 }
                 launch {
-                    preferencesRepo.crossDeviceSync.collect { _crossDeviceSync.value = it }
+                    preferencesRepo.crossDeviceSync.collect {
+                        _crossDeviceSync.value = it
+                        if (it) {
+                            _signingIn.value = false
+                        }
+                    }
                 }
                 launch {
                     preferencesRepo.signedInUserEmail.collect { _userEmail.value = it }
@@ -190,9 +199,17 @@ class SettingsViewModel(
                 }
             }
         }
+        viewModelScope.launch {
+            EventBus.events.collect { event ->
+                if (event is SignInCancelled) {
+                    _signingIn.value = false
+                }
+                if (event is SignOutEvent) {
+                    _signingIn.value = false
+                }
+            }
+        }
     }
-
-    private val networkMonitor = NetworkMonitor(getApplication())
 
     val networkEnabled: StateFlow<Boolean> = combine(
         preferencesRepo.allowMobileData,
@@ -367,8 +384,10 @@ class SettingsViewModel(
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
             if (enable) {
+                _signingIn.value = _userEmail.value.isNullOrEmpty()
                 EventBus.emit(SignInEvent)
             } else {
+                _signingIn.value = false
                 preferencesRepo.saveCrossDeviceSync(false)
                 stopWorkers()
             }
@@ -392,8 +411,7 @@ class SettingsViewModel(
                 return@launch
             }
 
-            val context: Context = getApplication()
-            val workManager = WorkManager.getInstance(context)
+            val workManager = WorkManager.getInstance(application)
 
             val allowMobile = preferencesRepo.allowMobileData.first()
             val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
@@ -488,8 +506,7 @@ class SettingsViewModel(
                 }
 
                 try {
-                    val context: Context = getApplication()
-                    val driveService = GoogleDriveServiceHelper.getDriveService(context, email)
+                    val driveService = GoogleDriveServiceHelper.getDriveService(application, email)
 
                     val files = driveService.files().list()
                         .setSpaces("appDataFolder")
@@ -541,8 +558,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepo.signedInUserEmail.first() ?: return@launch
 
-            val context: Context = getApplication()
-            val workManager = WorkManager.getInstance(context)
+            val workManager = WorkManager.getInstance(application)
 
             workManager.cancelUniqueWork(("download_sync_work"))
         }
@@ -1151,8 +1167,9 @@ data class SnackbarState(
 
 data object DatabaseRestoreEvent
 data object SyncDownloadEvent
-data object SignOutEvent
 data object SignInEvent
+data object SignInCancelled
+data object SignOutEvent
 
 
 /** Extension functions */
