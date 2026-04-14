@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -59,6 +61,7 @@ import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.primaryContainerLight
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,6 +162,7 @@ fun AboutScreen(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .background(primaryContainerLight, CircleShape)
+                        .border(3.dp, if (LocalCustomColors.current.isLightTheme) Color(0xFF323232) else Color.Transparent, CircleShape)
                         .padding(16.dp)
                         .size(80.dp)
                 )
