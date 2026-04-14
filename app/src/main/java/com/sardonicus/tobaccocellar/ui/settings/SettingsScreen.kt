@@ -382,6 +382,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             val hasScope by viewModel.hasScope.collectAsState()
             val connectionEnabled by viewModel.networkEnabled.collectAsState()
             val deviceSync by viewModel.crossDeviceSync.collectAsState()
+            val signingIn by viewModel.signingIn.collectAsState()
             val allowMobileData by viewModel.allowMobileData.collectAsState()
 
             if (!loading) {
@@ -391,6 +392,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     connectionEnabled = connectionEnabled,
                     confirmAcknowledgement = viewModel::saveCrossDeviceAcknowledged,
                     deviceSync = deviceSync,
+                    signingIn = signingIn,
                     onDeviceSync = viewModel::saveCrossDeviceSync,
                     email = email,
                     hasScope = hasScope,

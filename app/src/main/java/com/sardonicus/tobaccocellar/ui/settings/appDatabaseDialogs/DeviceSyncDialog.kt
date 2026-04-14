@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,15 +9,19 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +51,7 @@ fun DeviceSyncDialog(
     connectionEnabled: Boolean,
     confirmAcknowledgement: () -> Unit,
     deviceSync: Boolean,
+    signingIn: Boolean,
     onDeviceSync: (Boolean) -> Unit,
     email: String?,
     hasScope: Boolean,
@@ -163,12 +169,32 @@ fun DeviceSyncDialog(
                             )
                             CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                                 Switch(
-                                    checked = deviceSync,
+                                    checked = deviceSync || signingIn,
                                     onCheckedChange = { onDeviceSync(it) },
                                     modifier = Modifier
                                         .scale(.6f)
                                         .padding(start = 10.dp),
-                                    colors = SwitchDefaults.colors()
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = if (deviceSync) MaterialTheme.colorScheme.onPrimary else Color.Transparent,
+                                        checkedTrackColor = if (deviceSync) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    ),
+                                    thumbContent = if (signingIn && !deviceSync) {
+                                        {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier
+                                                        .padding(0.dp)
+                                                        .fillMaxSize(),
+                                                    strokeWidth = 3.dp
+                                                )
+                                            }
+                                        }
+                                    } else null
                                 )
                             }
                         }
