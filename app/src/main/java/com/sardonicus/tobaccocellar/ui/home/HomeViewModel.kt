@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.R
@@ -25,11 +25,11 @@ import com.sardonicus.tobaccocellar.ui.addEditItems.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
+import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
-import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
@@ -59,8 +59,8 @@ class HomeViewModel(
     private val itemsRepository: ItemsRepository,
     filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
-    application: Application
-): AndroidViewModel(application), ExportCsvHandler {
+    private val application: Application
+): ViewModel(), ExportCsvHandler {
 
     private val _tableTableSorting = MutableStateFlow(TableSorting())
     val tableSorting: StateFlow<TableSorting> = _tableTableSorting.asStateFlow()
@@ -101,6 +101,7 @@ class HomeViewModel(
     }
 
     private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
+    private val _filteredItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
 
     private val _isRendered = MutableStateFlow(false)
     fun updateListRendered(rendered: Boolean) { _isRendered.value = rendered }
@@ -118,6 +119,9 @@ class HomeViewModel(
                 // everything flow
                 launch {
                     filterViewModel.everythingFlow.collect { _allItems.value = it }
+                }
+                launch {
+                    filterViewModel.homeScreenFilteredItems.collect { _filteredItems.value = it }
                 }
 
                 // Table Sorting
@@ -1022,18 +1026,16 @@ class HomeViewModel(
 
     fun snackbarShown() { _showSnackbar.value = false }
 
-    val filteredItems = filterViewModel.homeScreenFilteredItems.value
-
     override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = if (allItems) _allItems.value else filteredItems
+            val data = if (allItems) _allItems.value else _filteredItems.value
             val maxRating = exportRating.maxRating
             val rounding = exportRating.rounding
 
             val csvData = csvHelper.exportToCsv(data, maxRating, rounding)
 
             if (uri != null) {
-                getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
+                application.contentResolver.openOutputStream(uri)?.use {
                         outputStream ->
                     outputStream.write(csvData.toByteArray())
                     _showSnackbar.value = true
@@ -1054,13 +1056,13 @@ class HomeViewModel(
             val data: List<TinExportData> = if (allItems) {
                 createTinExportData(_allItems.value, maxRating, rounding)
             } else {
-                createTinExportData(filteredItems, maxRating, rounding)
+                createTinExportData(_filteredItems.value, maxRating, rounding)
             }
 
             val tinCsvData = csvHelper.exportTinsToCsv(data)
 
             if (uri != null) {
-                getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
+                application.contentResolver.openOutputStream(uri)?.use {
                         outputStream ->
                     outputStream.write(tinCsvData.toByteArray())
                     _showSnackbar.value = true
