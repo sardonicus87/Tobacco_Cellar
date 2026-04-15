@@ -8,20 +8,19 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
@@ -31,18 +30,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.delay
 
 @Composable
 fun DeviceSyncDialog(
@@ -66,6 +74,22 @@ fun DeviceSyncDialog(
 
     val scrollState = rememberScrollState()
     val atBottom by remember { derivedStateOf { !scrollState.canScrollForward } }
+    val density = LocalDensity.current
+    val checkOffset = remember { with(density) { 14.sp.toDp() } }
+
+    var disconnectFailure by remember { mutableStateOf(false) }
+
+    LaunchedEffect(disconnectFailure, connectionEnabled) {
+        if (disconnectFailure) {
+            snapshotFlow { connectionEnabled }.collect {
+                if (it) {
+                    delay(1000)
+                    disconnectFailure = false
+                    onDeviceSync(true)
+                }
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -152,49 +176,78 @@ fun DeviceSyncDialog(
                     ) {
                         Spacer(Modifier.height(4.dp))
                         // Enable Sync
-                        Row(
-                            modifier = modifier
-                                .fillMaxWidth()
-                                .height(28.dp)
-                                .padding(start = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Multi-Device Sync:",
-                                modifier = Modifier,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = LocalContentColor.current
-                            )
-                            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                                Switch(
-                                    checked = deviceSync || signingIn,
-                                    onCheckedChange = { onDeviceSync(it) },
-                                    modifier = Modifier
-                                        .scale(.6f)
-                                        .padding(start = 10.dp),
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = if (deviceSync) MaterialTheme.colorScheme.onPrimary else Color.Transparent,
-                                        checkedTrackColor = if (deviceSync) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                    ),
-                                    thumbContent = if (signingIn && !deviceSync) {
-                                        {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(20.dp)
-                                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape),
-                                                contentAlignment = Alignment.Center
-                                            ) {
+                        Box {
+                            Row(
+                                modifier = modifier
+                                    .fillMaxWidth()
+                                    .height(28.dp)
+                                    .padding(start = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Multi-Device Sync:",
+                                    modifier = Modifier,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = LocalContentColor.current
+                                )
+                                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                                    Switch(
+                                        checked = deviceSync || signingIn || disconnectFailure,
+                                        onCheckedChange = {
+                                            if (!connectionEnabled && !deviceSync) {
+                                                disconnectFailure = it
+                                            } else {
+                                                onDeviceSync(it)
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .scale(.6f)
+                                            .padding(start = 10.dp),
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = if (deviceSync && connectionEnabled) MaterialTheme.colorScheme.onPrimary else if (!connectionEnabled) LocalCustomColors.current.favHeart else Color.Transparent,
+                                            checkedTrackColor = if (deviceSync && connectionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                            checkedBorderColor = if ((deviceSync && !connectionEnabled) || disconnectFailure) MaterialTheme.colorScheme.outline else Color.Transparent
+                                        ),
+                                        thumbContent = if (signingIn && !deviceSync) {
+                                            {
                                                 CircularProgressIndicator(
                                                     modifier = Modifier
                                                         .padding(0.dp)
-                                                        .fillMaxSize(),
+                                                        .fillMaxSize()
+                                                        .background(
+                                                            MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                            CircleShape
+                                                        ),
                                                     strokeWidth = 3.dp
                                                 )
                                             }
-                                        }
-                                    } else null
+                                        } else if ((deviceSync && !connectionEnabled) || disconnectFailure) {
+                                            {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.close),
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier
+                                                )
+                                            }
+                                        } else null
+                                    )
+                                }
+                            }
+                            if ((deviceSync && !connectionEnabled) || disconnectFailure) {
+                                Text(
+                                    text = "(Check Connection)",
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 1.em,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .offset(y = -(checkOffset + 8.dp)),
+                                    maxLines = 1,
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = .75f),
                                 )
                             }
                         }
@@ -268,27 +321,6 @@ fun DeviceSyncDialog(
                                         text = "Clear Remote Data",
                                         fontSize = 15.sp,
                                         maxLines = 1
-                                    )
-                                }
-                            }
-                            if (deviceSync && !connectionEnabled) {
-                                Box (
-                                    modifier = Modifier
-                                        .width(IntrinsicSize.Min)
-                                        .padding(end = 10.dp)
-                                        .fillMaxHeight(),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Text(
-                                        text = "(Check connection)",
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 12.sp,
-                                            maxFontSize = 14.sp,
-                                        ),
-                                        textAlign = TextAlign.End,
-                                        modifier = Modifier,
-                                        maxLines = 2,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                                     )
                                 }
                             }
