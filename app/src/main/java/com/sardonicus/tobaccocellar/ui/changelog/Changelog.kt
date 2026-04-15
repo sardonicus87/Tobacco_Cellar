@@ -14,6 +14,37 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 45,
+        versionNumber = "5.2.2",
+        buildDate = "15 Apr, 2026",
+        changes = listOf(
+            "New: About Screen (moved from Settings screen). The app and database version numbers " +
+                    "are now located here as well as the full in-app changelog and some other " +
+                    "things (play store listing, website, privacy and data policies).",
+            "Settings Screen redesigned (moved \"About\" section to a new screen)."
+        ),
+        improvements = listOf(
+            "Multi-Device Sync: added an option to sign-in with a Google Account that isn't " +
+                    "already on the device, and added an intermediate state for the switch " +
+                    "during the sign-in process.",
+            "Various minor UI tweaks and fixes.",
+            "Minor performance and stability improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed a bug when exporting CSV, would export nothing when using the filtered option."
+        ),
+        releaseNotes = listOf(
+            "New About Screen, access from top right menu on Cellar screen. Find the app/" +
+                "database versions, changelog, contact (e-mail), and other useful links (like " +
+                "privacy and data policies) here.",
+            "Multi-Device Sync: added an option to sign-in with a Google Account that isn't " +
+                    "already on the device.",
+            "Bug fix: exporting CSV, would export nothing when using the filtered option.",
+            "Other minor performance and stability improvements."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 44,
         versionNumber = "5.2.1",
         buildDate = "7 Apr, 2026",

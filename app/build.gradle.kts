@@ -15,14 +15,14 @@ kotlin {
         freeCompilerArgs.add("-Xlambdas=class")
     }
     android {
-        compileSdk = 36
+        compileSdk = 37
 
         defaultConfig {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 37
-            versionCode = 44
-            versionName = "5.2.1"
+            versionCode = 45
+            versionName = "5.2.2"
 
             vectorDrawables {
                 useSupportLibrary = true
