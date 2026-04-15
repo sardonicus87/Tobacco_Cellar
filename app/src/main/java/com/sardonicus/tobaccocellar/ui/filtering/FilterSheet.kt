@@ -12,6 +12,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
@@ -34,6 +36,11 @@ fun FilterSheet(
 ) {
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
     val pagerState = rememberPagerState { 3 }
+
+    val focusManager = LocalFocusManager.current
+    DisposableEffect(Unit) {
+        onDispose { focusManager.clearFocus() }
+    }
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(

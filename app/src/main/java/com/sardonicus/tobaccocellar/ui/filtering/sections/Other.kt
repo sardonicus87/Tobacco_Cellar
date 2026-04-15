@@ -37,6 +37,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
@@ -374,6 +376,11 @@ private fun RatingRangePop(
     val allowedPattern = remember(decimalSeparator) {
         val ds = Regex.escape(decimalSeparator)
         Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
+    }
+
+    val focusManager = LocalFocusManager.current
+    DisposableEffect(Unit) {
+        onDispose { focusManager.clearFocus() }
     }
 
     AlertDialog(
