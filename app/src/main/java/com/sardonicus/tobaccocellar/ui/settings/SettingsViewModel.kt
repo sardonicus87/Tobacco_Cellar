@@ -256,14 +256,24 @@ class SettingsViewModel(
     val databaseSettings = combine (
         _crossDeviceSync,
         _allowMobileData,
+        networkEnabled,
         _tinOzConversionRate,
         _tinGramsConversionRate,
         _defaultSyncOption,
-    ) { crossDeviceSync, mobileData, ozRate, gramsRate, defaultSync ->
+    ) { values: Array<Any> ->
+        val crossDeviceSync = values[0] as Boolean
+        val mobileData = values[1] as Boolean
+        val connected = values[2] as Boolean
+        val ozRate = values[3] as Double
+        val gramsRate = values[4] as Double
+        val defaultSync = values[5] as Boolean
+
         listOf(
             SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync.", crossDeviceSync.let {
-                if (it) { "On (${if (mobileData) "mobile" else "WiFi"})" }
-                else "Off" },
+                if (it) {
+                    if (!connected) "Disconnected" else "On (${if (mobileData) "mobile" else "WiFi"})"
+                } else "Off"
+            },
                 DialogType.DeviceSync),
             SettingsDialog("Tin Conversion Rates", "Change tin conversion rates.", "$ozRate oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
             SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option.", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
