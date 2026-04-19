@@ -144,7 +144,7 @@ fun ItemMenu(
                     Text(
                         text = "Edit Item",
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(25))
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(25))
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
@@ -159,7 +159,7 @@ fun ItemMenu(
                     Text(
                         text = "Quick Edit",
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(25))
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(25))
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
@@ -192,7 +192,7 @@ fun ItemMenu(
                         .fillMaxHeight()
                         .horizontalScroll(rememberScrollState())
                         .padding(3.dp, 8.dp)
-                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(50))
                 ) {
                     CompositionLocalProvider(
                         LocalContentColor provides MaterialTheme.colorScheme.primary.copy(alpha = 0.25f).compositeOver(MaterialTheme.colorScheme.onBackground)
@@ -314,7 +314,7 @@ fun ItemMenu(
                     Text(
                         text = "Save",
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(25))
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(25))
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
@@ -399,7 +399,6 @@ private fun QuickOption(
                 .size(6.dp)
                 .offset((-1).dp, (-8).dp)
                 .clip(CircleShape)
-                //.border(1.dp, borderColor, CircleShape)
                 .background(MaterialTheme.colorScheme.tertiary)
         )
         content()
