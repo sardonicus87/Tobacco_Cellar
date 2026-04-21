@@ -14,12 +14,15 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -172,13 +175,25 @@ class EditEntryViewModel(
         }
     }
 
+    private val _uiEvents = MutableSharedFlow<EditUiEvent>()
+    val uiEvents = _uiEvents.asSharedFlow()
+
     init {
         viewModelScope.launch {
             loading = true
 
-            val initialDetails = itemsRepository.getItemDetailsStream(itemsId)
-                .filterNotNull()
-                .first()
+            val initialDetails = withTimeoutOrNull(3000) {
+                filterViewModel.everythingFlow
+                    .mapNotNull { list -> list.find { it.items.id == itemsId } }
+                    .first()
+            }
+
+            if (initialDetails == null) {
+                loading = false
+                _uiEvents.emit(EditUiEvent.ShowMessage("Error: item not found."))
+                _uiEvents.emit(EditUiEvent.NavigateBack)
+                return@launch
+            }
 
             val itemDetails = initialDetails.items.toItemDetails()
                 .also { copyOriginalDetails(it) }
@@ -583,4 +598,9 @@ fun TinDetails.toOriginalTin(): OriginalTin {
         finished = this.finished,
         lastModified = this.lastModified
     )
+}
+
+sealed class EditUiEvent {
+    object NavigateBack: EditUiEvent()
+    data class ShowMessage(val message: String): EditUiEvent()
 }
