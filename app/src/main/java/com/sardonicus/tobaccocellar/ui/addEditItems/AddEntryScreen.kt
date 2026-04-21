@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.addEditItems
 import android.content.res.Configuration
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -88,6 +89,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -181,6 +183,15 @@ fun AddEntryScreen(
     val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
     val currentLeftTab by viewModel.currentLeftTab.collectAsState()
     val showRatingPop by viewModel.showRatingPop.collectAsState()
+
+    val activity = LocalActivity.current
+    DisposableEffect(Unit) {
+        onDispose {
+            if (activity?.isChangingConfigurations == false) {
+                focusManager.clearFocus()
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier
