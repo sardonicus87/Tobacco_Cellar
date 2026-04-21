@@ -784,11 +784,11 @@ class HomeViewModel(
     }
 
     fun saveQuickEdits() {
-        val itemId = _activeMenuId.value ?: return
+        _activeMenuId.value ?: return
         val pending = _quickEditState.value
 
         viewModelScope.launch(Dispatchers.Default) {
-            val original = itemsRepository.getItemById(itemId) ?: return@launch
+            val original = _originalItem.value ?: return@launch
 
             if (pending.saveEnabled) {
                 val updatedItem = original.copy(
