@@ -93,7 +93,6 @@ fun BlendDetailsScreen(
     DisposableEffect(Unit) {
         onDispose {
             if (activity?.isChangingConfigurations == false) {
-
                 viewModel.resetSelection()
             }
         }
