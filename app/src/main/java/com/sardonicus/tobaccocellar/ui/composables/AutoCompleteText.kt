@@ -283,7 +283,6 @@ private fun getInput(text: String, cursorPosition: Int, componentField: Boolean)
     val delimiterIndices = text.mapIndexedNotNull { index, char ->
         when (char) {
             ',' -> index
-            ' ' -> index
             else -> null
         }
     }.toMutableList().apply {
@@ -304,12 +303,14 @@ private fun getSuggestions(
 ): List<String> {
     if (input.length >= 2 ) { // && typeCount >= 2
         val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
+
         val otherWordsStartsWith = allItems.filter { string ->
             string.split(" ").drop(1)
                 .any {
                     it.startsWith(input, ignoreCase = true) }
                     && !startsWith.contains(string)
         }
+
         val contains = allItems.filter {
             it.contains(input, ignoreCase = true)
                     && !startsWith.contains(it) && !otherWordsStartsWith.contains(it)
@@ -327,6 +328,7 @@ private fun getSuggestions(
             else { it.equals(input, ignoreCase = false) } }.toSet()
 
         val newSuggestions = (startsWith + otherWordsStartsWith + contains) - selected
+
         return newSuggestions
     } else {
         return emptyList()
