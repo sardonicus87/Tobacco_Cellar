@@ -1,8 +1,8 @@
 [versions]
 activityCompose = "1.13.0"
 androidCredentials = "1.6.0"
-androidlibrary = "9.1.1"
-agp = "9.1.1"
+androidlibrary = "9.2.0"
+agp = "9.2.0"
 commonsCsv = "1.14.1"
 composeBom = "2026.03.01"
 coreKtx = "1.18.0"
