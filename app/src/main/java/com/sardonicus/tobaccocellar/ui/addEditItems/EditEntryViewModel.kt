@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.data.Components
+import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
@@ -64,8 +66,10 @@ class EditEntryViewModel(
         updateUiState(itemUiState.itemDetails)
     }
 
-    var originalItem by mutableStateOf(OriginalItem())
-    var originalTins by mutableStateOf<List<OriginalTin>>(emptyList())
+    val originalItem = MutableStateFlow(OriginalItem())
+    val originalTins = MutableStateFlow<List<OriginalTin>>(emptyList())
+    val originalComponentList = MutableStateFlow<List<Components>>(emptyList())
+    val originalFlavoringList = MutableStateFlow<List<Flavoring>>(emptyList())
 
     val autoCompleteData = filterViewModel.autoComplete.value
 
@@ -139,7 +143,7 @@ class EditEntryViewModel(
         itemDetails.originalBrand = itemDetails.brand
         itemDetails.originalBlend = itemDetails.blend
 
-        originalItem = originalItem.copy(
+        originalItem.value = OriginalItem(
             id = itemDetails.id,
             brand = itemDetails.originalBrand,
             blend = itemDetails.originalBlend,
@@ -158,7 +162,7 @@ class EditEntryViewModel(
     }
 
     private fun copyOriginalTins(tins: List<TinDetails>) {
-        originalTins = tins.map { originalTin ->
+        originalTins.value = tins.map { originalTin ->
             OriginalTin(
                 tinId = originalTin.tinId,
                 itemsId = originalTin.itemsId,
@@ -203,13 +207,14 @@ class EditEntryViewModel(
                 .sortedBy { it.tinId }
                 .mapIndexed { index, it ->
                 it.toTinDetails().copy(tempTinId = index + 1)
-            }. also {
-                copyOriginalTins(it)
-            }
+            }. also { copyOriginalTins(it) }
 
             componentList = components
             flavoringList = flavoring
             tinDetailsList = tins
+
+            originalComponentList.value = initialDetails.components
+            originalFlavoringList.value = initialDetails.flavoring
 
             val updatedDetails = itemDetails.copy(tinDetailsList = tins)
 
@@ -418,26 +423,27 @@ class EditEntryViewModel(
         if (validateInput(itemUiState.itemDetails)) {
             SyncStateManager.schedulingPaused = true
 
-            val previousComps = itemsRepository.getComponentsForItemStream(itemsId).first()
+            val previousComps = originalComponentList.first()
             val previousCompsSet = previousComps.map { it.componentName.lowercase() }
             val editedComps = componentList.toComponents(autoCompleteData.components)
             val editedCompsSet = editedComps.map { it.componentName.lowercase() }
             val compsToAdd = editedComps.filter { it.componentName.lowercase() !in previousCompsSet }
             val compsToRemove = previousComps.filter { it.componentName.lowercase() !in editedCompsSet }
 
-            val previousFlavors = itemsRepository.getFlavoringForItemStream(itemsId).first()
+            val previousFlavors = originalFlavoringList.first()
             val previousFlavorsSet = previousFlavors.map { it.flavoringName.lowercase() }
             val editedFlavoring = flavoringList.toFlavoring(autoCompleteData.flavorings)
             val editedFlavoringSet = editedFlavoring.map { it.flavoringName.lowercase() }
             val flavorToAdd = editedFlavoring.filter { it.flavoringName.lowercase() !in previousFlavorsSet }
             val flavorToRemove = previousFlavors.filter { it.flavoringName.lowercase() !in editedFlavoringSet }
 
-            val existingTinIds = originalTins.map { it.tinId }
+            val previousTins = originalTins.first()
+            val existingTinIds = previousTins.map { it.tinId }
             val newTins = tinDetailsList.filter { !existingTinIds.contains(it.tinId) }
             val updatedTins = tinDetailsList.filter { existingTinIds.contains(it.tinId) }.filter {
-                it.toOriginalTin() != originalTins.find { originalTin -> originalTin.tinId == it.tinId }
+                it.toOriginalTin() != previousTins.find { originalTin -> originalTin.tinId == it.tinId }
             }
-            val conflictingTins = originalTins.filter { tin ->
+            val conflictingTins = previousTins.filter { tin ->
                 // check for label conflicts in the event of swapped tin labels
                 tinDetailsList.any { it.tinId != tin.tinId && it.tinLabel == tin.tinLabel }
             }
@@ -461,13 +467,11 @@ class EditEntryViewModel(
                     ItemsComponentsCrossRef(itemsId, componentId)
                 )
             }
-            compsToRemove.forEach{
-                val componentId = itemsRepository.getComponentIdByName(it.componentName)
-                if (componentId != null) {
-                    itemsRepository.deleteComponentsCrossRef(
-                        ItemsComponentsCrossRef(itemsId, componentId)
-                    )
-                }
+            compsToRemove.forEach {
+                val componentId = it.componentId
+                itemsRepository.deleteComponentsCrossRef(
+                    ItemsComponentsCrossRef(itemsId, componentId)
+                )
             }
 
             flavorToAdd.forEach {
@@ -480,12 +484,10 @@ class EditEntryViewModel(
                 )
             }
             flavorToRemove.forEach {
-                val flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                if (flavorId != null) {
-                    itemsRepository.deleteFlavoringCrossRef(
-                        ItemsFlavoringCrossRef(itemsId, flavorId)
-                    )
-                }
+                val flavorId = it.flavoringId
+                itemsRepository.deleteFlavoringCrossRef(
+                    ItemsFlavoringCrossRef(itemsId, flavorId)
+                )
             }
 
             tinsToDelete.forEach {
