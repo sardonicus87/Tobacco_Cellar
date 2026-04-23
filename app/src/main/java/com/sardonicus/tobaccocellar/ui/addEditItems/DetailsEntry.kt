@@ -97,8 +97,9 @@ fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     showRatingPop: Boolean,
     onShowRatingPop: (Boolean) -> Unit,
+    fieldInteractionSource: MutableInteractionSource?,
     tooltipVisible: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -166,7 +167,8 @@ fun DetailsEntry(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
-                )
+                ),
+                interactionSource = fieldInteractionSource
             )
         }
 
@@ -238,7 +240,8 @@ fun DetailsEntry(
                     unfocusedContainerColor = LocalCustomColors.current.textField,
                     disabledContainerColor = LocalCustomColors.current.textField,
                 ),
-                shape = MaterialTheme.shapes.extraSmall
+                shape = MaterialTheme.shapes.extraSmall,
+                interactionSource = fieldInteractionSource
             )
         }
 
@@ -303,7 +306,8 @@ fun DetailsEntry(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
-                )
+                ),
+                interactionSource = fieldInteractionSource
             )
         }
 
@@ -347,7 +351,8 @@ fun DetailsEntry(
                     capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
-                )
+                ),
+                interactionSource = fieldInteractionSource
             )
         }
 
@@ -414,7 +419,8 @@ fun DetailsEntry(
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                     )
-                }
+                },
+                interactionSource = fieldInteractionSource
             )
         }
 
@@ -481,7 +487,8 @@ fun DetailsEntry(
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                     )
-                }
+                },
+                interactionSource = fieldInteractionSource
             )
         }
 

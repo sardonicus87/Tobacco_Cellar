@@ -105,7 +105,8 @@ fun TinsEntry(
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fieldInteractionSource: MutableInteractionSource? = null
 ) {
     Spacer(Modifier.height(7.dp))
     Column(
@@ -145,6 +146,7 @@ fun TinsEntry(
                     removeTin = { removeTin(index) },
                     itemUiState = itemUiState,
                     validateDates = validateDates,
+                    fieldInteractionSource = fieldInteractionSource,
                     modifier = Modifier
                         .padding(bottom = 4.dp)
                         .background(
@@ -182,6 +184,7 @@ private fun IndividualTin(
     removeTin: () -> Unit,
     itemUiState: ItemUiState,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
+    fieldInteractionSource: MutableInteractionSource?,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect (tinDetailsList) {
@@ -310,6 +313,7 @@ private fun IndividualTin(
                         singleLine = true,
                         maxLines = 1,
                         minLines = 1,
+                        interactionSource = fieldInteractionSource
                     )
                     Text(
                         text = "Label must be unique within each entry.",
@@ -389,7 +393,8 @@ private fun IndividualTin(
                             capitalization = KeyboardCapitalization.None,
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next,
-                        )
+                        ),
+                        interactionSource = fieldInteractionSource
                     )
                 }
 

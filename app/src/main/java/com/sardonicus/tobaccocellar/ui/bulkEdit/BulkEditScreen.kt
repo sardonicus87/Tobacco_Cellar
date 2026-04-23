@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -229,6 +230,9 @@ fun BulkEditBody(
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
     var textFieldFocused by remember { mutableStateOf(false) }
 
+    val fieldInteractionSource = remember { MutableInteractionSource() }
+    val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
+
     val focusManager = LocalFocusManager.current
     var anythingFocused by remember { mutableStateOf(false) }
     val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
@@ -391,7 +395,7 @@ fun BulkEditBody(
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = !textFieldFocused,
+                        userScrollEnabled = !textFieldFocused && !unfocusedFieldScroll,
                         verticalAlignment = Alignment.Top
                     ) { targetIndex ->
                         Column(
@@ -422,6 +426,7 @@ fun BulkEditBody(
                                         autoComps = autoComps,
                                         autoFlavor = autoFlavor,
                                         fieldFocused = { textFieldFocused = it },
+                                        fieldInteractionSource = fieldInteractionSource,
                                         modifier = Modifier
                                     )
 
@@ -541,6 +546,7 @@ fun BulkEditing(
     autoFlavor: List<String>,
     fieldFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    fieldInteractionSource: MutableInteractionSource? = null,
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
     val selectedItems = editingState.selectedItems
@@ -707,7 +713,8 @@ fun BulkEditing(
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Next,
                             ),
-                            enabled = editingState.genreSelected
+                            enabled = editingState.genreSelected,
+                            interactionSource = fieldInteractionSource
                         )
                     }
 
@@ -771,7 +778,8 @@ fun BulkEditing(
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Next,
                             ),
-                            enabled = editingState.cutSelected
+                            enabled = editingState.cutSelected,
+                            interactionSource = fieldInteractionSource
                         )
                     }
 
@@ -873,7 +881,8 @@ fun BulkEditing(
                                         overflow = TextOverflow.Clip,
                                     )
                                 }
-                            }
+                            },
+                            interactionSource = fieldInteractionSource
                         )
                     }
 
@@ -974,7 +983,8 @@ fun BulkEditing(
                                         overflow = TextOverflow.Clip,
                                     )
                                 }
-                            }
+                            },
+                            interactionSource = fieldInteractionSource
                         )
                     }
 

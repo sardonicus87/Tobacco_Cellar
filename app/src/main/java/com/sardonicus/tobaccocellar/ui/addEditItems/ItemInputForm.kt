@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.addEditItems
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,6 +90,9 @@ fun ItemInputForm(
 
     val largePagerState = rememberPagerState(initialPage = currentLeftTab()) { 2 }
     val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex()) { 3 }
+
+    val fieldInteractionSource = remember { MutableInteractionSource() }
+    val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
     if (isLarge) {
         LaunchedEffect(largePagerState.currentPage) {
@@ -181,6 +185,7 @@ fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
+                                    fieldInteractionSource = fieldInteractionSource,
                                     tooltipVisible = { tooltipVisible = it },
                                     modifier = Modifier
                                 )
@@ -259,7 +264,7 @@ fun ItemInputForm(
                 HorizontalPager(
                     state = narrowPagerState,
                     modifier = Modifier.fillMaxSize(),
-                    userScrollEnabled = !textFieldFocused && !tooltipVisible,
+                    userScrollEnabled = !textFieldFocused && !tooltipVisible && !unfocusedFieldScroll,
                     verticalAlignment = Alignment.Top
                 ) { targetIndex ->
                     Column(
@@ -282,6 +287,7 @@ fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
+                                    fieldInteractionSource = fieldInteractionSource,
                                     tooltipVisible = { tooltipVisible = it },
                                     modifier = Modifier
                                 )
@@ -302,6 +308,7 @@ fun ItemInputForm(
                                     removeTin = removeTin,
                                     itemUiState = itemUiState,
                                     validateDates = validateDates,
+                                    fieldInteractionSource = fieldInteractionSource,
                                     modifier = Modifier
                                 )
 
@@ -318,6 +325,7 @@ fun ItemInputForm(
                                     onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
+                                    fieldInteractionSource = fieldInteractionSource,
                                     tooltipVisible = { tooltipVisible = it },
                                     modifier = Modifier
                                 )

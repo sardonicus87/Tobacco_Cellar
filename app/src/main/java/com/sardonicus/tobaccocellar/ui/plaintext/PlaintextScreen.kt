@@ -22,6 +22,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -245,6 +246,9 @@ fun PlaintextBody(
 ) {
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
 
+    val fieldInteractionSource = remember { MutableInteractionSource() }
+    val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
+
     // pager and tab synchronizing
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
@@ -420,7 +424,7 @@ fun PlaintextBody(
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = !anythingFocused,
+            userScrollEnabled = !anythingFocused && !unfocusedFieldScroll,
             beyondViewportPageCount = 1,
             verticalAlignment = Alignment.Top
         ) { targetIndex ->
@@ -453,6 +457,7 @@ fun PlaintextBody(
                             savePreset = savePreset,
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
+                            fieldInteractionSource = fieldInteractionSource,
                             modifier = Modifier
                                 .fillMaxWidth()
                         )
@@ -975,7 +980,8 @@ fun PlaintextFormatting(
     savePreset: (Int, String, String) -> Unit,
     selectionKey: Int,
     updateSelectionFocused: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fieldInteractionSource: MutableInteractionSource? = null
 ) {
     val formatPreview by viewModel.formatPreview.collectAsState()
     val presets by viewModel.presets.collectAsState()
@@ -1095,7 +1101,8 @@ fun PlaintextFormatting(
                         unfocusedContainerColor = LocalCustomColors.current.textField,
                         disabledContainerColor = LocalCustomColors.current.textField,
                     ),
-                    shape = MaterialTheme.shapes.extraSmall
+                    shape = MaterialTheme.shapes.extraSmall,
+                    interactionSource = fieldInteractionSource
                 )
 
                 // Delimiter
@@ -1119,7 +1126,8 @@ fun PlaintextFormatting(
                         unfocusedContainerColor = LocalCustomColors.current.textField,
                         disabledContainerColor = LocalCustomColors.current.textField,
                     ),
-                    shape = MaterialTheme.shapes.extraSmall
+                    shape = MaterialTheme.shapes.extraSmall,
+                    interactionSource = fieldInteractionSource
                 )
             }
         }
@@ -1602,6 +1610,11 @@ private fun PrintDialog(
     val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
     val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
     val decimalSeparator = symbols.decimalSeparator.toString()
+
+    val focusManager = LocalFocusManager.current
+    DisposableEffect(Unit) {
+        onDispose { focusManager.clearFocus() }
+    }
 
     AlertDialog(
         onDismissRequest = { onPrintCancel(fontSize, margins) },
