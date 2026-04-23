@@ -23,6 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -58,6 +60,11 @@ fun RatingPopup(
 ) {
     var currentRatingString by rememberSaveable { mutableStateOf(formatDecimal(currentRating)) }
     var parsedDouble by rememberSaveable { mutableStateOf<Double?>(null) }
+
+    val focusManager = LocalFocusManager.current
+    DisposableEffect(Unit) {
+        onDispose { focusManager.clearFocus() }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
