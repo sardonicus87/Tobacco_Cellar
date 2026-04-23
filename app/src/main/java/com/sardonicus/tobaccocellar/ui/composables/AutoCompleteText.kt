@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,6 +64,7 @@ fun AutoCompleteText(
     enabled: Boolean = true,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     textStyle: TextStyle = LocalTextStyle.current,
+    interactionSource: MutableInteractionSource? = null,
     componentField: Boolean = false,
 ) {
     var suggestionsState by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -168,6 +170,7 @@ fun AutoCompleteText(
                 unfocusedContainerColor = LocalCustomColors.current.textField,
                 disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f),
             ),
+            interactionSource = interactionSource,
             shape = MaterialTheme.shapes.extraSmall,
             label = label,
             maxLines = maxLines,

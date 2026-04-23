@@ -39,12 +39,13 @@ fun CustomTextField(
     shape: Shape = TextFieldDefaults.shape,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     contentPadding: PaddingValues = contentPaddingWithoutLabel(),
+    interactionSource: MutableInteractionSource? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     supportingText: @Composable (() -> Unit)? = null,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSourceImp = interactionSource ?: remember { MutableInteractionSource() }
 
     BasicTextField(
         value = value,
@@ -54,7 +55,7 @@ fun CustomTextField(
         readOnly = readOnly,
         textStyle = textStyle,
         visualTransformation = visualTransformation,
-        interactionSource = interactionSource,
+        interactionSource = interactionSourceImp,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
@@ -69,7 +70,7 @@ fun CustomTextField(
             singleLine = singleLine,
             enabled = enabled,
             isError = isError,
-            interactionSource = interactionSource,
+            interactionSource = interactionSourceImp,
             colors = colors.copy(
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
