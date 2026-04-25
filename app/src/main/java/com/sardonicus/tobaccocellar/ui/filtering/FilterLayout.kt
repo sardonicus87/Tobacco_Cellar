@@ -3,6 +3,8 @@ package com.sardonicus.tobaccocellar.ui.filtering
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,11 +30,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,12 +69,25 @@ fun FilterLayout(
     sheetLayout: Boolean = true,
     pagerState: PagerState = rememberPagerState { 3 },
 ) {
+    val focusManager = LocalFocusManager.current
+    var hasFocus by remember { mutableStateOf(false) }
+
     Column (
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
             .imePadding()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .onFocusChanged { hasFocus = it.hasFocus }
+            .pointerInput(hasFocus) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Main)
+                    if (hasFocus) {
+                        focusManager.clearFocus()
+                        down.consume()
+                    }
+                }
+            },
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
