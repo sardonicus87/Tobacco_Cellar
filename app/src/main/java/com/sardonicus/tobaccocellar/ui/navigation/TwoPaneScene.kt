@@ -44,12 +44,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
@@ -189,19 +192,6 @@ data class TwoPaneScene<T : Any>(
                     modifier = Modifier
                         .width(paneWidth)
                         .graphicsLayer { clip = true }
-                        .pointerInput(Unit) {
-                            if (secondExpanded) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event =
-                                            awaitPointerEvent(pass = PointerEventPass.Initial)
-                                        if (event.changes.any { it.changedToDown() }) {
-                                            showButton = true
-                                        }
-                                    }
-                                }
-                            }
-                        }
                 ) {
                     Column(
                         modifier = Modifier
@@ -216,6 +206,35 @@ data class TwoPaneScene<T : Any>(
                                 )
                                 layout(constraints.maxWidth, constraints.maxHeight) {
                                     placeable.placeRelative(0, 0)
+                                }
+                            }
+                            .pointerInput(secondExpanded){
+                                if (secondExpanded) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event = awaitPointerEvent(PointerEventPass.Final)
+                                            val down = event.changes.find { it.changedToDown() && !it.isConsumed }
+
+                                            if (down != null) {
+                                                val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                                                    var change: PointerInputChange? = null
+                                                    while (change == null) {
+                                                        val nextEvent = awaitPointerEvent(PointerEventPass.Final)
+                                                        if (nextEvent.changes.any { it.changedToUp() }) {
+                                                            change = nextEvent.changes.find { it.changedToUp() }
+                                                        } else if (nextEvent.changes.any { it.isConsumed} ) {
+                                                            return@withTimeoutOrNull null
+                                                        }
+                                                    }
+                                                    change
+                                                }
+
+                                                if (up != null && !up.isConsumed) {
+                                                    showButton = true
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                     ) {
@@ -267,7 +286,12 @@ data class TwoPaneScene<T : Any>(
                 exit = fadeOut(tween(150)),
                 modifier = Modifier
                     .align(BiasAlignment(horizontalBias = 1f, verticalBias = -1f))
-                    .offset(x = buttonHorizontalOffset, y = buttonVerticalOffset)
+                    .offset {
+                        IntOffset(
+                            buttonHorizontalOffset.roundToPx(),
+                            buttonVerticalOffset.roundToPx()
+                        )
+                    }
             ) {
                 Box(
                     modifier = Modifier
