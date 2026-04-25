@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.filtering
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalFocusManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,14 +20,10 @@ fun FilterPane(
     filterViewModel: FilterViewModel
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) {
-                focusManager.clearFocus()
-            }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
