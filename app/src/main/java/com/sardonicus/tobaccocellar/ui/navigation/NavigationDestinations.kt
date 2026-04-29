@@ -3,15 +3,46 @@ package com.sardonicus.tobaccocellar.ui.navigation
 import androidx.navigation3.runtime.NavKey
 import com.sardonicus.tobaccocellar.ui.changelog.ChangelogEntryData
 import kotlinx.serialization.Serializable
+import kotlin.reflect.KClass
 
 // Used for TwoPane strategy for large screens
 enum class PaneType { MAIN, SECOND, NONE }
 interface PaneInfo { val paneType: PaneType }
 
-val mainSecondaryMap: Map<NavKey, NavKey> = mapOf(
-    HomeDestination to FilterPaneDestination,
-    StatsDestination to FilterPaneDestination,
-    DatesDestination to FilterPaneDestination
+data class TwoPanePairing(
+    val defaultSecondary: NavKey,
+    val allowedSeconds: List<KClass<out NavKey>>
+)
+
+val mainSecondaryMap: Map<NavKey, TwoPanePairing> = mapOf(
+    HomeDestination to TwoPanePairing(
+        defaultSecondary = FilterPaneDestination,
+        allowedSeconds = listOf(
+            FilterPaneDestination::class,
+            BlendDetailsDestination::class,
+        )
+    ),
+    StatsDestination to TwoPanePairing(
+        defaultSecondary = FilterPaneDestination,
+        allowedSeconds = listOf(
+            FilterPaneDestination::class,
+            BlendDetailsDestination::class,
+        )
+    ),
+    DatesDestination to TwoPanePairing(
+        defaultSecondary = FilterPaneDestination,
+        allowedSeconds = listOf(
+            FilterPaneDestination::class,
+            BlendDetailsDestination::class,
+        )
+    ),
+    AboutDestination to TwoPanePairing(
+        defaultSecondary = SettingsDestination,
+        allowedSeconds = listOf(
+            SettingsDestination::class,
+            ChangelogDestination::class,
+        )
+    ),
 )
 
 @Serializable
@@ -97,12 +128,12 @@ data object HelpDestination : NavKey, PaneInfo {
 
 @Serializable
 data object AboutDestination : NavKey, PaneInfo {
-    override val paneType = PaneType.NONE
+    override val paneType = PaneType.MAIN
 }
 
 @Serializable
 data object SettingsDestination : NavKey, PaneInfo {
-    override val paneType = PaneType.NONE // maybe main
+    override val paneType = PaneType.SECOND
 }
 
 @Serializable
@@ -110,5 +141,5 @@ data class ChangelogDestination(
     val changelogEntries: List<ChangelogEntryData>,
     val targetVersion: Int? = null
 ) : NavKey, PaneInfo {
-    override val paneType = PaneType.NONE // maybe second if settings main and dialogs moved to second
+    override val paneType = PaneType.SECOND
 }
