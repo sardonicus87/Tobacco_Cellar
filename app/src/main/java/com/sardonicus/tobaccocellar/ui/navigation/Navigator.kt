@@ -29,27 +29,25 @@ class Navigator(
             // for TwoPane compatible routes, check and if it doesn't exist, add the default
             // second pane immediately after the main pane
             val currentStack = state.backStacks.getValue(state.topLevelRoute)
-            if (isLarge && route in mainSecondaryMap) {
-                val defaultSecond = mainSecondaryMap.getValue(route)
-                if (!currentStack.contains(defaultSecond)) {
-                    currentStack.add(1, defaultSecond)
+            mainSecondaryMap[route]?.let {
+                if (isLarge && !currentStack.contains(it.defaultSecondary)) {
+                    currentStack.add(1, it.defaultSecondary)
                 }
             }
 
             // For TwoPane scene, clean up the previous stack after swapping top level routes
             oldStack?.removeIf { oldStack.indexOf(it) > 1 }
 
-        } else {
-            // not a top level route, add to current backstack
+        } else { // not a top level route, add to current backstack
             state.backStacks[state.topLevelRoute]?.add(route)
-
 
             // check the newly added route for TwoPane compatibility and add its default second
             val currentStack = state.backStacks.getValue(state.topLevelRoute)
-            if (isLarge && route is PaneInfo && route.paneType == PaneType.MAIN && route in mainSecondaryMap) {
-                val defaultSecond = mainSecondaryMap.getValue(route)
-                if (!currentStack.contains(defaultSecond)) {
-                    currentStack.add(1, defaultSecond)
+            if (isLarge && route is PaneInfo && route.paneType == PaneType.MAIN) {
+                mainSecondaryMap[route]?.let {
+                    if (!currentStack.contains(it.defaultSecondary)) {
+                        currentStack.add(1, it.defaultSecondary)
+                    }
                 }
             }
 
@@ -78,18 +76,19 @@ class Navigator(
         val currentStack = state.backStacks[state.topLevelRoute] ?: error("Stack for ${state.topLevelRoute} not found")
         val currentRoute = currentStack.last()
 
-        val currentRoute2: NavKey = if (isLarge && currentRoute is PaneInfo && currentRoute.paneType == PaneType.SECOND && mainSecondaryMap.containsValue(currentRoute)) {
-            val key = currentStack.size - 2
-            currentStack[key]
-        } else {
-            currentRoute
-        }
+        val currentRoute2: NavKey =
+            if (state.isTwoPane) {
+                currentStack[currentStack.size - 2]
+            } else {
+                currentRoute
+            }
 
         if (currentRoute2 == state.topLevelRoute) {
             state.topLevelRoute = state.startRoute
         } else {
             currentStack.removeLastOrNull()
         }
+
 
         val (mainAfter, secondAfter) = findPanes(state.currentStack)
         if (mainBefore != mainAfter && secondBefore != secondAfter) {
