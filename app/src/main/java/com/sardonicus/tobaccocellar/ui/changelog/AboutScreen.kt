@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -131,153 +133,161 @@ fun AboutScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(48.dp, Alignment.Top)
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
-
-            Spacer(Modifier.height(24.dp))
-
             Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = modifier
+                    .widthIn(max = 592.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
+                verticalArrangement = Arrangement.spacedBy(48.dp, Alignment.Top)
             ) {
-                Text(
-                    text = "Tobacco Cellar",
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier,
-                    fontSize = 34.sp,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-                Image(
-                    painter = painterResource(R.drawable.tc_logo_crop),
-                    contentDescription = "Tobacco Cellar Logo",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .background(primaryContainerLight, CircleShape)
-                        .border(3.dp, if (LocalCustomColors.current.isLightTheme) Color(0xFF323232) else Color.Transparent, CircleShape)
-                        .padding(16.dp)
-                        .size(80.dp)
-                )
-            }
 
-            // About
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
-            ) {
-                Text(
-                    text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
-                            "Uses Apache Commons CSV for reading and writing CSV files.",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    lineHeight = 1.5.em,
-                    softWrap = true,
-                )
-                FlowRow(
-                    modifier = Modifier,
-                    horizontalArrangement = Arrangement.Start,
+                Spacer(Modifier.height(24.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
                 ) {
                     Text(
-                        text = "Contact me if you experience any bugs: ",
+                        text = "Tobacco Cellar",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier,
+                        fontSize = 34.sp,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Image(
+                        painter = painterResource(R.drawable.tc_logo_crop),
+                        contentDescription = "Tobacco Cellar Logo",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .background(primaryContainerLight, CircleShape)
+                            .border(3.dp, if (LocalCustomColors.current.isLightTheme) Color(0xFF323232) else Color.Transparent, CircleShape)
+                            .padding(16.dp)
+                            .size(80.dp)
+                    )
+                }
+
+                // About
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
+                ) {
+                    Text(
+                        text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
+                                "Uses Apache Commons CSV for reading and writing CSV files.",
                         modifier = Modifier,
                         fontSize = 15.sp,
                         lineHeight = 1.5.em,
                         softWrap = true,
                     )
-                    key(selectionKey) {
-                        SelectionContainer(
-                            modifier = Modifier
-                                .onFocusChanged { selectionFocused = it.isFocused }
-                        ) {
-
-                            Text(
-                                text = "sardonicus.notadev@gmail.com",
+                    FlowRow(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.Start,
+                    ) {
+                        Text(
+                            text = "Contact me if you experience any bugs: ",
+                            modifier = Modifier,
+                            fontSize = 15.sp,
+                            lineHeight = 1.5.em,
+                            softWrap = true,
+                        )
+                        key(selectionKey) {
+                            SelectionContainer(
                                 modifier = Modifier
-                                    .clickable(
-                                        interactionSource = null,
-                                        indication = LocalIndication.current
-                                    ) {
-                                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                            data = "mailto:sardonicus.notadev@gmail.com".toUri()
-                                            putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
-                                        }
+                                    .onFocusChanged { selectionFocused = it.isFocused }
+                            ) {
 
-                                        context.startActivity(
-                                            Intent.createChooser(emailIntent, "Send Email")
-                                        )
-                                    },
-                                fontSize = 14.sp,
-                                softWrap = true,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Normal,
-                                textDecoration = TextDecoration.Underline
-                            )
+                                Text(
+                                    text = "sardonicus.notadev@gmail.com",
+                                    modifier = Modifier
+                                        .clickable(
+                                            interactionSource = null,
+                                            indication = LocalIndication.current
+                                        ) {
+                                            val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                                data = "mailto:sardonicus.notadev@gmail.com".toUri()
+                                                putExtra(Intent.EXTRA_SUBJECT, "Tobacco Cellar Feedback")
+                                            }
+
+                                            context.startActivity(Intent.createChooser(emailIntent, "Send Email"))
+                                        },
+                                    fontSize = 14.sp,
+                                    softWrap = true,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Normal,
+                                    textDecoration = TextDecoration.Underline
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Text(
-                text = versionInfo,
-                modifier = Modifier,
-                textAlign = TextAlign.Center,
-                fontSize = 15.sp,
-                lineHeight = 1.5.em,
-                softWrap = true,
-            )
+                Text(
+                    text = versionInfo,
+                    modifier = Modifier,
+                    textAlign = TextAlign.Center,
+                    fontSize = 15.sp,
+                    lineHeight = 1.5.em,
+                    softWrap = true,
+                )
 
-            // Changelog and links
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top)
-            ) {
-                Row(
+                // Changelog and links
+                Column(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top)
                 ) {
-                    Text(
-                        text = "Changelog",
+                    Row(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { navigateToChangelog() }
-                            .padding(10.dp, 6.dp),
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp,
-                        lineHeight = 1.em,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    ExternalLink("Website", "http://www.tobacco-cellar.com")
-                    ExternalLink("Play Store", "https://play.google.com/store/apps/details?id=com.sardonicus.tobaccocellar")
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            30.dp,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Changelog",
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { navigateToChangelog() }
+                                .padding(10.dp, 6.dp),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp,
+                            lineHeight = 1.em,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        ExternalLink("Website", "http://www.tobacco-cellar.com")
+                        ExternalLink("Play Store", "https://play.google.com/store/apps/details?id=com.sardonicus.tobaccocellar")
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ExternalLink("Privacy Policy", "http://www.tobacco-cellar.com/privacy-policy")
+                        ExternalLink("Managing Data", "http://www.tobacco-cellar.com/managing-data")
+                    }
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ExternalLink("Privacy Policy", "http://www.tobacco-cellar.com/privacy-policy")
-                    ExternalLink("Managing Data", "http://www.tobacco-cellar.com/managing-data")
-                }
-            }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }
