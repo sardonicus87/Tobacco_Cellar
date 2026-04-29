@@ -37,12 +37,12 @@ fun rememberNavigationState(
 
     val backStacks = topLevelRoutes.associateWith { rememberNavBackStack(it) }
 
-    LaunchedEffect(largeScreen, topLevelRoutes, mainSecondaryMap, globalTwoPane) {
+    LaunchedEffect(largeScreen, topLevelRoutes, globalTwoPane) {
         if (largeScreen && globalTwoPane) {
             val currentStack = backStacks.getValue(topLevelRoute.value)
             val currentTop = topLevelRoute.value
             if (currentTop in mainSecondaryMap) {
-                val defaultSecond = mainSecondaryMap.getValue(currentTop)
+                val defaultSecond = mainSecondaryMap.getValue(currentTop).defaultSecondary
                 if (!currentStack.contains(defaultSecond)) {
                     currentStack.add(1, defaultSecond)
                 }
@@ -50,7 +50,7 @@ fun rememberNavigationState(
         } else {
             backStacks.forEach { (navKey, stack) ->
                 if (navKey in mainSecondaryMap) {
-                    val defaultSecond = mainSecondaryMap.getValue(navKey)
+                    val defaultSecond = mainSecondaryMap.getValue(navKey).defaultSecondary
                     if (stack.size > 1 && stack[1] == defaultSecond) {
                         stack.remove(defaultSecond)
                     }
@@ -106,10 +106,15 @@ class NavigationState(
             if (!globalTwoPane) return false
 
             val currentStack = backStacks.getValue(topLevelRoute)
-            val startCompatible = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN } != null
-            val lastCompatible = currentStack.lastOrNull().let { it is PaneInfo && it.paneType == PaneType.SECOND }
+            val mainKey = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
+            val lastKey = currentStack.lastOrNull()
 
-            return largeScreen && startCompatible && lastCompatible
+            if (mainKey == null || lastKey == null) return false
+
+            val pairing = mainSecondaryMap[mainKey] ?: return false
+            val pairingValid = (lastKey as? PaneInfo)?.paneType == PaneType.SECOND && lastKey::class in pairing.allowedSeconds
+
+            return largeScreen && pairingValid
         }
 
     val interceptBack: Boolean
@@ -137,26 +142,21 @@ fun NavigationState.toEntries(
         )
     }
 
-    return stacksInUse
-//        .flatMap { decoratedEntries[it] ?: emptyList() }
-        .flatMap { stackKey ->
-            val stackEntries = decoratedEntries[stackKey] ?: emptyList()
+    return stacksInUse.flatMap { stackKey ->
+        val stackEntries = decoratedEntries[stackKey] ?: emptyList()
 
-            if (largeScreen && globalTwoPane && stackKey in mainSecondaryMap) {
-                val defaultSecond = mainSecondaryMap.getValue(stackKey)
-                val stack = backStacks[stackKey]
-                val needsDefault = stack?.contains(defaultSecond) == false
+        if (largeScreen && globalTwoPane) {
+            val defaultSecond = mainSecondaryMap.getValue(stackKey).defaultSecondary
+            val stack = backStacks[stackKey]
+            val needsDefault = stack?.contains(defaultSecond) == false
 
-                if (needsDefault) {
-                    val temp = stackEntries.toMutableList()
-                    temp.add(1, entryProvider(defaultSecond))
-                    temp
-                } else {
-                    stackEntries
-                }
-            } else {
-                stackEntries
+            if (needsDefault) {
+                val temp = stackEntries.toMutableList()
+                temp.add(1, entryProvider(defaultSecond))
+                return@flatMap temp
             }
         }
-        .toMutableStateList()
+
+        stackEntries
+    }.toMutableStateList()
 }
