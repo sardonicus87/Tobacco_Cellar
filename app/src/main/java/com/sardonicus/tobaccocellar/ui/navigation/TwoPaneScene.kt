@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.SeekableTransitionState
+import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.rememberTransition
@@ -52,6 +53,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
@@ -82,24 +84,24 @@ data class TwoPaneScene<T : Any>(
     val filterViewModel: FilterViewModel
 ) : Scene<T> {
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
+
     @SuppressLint("ConfigurationScreenWidthHeight")
     override val content: @Composable (() -> Unit) = {
-
-        BackHandler(enabled = interceptBack, onBack = onBack)
-
         val secondExpanded by filterViewModel.secondPaneExpanded.collectAsState()
-
-        BackHandler(!secondExpanded, filterViewModel::toggleSecondPane)
-
         val configuration = LocalConfiguration.current
         val expandedWidth = configuration.screenWidthDp.dp / 2
-        val screenHeight = LocalWindowInfo.current.containerSize.height.dp
         val expansionTween = 300
+
+        BackHandler(enabled = interceptBack, onBack = onBack)
+        BackHandler(!secondExpanded, filterViewModel::toggleSecondPane)
 
         val paneWidth by animateDpAsState(
             targetValue = if (secondExpanded) expandedWidth else 32.dp,
-            animationSpec = tween(expansionTween),
-            label = "PaneWidth"
+            animationSpec = tween(expansionTween)
+        )
+        val buttonOffset by animateDpAsState(
+            targetValue = if (secondExpanded) 12.dp else 0.dp,
+            animationSpec = tween(expansionTween)
         )
 
         var showButton by remember { mutableStateOf(false) }
@@ -114,234 +116,43 @@ data class TwoPaneScene<T : Any>(
             }
         }
 
-        val buttonHorizontalOffset by animateDpAsState(
-            targetValue = if (secondExpanded) (-12).dp else 0.dp,
-            animationSpec = tween(expansionTween),
-            label = "ButtonHorizontalOffset"
-        )
-        val buttonVerticalOffset by animateDpAsState(
-            targetValue = if (secondExpanded) 12.dp else 0.dp,
-            animationSpec = tween(expansionTween),
-            label = "ButtonVerticalOffset"
-        )
-        val buttonHeight by animateDpAsState(
-            targetValue = if (secondExpanded) 32.dp else screenHeight,
-            animationSpec = tween(expansionTween),
-            label = "ButtonHeight"
-        )
-        val buttonAlpha by animateFloatAsState(
-            targetValue = if (secondExpanded) .6f else 1f,
-            animationSpec = tween(expansionTween),
-            label = "ButtonAlpha"
-        )
-        val buttonCorner by animateDpAsState(
-            targetValue = if (secondExpanded) 4.dp else 0.dp,
-            animationSpec = tween(expansionTween),
-            label = "ButtonCorner"
-        )
-        val borderAlpha by animateFloatAsState(
-            targetValue = if (secondExpanded) .3f else 0f,
-            animationSpec = tween(expansionTween),
-            label = "BorderAlpha"
-        )
-
         Box(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxSize()) {
                 // Main pane
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                ) {
-                    val mainPaneState = remember { SeekableTransitionState(mainEntry) }
-                    val mainTransition = rememberTransition(mainPaneState)
-
-                    LaunchedEffect(mainEntry) {
-                        if (mainPaneState.currentState != mainEntry) {
-                            mainPaneState.animateTo(mainEntry)
-                        } else {
-                            mainPaneState.snapTo(mainEntry)
-                        }
-                    }
-
-                    val transition =
-                        (mainTransition.targetState.metadata[PANE_ENTER] as? ContentTransform?)
-                            ?: (mainTransition.currentState.metadata[PANE_EXIT] as? ContentTransform)
-                            ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
-
-                    val priorStack = remember(mainTransition.currentState) { fullBackStack }
-                    val isBack = isBack(priorStack, fullBackStack)
-                    val targetZIndex = if (isBack) -1f else 1f
-
-                    mainTransition.AnimatedContent(
-                        contentKey = { it.contentKey },
-                        transitionSpec = {
-                            ContentTransform(
-                                targetContentEnter = transition.targetContentEnter,
-                                initialContentExit = transition.initialContentExit,
-                                targetContentZIndex = targetZIndex
-                            )
-                        }
-                    ) {
-                        it.Content()
-                    }
-                }
-
+                PaneContainer(
+                    entry = mainEntry,
+                    fullBackStack = fullBackStack,
+                    isMain = true,
+                    modifier = Modifier.weight(1f)
+                )
 
                 // Second pane
-                Box(
+                PaneContainer(
+                    entry = secondEntry,
+                    fullBackStack = fullBackStack,
+                    isMain = false,
                     modifier = Modifier
                         .width(paneWidth)
                         .graphicsLayer { clip = true }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .width(expandedWidth)
-                            .layout { measurable, constraints ->
-                                val expandedWidthPx = expandedWidth.roundToPx()
-                                val placeable = measurable.measure(
-                                    constraints.copy(
-                                        maxWidth = expandedWidthPx,
-                                        minWidth = expandedWidthPx
-                                    )
-                                )
-                                layout(constraints.maxWidth, constraints.maxHeight) {
-                                    placeable.placeRelative(0, 0)
-                                }
-                            }
-                            .pointerInput(secondExpanded){
-                                if (secondExpanded) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            val event = awaitPointerEvent(PointerEventPass.Final)
-                                            val down = event.changes.find { it.changedToDown() && !it.isConsumed }
-
-                                            if (down != null) {
-                                                val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                                                    var change: PointerInputChange? = null
-                                                    while (change == null) {
-                                                        val nextEvent = awaitPointerEvent(PointerEventPass.Final)
-                                                        if (nextEvent.changes.any { it.changedToUp() }) {
-                                                            change = nextEvent.changes.find { it.changedToUp() }
-                                                        } else if (nextEvent.changes.any { it.isConsumed} ) {
-                                                            return@withTimeoutOrNull null
-                                                        }
-                                                    }
-                                                    change
-                                                }
-
-                                                if (up != null && !up.isConsumed) {
-                                                    showButton = true
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                    ) {
-                        val secondPaneState = remember { SeekableTransitionState(secondEntry) }
-                        val secondTransition = rememberTransition(secondPaneState)
-
-                        LaunchedEffect(secondEntry) {
-                            filterViewModel.setSecondPaneExpansion(true)
-
-                            if (secondPaneState.currentState != secondEntry) {
-                                secondPaneState.animateTo(secondEntry)
-                            } else {
-                                secondPaneState.snapTo(secondEntry)
-                            }
-                        }
-
-                        val transition =
-                            (secondTransition.targetState.metadata[PANE_ENTER] as? ContentTransform?)
-                                ?: (secondTransition.currentState.metadata[PANE_EXIT] as? ContentTransform)
-                                ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
-
-                        val priorStack = remember(secondTransition.currentState) { fullBackStack }
-                        val isBack = isBack(priorStack, fullBackStack)
-                        val targetZIndex = if (isBack) -1f else 1f
-
-                        GlowBox(
-                            color = GlowColor(Color.Black.copy(alpha = .15f)),
-                            size = GlowSize(start = 4.dp)
-                        ) {
-                            secondTransition.AnimatedContent(
-                                contentKey = { it.contentKey },
-                                transitionSpec = {
-                                    ContentTransform(
-                                        targetContentEnter = transition.targetContentEnter,
-                                        initialContentExit = transition.initialContentExit,
-                                        targetContentZIndex = targetZIndex
-                                    )
-                                }
-                            ) {
-                                it.Content()
-                            }
-                        }
-                    }
-                }
+                        .tapToggle(secondExpanded) { showButton = true },
+                    expandedWidth = expandedWidth,
+                    onEnter = { filterViewModel.setSecondPaneExpansion(true) }
+                )
             }
+
             AnimatedVisibility(
                 visible = showButton,
                 enter = fadeIn(tween(150)),
                 exit = fadeOut(tween(150)),
                 modifier = Modifier
-                    .align(BiasAlignment(horizontalBias = 1f, verticalBias = -1f))
-                    .offset {
-                        IntOffset(
-                            buttonHorizontalOffset.roundToPx(),
-                            buttonVerticalOffset.roundToPx()
-                        )
-                    }
+                    .align(BiasAlignment(1f, -1f))
+                    .offset { IntOffset(-buttonOffset.roundToPx(), buttonOffset.roundToPx()) }
             ) {
-                Box(
-                    modifier = Modifier
-                        .width(32.dp)
-                        .height(buttonHeight)
-                        .background(
-                            LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha),
-                            RoundedCornerShape(buttonCorner)
-                        )
-                        .border(
-                            1.dp,
-                            LocalCustomColors.current.whiteBlackInverted.copy(alpha = borderAlpha),
-                            RoundedCornerShape(buttonCorner)
-                        )
-                        .clickable(
-                            indication = null,
-                            interactionSource = null
-                        ) { filterViewModel.toggleSecondPane() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    AnimatedVisibility(
-                        visible = !secondExpanded,
-                        enter = fadeIn(tween(expansionTween)) + expandVertically(tween(expansionTween), Alignment.CenterVertically),
-                        exit = fadeOut(tween(expansionTween)) + shrinkVertically(tween(expansionTween), Alignment.CenterVertically),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .align(Alignment.CenterStart)
-                    ) {
-                        GlowBox(
-                            color = GlowColor(end = LocalCustomColors.current.whiteBlackInverted.copy(alpha = .15f)),
-                            size = GlowSize(end = 4.dp),
-                            contentAlignment = Alignment.CenterStart,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            Spacer(modifier = Modifier.width(32.dp))
-                        }
-                    }
-                    AnimatedContent(
-                        targetState = if (secondExpanded) R.drawable.arrow_right else R.drawable.arrow_left,
-                        transitionSpec = { fadeIn(tween(expansionTween)) togetherWith fadeOut(tween(expansionTween)) },
-                        label = "IconCrossfade"
-                    ) {
-                        Icon(
-                            painter = painterResource(id = it),
-                            contentDescription = null,
-                            tint = LocalCustomColors.current.whiteBlackInverted.copy(alpha = buttonAlpha),
-                            modifier = Modifier
-                        )
-                    }
-                }
+                TwoPaneButton(
+                    secondExpanded = secondExpanded,
+                    expansionTween = expansionTween,
+                    toggleSecondPane = filterViewModel::toggleSecondPane
+                )
             }
         }
     }
@@ -383,17 +194,17 @@ class TwoPaneStrategy<T : Any>(
         if (!enabled) return null
 
         val isLarge = windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
-
         if (!isLarge) return null
 
         val lastEntry = entries.lastOrNull() ?: return null
         val lastEntryPaneType = lastEntry.metadata[TwoPaneScene.PANE_TYPE] as? PaneType
-
-        val twoPaneCompatible = lastEntryPaneType != null && lastEntryPaneType != PaneType.NONE
-        if (!twoPaneCompatible) return null
+        if (lastEntryPaneType != PaneType.SECOND) return null
 
         val mainEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.MAIN } ?: return null
         val secondEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.SECOND } ?: return null
+
+        val pairing = getPairing(mainEntry.contentKey) ?: return null
+        if (!validPairing(pairing, secondEntry.contentKey)) return null
 
         if (mainEntry.contentKey == secondEntry.contentKey) return null
 
@@ -412,6 +223,172 @@ class TwoPaneStrategy<T : Any>(
     }
 }
 
+
+@Composable
+private fun <T : Any> PaneContainer(
+    entry: NavEntry<T>,
+    fullBackStack: List<NavEntry<T>>,
+    isMain: Boolean,
+    modifier: Modifier = Modifier,
+    expandedWidth: Dp = 0.dp,
+    onEnter: () -> Unit = {}
+) {
+    val paneState = remember { SeekableTransitionState(entry) }
+    val transition = rememberTransition(paneState)
+
+    LaunchedEffect(entry) {
+        onEnter()
+        if (paneState.currentState != entry) paneState.animateTo(entry) else paneState.snapTo(entry)
+    }
+
+    val contentTransform = (transition.targetState.metadata[if (isMain) TwoPaneScene.PANE_ENTER else TwoPaneScene.PANE_ENTER] as? ContentTransform)
+        ?: (transition.currentState.metadata[if (isMain) TwoPaneScene.PANE_EXIT else TwoPaneScene.PANE_EXIT] as? ContentTransform)
+        ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
+
+    val isBack = isBack(remember(transition.currentState) { fullBackStack }, fullBackStack)
+    val targetZIndex = if (isBack) -1f else 1f
+
+    val contentModifier = if (isMain) modifier else {
+        modifier.layout { measurable, constraints ->
+            val widthPx = expandedWidth.roundToPx()
+            val placeable = measurable.measure(constraints.copy(maxWidth = widthPx, minWidth = widthPx))
+            layout(constraints.maxWidth, constraints.maxHeight) { placeable.placeRelative(0, 0) }
+        }
+    }
+
+    Column(contentModifier) {
+        if (!isMain) {
+            GlowBox(
+                color = GlowColor(Color.Black.copy(alpha = .15f)),
+                size = GlowSize(start = 4.dp)
+            ) {
+                PaneContent(transition, contentTransform, targetZIndex)
+            }
+        } else {
+            PaneContent(transition, contentTransform, targetZIndex)
+        }
+    }
+}
+
+@Composable
+private fun <T : Any> PaneContent(
+    transition: Transition<NavEntry<T>>,
+    transform: ContentTransform,
+    zIndex: Float
+) {
+    transition.AnimatedContent(
+        contentKey = { it.contentKey },
+        transitionSpec = {
+            ContentTransform(
+                targetContentEnter = transform.targetContentEnter,
+                initialContentExit = transform.initialContentExit,
+                targetContentZIndex = zIndex
+            )
+        }
+    ) {
+        it.Content()
+    }
+}
+
+
+@Composable
+private fun TwoPaneButton(
+    secondExpanded: Boolean,
+    expansionTween: Int,
+    toggleSecondPane: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val screenHeight = LocalWindowInfo.current.containerDpSize.height
+
+    val buttonHeight by animateDpAsState(
+        targetValue = if (secondExpanded) 32.dp else screenHeight,
+        animationSpec = tween(expansionTween)
+    )
+    val buttonAlpha by animateFloatAsState(
+        targetValue = if (secondExpanded) .6f else 1f,
+        animationSpec = tween(expansionTween)
+    )
+    val buttonCorner by animateDpAsState(
+        targetValue = if (secondExpanded) 4.dp else 0.dp,
+        animationSpec = tween(expansionTween)
+    )
+    val borderAlpha by animateFloatAsState(
+        targetValue = if (secondExpanded) .3f else 0f,
+        animationSpec = tween(expansionTween)
+    )
+
+    Box(
+        modifier = modifier
+            .width(32.dp)
+            .height(buttonHeight)
+            .background(LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha), RoundedCornerShape(buttonCorner))
+            .border(1.dp, LocalCustomColors.current.whiteBlackInverted.copy(alpha = borderAlpha), RoundedCornerShape(buttonCorner))
+            .clickable(
+                indication = null,
+                interactionSource = null
+            ) { toggleSecondPane() },
+        contentAlignment = Alignment.Center
+    ) {
+        AnimatedVisibility(
+            visible = !secondExpanded,
+            enter = fadeIn(tween(expansionTween)) + expandVertically(tween(expansionTween), Alignment.CenterVertically),
+            exit = fadeOut(tween(expansionTween)) + shrinkVertically(tween(expansionTween), Alignment.CenterVertically),
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.CenterStart)
+        ) {
+            GlowBox(
+                color = GlowColor(end = LocalCustomColors.current.whiteBlackInverted.copy(alpha = .15f)),
+                size = GlowSize(end = 4.dp),
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Spacer(modifier = Modifier.width(32.dp))
+            }
+        }
+        AnimatedContent(
+            targetState = if (secondExpanded) R.drawable.arrow_right else R.drawable.arrow_left,
+            transitionSpec = { fadeIn(tween(expansionTween)) togetherWith fadeOut(tween(expansionTween)) },
+        ) {
+            Icon(
+                painter = painterResource(id = it),
+                contentDescription = null,
+                tint = LocalCustomColors.current.whiteBlackInverted.copy(alpha = buttonAlpha)
+            )
+        }
+    }
+}
+
+
+private fun Modifier.tapToggle(
+    enabled: Boolean,
+    onTap: () -> Unit
+): Modifier = if (!enabled) this else this.pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Final)
+            val down = event.changes.find { it.changedToDown() && !it.isConsumed }
+
+            if (down != null) {
+                val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                    var change: PointerInputChange? = null
+                    while (change == null) {
+                        val nextEvent = awaitPointerEvent(PointerEventPass.Final)
+                        if (nextEvent.changes.any { it.changedToUp() }) {
+                            change = nextEvent.changes.find { it.changedToUp() }
+                        } else if (nextEvent.changes.any { it.isConsumed }) {
+                            return@withTimeoutOrNull null
+                        }
+                    }
+                    change
+                }
+
+                if (up != null && !up.isConsumed) { onTap() }
+            }
+        }
+    }
+}
+
 private fun <T : Any> isBack(
     oldBackStack: List<T>,
     newBackStack: List<T>
@@ -424,9 +401,18 @@ private fun <T : Any> isBack(
     // navigated
     if (newBackStack.size > oldBackStack.size) return false
 
-    val divergingIndex =
-        newBackStack.indices.firstOrNull { index -> newBackStack[index] != oldBackStack[index] }
+    val divergingIndex = newBackStack.indices.firstOrNull { index -> newBackStack[index] != oldBackStack[index] }
     // if newBackStack never diverged from oldBackStack, then it is a clean subset of the oldStack
     // and is a pop
     return divergingIndex == null && newBackStack.size != oldBackStack.size
+}
+
+private fun getPairing(mainKey: Any): TwoPanePairing? {
+    val main = mainKey.toString().substringBefore('(')
+    return mainSecondaryMap.entries.find { it.key.toString().substringBefore('(') == main }?.value
+}
+
+private fun validPairing(pairing: TwoPanePairing, secondKey: Any): Boolean {
+    val second = secondKey.toString().substringBefore('(')
+    return pairing.allowedSeconds.any { it.simpleName == second }
 }
