@@ -28,8 +28,10 @@ fun GlobalTwoPaneDialog(
     onDismiss: () -> Unit,
     globalTwoPane: Boolean,
     twoColumnTabs: Boolean,
+    landscapeTwoPane: Boolean,
     onGlobalTwoPane: (Boolean) -> Unit,
     onTwoColumnTabs: (Boolean) -> Unit,
+    onLandscapeTwoPane: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
@@ -85,7 +87,7 @@ fun GlobalTwoPaneDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Two Column Tabs:",
+                        text = "Expand tabs to two columns:",
                         modifier = Modifier,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
@@ -95,6 +97,33 @@ fun GlobalTwoPaneDialog(
                         Switch(
                             checked = twoColumnTabs,
                             onCheckedChange = { onTwoColumnTabs(it) },
+                            modifier = Modifier
+                                .scale(.6f)
+                                .padding(start = 10.dp),
+                            colors = SwitchDefaults.colors()
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .height(28.dp)
+                        .padding(start = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Restrict to landscape only:",
+                        modifier = Modifier,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = LocalContentColor.current
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                        Switch(
+                            checked = landscapeTwoPane,
+                            onCheckedChange = { onLandscapeTwoPane(it) },
                             modifier = Modifier
                                 .scale(.6f)
                                 .padding(start = 10.dp),
