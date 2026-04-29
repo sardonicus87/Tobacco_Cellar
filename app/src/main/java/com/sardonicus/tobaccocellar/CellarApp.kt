@@ -76,6 +76,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.filtering.FilterSheet
+import com.sardonicus.tobaccocellar.ui.navigation.AboutDestination
 import com.sardonicus.tobaccocellar.ui.navigation.CellarNavigation
 import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
@@ -96,7 +97,7 @@ fun CellarApp(
     isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }, // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)  // isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
     navigationState: NavigationState = rememberNavigationState(
         startRoute = HomeDestination,
-        topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination),
+        topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination, AboutDestination),
         largeScreen = isLarge,
         globalTwoPane = globalTwoPane
     ),
@@ -270,6 +271,7 @@ fun TopBarMenu(
     exportCsvHandler: ExportCsvHandler? = null,
 ) {
     val menuState by filterViewModel.topAppBarMenuState.collectAsState()
+    val isTwoPane by filterViewModel.twoPaneState.collectAsState()
 
     DropdownMenu(
         expanded = menuState.menuExpanded,
@@ -346,7 +348,7 @@ fun TopBarMenu(
                     enabled = true,
                 )
                 DropdownMenuItem(
-                    text = { Text(text = "About") },
+                    text = { Text(text = if (isTwoPane) "About/Settings" else "About") },
                     onClick = {
                         filterViewModel.showMenu(false)
                         navigateToAbout()
@@ -355,16 +357,18 @@ fun TopBarMenu(
                         .padding(0.dp),
                     enabled = true,
                 )
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(R.string.settings)) },
-                    onClick = {
-                        filterViewModel.showMenu(false)
-                        navigateToSettings()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled = true,
-                )
+                if (!isTwoPane) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(R.string.settings)) },
+                        onClick = {
+                            filterViewModel.showMenu(false)
+                            navigateToSettings()
+                        },
+                        modifier = Modifier
+                            .padding(0.dp),
+                        enabled = true,
+                    )
+                }
             }
             MenuState.EXPORT_CSV -> {
                 DropdownMenuItem(
