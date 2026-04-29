@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -168,9 +169,15 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.displayCutout)
                     ) {
                         val globalTwoPane by preferencesRepo.globalTwoPane.collectAsState()
+                        val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
+                        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+                        val twoPaneEnabled = remember(globalTwoPane, landscapeOnly, landscape) {
+                            globalTwoPane && (if (landscapeOnly) landscape else true)
+                        }
+
                         CellarApp(
                             isGestureNav = isGestureNav,
-                            globalTwoPane = globalTwoPane
+                            globalTwoPane = twoPaneEnabled,
                         )
                     }
                     SystemBarsProtection()

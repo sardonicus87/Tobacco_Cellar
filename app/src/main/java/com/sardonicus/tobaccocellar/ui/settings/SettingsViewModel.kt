@@ -90,6 +90,9 @@ class SettingsViewModel(
     private val _globalTwoPane = MutableStateFlow(true)
     val globalTwoPane: StateFlow<Boolean> = _globalTwoPane.asStateFlow()
 
+    private val _landscapeTwoPane = MutableStateFlow(false)
+    val landscapeTwoPane = _landscapeTwoPane.asStateFlow()
+
     private val _twoColumnTabs = MutableStateFlow(true)
     val twoColumnTabs: StateFlow<Boolean> = _twoColumnTabs.asStateFlow()
 
@@ -163,6 +166,9 @@ class SettingsViewModel(
                 // Large Screen Options
                 launch {
                     preferencesRepo.globalTwoPane.collect { _globalTwoPane.value = it }
+                }
+                launch {
+                    preferencesRepo.landscapeTwoPane.collect { _landscapeTwoPane.value = it }
                 }
                 launch {
                     preferencesRepo.twoColumnTabs.collect { _twoColumnTabs.value = it }
@@ -373,6 +379,12 @@ class SettingsViewModel(
     fun saveGlobalTwoPane(option: Boolean) {
         viewModelScope.launch {
             preferencesRepo.saveGlobalTwoPane(option)
+        }
+    }
+
+    fun saveLandscapeTwoPane(option: Boolean) {
+        viewModelScope.launch {
+            preferencesRepo.saveLandscapeTwoPane(option)
         }
     }
 
@@ -1295,6 +1307,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val datesLastSeen = preferencesRepo.datesSeen.first()
     val globalTwoPane = preferencesRepo.globalTwoPane.first().toString()
     val twoColumnTabs = preferencesRepo.twoColumnTabs.first().toString()
+    val landscapeTwoPane = preferencesRepo.landscapeTwoPane.first().toString()
 
     return """
             tableView=$tableView
@@ -1318,6 +1331,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
             datesLastSeen=$datesLastSeen
             globalTwoPane=$globalTwoPane
             twoColumnTabs=$twoColumnTabs
+            landscapeTwoPane=$landscapeTwoPane
         """.trimIndent()
 }
 
@@ -1389,6 +1403,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                 "datesLastSeen" -> preferencesRepo.setDatesSeen(value)
                 "globalTwoPane" -> preferencesRepo.saveGlobalTwoPane(value.toBoolean())
                 "twoColumnTabs" -> preferencesRepo.saveTwoColumnTabs(value.toBoolean())
+                "landscapeTwoPane" -> preferencesRepo.saveLandscapeTwoPane(value.toBoolean())
             }
         }
     }

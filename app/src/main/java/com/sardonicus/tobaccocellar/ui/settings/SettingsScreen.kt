@@ -363,14 +363,17 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.GlobalTwoPane -> {
             val globalTwoPane by viewModel.globalTwoPane.collectAsState()
+            val landscapeTwoPane by viewModel.landscapeTwoPane.collectAsState()
             val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
 
             GlobalTwoPaneDialog(
                 onDismiss = viewModel::dismissDialog,
                 globalTwoPane = globalTwoPane,
                 twoColumnTabs = twoColumnTabs,
+                landscapeTwoPane = landscapeTwoPane,
                 onGlobalTwoPane = viewModel::saveGlobalTwoPane,
                 onTwoColumnTabs = viewModel::saveTwoColumnTabs,
+                onLandscapeTwoPane = viewModel::saveLandscapeTwoPane,
                 modifier = Modifier
             )
         }

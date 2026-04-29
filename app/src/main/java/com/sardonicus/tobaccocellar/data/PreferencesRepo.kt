@@ -55,6 +55,7 @@ class PreferencesRepo(
 
         val GLOBAL_TWO_PANE = booleanPreferencesKey("two_pane_global")
         val TWO_COLUMN_TABS = booleanPreferencesKey("two_column_tabs")
+        val LANDSCAPE_TWO_PANE = booleanPreferencesKey("two_pane_landscape")
 
         val CROSS_DEVICE_ACKNOWLEDGED = booleanPreferencesKey("cross_device_acknowledged")
         val CROSS_DEVICE_SYNC = booleanPreferencesKey("cross_device_sync")
@@ -455,6 +456,22 @@ class PreferencesRepo(
             initialValue = true
         )
 
+    val landscapeTwoPane: StateFlow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading two-pane preferences.", it)
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }.map {
+            it[LANDSCAPE_TWO_PANE] ?: false
+        }.stateIn(
+            scope = applicationScope,
+            started = SharingStarted.Eagerly,
+            initialValue = false
+        )
+
     suspend fun saveGlobalTwoPane(enabled: Boolean) {
         dataStore.edit {
             it[GLOBAL_TWO_PANE] = enabled
@@ -464,6 +481,12 @@ class PreferencesRepo(
     suspend fun saveTwoColumnTabs(enabled: Boolean) {
         dataStore.edit {
             it[TWO_COLUMN_TABS] = enabled
+        }
+    }
+
+    suspend fun saveLandscapeTwoPane(enabled: Boolean) {
+        dataStore.edit {
+            it[LANDSCAPE_TWO_PANE] = enabled
         }
     }
 

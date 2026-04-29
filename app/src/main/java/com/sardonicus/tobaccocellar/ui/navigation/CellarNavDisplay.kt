@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
+import android.content.res.Configuration
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -18,6 +19,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -95,7 +97,12 @@ fun CellarNavigation(
     val csvHelper = app.csvHelper
     val networkMonitor = remember { NetworkMonitor(app) }
 
-    val twoColumnTabs by preferencesRepo.twoColumnTabs.collectAsState()
+    val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
+    val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val twoColumnTabs = remember(twoColumnSetting, landscapeOnly, landscape) {
+        twoColumnSetting && (if (landscapeOnly) landscape else true)
+    }
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
@@ -452,6 +459,7 @@ fun CellarNavigation(
 
                 SettingsScreen(
                     onNavigateUp = { navigator.goBack() },
+                    canNavigateBack = !navigationState.isTwoPane,
                     viewModel = viewModel
                 )
             }
