@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.changelog
+package com.sardonicus.tobaccocellar.ui.aboutChangelog
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
