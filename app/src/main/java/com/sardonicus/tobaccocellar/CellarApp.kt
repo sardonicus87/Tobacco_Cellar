@@ -45,7 +45,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -65,9 +64,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
-import androidx.window.core.layout.WindowSizeClass
-import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
-import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.BottomSheetState
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -92,24 +88,22 @@ import kotlinx.coroutines.launch
 @Composable
 fun CellarApp(
     isGestureNav: Boolean,
-    globalTwoPane: Boolean,
-    windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
-    isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }, // isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)  // isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
+    twoPaneAllowed: Boolean,
+    twoColumnTabs: Boolean,
     navigationState: NavigationState = rememberNavigationState(
         startRoute = HomeDestination,
         topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination, AboutDestination),
-        largeScreen = isLarge,
-        globalTwoPane = globalTwoPane
+        twoPaneAllowed = twoPaneAllowed
     ),
-    navigator: Navigator = remember(navigationState, isLarge) { Navigator(navigationState, isLarge) },
+    navigator: Navigator = remember(navigationState, twoPaneAllowed) { Navigator(navigationState, twoPaneAllowed) },
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
     CellarNavigation(
         navigator = navigator,
         navigationState = navigationState,
         isGestureNav = isGestureNav,
-        largeScreen = isLarge,
-        globalTwoPane = globalTwoPane,
+        twoPaneAllowed = twoPaneAllowed,
+        twoColumnTabs = twoColumnTabs,
         filterViewModel = filterViewModel
     )
 

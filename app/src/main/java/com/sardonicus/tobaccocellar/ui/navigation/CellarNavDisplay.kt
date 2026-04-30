@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
-import android.content.res.Configuration
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -19,7 +18,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -33,6 +31,9 @@ import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.aboutChangelog.AboutScreen
+import com.sardonicus.tobaccocellar.ui.aboutChangelog.ChangelogScreen
+import com.sardonicus.tobaccocellar.ui.aboutChangelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.addEditItems.AddEntryScreen
 import com.sardonicus.tobaccocellar.ui.addEditItems.AddEntryViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.EditEntryScreen
@@ -41,9 +42,6 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.BlendDetailsScreen
 import com.sardonicus.tobaccocellar.ui.blendDetails.BlendDetailsViewModel
 import com.sardonicus.tobaccocellar.ui.bulkEdit.BulkEditScreen
 import com.sardonicus.tobaccocellar.ui.bulkEdit.BulkEditViewModel
-import com.sardonicus.tobaccocellar.ui.changelog.AboutScreen
-import com.sardonicus.tobaccocellar.ui.changelog.ChangelogScreen
-import com.sardonicus.tobaccocellar.ui.changelog.changelogEntries
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvHelpScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportResultsScreen
 import com.sardonicus.tobaccocellar.ui.csvimport.CsvImportScreen
@@ -69,13 +67,13 @@ fun CellarNavigation(
     navigator: Navigator,
     navigationState: NavigationState,
     isGestureNav: Boolean,
-    largeScreen: Boolean,
-    globalTwoPane: Boolean,
+    twoPaneAllowed: Boolean,
+    twoColumnTabs: Boolean,
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val shouldCloseSheet by remember(largeScreen, navigationState.isTwoPane) {
-        derivedStateOf { largeScreen && navigationState.isTwoPane }
+    val shouldCloseSheet by remember(twoPaneAllowed, navigationState.isTwoPane) {
+        derivedStateOf { twoPaneAllowed && navigationState.isTwoPane }
     }
     LaunchedEffect(shouldCloseSheet) {
         if (shouldCloseSheet) { filterViewModel.closeBottomSheet() }
@@ -97,12 +95,6 @@ fun CellarNavigation(
     val csvHelper = app.csvHelper
     val networkMonitor = remember { NetworkMonitor(app) }
 
-    val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
-    val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
-    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val twoColumnTabs = remember(twoColumnSetting, landscapeOnly, landscape) {
-        twoColumnSetting && (if (landscapeOnly) landscape else true)
-    }
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
@@ -133,15 +125,17 @@ fun CellarNavigation(
             }
         } else emptyMap()
 
-        val twoPaneSlide: Map<String, ContentTransform> = mapOf(
-            TwoPaneScene.PANE_ENTER to
-                    if (navigationState.cameFrom is BlendDetailsDestination) {
-                        slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it }
-                    } else {
-                        slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
-                    },
-            TwoPaneScene.PANE_EXIT to (EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it })
-        )
+        val twoPaneSlide: Map<String, ContentTransform> = if (navigationState.isTwoPane) {
+            mapOf(
+                TwoPaneScene.PANE_ENTER to
+                        if (navigationState.cameFrom is BlendDetailsDestination) {
+                            slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it }
+                        } else {
+                            slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
+                        },
+                TwoPaneScene.PANE_EXIT to (EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it })
+            )
+        } else emptyMap()
 
         when (key) {
             is HomeDestination -> NavEntry(key, metadata = paneInfo) {
@@ -271,7 +265,7 @@ fun CellarNavigation(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
-                    isLargeScreen = largeScreen && twoColumnTabs,
+                    twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -294,7 +288,7 @@ fun CellarNavigation(
                 EditEntryScreen(
                     navigateBack = { navigator.goBack() },
                     onNavigateUp = { navigator.goBack() },
-                    isLargeScreen = largeScreen && twoColumnTabs,
+                    twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -314,7 +308,7 @@ fun CellarNavigation(
 
                 BulkEditScreen(
                     onNavigateUp = { navigator.goBack() },
-                    isLargeScreen = largeScreen && twoColumnTabs,
+                    twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -416,7 +410,7 @@ fun CellarNavigation(
 
                 PlaintextScreen(
                     onNavigateUp = { navigator.goBack() },
-                    isLargeScreen = largeScreen && twoColumnTabs,
+                    twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
                 )
             }
@@ -468,7 +462,31 @@ fun CellarNavigation(
         }
     }
 
-    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, globalTwoPane)
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed)
+
+    LaunchedEffect(twoPaneAllowed) {
+        if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
+            val aboutStack = navigationState.backStacks[AboutDestination]
+
+            if (aboutStack?.size == 1 && aboutStack.last() == AboutDestination) {
+                navigationState.topLevelRoute = navigationState.startRoute
+                val targetStack = navigationState.backStacks[navigationState.startRoute]
+                if (targetStack != null && !targetStack.contains(SettingsDestination)) {
+                    targetStack.add(SettingsDestination)
+                }
+            }
+        }
+        else {
+            if (twoPaneAllowed) {
+                val startStack = navigationState.backStacks[navigationState.startRoute]
+
+                if (navigationState.topLevelRoute == navigationState.startRoute && startStack?.lastOrNull() == SettingsDestination) {
+                    navigator.navigate(AboutDestination)
+                    startStack.remove(SettingsDestination)
+                }
+            }
+        }
+    }
 
     NavDisplay(
         entries = navigationState.toEntries(entryProvider),

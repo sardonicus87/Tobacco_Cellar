@@ -4,7 +4,7 @@ import androidx.navigation3.runtime.NavKey
 
 class Navigator(
     val state: NavigationState,
-    private val isLarge: Boolean = false
+    private val twoPaneAllowed: Boolean = false
 ) {
     private var lastNavigationTime = 0L
 
@@ -20,7 +20,7 @@ class Navigator(
         if (route in state.backStacks.keys) { // is a top level route, switch to that backstack
 
             // For TwoPane, save the current backstack before navigating
-            val oldStack = if (isLarge && state.topLevelRoute in mainSecondaryMap) {
+            val oldStack = if (twoPaneAllowed && state.topLevelRoute in mainSecondaryMap) {
                 state.backStacks.getValue(state.topLevelRoute)
             } else { null }
 
@@ -29,9 +29,11 @@ class Navigator(
             // for TwoPane compatible routes, check and if it doesn't exist, add the default
             // second pane immediately after the main pane
             val currentStack = state.backStacks.getValue(state.topLevelRoute)
-            mainSecondaryMap[route]?.let {
-                if (isLarge && !currentStack.contains(it.defaultSecondary)) {
-                    currentStack.add(1, it.defaultSecondary)
+            if (twoPaneAllowed && route is PaneInfo && route.paneType == PaneType.MAIN) {
+                mainSecondaryMap[route]?.let {
+                    if (currentStack.getOrNull(1) != it.defaultSecondary) {
+                        currentStack.add(1, it.defaultSecondary)
+                    }
                 }
             }
 
@@ -43,9 +45,9 @@ class Navigator(
 
             // check the newly added route for TwoPane compatibility and add its default second
             val currentStack = state.backStacks.getValue(state.topLevelRoute)
-            if (isLarge && route is PaneInfo && route.paneType == PaneType.MAIN) {
+            if (twoPaneAllowed && route is PaneInfo && route.paneType == PaneType.MAIN) {
                 mainSecondaryMap[route]?.let {
-                    if (!currentStack.contains(it.defaultSecondary)) {
+                    if (currentStack.getOrNull(1) != it.defaultSecondary) {
                         currentStack.add(1, it.defaultSecondary)
                     }
                 }
@@ -53,7 +55,7 @@ class Navigator(
 
             // for TwoPane compatible routes, check and if it is already on the stack, remove the
             // duplicate
-            if (isLarge && route is PaneInfo && route.paneType == PaneType.SECOND) {
+            if (twoPaneAllowed && route is PaneInfo && route.paneType == PaneType.SECOND) {
                 val currentStack = state.backStacks.getValue(state.topLevelRoute)
                 val duplicate = currentStack.take(currentStack.size - 1).find { it::class == route::class }
 

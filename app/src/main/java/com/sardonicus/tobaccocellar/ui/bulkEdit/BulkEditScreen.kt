@@ -119,7 +119,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 fun BulkEditScreen(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit,
-    isLargeScreen: Boolean,
+    twoColumnTabs: Boolean,
     canNavigateBack: Boolean = true,
     viewModel: BulkEditViewModel = viewModel(),
 ){
@@ -182,7 +182,7 @@ fun BulkEditScreen(
         ) {
             BulkEditBody(
                 saveIndicator = saveIndicator,
-                isLargeScreen = isLargeScreen,
+                twoColumnTabs = twoColumnTabs,
                 tabIndex = tabIndex,
                 onTabChange = viewModel::updateTabIndex,
                 items = bulkEditUiState.items,
@@ -209,7 +209,7 @@ fun BulkEditScreen(
 @Composable
 fun BulkEditBody(
     saveIndicator: Boolean,
-    isLargeScreen: Boolean,
+    twoColumnTabs: Boolean,
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
     items: List<ItemsComponentsAndTins>,
@@ -268,7 +268,7 @@ fun BulkEditBody(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                if (isLargeScreen) {
+                if (twoColumnTabs) {
                     Row(Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier
@@ -577,7 +577,7 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Batch Edit",
+                            text = "Edit",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                             modifier = Modifier

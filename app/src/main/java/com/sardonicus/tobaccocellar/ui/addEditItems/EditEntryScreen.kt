@@ -40,7 +40,7 @@ fun EditEntryScreen(
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
-    isLargeScreen: Boolean = false,
+    twoColumnTabs: Boolean = false,
     viewModel: EditEntryViewModel = viewModel(),
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -95,7 +95,7 @@ fun EditEntryScreen(
         ) {
             Box {
                 AddEntryBody(
-                    isLargeScreen = { isLargeScreen },
+                    twoColumnTabs = { twoColumnTabs },
                     selectedTabIndex = { selectedTabIndex },
                     currentLeftTab = { currentLeftTab },
                     updateSelectedTab = viewModel::updateSelectedTab,

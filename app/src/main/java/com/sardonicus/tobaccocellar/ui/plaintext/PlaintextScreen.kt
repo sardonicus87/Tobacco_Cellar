@@ -154,7 +154,7 @@ import kotlin.math.roundToInt
 @Composable
 fun PlaintextScreen(
     onNavigateUp: () -> Unit,
-    isLargeScreen: Boolean,
+    twoColumnTabs: Boolean,
     modifier: Modifier = Modifier,
     viewModel: PlaintextViewModel = viewModel()
 ) {
@@ -215,7 +215,7 @@ fun PlaintextScreen(
             PlaintextBody(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
-                largeScreen = isLargeScreen,
+                largeScreen = twoColumnTabs,
                 selectionFocused = selectionFocused,
                 anythingFocused = otherFocused,
                 tabIndex = tabIndex,

@@ -26,8 +26,7 @@ import androidx.savedstate.compose.serialization.serializers.MutableStateSeriali
 fun rememberNavigationState(
     startRoute: NavKey,
     topLevelRoutes: Set<NavKey>,
-    largeScreen: Boolean = false,
-    globalTwoPane: Boolean = true
+    twoPaneAllowed: Boolean = true
 ): NavigationState {
 
     val topLevelRoute = rememberSerializable(
@@ -37,35 +36,33 @@ fun rememberNavigationState(
 
     val backStacks = topLevelRoutes.associateWith { rememberNavBackStack(it) }
 
-    LaunchedEffect(largeScreen, topLevelRoutes, globalTwoPane) {
-        if (largeScreen && globalTwoPane) {
+    LaunchedEffect(topLevelRoutes, twoPaneAllowed) {
+        if (twoPaneAllowed) {
             val currentStack = backStacks.getValue(topLevelRoute.value)
             val currentTop = topLevelRoute.value
-            if (currentTop in mainSecondaryMap) {
-                val defaultSecond = mainSecondaryMap.getValue(currentTop).defaultSecondary
-                if (!currentStack.contains(defaultSecond)) {
-                    currentStack.add(1, defaultSecond)
+
+            mainSecondaryMap[currentTop]?.let {
+                if (currentStack.getOrNull(1) != it.defaultSecondary) {
+                    currentStack.add(1, it.defaultSecondary)
                 }
             }
         } else {
             backStacks.forEach { (navKey, stack) ->
-                if (navKey in mainSecondaryMap) {
-                    val defaultSecond = mainSecondaryMap.getValue(navKey).defaultSecondary
-                    if (stack.size > 1 && stack[1] == defaultSecond) {
-                        stack.remove(defaultSecond)
+                mainSecondaryMap[navKey]?.let {
+                    if (stack.getOrNull(1) == it.defaultSecondary) {
+                        stack.remove(it.defaultSecondary)
                     }
                 }
             }
         }
     }
 
-    return remember(startRoute, topLevelRoutes, largeScreen, globalTwoPane) {
+    return remember(startRoute, topLevelRoutes, twoPaneAllowed) {
         NavigationState(
             startRoute = startRoute,
             topLevelRoute = topLevelRoute,
             backStacks = backStacks,
-            largeScreen = largeScreen,
-            globalTwoPane = globalTwoPane
+            twoPaneAllowed = twoPaneAllowed
         )
     }
 }
@@ -75,8 +72,7 @@ class NavigationState(
     val startRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
     val backStacks: Map<NavKey, NavBackStack<NavKey>>,
-    val largeScreen: Boolean = false,
-    val globalTwoPane: Boolean = true
+    val twoPaneAllowed: Boolean = true
 ) {
     var topLevelRoute: NavKey by topLevelRoute
 
@@ -103,7 +99,7 @@ class NavigationState(
 
     val isTwoPane: Boolean
         get() {
-            if (!globalTwoPane) return false
+            if (!twoPaneAllowed) return false
 
             val currentStack = backStacks.getValue(topLevelRoute)
             val mainKey = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
@@ -114,7 +110,7 @@ class NavigationState(
             val pairing = mainSecondaryMap[mainKey] ?: return false
             val pairingValid = (lastKey as? PaneInfo)?.paneType == PaneType.SECOND && lastKey::class in pairing.allowedSeconds
 
-            return largeScreen && pairingValid
+            return pairingValid
         }
 
     val interceptBack: Boolean
@@ -145,15 +141,15 @@ fun NavigationState.toEntries(
     return stacksInUse.flatMap { stackKey ->
         val stackEntries = decoratedEntries[stackKey] ?: emptyList()
 
-        if (largeScreen && globalTwoPane) {
-            val defaultSecond = mainSecondaryMap.getValue(stackKey).defaultSecondary
-            val stack = backStacks[stackKey]
-            val needsDefault = stack?.contains(defaultSecond) == false
+        if (twoPaneAllowed) {
+            mainSecondaryMap[stackKey]?.let {
+                val stack = backStacks[stackKey]
 
-            if (needsDefault) {
-                val temp = stackEntries.toMutableList()
-                temp.add(1, entryProvider(defaultSecond))
-                return@flatMap temp
+                if (stack?.contains(it.defaultSecondary) == false) {
+                    val temp = stackEntries.toMutableList()
+                    temp.add(1, entryProvider(it.defaultSecondary))
+                    return@flatMap temp
+                }
             }
         }
 

@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,9 +59,6 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
-import androidx.window.core.layout.WindowSizeClass
-import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
-import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -168,12 +164,10 @@ data class TwoPaneScene<T : Any>(
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean, enabled: Boolean): TwoPaneStrategy<T> {
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
-    return remember(windowSizeClass, sceneKey, interceptBack, enabled, filterViewModel) {
+    return remember(sceneKey, interceptBack, enabled, filterViewModel) {
         TwoPaneStrategy(
-            windowSizeClass,
             sceneKey,
             interceptBack,
             enabled,
@@ -184,7 +178,6 @@ fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean, ena
 
 
 class TwoPaneStrategy<T : Any>(
-    private val windowSizeClass: WindowSizeClass,
     private val sceneKey: Int,
     private val interceptBack: Boolean,
     private val enabled: Boolean,
@@ -192,9 +185,6 @@ class TwoPaneStrategy<T : Any>(
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (!enabled) return null
-
-        val isLarge = windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
-        if (!isLarge) return null
 
         val lastEntry = entries.lastOrNull() ?: return null
         val lastEntryPaneType = lastEntry.metadata[TwoPaneScene.PANE_TYPE] as? PaneType

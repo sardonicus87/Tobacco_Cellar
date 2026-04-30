@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ItemInputForm(
-    isLargeScreen: () -> Boolean,
+    twoColumnTabs: () -> Boolean,
     selectedTabIndex: () -> Int,
     currentLeftTab: () -> Int,
     updateSelectedTab: (Int) -> Unit,
@@ -84,7 +84,7 @@ fun ItemInputForm(
     var tooltipVisible by remember { mutableStateOf(false) }
     var textFieldFocused by remember { mutableStateOf(false) }
     val fieldFocused: (Boolean) -> Unit = { textFieldFocused = it }
-    val isLarge = isLargeScreen()
+    val twoColumn = twoColumnTabs()
     val currentLeftTab = currentLeftTab()
     val selectedTabIndex = remember(selectedTabIndex()) { selectedTabIndex().coerceIn(0, 2) }
 
@@ -94,7 +94,7 @@ fun ItemInputForm(
     val fieldInteractionSource = remember { MutableInteractionSource() }
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
-    if (isLarge) {
+    if (twoColumn) {
         LaunchedEffect(largePagerState.currentPage) {
             if (largePagerState.currentPage == largePagerState.targetPage) {
                 if (largePagerState.currentPage != currentLeftTab()) {
@@ -130,12 +130,12 @@ fun ItemInputForm(
         verticalArrangement = Arrangement.Top
     ) {
         AdaptiveTabRow(
-            isLarge = isLarge,
+            twoColumnTabs = twoColumn,
             selectedTabIndex = selectedTabIndex,
             tabErrorState = tabErrorState,
             updateSelectedTab = updateSelectedTab
         )
-        if (isLarge) {
+        if (twoColumn) {
             Row(Modifier.fillMaxHeight()) {
                 GlowBox(
                     color = GlowColor(MaterialTheme.colorScheme.background),
@@ -339,7 +339,7 @@ fun ItemInputForm(
 
 @Composable
 private fun AdaptiveTabRow(
-    isLarge: Boolean,
+    twoColumnTabs: Boolean,
     selectedTabIndex: Int,
     tabErrorState: TabErrorState,
     updateSelectedTab: (Int) -> Unit,
@@ -364,7 +364,7 @@ private fun AdaptiveTabRow(
     }
 
     CompositionLocalProvider(LocalRippleConfiguration provides null) {
-        if (isLarge) {
+        if (twoColumnTabs) {
             Column {
                 Box(Modifier.fillMaxWidth()) {
                     SecondaryTabRow(

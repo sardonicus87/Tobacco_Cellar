@@ -57,7 +57,7 @@ fun AddEntryScreen(
     onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
-    isLargeScreen: Boolean = false,
+    twoColumnTabs: Boolean = false,
     viewModel: AddEntryViewModel = viewModel(),
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -99,7 +99,7 @@ fun AddEntryScreen(
                 .padding(innerPadding)
         ) {
             AddEntryBody(
-                isLargeScreen = { isLargeScreen },
+                twoColumnTabs = { twoColumnTabs },
                 selectedTabIndex = { selectedTabIndex },
                 currentLeftTab = { currentLeftTab },
                 updateSelectedTab = viewModel::updateSelectedTab,
@@ -146,7 +146,7 @@ fun AddEntryScreen(
 
 @Composable
 fun AddEntryBody(
-    isLargeScreen: () -> Boolean,
+    twoColumnTabs: () -> Boolean,
     selectedTabIndex: () -> Int,
     currentLeftTab: () -> Int,
     updateSelectedTab: (Int) -> Unit,
@@ -191,7 +191,7 @@ fun AddEntryBody(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ItemInputForm(
-            isLargeScreen = isLargeScreen,
+            twoColumnTabs = twoColumnTabs,
             selectedTabIndex = selectedTabIndex,
             currentLeftTab = currentLeftTab,
             updateSelectedTab = updateSelectedTab,
@@ -220,7 +220,7 @@ fun AddEntryBody(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
                 .padding(horizontal = 24.dp)
-                .padding(top = 24.dp, bottom = if (!isLargeScreen() && landscape) 24.dp else 40.dp),
+                .padding(top = 24.dp, bottom = if (!twoColumnTabs() && landscape) 24.dp else 40.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Button(

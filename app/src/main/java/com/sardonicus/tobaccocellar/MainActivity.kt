@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -48,6 +49,8 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.lifecycleScope
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.google.android.gms.auth.api.identity.AuthorizationClient
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -168,16 +171,23 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
                     ) {
+                        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+                        val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
                         val globalTwoPane by preferencesRepo.globalTwoPane.collectAsState()
+                        val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
                         val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
                         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-                        val twoPaneEnabled = remember(globalTwoPane, landscapeOnly, landscape) {
-                            globalTwoPane && (if (landscapeOnly) landscape else true)
+                        val twoPaneAllowed = remember(isLarge, globalTwoPane, landscapeOnly, landscape) {
+                            isLarge && globalTwoPane && (if (landscapeOnly) landscape else true)
+                        }
+                        val twoColumnTabs = remember(isLarge, twoColumnSetting, landscapeOnly, landscape) {
+                            isLarge && twoColumnSetting && (if (landscapeOnly) landscape else true)
                         }
 
                         CellarApp(
                             isGestureNav = isGestureNav,
-                            globalTwoPane = twoPaneEnabled,
+                            twoPaneAllowed = twoPaneAllowed,
+                            twoColumnTabs = twoColumnTabs
                         )
                     }
                     SystemBarsProtection()
