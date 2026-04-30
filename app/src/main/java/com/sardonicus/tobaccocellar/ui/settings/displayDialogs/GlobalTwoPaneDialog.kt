@@ -45,7 +45,9 @@ fun GlobalTwoPaneDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Adaptive layout options for large screens:",
+                    text = "Adaptive layout options for large screens. The dual-pane and expand " +
+                            "tabs are separate options (disabling one will not affect the other). " +
+                            "\"Restrict to landscape\" affects both.",
                     modifier = Modifier
                         .padding(bottom = 10.dp),
                     fontSize = 15.sp,
