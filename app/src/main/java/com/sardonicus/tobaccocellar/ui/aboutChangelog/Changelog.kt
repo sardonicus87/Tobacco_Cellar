@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.changelog
+package com.sardonicus.tobaccocellar.ui.aboutChangelog
 
 import kotlinx.serialization.Serializable
 
@@ -14,6 +14,34 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 46,
+        versionNumber = "5.2.3",
+        buildDate = "1 May, 2026",
+        improvements = listOf(
+            "Tabbed screens with text input: when dragging an unfocused text field to scroll to " +
+                    "end of text, tabs won't swipe change if the field is internally scrollable " +
+                    "unless it is already scrolled to the maximum in that direction.",
+            "Large Screen Dual Pane Improvements: prevent showing the \"collapse\" button when " +
+                    "tapping elements or tapping to clear focus (you still tap inside the pane to " +
+                    "show the button, this just prevents showing the button unnecessarily when " +
+                    "the intention is to do something else).",
+            "Large Screen Dual Pane Improvements: added a new setting to optionally restrict the " +
+                    "dual pane adaptive layout to landscape orientation only.",
+            "Large Screen Dual Pane Improvements: combined the About and Settings screens into " +
+                    "a single screen dual pane layout. Full changelog also opens in the second " +
+                    "pane (when navigated to from the About screen).",
+            "Filter Sheet: tapping inside the sheet itself in single pane layouts now clears " +
+                    "focus within the sheet (like when the brand search box is selected).",
+            "Various minor UI tweaks and fixes.",
+            "Minor performance and stability improvements."
+        ),
+        bugFixes = listOf(
+            "Auto-Complete text input suggestions: under some circumstances, some irrelevant " +
+                    "suggestions were being populated for flavoring and component fields."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 45,
         versionNumber = "5.2.2",
         buildDate = "15 Apr, 2026",
@@ -26,15 +54,13 @@ val changelogEntries = listOf(
         improvements = listOf(
             "Multi-Device Sync: added an option to sign-in with a Google Account that isn't " +
                     "already on the device, and added an intermediate state for the switch " +
-                    "during the sign-in process.",
-            "Various minor UI tweaks and fixes.",
-            "Minor performance and stability improvements."
+                    "during the sign-in process."
         ),
         bugFixes = listOf(
             "Fixed a bug when exporting CSV, would export nothing when using the filtered option."
         ),
         releaseNotes = listOf(
-            "New About Screen, access from top right menu on Cellar screen. Find the app/" +
+            "New About Screen (access from top right menu on Cellar screen). Find the app/" +
                 "database versions, changelog, contact (e-mail), and other useful links (like " +
                 "privacy and data policies) here.",
             "Multi-Device Sync: added an option to sign-in with a Google Account that isn't " +
@@ -48,7 +74,6 @@ val changelogEntries = listOf(
         versionCode = 44,
         versionNumber = "5.2.1",
         buildDate = "7 Apr, 2026",
-        changes = listOf(),
         improvements = listOf(
             "Plaintext Screen: the action icon row on the List tab is now collapsable, with the " +
                     "default state collapsed (tap the arrow button at the top right).",
@@ -71,8 +96,7 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Tabbed Layouts: minor bug fix, if a field was selected and tab changes were made by " +
                     "tapping on the tab, the field wasn't properly being deselected."
-        ),
-        releaseNotes = listOf()
+        )
     ),
 
     ChangelogEntryData(
@@ -121,7 +145,6 @@ val changelogEntries = listOf(
         versionCode = 42,
         versionNumber = "5.1.3",
         buildDate = "16 Mar, 2026",
-        changes = listOf(),
         improvements = listOf(
             "Cellar large screen dual pane layouts, if the second pane is collapsed on a Blend " +
                     "Details screen and the same entry is tapped again, the second pane will " +
@@ -163,21 +186,19 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Two Pane layouts, fixed minor navigational bug: clicking the same entry a second " +
                     "time would lead to two copies on the navigation stack."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 40,
         versionNumber = "5.1.1",
         buildDate = "6 Mar, 2026",
-        changes = listOf(),
-        improvements = listOf(),
         bugFixes = listOf(
             "Filtering Bug fixed, previous update inadvertently caused all filter options to be " +
                     "disabled if tins and/or favorites/dislikes fields were unused by any items.",
             "Edit Entry, fixed a bug introduced by the last update that would cause a crash when " +
                     "trying to delete a tin."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -330,14 +351,13 @@ val changelogEntries = listOf(
         ),
         bugFixes = listOf(
             "Potentially fixed a rare focus-related bug that could cause a crash."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 36,
         versionNumber = "4.0.1",
         buildDate = "6 Nov, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Plaintext Output, made rating rounding optional. Not adding rounding will return the " +
                     "existing rating with up to 2 decimal places.",
@@ -349,7 +369,7 @@ val changelogEntries = listOf(
                     "had border applied.",
             "Fixed minor blank list flash when switching between include/exclude states of some " +
                     "filters."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -405,14 +425,13 @@ val changelogEntries = listOf(
                     "open or search field focused (clears focus or menu instead, if they're open).",
             "Plaintext Output, minor bug where the delimiter wasn't being removed from the last " +
                     "line if it was just blank spaces/lines."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 34,
         versionNumber = "3.3.2",
         buildDate = "1 Oct, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Plaintext screen presets, included the saved delimiter in the save/load preset " +
                     "boxes and added a long-press to delete a preset. Also, tapping on the " +
@@ -428,19 +447,17 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Plaintext screen, tapping to load a preset when one is not selected would cause a " +
                     "crash, the button is now disabled unless a preset is selected."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 33,
         versionNumber = "3.3.1",
         buildDate = "23 Sept, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Corrected some of the instructions on the Plaintext Output screen, tweaked some of " +
                     "the UI (print dialog mainly), corrected some other minor UI errors.",
-        ),
-        bugFixes = listOf(),
+        )
     ),
 
     ChangelogEntryData(
@@ -467,14 +484,13 @@ val changelogEntries = listOf(
             "Cellar screen quick jump button intermittent bug, was sometimes not recognizing " +
                     "being at the bottom of the list and clearing like it should, and would " +
                     "re-appear if attempting to scroll down when already at the bottom.",
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 31,
         versionNumber = "3.2.1",
         buildDate = "28 Aug, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Filter sheet, types and ratings sections now display a text if these fields are unused.",
             "Cellar Screen quick search, search icon dropdown arrow hidden and clickability is " +
@@ -488,7 +504,7 @@ val changelogEntries = listOf(
             "Fixed a list/table scroll return bug introduced in the last update where the return " +
                     "position wasn't working right (scroll to new item on add, return to position " +
                     "on return, etc)."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -563,7 +579,7 @@ val changelogEntries = listOf(
             "CSV Import, there was a bug that would cause a temporary/partial error on import " +
                     "when a CSV contained duplicate brand/blend records.",
             "Fixed some other minor UI bugs."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -595,28 +611,26 @@ val changelogEntries = listOf(
             "Fixed Edit Entry screen, when switching to the notes tab without having yet changed " +
                     "any details or viewing tins tab, Details tab would falsely indicate an error.",
             "Details screen, tins marked as \"Finished\" were being counted in the quantity."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 28,
         versionNumber = "3.1.9",
         buildDate = "22 July, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Performance and stability improvements, another tweak to Auto Complete suggestions " +
                     "for smoother closing of the list when selecting a suggestion."
         ),
         bugFixes = listOf(
             "Fixed another bug in the Dates screen that resulted in a crash."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 27,
         versionNumber = "3.1.8",
         buildDate = "22 July, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Swapped the order of tin filtering check boxes and tin containers in the filter sheet.",
             "Performance and stability improvements.",
@@ -624,40 +638,34 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Yet another attempt to fix autocomplete suggestions on some devices not properly " +
                     "dismissing. Hopefully this time it's FINALLY fixed and consistent."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 26,
         versionNumber = "3.1.7",
         buildDate = "19 July, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Added a notification dot to the Dates navigation button if any tins are ready today " +
-                    "through the next 7 days. This is based on tin \"open date\"s having been " +
-                    "previously set to a future date (presumed to be the date ready to open). " +
-                    "The dot will disappear upon viewing the Dates screen and will only reappear " +
-                    "when a new tin is ready in a week from the day of running the app.",
+                    "through the next 7 days based on tin \"open date\"s having been " +
+                    "previously set to a future date. The dot will disappear upon viewing the " +
+                    "Dates screen and will only reappear when a new tin is ready.",
             "Refined the autocomplete suggestion fields once more for better control over when " +
                     "suggestions appear/dismiss and their offset above/below the input field. " +
                     "Pressing the device back button now dismisses the keyboard, then the " +
-                    "suggestions, then navigates back. The offset for the suggestions list when " +
-                    "it appears above the input field has also been fixed. Suggestions are now " +
-                    "also properly removed when matching entered text, and don't pop back up " +
-                    "after selecting a suggestion (unless the text input is manually changed).",
+                    "suggestions, then navigates back. Suggestions are now also properly removed " +
+                    "when matching entered text.",
             "Revert some entry fields to being sentence capitalization by default as this seems " +
                     "more commonly how such fields are used in other apps/sites. Affected fields " +
                     "are brand, blend, subgenre and tin label.",
             "More stability and performance improvements."
-        ),
-        bugFixes = listOf(),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 25,
         versionNumber = "3.1.6",
         buildDate = "14 July, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Slight tweak to Dates screen, moved the date to the same line as the tin for \"Other " +
                     "tins ready this month\".",
@@ -670,14 +678,13 @@ val changelogEntries = listOf(
         ),
         bugFixes = listOf(
             "Fixed bug in Filter Sheet randomly causing a crash in some circumstances."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 24,
         versionNumber = "3.1.5",
         buildDate = "8 July, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Added a check to disable the \"Unassigned\" chip in the type section of the filter " +
                     "sheet if no entries are unassigned to a blend type.",
@@ -685,14 +692,13 @@ val changelogEntries = listOf(
         ),
         bugFixes = listOf(
             "Fixed another bug with the Dates screen causing a crash in some cases."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 23,
         versionNumber = "3.1.4",
         buildDate = "2 June, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Add/Edit entry, eliminated the need to enter a leading \"0\" for fractional amounts " +
                     "on tins. It's now possible to simply enter \".75\" instead of \"0.75\".",
@@ -701,15 +707,13 @@ val changelogEntries = listOf(
                     "qualifiers, having only a unit qualifier and no amount, etc).",
             "Added themed icon support for Android 12/13+.",
             "Slight adjustment to date calculations for better accuracy.",
-        ),
-        bugFixes = listOf(),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 22,
         versionNumber = "3.1.3",
         buildDate = "28 May, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Filter sheet minor UI improvement to tins section check boxes, the text now resizes " +
                     "(some smaller phones the text would get cut off or pushed to a new line).",
@@ -719,11 +723,11 @@ val changelogEntries = listOf(
             "Stats screen, minor UI improvement in the expand/collapse of Quick Stats section, " +
                     "it's now a divider with an arrow (looks better than just a text that says " +
                     "expand/collapse, still functions the same way).",
-            "Locale-specific number formatting (123,456.78 vs 123.456,78), where applicable " +
-                    "based on location settings. This includes all numerical entry fields, any " +
-                    "displays related to quantities, and CSV import/export. However for entry " +
-                    "fields, grouping separators are disallowed (only decimal separators and " +
-                    "digits allowed, and leading 0 is required for sub 1 numbers, eg. 0.5).",
+            "Locale-specific number formatting where applicable based on device locale settings. " +
+                    "Includes all numerical entry fields, any displays related to quantities, and " +
+                    "CSV import/export. However for entry fields, grouping separators are " +
+                    "disallowed (only decimal separators and digits allowed, and leading 0 is " +
+                    "required for sub 1 numbers, eg. 0.5).",
             "Further number formatting improvements in quantities include dropping trailing " +
                     "decimal 0's in all places where this previously was missed.",
             "CSV Import, more robust number/quantity safety when parsing the quantity/unit in tin " +
@@ -738,14 +742,13 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Dates screen, fixed a bug that would intermittently cause a crash when navigating to " +
                     "the dates screen."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 21,
         versionNumber = "3.1.2",
         buildDate = "22 May, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Stats screen Quick Stats sub-sections, if the name of what's being counted is too " +
                     "long, now resizes to fit. Also, the number of opened tins in the first " +
@@ -764,19 +767,17 @@ val changelogEntries = listOf(
                     "and mapped correctly in the Quick Stats.",
             "Fixed bug on Stats screen where the number of opened tins in the first section was " +
                     "not being printed on a new line."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 20,
         versionNumber = "3.1.1",
         buildDate = "19 May, 2025",
-        changes = listOf(),
-        improvements = listOf(),
         bugFixes = listOf(
             "Fixed a crash on app startup related to new Google/Android messing up the Datastore " +
                     "api (no longer works with the code shrinking)."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -792,8 +793,7 @@ val changelogEntries = listOf(
                     "containers. Please see the Help/FAQ for more details.",
             "Changed the \"Container\" search option to \"Tin Label\" as searching containers is " +
                     "now redundant/irrelevant with the new filters, and searching by \"Tin Label\" " +
-                    "is likely more useful. The Tin Label search will show an expansion on each " +
-                    "item with a simplified list of tins that match the search.",
+                    "is likely more useful.",
             "Stats screen, added two more sub-sections to Quick Stats, one for components and one " +
                     "for flavorings."
         ),
@@ -803,8 +803,8 @@ val changelogEntries = listOf(
                     "the status bar temporarily.",
             "Stats screen Quick Stats section now sorts the various sub-sections in descending " +
                     "order (by the \"Raw Stats\" values) and keeps the filtered stat in-line with " +
-                    "the raw stat. Alignment also improved as well as text can now be selected " +
-                    "(highlight and copy) and dividers added between sub-sections.",
+                    "the raw stat. Text can now be selected (highlight and copy) and dividers " +
+                    "added between sub-sections.",
             "Stats screen pie charts where \"... by Tins\" has been re-labelled to \"... by \"No. " +
                     "of Tins\"\" for clarity of the data source.",
             "Minor UI polishing (filter applied indicator, padding on various elements, etc).",
@@ -817,14 +817,13 @@ val changelogEntries = listOf(
                     "the correct layout (instead, just showing all sections empty).",
             "Cellar Table view fixed a minor bug where list position could be lost when changing " +
                     "sorting while in a search result.",
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 18,
         versionNumber = "3.0.2",
         buildDate = "7 May, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Batch Edit screen, moved the \"Save\" button to outside the scroll column of the " +
                     "fields (might appear hidden if user doesn't realize column scrolls).",
@@ -838,14 +837,13 @@ val changelogEntries = listOf(
                     "resulting in a crash when using the update option.",
             "Fixed bug Edit Entry when changing components or flavoring, was failing to add or " +
                     "remove values correctly if no other fields were also being changed."
-        ),
+        )
     ),
 
     ChangelogEntryData(
         versionCode = 17,
         versionNumber = "3.0.1",
         buildDate = "4 May, 2025",
-        changes = listOf(),
         improvements = listOf(
             "Blend Details and Dates screens: whenever a time period is shown, if the date is " +
                     "equal to today, it now says \"today\" instead of \"less than a day\".",
@@ -862,7 +860,7 @@ val changelogEntries = listOf(
             "Fixed Stats screen: tin stats in the Quick Stats would always show \"0 opened\" when " +
                     "tins or dating feature wasn't used rather than just not being shown.",
             "Fixed a crash when deleting an item from the Edit Entry screen.",
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -930,12 +928,12 @@ val changelogEntries = listOf(
                     "if the quantities haven't been formatted, the loading indicator is " +
                     "displayed, but formatting is much faster now.",
             "Edge-to-edge enforcement issues: fixed the status and navigation bars on pre-Android " +
-                    "15 phones. The status and notification bars adjusted content color based on " +
-                    "the phone's dark mode, not the app, making them appear invisible when the " +
-                    "phone was in light mode. Now they should be consistently black and everything " +
-                    "should now be visible regardless of the phone's system light/dark mode."
-        ),
+                    "15 phones. The status and notification bars should now be consistently black " +
+                    "and everything should now be visible regardless of the device system " +
+                    "light/dark mode."
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 15,
         versionNumber = "2.7.0",
@@ -954,22 +952,16 @@ val changelogEntries = listOf(
                     "file with confidence that there will be no data loss or corruption.",
             "Cellar Screen quick Blend Search now can be switched to a \"Notes\" or \"Container\" " +
                     "search by tapping the search icon on the left to open a dropdown menu. The " +
-                    "The default option is \"Blend\". Your selection will be saved and " +
-                    "indicated by the placeholder text in the search field.",
+                    "The default option is \"Blend\".",
             "Add/Edit screens, tin entry date pickers now restrict selectable dates to be in " +
                     "range of the other date fields. If all fields are blank, any date could " +
                     "be entered, but if any field is filled: manufacture date must be on/before " +
-                    "cellar date (or opened date), cellar date must be on/after manufactured " +
-                    "date and on/before opened date, and opened date must be on/after cellared " +
-                    "date (or manufactured). Error colors added when dates do not fit this " +
+                    "cellar/opened date, cellar date must be on/after manufactured " +
+                    "date and on/before opened date, and opened date must be on/after cellared/ " +
+                    "manufactured date. Error colors added when dates do not fit this " +
                     "schema and validation updated to prevent saving with invalid dates.",
             "Add/Edit screen date picker has also been changed such that the default view when " +
-                    "launched is the calendar picker mode rather than the input mode in order " +
-                    "to make the date picking easier with the new restrictions on selection. In " +
-                    "order to clear a previously entered date, switch to the input mode by " +
-                    "tapping the edit icon in the top right and erase the entered date (there's " +
-                    "no deselect option in the calendar mode because Google hasn't added that to " +
-                    "the date picker API).",
+                    "launched is the calendar picker mode rather than the input mode.",
             "Add/Edit screens, added error state highlights to the unit field in tins entry if a " +
                     "quantity is entered (though quantity is optional, unit is required with it).",
             "Add/Edit screens now also display an indicator on the tabs if that tab contains the " +
@@ -1001,7 +993,7 @@ val changelogEntries = listOf(
                     "with a proper calculation for the future date.",
             "Blend Details screen typo: when the length of time since X date for tins with dates " +
                     "was \"less than one day...\", there was an erroneous \".\" included.",
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -1028,11 +1020,8 @@ val changelogEntries = listOf(
                     "tapping. Put up some guardrails even though this never resulted in a crash " +
                     "or not responding event.",
             "Potentially fixed some odd, rare navigation-related crash, possibly related to the " +
-                    "Blend Details screen. I don't know what the crash is as the report doesn't " +
-                    "show my app code and nobody has emailed me about an issue, so I don't even " +
-                    "know what it is, and it may be related to an Android Compose navigation " +
-                    "internal instability (in other words, out-of-my-hands to fix)."
-        ),
+                    "Blend Details screen."
+        )
     ),
 
     ChangelogEntryData(
@@ -1059,7 +1048,7 @@ val changelogEntries = listOf(
         ),
         bugFixes = listOf(
             "Fixed: list position on blend search was being lost when editing an entry."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -1081,8 +1070,7 @@ val changelogEntries = listOf(
                     "quantity entered without selecting a unit.",
             "Moved \"(Unassigned)\" type filtering in the new filter sections to be the last option.",
             "Conditionally enable subgenre, cut and component filter sections if there are any " +
-                    "blends that use these fields (visual improvement over having just a single " +
-                    "chip which says \"(Unassigned)\").",
+                    "blends that use these fields.",
             "Adjusted list position for charts on the stats screen depending on where the thin " +
                     "slices occur, as well as improve outside thin slice percentage placement at " +
                     "top of charts.",
@@ -1093,12 +1081,10 @@ val changelogEntries = listOf(
             "Fixed a bug where the list wasn't returning to the previous position when clearing " +
                     "blend search.",
             "Fixed a minor issue in filtering by certain fields that generate selection options " +
-                    "based on data in the database, where if the last entry of a given filter " +
-                    "was edited or deleted, that filter value would still be applied " +
-                    "despite no longer being a valid option and unable to be de-selected as it " +
-                    "was removed from the selectable options.",
+                    "based on existing data where editing/deleting the last entry with that " +
+                    "value, that filter value would still be applied and unable to be de-selected.",
             "Fixed a bug where the changelog became unscrollable after the last update."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -1122,8 +1108,7 @@ val changelogEntries = listOf(
             "Added a loading state for the stats screen while data is collected (in case it was needed).",
             "Further attempt to refine autocomplete suggestion fields popup behavior and " +
                     "efficiency."
-        ),
-        bugFixes = listOf(),
+        )
     ),
 
     ChangelogEntryData(
@@ -1155,7 +1140,7 @@ val changelogEntries = listOf(
             "Fixed a bug where the quantity was still red (out of stock) when selecting a " +
                     "quantity option other than No. of Tins and this field was 0 despite tins " +
                     "having quantities."
-        ),
+        )
     ),
 
     ChangelogEntryData(
@@ -1179,8 +1164,9 @@ val changelogEntries = listOf(
                     "selecting a suggestion when the field was empty.",
             "Fixed a bug when adding tins in the add/edit screens where if a tin were added when " +
                     "there were none, the first tin entry should have started in expanded state."
-        ),
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 8,
         versionNumber = "2.1.0",
@@ -1200,8 +1186,9 @@ val changelogEntries = listOf(
                     "were added.",
             "Fixed \"Add\" button highlight in bottom bar sometimes getting stuck.",
             "Fixed error in Blend Details where type label was the blend type instead of \"Type: \"."
-        ),
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 7,
         versionNumber = "2.0.1",
@@ -1210,8 +1197,9 @@ val changelogEntries = listOf(
         improvements = listOf(),
         bugFixes = listOf(
             "Fixed app startup crash introduced in version 2.0.0."
-        ),
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 6,
         versionNumber = "2.0.0",
@@ -1234,9 +1222,7 @@ val changelogEntries = listOf(
                     "by tapping an item rather than long-pressing, navigation will trigger if " +
                     "the menu overlay is not open on any item or blend search is not focused.",
             "In table view, now tapping or long-pressing the \"Brand\" cell will also trigger " +
-                    "navigation to Blend Details or edit entry (respectively). This behavior may " +
-                    "change in the future. Additionally, tapping anywhere in the cell will now " +
-                    "trigger the navigation, not just clicking on the text.",
+                    "navigation to Blend Details or edit entry (respectively).",
         ),
         improvements = listOf(
             "Stats chart label list for thin slices aligned to top of chart (rather than center) " +
@@ -1258,8 +1244,9 @@ val changelogEntries = listOf(
             "Fixed a bug where multiple blank lines in the notes field would cause it to stop " +
                     "working.",
             "Fixed the \"flash\" when transitioning to CSV import results.",
-        ),
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 5,
         versionNumber = "1.4.0",
@@ -1278,12 +1265,10 @@ val changelogEntries = listOf(
                     "represents and the percentage/value is listed at the edge of the slice.",
             "Pie chart labeling placement more accurately centered on slices.",
             "Fixed some UI issues of some components (such as extra side-padding on Filter Sheet " +
-                    "when in landscape) related to Android 15 forced edge-to-edge. Some UI " +
-                    "issues remain for some things (such as the full screen image in the \"Help/" +
-                    "FAQ\" screen) depending on whether you're on an Android 15 device or a pre-" +
-                    "Android 15 device.",
-        ),
+                    "when in landscape) related to Android 15 forced edge-to-edge."
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 4,
         versionNumber = "1.3.1",
@@ -1303,8 +1288,9 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Fixed top bar \"Back\" button not working on the Help/FAQ screen.",
             "\"Tin Converter\" not working on Edit Entry screen."
-        ),
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 3,
         versionNumber = "1.3.0",
@@ -1322,6 +1308,7 @@ val changelogEntries = listOf(
             "search results now returns to the previous position."
         )
     ),
+
     ChangelogEntryData(
         versionCode = 2,
         versionNumber = "1.2.0",
@@ -1342,15 +1329,16 @@ val changelogEntries = listOf(
                     "restart.",
             "Fixed bug where app would crash when trying to save an edit with a non-unique " +
                     "combination of Brand and Blend."
-        ),
+        )
     ),
+
     ChangelogEntryData(
         versionCode = 1,
         versionNumber = "1.0.0",
         buildDate = "20 Nov, 2024",
         changes = listOf(
             "Initial Release"
-        ),
+        )
     )
 )
 
