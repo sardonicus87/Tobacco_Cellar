@@ -175,8 +175,10 @@ private fun OverflowWrapper(
             )
         },
         enabledAtIndex = { enabled[available[it]] ?: true },
-        overflowIndicator = { overflowCount, enabledCount, overflowEnabled -> // overflowEnabled means count > 0
-            val overflowedSelected = overflowCheck(selected, available, available.size - overflowCount)
+        overflowIndicator = { visible, _, enabledCount, overflowEnabled -> // overflowEnabled means count > 0; _ = overflowCount
+            val overflowedSelected = if (selected.isNotEmpty() && available.isNotEmpty() && visible < available.size) {
+                overflowCheck(selected, available, visible)
+            } else false
 
             val labelColor =
                 if (overflowedSelected) MaterialTheme.colorScheme.onSecondaryContainer

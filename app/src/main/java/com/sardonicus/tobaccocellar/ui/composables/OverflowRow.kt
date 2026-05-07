@@ -18,6 +18,7 @@ fun <T> OverflowRow(
     items: List<T>,
     itemContent: @Composable (item: T) -> Unit,
     overflowIndicator: @Composable (
+        visibleCount: Int,
         overflowCount: Int,
         enabledOverflowCount: Int,
         isOverflowEnabled: Boolean,
@@ -39,7 +40,8 @@ fun <T> OverflowRow(
 
         // measure indicator
         val maxPossibleOverflow = itemCount
-        val overflowMeasurable = subcompose("overflow_max") { overflowIndicator(maxPossibleOverflow, maxPossibleOverflow, true) }.firstOrNull()
+        val overflowMeasurable = subcompose("overflow_max") {
+            overflowIndicator(0, maxPossibleOverflow, maxPossibleOverflow, true) }.firstOrNull()
         val overflowPlaceable = overflowMeasurable?.measure(Constraints())
         val overflowIndicatorWidth = overflowPlaceable?.width ?: 0
         val overflowIndicatorHeight = overflowPlaceable?.height ?: 0
@@ -118,7 +120,7 @@ fun <T> OverflowRow(
             ) {
                 repeat(visibleItemCount) { i -> itemContent(items[i]) }
 
-                if (showOver) { overflowIndicator(actualOverCount, enabledOverflowCount, anyOverflowedEnabled) }
+                if (showOver) { overflowIndicator(visibleItemCount, actualOverCount, enabledOverflowCount, anyOverflowedEnabled) }
             }
         }.map { it.measure(constraints) }
 
