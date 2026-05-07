@@ -612,7 +612,6 @@ fun CellarBottomAppBar(
                 BottomBarButton(
                     title = { "Cellar" },
                     icon = { R.drawable.table_view_old },
-                //    destination = { HomeDestination },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
                     activeColor = { if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon },
                     modifier = Modifier.weight(1f)
@@ -622,7 +621,6 @@ fun CellarBottomAppBar(
                 BottomBarButton(
                     title = { "Stats" },
                     icon = { R.drawable.bar_chart },
-                //    destination = StatsDestination,
                     onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
                     enabled = { !databaseEmpty },
                     activeColor = {
@@ -637,15 +635,16 @@ fun CellarBottomAppBar(
                 BottomBarButton(
                     title = { "Dates" },
                     icon = { R.drawable.calendar_month },
-                //    destination = DatesDestination,
                     onClick = { filterViewModel.getPositionTrigger(); navigateToDates() },
                     enabled = { datesExist },
                     showIndicator = { tinsReady },
                     indicatorColor = { if (tinsReady) indicatorCircle else Color.Transparent },
                     borderColor =  {
                         if (tinsReady) {
-                            if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight else navIcon
-                        } else Color.Transparent
+                            if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
+                            else navIcon
+                        }
+                        else Color.Transparent
                     },
                     activeColor = {
                         if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
@@ -657,31 +656,36 @@ fun CellarBottomAppBar(
 
                 // 4. Filtering
                 if (!isTwoPane) {
+                    val filterEnabled = remember(currentDestination, searchPerformed, databaseEmpty) {
+                        if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty
+                    }
+
                     BottomBarButton(
                         title = { "Filter" },
                         icon = { R.drawable.filter_24 },
                         onClick = filterViewModel::openBottomSheet,
-                        enabled = { if (currentDestination == HomeDestination && !databaseEmpty) !searchPerformed else !databaseEmpty },
+                        enabled = { filterEnabled },
                         showIndicator = { filteringApplied },
                         indicatorColor = {
                             if (filteringApplied) {
-                                if (searchPerformed && currentDestination == HomeDestination) {
-                                    indicatorCircle.copy(alpha = 0.5f)
-                                } else indicatorCircle
-                            } else Color.Transparent
+                                if (!filterEnabled) indicatorCircle.copy(alpha = 0.5f)
+                                else indicatorCircle
+                            }
+                            else Color.Transparent
                         },
                         borderColor = {
                             if (filteringApplied) {
-                                if (searchPerformed && currentDestination == HomeDestination) {
-                                    indicatorBorderCorrection
-                                } else {
-                                    if (sheetState == BottomSheetState.OPENED) {
-                                        onPrimaryLight
-                                    } else navIcon
-                                }
-                            } else Color.Transparent
+                                if (!filterEnabled) indicatorBorderCorrection
+                                else if (sheetState == BottomSheetState.OPENED) onPrimaryLight
+                                else navIcon
+                            }
+                            else Color.Transparent
                         },
-                        activeColor = { if (sheetState == BottomSheetState.OPENED) onPrimaryLight else navIcon },
+                        activeColor = {
+                            if (!filterEnabled) navIcon.copy(alpha = .5f)
+                            else if (sheetState == BottomSheetState.OPENED) onPrimaryLight
+                            else navIcon
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -717,7 +721,6 @@ private fun BottomBarButton(
             .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // The Indicator
         if (showIndicator()) {
             Box(
                 modifier = Modifier
