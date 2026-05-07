@@ -662,7 +662,7 @@ fun CellarBottomAppBar(
 
                     BottomBarButton(
                         title = { "Filter" },
-                        icon = { R.drawable.filter_24 },
+                        icon = { if (currentDestination == HomeDestination && searchPerformed && filteringApplied) R.drawable.filter_search_disabled else R.drawable.filter_24 },
                         onClick = filterViewModel::openBottomSheet,
                         enabled = { filterEnabled },
                         showIndicator = { filteringApplied },
