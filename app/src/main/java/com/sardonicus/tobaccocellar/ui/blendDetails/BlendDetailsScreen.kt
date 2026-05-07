@@ -161,7 +161,7 @@ fun BlendDetailsScreen(
 
 
 @Composable
-fun BlendDetailsBody(
+private fun BlendDetailsBody(
     blendDetails: BlendDetails,
     viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
@@ -495,7 +495,7 @@ fun BlendDetailsBody(
 
 
 @Composable
-fun NotesText(
+private fun NotesText(
     notes: String,
     viewModel: BlendDetailsViewModel,
     modifier: Modifier = Modifier,
