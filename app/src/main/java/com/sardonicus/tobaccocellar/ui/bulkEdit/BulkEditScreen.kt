@@ -1069,7 +1069,7 @@ fun BulkEditing(
                             Text(
                                 text = "Fav/Dis?:",
                                 style = TextStyle(
-                                    color = if (!editingState.productionSelected) LocalContentColor.current.copy(
+                                    color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current,
                                     lineBreak = LineBreak.Paragraph
