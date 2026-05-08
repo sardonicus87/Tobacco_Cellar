@@ -14,6 +14,18 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 47,
+        versionNumber = "5.2.4",
+        buildDate = "7 May, 2026",
+        bugFixes = listOf(
+            "Filter Button, fixed a small bug where the bottom bar filter button did not change " +
+                    "appearance when it was disabled (example, during a search).",
+            "Filtering, potentially fixed an uncommon crash from the chip-based filtering " +
+                    "sections (like \"Subgenre\")."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 46,
         versionNumber = "5.2.3",
         buildDate = "1 May, 2026",
