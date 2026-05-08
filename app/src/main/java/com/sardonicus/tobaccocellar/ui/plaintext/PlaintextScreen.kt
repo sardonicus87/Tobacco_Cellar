@@ -231,7 +231,7 @@ fun PlaintextScreen(
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
-fun PlaintextBody(
+private fun PlaintextBody(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
     largeScreen: Boolean,
@@ -880,7 +880,7 @@ private fun PlaintextActionRow(
 }
 
 @Composable
-fun PlaintextList(
+private fun PlaintextList(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
     context: Context,
@@ -971,7 +971,7 @@ fun PlaintextList(
 
 
 @Composable
-fun PlaintextFormatting(
+private fun PlaintextFormatting(
     viewModel: PlaintextViewModel,
     largeScreen: Boolean,
     formatString: String,
@@ -1967,7 +1967,7 @@ private fun SaveDialog(
                             .padding(vertical = 4.dp, horizontal = 8.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .border(
-                                width = 1.dp,
+                                width = if (isSelected) 1.dp else Dp.Hairline,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else if (presetExists) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 shape = RoundedCornerShape(4.dp)
                             )
@@ -2130,7 +2130,8 @@ private fun LoadDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 12.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -2148,7 +2149,7 @@ private fun LoadDialog(
                             .padding(vertical = 4.dp, horizontal = 8.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .border(
-                                width = Dp.Hairline,
+                                width = if (isSelected) 1.dp else Dp.Hairline,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else if (presetLoaded) MaterialTheme.colorScheme.secondary else Color.Transparent,
                                 shape = RoundedCornerShape(4.dp)
                             )
