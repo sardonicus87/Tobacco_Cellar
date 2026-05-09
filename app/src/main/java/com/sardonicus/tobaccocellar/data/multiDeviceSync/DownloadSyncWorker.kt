@@ -97,17 +97,19 @@ class DownloadSyncWorker(
             val cutOffTime = System.currentTimeMillis() - oneMonthMillis
 
             val oldFiles = fileList.files.filter { it.createdTime.value < cutOffTime }
+            val failedDelete = mutableSetOf<String>()
             if (oldFiles.isNotEmpty()) {
                 for (file in oldFiles) {
                     try {
                         driveService.files().delete(file.id).execute()
                     } catch (_: Exception) {
+                        failedDelete.add(file.id)
                         continue
                     }
                 }
             }
 
-            val oldFileIds = oldFiles.map { it.id }.toSet()
+            val oldFileIds = oldFiles.map { it.id }.toSet() - failedDelete
             val allProcessedIds = processedFileIds + successfullyProcessedFiles - oldFileIds
 
             preferencesRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
