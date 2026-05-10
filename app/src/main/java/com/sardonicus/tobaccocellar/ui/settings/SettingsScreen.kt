@@ -171,10 +171,11 @@ private fun SettingsBody(
         item {
             Text(
                 text = "Display Settings",
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .padding(start = 16.dp, bottom = 4.dp),
-                fontSize = 18.sp
+                fontSize = 17.sp,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -192,10 +193,11 @@ private fun SettingsBody(
         item {
             Text(
                 text = "App & Database Settings",
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .padding(start = 16.dp, bottom = 4.dp),
-                fontSize = 18.sp
+                fontSize = 17.sp,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -248,7 +250,7 @@ private fun SettingsRow(
                     interactionSource = interactionSource,
                     onClickLabel = item.description,
                 ) { onClick(item.dialogType) }
-                .padding(8.dp, 6.dp)
+                .padding(8.dp, 5.dp)
                 .width(IntrinsicSize.Max),
             fontSize = 16.sp,
             maxLines = 1,
@@ -271,13 +273,13 @@ private fun SettingsRow(
                 Text(
                     text = item.currentSetting,
                     modifier = Modifier,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     autoSize = TextAutoSize.StepBased(
-                        minFontSize = 12.sp,
-                        maxFontSize = 15.sp,
+                        minFontSize = 11.sp,
+                        maxFontSize = 14.sp,
                         stepSize = 0.1.sp
                     ),
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Normal,
                     maxLines = 1,
                     color = MaterialTheme.colorScheme.secondary
                 )
