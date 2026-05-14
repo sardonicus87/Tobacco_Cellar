@@ -67,7 +67,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
 
         // Network Flow and trigger upload if can upload
-        applicationScope.launch {
+        applicationScope.launch(Dispatchers.Default) {
             if (preferencesRepo.crossDeviceSync.first()) {
                 val networkMonitor = NetworkMonitor(this@CellarApplication)
                 val itemsRepository = container.itemsRepository
@@ -91,44 +91,48 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
 
         // Periodic Worker
-        applicationScope.launch {
-            val workManager = WorkManager.getInstance(this@CellarApplication)
+        applicationScope.launch(Dispatchers.Default) {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
-            val mobileEnabled = preferencesRepo.allowMobileData.first()
-            val networkType = if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
-
-            // Periodic Worker
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(networkType)
-                .build()
-
-            val downloadWorkRequest = PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
-                .setConstraints(constraints)
-                .build()
-
             if (syncEnabled) {
+                val workManager = WorkManager.getInstance(this@CellarApplication)
+                val mobileEnabled = preferencesRepo.allowMobileData.first()
+                val networkType =
+                    if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
+
+                // Periodic Worker
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(networkType)
+                    .build()
+
+                val downloadWorkRequest =
+                    PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
+                        .setConstraints(constraints)
+                        .addTag("periodic worker")
+                        .build()
+
                 workManager.enqueueUniquePeriodicWork(
                     "download_sync_work",
                     ExistingPeriodicWorkPolicy.KEEP,
                     downloadWorkRequest
                 )
-            }
 
-            // Refresh Db flow when there's a download
-            workManager.getWorkInfoByIdFlow(downloadWorkRequest.id)
-                .collect { workInfo ->
-                    when (workInfo?.state) {
-                        WorkInfo.State.SUCCEEDED -> {
-                            val result = workInfo.outputData
-                            when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
-                                DownloadSyncWorker.SYNC_COMPLETE -> {
-                                    EventBus.emit(SyncDownloadEvent)
+                // Refresh Db flow when there's a download
+                workManager.getWorkInfoByIdFlow(downloadWorkRequest.id)
+                    .collect { workInfo ->
+                        when (workInfo?.state) {
+                            WorkInfo.State.SUCCEEDED -> {
+                                val result = workInfo.outputData
+                                when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
+                                    DownloadSyncWorker.SYNC_COMPLETE -> {
+                                        EventBus.emit(SyncDownloadEvent)
+                                    }
                                 }
                             }
+
+                            else -> {}
                         }
-                        else -> {}
                     }
-                }
+            }
         }
     }
 
@@ -198,11 +202,11 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         // cold/warm start check for new files
         if (savedInstanceState == null) {
-            applicationScope.launch {
-                val workManager = WorkManager.getInstance(this@CellarApplication)
+            applicationScope.launch(Dispatchers.Default) {
                 val syncEnabled = preferencesRepo.crossDeviceSync.first()
 
                 if (syncEnabled) {
+                    val workManager = WorkManager.getInstance(this@CellarApplication)
                     val allowMobile = preferencesRepo.allowMobileData.first()
                     val networkType =
                         if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
@@ -213,6 +217,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                                 .setRequiredNetworkType(networkType)
                                 .build()
                         )
+                        .addTag("cold/warm start check")
                         .build()
 
                     workManager.enqueue(onStartWorkRequest)
@@ -221,7 +226,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
     }
     override fun onActivityStarted(activity: Activity) { // hot starts
-        applicationScope.launch {
+        applicationScope.launch(Dispatchers.Default) {
             if (preferencesRepo.crossDeviceSync.first()) {
                 val tenMinutes: Long = 10 * 60 * 1000
                 if (System.currentTimeMillis() - lastSyncVerification > tenMinutes) {
