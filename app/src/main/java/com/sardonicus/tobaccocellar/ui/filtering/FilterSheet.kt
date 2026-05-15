@@ -1,7 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.filtering
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -17,6 +17,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -63,7 +64,7 @@ fun FilterSheet(
 
             Box {
                 val density = LocalDensity.current
-                val navigation = WindowInsets.navigationBars.getBottom(density).times(1f)
+                val navigation = WindowInsets.navigationBars.getBottom(density).toFloat()
                 FilterLayout(
                     filterViewModel = filterViewModel,
                     closeSheet = filterViewModel::closeBottomSheet,
@@ -71,13 +72,16 @@ fun FilterSheet(
                     modifier = Modifier
                 )
 
-                Canvas(Modifier.matchParentSize()) {
-                    drawRect(
-                        color = Color.Black.copy(alpha = .9f),
-                        topLeft = Offset(0f, (size.height)),
-                        size = Size(size.width, navigation)
-                    )
-                }
+                Spacer(Modifier
+                    .matchParentSize()
+                    .drawBehind {
+                        drawRect(
+                            Color.Black.copy(alpha = .9f),
+                            Offset(0f, size.height),
+                            Size(size.width, navigation)
+                        )
+                    }
+                )
             }
         }
     }
