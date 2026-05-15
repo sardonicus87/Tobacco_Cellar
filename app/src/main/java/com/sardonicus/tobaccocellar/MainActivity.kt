@@ -3,8 +3,6 @@ package com.sardonicus.tobaccocellar
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -14,9 +12,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -66,6 +65,8 @@ import com.sardonicus.tobaccocellar.ui.settings.SignInEvent
 import com.sardonicus.tobaccocellar.ui.settings.SignOutEvent
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -91,21 +92,25 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         actionBar?.hide()
 
-        onBackPressedDispatcher.addCallback(this, object :
-            OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (backPressedOnce) {
-                    finish()
-                    return
+        onBackPressedDispatcher.addCallback(
+            this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (backPressedOnce) {
+                        finish()
+                        return
+                    }
+
+                    backPressedOnce = true
+                    Toast.makeText(this@MainActivity, "Tap again to exit", Toast.LENGTH_SHORT)
+                        .show()
+
+                    lifecycleScope.launch(Dispatchers.Default) {
+                        delay(2000)
+                        backPressedOnce = false
+                    }
                 }
-
-                backPressedOnce = true
-                Toast.makeText(this@MainActivity, "Tap again to exit", Toast.LENGTH_SHORT)
-                    .show()
-
-                Handler(Looper.getMainLooper()).postDelayed({ backPressedOnce = false }, 2000)
             }
-        })
+        )
 
         windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -132,7 +137,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // sign in launch
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.Default) {
             EventBus.events.collect { event ->
                 if (event is SignInEvent) {
                     val userEmail = preferencesRepo.signedInUserEmail.first()
@@ -210,7 +215,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun signIn() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.Default) {
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(getString(R.string.web_client_id))
@@ -248,7 +253,7 @@ class MainActivity : ComponentActivity() {
     }
 
     fun signOut() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.Default) {
             try {
                 credentialManager.clearCredentialState(ClearCredentialStateRequest())
                 preferencesRepo.saveCrossDeviceSync(false)
@@ -298,47 +303,24 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-private fun SystemBarsProtection(
-    statusBarHeight: () -> Float = calculateStatusBar(),
-    navigationHeight: () -> Float = calculateNavigation()
-) {
- //   val darkTheme: Boolean = isSystemInDarkTheme()
- //   val color = if(darkTheme) Color.Black else Color.Black
-    val color = Color.Black
-
-    Canvas(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        val status = statusBarHeight()
-        val navigation = navigationHeight()
-
-        drawRect(
-            color = color,
-            topLeft = Offset(0f, 0f),
-            size = Size(size.width, status)
-        )
-        drawRect(
-            color = color,
-            topLeft = Offset(0f, (size.height - navigation)),
-            size = Size(size.width, navigation)
-        )
-    }
-}
-
-@Composable
-fun calculateStatusBar(): () -> Float {
-    val statusBars = WindowInsets.statusBars
+private fun SystemBarsProtection() {
     val density = LocalDensity.current
-    return { statusBars.getTop(density).times(1f) }
+    val statusBarHeight = WindowInsets.statusBars.getTop(density).toFloat()
+    val navigationHeight = WindowInsets.navigationBars.getBottom(density).toFloat()
+
+    Spacer(Modifier
+        .fillMaxSize()
+        .drawBehind {
+            drawRect(Color.Black, size = Size(size.width, statusBarHeight))
+            drawRect(
+                Color.Black,
+                Offset(0f, size.height - navigationHeight),
+                Size(size.width, navigationHeight)
+            )
+        }
+    )
 }
 
-@Composable
-fun calculateNavigation(): () -> Float {
-    val navigation = WindowInsets.navigationBars
-    val density = LocalDensity.current
-    return { navigation.getBottom(density).times(1f) }
-}
 
 @Composable
 fun gestureNavigation(): Boolean {
