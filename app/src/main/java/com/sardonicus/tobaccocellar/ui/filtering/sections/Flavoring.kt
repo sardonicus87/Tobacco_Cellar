@@ -23,9 +23,9 @@ fun FlavoringSection(
     modifier: Modifier = Modifier,
 ) {
     val available by filterViewModel.flavoringAvailable.collectAsState()
-    val selected by filterViewModel.sheetSelectedFlavorings.collectAsState()
+    val selected by filterViewModel.selectedFlavorings.collectAsState()
     val enabled by filterViewModel.flavoringsEnabled.collectAsState()
-    val matching by filterViewModel.sheetSelectedFlavorMatching.collectAsState()
+    val matching by filterViewModel.flavorMatching.collectAsState()
     val matchEnablement by filterViewModel.flavorMatchingEnabled.collectAsState()
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(None Assigned)" } } }
 

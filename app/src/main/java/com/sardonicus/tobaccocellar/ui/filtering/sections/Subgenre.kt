@@ -23,7 +23,7 @@ fun SubgenreSection(
     modifier: Modifier = Modifier,
 ) {
     val available by filterViewModel.subgenreAvailable.collectAsState()
-    val selected by filterViewModel.sheetSelectedSubgenres.collectAsState()
+    val selected by filterViewModel.selectedSubgenres.collectAsState()
     val enabled by filterViewModel.subgenresEnabled.collectAsState()
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(Unassigned)" } } }
 

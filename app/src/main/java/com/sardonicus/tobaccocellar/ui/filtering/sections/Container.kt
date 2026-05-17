@@ -23,7 +23,7 @@ fun ContainerFilterSection(
     modifier: Modifier = Modifier,
 ) {
     val available by filterViewModel.containerAvailable.collectAsState()
-    val selected by filterViewModel.sheetSelectedContainer.collectAsState()
+    val selected by filterViewModel.selectedContainer.collectAsState()
     val enabled by filterViewModel.containerEnabled.collectAsState()
     val tinsExist by filterViewModel.tinsExist.collectAsState()
     val nothingLabel by remember(tinsExist) {

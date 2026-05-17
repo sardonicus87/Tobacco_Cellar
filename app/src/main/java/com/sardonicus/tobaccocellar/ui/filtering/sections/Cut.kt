@@ -23,7 +23,7 @@ fun CutSection(
     modifier: Modifier = Modifier,
 ) {
     val available by filterViewModel.cutAvailable.collectAsState()
-    val selected by filterViewModel.sheetSelectedCuts.collectAsState()
+    val selected by filterViewModel.selectedCuts.collectAsState()
     val enabled by filterViewModel.cutsEnabled.collectAsState()
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(Unassigned)" } } }
 

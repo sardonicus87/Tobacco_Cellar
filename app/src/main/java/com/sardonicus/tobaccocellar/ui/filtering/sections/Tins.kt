@@ -33,13 +33,13 @@ fun TinsFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val hasTins by filterViewModel.sheetSelectedHasTins.collectAsState()
+    val hasTins by filterViewModel.selectedHasTins.collectAsState()
     val implicitHas by filterViewModel.implicitHasTins.collectAsState()
-    val noTins by filterViewModel.sheetSelectedNoTins.collectAsState()
-    val opened by filterViewModel.sheetSelectedOpened.collectAsState()
-    val unopened by filterViewModel.sheetSelectedUnopened.collectAsState()
-    val finished by filterViewModel.sheetSelectedFinished.collectAsState()
-    val unfinished by filterViewModel.sheetSelectedUnfinished.collectAsState()
+    val noTins by filterViewModel.selectedNoTins.collectAsState()
+    val opened by filterViewModel.selectedOpened.collectAsState()
+    val unopened by filterViewModel.selectedUnopened.collectAsState()
+    val finished by filterViewModel.selectedFinished.collectAsState()
+    val unfinished by filterViewModel.selectedUnfinished.collectAsState()
 
     val hasEnabled by filterViewModel.hasTinsEnabled.collectAsState()
     val noEnabled by filterViewModel.noTinsEnabled.collectAsState()

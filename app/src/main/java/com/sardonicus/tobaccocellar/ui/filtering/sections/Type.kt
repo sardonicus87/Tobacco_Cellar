@@ -34,7 +34,7 @@ fun TypeFilterSection(
     modifier: Modifier = Modifier,
     types: List<String> = listOf("Aromatic", "English", "Burley", "Virginia", "Other", "(Unassigned)"),
 ) {
-    val selectedTypes by filterViewModel.sheetSelectedTypes.collectAsState()
+    val selectedTypes by filterViewModel.selectedTypes.collectAsState()
     val enabled by filterViewModel.typesEnabled.collectAsState()
     val typesExist by filterViewModel.typesExist.collectAsState()
 

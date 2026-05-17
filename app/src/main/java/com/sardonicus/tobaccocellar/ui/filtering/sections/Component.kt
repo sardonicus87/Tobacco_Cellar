@@ -23,9 +23,9 @@ fun ComponentSection(
     modifier: Modifier = Modifier,
 ) {
     val available by filterViewModel.componentAvailable.collectAsState()
-    val selected by filterViewModel.sheetSelectedComponents.collectAsState()
+    val selected by filterViewModel.selectedComponents.collectAsState()
     val enabled by filterViewModel.componentsEnabled.collectAsState()
-    val matching by filterViewModel.sheetSelectedCompMatching.collectAsState()
+    val matching by filterViewModel.compMatching.collectAsState()
     val matchEnablement by filterViewModel.compMatchingEnabled.collectAsState()
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != "(None Assigned)" } } }
 

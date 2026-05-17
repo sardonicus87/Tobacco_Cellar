@@ -88,7 +88,7 @@ fun BrandFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val excludeSwitch by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
+    val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
 
     Column(
         modifier = modifier
@@ -274,7 +274,7 @@ private fun SelectableBrandsRow(
         }
     }
 
-    val excludeSwitch by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
+    val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
     val filteredBrands by filterViewModel.filteredBrands.collectAsState()
     val unselectedBrands by filterViewModel.unselectedBrands.collectAsState()
     val brandEnabled by filterViewModel.brandEnabled.collectAsState()
@@ -351,7 +351,7 @@ private fun SelectedBrandChipBox(
     clearAllSelectedBrands: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val excludeSwitch by filterViewModel.sheetSelectedExcludeBrandSwitch.collectAsState()
+    val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
     val selectedBrands by filterViewModel.selectedBrand.collectAsState()
     val showBrandChipOverflow by filterViewModel.showBrandChipOverflow.collectAsState()
     val maxWidth by filterViewModel.chipMaxWidth.collectAsState()

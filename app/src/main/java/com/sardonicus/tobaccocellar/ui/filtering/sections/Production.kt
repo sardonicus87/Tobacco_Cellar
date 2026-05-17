@@ -23,8 +23,8 @@ fun ProductionFilterSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val production by filterViewModel.sheetSelectedProduction.collectAsState()
-    val outOfProduction by filterViewModel.sheetSelectedOutOfProduction.collectAsState()
+    val production by filterViewModel.selectedProduction.collectAsState()
+    val outOfProduction by filterViewModel.selectedOutOfProduction.collectAsState()
 
     val productionEnabled by filterViewModel.productionEnabled.collectAsState()
     val outOfProductionEnabled by filterViewModel.outOfProductionEnabled.collectAsState()

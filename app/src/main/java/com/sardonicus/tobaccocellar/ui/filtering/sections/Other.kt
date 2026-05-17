@@ -227,9 +227,9 @@ private fun StarRatingFilters(
     val unratedEnabled by filterViewModel.unratedEnabled.collectAsState()
 
     val unchosen by filterViewModel.rangeUnchosen.collectAsState()
-    val unrated by filterViewModel.sheetSelectedUnrated.collectAsState()
-    val ratingLow by filterViewModel.sheetSelectedRatingLow.collectAsState()
-    val ratingHigh by filterViewModel.sheetSelectedRatingHigh.collectAsState()
+    val unrated by filterViewModel.selectedUnrated.collectAsState()
+    val ratingLow by filterViewModel.selectedRatingLow.collectAsState()
+    val ratingHigh by filterViewModel.selectedRatingHigh.collectAsState()
 
     val lowText by filterViewModel.rangeLowText.collectAsState()
     val highText by filterViewModel.rangeHighText.collectAsState()
@@ -698,8 +698,8 @@ private fun InStockSection(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val inStock by filterViewModel.sheetSelectedInStock.collectAsState()
-    val outOfStock by filterViewModel.sheetSelectedOutOfStock.collectAsState()
+    val inStock by filterViewModel.selectedInStock.collectAsState()
+    val outOfStock by filterViewModel.selectedOutOfStock.collectAsState()
     val inStockEnabled by filterViewModel.inStockEnabled.collectAsState()
     val outOfStockEnabled by filterViewModel.outOfStockEnabled.collectAsState()
 
