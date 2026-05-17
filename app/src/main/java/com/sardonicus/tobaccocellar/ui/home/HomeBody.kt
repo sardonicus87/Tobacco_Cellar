@@ -25,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -94,9 +93,7 @@ fun HomeBody(
                 .padding(16.dp)
         )
 
-        HomeScrollHandler(
-            columnState, sortedItems, { itemsCount }, filterViewModel, coroutineScope(),
-        )
+        HomeScrollHandler(columnState, sortedItems, { itemsCount }, filterViewModel)
     }
 }
 
@@ -188,8 +185,7 @@ private fun HomeScrollHandler(
     columnState: LazyListState,
     sortedItems: ItemsList,
     itemsCount: () -> Int,
-    filterViewModel: FilterViewModel,
-    coroutineScope: CoroutineScope,
+    filterViewModel: FilterViewModel
 ) {
     val scrollState by filterViewModel.homeScrollState.collectAsState()
     val currentItemsList by rememberUpdatedState(sortedItems.list)
@@ -203,15 +199,11 @@ private fun HomeScrollHandler(
         snapshotFlow { columnState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
 
         if (savedItemIndex != -1) {
-            withFrameNanos {
-                coroutineScope.launch {
-                    if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
-                        val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
-                        columnState.scrollToItem(savedItemIndex, offset)
-                    } else {
-                        columnState.scrollToItem(savedItemIndex)
-                    }
-                }
+            if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
+                val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
+                columnState.scrollToItem(savedItemIndex, offset)
+            } else {
+                columnState.scrollToItem(savedItemIndex)
             }
             filterViewModel.resetScroll()
         }
@@ -226,7 +218,7 @@ private fun HomeScrollHandler(
             val offset = scrollState.currentPosition[1]
 
             if (index != null && offset != null) {
-                withFrameNanos { coroutineScope.launch { columnState.scrollToItem(index, offset) } }
+                columnState.scrollToItem(index, offset)
                 filterViewModel.resetScroll()
             }
         }
