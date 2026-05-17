@@ -64,9 +64,11 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             if (!preferencesRepo.syncSettingsMigrated.first()) {
                 migrateSyncSettings()
             }
+
+            filterViewModel
         }
 
-        // Network Flow and trigger upload if can upload
+        // Check Network Flow and trigger upload if possible
         applicationScope.launch(Dispatchers.Default) {
             if (preferencesRepo.crossDeviceSync.first()) {
                 val networkMonitor = NetworkMonitor(this@CellarApplication)
