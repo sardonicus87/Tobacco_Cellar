@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -57,7 +56,7 @@ import kotlin.math.floor
 class HomeViewModel(
     private val preferencesRepo: PreferencesRepo,
     private val itemsRepository: ItemsRepository,
-    filterViewModel: FilterViewModel,
+    private val filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
     private val application: Application
 ): ViewModel(), ExportCsvHandler {
@@ -100,9 +99,6 @@ class HomeViewModel(
         _tableShadow.value = if (canScroll) 0.15f else 0f
     }
 
-    private val _allItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
-    private val _filteredItems = mutableStateOf<List<ItemsComponentsAndTins>>(emptyList())
-
     private val _isRendered = MutableStateFlow(false)
     fun updateListRendered(rendered: Boolean) { _isRendered.value = rendered }
 
@@ -116,14 +112,6 @@ class HomeViewModel(
         }
         viewModelScope.launch(Dispatchers.Default) {
             supervisorScope {
-                // everything flow
-                launch {
-                    filterViewModel.everythingFlow.collect { _allItems.value = it }
-                }
-                launch {
-                    filterViewModel.homeScreenFilteredItems.collect { _filteredItems.value = it }
-                }
-
                 // Table Sorting
                 launch {
                     combine(
@@ -734,7 +722,7 @@ class HomeViewModel(
 
     fun setQuickEditItem(itemId: Int?) {
         if (itemId != null) {
-            val item = _allItems.value.first { it.items.id == itemId }
+            val item = sortedItems.value.first { it.items.id == itemId }
             val active = QuickEditItem(
                 rating = item.items.rating,
                 favorite = item.items.favorite,
@@ -1028,7 +1016,7 @@ class HomeViewModel(
 
     override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = if (allItems) _allItems.value else _filteredItems.value
+            val data = if (allItems) filterViewModel.everythingFlow.first() else filterViewModel.homeScreenFilteredItems.first()
             val maxRating = exportRating.maxRating
             val rounding = exportRating.rounding
 
@@ -1054,9 +1042,9 @@ class HomeViewModel(
             val maxRating = exportRating.maxRating
             val rounding = exportRating.rounding
             val data: List<TinExportData> = if (allItems) {
-                createTinExportData(_allItems.value, maxRating, rounding)
+                createTinExportData(filterViewModel.everythingFlow.first(), maxRating, rounding)
             } else {
-                createTinExportData(_filteredItems.value, maxRating, rounding)
+                createTinExportData(filterViewModel.homeScreenFilteredItems.first(), maxRating, rounding)
             }
 
             val tinCsvData = csvHelper.exportTinsToCsv(data)
