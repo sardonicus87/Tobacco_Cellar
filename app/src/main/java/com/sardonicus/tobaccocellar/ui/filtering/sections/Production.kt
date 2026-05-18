@@ -42,14 +42,14 @@ fun ProductionFilterSection(
             checked = production,
             onCheckedChange = filterViewModel::updateSelectedProduction,
             modifier = Modifier,
-            enabled = productionEnabled
+            enabled = productionEnabled || production
         )
         CheckboxWithLabel(
             text = "Discontinued",
             checked = outOfProduction,
             onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
             modifier = Modifier,
-            enabled = outOfProductionEnabled
+            enabled = outOfProductionEnabled || outOfProduction
         )
     }
 }

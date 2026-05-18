@@ -92,7 +92,7 @@ fun TypeFilterSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background,
                         ),
-                        enabled = typeEnabled
+                        enabled = typeEnabled || selected
                     )
                 }
             }

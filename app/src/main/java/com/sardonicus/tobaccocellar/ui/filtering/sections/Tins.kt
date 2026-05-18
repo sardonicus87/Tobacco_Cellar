@@ -97,7 +97,7 @@ fun TinsFilterSection(
                             checked = hasTins,
                             onCheckedChange = filterViewModel::updateSelectedHasTins,
                             modifier = Modifier,
-                            enabled = hasEnabled && tinsExist,
+                            enabled = tinsExist && (hasEnabled || hasTins),
                             fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
                         )
                     }
@@ -106,7 +106,7 @@ fun TinsFilterSection(
                         checked = noTins,
                         onCheckedChange = filterViewModel::updateSelectedNoTins,
                         modifier = Modifier,
-                        enabled = noEnabled && tinsExist,
+                        enabled = tinsExist && (noEnabled || noTins),
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
@@ -122,7 +122,7 @@ fun TinsFilterSection(
                         checked = opened,
                         onCheckedChange = filterViewModel::updateSelectedOpened,
                         modifier = Modifier,
-                        enabled = openedEnabled && tinsExist,
+                        enabled = tinsExist && (openedEnabled || opened),
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
@@ -130,7 +130,7 @@ fun TinsFilterSection(
                         checked = unopened,
                         onCheckedChange = filterViewModel::updateSelectedUnopened,
                         modifier = Modifier,
-                        enabled = unopenedEnabled && tinsExist,
+                        enabled = tinsExist && (unopenedEnabled || unopened),
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }
@@ -146,7 +146,7 @@ fun TinsFilterSection(
                         checked = finished,
                         onCheckedChange = filterViewModel::updateSelectedFinished,
                         modifier = Modifier,
-                        enabled = finishedEnabled && tinsExist,
+                        enabled = tinsExist && (finishedEnabled || finished),
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
@@ -154,7 +154,7 @@ fun TinsFilterSection(
                         checked = unfinished,
                         onCheckedChange = filterViewModel::updateSelectedUnfinished,
                         modifier = Modifier,
-                        enabled = unfinishedEnabled && tinsExist,
+                        enabled = tinsExist && (unfinishedEnabled || unfinished),
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                 }

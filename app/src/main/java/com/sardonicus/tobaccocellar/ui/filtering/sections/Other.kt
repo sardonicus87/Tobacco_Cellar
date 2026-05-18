@@ -170,7 +170,7 @@ private fun FavoriteDislikeFilters(
                             },
                     )
                 },
-                enabled = { favoritesEnabled && favDisExist() },
+                enabled = { (favoritesEnabled || favoritesSelection != ToggleableState.Off) && favDisExist() },
                 maxLines = { 1 },
             )
 
@@ -188,7 +188,7 @@ private fun FavoriteDislikeFilters(
                             },
                     )
                 },
-                enabled = { dislikedsEnabled && favDisExist() },
+                enabled = { (dislikedsEnabled || dislikedsSelection != ToggleableState.Off) && favDisExist() },
                 maxLines = { 1 },
             )
         }
@@ -419,7 +419,7 @@ private fun RatingRangePop(
                     },
                     modifier = Modifier
                         .padding(bottom = 8.dp),
-                    enabled = unratedEnabled(),
+                    enabled = unratedEnabled() || unrated(),
                     fontColor = if (!unratedEnabled()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
                 )
                 // Rating Range //
@@ -716,7 +716,7 @@ private fun InStockSection(
             checked = { inStock },
             onCheckedChange = filterViewModel::updateSelectedInStock,
             modifier = Modifier,
-            enabled = { inStockEnabled },
+            enabled = { inStockEnabled || inStock },
             allowResize = { true }
         )
         LocalCheckboxWithLabel(
@@ -724,7 +724,7 @@ private fun InStockSection(
             checked = { outOfStock },
             onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
-            enabled = { outOfStockEnabled },
+            enabled = { outOfStockEnabled || outOfStock },
             allowResize = { false }
         )
     }

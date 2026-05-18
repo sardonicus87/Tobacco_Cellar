@@ -168,7 +168,7 @@ private fun OverflowWrapper(
             FilterChipWrapper(
                 label = { it },
                 selected = { isSelected },
-                enabled = { enabled[it] ?: false },
+                enabled = { (enabled[it] ?: false) || isSelected },
                 onClick = { updateSelectedOptions(it, !isSelected) },
                 modifier = Modifier
                     .widthIn(max = 140.dp)
