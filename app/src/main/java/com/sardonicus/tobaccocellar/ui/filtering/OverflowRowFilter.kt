@@ -275,7 +275,7 @@ private fun FlowFilterMatchOptions(
         )
 
         FlowMatchOption.entries.forEachIndexed { index, it ->
-            val enabled = !nothingAssigned() && (matchOptionEnablement()[it] ?: false)
+            val enabled = !nothingAssigned() && (matchOptionEnablement()[it] ?: false) || matching() == it
             Box(
                 modifier = Modifier
                     .padding(0.dp)
