@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -121,7 +122,7 @@ fun HomeHeader(
             modifier = modifier
                 .width(68.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             ListColumnMenu(
                 viewModel = viewModel,
@@ -403,17 +404,9 @@ private fun TotalCount(
 
     Box (contentAlignment = Alignment.CenterEnd) {
         Text(
-            text = "999",
-            modifier = Modifier,
-            textAlign = TextAlign.End,
-            fontWeight = FontWeight.Normal,
-            fontSize = 15.sp,
-            maxLines = 1,
-            color = Color.Transparent
-        )
-        Text(
             text = "$count",
-            modifier = Modifier,
+            modifier = Modifier
+                .widthIn(min = 28.dp),
             textAlign = TextAlign.End,
             fontWeight = FontWeight.Normal,
             fontSize = 15.sp,
