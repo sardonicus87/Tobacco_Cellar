@@ -309,7 +309,7 @@ private fun SelectableBrandsRow(
             state = lazyListState
         ) {
             items(unselectedBrands, key = { it }) { brand ->
-                val enabled by remember(brand) { derivedStateOf { brandEnabled[brand] ?: true } }
+                val enabled by remember(brand) { derivedStateOf { brandEnabled[brand] == true } }
 
                 BrandTextButton(
                     brand = { brand },
