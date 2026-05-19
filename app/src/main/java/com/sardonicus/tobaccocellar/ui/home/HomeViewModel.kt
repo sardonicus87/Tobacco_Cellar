@@ -371,7 +371,7 @@ class HomeViewModel(
             initialValue = MenuState()
         )
 
-    val sortQuantity = combine(
+    private val quantityState = combine(
         filterViewModel.homeScreenFilteredItems,
         filterViewModel.homeScreenFilteredTins,
         preferencesRepo.quantityOption,
@@ -379,39 +379,16 @@ class HomeViewModel(
         preferencesRepo.tinGramsConversionRate
     ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
         filteredItems.associate { items ->
-            items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
+            val itemTins = items.tins.filter { it in filteredTins }
+            val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate)
+            val display = formatQuantity(raw, quantityOption, itemTins)
+
+            items.items.id to ItemQuantity(raw, display)
         }
     }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = emptyMap()
-        )
-
-    val formattedQuantities = combine(
-        filterViewModel.homeScreenFilteredItems,
-        filterViewModel.homeScreenFilteredTins,
-        preferencesRepo.quantityOption,
-        preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate
-    ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
-
-        filteredItems.associate { items ->
-            val totalQuantity =
-                calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate) // !it.finished &&
-            val formattedQuantity =
-                formatQuantity(totalQuantity, quantityOption, items.tins.filter { it in filteredTins }) // !it.finished &&
-
-            items.items.id to formattedQuantity
-        }
-    }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyMap()
         )
 
@@ -422,15 +399,16 @@ class HomeViewModel(
         tableSorting,
         listSorting,
         preferencesRepo.typeGenreOption,
-        sortQuantity,
-        formattedQuantities
+        quantityState
     ) { array ->
         val filteredItems = array[0] as List<ItemsComponentsAndTins>
         val isTableView = array[1] as Boolean
         val tableSorting = array[2] as TableSorting
         val listSorting = array[3] as ListSorting
         val typeGenreOption = array[4] as TypeGenreOption
-        val sortQuantity = array[5] as Map<Int, Double>
+        val sortState = array[5] as Map<Int, ItemQuantity>
+
+        val sortQuantity = sortState.mapValues { it.value.raw }
 
         sortItems(filteredItems, isTableView, tableSorting, listSorting, sortQuantity, typeGenreOption)
     }
@@ -453,21 +431,23 @@ class HomeViewModel(
     @Suppress("UNCHECKED_CAST")
     val itemsListState: StateFlow<ItemsList> = combine(
         sortedItems,
-        formattedQuantities,
+        quantityState,
         preferencesRepo.showRating,
         preferencesRepo.typeGenreOption,
         filteredTins,
         filterViewModel.showTins,
     ) { array ->
         val items = array[0] as List<ItemsComponentsAndTins>
-        val quantities = array[1] as Map<Int, String>
+        val quantities = array[1] as Map<Int, ItemQuantity>
         val showRating = array[2] as Boolean
         val typeOption = array[3] as TypeGenreOption
         val tins = array[4] as TinsList
         val showTins = array[5] as Boolean
 
         val list = items.map { item ->
-            val quantity = quantities[item.items.id] ?: "--"
+            val quantity = quantities[item.items.id]
+            val formattedQuantity = quantity?.display ?: "--"
+            val outOfStock = quantity?.raw == 0.0
             val filteredTins = if (showTins) item.tins.filter { it in tins.tins } else emptyList()
 
             val showRating = showRating && item.items.rating != null
@@ -475,8 +455,8 @@ class HomeViewModel(
             ItemsListState(
                 item = item,
                 itemId = item.items.id,
-                formattedQuantity = quantity,
-                outOfStock = quantity.none { it in '1'..'9' },
+                formattedQuantity = formattedQuantity,
+                outOfStock = outOfStock,
                 formattedTypeGenre = calculateTypeGenre(item.items, typeOption),
                 tins = TinsList(filteredTins),
                 rating = if (showRating) item.items.rating.toString() else "",
@@ -596,7 +576,7 @@ class HomeViewModel(
         emptyMessage,
         resetLoading,
         _isRendered,
-        formattedQuantities,
+        quantityState
     ) { array ->
         val sortedItems = array[0] as List<ItemsComponentsAndTins>
         val isTableView = array[1] as Boolean
@@ -604,10 +584,11 @@ class HomeViewModel(
         val emptyMessage = array[3] as String
         val resetLoading = array[4] as Boolean
         val isRendered = array[5] as Boolean
-        val formattedQuantities = array[6] as Map<Int, String>
+        val qtyState = array[6] as Map<Int, ItemQuantity>
 
+        val formatFinished = emptyDatabase || qtyState.isNotEmpty()
 
-        if (formattedQuantities.isNotEmpty()) { _resetLoading.value = false }
+        if (formatFinished) { _resetLoading.value = false }
 
         val dataLoading = if (resetLoading) {
             true
@@ -810,62 +791,72 @@ class HomeViewModel(
         return if (filteredItems.isNotEmpty()) {
             if (isTableView) {
                 when (tableSorting.columnIndex) {
-                    0 -> filteredItems.sortedBy { it.items.brand }
-                    1 -> filteredItems.sortedBy { it.items.blend }
-                    2 -> filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
-                    3 -> filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                    4 -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
-                    7 -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                    0 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.brand }
+                        else filteredItems.sortedByDescending { it.items.brand }
+                    1 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.blend }
+                        else filteredItems.sortedByDescending { it.items.blend }
+                    2 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                        else filteredItems.sortedByDescending { it.items.type.ifBlank { "~" } }
+                    3 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
+                        else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
+                    4 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
+                        else filteredItems.sortedBy { it.items.rating ?: 10.0 }
+                    7 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                        else filteredItems.sortedWith(
+                            compareBy<ItemsComponentsAndTins> {
+                                if (sortQuantity[it.items.id] == 0.0) 1 else 0
+                            }.thenBy { sortQuantity[it.items.id] }
+                        )
                     else -> filteredItems
-                }.let { sortedList ->
-                    if (tableSorting.sortAscending) sortedList
-                    else sortedList.let { toReverse ->
-                        when (tableSorting.columnIndex) {
-                            4 -> toReverse.sortedBy { item -> item.items.rating ?: 10.0 }
-                            7 -> {
-                                toReverse.sortedWith(
-                                    compareBy<ItemsComponentsAndTins> {
-                                        if (sortQuantity[it.items.id] == 0.0) 1 else 0
-                                    }.thenBy { sortQuantity[it.items.id] }
-                                )
-                            }
-                            else -> toReverse.reversed()
-                        }
-                    }
                 }
             } else {
                 when (listSorting.option) {
-                    ListSortOption.DEFAULT -> filteredItems.sortedBy { it.items.id }
-                    ListSortOption.BLEND -> filteredItems.sortedBy { it.items.blend }
-                    ListSortOption.BRAND -> filteredItems.sortedBy { it.items.brand }
-                    ListSortOption.TYPE -> {
-                        if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                            filteredItems.sortedBy { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                    ListSortOption.DEFAULT ->
+                        if (listSorting.listAscending) filteredItems.sortedBy { it.items.id }
+                        else filteredItems.sortedByDescending { it.items.id }
+                    ListSortOption.BLEND ->
+                        if (listSorting.listAscending) filteredItems.sortedBy { it.items.blend }
+                        else filteredItems.sortedByDescending { it.items.blend }
+                    ListSortOption.BRAND ->
+                        if (listSorting.listAscending) filteredItems.sortedBy { it.items.brand }
+                        else filteredItems.sortedByDescending { it.items.brand }
+                    ListSortOption.TYPE ->
+                        if (listSorting.listAscending) {
+                            if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
+                                filteredItems.sortedBy { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                            } else filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
                         }
-                        else filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
-                    }
-                    ListSortOption.SUBGENRE -> {
-                        if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                            filteredItems.sortedBy { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
+                        else {
+                            if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
+                                filteredItems.sortedByDescending { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                            } else filteredItems.sortedByDescending { it.items.type.ifBlank { "~" } }
                         }
-                        else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                    }
-                    ListSortOption.RATING -> filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
-                    ListSortOption.QUANTITY -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                }.let { sortedList ->
-                    if (listSorting.listAscending) sortedList
-                    else sortedList.let { toReverse ->
-                        when (listSorting.option) {
-                            ListSortOption.RATING -> toReverse.sortedBy { item -> item.items.rating ?: 10.0 }
-                            ListSortOption.QUANTITY -> {
-                                toReverse.sortedWith(
-                                    compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
-                                        .thenBy { sortQuantity[it.items.id] }
-                                )
-                            }
-                            else -> toReverse.reversed()
+                    ListSortOption.SUBGENRE ->
+                        if (listSorting.listAscending) {
+                            if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
+                                filteredItems.sortedBy { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
+                            } else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
                         }
-                    }
+                        else {
+                            if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
+                                filteredItems.sortedByDescending { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
+                            } else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
+                        }
+                    ListSortOption.RATING ->
+                        if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
+                        else filteredItems.sortedBy { item -> item.items.rating ?: 10.0 }
+                    ListSortOption.QUANTITY ->
+                        if (listSorting.listAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                        else filteredItems.sortedWith(
+                            compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
+                                .thenBy { sortQuantity[it.items.id] }
+                        )
                 }
             }
         } else emptyList()
@@ -1175,6 +1166,12 @@ data class ViewSelect(
 )
 
 @Stable
+data class ItemQuantity(
+    val raw: Double,
+    val display: String
+)
+
+@Stable
 data class MenuState(
     val isMenuShown: Boolean = false,
     val activeMenuId: Int? = null
@@ -1289,34 +1286,24 @@ fun calculateTotalQuantity(
     ounceRate: Double,
     gramRate: Double
 ): Double {
-    val tinQuantities = tins.map {
-        when (it.finished) {
-            true -> 0.0
-            false -> it.tinQuantity
-        }
-    }
-    val tinsRemap = tins.mapIndexed { index, it ->
-        it.copy(tinQuantity = tinQuantities[index])
-    }
-
-    return if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
-        when (quantityOption) {
+    if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
+        return when (quantityOption) {
             QuantityOption.TINS -> items.items.quantity.toDouble()
             QuantityOption.OUNCES -> items.items.quantity.toDouble() * ounceRate
             QuantityOption.GRAMS -> items.items.quantity.toDouble() * gramRate
         }
-    } else {
-        when (quantityOption) {
-            QuantityOption.TINS -> items.items.quantity.toDouble()
-            QuantityOption.OUNCES -> calculateOunces(tinsRemap)
-            QuantityOption.GRAMS -> calculateGrams(tinsRemap)
-        }
+    }
+
+    return when (quantityOption) {
+        QuantityOption.TINS -> items.items.quantity.toDouble()
+        QuantityOption.OUNCES -> calculateOunces(tins)
+        QuantityOption.GRAMS -> calculateGrams(tins)
     }
 }
 
 fun calculateOunces(tins: List<Tins>): Double {
     return tins.sumOf {
-        if (it.tinQuantity > 0.0) {
+        if (!it.finished && it.tinQuantity > 0.0) {
             when (it.unit) {
                 "oz" -> it.tinQuantity
                 "lbs" -> it.tinQuantity * 16
@@ -1329,7 +1316,7 @@ fun calculateOunces(tins: List<Tins>): Double {
 
 fun calculateGrams(tins: List<Tins>): Double {
     return tins.sumOf {
-        if (it.tinQuantity > 0.0) {
+        if (!it.finished && it.tinQuantity > 0.0) {
             when (it.unit) {
                 "oz" -> it.tinQuantity * 28.3495
                 "lbs" -> it.tinQuantity * 453.592
