@@ -262,7 +262,7 @@ private fun StatsBody(
             }
         }
 
-        if (filteredStats.brandsByRating.count() > 3) {
+        if (filteredStats.brandsByRating.count() > 1) {
             item {
                 HorizontalDivider(
                     modifier = Modifier
