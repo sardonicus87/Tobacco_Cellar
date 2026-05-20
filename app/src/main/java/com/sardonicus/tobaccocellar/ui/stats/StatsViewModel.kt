@@ -3,8 +3,6 @@ package com.sardonicus.tobaccocellar.ui.stats
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sardonicus.tobaccocellar.data.Components
-import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
@@ -19,7 +17,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -28,7 +25,7 @@ import kotlin.math.floor
 
 class StatsViewModel(
     filterViewModel: FilterViewModel,
-    private val preferencesRepo: PreferencesRepo
+    preferencesRepo: PreferencesRepo
 ): ViewModel() {
 
     private val _selectionFocused = MutableStateFlow(false)
@@ -45,66 +42,102 @@ class StatsViewModel(
     val rawStats: StateFlow<RawStats> = combine (
         filterViewModel.everythingFlow,
         filterViewModel.ratingsExist,
-        preferencesRepo.quantityOption
-    ) { it, ratingsExist, quantityOption ->
-        val averageRating = if (ratingsExist) { (it.sumOf { it.items.rating ?: 0.0 }) / (it.count { it.items.rating != null }) } else null
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate
+    ) { allItems, ratingsExist, quantityOption, ozRate, gramsRate ->
+
+        val brandSet = mutableSetOf<String>()
+        val typeMap = mutableMapOf<String, Int>()
+        val subgenreMap = mutableMapOf<String, Int>()
+        val cutMap = mutableMapOf<String, Int>()
+        val componentMap = mutableMapOf<String, Int>()
+        val flavoringMap = mutableMapOf<String, Int>()
+        val containerMap = mutableMapOf<String, Int>()
+
+        var favoriteCount = 0
+        var dislikedCount = 0
+        var totalQuantity = 0
+        var totalZeroQuantity = 0
+        var ratedCount = 0
+        var ratingSum = 0.0
+        var totalOpened = 0
+        var hasTins = false
+
+        val quantityRemap = when (quantityOption) {
+            QuantityOption.TINS -> if (isMetricLocale()) QuantityOption.GRAMS else QuantityOption.OUNCES
+            else -> quantityOption
+        }
+        var weightAccumulator = 0.0
+
+        for (fullItem in allItems) {
+            val item = fullItem.items
+            brandSet.add(item.brand)
+
+            if (item.favorite) favoriteCount++
+            if (item.disliked) dislikedCount++
+            totalQuantity += item.quantity
+            if (item.quantity == 0) totalZeroQuantity++
+            if (item.rating != null) {
+                ratedCount++
+                ratingSum += item.rating
+            }
+
+            typeMap.increment(item.type.ifBlank { "Unassigned" })
+            subgenreMap.increment(item.subGenre.ifBlank { "Unassigned" })
+            cutMap.increment(item.cut.ifBlank { "Unassigned" })
+
+            if (fullItem.components.isEmpty()) componentMap.increment("None Assigned")
+            else fullItem.components.forEach { componentMap.increment(it.componentName) }
+
+            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("None Assigned")
+            else fullItem.flavoring.forEach { flavoringMap.increment(it.flavoringName) }
+
+            // Tins
+            var itemTinsWeight = 0.0
+            var unfinishedCount = 0
+            var allValid = true
+
+            if (fullItem.tins.isNotEmpty()) hasTins = true
+            for (tin in fullItem.tins) {
+                if (!tin.finished) {
+                    unfinishedCount++
+                    containerMap.increment(tin.container.ifBlank { "Unassigned" })
+                    if (tin.openDate != null) totalOpened++
+
+                    if (tin.unit.isBlank()) allValid = false
+                    itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap)
+                }
+            }
+
+            weightAccumulator += if (unfinishedCount > 0 && allValid) {
+                itemTinsWeight
+            } else {
+                when (quantityRemap) {
+                    QuantityOption.OUNCES -> item.quantity * ozRate
+                    QuantityOption.GRAMS -> item.quantity * gramsRate
+                    else -> 0.0
+                }
+            }
+        }
 
         RawStats(
-            blendsCount = it.size,
-            brandsCount = it.groupingBy { it.items.brand }.eachCount().size,
-            averageRating = formatDecimal(averageRating),
-            favoriteCount = it.count { it.items.favorite },
-            dislikedCount = it.count { it.items.disliked },
-            totalQuantity = it.sumOf { it.items.quantity },
-            estimatedWeight = calculateTotal(it, it.flatMap { items -> items.tins.filter { !it.finished } }, quantityOption),
-            totalZeroQuantity = it.count { it.items.quantity == 0 },
-            totalOpened = if (it.map { it.tins }.isEmpty() || it.map { it.tins }.all { tins -> tins.all { it.openDate == null } }) null
-                else it.flatMap { it.tins }.count { it.openDate != null && !it.finished },
+            blendsCount = allItems.size,
+            brandsCount = brandSet.size,
+            averageRating = if (ratingsExist) formatDecimal(ratingSum / ratedCount) else "",
+            favoriteCount = favoriteCount,
+            dislikedCount = dislikedCount,
+            totalQuantity = totalQuantity,
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator), // calculateTotal(allItems, allItems.flatMap { items -> items.tins.filter { !it.finished } }, quantityOption, ozRate, gramsRate),
+            totalZeroQuantity = totalZeroQuantity,
+            totalOpened = if (!hasTins) null else totalOpened,
 
-            totalByType = it.groupingBy { it.items.type.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value }
-                .let{ remapUnassigned(it, "Unassigned") },
-            totalBySubgenre = it.groupingBy {
-                it.items.subGenre.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value }
-                .let{ remapUnassigned(it, "Unassigned") },
-            totalByCut = it.groupingBy {
-                it.items.cut.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value }
-                .let { remapUnassigned(it, "Unassigned") },
-            totalByComponent = it.flatMap { it.components
-                .ifEmpty { listOf(Components(componentName = "None Assigned")) } }
-                .groupingBy { it.componentName }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value }
-                .let { remapUnassigned(it, "None Assigned") },
-            totalByFlavoring = it.flatMap { it.flavoring
-                .ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
-                .groupingBy { it.flavoringName }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value }
-                .let { remapUnassigned(it, "None Assigned") },
-            totalByContainer = it.flatMap { it.tins }
-                .filter { !it.finished }
-                .groupingBy { it.container.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value }
-                .let { remapUnassigned(it, "Unassigned") },
+            totalByType = remapUnassigned(typeMap.sortByValue(), "Unassigned"),
+            totalBySubgenre = remapUnassigned(subgenreMap.sortByValue(), "Unassigned"),
+            totalByCut = remapUnassigned(cutMap.sortByValue(), "Unassigned"),
+            totalByComponent = remapUnassigned(componentMap.sortByValue(), "None Assigned"),
+            totalByFlavoring = remapUnassigned(flavoringMap.sortByValue(), "None Assigned"),
+            totalByContainer = remapUnassigned(containerMap.sortByValue(), "Unassigned"),
 
             rawLoading = false
         )
@@ -112,197 +145,203 @@ class StatsViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = RawStats(rawLoading = true)
         )
 
 
     /** Filtered stats */
+    @Suppress("UNCHECKED_CAST")
     val filteredStats: StateFlow<FilteredStats> = combine(
         filterViewModel.everythingFlow,
         filterViewModel.unifiedFilteredItems,
         filterViewModel.unifiedFilteredTins,
         filterViewModel.ratingsExist,
-        preferencesRepo.quantityOption
-    ) { allItems, filteredItems, filteredTins, ratingsExist, quantityOption ->
-        val tinIds = filteredTins.map { it.tinId }
-        val relevantTins = filteredItems.flatMap { it.tins }.filter { it.tinId in tinIds && !it.finished }
-        val filteredRatingsExist = filteredItems.any { it.items.rating != null }
-        val averageRating =
-            if (ratingsExist && filteredRatingsExist) { (filteredItems.sumOf { it.items.rating ?: 0.0 }) / (filteredItems.count { it.items.rating != null }) }
-            else null
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate
+    ) { array ->
+        val allItems = array[0] as List<ItemsComponentsAndTins>
+        val filteredItems = array[1] as List<ItemsComponentsAndTins>
+        val filteredTins = array[2] as List<Tins>
+        val ratingsExist = array[3] as Boolean
+        val quantityOption = array[4] as QuantityOption
+        val ozRate = array[5] as Double
+        val gramsRate = array[6] as Double
+
+        val filteredIds = filteredItems.map { it.items.id }.toSet()
+        val filteredTinIds = filteredTins.map { it.tinId }.toSet()
+
+        val typeMap = mutableMapOf<String, Int>()
+        val typeMapFiltered = mutableMapOf<String, Int>()
+        val subgenreMap = mutableMapOf<String, Int>()
+        val subgenreMapFiltered = mutableMapOf<String, Int>()
+        val cutMap = mutableMapOf<String, Int>()
+        val cutMapFiltered = mutableMapOf<String, Int>()
+        val componentMap = mutableMapOf<String, Int>()
+        val componentMapFiltered = mutableMapOf<String, Int>()
+        val flavoringMap = mutableMapOf<String, Int>()
+        val flavoringMapFiltered = mutableMapOf<String, Int>()
+        val containerMap = mutableMapOf<String, Int>()
+        val containerMapFiltered = mutableMapOf<String, Int>()
+
+        val brandsByEntries = mutableMapOf<String, Int>()
+        val brandsByQuantity = mutableMapOf<String, Int>()
+        val typesByEntries = mutableMapOf<String, Int>()
+        val typesByQuantity = mutableMapOf<String, Int>()
+        val subgenresByEntries = mutableMapOf<String, Int>()
+        val subgenresByQuantity = mutableMapOf<String, Int>()
+        val cutsByEntries = mutableMapOf<String, Int>()
+        val cutsByQuantity = mutableMapOf<String, Int>()
+
+        val brandsRatingSum = mutableMapOf<String, Double>()
+        val brandsRatingCount = mutableMapOf<String, Int>()
+
+        val ratingsDistribution = mutableMapOf<Double, Int>()
+        var unratedCount = 0
+
+        var favoriteCount = 0
+        var dislikedCount = 0
+        var totalQuantity = 0
+        var totalZeroQuantity = 0
+        var ratedCount = 0
+        var ratingSum = 0.0
+        var totalOpened = 0
+
+        val relevantTinsWeight = mutableListOf<Tins>()
+        val quantityRemap = when (quantityOption) {
+            QuantityOption.TINS -> if (isMetricLocale()) QuantityOption.GRAMS else QuantityOption.OUNCES
+            else -> quantityOption
+        }
+        var weightAccumulator = 0.0
+
+        for (fullItem in allItems) {
+            val item = fullItem.items
+            val relevant = item.id in filteredIds
+
+            val type = item.type.ifBlank { "Unassigned" }
+            val subgenre = item.subGenre.ifBlank { "Unassigned" }
+            val cut = item.cut.ifBlank { "Unassigned" }
+
+            typeMap.increment(type)
+            subgenreMap.increment(subgenre)
+            cutMap.increment(cut)
+
+            if (fullItem.components.isEmpty()) componentMap.increment("None Assigned")
+            else fullItem.components.forEach { componentMap.increment(it.componentName) }
+
+            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("None Assigned")
+            else fullItem.flavoring.forEach { flavoringMap.increment(it.flavoringName) }
+
+            fullItem.tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { "Unassigned" }) }
+
+            if (relevant) {
+                typeMapFiltered.increment(type)
+                subgenreMapFiltered.increment(subgenre)
+                cutMapFiltered.increment(cut)
+
+                if (fullItem.components.isEmpty()) componentMapFiltered.increment("None Assigned")
+                else fullItem.components.forEach { componentMapFiltered.increment(it.componentName) }
+
+                if (fullItem.flavoring.isEmpty()) flavoringMapFiltered.increment("None Assigned")
+                else fullItem.flavoring.forEach { flavoringMapFiltered.increment(it.flavoringName) }
+
+                if (item.favorite) favoriteCount++
+                if (item.disliked) dislikedCount++
+                totalQuantity += item.quantity
+                if (item.quantity == 0) totalZeroQuantity++
+                if (item.rating != null) {
+                    ratedCount++
+                    ratingSum += item.rating
+                    ratingsDistribution.incrementDist(floor(item.rating * 2) / 2.0)
+                    brandsRatingSum[item.brand] = (brandsRatingSum[item.brand] ?: 0.0) + item.rating
+                    brandsRatingCount[item.brand] = (brandsRatingCount[item.brand] ?: 0) + 1
+                } else { unratedCount++ }
+
+                brandsByEntries.increment(item.brand)
+                typesByEntries.increment(item.type)
+                subgenresByEntries.increment(item.subGenre)
+                cutsByEntries.increment(item.cut)
+
+                if (item.quantity > 0) {
+                    brandsByQuantity[item.brand] = (brandsByQuantity[item.brand] ?: 0) + item.quantity
+                    typesByQuantity[item.type] = (typesByQuantity[item.type] ?: 0) + item.quantity
+                    subgenresByQuantity[item.subGenre] = (subgenresByQuantity[item.subGenre] ?: 0) + item.quantity
+                    cutsByQuantity[item.cut] = (cutsByQuantity[item.cut] ?: 0) + item.quantity
+                }
+
+                // Tins
+                var itemTinsWeight = 0.0
+                var unfinishedTinsCount = 0
+                var allValid = true
+
+                fullItem.tins.forEach { tin ->
+                    if (tin.tinId in filteredTinIds && !tin.finished) {
+                        unfinishedTinsCount++
+                        relevantTinsWeight.add(tin)
+                        containerMapFiltered.increment(tin.container.ifBlank { "Unassigned" })
+                        if (tin.openDate != null) totalOpened++
+                        if (tin.unit.isBlank()) allValid = false
+                        itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap)
+                    }
+                }
+
+                weightAccumulator += if (unfinishedTinsCount > 0 && allValid) {
+                    itemTinsWeight
+                } else {
+                    when (quantityRemap) {
+                        QuantityOption.OUNCES -> item.quantity * ozRate
+                        QuantityOption.GRAMS -> item.quantity * gramsRate
+                        else -> 0.0
+                    }
+                }
+            }
+        }
+
+        val globalAvg = if (ratedCount > 0) ratingSum / ratedCount else 0.0
 
         FilteredStats(
             blendsCount = filteredItems.size,
-            brandsCount = filteredItems.groupingBy { it.items.brand }.eachCount().size,
-            averageRating = formatDecimal(averageRating).ifBlank { "-.-" },
-            favoriteCount = filteredItems.count { it.items.favorite },
-            dislikedCount = filteredItems.count { it.items.disliked },
-            totalQuantity = filteredItems.sumOf { it.items.quantity },
-            estimatedWeight = calculateTotal(filteredItems, filteredItems.flatMap { items -> items.tins.filter { !it.finished && it in filteredTins } }, quantityOption),
-            totalZeroQuantity = filteredItems.count { it.items.quantity == 0 },
-            totalOpened = relevantTins.count { it.openDate != null && !it.finished },
+            brandsCount = brandsByEntries.size,
+            averageRating = if (ratingsExist && ratedCount > 0) formatDecimal(ratingSum / ratedCount) else "-.-",
+            favoriteCount = favoriteCount,
+            dislikedCount = dislikedCount,
+            totalQuantity = totalQuantity,
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator), // calculateTotal(filteredItems, relevantTinsWeight, quantityOption, ozRate, gramsRate),
+            totalZeroQuantity = totalZeroQuantity,
+            totalOpened = totalOpened,
 
-            totalByType = allItems.groupingBy {
-                it.items.type.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { entry ->
-                    entry.key to (filteredItems.groupingBy {
-                        it.items.type.ifBlank { "Unassigned" }
-                    }.eachCount()[entry.key] ?: 0) }
-                .let { remapUnassigned(it, "Unassigned") },
-            totalBySubgenre = allItems.groupingBy {
-                it.items.subGenre.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { entry ->
-                    entry.key to (filteredItems.groupingBy {
-                        it.items.subGenre.ifBlank { "Unassigned" }
-                    }.eachCount()[entry.key] ?: 0)
-                }
-                .let { remapUnassigned(it, "Unassigned") },
-            totalByCut = allItems.groupingBy {
-                it.items.cut.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { entry ->
-                    entry.key to (filteredItems.groupingBy {
-                        it.items.cut.ifBlank { "Unassigned" }
-                    }.eachCount()[entry.key] ?: 0)
-                }
-                .let { remapUnassigned(it, "Unassigned") },
-            totalByComponent = allItems.flatMap { it.components.ifEmpty {
-                listOf(Components(componentName = "None Assigned")) } }
-                .groupingBy { it.componentName }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { entry ->
-                    entry.key to (filteredItems.flatMap {
-                        it.components.ifEmpty { listOf(Components(componentName = "None Assigned")) } }
-                        .groupingBy { it.componentName }.eachCount()[entry.key] ?: 0)
-                }
-                .let { remapUnassigned(it, "None Assigned") },
-            totalByFlavoring = allItems.flatMap { it.flavoring.ifEmpty{
-                listOf(Flavoring(flavoringName = "None Assigned")) } }
-                .groupingBy { it.flavoringName }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { entry ->
-                    entry.key to (filteredItems.flatMap {
-                        it.flavoring.ifEmpty { listOf(Flavoring(flavoringName = "None Assigned")) } }
-                        .groupingBy { it.flavoringName }.eachCount()[entry.key] ?: 0)
-                }
-                .let { remapUnassigned(it, "None Assigned") },
-            totalByContainer = allItems.flatMap { it.tins }
-                .filter { !it.finished }
-                .groupingBy { it.container.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { entry ->
-                    entry.key to (relevantTins.groupingBy {
-                        it.container.ifBlank { "Unassigned" }
-                    }.eachCount()[entry.key] ?: 0)
-                }
-                .let { remapUnassigned(it, "Unassigned") },
+            totalByType = typeMap.buildComp(typeMapFiltered, "Unassigned"),
+            totalBySubgenre = subgenreMap.buildComp(subgenreMapFiltered, "Unassigned"),
+            totalByCut = cutMap.buildComp(cutMapFiltered, "Unassigned"),
+            totalByComponent = componentMap.buildComp(componentMapFiltered, "None Assigned"),
+            totalByFlavoring = flavoringMap.buildComp(flavoringMapFiltered, "None Assigned"),
+            totalByContainer = containerMap.buildComp(containerMapFiltered, "Unassigned"),
 
 
-            brandsByEntries = filteredItems
-                .groupingBy { it.items.brand }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .let { reduceToTen(it) },
-            brandsByQuantity = filteredItems
-                .filter { it.items.quantity > 0 }
-                .groupingBy { it.items.brand }
-                .fold(0) { acc, item -> acc + item.items.quantity }
-                .entries
-                .sortedByDescending { it.value }
-                .let { reduceToTen(it) },
-            brandsByRating = filteredItems
-                .filter { it.items.rating != null }
-                .groupBy { it.items.brand }
-                .mapValues { (_, items) ->
-                    val count = items.size
-                    val average = items.sumOf { it.items.rating!! } / count
-
-                    val m = 2
-                    val globalAverage = averageRating ?: 0.0
-                    val weighted = ((count * average) + (m * globalAverage)) / (count + m)
-
-                    BrandRatingStats(
-                        averageRating = average,
-                        weightedRating = weighted,
-                        ratingsCount = count
-                    )
-                }
-                .toList()
-                .sortedByDescending { it.second.weightedRating }
-                .take(10)
-                .toMap(),
-            typesByEntries = filteredItems.groupingBy {
-                it.items.type.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value },
-            typesByQuantity = filteredItems
-                .filter { it.items.quantity > 0 }
-                .groupingBy { it.items.type.ifBlank { "Unassigned" } }
-                .fold(0) { acc, item -> acc + item.items.quantity }
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value },
+            brandsByEntries = brandsByEntries.reduceToTen(),
+            brandsByQuantity = brandsByQuantity.reduceToTen(),
+            brandsByRating = brandsRatingCount.mapValues { (brand, count) ->
+                val avg = brandsRatingSum[brand]!! / count
+                val m = 2
+                val weighted = ((count * avg) + (m * globalAvg)) / (count + m)
+                BrandRatingStats(avg, weighted, count)
+            }.toList().sortedByDescending { it.second.weightedRating }.take(10).toMap(),
+            typesByEntries = typesByEntries.sortByValue(),
+            typesByQuantity = typesByQuantity.sortByValue(),
             ratingsDistribution = RatingsDistribution(
-                distribution = filteredItems.mapNotNull { it.items.rating }
-                    .groupingBy {
-                        when {
-                            it < 5.0 -> floor(it * 2) / 2.0
-                            else -> 5.0
-                        }
-                    }
-                    .eachCount(),
-                unratedCount = filteredItems.map { it.items.rating }.count { it == null }
+                distribution = ratingsDistribution,
+                unratedCount = unratedCount
             ),
-            favDisByEntries = filteredItems
-                .groupingBy { if (it.items.favorite) "Favorite" else if (it.items.disliked) "Disliked" else "Neutral" }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .associate { it.key to it.value },
-            subgenresByEntries = filteredItems
-                .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .let { reduceToTen(it) },
-            subgenresByQuantity = filteredItems
-                .filter { it.items.quantity > 0 }
-                .groupingBy { it.items.subGenre.ifBlank { "Unassigned" } }
-                .fold(0) { acc, item -> acc + item.items.quantity }
-                .entries
-                .sortedByDescending { it.value }
-                .let { reduceToTen(it) },
-            cutsByEntries = filteredItems
-                .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
-                .eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .let { reduceToTen(it) },
-            cutsByQuantity = filteredItems
-                .filter { it.items.quantity > 0 }
-                .groupingBy { it.items.cut.ifBlank { "Unassigned" } }
-                .fold(0) { acc, item -> acc + item.items.quantity }
-                .entries
-                .sortedByDescending { it.value }
-                .let { reduceToTen(it) },
+            favDisByEntries = mapOf(
+                "Favorite" to favoriteCount,
+                "Disliked" to dislikedCount,
+                "Neutral" to (filteredItems.size - favoriteCount - dislikedCount)
+            ).filterValues { it > 0 }.sortByValue(),
+            subgenresByEntries = subgenresByEntries.reduceToTen(),
+            subgenresByQuantity = subgenresByQuantity.reduceToTen(),
+            cutsByEntries = cutsByEntries.reduceToTen(),
+            cutsByQuantity = cutsByQuantity.reduceToTen(),
 
             filteredLoading = false,
         )
@@ -310,7 +349,7 @@ class StatsViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = FilteredStats(filteredLoading = true)
         )
 
@@ -356,94 +395,6 @@ class StatsViewModel(
                 updateLoading(it)
             }
         }
-    }
-
-
-    /** Helper functions **/
-    private fun reduceToTen(entries:  List<Map.Entry<String, Int>>): Map<String, Int> {
-        return if (entries.size > 10) {
-            val topNine = entries.take(9).associate { it.key to it.value }
-            val otherCount = entries.drop(9).sumOf { it.value }
-            topNine + ("(Other)" to otherCount)
-        } else {
-            entries.associate { it.key to it.value }
-        }
-    }
-
-    private fun remapUnassigned(map: Map<String, Int>, unassignedKey: String): Map<String, Int> {
-        val mutableMap = map.toMutableMap()
-        val unassignedValue = mutableMap.remove(unassignedKey)
-        if (unassignedValue != null) {
-            mutableMap[unassignedKey] = unassignedValue
-        }
-        return mutableMap
-    }
-
-    private suspend fun calculateTotal(items: List<ItemsComponentsAndTins>, tins: List<Tins>, quantityOption: QuantityOption): String {
-        val ozRate = preferencesRepo.tinOzConversionRate.first()
-        val gramsRate = preferencesRepo.tinGramsConversionRate.first()
-        val quantityRemap = when (quantityOption) {
-            QuantityOption.TINS -> {
-                val isMetric = isMetricLocale()
-                if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
-            }
-            else -> quantityOption
-        }
-        val itemTinsMap = tins.groupBy { it.itemsId }
-
-        var totalWeight = 0.0
-
-        for (item in items) {
-            val item = item.items
-            val itemTins = itemTinsMap[item.id] ?: emptyList()
-
-            var itemWeight = 0.0
-
-            if (itemTins.isNotEmpty() && itemTins.all { it.unit.isNotBlank() }) {
-                for (tin in itemTins) {
-                    itemWeight += when (quantityRemap) {
-                        QuantityOption.OUNCES -> {
-                            when (tin.unit) {
-                                "oz" -> tin.tinQuantity
-                                "lbs" -> tin.tinQuantity * 16
-                                "grams" -> tin.tinQuantity / 28.3495
-                                else -> 0.0
-                            }
-                        }
-                        QuantityOption.GRAMS -> {
-                            when (tin.unit) {
-                                "oz" -> tin.tinQuantity * 28.3495
-                                "lbs" -> tin.tinQuantity * 453.592
-                                "grams" -> tin.tinQuantity
-                                else -> 0.0
-                            }
-                        }
-                        else -> 0.0
-                    }
-                }
-            } else {
-                itemWeight +=
-                    when (quantityRemap) {
-                        QuantityOption.OUNCES -> { item.quantity * ozRate }
-                        QuantityOption.GRAMS -> { item.quantity * gramsRate }
-                        else -> 0.0
-                    }
-            }
-            totalWeight += itemWeight
-        }
-
-        val sum = totalWeight
-
-        val formattedSum =
-            when (quantityRemap) {
-                QuantityOption.OUNCES -> {
-                    if (sum >= 16.00) { formatDecimal((sum / 16)) + " lbs" }
-                    else { formatDecimal(sum) + " oz" }
-                }
-                QuantityOption.GRAMS -> { formatDecimal(sum) + " g" }
-                else -> null
-            }
-        return formattedSum ?: ""
     }
 
 
@@ -551,3 +502,91 @@ data class RatingsDistribution(
     val distribution: Map<Double, Int> = emptyMap(),
     val unratedCount: Int = 0
 )
+
+
+/** Helper functions **/
+private fun Map<String, Int>.reduceToTen(): Map<String, Int> {
+    val sorted = this.entries.sortedByDescending { it.value }
+    if (sorted.size <= 10) return sorted.associate { it.key to it.value }
+
+    val result = LinkedHashMap<String, Int>(10)
+    for (i in 0 until 9) { result[sorted[i].key] = sorted[i].value }
+
+    result["(Other)"] = sorted.drop(9).sumOf { it.value }
+    return result
+}
+
+private fun Map<String, Int>.buildComp(filtered: Map<String, Int>, unassigned: String): Map<String, Int> {
+    val sorted = this.entries.sortedByDescending { it.value }
+
+    val result = LinkedHashMap<String, Int>(sorted.size)
+    var unassignedVal: Int? = null
+
+    for (entry in sorted) {
+        val key = entry.key
+        val value = filtered[key] ?: 0
+
+        if (key == unassigned) { unassignedVal = value }
+        else { result[key] = value }
+    }
+
+    if (unassignedVal != null) { result[unassigned] = unassignedVal }
+
+    return result
+}
+
+private fun remapUnassigned(map: Map<String, Int>, unassignedKey: String): Map<String, Int> {
+    val mutableMap = map.toMutableMap()
+    val unassignedValue = mutableMap.remove(unassignedKey)
+    if (unassignedValue != null) {
+        mutableMap[unassignedKey] = unassignedValue
+    }
+    return mutableMap
+}
+
+private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: QuantityOption): Double {
+    return when (quantityOption) {
+        QuantityOption.OUNCES -> {
+            when (unit) {
+                "oz" -> tinQuantity
+                "lbs" -> tinQuantity * 16
+                "grams" -> tinQuantity / 28.3495
+                else -> 0.0
+            }
+        }
+        QuantityOption.GRAMS -> {
+            when (unit) {
+                "oz" -> tinQuantity * 28.3495
+                "lbs" -> tinQuantity * 453.592
+                "grams" -> tinQuantity
+                else -> 0.0
+            }
+        }
+        else -> 0.0
+    }
+}
+
+private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double): String {
+    return when (quantityOption) {
+        QuantityOption.OUNCES -> {
+            if (totalWeight >= 16.00) { formatDecimal((totalWeight / 16)) + " lbs" }
+            else { formatDecimal(totalWeight) + " oz" }
+        }
+        QuantityOption.GRAMS -> { formatDecimal(totalWeight) + " g" }
+        else -> null
+    } ?: ""
+}
+
+private fun MutableMap<String, Int>.increment(key: String) {
+    this[key] = (this[key] ?: 0) + 1
+}
+
+private fun MutableMap<Double, Int>.incrementDist(key: Double) {
+    this[key] = (this[key] ?: 0) + 1
+}
+
+private fun Map<String, Int>.sortByValue(): Map<String, Int> {
+    return this.entries
+        .sortedByDescending { it.value }
+        .associate { it.key to it.value }
+}
