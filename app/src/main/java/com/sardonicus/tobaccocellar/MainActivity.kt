@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             } else {
-                Toast.makeText(this, "Drive permission was denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Drive permission was denied", Toast.LENGTH_SHORT).show()
             }
         }
 
