@@ -47,7 +47,9 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import com.google.android.gms.auth.api.identity.AuthorizationClient
@@ -118,8 +120,8 @@ class MainActivity : ComponentActivity() {
         updateSystemBarsForOrientation(resources.configuration.orientation)
 
         preferencesRepo = (application as CellarApplication).preferencesRepo
-        credentialManager = CredentialManager.create(this)
-        authorizationClient = Identity.getAuthorizationClient(this)
+        credentialManager = CredentialManager.create(applicationContext)
+        authorizationClient = Identity.getAuthorizationClient(applicationContext)
         authorizationLauncher = registerForActivityResult(
                 ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -138,27 +140,31 @@ class MainActivity : ComponentActivity() {
 
         // sign in launch
         lifecycleScope.launch(Dispatchers.Default) {
-            EventBus.events.collect { event ->
-                if (event is SignInEvent) {
-                    val userEmail = preferencesRepo.signedInUserEmail.first()
-                    val hasScope = preferencesRepo.hasDriveScope.first()
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                EventBus.events.collect { event ->
+                    if (event is SignInEvent) {
+                        val userEmail = preferencesRepo.signedInUserEmail.first()
+                        val hasScope = preferencesRepo.hasDriveScope.first()
 
-                    when {
-                        userEmail != null && hasScope -> {
-                            lifecycleScope.launch {
-                                preferencesRepo.saveCrossDeviceSync(true)
+                        when {
+                            userEmail != null && hasScope -> {
+                                lifecycleScope.launch {
+                                    preferencesRepo.saveCrossDeviceSync(true)
+                                }
+                            }
+
+                            userEmail != null && !hasScope -> {
+                                authorizeDrive()
+                            }
+
+                            else -> {
+                                signIn()
                             }
                         }
-                        userEmail != null && !hasScope -> {
-                            authorizeDrive()
-                        }
-                        else -> {
-                           signIn()
-                        }
                     }
-                }
-                if (event is SignOutEvent) {
-                    signOut()
+                    if (event is SignOutEvent) {
+                        signOut()
+                    }
                 }
             }
         }
@@ -215,7 +221,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun signIn() {
-        lifecycleScope.launch(Dispatchers.Default) {
+        lifecycleScope.launch {
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(getString(R.string.web_client_id))
@@ -253,7 +259,7 @@ class MainActivity : ComponentActivity() {
     }
 
     fun signOut() {
-        lifecycleScope.launch(Dispatchers.Default) {
+        lifecycleScope.launch {
             try {
                 credentialManager.clearCredentialState(ClearCredentialStateRequest())
                 preferencesRepo.saveCrossDeviceSync(false)
