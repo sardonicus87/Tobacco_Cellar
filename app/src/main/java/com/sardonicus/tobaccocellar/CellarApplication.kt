@@ -31,11 +31,14 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
@@ -51,6 +54,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     val filterViewModel: FilterViewModel by lazy { FilterViewModel(container.itemsRepository, preferencesRepo) }
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var verificationJob: Job? = null
     private var lastSyncVerification: Long = 0
 
     override fun onCreate() {
@@ -61,83 +65,74 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         csvHelper = CsvHelper()
 
         applicationScope.launch(Dispatchers.Default) {
-            if (!preferencesRepo.syncSettingsMigrated.first()) {
-                migrateSyncSettings()
-            }
-
+            if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() }
             filterViewModel
         }
 
-        // Check Network Flow and trigger upload if possible
+        // Check Network Flow and trigger upload if there are pending ops,
         applicationScope.launch(Dispatchers.Default) {
-            if (preferencesRepo.crossDeviceSync.first()) {
-                val networkMonitor = NetworkMonitor(this@CellarApplication)
-                val itemsRepository = container.itemsRepository
-
-                if (itemsRepository.hasPendingOperations()) {
-                    val networkCheckFlow = combine(
-                        networkMonitor.isWifi,
-                        networkMonitor.isConnected,
-                        preferencesRepo.allowMobileData
-                    ) { isWifi, isConnected, allowMobile ->
-                        isWifi || (isConnected && allowMobile)
-                    }
-
-                    networkCheckFlow.distinctUntilChanged().collect { canUpload ->
-                        if (canUpload) {
-                            itemsRepository.triggerUploadWorker()
-                        }
+            preferencesRepo.crossDeviceSync.collectLatest { enabled ->
+                if (enabled) {
+                    supervisorScope{
+                        launch { triggerPendingUpload() }
+                        launch { periodicDownloadSetup() }
                     }
                 }
             }
         }
+    }
 
-        // Periodic Worker
-        applicationScope.launch(Dispatchers.Default) {
-            val syncEnabled = preferencesRepo.crossDeviceSync.first()
-            if (syncEnabled) {
-                val workManager = WorkManager.getInstance(this@CellarApplication)
-                val mobileEnabled = preferencesRepo.allowMobileData.first()
-                val networkType =
-                    if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
+    private suspend fun triggerPendingUpload() {
+        val networkMonitor = NetworkMonitor(this@CellarApplication)
+        val itemsRepository = container.itemsRepository
 
-                // Periodic Worker
-                val constraints = Constraints.Builder()
-                    .setRequiredNetworkType(networkType)
-                    .build()
+        if (itemsRepository.hasPendingOperations()) {
+            val networkCheckFlow = combine(networkMonitor.isWifi, networkMonitor.isConnected,
+                preferencesRepo.allowMobileData) { isWifi, isConnected, allowMobile ->
+                isWifi || (isConnected && allowMobile)
+            }
 
-                val downloadWorkRequest =
-                    PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
-                        .setConstraints(constraints)
-                        .addTag("periodic worker")
-                        .build()
-
-                workManager.enqueueUniquePeriodicWork(
-                    "download_sync_work",
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    downloadWorkRequest
-                )
-
-                // Refresh Db flow when there's a download
-                workManager.getWorkInfoByIdFlow(downloadWorkRequest.id)
-                    .collect { workInfo ->
-                        when (workInfo?.state) {
-                            WorkInfo.State.SUCCEEDED -> {
-                                val result = workInfo.outputData
-                                when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
-                                    DownloadSyncWorker.SYNC_COMPLETE -> {
-                                        EventBus.emit(SyncDownloadEvent)
-                                    }
-                                }
-                            }
-
-                            else -> {}
-                        }
-                    }
+            networkCheckFlow.distinctUntilChanged().collect { canUpload ->
+                if (canUpload) { itemsRepository.triggerUploadWorker() }
             }
         }
     }
 
+    private suspend fun periodicDownloadSetup() {
+        val workManager = WorkManager.getInstance(this@CellarApplication)
+        val mobileEnabled = preferencesRepo.allowMobileData.first()
+        val networkType = if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
+
+        // Periodic Worker
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(networkType)
+            .build()
+
+        val downloadWorkRequest =
+            PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .addTag("periodic worker")
+                .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            "download_sync_work",
+            ExistingPeriodicWorkPolicy.KEEP,
+            downloadWorkRequest
+        )
+
+        // Refresh Db flow when there's a download
+        workManager.getWorkInfoByIdFlow(downloadWorkRequest.id).collect { workInfo ->
+            when (workInfo?.state) {
+                WorkInfo.State.SUCCEEDED -> {
+                    val result = workInfo.outputData
+                    when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
+                        DownloadSyncWorker.SYNC_COMPLETE -> EventBus.emit(SyncDownloadEvent)
+                    }
+                }
+                else -> {}
+            }
+        }
+    }
 
     private suspend fun migrateSyncSettings() {
         SyncStateManager.loggingPaused = true
@@ -173,19 +168,16 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                         .execute()
                 } catch (e: Exception) {
                     val authError = when (e) {
-                        // server responds, handshake failure or rejected, connection safe
-                        is GoogleJsonResponseException ->
-                            e.statusCode == 401 || e.statusCode == 403
-                        // User potentially unlinked app through Google account settings or
-                        // something else where Google Play Services/Auth Service says no
-                        is GoogleAuthIOException ->
-                            e is UserRecoverableAuthIOException
-                        else -> false // any other failure (e.g. no internet connection)
+                        // server responds, handshake failure or rejected
+                        is GoogleJsonResponseException -> e.statusCode == 401 || e.statusCode == 403
+                        // Google Play Services/Auth Service says no (potentially user-unlinked app
+                        // through Google account settings
+                        is GoogleAuthIOException -> e is UserRecoverableAuthIOException
+                        // any other failure (e.g. no internet connection)
+                        else -> false
                     }
 
-                    if (authError) {
-                        resetSyncState()
-                    }
+                    if (authError) { resetSyncState() }
                 }
             }
         }
@@ -210,8 +202,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                 if (syncEnabled) {
                     val workManager = WorkManager.getInstance(this@CellarApplication)
                     val allowMobile = preferencesRepo.allowMobileData.first()
-                    val networkType =
-                        if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
+                    val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
 
                     val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
                         .setConstraints(
@@ -228,12 +219,14 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
     }
     override fun onActivityStarted(activity: Activity) { // hot starts
-        applicationScope.launch(Dispatchers.Default) {
-            if (preferencesRepo.crossDeviceSync.first()) {
-                val tenMinutes: Long = 10 * 60 * 1000
-                if (System.currentTimeMillis() - lastSyncVerification > tenMinutes) {
-                    lastSyncVerification = System.currentTimeMillis()
-                    verifySyncStatus()
+        if (verificationJob?.isActive != true) {
+            verificationJob = applicationScope.launch(Dispatchers.Default) {
+                if (preferencesRepo.crossDeviceSync.first()) {
+                    val hour: Long = 60 * 60 * 1000
+                    if ((System.currentTimeMillis() - lastSyncVerification) > hour) {
+                        lastSyncVerification = System.currentTimeMillis()
+                        verifySyncStatus()
+                    }
                 }
             }
         }
