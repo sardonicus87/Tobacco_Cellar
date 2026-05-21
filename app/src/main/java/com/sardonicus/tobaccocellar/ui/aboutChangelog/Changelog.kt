@@ -14,6 +14,27 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 48,
+        versionNumber = "5.2.5",
+        buildDate = "21 May, 2026",
+        improvements = listOf(
+            "Multiple background work and memory management improvements.",
+            "Big performance and stability improvements (particularly related to startup time " +
+                    "filtering, and memory overhead).",
+            "Minor UI tweaks."
+        ),
+        bugFixes = listOf(
+            "Potentially fixed some out-of-memory errors for some devices.",
+            "Fixed a bug that causes a crash when signing-out of Multi-Device Sync."
+        ),
+        releaseNotes = listOf(
+            "Big memory overhead and performance improvements, may also fix bugs related to out " +
+                    "of memory issues.",
+            "Fixed a bug that caused a crash during the Multi-Device Sync sign-out process."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 47,
         versionNumber = "5.2.4",
         buildDate = "7 May, 2026",
