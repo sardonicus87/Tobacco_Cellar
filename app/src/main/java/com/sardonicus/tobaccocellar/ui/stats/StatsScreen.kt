@@ -31,8 +31,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -167,7 +170,6 @@ private fun StatsBody(
         }
     }
 
-    val showValue by viewModel.showValue.collectAsState()
 
     LazyColumn(
         state = lazyListState,
@@ -238,8 +240,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Brands by Number of Entries",
                     chartData = { filteredStats.brandsByEntries },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                 )
             }
         }
@@ -254,8 +254,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Brands by \"No. of Tins\"",
                     chartData = { filteredStats.brandsByQuantity },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -284,8 +282,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Types by Entries",
                     chartData = { filteredStats.typesByEntries },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -300,8 +296,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Types by \"No. of Tins\"",
                     chartData = { filteredStats.typesByQuantity },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -317,8 +311,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Ratings Distribution",
                     histogramData = { filteredStats.ratingsDistribution },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     showHistogram = true,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
@@ -334,8 +326,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Fav/Dislike by Entries",
                     chartData = { filteredStats.favDisByEntries },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -350,8 +340,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Subgenres by Entries",
                     chartData = { filteredStats.subgenresByEntries },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -366,8 +354,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Subgenres by \"No. of Tins\"",
                     chartData = { filteredStats.subgenresByQuantity },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -382,8 +368,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Cuts by Entries",
                     chartData = { filteredStats.cutsByEntries },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -400,8 +384,6 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Cuts by \"No. of Tins\"",
                     chartData = { filteredStats.cutsByQuantity },
-                    showValue = { showValue },
-                    onShowValue = viewModel::onShowValue,
                     modifier = Modifier
                         .padding(horizontal = 20.dp)
                 )
@@ -576,8 +558,6 @@ private fun BrandsByRatingSection(
 @Composable
 private fun ChartsFormat(
     label: String,
-    showValue: () -> Boolean,
-    onShowValue: () -> Unit,
     modifier: Modifier = Modifier,
     chartData: () -> Map<String, Int> = { mapOf() },
     histogramData: () -> RatingsDistribution = { RatingsDistribution() },
@@ -588,6 +568,9 @@ private fun ChartsFormat(
             if (!showHistogram) chartData().values.sum() else histogramData().distribution.values.sum()
         }
     }
+
+    var showValue by rememberSaveable { mutableStateOf(false) }
+    val onShowValue: () -> Unit = { showValue = !showValue }
 
     Column(
         modifier = modifier
@@ -615,7 +598,7 @@ private fun ChartsFormat(
                 textAlign = TextAlign.Start
             )
             Text(
-                text = if (!showValue()) "Show Values" else "Hide Values",
+                text = if (!showValue) "Show Values" else "Hide Values",
                 modifier = Modifier
                     .clickable(
                         indication = LocalIndication.current,
@@ -639,7 +622,7 @@ private fun ChartsFormat(
                 data = chartData(),
                 showLabels = true,
                 showPercentages = true,
-                showValues = showValue(),
+                showValues = showValue,
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
                     .fillMaxWidth(0.7f),
@@ -654,7 +637,7 @@ private fun ChartsFormat(
         } else {
             HistogramChart(
                 data = histogramData(),
-                showValues = showValue(),
+                showValues = showValue,
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
                     .fillMaxWidth(0.7f)

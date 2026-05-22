@@ -128,7 +128,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator), // calculateTotal(allItems, allItems.flatMap { items -> items.tins.filter { !it.finished } }, quantityOption, ozRate, gramsRate),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = if (!hasTins) null else totalOpened,
 
@@ -307,7 +307,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator), // calculateTotal(filteredItems, relevantTinsWeight, quantityOption, ozRate, gramsRate),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = totalOpened,
 
@@ -382,7 +382,7 @@ class StatsViewModel(
         }
             .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = AvailableSections()
         )
 
@@ -404,11 +404,6 @@ class StatsViewModel(
     fun updateExpanded(newExpanded: Boolean) {
         expanded.value = newExpanded
     }
-
-    private val _showValue = MutableStateFlow(false)
-    val showValue = _showValue.asStateFlow()
-
-    fun onShowValue() { _showValue.value = !_showValue.value }
 
     fun updateFocused(focused: Boolean) {
         _selectionFocused.update { focused }
