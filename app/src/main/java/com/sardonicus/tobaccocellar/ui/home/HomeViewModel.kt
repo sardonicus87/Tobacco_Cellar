@@ -294,7 +294,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = 0
         )
 
@@ -307,7 +307,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = ViewSelect()
         )
 
@@ -354,7 +354,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = ListSortingMenuState()
         )
 
@@ -367,7 +367,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = MenuState()
         )
 
@@ -415,7 +415,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
@@ -424,7 +424,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = TinsList()
         )
 
@@ -469,7 +469,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = ItemsList()
         )
 
@@ -563,7 +563,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = TableLayoutData()
         )
 
@@ -609,7 +609,7 @@ class HomeViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = HomeUiState(isLoading = true)
         )
 
@@ -647,10 +647,10 @@ class HomeViewModel(
             )
     }
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000L),
-        initialValue = QuickEditItem()
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = QuickEditItem()
+        )
 
 
 
@@ -930,7 +930,7 @@ class HomeViewModel(
             }
         }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = TableColumn.entries.associateWith { true }
         )
 
@@ -973,7 +973,7 @@ class HomeViewModel(
         }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
+                started = SharingStarted.WhileSubscribed(5000),
                 initialValue = mapOf(
                     TableColumn.BRAND to true,
                     TableColumn.BLEND to true,
