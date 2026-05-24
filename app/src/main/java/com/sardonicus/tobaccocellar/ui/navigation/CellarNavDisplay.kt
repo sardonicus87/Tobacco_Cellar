@@ -287,7 +287,12 @@ fun CellarNavigation(
 
                 EditEntryScreen(
                     navigateBack = { navigator.goBack() },
-                    onNavigateUp = { navigator.goBack() },
+                    navigateHome = {
+                        navigationState.backStacks.forEach { (_, stack) ->
+                            stack.removeIf { stack.indexOf(it) > 0}
+                        }
+                        navigator.navigate(HomeDestination)
+                    },
                     twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
                 )

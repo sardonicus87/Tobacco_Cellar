@@ -38,7 +38,7 @@ import kotlinx.coroutines.withContext
 fun EditEntryScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
-    onNavigateUp: () -> Unit,
+    navigateHome: () -> Unit,
     canNavigateBack: Boolean = true,
     twoColumnTabs: Boolean = false,
     viewModel: EditEntryViewModel = viewModel(),
@@ -80,7 +80,7 @@ fun EditEntryScreen(
                 title = stringResource(R.string.edit_entry_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
-                navigateUp = onNavigateUp,
+                navigateUp = navigateBack,
                 showMenu = false,
                 modifier = Modifier
             )
@@ -129,7 +129,7 @@ fun EditEntryScreen(
                     onDeleteClick = {
                         coroutineScope.launch {
                             viewModel.deleteItem()
-                            navigateBack()
+                            navigateHome()
                         }
                     },
                     isEditEntry = true,
