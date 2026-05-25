@@ -21,16 +21,15 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
-import com.sardonicus.tobaccocellar.ui.addEditItems.ItemUpdatedEvent
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
-import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -41,17 +40,10 @@ import java.time.ZoneId
 import java.util.Locale
 
 class BlendDetailsViewModel(
-    private val itemsId: Int,
-    private val itemsRepository: ItemsRepository,
-    private val preferencesRepo: PreferencesRepo,
+    itemsId: Int,
+    itemsRepository: ItemsRepository,
+    private val preferencesRepo: PreferencesRepo
 ) : ViewModel() {
-
-    private val _blendDetails = MutableStateFlow(BlendDetails())
-    val blendDetails = _blendDetails.asStateFlow()
-
-    private val _loadingFinished = MutableStateFlow(false)
-    val loadingFinished = _loadingFinished.asStateFlow()
-
     private val _selectionKey = MutableStateFlow(0)
     val selectionKey = _selectionKey.asStateFlow()
 
@@ -61,31 +53,9 @@ class BlendDetailsViewModel(
     private val _parseLinks = MutableStateFlow(false)
     val parseLinks = _parseLinks.asStateFlow()
 
-    private val _contentVisible = MutableStateFlow(false)
-    val contentVisible = _contentVisible.asStateFlow()
-    fun updateVisible() {
-        _contentVisible.value = true
-    }
-
     init {
-        refreshData()
-        viewModelScope.launch {
-            EventBus.events.collect {
-                if (it is ItemUpdatedEvent) {
-                    refreshData()
-                }
-            }
-        }
         viewModelScope.launch {
             _parseLinks.value = preferencesRepo.parseLinks.first()
-        }
-        viewModelScope.launch {
-            loadingFinished.collect {
-                if (it) {
-                    delay(10)
-                    updateVisible()
-                }
-            }
         }
     }
 
@@ -94,71 +64,74 @@ class BlendDetailsViewModel(
         updateFocused(false)
     }
 
-    private fun refreshData() {
-        viewModelScope.launch {
-            _loadingFinished.value = false
 
-            val quantityRemap = when (val quantityOption = preferencesRepo.quantityOption.first()) {
-                QuantityOption.TINS -> {
-                    val isMetric = isMetricLocale()
-                    if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
-                }
-                else -> quantityOption
-            }
-
-            itemsRepository.getItemDetailsStream(itemsId)
-                .filterNotNull()
-                .collectLatest { item ->
-                    val details = BlendDetails(
-                        id = item.items.id,
-                        brand = item.items.brand,
-                        blend = item.items.blend,
-                        favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
-                        itemDetails = setOfNotNull(
-                            buildDetailsString("Type: ", item.items.type.ifBlank { "Unassigned" }),
-                            buildDetailsString("Subgenre: ", item.items.subGenre),
-                            buildDetailsString("Cut: ", item.items.cut),
-                            buildDetailsString("Components: ", item.components.map { it.componentName }.sorted().joinToString(", ")),
-                            buildDetailsString("Flavors: ", item.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
-                            buildDetailsString("Production Status: ", if (item.items.inProduction) "in production" else "not in production"),
-                            buildDetailsString("No. of Tins: ", item.items.quantity.toString())
-                        ),
-                        rating = item.items.rating,
-                        notes = item.items.notes,
-                        tinsDetails = item.tins.sortedBy { it.tinId }.associateWith { tin ->
-                            buildSet {
-                                buildDetailsString("Container: ", tin.container)?.let { add(DetailLine(it)) }
-                                buildDetailsString("Quantity: ", if (tin.unit.isNotBlank()) { formatDecimal(tin.tinQuantity) + " ${tin.unit}" } else "")
-                                    ?.let { add(DetailLine(it)) }
-
-                                if (tin.manufactureDate != null) {
-                                    val primary = buildDetailsString("Manufacture Date: ", formatMediumDate(tin.manufactureDate))!!
-                                    val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, DateField.MANUFACTURE)})", 12.sp)
-                                    add(DetailLine(primary, secondary))
-                                }
-
-                                if (tin.cellarDate != null) {
-                                    val primary = buildDetailsString("Cellar Date: ", formatMediumDate(tin.cellarDate))!!
-                                    val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, DateField.CELLAR)})", 12.sp)
-                                    add(DetailLine(primary, secondary))
-                                }
-
-                                if (tin.openDate != null) {
-                                    val primary = buildDetailsString("Open Date: ", formatMediumDate(tin.openDate))!!
-                                    val secondary = if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, DateField.OPEN)})", 12.sp) } else { buildDetailsString("", "finished", 12.sp)}
-                                    add(DetailLine(primary, secondary))
-                                }
-                            }
-                        },
-                        tinsTotal = if (item.tins.any { it.tinQuantity > 0 && !it.finished }) calculateTotal(item.tins.filter { !it.finished }, quantityRemap) else ""
-                    )
-                    _blendDetails.value = details
-                    _loadingFinished.value = true
-                }
+    val blendDetails: StateFlow<BlendDetails> = combine(
+        itemsRepository.getItemDetailsStream(itemsId),
+        preferencesRepo.quantityOption
+    ) { item, quantityOption ->
+        val isMetric = isMetricLocale()
+        val quantityRemap = when (quantityOption) {
+            QuantityOption.TINS -> if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
+            else -> quantityOption
         }
+
+        BlendDetails(
+            id = item.items.id,
+            brand = item.items.brand,
+            blend = item.items.blend,
+            favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
+            itemDetails = setOfNotNull(
+                buildDetailsString("Type: ", item.items.type.ifBlank { "Unassigned" }),
+                buildDetailsString("Subgenre: ", item.items.subGenre),
+                buildDetailsString("Cut: ", item.items.cut),
+                buildDetailsString("Components: ", item.components.map { it.componentName }.sorted().joinToString(", ")),
+                buildDetailsString("Flavors: ", item.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
+                buildDetailsString("Production Status: ", if (item.items.inProduction) "in production" else "not in production"),
+                buildDetailsString("No. of Tins: ", item.items.quantity.toString())
+            ),
+            rating = item.items.rating,
+            notes = item.items.notes,
+            tinsDetails = item.tins.sortedBy { it.tinId }.associateWith { tin ->
+                buildSet {
+                    buildDetailsString("Container: ", tin.container)?.let { add(DetailLine(it)) }
+                    buildDetailsString("Quantity: ", if (tin.unit.isNotBlank()) { formatDecimal(tin.tinQuantity) + " ${tin.unit}" } else "")?.let { add(DetailLine(it)) }
+                    buildDetailsString("Manufacture Date: ", formatMediumDate(tin.manufactureDate))?.let {
+                        val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, DateField.MANUFACTURE)})", 12.sp)
+                        add(DetailLine(it, secondary))
+                    }
+                    buildDetailsString("Cellar Date: ", formatMediumDate(tin.cellarDate))?.let {
+                        val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, DateField.CELLAR)})", 12.sp)
+                        add(DetailLine(it, secondary))
+                    }
+                    buildDetailsString("Open Date: ", formatMediumDate(tin.openDate))?.let {
+                        val secondary =
+                            if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, DateField.OPEN)})", 12.sp) }
+                            else { buildDetailsString("", "finished", 12.sp) }
+                        add(DetailLine(it, secondary))
+                    }
+                }
+            },
+            tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap)
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = BlendDetails()
+        )
+
+
+    private fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp): AnnotatedString? {
+        if (value.isBlank()) return null
+        val string = buildAnnotatedString {
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
+        }
+        return string
     }
 
     private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption): String {
+        if (tins.isEmpty()) return ""
         val sum =
             when (quantityOption) {
                 QuantityOption.OUNCES -> {
@@ -217,21 +190,12 @@ class BlendDetailsViewModel(
 
     fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
 
-    fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp): AnnotatedString? {
-        if (value.isBlank()) return null
-        val string = buildAnnotatedString {
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
-        }
-        return string
-    }
-
+    val urlRegex = Regex("""(https?://|www\.)[a-zA-Z0-9_./-]*[a-zA-Z0-9_/-]""")
     fun parseHyperlinks(text: String, color: Color, linkListener: LinkInteractionListener, parseLinks: Boolean): AnnotatedString {
         if (text.isBlank()) return AnnotatedString("")
 
         if (!parseLinks) return buildAnnotatedString { append(text) }
 
-        val urlRegex = Regex("""(https?://|www\.)[a-zA-Z0-9_./-]*[a-zA-Z0-9_/-]""")
         val annotatedString = buildAnnotatedString {
             val matches = urlRegex.findAll(text)
             var lastIndex = 0
