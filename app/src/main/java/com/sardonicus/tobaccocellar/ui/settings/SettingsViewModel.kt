@@ -24,6 +24,7 @@ import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
 import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
 import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
 import com.sardonicus.tobaccocellar.data.MIGRATION_4_5
+import com.sardonicus.tobaccocellar.data.MIGRATION_5_6
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
@@ -737,9 +738,7 @@ class SettingsViewModel(
             } ?: throw IOException("Could not open file descriptor for backup")
 
             try {
-                if (backupState.value.databaseChecked) {
-                    backupDatabase(context, tempDbZip)
-                }
+                if (backupState.value.databaseChecked) { backupDatabase(context, tempDbZip) }
 
                 val databaseBytes = if (backupState.value.databaseChecked) { tempDbZip.readBytes() } else { ByteArray(0) }
                 val databaseLengthBytes = databaseBytes.size.toByteArray()
@@ -1011,6 +1010,7 @@ class SettingsViewModel(
         migrations.add(MIGRATION_2_3)
         migrations.add(MIGRATION_3_4)
         migrations.add(MIGRATION_4_5)
+        migrations.add(MIGRATION_5_6)
         return migrations
     }
 
