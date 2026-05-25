@@ -28,10 +28,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -42,7 +40,7 @@ import java.util.Locale
 class BlendDetailsViewModel(
     itemsId: Int,
     itemsRepository: ItemsRepository,
-    private val preferencesRepo: PreferencesRepo
+    preferencesRepo: PreferencesRepo
 ) : ViewModel() {
     private val _selectionKey = MutableStateFlow(0)
     val selectionKey = _selectionKey.asStateFlow()
@@ -53,11 +51,6 @@ class BlendDetailsViewModel(
     private val _parseLinks = MutableStateFlow(false)
     val parseLinks = _parseLinks.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            _parseLinks.value = preferencesRepo.parseLinks.first()
-        }
-    }
 
     fun resetSelection() {
         _selectionKey.update { it + 1 }
@@ -67,13 +60,16 @@ class BlendDetailsViewModel(
 
     val blendDetails: StateFlow<BlendDetails> = combine(
         itemsRepository.getItemDetailsStream(itemsId),
-        preferencesRepo.quantityOption
-    ) { item, quantityOption ->
+        preferencesRepo.quantityOption,
+        preferencesRepo.parseLinks
+    ) { item, quantityOption, parseLinks ->
         val isMetric = isMetricLocale()
         val quantityRemap = when (quantityOption) {
             QuantityOption.TINS -> if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
             else -> quantityOption
         }
+
+        _parseLinks.value = parseLinks
 
         BlendDetails(
             id = item.items.id,
