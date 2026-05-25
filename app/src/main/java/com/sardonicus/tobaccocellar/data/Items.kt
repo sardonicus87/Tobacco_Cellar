@@ -46,7 +46,10 @@ data class Items(
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = (["itemsId", "tinLabel"]), unique = true)]
+    indices = [
+        Index(value = (["itemsId", "tinLabel"]), unique = true),
+        Index(value = ["itemsId"])
+    ]
 )
 data class Tins(
     @PrimaryKey(autoGenerate = true)
