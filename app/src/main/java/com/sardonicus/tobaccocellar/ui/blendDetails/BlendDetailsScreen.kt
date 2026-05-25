@@ -2,9 +2,9 @@ package com.sardonicus.tobaccocellar.ui.blendDetails
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,9 +38,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -71,6 +77,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +92,7 @@ fun BlendDetailsScreen(
 
     val blendDetails by viewModel.blendDetails.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
-    val contentVisible by viewModel.contentVisible.collectAsState()
+    var composed by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(selectionFocused) {
         if (selectionFocused) {
@@ -140,10 +147,7 @@ fun BlendDetailsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            AnimatedVisibility(
-                visible = contentVisible,
-                enter = fadeIn(tween(500))
-            ) {
+            Box(Modifier.fillMaxSize()) {
                 BlendDetailsBody(
                     blendDetails = blendDetails,
                     viewModel = viewModel,
@@ -152,8 +156,17 @@ fun BlendDetailsScreen(
                         navigateToEditEntry(it)
                     },
                     selectionFocused = viewModel::updateFocused,
+                    updateComposed = { composed = it },
                     modifier = Modifier
                 )
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = !composed,
+                    enter = EnterTransition.None,
+                    exit = fadeOut(tween(500)),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+                }
             }
         }
     }
@@ -166,13 +179,22 @@ private fun BlendDetailsBody(
     viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
     selectionFocused: (Boolean) -> Unit,
+    updateComposed: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val selectionKey by viewModel.selectionKey.collectAsState()
+    val columnState = rememberLazyListState()
+
+    LaunchedEffect(columnState) {
+        snapshotFlow { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() }
+            .distinctUntilChanged()
+            .collect { updateComposed(it) }
+    }
 
     LazyColumn (
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
+        state = columnState,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
@@ -522,7 +544,6 @@ private fun NotesText(
             if (line.isEmpty()) {
                 Spacer(Modifier.height(blankLineHeight))
             } else {
-
                 Text(
                     text = viewModel.parseHyperlinks(line, MaterialTheme.colorScheme.primary, linkListener, parseLinks),
                     fontSize = fontSize,
