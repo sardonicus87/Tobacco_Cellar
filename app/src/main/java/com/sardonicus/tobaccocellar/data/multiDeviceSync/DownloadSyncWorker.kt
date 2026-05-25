@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.data.multiDeviceSync
 
 import android.content.Context
+import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -16,8 +17,9 @@ import com.sardonicus.tobaccocellar.data.TinSyncPayload
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import java.io.ByteArrayOutputStream
+import kotlinx.serialization.json.decodeFromStream
 
 class DownloadSyncWorker(
     appContext: Context,
@@ -33,6 +35,7 @@ class DownloadSyncWorker(
         const val NETWORK_ERROR = "NETWORK_ERROR"
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun doWork(): Result {
         val app = applicationContext as CellarApplication
         val itemsRepository = app.container.itemsRepository
@@ -68,20 +71,22 @@ class DownloadSyncWorker(
 
             val successfullyProcessedFiles = mutableListOf<String>()
 
+            val dbVersion = TobaccoDatabase.getDatabaseVersion(applicationContext)
+
             for (file in newFiles) {
                 var processSuccess = true
 
                 try {
-                    val outputStream = ByteArrayOutputStream()
+                    driveService.files().get(file.id).executeMediaAsInputStream().use { inputStream ->
+                        val operations = Json.decodeFromStream<List<PendingSyncOperation>>(inputStream)
+                        val db = TobaccoDatabase.getDatabase(applicationContext)
 
-                    driveService.files().get(file.id).executeMediaAndDownloadTo(outputStream)
-
-                    val fileContent = outputStream.toString()
-                    val operations = Json.decodeFromString<List<PendingSyncOperation>>(fileContent)
-
-                    for (op in operations) {
-                        if (!applyOperation(itemsRepository, op)) {
-                            processSuccess = false
+                        db.withTransaction {
+                            for (op in operations) {
+                                if (!applyOperation(itemsRepository, op, dbVersion)) {
+                                    processSuccess = false
+                                }
+                            }
                         }
                     }
 
@@ -120,8 +125,7 @@ class DownloadSyncWorker(
         }
     }
 
-    private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation): Boolean {
-        val localDbVersion = TobaccoDatabase.getDatabaseVersion(applicationContext)
+    private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation, localDbVersion: Int): Boolean {
         if (op.dbVersion != localDbVersion) { return false }
 
         when (op.entityType) {

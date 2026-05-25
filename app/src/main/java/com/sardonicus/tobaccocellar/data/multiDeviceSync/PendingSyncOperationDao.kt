@@ -10,8 +10,8 @@ interface PendingSyncOperationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOperation(operation: PendingSyncOperation)
 
-    @Query("SELECT * FROM pending_sync_operations ORDER BY timestamp ASC")
-    suspend fun getAllOperations(): List<PendingSyncOperation>
+    @Query("SELECT * FROM pending_sync_operations ORDER BY timestamp ASC LIMIT :limit")
+    suspend fun getPagedOperations(limit: Int): List<PendingSyncOperation>
 
     @Query("DELETE FROM pending_sync_operations WHERE id IN (:ids)")
     suspend fun deleteOperation(ids: List<Long>)

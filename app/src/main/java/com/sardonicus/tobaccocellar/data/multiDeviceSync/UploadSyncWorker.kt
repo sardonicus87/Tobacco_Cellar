@@ -7,14 +7,18 @@ import com.google.api.client.http.InputStreamContent
 import com.google.api.services.drive.model.File
 import com.sardonicus.tobaccocellar.CellarApplication
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.util.UUID
 
 class UploadSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ): CoroutineWorker(appContext, workerParams) {
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun doWork(): Result {
         val app = applicationContext as CellarApplication
         val preferencesRepo = app.preferencesRepo
@@ -25,36 +29,40 @@ class UploadSyncWorker(
             if (!syncEnabled) { return Result.success() }
 
             val userEmail = preferencesRepo.signedInUserEmail.first() ?: return Result.success()
-
-            val pendingOperations = pendingSyncOperationDao.getAllOperations().ifEmpty { return Result.success() }
-
             val driveService = GoogleDriveServiceHelper.getDriveService(applicationContext, userEmail)
-            val jsonPayload = Json.encodeToString(pendingOperations)
-            val filename = "${UUID.randomUUID()}.json"
 
-            val fileMetadata = File().apply {
-                name = filename
-                parents = listOf("appDataFolder")
+            while (pendingSyncOperationDao.hasPendingOperations()) {
+                val pendingOperations = pendingSyncOperationDao.getPagedOperations(25)
+                if (pendingOperations.isEmpty()) break
+
+                val outputStream = ByteArrayOutputStream()
+                Json.encodeToStream(pendingOperations, outputStream)
+
+                val fileMetadata = File().apply {
+                    name = "${UUID.randomUUID()}.json"
+                    parents = listOf("appDataFolder")
+                }
+
+                val contentStream = InputStreamContent(
+                    "application/json",
+                    ByteArrayInputStream(outputStream.toByteArray())
+                )
+
+                val uploadedFile = driveService.files().create(fileMetadata, contentStream)
+                    .setFields("id")
+                    .execute()
+
+                val fileId = uploadedFile.id
+                if (fileId != null) {
+                    val currentProcessedFiles = preferencesRepo.processedSyncFiles.first()
+                    val updatedProcessedFiles = currentProcessedFiles + fileId
+                    preferencesRepo.saveProcessedSyncFiles(updatedProcessedFiles)
+                }
+
+                val processedIds = pendingOperations.map { it.id }
+                pendingSyncOperationDao.deleteOperation(processedIds)
+
             }
-
-            val contentStream = InputStreamContent(
-                "application/json",
-                ByteArrayInputStream(jsonPayload.toByteArray())
-            )
-
-            val uploadedFile = driveService.files().create(fileMetadata, contentStream)
-                .setFields("id")
-                .execute()
-
-            val fileId = uploadedFile.id
-            if (fileId != null) {
-                val currentProcessedFiles = preferencesRepo.processedSyncFiles.first()
-                val updatedProcessedFiles = currentProcessedFiles + fileId
-                preferencesRepo.saveProcessedSyncFiles(updatedProcessedFiles)
-            }
-
-            val processedIds = pendingOperations.map { it.id }
-            pendingSyncOperationDao.deleteOperation(processedIds)
 
             return Result.success()
         } catch (_: Exception) {

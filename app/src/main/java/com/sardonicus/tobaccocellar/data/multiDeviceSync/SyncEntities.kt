@@ -1,11 +1,15 @@
 package com.sardonicus.tobaccocellar.data.multiDeviceSync
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Entity(tableName = "pending_sync_operations")
+@Entity(
+    tableName = "pending_sync_operations",
+    indices = [Index(value = ["timestamp"])]
+)
 data class PendingSyncOperation(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
