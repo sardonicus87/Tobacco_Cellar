@@ -120,7 +120,7 @@ interface ItemsDao {
     // Get item details by id //
     @Transaction
     @Query("SELECT * FROM items WHERE id = :id")
-    fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
+    fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins>
 
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun getItemById(id: Int): Items?

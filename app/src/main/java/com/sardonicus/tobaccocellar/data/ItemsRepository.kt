@@ -65,7 +65,7 @@ interface ItemsRepository {
 
 
     /** Get single item **/
-    suspend fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins?>
+    fun getItemDetailsStream(id: Int): Flow<ItemsComponentsAndTins>
 
     suspend fun getItemById(id: Int): Items?
 
