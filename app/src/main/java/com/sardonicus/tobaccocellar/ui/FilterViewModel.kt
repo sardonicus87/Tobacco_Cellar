@@ -442,10 +442,6 @@ class FilterViewModel (
             itemsRepository.getEverythingStream()
         }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
-    private val lastSeenFlow: Flow<List<Int>> = preferencesRepo.datesSeen.map { datesString ->
-        if (datesString.isBlank()) { emptyList() }
-        else { datesString.split(",").mapNotNull { it.trim().toIntOrNull() } }
-    }
 
     // setting available vals
     private val _selectionHistory = MutableStateFlow<List<Pair<FilterCategory, Any?>>>(emptyList())
@@ -563,8 +559,9 @@ class FilterViewModel (
         viewModelScope.launch(Dispatchers.Default) {
             combine (
                 everythingFlow,
-                lastSeenFlow
-            ) { everything, lastSeen ->
+                preferencesRepo.datesSeen
+            ) { everything, datesString ->
+                val lastSeen = datesString.split(",").mapNotNull { it.trim().toIntOrNull() }
                 everything.flatMap { it.tins }
                     .filter { tins ->
                         tins.openDate?.let {
