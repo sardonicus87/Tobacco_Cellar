@@ -10,12 +10,12 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.calculateAge
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -44,56 +44,60 @@ class DatesViewModel(
             filterViewModel.unifiedFilteredTins,
             filterViewModel.everythingFlow
         ) { filteredItems, filteredTins, allItems ->
+            val now = LocalDate.now()
+            val nowMillis = now.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            val filteredItemTins = filteredItems.flatMap { it.tins }.filter { it in filteredTins }
-            val tinDates = filteredItemTins.mapNotNull { it.manufactureDate } + filteredItemTins.mapNotNull { it.cellarDate } + filteredItemTins.mapNotNull { it.openDate }
+            val filteredTinIds = filteredTins.map { it.tinId }.toSet()
+            val datedTins = filteredItems.flatMap { item ->
+                item.tins.filter { it.tinId in filteredTinIds }.map { tin ->
+                    Triple(item, tin, tin.manufactureDate ?: tin.cellarDate ?: tin.openDate)
+                }
+            }.filter { it.third != null }
 
-            val agingDueThisWeek = agingDue(allItems).first
-            val agingDueThisMonth = agingDue(allItems).second
+            val agingData = agingDue(allItems, now)
+            val weekSection = AgingSection("Tins ready in the next 7 days:", "No tins ready this week.", agingData.first)
+            val monthSection = AgingSection("Other tins ready this month:", "No more tins ready this month.", agingData.second)
 
-            val weekSection = AgingSection("Tins ready in the next 7 days:", "No tins ready this week.", agingDueThisWeek)
-            val monthSection = AgingSection("Other tins ready this month:", "No more tins ready this month.", agingDueThisMonth)
+            val filteredItemTins2 = datedTins.map { it.second }
+            val averageManuf = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { it.manufactureDate }
+            val averageCellar = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { if (!it.finished) it.cellarDate else null }
+            val averageOpen = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { if (!it.finished) it.openDate else null }
+            val averageWait = calculateAverageDate(filteredItemTins2, DatePeriod.FUTURE, now) { it.openDate }
 
-            val averageManuf = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { it.manufactureDate }
-            val averageCellar = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null }
-            val averageOpen = calculateAverageDate(filteredItemTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
-            val averageWait = calculateAverageDate(filteredItemTins, DatePeriod.FUTURE) { it.openDate }
+            val pastManu = findDatedTins(datedTins, DatePeriod.PAST, nowMillis) { it.manufactureDate }
+            val pastCellar = findDatedTins(datedTins, DatePeriod.PAST, nowMillis) { if (!it.finished) it.cellarDate else null }
+            val pastOpened = findDatedTins(datedTins, DatePeriod.PAST, nowMillis) { if (!it.finished) it.openDate else null }
 
-            val manufSection = AverageAgeSection("Average age (manuf): ", averageManuf)
-            val cellarSection = AverageAgeSection("Average time in cellar: ", averageCellar)
-            val openSection = AverageAgeSection("Average opened time: ", averageOpen)
-            val waitSection = AverageAgeSection("Average wait (open): ", averageWait)
-
-            val pastManu = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { it.manufactureDate }
-            val pastCellar = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.cellarDate else null }
-            val pastOpened = findDatedTins(filteredItems, filteredTins, DatePeriod.PAST) { if (!it.finished) it.openDate else null }
-
-            val oldestManu = OldestTinsSection("Manufacture", pastManu)
-            val oldestCellar = OldestTinsSection("Cellared", pastCellar)
-            val oldestOpened = OldestTinsSection("Opened", pastOpened)
-
-            val futureManu = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.manufactureDate }
-            val futureCellar = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.cellarDate }
-            val futureOpen = findDatedTins(filteredItems, filteredTins, DatePeriod.FUTURE) { it.openDate }
-
-            val futureManuSection = FutureTinsSection("Manufacture", futureManu)
-            val futureCellarSection = FutureTinsSection("Cellared", futureCellar)
-            val futureOpenSection = FutureTinsSection("Opened", futureOpen)
+            val futureManu = findDatedTins(datedTins, DatePeriod.FUTURE, nowMillis) { it.manufactureDate }
+            val futureCellar = findDatedTins(datedTins, DatePeriod.FUTURE, nowMillis) { it.cellarDate }
+            val futureOpen = findDatedTins(datedTins, DatePeriod.FUTURE, nowMillis) { it.openDate }
 
             DatesUiState(
-                items = filteredItems,
-                datesExist = tinDates.isNotEmpty(),
+                datesExist = datedTins.isNotEmpty(),
 
                 agingSection = listOf(weekSection, monthSection),
-                agingExists = agingDue(allItems).first.isNotEmpty() || agingDue(allItems).second.isNotEmpty(),
+                agingExists = agingData.first.isNotEmpty() || agingData.second.isNotEmpty(), // agingDue(allItems).first.isNotEmpty() || agingDue(allItems).second.isNotEmpty(),
 
-                averageAgeSection = listOf(manufSection, cellarSection, openSection, waitSection),
+                averageAgeSection = listOf(
+                    AverageAgeSection("Average age (manuf): ", averageManuf),
+                    AverageAgeSection("Average time in cellar: ", averageCellar),
+                    AverageAgeSection("Average opened time: ", averageOpen),
+                    AverageAgeSection("Average wait (open): ", averageWait)
+                ),
                 averageAgeExists = averageManuf.isNotBlank() || averageCellar.isNotBlank() || averageOpen.isNotBlank() || averageWait.isNotBlank(),
 
-                oldestTinsSection = listOf(oldestManu, oldestCellar, oldestOpened),
+                oldestTinsSection = listOf(
+                    OldestTinsSection("Manufacture", pastManu),
+                    OldestTinsSection("Cellared", pastCellar),
+                    OldestTinsSection("Opened", pastOpened)
+                ),
                 oldestTinsExists = pastManu.isNotEmpty() || pastCellar.isNotEmpty() || pastOpened.isNotEmpty(),
 
-                futureTinsSection = listOf(futureManuSection, futureCellarSection, futureOpenSection),
+                futureTinsSection = listOf(
+                    FutureTinsSection("Manufacture", futureManu),
+                    FutureTinsSection("Cellared", futureCellar),
+                    FutureTinsSection("Opened", futureOpen)
+                ),
                 futureTinsExists = futureManu.isNotEmpty() || futureCellar.isNotEmpty() || futureOpen.isNotEmpty(),
 
                 loading = false,
@@ -101,128 +105,106 @@ class DatesViewModel(
         }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
+                started = SharingStarted.WhileSubscribed(5000),
                 initialValue = DatesUiState(loading = true)
             )
 
 
-    init {
-        viewModelScope.launch {
-            val currentReady = filterViewModel.everythingFlow.first().flatMap { it.tins }
-                .filter { tins ->
-                    tins.openDate?.let {
-                        Instant.ofEpochMilli(it)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
-                    } ?: false
-                }.joinToString(",") { it.tinId.toString() }
+    private var trackingJob: Job? = null
+    fun startDatesSeen() {
+        trackingJob?.cancel()
+        trackingJob = viewModelScope.launch {
+            filterViewModel.everythingFlow.collect { allItems ->
+                val currentReady = allItems.flatMap { it.tins }
+                    .filter { tins ->
+                        tins.openDate?.let {
+                            Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault())
+                                .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
+                        } ?: false
+                    }.joinToString(",") { it.tinId.toString() }
 
-            preferencesRepo.setDatesSeen(currentReady)
+                preferencesRepo.setDatesSeen(currentReady)
+            }
         }
+    }
+
+    fun cancelDatesSeen() {
+        trackingJob?.cancel()
+        trackingJob = null
     }
 
 
     fun findDatedTins(
-        items: List<ItemsComponentsAndTins>,
-        tins: List<Tins>,
+        data: List<Triple<ItemsComponentsAndTins, Tins, Long?>>,
         period: DatePeriod,
+        now: Long,
         dateSelector: (Tins) -> Long?,
-        ): List<DateInfoItem> {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    ): List<DateInfoItem> {
+        val itemsWithDate: List<Pair<DateInfoItem, Long?>> = data.mapNotNull { (item, tin, _) ->
+            val originalMillis = dateSelector(tin) ?: return@mapNotNull null
+            val itemDate = Instant.ofEpochMilli(originalMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        val tinIds = tins.map { it.tinId }
+            val isMatch = if (period == DatePeriod.PAST) itemDate <= now else itemDate > now
+            if (!isMatch) return@mapNotNull null
 
-        val itemsWithDate: List<Pair<DateInfoItem, Long?>> = items.flatMap{ item ->
-            item.tins
-                .filter { it.tinId in tinIds }
-                .map {
-                val originalMillis = dateSelector(it)
-                Pair(
-                    DateInfoItem(
-                        id = item.items.id,
-                        brand = item.items.brand,
-                        blend = item.items.blend,
-                        tinLabel = it.tinLabel,
-                        date = formatMediumDate(originalMillis),
-                        time = calculateAge(originalMillis),
-                    ),
-                    originalMillis
-                )
-            }
-        }. filter { it.first.date.isNotBlank() }
+            Pair(
+                DateInfoItem(
+                    id = item.items.id,
+                    brand = item.items.brand,
+                    blend = item.items.blend,
+                    tinLabel = tin.tinLabel,
+                    date = formatMediumDate(originalMillis),
+                    timeFrame = calculateAge(originalMillis),
+                ),
+                originalMillis
+            )
 
-        return when (period) {
-            DatePeriod.PAST -> itemsWithDate
-                .filter { (_, millis) ->
-                    millis?.let {
-                        val itemDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                        itemDate <= now
-                    } ?: false
-                }
-                .sortedBy { (_, millis) -> millis ?: Long.MAX_VALUE }
-                .map { it.first }
-
-            DatePeriod.FUTURE -> itemsWithDate
-                .filter { (_, millis) ->
-                    millis?.let {
-                        val itemDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                        itemDate > now
-                    } ?: false
-                }
-                .sortedBy { (_, millis) -> millis ?: Long.MAX_VALUE }
-                .map { it.first }
         }
-            .take(5)
+
+        return if (period == DatePeriod.PAST) {
+            itemsWithDate.sortedBy { it.second }.map { it.first }
+        } else {
+            itemsWithDate.sortedBy { it.second }.map { it.first }
+        }.take(5)
     }
 
 
     fun calculateAverageDate(
         tins: List<Tins>,
         periodSelection: DatePeriod,
+        now: LocalDate,
         field: (Tins) -> Long?
     ): String {
-        val now = LocalDate.now()
-
-        val relevantTins = tins.mapNotNull {
-            val dateMillis = field(it)
-            if (dateMillis != null) {
-                val then = Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-                val period = if (periodSelection == DatePeriod.PAST) { then <= now } else { then > now }
-                if (period) { it } else { null }
-            } else {
-                null
-            }
+        val relevantDates = tins.mapNotNull { field(it) }.filter {
+            val then = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+            if (periodSelection == DatePeriod.PAST) then <= now else then > now
         }
 
-        if (relevantTins.isEmpty()) { return "" }
+        if (relevantDates.isEmpty()) return ""
 
         var totalYears = 0.0
         var totalMonths = 0.0
         var totalDays = 0.0
-        val count = relevantTins.size
+        val count = relevantDates.size
 
-        for (date in relevantTins) {
-            val dateParts = getAgeParts(field(date)!!, periodSelection)
-            totalYears += dateParts.first
-            totalMonths += dateParts.second
-            totalDays += dateParts.third
+        for (date in relevantDates) {
+            val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
+            val datePeriod = if (periodSelection == DatePeriod.PAST) Period.between(then, now) else Period.between(now, then)
+            totalYears += datePeriod.years
+            totalMonths += datePeriod.months
+            totalDays += datePeriod.days
         }
 
-        var years: Int
-        var months: Int
-        var days: Double
+        val years = floor(totalYears / count).toInt()
+        val fractionalYear = (totalYears / count) - years
 
-        val rawYears = totalYears / count
-        years = floor(rawYears).toInt()
-        val fractionalYearMonths = (rawYears - years) * 12.0
+        val rawMonths = (totalMonths / count) + (fractionalYear * 12.0)
+        val months = floor(rawMonths).toInt()
+        val fractionalMonth = rawMonths - months
 
-        val rawMonths = (totalMonths + fractionalYearMonths) / count
-        months = floor(rawMonths).toInt()
-        val fractionalMonthsDays = (rawMonths - months) * 30.4375
-
-        days = (totalDays + fractionalMonthsDays) / count
-        val places = if (years == 0 && months == 0) 1 else 0
-        val dayString = formatDecimal(days, places)
+        val days = (totalDays / count) + (fractionalMonth * 30.4375)
+        val dayString = formatDecimal(days, if (years == 0 && months == 0) 1 else 0)
 
         val parts = mutableListOf<String>()
 
@@ -230,62 +212,54 @@ class DatesViewModel(
         if (months > 0) { parts.add("$months month${if (months > 1) "s" else ""}") }
         if (days > 0.09) { parts.add("$dayString day${if (dayString != "1") "s" else ""}") }
 
-        return if (parts.isEmpty()) {
-            ""
-        } else parts.joinToString(", ")
+        return parts.joinToString(", ")
     }
 
-
-    fun getAgeParts(date: Long, period: DatePeriod): Triple<Int, Int, Int> {
-        val now = LocalDate.now()
-        val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
-        val datePeriod = if (period == DatePeriod.PAST) Period.between(then, now) else Period.between(now, then)
-
-        return Triple(datePeriod.years, datePeriod.months, datePeriod.days)
-    }
-
-    fun agingDue(items: List<ItemsComponentsAndTins>): Pair<List<DateInfoItem>, List<DateInfoItem>> {
-        val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    fun agingDue(items: List<ItemsComponentsAndTins>, now: LocalDate): Pair<List<DateInfoItem>, List<DateInfoItem>> {
         val oneWeek = LocalDate.now().plusDays(7).atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
         val endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth()).atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
+        val nowMillis = now.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        val itemsWithDate: List<Pair<DateInfoItem, Long>> = items.flatMap{ item ->
-            item.tins
-                .filter { !it.finished && it.openDate != null }
-                .map {
-                    val originalMillis = it.openDate!!
-                    Pair(
+        val thisWeekTins = mutableListOf<DateInfoItem>()
+        val thisMonthTins = mutableListOf<DateInfoItem>()
+
+        for (item in items) {
+            for (tin in item.tins) {
+                if (tin.finished || tin.openDate == null) continue
+
+                val openMillis = tin.openDate
+                val openDate = Instant.ofEpochMilli(openMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+                if (openDate in nowMillis..oneWeek) {
+                    thisWeekTins.add(
                         DateInfoItem(
                             id = item.items.id,
                             brand = item.items.brand,
                             blend = item.items.blend,
-                            tinLabel = it.tinLabel,
-                            date = formatMediumDate(originalMillis),
-                            time = calculateAge(originalMillis),
-                        ),
-                        originalMillis
+                            tinLabel = tin.tinLabel,
+                            date = formatMediumDate(openMillis),
+                            timeFrame = calculateAge(openMillis),
+                        )
+                    )
+                } else if (openDate in (oneWeek + 1)..endOfMonth) {
+                    thisMonthTins.add(
+                        DateInfoItem(
+                            id = item.items.id,
+                            brand = item.items.brand,
+                            blend = item.items.blend,
+                            tinLabel = tin.tinLabel,
+                            date = formatMediumDate(openMillis),
+                            timeFrame = calculateAge(openMillis),
+                        )
                     )
                 }
-        }. filter { it.first.date.isNotBlank() }
-
-        val thisWeekTins = itemsWithDate.filter { (_, millis) ->
-                val openDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                tinTimeInPeriod(openDate, now, oneWeek)
-        }.map { it.first }
-
-        val thisMonthTins = itemsWithDate.filter { (_, millis) ->
-            val openDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            tinTimeInPeriod(openDate, now, endOfMonth)
-        }.map { it.first }.filter { !thisWeekTins.contains(it) }
+            }
+        }
 
         return Pair(thisWeekTins, thisMonthTins)
     }
 
-    fun tinTimeInPeriod(tinTime: Long, start: Long, end: Long): Boolean {
-        return tinTime in start..end
-    }
 
     fun resetSelection() {
         _selectionKey.update { it + 1 }
@@ -301,19 +275,14 @@ class DatesViewModel(
 
 @Stable
 data class DatesUiState(
-    val items: List<ItemsComponentsAndTins> = listOf(),
     val datesExist: Boolean = false,
     val loading: Boolean = false,
-
     val agingSection: List<AgingSection> = emptyList(),
     val agingExists: Boolean = false,
-
     val averageAgeSection: List<AverageAgeSection> = emptyList(),
     val averageAgeExists: Boolean = false,
-
     val oldestTinsSection: List<OldestTinsSection> = emptyList(),
     val oldestTinsExists: Boolean = false,
-
     val futureTinsSection: List<FutureTinsSection> = emptyList(),
     val futureTinsExists: Boolean = false,
 )
@@ -350,7 +319,7 @@ data class DateInfoItem(
     val blend: String = "",
     val tinLabel: String = "",
     val date: String = "",
-    val time: String = "",
+    val timeFrame: String = "",
 )
 
 enum class DatePeriod { PAST, FUTURE }
