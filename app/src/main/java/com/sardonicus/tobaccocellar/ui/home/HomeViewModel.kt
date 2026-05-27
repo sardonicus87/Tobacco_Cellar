@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import java.io.File
@@ -144,41 +145,38 @@ class HomeViewModel(
 
                 // Release notes
                 launch{
-                    preferencesRepo.releaseNotesSeen.collect { savedVersion ->
-                        if (savedVersion == null) {
-                            saveReleaseNotesSeen()
-                        } else {
-                            val latestReleaseNotes = changelogEntries
-                                .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
-                                .sortedByDescending { it.versionCode }
-                                .take(3)
+                    val savedVersion = preferencesRepo.releaseNotesSeen.first()
+                    if (savedVersion == null) {
+                        saveReleaseNotesSeen()
+                    } else {
+                        val latestReleaseNotes = changelogEntries
+                            .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
+                            .sortedByDescending { it.versionCode }
+                            .take(3)
 
-                            if (latestReleaseNotes.isNotEmpty()) {
-                                _releaseNotesState.value = ReleaseNotesState(
-                                    show = true,
-                                    changelogData = latestReleaseNotes
-                                )
-                            } else {
-                                _releaseNotesState.value = ReleaseNotesState()
-                            }
+                        if (latestReleaseNotes.isNotEmpty()) {
+                            _releaseNotesState.value = ReleaseNotesState(
+                                show = true,
+                                changelogData = latestReleaseNotes
+                            )
+                        } else {
+                            _releaseNotesState.value = ReleaseNotesState()
                         }
                     }
                 }
 
                 // New User (may be used in the future)
                 launch {
-                    preferencesRepo.newUser.collect {
-                        if (it == null) {
-                            preferencesRepo.updateToExistingUser()
-                        }
-                    }
+                    if (preferencesRepo.newUser.first() == null ) { preferencesRepo.updateToExistingUser() }
                 }
 
                 // Important alerts
                 launch {
-                    preferencesRepo.lastAlertFlow.collect { lastShown ->
+                    preferencesRepo.lastAlertFlow.takeWhile { lastShown ->
+                        lastShown < OneTimeAlerts.CURRENT_ALERT_VERSION
+                    }.collect { lastShown ->
                         val unseenAlerts = OneTimeAlerts.alerts
-                            .filter { it.id in (lastShown + 1) ..OneTimeAlerts.CURRENT_ALERT_VERSION }
+                            .filter { it.id in (lastShown + 1)..OneTimeAlerts.CURRENT_ALERT_VERSION }
                             .sortedBy { it.id }
 
                         val alertToDisplay = unseenAlerts.firstOrNull()
