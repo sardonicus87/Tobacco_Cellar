@@ -428,7 +428,10 @@ fun CellarNavigation(
 
             is AboutDestination -> NavEntry(key, metadata = paneInfo) {
                 AboutScreen(
-                    onNavigateUp = { navigator.goBack() },
+                    onNavigateUp = {
+                        navigationState.resetBackStack(AboutDestination)
+                        navigator.goBack()
+                    },
                     navigateToChangelog = { navigator.navigate(ChangelogDestination(changelogEntries)) },
                 )
             }

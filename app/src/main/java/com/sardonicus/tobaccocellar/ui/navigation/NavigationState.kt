@@ -119,6 +119,12 @@ class NavigationState(
 
             return isTwoPane && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
         }
+
+
+    fun resetBackStack(route: NavKey) {
+        val stack = backStacks[route]
+        stack?.clear()
+    }
 }
 
 
