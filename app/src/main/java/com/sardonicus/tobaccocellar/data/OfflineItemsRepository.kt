@@ -77,15 +77,15 @@ class OfflineItemsRepository(
         scheduleSyncUpload()
     }
 
-    override suspend fun updateMultipleItems(items: List<ItemsComponentsAndTins>) {
+    override suspend fun updateMultipleItems(items: List<Items>) {
         for (item in items) {
-            itemsDao.updateICT(item.items, item.components, item.tins)
+            itemsDao.update(item)
 
             val operation = PendingSyncOperation(
                 operationType = "UPDATE",
                 entityType = "Items",
-                entityId = item.items.id.toString(),
-                payload = Json.encodeToString(item.items),
+                entityId = item.id.toString(),
+                payload = Json.encodeToString(item),
                 dbVersion = dbVersion
             )
             logOperation(operation)

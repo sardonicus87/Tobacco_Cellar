@@ -13,7 +13,7 @@ interface ItemsRepository {
 
     suspend fun updateItem(item: Items)
 
-    suspend fun updateMultipleItems(items: List<ItemsComponentsAndTins>)
+    suspend fun updateMultipleItems(items: List<Items>)
 
     suspend fun deleteItem(item: Items)
 
