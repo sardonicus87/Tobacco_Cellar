@@ -488,7 +488,7 @@ class OfflineItemsRepository(
 
         workManager.enqueueUniqueWork(
             "upload_sync_work",
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.APPEND,
             uploadWorkRequest
         )
     }
