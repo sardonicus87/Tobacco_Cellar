@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.bulkEdit
 
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -31,6 +32,8 @@ class BulkEditViewModel (
     private val preferencesRepo: PreferencesRepo,
 ): ViewModel() {
 
+    var editingState by mutableStateOf(EditingState())
+
     /** UI stuff */
     @Suppress("UNCHECKED_CAST")
     val bulkEditUiState: StateFlow<BulkEditUiState> =
@@ -49,18 +52,16 @@ class BulkEditViewModel (
         }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
+                started = SharingStarted.WhileSubscribed(5000),
                 initialValue = BulkEditUiState()
             )
 
-    var editingState by mutableStateOf(EditingState())
-        private set
 
     init {
         viewModelScope.launch {
             filterViewModel.unifiedFilteredItems.collect { filteredItems ->
-                val filteredSet = filteredItems.toSet()
-                val updatedSelection = editingState.selectedItems.filter { it in filteredSet }
+                val filteredSet = filteredItems.map { it.items.id }.toSet()
+                val updatedSelection = editingState.selectedItems.intersect(filteredSet)
 
                 if (updatedSelection.size != editingState.selectedItems.size) {
                     editingState = editingState.copy(selectedItems = updatedSelection)
@@ -111,207 +112,139 @@ class BulkEditViewModel (
         )
     }
 
-    fun updateSelection(item: ItemsComponentsAndTins) {
+    fun updateSelection(itemId: Int) {
+        val current = editingState.selectedItems
         editingState = editingState.copy(
-            selectedItems = editingState.selectedItems.toMutableList().apply {
-                if (editingState.selectedItems.contains(item)) {
-                    remove(item)
-                } else {
-                    add(item)
-                }
-            }
+            selectedItems = if (current.contains(itemId)) current - itemId else current + itemId
         )
     }
 
-    var anyFieldSelected by mutableStateOf(false)
-
-    fun fieldSelected(): Boolean {
-        anyFieldSelected = editingState.typeSelected || editingState.genreSelected ||
-                editingState.cutSelected || editingState.compsSelected ||
-                editingState.flavorSelected || editingState.favoriteDisSelected ||
-                editingState.productionSelected || editingState.syncTinsSelected ||
-                editingState.ratingSelected
-
-        return anyFieldSelected
+    val enableSave by derivedStateOf {
+        editingState.selectedItems.isNotEmpty() && (
+                editingState.typeSelected || editingState.genreSelected ||
+                        editingState.cutSelected || editingState.compsSelected ||
+                        editingState.flavorSelected || editingState.favoriteDisSelected ||
+                        editingState.productionSelected || editingState.syncTinsSelected ||
+                        editingState.ratingSelected
+                )
     }
 
     private fun resetEditingState() { editingState = EditingState() }
 
-    fun resetSelectedItems() {
-        editingState = editingState.copy(
-            selectedItems = listOf()
-        )
-    }
+    fun resetSelectedItems() { editingState = editingState.copy(selectedItems = emptySet()) }
 
-    fun selectAll() {
-        editingState = editingState.copy(
-            selectedItems = bulkEditUiState.value.items
-        )
+    fun selectAll() { editingState = editingState.copy(
+        selectedItems = bulkEditUiState.value.items.map { it.items.id }.toSet())
     }
 
 
     /** helper functions for tin sync */
-    private var ozRate: Double = 0.0
-    private var gramsRate: Double = 0.0
-
-    init {
-        viewModelScope.launch {
-            ozRate = preferencesRepo.tinOzConversionRate.first()
-            gramsRate = preferencesRepo.tinGramsConversionRate.first()
-        }
-    }
-
-    private fun calculateSyncTins(allTins: List<Tins>): Int {
+    private fun calculateSyncTins(allTins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
         val tins = allTins.filter { !it.finished }
-        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
-            (it.tinQuantity * 16) / ozRate
-        }
-        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
-            it.tinQuantity / ozRate
-        }
-        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
-            it.tinQuantity / gramsRate
-        }
+        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf { (it.tinQuantity * 16) / ozRate }
+        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf { it.tinQuantity / ozRate }
+        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf { it.tinQuantity / gramsRate }
+
         return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
     }
 
     private val _saveIndicator = MutableStateFlow(false)
     val saveIndicator: StateFlow<Boolean> = _saveIndicator.asStateFlow()
 
-    fun setLoadingState(loading: Boolean) {
-        _saveIndicator.value = loading
-    }
+    fun setLoadingState(loading: Boolean) { _saveIndicator.value = loading }
 
 
     /** Save function */
     fun batchEditSave() {
         viewModelScope.launch {
             setLoadingState(true)
-
             SyncStateManager.schedulingPaused = true
+
+            val ozRate = preferencesRepo.tinOzConversionRate.first()
+            val gramsRate = preferencesRepo.tinGramsConversionRate.first()
 
             try {
                 val lastModified = System.currentTimeMillis()
+                val filteredItems = bulkEditUiState.value.items.associateBy { it.items.id }
+                val selectedItems = editingState.selectedItems.mapNotNull { filteredItems[it] }
 
-                val itemsToUpdate = editingState.selectedItems.map { items ->
+                val resolvedCompIds = mutableMapOf<String, Int>()
+                if (editingState.compsSelected) {
+                    val existingComps = bulkEditUiState.value.autoComps
+                    val compNames = editingState.compsString.split(",")
+                        .map { it.trim() }.filter { it.isNotBlank() }.map { input ->
+                            existingComps.find { it.equals(input, ignoreCase = true) } ?: input
+                        }
+
+                    compNames.forEach { name ->
+                        var id = itemsRepository.getComponentIdByName(name)
+                        if (id == null && editingState.compsAdd) {
+                            id = itemsRepository.insertComponent(Components(componentName = name)).toInt()
+                        }
+                        if (id != null) resolvedCompIds[name] = id
+                    }
+                }
+
+                val resolvedFlavorIds = mutableMapOf<String, Int>()
+                if (editingState.flavorSelected) {
+                    val existingFlavors = bulkEditUiState.value.autoFlavor
+                    val flavorNames = editingState.flavorString.split(",")
+                        .map { it.trim() }.filter { it.isNotBlank() }.map { input ->
+                            existingFlavors.find { it.equals(input, ignoreCase = true) } ?: input
+                        }
+
+                    flavorNames.forEach { name ->
+                        var id = itemsRepository.getFlavoringIdByName(name)
+                        if (id == null && editingState.flavorAdd) {
+                            id = itemsRepository.insertFlavoring(Flavoring(flavoringName = name)).toInt()
+                        }
+                        if (id != null) resolvedFlavorIds[name] = id
+                    }
+                }
+
+                val itemsToUpdate = selectedItems.map { items ->
                     val itemsId = items.items.id
 
-                    val existingComps = items.components.map { it.componentName }
-                    val editComps = editingState.toComps(existingComps)
-                    val updatedComps = if (editingState.compsSelected) {
-                        when (editingState.compsAdd) {
-                            true -> {
-                                (items.components + editComps.filterNot {
-                                    it.componentName in existingComps
-                                }).distinctBy { it.componentName }
-                            }
-
-                            false -> {
-                                items.components.filterNot { component ->
-                                    component.componentName in editComps.map { it.componentName }
-                                }
+                    if (editingState.compsSelected) {
+                        resolvedCompIds.values.forEach { compId ->
+                            val crossRef = ItemsComponentsCrossRef(itemsId, compId)
+                            if (editingState.compsAdd) {
+                                itemsRepository.insertComponentsCrossRef(crossRef)
+                            } else {
+                                itemsRepository.deleteComponentsCrossRef(crossRef)
                             }
                         }
-                    } else {
-                        items.components
                     }
-                    val compsToAdd = updatedComps.filter { it.componentName !in existingComps }
-                    val compsToRemove =
-                        existingComps.filter { component -> component !in updatedComps.map { it.componentName } }
 
-                    val existingFlavor = items.flavoring.map { it.flavoringName }
-                    val editFlavor = editingState.toFlavor(existingFlavor)
-                    val updatedFlavor = if (editingState.flavorSelected) {
-                        when (editingState.flavorAdd) {
-                            true -> {
-                                (items.flavoring + editFlavor.filterNot {
-                                    it.flavoringName in existingFlavor
-                                }).distinctBy { it.flavoringName }
+                    if (editingState.flavorSelected) {
+                        resolvedFlavorIds.values.forEach { flavorId ->
+                            val crossRef = ItemsFlavoringCrossRef(itemsId, flavorId)
+                            if (editingState.flavorAdd) {
+                                itemsRepository.insertFlavoringCrossRef(crossRef)
+                            } else {
+                                itemsRepository.deleteFlavoringCrossRef(crossRef)
                             }
-
-                            false -> {
-                                items.flavoring.filterNot { flavoring ->
-                                    flavoring.flavoringName in editFlavor.map { it.flavoringName }
-                                }
-                            }
-                        }
-                    } else {
-                        items.flavoring
-                    }
-                    val flavorToAdd = updatedFlavor.filter { it.flavoringName !in existingFlavor }
-                    val flavorToRemove =
-                        existingFlavor.filter { flavoring -> flavoring !in updatedFlavor.map { it.flavoringName } }
-
-                    compsToAdd.forEach {
-                        var componentId = itemsRepository.getComponentIdByName(it.componentName)
-                        if (componentId == null) {
-                            componentId = itemsRepository.insertComponent(it).toInt()
-                        }
-                        itemsRepository.insertComponentsCrossRef(
-                            ItemsComponentsCrossRef(
-                                itemsId,
-                                componentId
-                            )
-                        )
-                    }
-                    compsToRemove.forEach {
-                        val componentId = itemsRepository.getComponentIdByName(it)
-                        if (componentId != null) {
-                            itemsRepository.deleteComponentsCrossRef(
-                                ItemsComponentsCrossRef(
-                                    itemsId,
-                                    componentId
-                                )
-                            )
-                        }
-                    }
-
-                    flavorToAdd.forEach {
-                        var flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                        if (flavorId == null) {
-                            flavorId = itemsRepository.insertFlavoring(it).toInt()
-                        }
-                        itemsRepository.insertFlavoringCrossRef(
-                            ItemsFlavoringCrossRef(
-                                itemsId,
-                                flavorId
-                            )
-                        )
-                    }
-                    flavorToRemove.forEach {
-                        val flavorId = itemsRepository.getFlavoringIdByName(it)
-                        if (flavorId != null) {
-                            itemsRepository.deleteFlavoringCrossRef(
-                                ItemsFlavoringCrossRef(
-                                    itemsId,
-                                    flavorId
-                                )
-                            )
                         }
                     }
 
                     val newQuantity = if (editingState.syncTinsSelected && editingState.syncTins) {
-                        calculateSyncTins(items.tins)
+                        calculateSyncTins(items.tins, ozRate, gramsRate)
                     } else {
                         items.items.quantity
                     }
 
 
-                    items.copy(
-                        items = items.items.copy(
-                            type = if (editingState.typeSelected) editingState.type else items.items.type,
-                            subGenre = if (editingState.genreSelected) editingState.subGenre else items.items.subGenre,
-                            cut = if (editingState.cutSelected) editingState.cut else items.items.cut,
-                            rating = if (editingState.ratingSelected) editingState.rating else items.items.rating,
-                            disliked = if (editingState.favoriteDisSelected) editingState.disliked else items.items.disliked,
-                            favorite = if (editingState.favoriteDisSelected) editingState.favorite else items.items.favorite,
-                            inProduction = if (editingState.productionSelected) editingState.inProduction else items.items.inProduction,
-                            syncTins = if (editingState.syncTinsSelected) editingState.syncTins else items.items.syncTins,
-                            quantity = newQuantity,
-                            lastModified = lastModified
-                        ),
-                        components = updatedComps,
-                        flavoring = updatedFlavor
+                    items.items.copy(
+                        type = if (editingState.typeSelected) editingState.type else items.items.type,
+                        subGenre = if (editingState.genreSelected) editingState.subGenre else items.items.subGenre,
+                        cut = if (editingState.cutSelected) editingState.cut else items.items.cut,
+                        rating = if (editingState.ratingSelected) editingState.rating else items.items.rating,
+                        disliked = if (editingState.favoriteDisSelected) editingState.disliked else items.items.disliked,
+                        favorite = if (editingState.favoriteDisSelected) editingState.favorite else items.items.favorite,
+                        inProduction = if (editingState.productionSelected) editingState.inProduction else items.items.inProduction,
+                        syncTins = if (editingState.syncTinsSelected) editingState.syncTins else items.items.syncTins,
+                        quantity = newQuantity,
+                        lastModified = lastModified
                     )
                 }
 
@@ -340,7 +273,7 @@ data class BulkEditUiState(
 )
 
 data class EditingState(
-    val selectedItems: List<ItemsComponentsAndTins> = listOf(),
+    val selectedItems: Set<Int> = emptySet(), // List<ItemsComponentsAndTins> = listOf()
     val id: Int = 0,
 
     val typeSelected: Boolean = false,
@@ -368,30 +301,3 @@ data class EditingState(
     var inProduction: Boolean = true,
     var syncTins: Boolean = false,
 )
-
-fun EditingState.toComps(existingComps: List<String>): List<Components> {
-    return compsString
-        .replace(Regex("\\s+"), " ")
-        .split(",")
-        .filter { it.isNotBlank() }.map { enteredComp ->
-            val normalizedComp = enteredComp.trim().lowercase()
-            val existingComp = existingComps.find { existingComp ->
-                existingComp.lowercase() == normalizedComp
-            }
-
-            Components(componentName = existingComp ?: enteredComp.trim())
-        }
-}
-
-fun EditingState.toFlavor(existingFlavor: List<String>): List<Flavoring> {
-    return flavorString
-        .replace(Regex("\\s+"), " ")
-        .split(",")
-        .filter { it.isNotBlank() }.map { enteredFlavor ->
-            val normalizedFlavor = enteredFlavor.trim().lowercase()
-            val existingFlavor = existingFlavor.find { existingFlavor ->
-                existingFlavor.lowercase() == normalizedFlavor
-            }
-            Flavoring(flavoringName = existingFlavor ?: enteredFlavor.trim())
-        }
-}

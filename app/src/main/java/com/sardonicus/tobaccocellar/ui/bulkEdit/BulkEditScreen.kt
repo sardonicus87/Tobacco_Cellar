@@ -192,7 +192,7 @@ fun BulkEditScreen(
                 clearSelections = viewModel::resetSelectedItems,
                 selectAll = viewModel::selectAll,
                 onValueChange = viewModel::onValueChange,
-                batchEditValidation = viewModel::fieldSelected,
+                enableSave = viewModel.enableSave,
                 batchEdit = viewModel::batchEditSave,
                 autoGenres = bulkEditUiState.autoGenres,
                 autoCuts = bulkEditUiState.autoCuts,
@@ -213,13 +213,13 @@ fun BulkEditBody(
     tabIndex: Int,
     onTabChange: (Int) -> Unit,
     items: List<ItemsComponentsAndTins>,
-    selectedItems: List<ItemsComponentsAndTins>,
+    selectedItems: Set<Int>,
     editingState: EditingState,
-    updateSelection: (ItemsComponentsAndTins) -> Unit,
+    updateSelection: (Int) -> Unit,
     clearSelections: () -> Unit,
     selectAll: () -> Unit,
     onValueChange: (EditingState) -> Unit,
-    batchEditValidation: () -> Boolean,
+    enableSave: Boolean,
     batchEdit: () -> Unit,
     autoGenres: List<String>,
     autoCuts: List<String>,
@@ -330,7 +330,7 @@ fun BulkEditBody(
                                 isLargeScreen = true,
                                 editingState = editingState,
                                 onValueChange = onValueChange,
-                                batchEditValidation = batchEditValidation,
+                                enableSave = enableSave,
                                 batchEdit = batchEdit,
                                 autoGenres = autoGenres,
                                 autoCuts = autoCuts,
@@ -419,7 +419,7 @@ fun BulkEditBody(
                                         isLargeScreen = false,
                                         editingState = editingState,
                                         onValueChange = onValueChange,
-                                        batchEditValidation = batchEditValidation,
+                                        enableSave = enableSave,
                                         batchEdit = batchEdit,
                                         autoGenres = autoGenres,
                                         autoCuts = autoCuts,
@@ -457,8 +457,8 @@ fun BulkEditBody(
 @Composable
 fun BulkSelections(
     items: List<ItemsComponentsAndTins>,
-    selectedItems: List<ItemsComponentsAndTins>,
-    updateSelection: (ItemsComponentsAndTins) -> Unit,
+    selectedItems: Set<Int>,
+    updateSelection: (Int) -> Unit,
     clearSelections: () -> Unit,
     selectAll: () -> Unit,
     modifier: Modifier = Modifier,
@@ -517,11 +517,11 @@ fun BulkSelections(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(items, key = { it.items.id }) {
-                val selected = selectedItems.contains(it)
+                val selected = selectedItems.contains(it.items.id)
                 BulkSelectionsItem(
                     item = it.items,
                     selected = selected,
-                    onItemClick = { updateSelection(it) },
+                    onItemClick = { updateSelection(it.items.id) },
                 )
             }
             item(span = { GridItemSpan(2) }) {
@@ -538,7 +538,7 @@ fun BulkEditing(
     isLargeScreen: Boolean,
     editingState: EditingState,
     onValueChange: (EditingState) -> Unit,
-    batchEditValidation: () -> Boolean,
+    enableSave: Boolean,
     batchEdit: () -> Unit,
     autoGenres: List<String>,
     autoCuts: List<String>,
@@ -549,7 +549,6 @@ fun BulkEditing(
     fieldInteractionSource: MutableInteractionSource? = null,
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
-    val selectedItems = editingState.selectedItems
     var showRatingPop by rememberSaveable { mutableStateOf(false) }
 
     Column {
@@ -1338,7 +1337,7 @@ fun BulkEditing(
                 .padding(horizontal = 24.dp)
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally),
-            enabled = selectedItems.isNotEmpty() && batchEditValidation(),
+            enabled = enableSave,
             shape = MaterialTheme.shapes.small
         ) {
             Text(
