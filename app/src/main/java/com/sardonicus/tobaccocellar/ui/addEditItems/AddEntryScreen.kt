@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -104,17 +105,12 @@ fun AddEntryScreen(
                 currentLeftTab = { currentLeftTab },
                 updateSelectedTab = viewModel::updateSelectedTab,
                 itemUiState = viewModel.itemUiState,
-                componentUiState = viewModel.componentList,
-                flavoringUiState = viewModel.flavoringList,
-                tinDetailsList = viewModel.tinDetailsList,
+                autoComplete = viewModel.autoCompleteData,
                 tabErrorState = viewModel.tabErrorState,
-                syncedTins = viewModel.calculateSyncTins(),
-                existState = viewModel.existState,
+                existState = viewModel.existState.value,
                 resetExistState = viewModel::resetExistState,
                 onItemValueChange = viewModel::updateUiState,
                 onTinValueChange = viewModel::updateTinDetails,
-                onComponentChange = viewModel::updateComponentList,
-                onFlavoringChange = viewModel::updateFlavoringList,
                 addTin = viewModel::addTin,
                 removeTin = viewModel::removeTin,
                 showRatingPop = showRatingPop,
@@ -124,7 +120,7 @@ fun AddEntryScreen(
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
                             viewModel.checkItemExistsOnSave()
-                            if (!viewModel.existState.exists) {
+                            if (!viewModel.existState.value.exists) {
                                 viewModel.saveItem()
                                 navigateBack()
                             }
@@ -151,17 +147,12 @@ fun AddEntryBody(
     currentLeftTab: () -> Int,
     updateSelectedTab: (Int) -> Unit,
     itemUiState: ItemUiState,
-    componentUiState: ComponentList,
-    flavoringUiState: FlavoringList,
-    tinDetailsList: List<TinDetails>,
+    autoComplete: AutoCompleteData,
     tabErrorState: TabErrorState,
-    syncedTins: Int,
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
-    onComponentChange: (String) -> Unit,
-    onFlavoringChange: (String) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     showRatingPop: Boolean,
@@ -196,17 +187,12 @@ fun AddEntryBody(
             currentLeftTab = currentLeftTab,
             updateSelectedTab = updateSelectedTab,
             itemDetails = itemUiState.itemDetails,
-            itemUiState = itemUiState,
-            componentUiState = componentUiState,
-            flavoringUiState = flavoringUiState,
-            tinDetailsList = tinDetailsList,
+            tinDetailsList = itemUiState.itemDetails.tinDetailsList,
+            autoComplete = autoComplete,
             tabErrorState = tabErrorState,
-            syncedTins = syncedTins,
             onValueChange = onItemValueChange,
             onTinValueChange = onTinValueChange,
             isTinLabelValid = isTinLabelValid,
-            onComponentChange = onComponentChange,
-            onFlavoringChange = onFlavoringChange,
             addTin = addTin,
             removeTin = removeTin,
             showRatingPop = showRatingPop,

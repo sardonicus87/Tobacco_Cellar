@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
@@ -87,13 +88,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 @Composable
 fun DetailsEntry(
     itemDetails: ItemDetails,
-    itemUiState: ItemUiState,
-    syncedTins: Int,
+    autoComplete: AutoCompleteData,
     isEditEntry: Boolean,
-    componentList: ComponentList,
-    onComponentChange: (String) -> Unit,
-    flavoringList: FlavoringList,
-    onFlavoringChange: (String) -> Unit,
     onValueChange: (ItemDetails) -> Unit,
     showRatingPop: Boolean,
     onShowRatingPop: (Boolean) -> Unit,
@@ -122,15 +118,15 @@ fun DetailsEntry(
 
             AutoCompleteText(
                 value = itemDetails.brand,
-                allItems = itemUiState.autoBrands,
+                allItems = autoComplete.brands,
                 onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
                 onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
                 modifier = Modifier
                     .fillMaxWidth(),
                 placeholder = {
                     if (isEditEntry) {
-                        val text = if (itemDetails.originalBrand.isNotEmpty()) {
-                            "(" + itemDetails.originalBrand + ")" } else ""
+                        val text = if (itemDetails.originalItem.brand.isNotEmpty()) {
+                            "(" + itemDetails.originalItem.brand + ")" } else ""
                         Text(
                             text = text,
                             modifier = Modifier
@@ -193,8 +189,8 @@ fun DetailsEntry(
                 singleLine = true,
                 placeholder = {
                     if (isEditEntry) {
-                        val text = if (itemDetails.originalBlend.isNotEmpty()) {
-                            "(" + itemDetails.originalBlend + ")" } else ""
+                        val text = if (itemDetails.originalItem.blend.isNotEmpty()) {
+                            "(" + itemDetails.originalItem.blend + ")" } else ""
                         Text(
                             text = text,
                             modifier = Modifier
@@ -282,7 +278,7 @@ fun DetailsEntry(
             AutoCompleteText(
                 value = itemDetails.subGenre,
                 onValueChange = { onValueChange(itemDetails.copy(subGenre = it)) },
-                allItems = itemUiState.autoGenres,
+                allItems = autoComplete.subgenres,
                 onOptionSelected = { onValueChange(itemDetails.copy(subGenre = it)) },
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -328,7 +324,7 @@ fun DetailsEntry(
                 value = itemDetails.cut,
                 onValueChange = { onValueChange(itemDetails.copy(cut = it)) },
                 onOptionSelected = { onValueChange(itemDetails.copy(cut = it)) },
-                allItems = itemUiState.autoCuts,
+                allItems = autoComplete.cuts,
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
@@ -380,15 +376,15 @@ fun DetailsEntry(
             )
 
             AutoCompleteText(
-                value = componentList.componentString,
-                allItems = componentList.autoComps,
-                onValueChange = { onComponentChange(it) },
+                value = itemDetails.componentString,
+                allItems = autoComplete.components,
+                onValueChange = { onValueChange(itemDetails.copy(componentString = it)) },
                 componentField = true,
-                onOptionSelected = { onComponentChange(it) },
+                onOptionSelected = { onValueChange(itemDetails.copy(componentString = it)) },
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
-                    if (componentList.componentString.length > 4) {
+                    if (itemDetails.componentString.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
@@ -396,7 +392,7 @@ fun DetailsEntry(
                                 .clickable(
                                     indication = LocalIndication.current,
                                     interactionSource = null
-                                ) { onComponentChange("") }
+                                ) { onValueChange(itemDetails.copy(componentString = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -448,15 +444,15 @@ fun DetailsEntry(
             )
 
             AutoCompleteText(
-                value = flavoringList.flavoringString,
-                onValueChange = { onFlavoringChange(it) },
+                value = itemDetails.flavoringString,
+                onValueChange = { onValueChange(itemDetails.copy(flavoringString = it)) },
                 componentField = true,
-                onOptionSelected = { onFlavoringChange(it) },
-                allItems = flavoringList.autoFlavors,
+                onOptionSelected = { onValueChange(itemDetails.copy(flavoringString = it)) },
+                allItems = autoComplete.flavorings,
                 modifier = Modifier
                     .fillMaxWidth(),
                 trailingIcon = {
-                    if (flavoringList.flavoringString.length > 4) {
+                    if (itemDetails.flavoringString.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
@@ -464,7 +460,7 @@ fun DetailsEntry(
                                 .clickable(
                                     indication = LocalIndication.current,
                                     interactionSource = null
-                                ) { onFlavoringChange("") }
+                                ) { onValueChange(itemDetails.copy(flavoringString = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -527,9 +523,7 @@ fun DetailsEntry(
                 val pattern = remember { Regex("^(\\s*|\\d+)$") }
 
                 TextField(
-                    value =
-                        if (itemDetails.syncTins) syncedTins.toString()
-                        else itemDetails.quantityString,
+                    value = itemDetails.quantityString,
                     onValueChange = {
                         if (!itemDetails.syncTins) {
                             if (it.matches(pattern) && it.length <= 2) {

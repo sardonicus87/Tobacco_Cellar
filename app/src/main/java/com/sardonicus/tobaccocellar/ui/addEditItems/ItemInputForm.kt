@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -62,19 +63,14 @@ fun ItemInputForm(
     currentLeftTab: () -> Int,
     updateSelectedTab: (Int) -> Unit,
     itemDetails: ItemDetails,
-    itemUiState: ItemUiState,
-    componentUiState: ComponentList,
-    flavoringUiState: FlavoringList,
     tinDetailsList: List<TinDetails>,
+    autoComplete: AutoCompleteData,
     tabErrorState: TabErrorState,
-    syncedTins: Int,
     isEditEntry: Boolean,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     onValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
-    onComponentChange: (String) -> Unit,
-    onFlavoringChange: (String) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     showRatingPop: Boolean,
@@ -175,14 +171,9 @@ fun ItemInputForm(
                             if (targetIndex == 0) {
                                 DetailsEntry(
                                     itemDetails = itemDetails,
-                                    itemUiState = itemUiState,
-                                    syncedTins = syncedTins,
+                                    autoComplete = autoComplete,
                                     isEditEntry = isEditEntry,
                                     onValueChange = onValueChange,
-                                    componentList = componentUiState,
-                                    onComponentChange = onComponentChange,
-                                    flavoringList = flavoringUiState,
-                                    onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
                                     fieldInteractionSource = fieldInteractionSource,
@@ -241,7 +232,7 @@ fun ItemInputForm(
                             isTinLabelValid = isTinLabelValid,
                             addTin = addTin,
                             removeTin = removeTin,
-                            itemUiState = itemUiState,
+                            autoComplete = autoComplete,
                             validateDates = validateDates,
                             modifier = Modifier
                         )
@@ -277,14 +268,9 @@ fun ItemInputForm(
                             0 ->
                                 DetailsEntry(
                                     itemDetails = itemDetails,
-                                    itemUiState = itemUiState,
-                                    syncedTins = syncedTins,
+                                    autoComplete = autoComplete,
                                     isEditEntry = isEditEntry,
                                     onValueChange = onValueChange,
-                                    componentList = componentUiState,
-                                    onComponentChange = onComponentChange,
-                                    flavoringList = flavoringUiState,
-                                    onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
                                     fieldInteractionSource = fieldInteractionSource,
@@ -306,7 +292,7 @@ fun ItemInputForm(
                                     isTinLabelValid = isTinLabelValid,
                                     addTin = addTin,
                                     removeTin = removeTin,
-                                    itemUiState = itemUiState,
+                                    autoComplete = autoComplete,
                                     validateDates = validateDates,
                                     fieldInteractionSource = fieldInteractionSource,
                                     modifier = Modifier
@@ -315,14 +301,9 @@ fun ItemInputForm(
                             else ->
                                 DetailsEntry(
                                     itemDetails = itemDetails,
-                                    itemUiState = itemUiState,
-                                    syncedTins = syncedTins,
+                                    autoComplete = autoComplete,
                                     isEditEntry = isEditEntry,
                                     onValueChange = onValueChange,
-                                    componentList = componentUiState,
-                                    onComponentChange = onComponentChange,
-                                    flavoringList = flavoringUiState,
-                                    onFlavoringChange = onFlavoringChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = onShowRatingPop,
                                     fieldInteractionSource = fieldInteractionSource,

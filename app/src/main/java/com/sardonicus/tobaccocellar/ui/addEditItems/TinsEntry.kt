@@ -77,6 +77,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.CustomDropDown
@@ -101,7 +102,7 @@ fun TinsEntry(
     tinDetailsList: List<TinDetails>,
     onTinValueChange: (TinDetails) -> Unit,
     isTinLabelValid: (String, Int) -> Boolean,
-    itemUiState: ItemUiState,
+    autoComplete: AutoCompleteData,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
@@ -144,7 +145,7 @@ fun TinsEntry(
                     showError = tinDetails.labelIsNotValid,
                     isTinLabelValid = isTinLabelValid,
                     removeTin = { removeTin(index) },
-                    itemUiState = itemUiState,
+                    autoComplete = autoComplete,
                     validateDates = validateDates,
                     fieldInteractionSource = fieldInteractionSource,
                     modifier = Modifier
@@ -182,7 +183,7 @@ private fun IndividualTin(
     isTinLabelValid: (String, Int) -> Boolean,
     showError: Boolean,
     removeTin: () -> Unit,
-    itemUiState: ItemUiState,
+    autoComplete: AutoCompleteData,
     validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     fieldInteractionSource: MutableInteractionSource?,
     modifier: Modifier = Modifier
@@ -370,7 +371,7 @@ private fun IndividualTin(
                         value = tinDetails.container,
                         onValueChange = { onTinValueChange(tinDetails.copy(container = it)) },
                         onOptionSelected = { onTinValueChange(tinDetails.copy(container = it)) },
-                        allItems = itemUiState.autoContainers,
+                        allItems = autoComplete.tinContainers,
                         modifier = Modifier
                             .fillMaxWidth(),
                         trailingIcon = {
@@ -960,9 +961,7 @@ private fun IndividualTin(
                     ) {
                         val disabled = tinDetails.openDate != null && tinDetails.openDate > System.currentTimeMillis()
                         LaunchedEffect(disabled) {
-                            if (disabled) {
-                                onTinValueChange(tinDetails.copy(finished = false))
-                            }
+                            if (disabled) { onTinValueChange(tinDetails.copy(finished = false)) }
                         }
 
                         Text(
@@ -974,9 +973,7 @@ private fun IndividualTin(
                         )
                         CustomCheckbox(
                             checked = tinDetails.finished,
-                            onCheckedChange = {
-                                onTinValueChange(tinDetails.copy(finished = it))
-                            },
+                            onCheckedChange = { onTinValueChange(tinDetails.copy(finished = it)) },
                             size = 22.dp,
                             checkedIcon = R.drawable.check_box_24,
                             uncheckedIcon = R.drawable.check_box_outline_24,

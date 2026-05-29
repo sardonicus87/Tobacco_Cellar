@@ -54,8 +54,8 @@ fun EditEntryScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEvents.collect { event ->
             when (event) {
-                is EditUiEvent.NavigateBack -> navigateBack()
-                is EditUiEvent.ShowMessage -> {
+                is ItemNotFoundEvent.NavigateBack -> navigateBack()
+                is ItemNotFoundEvent.ShowMessage -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -100,16 +100,11 @@ fun EditEntryScreen(
                     currentLeftTab = { currentLeftTab },
                     updateSelectedTab = viewModel::updateSelectedTab,
                     itemUiState = viewModel.itemUiState,
-                    componentUiState = viewModel.componentList,
-                    flavoringUiState = viewModel.flavoringList,
-                    tinDetailsList = viewModel.tinDetailsList,
+                    autoComplete = viewModel.autoCompleteData,
                     tabErrorState = viewModel.tabErrorState,
-                    syncedTins = viewModel.calculateSyncTins(),
                     existState = ExistState(),
                     onItemValueChange = viewModel::updateUiState,
                     onTinValueChange = viewModel::updateTinDetails,
-                    onComponentChange = viewModel::updateComponentList,
-                    onFlavoringChange = viewModel::updateFlavoringList,
                     addTin = viewModel::addTin,
                     removeTin = viewModel::removeTin,
                     showRatingPop = showRatingPop,
@@ -119,7 +114,7 @@ fun EditEntryScreen(
                         coroutineScope.launch {
                             withContext(Dispatchers.Main) {
                                 viewModel.checkItemExistsOnUpdate()
-                                if (!viewModel.existState.exists) {
+                                if (!viewModel.existState.value.exists) {
                                     viewModel.updateItem()
                                     navigateBack()
                                 }
@@ -133,19 +128,20 @@ fun EditEntryScreen(
                         }
                     },
                     isEditEntry = true,
-                    validateDates = viewModel::validateDates,
+                    validateDates = { manu, cellar, open ->
+                        validateDates(manu, cellar, open) },
                     modifier = Modifier
                         .padding(0.dp)
                         .fillMaxSize()
                 )
-                if (viewModel.loading) {
+                if (viewModel.loading.value) {
                     LoadingIndicator(
                         scrimColor = Color.Black.copy(alpha = 0.33f),
                     )
                 }
             }
 
-            if (viewModel.existState.existCheck) {
+            if (viewModel.existState.value.existCheck) {
                 ItemExistsEditDialog(
                     onItemExistsConfirm = {
                         viewModel.resetExistState()
