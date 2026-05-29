@@ -8,12 +8,12 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperation
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperationDao
-import kotlin.jvm.java
 
-val MIGRATION_1_2 = object : Migration(1, 2) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
+val allMigrations = arrayOf(
+    object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
                 CREATE TABLE IF NOT EXISTS 'tins' (
                     'tinId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     'itemsId' INTEGER NOT NULL,
@@ -28,31 +28,31 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                     ON UPDATE NO ACTION ON DELETE CASCADE
                 )
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE UNIQUE INDEX IF NOT EXISTS
                 'index_tins_itemsId_tinLabel'
                 ON 'tins' ('itemsId', 'tinLabel')
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE TABLE IF NOT EXISTS 'components' (
                     'componentId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     'componentName' TEXT NOT NULL DEFAULT ''
                 )
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE UNIQUE INDEX IF NOT EXISTS
                 'index_components_componentName'
                 ON 'components' ('componentName')
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE TABLE IF NOT EXISTS 'items_components_cross_ref' (
                     'itemId' INTEGER NOT NULL,
                     'componentId' INTEGER NOT NULL,
@@ -63,38 +63,38 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                     ON UPDATE NO ACTION ON DELETE CASCADE
                 )
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE INDEX IF NOT EXISTS
                 'index_items_components_cross_ref_componentId'
                 ON 'items_components_cross_ref' ('componentId')
             """
-        )
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'subGenre' TEXT NOT NULL DEFAULT ''")
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'cut' TEXT NOT NULL DEFAULT ''")
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'inProduction' INTEGER NOT NULL DEFAULT 1")
-    }
-}
-val MIGRATION_2_3 = object : Migration(2, 3) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
+            )
+            db.execSQL("ALTER TABLE 'items' ADD COLUMN 'subGenre' TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE 'items' ADD COLUMN 'cut' TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE 'items' ADD COLUMN 'inProduction' INTEGER NOT NULL DEFAULT 1")
+        }
+    },
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
                 CREATE TABLE IF NOT EXISTS 'flavoring' (
                     'flavoringId' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     'flavoringName' TEXT NOT NULL DEFAULT ''
                 )
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE UNIQUE INDEX IF NOT EXISTS
                 'index_flavoring_flavoringName'
                 ON 'flavoring' ('flavoringName')
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE TABLE IF NOT EXISTS 'items_flavoring_cross_ref' (
                     'itemId' INTEGER NOT NULL,
                     'flavoringId' INTEGER NOT NULL,
@@ -105,31 +105,31 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
                     ON UPDATE NO ACTION ON DELETE CASCADE
                 )
             """
-        )
-        db.execSQL(
-            """
+            )
+            db.execSQL(
+                """
                 CREATE INDEX IF NOT EXISTS
                 'index_items_flavoring_cross_ref_flavoringId'
                 ON 'items_flavoring_cross_ref' ('flavoringId')
             """
-        )
-        db.execSQL("ALTER TABLE 'tins' ADD COLUMN 'finished' INTEGER NOT NULL DEFAULT 0")
-    }
-}
-val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'rating' REAL")
-    }
-}
-val MIGRATION_4_5 = object : Migration(4, 5) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'syncTins' INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE 'items' ADD COLUMN 'lastModified' INTEGER NOT NULL DEFAULT 0")
+            )
+            db.execSQL("ALTER TABLE 'tins' ADD COLUMN 'finished' INTEGER NOT NULL DEFAULT 0")
+        }
+    },
+    object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE 'items' ADD COLUMN 'rating' REAL")
+        }
+    },
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE 'items' ADD COLUMN 'syncTins' INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE 'items' ADD COLUMN 'lastModified' INTEGER NOT NULL DEFAULT 0")
 
-        db.execSQL("ALTER TABLE 'tins' ADD COLUMN 'lastModified' INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE 'tins' ADD COLUMN 'lastModified' INTEGER NOT NULL DEFAULT 0")
 
-        db.execSQL(
-            """
+            db.execSQL(
+                """
                 CREATE TABLE IF NOT EXISTS 'pending_sync_operations' (
                     'id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     'operationType' TEXT NOT NULL,
@@ -140,15 +140,16 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
                     'dbVersion' INTEGER NOT NULL DEFAULT 0
                 )
             """
-        )
+            )
+        }
+    },
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE INDEX IF NOT EXISTS 'index_pending_sync_operations_timestamp' ON 'pending_sync_operations' ('timestamp')")
+            db.execSQL("CREATE INDEX IF NOT EXISTS 'index_tins_itemsId' ON 'tins' ('itemsId')")
+        }
     }
-}
-val MIGRATION_5_6 = object : Migration(5, 6) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("CREATE INDEX IF NOT EXISTS 'index_pending_sync_operations_timestamp' ON 'pending_sync_operations' ('timestamp')")
-        db.execSQL("CREATE INDEX IF NOT EXISTS 'index_tins_itemsId' ON 'tins' ('itemsId')")
-    }
-}
+)
 
 @Database(
     entities = [
@@ -175,11 +176,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
         fun getDatabase(context: Context): TobaccoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TobaccoDatabase::class.java, "tobacco_database")
-                    .addMigrations(MIGRATION_1_2)
-                    .addMigrations(MIGRATION_2_3)
-                    .addMigrations(MIGRATION_3_4)
-                    .addMigrations(MIGRATION_4_5)
-                    .addMigrations(MIGRATION_5_6)
+                    .addMigrations(*allMigrations)
                     .build()
                     .also { Instance = it }
             }
