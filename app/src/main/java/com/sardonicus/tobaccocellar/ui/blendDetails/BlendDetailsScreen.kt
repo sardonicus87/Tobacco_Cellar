@@ -162,7 +162,7 @@ fun BlendDetailsScreen(
                 androidx.compose.animation.AnimatedVisibility(
                     visible = !composed,
                     enter = EnterTransition.None,
-                    exit = fadeOut(tween(500)),
+                    exit = fadeOut(tween(250)),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
