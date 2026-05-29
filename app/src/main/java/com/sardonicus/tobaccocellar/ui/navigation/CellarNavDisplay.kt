@@ -182,7 +182,7 @@ fun CellarNavigation(
                         initializer {
                             BlendDetailsViewModel(
                                 itemsId = key.itemsId,
-                                itemsRepository = itemsRepository,
+                                filterViewModel = filterViewModel,
                                 preferencesRepo = preferencesRepo
                             )
                         }

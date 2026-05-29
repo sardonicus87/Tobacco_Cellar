@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +39,7 @@ import java.util.Locale
 
 class BlendDetailsViewModel(
     itemsId: Int,
-    itemsRepository: ItemsRepository,
+    filterViewModel: FilterViewModel,
     preferencesRepo: PreferencesRepo
 ) : ViewModel() {
     private val _selectionKey = MutableStateFlow(0)
@@ -59,10 +59,10 @@ class BlendDetailsViewModel(
 
 
     val blendDetails: StateFlow<BlendDetails> = combine(
-        itemsRepository.getItemDetailsStream(itemsId),
+        filterViewModel.everythingFlow,
         preferencesRepo.quantityOption,
         preferencesRepo.parseLinks
-    ) { item, quantityOption, parseLinks ->
+    ) { allItems, quantityOption, parseLinks ->
         val isMetric = isMetricLocale()
         val quantityRemap = when (quantityOption) {
             QuantityOption.TINS -> if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
@@ -70,6 +70,8 @@ class BlendDetailsViewModel(
         }
 
         _parseLinks.value = parseLinks
+
+        val item = allItems.first { it.items.id == itemsId }
 
         BlendDetails(
             id = item.items.id,
