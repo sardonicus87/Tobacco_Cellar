@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -20,14 +19,10 @@ import androidx.work.WorkManager
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
-import com.sardonicus.tobaccocellar.data.MIGRATION_1_2
-import com.sardonicus.tobaccocellar.data.MIGRATION_2_3
-import com.sardonicus.tobaccocellar.data.MIGRATION_3_4
-import com.sardonicus.tobaccocellar.data.MIGRATION_4_5
-import com.sardonicus.tobaccocellar.data.MIGRATION_5_6
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.data.allMigrations
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
@@ -973,13 +968,12 @@ class SettingsViewModel(
             } else if (backupDbVersion < existingDbVersion) {
                 tempMigrationDir = File(context.cacheDir, "temp_migration_dir")
                 tempMigrationDir.mkdirs()
-                val migrations = getMigrations()
 
                 tempZipFile.writeBytes(databaseBytes)
                 unzipFile(tempZipFile, tempMigrationDir)
 
                 val unzippedDb = File(tempMigrationDir, "tobacco_database")
-                val migratedDb = buildAndMigrateDb(context, unzippedDb, migrations)
+                val migratedDb = buildAndMigrateDb(context, unzippedDb)
 
                 copyMigratedDb(migratedDb, dbFile, walFile, shmFile)
                 migratedDb.close()
@@ -1004,17 +998,7 @@ class SettingsViewModel(
         }
     }
 
-    private fun getMigrations(): List<Migration> {
-        val migrations = mutableListOf<Migration>()
-        migrations.add(MIGRATION_1_2)
-        migrations.add(MIGRATION_2_3)
-        migrations.add(MIGRATION_3_4)
-        migrations.add(MIGRATION_4_5)
-        migrations.add(MIGRATION_5_6)
-        return migrations
-    }
-
-    private fun buildAndMigrateDb(context: Context, unzippedDb: File, migrations: List<Migration>): RoomDatabase {
+    private fun buildAndMigrateDb(context: Context, unzippedDb: File): RoomDatabase {
         return try {
             Room.databaseBuilder(
                 context.applicationContext,
@@ -1022,7 +1006,7 @@ class SettingsViewModel(
                 unzippedDb.absolutePath
             )
                 .createFromFile(unzippedDb)
-                .addMigrations(*migrations.toTypedArray())
+                .addMigrations(*allMigrations)
                 .build()
                 .apply { openHelper.writableDatabase }
         } catch (e: Exception) {
