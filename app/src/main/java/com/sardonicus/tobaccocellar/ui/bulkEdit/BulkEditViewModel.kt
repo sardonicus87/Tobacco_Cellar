@@ -273,7 +273,7 @@ data class BulkEditUiState(
 )
 
 data class EditingState(
-    val selectedItems: Set<Int> = emptySet(), // List<ItemsComponentsAndTins> = listOf()
+    val selectedItems: Set<Int> = emptySet(),
     val id: Int = 0,
 
     val typeSelected: Boolean = false,
@@ -286,18 +286,18 @@ data class EditingState(
     val productionSelected: Boolean = false,
     val syncTinsSelected: Boolean = false,
 
-    var type: String = "",
-    var rating: Double? = null,
-    var disliked: Boolean = false,
-    var favorite: Boolean = false,
-    var subGenre: String = "",
-    var cut: String = "",
-    var compsString: String = "",
-    var components: List<Components> = listOf(),
-    var compsAdd: Boolean = true,
-    var flavorString: String = "",
-    var flavoring: List<Flavoring> = listOf(),
-    var flavorAdd: Boolean = true,
-    var inProduction: Boolean = true,
-    var syncTins: Boolean = false,
+    val type: String = "",
+    val rating: Double? = null,
+    val disliked: Boolean = false,
+    val favorite: Boolean = false,
+    val subGenre: String = "",
+    val cut: String = "",
+    val compsString: String = "",
+    val components: List<Components> = listOf(),
+    val compsAdd: Boolean = true,
+    val flavorString: String = "",
+    val flavoring: List<Flavoring> = listOf(),
+    val flavorAdd: Boolean = true,
+    val inProduction: Boolean = true,
+    val syncTins: Boolean = false,
 )
