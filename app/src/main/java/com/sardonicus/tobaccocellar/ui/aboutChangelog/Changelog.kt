@@ -14,13 +14,23 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 49,
+        versionNumber = "5.2.6",
+        buildDate = "30 May, 2026",
+        improvements = listOf(
+            "Continuing performance and stability improvements, mainly with regards to the Multi-" +
+                    "Device Sync feature, as well as several more memory and stability improvements."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 48,
         versionNumber = "5.2.5",
         buildDate = "21 May, 2026",
         improvements = listOf(
             "Multiple background work and memory management improvements.",
             "Big performance and stability improvements (particularly related to startup time " +
-                    "filtering, and memory overhead).",
+                    "filtering, Stats screen, and memory overhead).",
             "Minor UI tweaks."
         ),
         bugFixes = listOf(

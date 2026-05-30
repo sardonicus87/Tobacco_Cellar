@@ -21,8 +21,8 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 37
-            versionCode = 48
-            versionName = "5.2.5"
+            versionCode = 49
+            versionName = "5.2.6"
 
             vectorDrawables {
                 useSupportLibrary = true
@@ -75,73 +75,6 @@ kotlin {
         namespace = "com.sardonicus.tobaccocellar"
     }
 }
-
-//android {
-//    compileSdk = 36
-//
-//    defaultConfig {
-//        applicationId = "com.sardonicus.tobaccocellar"
-//        minSdk = 26
-//        targetSdk = 36
-//        versionCode = 38
-//        versionName = "5.0.0"
-//
-//        vectorDrawables {
-//            useSupportLibrary = true
-//        }
-//    }
-//
-////    sourceSets.all {
-////        val variantName = name
-////        kotlin.directories += "generated/ksp/$variantName/kotlin"
-////        java.directories += "generated/ksp/$variantName/java"
-////    }
-//
-//    sourceSets.all {
-//        val variantName = name
-//        kotlin.directories.add(layout.buildDirectory.dir("generated/ksp/$variantName/kotlin").get().asFile.absolutePath)
-//        java.directories.add(layout.buildDirectory.dir("generated/ksp/$variantName/java").get().asFile.absolutePath)
-//    }
-//
-//    buildTypes {
-//        release {
-//            isMinifyEnabled = true
-//            isShrinkResources = true
-//
-//            proguardFiles(
-//                getDefaultProguardFile("proguard-android-optimize.txt"),
-//                "proguard-rules.pro"
-//            )
-//
-//            signingConfig = signingConfigs.getByName("debug")
-//
-//            ndk {
-//                debugSymbolLevel = "SYMBOL_TABLE"
-//            }
-//        }
-//    }
-//
-//    compileOptions {
-//        sourceCompatibility = JavaVersion.VERSION_21
-//        targetCompatibility = JavaVersion.VERSION_21
-//    }
-//
-//    buildFeatures {
-//        compose = true
-//        buildConfig = true
-//        resValues = true
-//    }
-//
-//    packaging {
-//        resources {
-//            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-//            excludes += "/META-INF/INDEX.LIST"
-//            excludes += "/META-INF/DEPENDENCIES"
-//        }
-//    }
-//
-//    namespace = "com.sardonicus.tobaccocellar"
-//}
 
 dependencies {
 
