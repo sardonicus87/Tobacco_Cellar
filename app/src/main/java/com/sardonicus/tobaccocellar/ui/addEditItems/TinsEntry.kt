@@ -101,11 +101,9 @@ import java.util.Locale
 fun TinsEntry(
     tinDetailsList: List<TinDetails>,
     onTinValueChange: (TinDetails) -> Unit,
-    isTinLabelValid: (String, Int) -> Boolean,
     autoComplete: AutoCompleteData,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
-    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier,
     fieldInteractionSource: MutableInteractionSource? = null
 ) {
@@ -142,11 +140,9 @@ fun TinsEntry(
                     tinDetailsList = tinDetailsList,
                     tempTinId = tinDetails.tempTinId,
                     onTinValueChange = onTinValueChange,
-                    showError = tinDetails.labelIsNotValid,
-                    isTinLabelValid = isTinLabelValid,
+                    showError = !tinDetails.labelIsValid,
                     removeTin = { removeTin(index) },
                     autoComplete = autoComplete,
-                    validateDates = validateDates,
                     fieldInteractionSource = fieldInteractionSource,
                     modifier = Modifier
                         .padding(bottom = 4.dp)
@@ -180,18 +176,16 @@ private fun IndividualTin(
     tinDetailsList: List<TinDetails>,
     tempTinId: Int,
     onTinValueChange: (TinDetails) -> Unit,
-    isTinLabelValid: (String, Int) -> Boolean,
     showError: Boolean,
     removeTin: () -> Unit,
     autoComplete: AutoCompleteData,
-    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     fieldInteractionSource: MutableInteractionSource?,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect (tinDetailsList) {
         onTinValueChange(
             tinDetails.copy(
-                labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tempTinId)
+                labelIsValid = isTinLabelValid(tinDetailsList, tinDetails.tinLabel, tempTinId)
             )
         )
     }

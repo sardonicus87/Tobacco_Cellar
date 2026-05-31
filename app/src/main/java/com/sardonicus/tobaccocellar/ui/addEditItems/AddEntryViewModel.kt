@@ -83,9 +83,9 @@ class AddEntryViewModel(
     fun updateTinDetails(tinDetails: TinDetails) {
         val newList = itemUiState.itemDetails.tinDetailsList.map {
             if (it.tempTinId == tinDetails.tempTinId) {
-                tinDetails.copy(labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tinDetails.tempTinId))
+                tinDetails.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, tinDetails.tinLabel, tinDetails.tempTinId))
             } else {
-                it.copy(labelIsNotValid = isTinLabelValid(it.tinLabel, it.tempTinId))
+                it.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, it.tinLabel, it.tempTinId))
             }
         }
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
@@ -112,11 +112,6 @@ class AddEntryViewModel(
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
     }
 
-    fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
-        val check = itemUiState.itemDetails.tinDetailsList.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
-        return !check
-    }
-
 
     /** check if Item already exists, display optional dialog if so **/
     val existState = mutableStateOf(ExistState())
@@ -130,15 +125,13 @@ class AddEntryViewModel(
             existState.value =
                 ExistState(
                     exists = true,
-                    transferId = transferId!!,
-                    existCheck = true
+                    transferId = transferId!!
                 )
         } else {
             existState.value =
                 ExistState(
                     exists = false,
-                    transferId = 0,
-                    existCheck = false,
+                    transferId = 0
                 )
         }
     }
@@ -147,8 +140,7 @@ class AddEntryViewModel(
         existState.value =
             ExistState(
                 exists = false,
-                transferId = 0,
-                existCheck = false,
+                transferId = 0
             )
     }
 

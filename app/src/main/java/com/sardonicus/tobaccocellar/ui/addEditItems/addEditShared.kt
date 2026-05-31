@@ -64,6 +64,11 @@ private fun normalizeDate(millis: Long?): Long? {
 }
 
 
+fun isTinLabelValid(tins: List<TinDetails>, tinLabel: String, tempTinId: Int): Boolean {
+    return tins.filter { it.tempTinId != tempTinId && it.tinLabel.isNotBlank() }.none { it.tinLabel == tinLabel }
+}
+
+
 fun calculateSyncTins(
     tinDetails: List<TinDetails>,
     conversion: TinConversion
@@ -145,7 +150,7 @@ data class TinDetails(
     val cellarDateLong: String = "",
     val openDateLong: String = "",
     val detailsExpanded: Boolean = true,
-    val labelIsNotValid: Boolean = false,
+    val labelIsValid: Boolean = false,
 )
 
 data class OriginalTin(
@@ -176,8 +181,7 @@ data class TabErrorState(
 
 data class ExistState(
     val exists: Boolean = false,
-    val transferId: Int = 0,
-    val existCheck: Boolean = false,
+    val transferId: Int = 0
 )
 
 /** Extension converter functions **/

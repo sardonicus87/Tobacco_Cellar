@@ -115,7 +115,6 @@ fun AddEntryScreen(
                 removeTin = viewModel::removeTin,
                 showRatingPop = showRatingPop,
                 onShowRatingPop = viewModel::onShowRatingPop,
-                isTinLabelValid = viewModel::isTinLabelValid,
                 onSaveClick = {
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
@@ -129,7 +128,6 @@ fun AddEntryScreen(
                 },
                 onDeleteClick = { },
                 isEditEntry = false,
-                validateDates = { _, _, _ -> Triple(true, true, true) },
                 navigateToEditEntry = navigateToEditEntry,
                 modifier = modifier
                     .padding(0.dp)
@@ -152,7 +150,6 @@ fun AddEntryBody(
     existState: ExistState,
     onItemValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
-    isTinLabelValid: (String, Int) -> Boolean,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     showRatingPop: Boolean,
@@ -160,7 +157,6 @@ fun AddEntryBody(
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
-    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     modifier: Modifier = Modifier,
     navigateToEditEntry: (Int) -> Unit = {},
     resetExistState: () -> Unit = {}
@@ -192,13 +188,11 @@ fun AddEntryBody(
             tabErrorState = tabErrorState,
             onValueChange = onItemValueChange,
             onTinValueChange = onTinValueChange,
-            isTinLabelValid = isTinLabelValid,
             addTin = addTin,
             removeTin = removeTin,
             showRatingPop = showRatingPop,
             onShowRatingPop = onShowRatingPop,
             isEditEntry = isEditEntry,
-            validateDates = validateDates,
             modifier = Modifier
                 .weight(1f)
         )
@@ -253,7 +247,7 @@ fun AddEntryBody(
         }
     }
 
-    if (existState.existCheck) {
+    if (existState.exists) {
         ItemExistsDialog(
             onItemExistsConfirm = {
                 resetExistState()
@@ -303,7 +297,8 @@ fun ItemExistsEditDialog(
         title = { Text(stringResource(R.string.attention)) },
         text = {
             Text(
-                text = "An entry already exists with this combination of Brand and Blend—the combination of Brand and Blend must be unique for each entry.",
+                text = "An entry already exists with this combination of Brand and Blend (the " +
+                        "combination of Brand and Blend must be unique for each entry).",
                 softWrap = true,
             )
         },

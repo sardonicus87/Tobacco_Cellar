@@ -109,7 +109,6 @@ fun EditEntryScreen(
                     removeTin = viewModel::removeTin,
                     showRatingPop = showRatingPop,
                     onShowRatingPop = viewModel::onShowRatingPop,
-                    isTinLabelValid = viewModel::isTinLabelValid,
                     onSaveClick = {
                         coroutineScope.launch {
                             withContext(Dispatchers.Main) {
@@ -128,8 +127,6 @@ fun EditEntryScreen(
                         }
                     },
                     isEditEntry = true,
-                    validateDates = { manu, cellar, open ->
-                        validateDates(manu, cellar, open) },
                     modifier = Modifier
                         .padding(0.dp)
                         .fillMaxSize()
@@ -141,7 +138,7 @@ fun EditEntryScreen(
                 }
             }
 
-            if (viewModel.existState.value.existCheck) {
+            if (viewModel.existState.value.exists) {
                 ItemExistsEditDialog(
                     onItemExistsConfirm = {
                         viewModel.resetExistState()

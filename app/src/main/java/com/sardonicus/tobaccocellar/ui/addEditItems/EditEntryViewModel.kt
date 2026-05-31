@@ -50,9 +50,8 @@ class EditEntryViewModel(
 
     fun updateSelectedTab(index: Int) {
         _selectedTabIndex.value = index
-        if (index < 2) {
-            _currentLeftTab.value = index
-        }
+        if (index < 2) _currentLeftTab.value = index
+
         updateUiState(itemUiState.itemDetails)
     }
 
@@ -167,9 +166,9 @@ class EditEntryViewModel(
     fun updateTinDetails(tinDetails: TinDetails) {
         val newList = itemUiState.itemDetails.tinDetailsList.map {
             if (it.tempTinId == tinDetails.tempTinId) {
-                tinDetails.copy(labelIsNotValid = isTinLabelValid(tinDetails.tinLabel, tinDetails.tempTinId))
+                tinDetails.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, tinDetails.tinLabel, tinDetails.tempTinId))
             } else {
-                it.copy(labelIsNotValid = isTinLabelValid(it.tinLabel, it.tempTinId))
+                it.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, it.tinLabel, it.tempTinId))
             }
         }
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
@@ -192,7 +191,6 @@ class EditEntryViewModel(
         }
         val newTin = TinDetails(tempTinId = newTempId, tinLabel = "")
 
-       // tinDetailsList = tinDetailsList + newTin
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = tinDetailsList + newTin))
     }
 
@@ -201,38 +199,29 @@ class EditEntryViewModel(
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
     }
 
-    fun isTinLabelValid(tinLabel: String, tempTinId: Int): Boolean {
-        val check = itemUiState.itemDetails.tinDetailsList.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
-        return !check
-    }
-
 
     /** check if Item already exists, display optional dialog if so **/
     val existState = mutableStateOf(ExistState())
 
     suspend fun checkItemExistsOnUpdate() {
         val currentItem = itemUiState.itemDetails
-
         if (currentItem.brand == originalItem.value.brand && currentItem.blend == originalItem.value.blend) {
             existState.value =
                 ExistState(
                     exists = false,
-                    transferId = 0,
-                    existCheck = false,
+                    transferId = 0
                 )
         } else {
             val existCheck = itemsRepository.exists(currentItem.brand, currentItem.blend)
             existState.value = if (existCheck) {
                 ExistState(
                     exists = true,
-                    transferId = 0,
-                    existCheck = true
+                    transferId = 0
                 )
             } else {
                 ExistState(
                     exists = false,
-                    transferId = 0,
-                    existCheck = false,
+                    transferId = 0
                 )
             }
         }
@@ -242,8 +231,7 @@ class EditEntryViewModel(
         existState.value =
             ExistState(
                 exists = false,
-                transferId = 0,
-                existCheck = false,
+                transferId = 0
             )
     }
 

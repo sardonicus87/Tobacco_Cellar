@@ -67,10 +67,8 @@ fun ItemInputForm(
     autoComplete: AutoCompleteData,
     tabErrorState: TabErrorState,
     isEditEntry: Boolean,
-    validateDates: (Long?, Long?, Long?) -> Triple<Boolean, Boolean, Boolean>,
     onValueChange: (ItemDetails) -> Unit,
     onTinValueChange: (TinDetails) -> Unit,
-    isTinLabelValid: (String, Int) -> Boolean,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
     showRatingPop: Boolean,
@@ -229,11 +227,9 @@ fun ItemInputForm(
                         TinsEntry(
                             tinDetailsList = tinDetailsList,
                             onTinValueChange = onTinValueChange,
-                            isTinLabelValid = isTinLabelValid,
                             addTin = addTin,
                             removeTin = removeTin,
                             autoComplete = autoComplete,
-                            validateDates = validateDates,
                             modifier = Modifier
                         )
                         Spacer(Modifier.weight(1f))
@@ -289,11 +285,9 @@ fun ItemInputForm(
                                 TinsEntry(
                                     tinDetailsList = tinDetailsList,
                                     onTinValueChange = onTinValueChange,
-                                    isTinLabelValid = isTinLabelValid,
                                     addTin = addTin,
                                     removeTin = removeTin,
                                     autoComplete = autoComplete,
-                                    validateDates = validateDates,
                                     fieldInteractionSource = fieldInteractionSource,
                                     modifier = Modifier
                                 )
