@@ -296,11 +296,7 @@ class HomeViewModel(
             initialValue = 0
         )
 
-    val viewSelect = isTableView.map {
-        ViewSelect(
-            isTableView = it,
-        )
-    }
+    val viewSelect = isTableView.map { ViewSelect(isTableView = it) }
         .distinctUntilChanged()
         .flowOn(Dispatchers.Default)
         .stateIn(
@@ -621,9 +617,7 @@ class HomeViewModel(
     }
 
     fun saveAlertSeen(alertId: Int) {
-        viewModelScope.launch(Dispatchers.Default) {
-            preferencesRepo.saveAlertShown(alertId)
-        }
+        viewModelScope.launch(Dispatchers.Default) { preferencesRepo.saveAlertShown(alertId) }
     }
 
 
@@ -649,7 +643,6 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = QuickEditItem()
         )
-
 
 
     private var dismissJob: Job? = null
@@ -887,9 +880,7 @@ class HomeViewModel(
         val newListSorting =
             if (currentSorting.option == value) {
                 ListSorting(value, !currentSorting.listAscending)
-            } else {
-                ListSorting(value)
-            }
+            } else { ListSorting(value) }
 
         _listSorting.value = newListSorting
 
@@ -906,9 +897,7 @@ class HomeViewModel(
                     currentSorting.sortAscending -> currentSorting.copy(sortAscending = false)
                     else -> TableSorting()
                 }
-            } else {
-                TableSorting(columnIndex, true)
-            }
+            } else { TableSorting(columnIndex, true) }
 
         _tableTableSorting.value = newTableSorting
 
@@ -923,9 +912,7 @@ class HomeViewModel(
 
     val tableColumnVisibility: StateFlow<Map<TableColumn, Boolean>> =
         preferencesRepo.tableColumnsHidden.map {
-            TableColumn.entries.associateWith { column ->
-                column.name !in it
-            }
+            TableColumn.entries.associateWith { column -> column.name !in it }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -935,11 +922,8 @@ class HomeViewModel(
     fun updateColumnVisibility(column: TableColumn, visible: Boolean) {
         viewModelScope.launch(Dispatchers.Default) {
             val currentHidden = preferencesRepo.tableColumnsHidden.first()
-            val newHidden = if (visible) {
-                currentHidden - column.name
-            } else {
-                currentHidden + column.name
-            }
+            val newHidden = if (visible) currentHidden - column.name else currentHidden + column.name
+
             preferencesRepo.saveTableColumnsHidden(newHidden)
         }
     }
@@ -989,9 +973,7 @@ class HomeViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             columnVisibilityEnablement.collect { visibilityMap ->
                 val disabled = visibilityMap.filterValues { !it }.keys
-                disabled.forEach {
-                    updateColumnVisibility(it, false)
-                }
+                disabled.forEach { updateColumnVisibility(it, false) }
             }
         }
     }
@@ -1012,8 +994,7 @@ class HomeViewModel(
             val csvData = csvHelper.exportToCsv(data, maxRating, rounding)
 
             if (uri != null) {
-                application.contentResolver.openOutputStream(uri)?.use {
-                        outputStream ->
+                application.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(csvData.toByteArray())
                     _showSnackbar.value = true
                 }
@@ -1039,8 +1020,7 @@ class HomeViewModel(
             val tinCsvData = csvHelper.exportTinsToCsv(data)
 
             if (uri != null) {
-                application.contentResolver.openOutputStream(uri)?.use {
-                        outputStream ->
+                application.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(tinCsvData.toByteArray())
                     _showSnackbar.value = true
                 }
@@ -1064,7 +1044,6 @@ class HomeViewModel(
             val ratingString = exportRatingString(item.items.rating, maxRating, rounding)
 
             val tins = item.tins
-
 
             if (tins.isNotEmpty()) {
                 for (tin in tins) {
