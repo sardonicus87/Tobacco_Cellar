@@ -113,7 +113,7 @@ class EditEntryViewModel(
                 preferencesRepo.tinOzConversionRate,
                 preferencesRepo.tinGramsConversionRate,
             ) { ozRate, gramsRate ->
-                Pair(ozRate, gramsRate)
+                ozRate to gramsRate
             }.first().let { (ozRate, gramsRate) ->
                 tinConversion.value = TinConversion(
                     ozRate = ozRate,
