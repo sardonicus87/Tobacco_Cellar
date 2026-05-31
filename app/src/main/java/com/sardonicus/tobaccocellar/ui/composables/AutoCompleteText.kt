@@ -304,7 +304,7 @@ private fun getSuggestions(
     allItems: List<String>,
     componentField: Boolean
 ): List<String> {
-    if (input.length >= 2 ) { // && typeCount >= 2
+    if (input.length >= 2 ) {
         val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
 
         val otherWordsStartsWith = allItems.filter { string ->
@@ -314,10 +314,9 @@ private fun getSuggestions(
                     && !startsWith.contains(string)
         }
 
-        val contains = allItems.filter {
-            it.contains(input, ignoreCase = true)
-                    && !startsWith.contains(it) && !otherWordsStartsWith.contains(it)
-        }
+        val contains = if (input.length > 3) allItems.filter {
+            it.contains(input, ignoreCase = true) && !startsWith.contains(it) && !otherWordsStartsWith.contains(it)
+        } else emptyList()
 
         val selectedInput =
             if (componentField) {
