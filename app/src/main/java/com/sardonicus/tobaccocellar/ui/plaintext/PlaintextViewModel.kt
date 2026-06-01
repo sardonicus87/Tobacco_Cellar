@@ -19,11 +19,16 @@ import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -80,244 +85,24 @@ class PlaintextViewModel (
 
     fun updateTabIndex(index: Int) { _tabIndex.value = index }
 
-
-    init {
-        // Sorting
-        viewModelScope.launch {
-            combine(
-                preferencesRepo.plaintextSorting,
-                preferencesRepo.plaintextSortAscending,
-                preferencesRepo.plaintextSubSorting
-            ) { sorting, ascending, subSorting ->
-                PlaintextSortOption(
-                    value = sorting,
-                    ascending = ascending,
-                    subSort = subSorting
-                )
-            }.collect {
-                _sortState.value = it
-            }
-        }
-
-        // Format string
-        viewModelScope.launch {
-            val format = preferencesRepo.plaintextFormatString.first()
-            val delimiter = preferencesRepo.plaintextDelimiter.first()
-
-            if (format.isNotBlank() || delimiter.isNotBlank()) {
-                saveFormatString(format, delimiter)
-            }
-            _isInitialized.value = true
-        }
-
-        // Print settings
-        viewModelScope.launch {
-            combine(
-                preferencesRepo.plaintextPrintFontSize,
-                preferencesRepo.plaintextPrintMargin
-            ) { font, margin ->
-                PrintOptions(font, margin)
-            }.collect {
-                _printOptions.value = it
-            }
-        }
-
-        // Presets loading
-        viewModelScope.launch {
-            preferencesRepo.plaintextPresetsFlow.collect {
-                _presets.value = it
-            }
-        }
+    private sealed class Template {
+        data class Text(val content: String) : Template()
+        data class Placeholder(val key: String) : Template()
+        data class LineNumber(val length: Int) : Template()
+        data class Conditional(val segments: List<Template>) : Template()
+        data class TinSublist(val segments: List<Template>, val subDelimiter: String) : Template()
     }
 
+    companion object {
+        private val TIN_SUBLIST = Regex("""\{(.*?)\}""")
+        private val RATING_PLACEHOLDER = Regex("@rating_(\\d+)(?:_(\\d))?")
+        private val PLACEHOLDER_SCAN = Regex("""@\w+(?!\w)""")
 
-    @Suppress("UNCHECKED_CAST")
-    val plainList = combine(
-        filterViewModel.unifiedFilteredItems,
-        filterViewModel.unifiedFilteredTins,
-        preferencesRepo.quantityOption,
-        preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate,
-        preferencesRepo.plaintextFormatString,
-        preferencesRepo.plaintextDelimiter,
-        sortState,
-        subSortOption
-    ) { values ->
-        val filteredItems = values[0] as List<ItemsComponentsAndTins>
-        val filteredTins = values[1] as List<Tins>
-        val quantityOption = values[2] as QuantityOption
-        val ozRate = values[3] as Double
-        val gramsRate = values[4] as Double
-        val formatString = values[5] as String
-        val delimiter = values[6] as String
-        val sortState = values[7] as PlaintextSortOption
-        val subSortOption = values[8] as String
+        private val TIN_PLACEHOLDERS = listOf("@label", "@container", "@T_qty", "@manufacture",
+            "@cellar", "@open", "@finished")
+        private val SPECIAL_CHARACTERS = setOf('#', '[', ']', '{', '}', '\'', '~')
 
-        val sortQuantity = filteredItems.associate { items ->
-            items.items.id to calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
-        }
-        val formattedQuantities = filteredItems.associate { items ->
-            val totalQuantity = calculateTotalQuantity(items, items.tins.filter { it in filteredTins }, quantityOption, ozRate, gramsRate)
-            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, items.tins.filter { it in filteredTins })
-            items.items.id to formattedQuantity
-        }
-        val tinSubSort: (Tins) -> Comparable<*> = {
-            val parentItem = filteredItems.firstOrNull { item -> item.items.id == it.itemsId }
-            if (parentItem != null) {
-                when (subSortOption) {
-                    PlaintextSortOption.DEFAULT.value -> parentItem.items.id
-                    PlaintextSortOption.TIN_DEFAULT.value -> it.tinId
-                    PlaintextSortOption.BRAND.value -> parentItem.items.brand
-                    PlaintextSortOption.BLEND.value -> parentItem.items.blend
-                    else -> parentItem.items.id
-                }
-            } else {
-                it.tinId
-            }
-        }
-        val tinQuantitySorting = filteredTins.associateWith { tinNormalizedWeight(it) }
-
-//        val itemsSubSort: (ItemsComponentsAndTins) -> Comparable<*> = when (subSortOption) {
-//            PlaintextSortOption.DEFAULT.value -> { it -> it.items.id }
-//            PlaintextSortOption.BRAND.value -> { it -> it.items.brand }
-//            PlaintextSortOption.BLEND.value -> { it -> it.items.blend }
-//            else -> { it -> it.items.id }
-//        }
-
-        val sortedItems =  if (filteredItems.isNotEmpty()) {
-            when (sortState.value) {
-                PlaintextSortOption.DEFAULT.value -> filteredItems.sortedBy { it.items.id }
-                PlaintextSortOption.BRAND.value -> filteredItems.sortedBy { it.items.brand }
-                PlaintextSortOption.BLEND.value -> filteredItems.sortedBy { it.items.blend }
-                PlaintextSortOption.TYPE.value -> filteredItems.sortedBy { it.items.type }
-                PlaintextSortOption.SUBGENRE.value -> filteredItems.sortedBy { it.items.subGenre }
-                PlaintextSortOption.CUT.value -> filteredItems.sortedBy { it.items.cut }
-                PlaintextSortOption.QUANTITY.value -> filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                PlaintextSortOption.RATING.value -> filteredItems.sortedByDescending { items -> items.items.rating.let { it ?: 0.0 } }
-                else -> filteredItems.sortedBy { it.items.id }
-            }.let { sortedList ->
-                if (sortState.ascending) sortedList
-                else sortedList.let { toReverse ->
-                    when (sortState.value) {
-                        PlaintextSortOption.RATING.value -> toReverse.sortedBy { item -> item.items.rating ?: 10.0 }
-                        PlaintextSortOption.QUANTITY.value -> {
-                            toReverse.sortedWith(
-                                compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
-                                    .thenBy { sortQuantity[it.items.id] }
-                            )
-                        }
-                        else -> toReverse.reversed()
-                    }
-                }
-            }
-        } else emptyList()
-
-        val sortedTins = if (filteredTins.isNotEmpty()) {
-            when (sortState.value) {
-                PlaintextSortOption.TIN_LABEL.value -> filteredTins.sortedWith (
-                    compareBy<Tins> { it.tinLabel }.thenBy { tinSubSort(it) }
-                )
-                PlaintextSortOption.TIN_CONTAINER.value -> filteredTins.sortedWith(
-                    compareBy<Tins> { it.container.ifBlank { "~" } }.thenBy { tinSubSort(it) }
-                )
-                PlaintextSortOption.TIN_QUANTITY.value -> filteredTins.sortedWith(
-                    compareByDescending<Tins> { tinQuantitySorting[it] }.thenBy { tinSubSort(it) }
-                )
-                else -> filteredTins.sortedBy { it.itemsId }
-            }.let {
-                if (sortState.ascending) { it } else { it.reversed() }
-            }
-        } else emptyList()
-
-        generateListString(sortedItems, sortedTins, sortState, formattedQuantities, formatString, delimiter)
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = ""
-        )
-
-    init {
-        viewModelScope.launch {
-            combine(
-                plainList,
-                formatStringEntry,
-                _isInitialized
-            ) { list, format, initialized ->
-                when {
-                    !initialized -> true
-                    format.isBlank() -> false
-                    list.isNotBlank() -> {
-                        delay(25)
-                        false
-                    }
-                    else -> true
-                }
-            }. collect {
-                _loading.value = it
-            }
-        }
-    }
-
-
-    val sortOptions = preferencesRepo.plaintextFormatString.map { formatString ->
-        if (formatString.isNotBlank()) {
-            val options = mutableListOf(PlaintextSortOption.DEFAULT)
-            val itemOptionMap = mapOf(
-                "@brand" to PlaintextSortOption.BRAND,
-                "@blend" to PlaintextSortOption.BLEND,
-                "@type" to PlaintextSortOption.TYPE,
-                "@subgenre" to PlaintextSortOption.SUBGENRE,
-                "@cut" to PlaintextSortOption.CUT,
-                "@qty" to PlaintextSortOption.QUANTITY,
-                "@rating_" to PlaintextSortOption.RATING
-            )
-            val tinOptionMap = mapOf(
-                "@label" to PlaintextSortOption.TIN_LABEL,
-                "@container" to PlaintextSortOption.TIN_CONTAINER,
-                "@T_qty" to PlaintextSortOption.TIN_QUANTITY
-            )
-
-            itemOptionMap.forEach { if (formatString.contains(it.key)) options.add(it.value) }
-
-            val tinsSublist = Regex("""\{(.*?)\}""")
-            val fsRemovedSublist = formatString.replace(tinsSublist, "")
-            val validTinOptions = mutableListOf<PlaintextSortOption>()
-            tinOptionMap.forEach {
-                if (fsRemovedSublist.contains(it.key)) {
-                    validTinOptions.add(it.value)
-                }
-            }
-            if (validTinOptions.isNotEmpty()) {
-                options.add(PlaintextSortOption.TIN_DEFAULT)
-                options.addAll(validTinOptions)
-            }
-
-            options.distinctBy { it.value }
-        } else emptyList()
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = emptyList()
-        )
-
-    val formatPreview = combine(
-        sortState,
-        preferencesRepo.quantityOption,
-        preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate,
-        preferencesRepo.plaintextFormatString,
-        preferencesRepo.plaintextDelimiter
-    ) { values ->
-        val sortState = values[0] as PlaintextSortOption
-        val quantityOption = values[1] as QuantityOption
-        val ozRate = values[2] as Double
-        val gramsRate = values[3] as Double
-        val formatString = values[4] as String
-        val delimiter = values[5] as String
-
-        val previewItems = listOf(
+        private val previewItems = listOf(
             Items(
                 id = 1,
                 brand = "Brand A",
@@ -367,7 +152,7 @@ class PlaintextViewModel (
                 lastModified = -1L
             )
         )
-        val previewTins = listOf(
+        private val previewTins = listOf(
             Tins(
                 tinId = 1,
                 itemsId = 1,
@@ -408,7 +193,7 @@ class PlaintextViewModel (
                 lastModified = -1L
             ),
         )
-        val previewComponents = listOf(
+        private val previewComponents = listOf(
             Components(
                 componentId = 1,
                 componentName = "virginia"
@@ -422,7 +207,7 @@ class PlaintextViewModel (
                 componentName = "burley"
             )
         )
-        val previewFlavoring = listOf(
+        private val previewFlavoring = listOf(
             Flavoring(
                 flavoringId = 1,
                 flavoringName = "vanilla"
@@ -432,7 +217,7 @@ class PlaintextViewModel (
                 flavoringName = "anise"
             ),
         )
-        val previewComponentCrossRef = listOf(
+        private val previewComponentCrossRef = listOf(
             ItemsComponentsCrossRef(
                 itemId = 1,
                 componentId = 1
@@ -446,7 +231,7 @@ class PlaintextViewModel (
                 componentId = 3
             ),
         )
-        val previewFlavoringCrossRef = listOf(
+        private val previewFlavoringCrossRef = listOf(
             ItemsFlavoringCrossRef(
                 itemId = 3,
                 flavoringId = 1
@@ -456,7 +241,7 @@ class PlaintextViewModel (
                 flavoringId = 2
             ),
         )
-        val previewData = previewItems.map { item ->
+        private val previewData = previewItems.map { item ->
             val itemsComponents = previewComponents.filter {
                 previewComponentCrossRef.any { ref -> ref.itemId == item.id && ref.componentId == it.componentId }
             }
@@ -471,125 +256,280 @@ class PlaintextViewModel (
             )
 
         }
-        val previewFormattedQuantities = previewData.associate { items ->
-            items.items.id to formatQuantity(calculateTotalQuantity(items, items.tins.filter { it in previewTins }, quantityOption, ozRate, gramsRate), quantityOption, items.tins.filter { it in previewTins })
+    }
+
+    init {
+        viewModelScope.launch {
+            // Sorting
+            launch {
+                combine(
+                    preferencesRepo.plaintextSorting,
+                    preferencesRepo.plaintextSortAscending,
+                    preferencesRepo.plaintextSubSorting
+                ) { sorting, ascending, subSorting ->
+                    PlaintextSortOption(
+                        value = sorting,
+                        ascending = ascending,
+                        subSort = subSorting
+                    )
+                }.collect { _sortState.value = it }
+            }
+
+            // Format string
+            launch {
+                combine(
+                    preferencesRepo.plaintextFormatString,
+                    preferencesRepo.plaintextDelimiter
+                ) { format, delimiter ->
+                    format to delimiter
+                }.first().let { (format, delimiter) ->
+                    if (format.isNotBlank() || delimiter.isNotBlank()) {
+                        saveFormatString(format, delimiter)
+                    }
+                    _isInitialized.value = true
+                }
+            }
+
+            // Save latest format
+            launch {
+                combine(
+                    _formatStringEntry,
+                    _delimiter
+                ) { format, delimiter ->
+                    format to delimiter
+                }.collectLatest { (format, delimiter) ->
+                    delay(500)
+                    preferencesRepo.setPlaintextFormatString(format)
+                    preferencesRepo.setPlaintextDelimiter(delimiter)
+                }
+            }
+
+            // Print settings
+            launch {
+                combine(
+                    preferencesRepo.plaintextPrintFontSize,
+                    preferencesRepo.plaintextPrintMargin
+                ) { font, margin ->
+                    PrintOptions(font, margin)
+                }.collect { _printOptions.value = it }
+            }
+
+            // Presets loading
+            launch {
+                preferencesRepo.plaintextPresetsFlow.collect { _presets.value = it }
+            }
+        }
+    }
+
+    private val parsedTemplate: StateFlow<List<Template>> = preferencesRepo.plaintextFormatString
+        .map { parseTemplate(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(50000), emptyList())
+
+    @Suppress("UNCHECKED_CAST")
+    val plainList = combine(
+        filterViewModel.unifiedFilteredItems,
+        filterViewModel.unifiedFilteredTins,
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate,
+        parsedTemplate,
+        preferencesRepo.plaintextDelimiter,
+        sortState,
+        subSortOption
+    ) { values ->
+        val filteredItems = values[0] as List<ItemsComponentsAndTins>
+        val filteredTins = values[1] as List<Tins>
+        val quantityOption = values[2] as QuantityOption
+        val ozRate = values[3] as Double
+        val gramsRate = values[4] as Double
+        val template = values[5] as List<Template>
+        val delimiter = values[6] as String
+        val sortState = values[7] as PlaintextSortOption
+        val subSortOption = values[8] as String
+
+        val itemsMap = filteredItems.associateBy { it.items.id }
+        val filteredTinsSet = filteredTins.toSet()
+
+        val quantitiesData = filteredItems.associate { items ->
+            val relevantTins = items.tins.filter { it in filteredTinsSet }
+            val totalQuantity = calculateTotalQuantity(items, relevantTins, quantityOption, ozRate, gramsRate)
+            val formattedQuantity = formatQuantity(totalQuantity, quantityOption, relevantTins)
+            items.items.id to (totalQuantity to formattedQuantity)
         }
 
-        generateListString(previewData, previewTins, sortState, previewFormattedQuantities, formatString, delimiter)
+        val tinSubSort: (Tins) -> Comparable<*> = {
+            val parentItem = itemsMap[it.itemsId] // filteredItems.firstOrNull { item -> item.items.id == it.itemsId }
+            if (parentItem != null) {
+                when (subSortOption) {
+                    PlaintextSortOption.DEFAULT.value -> parentItem.items.id
+                    PlaintextSortOption.TIN_DEFAULT.value -> it.tinId
+                    PlaintextSortOption.BRAND.value -> parentItem.items.brand
+                    PlaintextSortOption.BLEND.value -> parentItem.items.blend
+                    else -> parentItem.items.id
+                }
+            } else { it.tinId }
+        }
+        val tinQuantitySorting = filteredTinsSet.associateWith { tinNormalizedWeight(it) }
+
+//        val itemsSubSort: (ItemsComponentsAndTins) -> Comparable<*> = when (subSortOption) {
+//            PlaintextSortOption.DEFAULT.value -> { it -> it.items.id }
+//            PlaintextSortOption.BRAND.value -> { it -> it.items.brand }
+//            PlaintextSortOption.BLEND.value -> { it -> it.items.blend }
+//            else -> { it -> it.items.id }
+//        }
+
+        val sortedItems =  if (filteredItems.isNotEmpty()) {
+            val comparator: Comparator<ItemsComponentsAndTins> = when (sortState.value) {
+                PlaintextSortOption.DEFAULT.value -> compareBy { it.items.id }
+                PlaintextSortOption.BRAND.value -> compareBy { it.items.brand }
+                PlaintextSortOption.BLEND.value -> compareBy { it.items.blend }
+                PlaintextSortOption.TYPE.value -> compareBy { it.items.type }
+                PlaintextSortOption.SUBGENRE.value -> compareBy { it.items.subGenre }
+                PlaintextSortOption.CUT.value -> compareBy { it.items.cut }
+                PlaintextSortOption.QUANTITY.value ->
+                    compareBy<ItemsComponentsAndTins> { (quantitiesData[it.items.id]?.first ?: 0.0) == 0.0 }
+                        .thenBy {
+                            val weight = quantitiesData[it.items.id]?.first ?: 0.0
+                            if (sortState.ascending) -weight else weight
+                        }
+                PlaintextSortOption.RATING.value ->
+                    compareBy<ItemsComponentsAndTins> { it.items.rating == null }
+                        .thenBy {
+                            val rating = it.items.rating ?: 0.0
+                            if (sortState.ascending ) -rating else rating
+                        }
+                else -> compareBy { it.items.id }
+            }
+
+            if (sortState.value == PlaintextSortOption.QUANTITY.value || sortState.value == PlaintextSortOption.RATING.value){
+                filteredItems.sortedWith(comparator)
+            } else filteredItems.sortedWith(if (sortState.ascending) comparator else comparator.reversed())
+        } else emptyList()
+
+        val sortedTins = if (filteredTinsSet.isNotEmpty()) {
+            val comparator = when (sortState.value) {
+                PlaintextSortOption.TIN_LABEL.value ->
+                    compareBy<Tins> { it.tinLabel }.thenBy { tinSubSort(it) }
+                PlaintextSortOption.TIN_CONTAINER.value ->
+                    compareBy<Tins> { it.container.ifBlank { "~" } }.thenBy { tinSubSort(it) }
+                PlaintextSortOption.TIN_QUANTITY.value ->
+                    compareByDescending<Tins> { tinQuantitySorting[it] }.thenBy { tinSubSort(it) }
+                else -> compareBy<Tins> { it.itemsId }.thenBy { tinSubSort(it) }
+            }
+
+            filteredTinsSet.sortedWith(if (sortState.ascending) comparator else comparator.reversed())
+        } else emptyList()
+
+        generateListString(sortedItems, sortedTins, filteredTins, sortState, quantitiesData.mapValues { it.value.second }, template, delimiter)
     }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = ""
         )
 
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
-    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
-
-    private fun tinNormalizedWeight(tin: Tins): Double {
-        if (tin.finished) return 0.0
-        if (tin.unit.isBlank()) return 0.0
-
-        return when (tin.unit) {
-            "oz" -> tin.tinQuantity * 28.3495
-            "lbs" -> tin.tinQuantity * 453.592
-            "grams" -> tin.tinQuantity
-            else -> 0.0
+    init {
+        viewModelScope.launch {
+            combine(
+                plainList,
+                formatStringEntry,
+                _isInitialized
+            ) { list, format, initialized ->
+                when {
+                    !initialized -> true
+                    format.isBlank() -> false
+                    list.isNotBlank() -> {
+                        delay(25)
+                        false
+                    }
+                    else -> true
+                }
+            }.collect { _loading.value = it }
         }
     }
 
-    fun toggleActionRow() { _actionRowExpanded.update { !it } }
+    val sortOptions = preferencesRepo.plaintextFormatString.map { formatString ->
+        if (formatString.isNotBlank()) {
+            val options = mutableListOf(PlaintextSortOption.DEFAULT)
+            val itemOptionMap = mapOf(
+                "@brand" to PlaintextSortOption.BRAND,
+                "@blend" to PlaintextSortOption.BLEND,
+                "@type" to PlaintextSortOption.TYPE,
+                "@subgenre" to PlaintextSortOption.SUBGENRE,
+                "@cut" to PlaintextSortOption.CUT,
+                "@qty" to PlaintextSortOption.QUANTITY,
+                "@rating_" to PlaintextSortOption.RATING
+            )
+            val tinOptionMap = mapOf(
+                "@label" to PlaintextSortOption.TIN_LABEL,
+                "@container" to PlaintextSortOption.TIN_CONTAINER,
+                "@T_qty" to PlaintextSortOption.TIN_QUANTITY
+            )
 
-    fun updateSortMenuState(sortMenu: SortMenuState) {
-        val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
+            itemOptionMap.forEach { if (formatString.contains(it.key)) options.add(it.value) }
 
-        _sortMenuState.value = SortMenuState(
-            mainMenu = sortMenu.mainMenu,
-            subMenu = subMenuOverride,
-            mainSelection = sortMenu.mainSelection,
-            subSelection = sortMenu.subSelection
-        )
-    }
+            val fsRemovedSublist = formatString.replace(TIN_SUBLIST, "")
+            val validTinOptions = mutableListOf<PlaintextSortOption>()
 
-    fun updateSorting(option: String, reverseSwitch: Boolean) {
-        viewModelScope.launch {
-            val currentSort = _sortState.value
-            val reverse = if (reverseSwitch) !currentSort.ascending else currentSort.ascending
-            val newSort = if (currentSort.value == option) {
-                PlaintextSortOption(value = option, reverse)
-            } else {
-                PlaintextSortOption(option)
+            tinOptionMap.forEach { if (fsRemovedSublist.contains(it.key)) validTinOptions.add(it.value) }
+
+            if (validTinOptions.isNotEmpty()) {
+                options.add(PlaintextSortOption.TIN_DEFAULT)
+                options.addAll(validTinOptions)
             }
-            preferencesRepo.setPlaintextSorting(newSort.value, newSort.ascending)
-        }
+
+            options.distinctBy { it.value }
+        } else emptyList()
     }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    fun updateSubSorting(option: String) {
-        _subSortOption.value = option
+    @Suppress("UNCHECKED_CAST")
+    val formatPreview = combine(
+        sortState,
+        preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate,
+        preferencesRepo.tinGramsConversionRate,
+        parsedTemplate,
+        preferencesRepo.plaintextDelimiter
+    ) { values ->
+        val sortState = values[0] as PlaintextSortOption
+        val quantityOption = values[1] as QuantityOption
+        val ozRate = values[2] as Double
+        val gramsRate = values[3] as Double
+        val template = values[4] as List<Template>
+        val delimiter = values[5] as String
 
-        viewModelScope.launch {
-            preferencesRepo.setPlaintextSubSorting(option)
+        val previewFormattedQuantities = previewData.associate { items ->
+            val relevantTins = items.tins.filter { it in previewTins }
+            items.items.id to formatQuantity(calculateTotalQuantity(items, relevantTins, quantityOption, ozRate, gramsRate), quantityOption, relevantTins)
         }
+
+        generateListString(previewData, previewTins, previewTins, sortState, previewFormattedQuantities, template, delimiter)
     }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
 
-    fun saveFormatString(format: String, delimiter: String = "") {
-        _formatStringEntry.value = format
-        _delimiter.value = delimiter
-
-        viewModelScope.launch {
-            preferencesRepo.setPlaintextFormatString(format)
-            preferencesRepo.setPlaintextDelimiter(delimiter)
-        }
-    }
-
-    fun savePreset(slot: Int, format: String, delimiter: String) {
-        viewModelScope.launch {
-            preferencesRepo.savePlaintextPreset(slot, format, delimiter)
-        }
-    }
-
-    fun showPrintDialog(show: Boolean) { _printDialog.value = show }
-
-    fun savePrintOptions(font: Float, margin: Double) {
-        _printOptions.value = PrintOptions(font, margin)
-
-        viewModelScope.launch {
-            preferencesRepo.setPlaintextPrintOptions(font, margin)
-        }
-    }
-
-
-    private fun generateListString(
+    private suspend fun generateListString(
         items: List<ItemsComponentsAndTins>,
         tins: List<Tins>,
+        filteredTins: List<Tins>,
         sortState: PlaintextSortOption,
         quantities: Map<Int, String>,
-        formatString: String,
+        template: List<Template>,
         delimiter: String,
-    ): String {
-        if (formatString.isBlank()) return ""
+    ): String = coroutineScope {
+        if (template.isEmpty()) return@coroutineScope ""
 
-        val resultBuilder = StringBuilder()
-        var entryCounter = 0
-        val numPlaceholder = Regex("#+")
-
-        val tinPlaceholders = listOf(
-            "@label",
-            "@container",
-            "@T_qty",
-            "@manufacture",
-            "@cellar",
-            "@open",
-            "@finished"
-        )
-        val tinsSublistCheck = Regex("""\{(.*?)\}""")
-        val fsRemovedSublist = tinsSublistCheck.replace(formatString, "")
-        val containsTinCall = tinPlaceholders.any { fsRemovedSublist.contains(it) }
+        val fsRemovedSublist = TIN_SUBLIST.replace(_formatStringEntry.value, "")
+        val containsTinCall = TIN_PLACEHOLDERS.any { fsRemovedSublist.contains(it) }
+        val processedDelimiter = delimiter.replace("_n_", "\n")
 
         val tinsPrimary = when (sortState.value) {
             PlaintextSortOption.TIN_LABEL.value,
@@ -598,36 +538,20 @@ class PlaintextViewModel (
             else -> false
         }
 
+        val tasks = mutableListOf<Pair<ItemsComponentsAndTins, Tins?>>()
+
         if (!tinsPrimary) {
             // List by Items sorting
             for (item in items) {
                 val itemTins = item.tins.filter { it in tins }
-
                 if (containsTinCall) {
                     if (itemTins.isNotEmpty()) {
-                        for (tin in itemTins) {
-                            entryCounter++
-                            resultBuilder.append(
-                                processLine(
-                                    formatString, delimiter, item, tin, tins, quantities, entryCounter, numPlaceholder
-                                )
-                            )
-                        }
+                        itemTins.forEach { tasks.add(item to it) }
                     } else {
-                        entryCounter++
-                        resultBuilder.append(
-                            processLine(
-                                formatString, delimiter, item, null, tins, quantities, entryCounter, numPlaceholder
-                            )
-                        )
+                        tasks.add(item to null)
                     }
                 } else {
-                    entryCounter++
-                    resultBuilder.append(
-                        processLine(
-                            formatString, delimiter, item, null, tins, quantities, entryCounter, numPlaceholder
-                        )
-                    )
+                    tasks.add(item to null)
                 }
             }
         } else {
@@ -635,261 +559,77 @@ class PlaintextViewModel (
             if (containsTinCall) {
                 for (tin in tins) {
                     val tinItem = items.first { it.items.id == tin.itemsId }
-
-                    entryCounter++
-                    resultBuilder.append(
-                        processLine(
-                            formatString, delimiter, tinItem, tin, tins, quantities, entryCounter, numPlaceholder
-                        )
-                    )
+                    tasks.add(tinItem to tin)
                 }
             } else {
                 val uniqueItems = tins.mapNotNull { tin ->
                     items.firstOrNull { it.items.id == tin.itemsId } }.distinctBy { it.items.id }
                 val remainingItems = items.filter { it !in uniqueItems }
-
-                for (item in uniqueItems) {
-                    entryCounter++
-
-                    resultBuilder.append(
-                        processLine(
-                            formatString, delimiter, item, null, tins, quantities, entryCounter, numPlaceholder
-                        )
-                    )
-                }
-                for (item in remainingItems) {
-                    entryCounter++
-
-                    resultBuilder.append(
-                        processLine(
-                            formatString, delimiter, item, null, tins, quantities, entryCounter, numPlaceholder
-                        )
-                    )
-                }
+                (uniqueItems + remainingItems).forEach { tasks.add(it to null) }
             }
         }
 
-        val processedString = resultBuilder.toString()
-        val processedDelimiter = delimiter.replace("_n_", "\n")
+        val results = tasks.mapIndexed { index, (item, tin) ->
+            async(Dispatchers.Default) {
+                renderSegments(template, item, tin, filteredTins, quantities, index + 1, processedDelimiter).first
+            }
+        }.awaitAll()
 
-        return if (processedDelimiter.isNotEmpty() && processedString.endsWith(processedDelimiter)) {
+        val processedString = results.joinToString("") // resultBuilder.toString()
+
+        if (processedDelimiter.isNotEmpty() && processedString.endsWith(processedDelimiter)) {
             processedString.removeSuffix(processedDelimiter)
         } else { processedString }
     }
 
-    private fun processLine(
-        format: String,
-        delimiter: String,
+    private fun renderSegments(
+        segments: List<Template>,
         itemData: ItemsComponentsAndTins?,
         tinData: Tins?,
         filteredTins: List<Tins>,
         formattedQuantities: Map<Int, String>,
         currentLineNumber: Int,
-        numPlaceholderRegex: Regex,
-    ) : String {
-        var processedLine = format
+        delimiter: String = ""
+    ): Pair<String, Boolean> {
+        var anyResolved = false
+        val result = StringBuilder()
 
-        // Pre-process escaped specials (replace with temp unique placeholder to prevent processing)
-        val specialCharacters = listOf(
-            '#',
-            '[',
-            ']',
-            '{',
-            '}',
-            '\'',
-            '~'
-        )
-        val escapeReplacements = mutableMapOf<String, String>()
-        var tempEscapeString = ""
-        var i = 0
-        var placeholderIndex = 0
-
-        while (i < processedLine.length) {
-            if (processedLine[i] == '\'') {
-                if (i + 1 < processedLine.length) {
-                    val nextChar = processedLine[i + 1]
-                    if (specialCharacters.contains(nextChar)) {
-                        val placeholder = "%%ESC${placeholderIndex++}%%"
-                        escapeReplacements[placeholder] = nextChar.toString()
-                        tempEscapeString += placeholder
-                        i += 2
-                        continue
-                    }
+        for (segment in segments) {
+            when (segment) {
+                is Template.Text -> result.append(segment.content)
+                is Template.Placeholder -> {
+                    val resolved = resolveSinglePlace(segment.key, itemData, tinData, formattedQuantities)
+                    if (resolved.isNotBlank()) anyResolved = true
+                    result.append(resolved)
                 }
-            }
-            tempEscapeString += processedLine[i]
-            i++
-        }
-
-        processedLine = tempEscapeString
-
-
-        // Conditional block processing
-        val tinSublist = Regex("""\{(.*?)\}""")
-        val tinSublistReplacements = mutableMapOf<String, String>()
-        var tempId = -1
-        var lineWithoutTins = processedLine
-
-        lineWithoutTins = tinSublist.replace(lineWithoutTins) {
-            val original = it.value
-            tempId++
-            val placeholder = "%%TIN${tempId}%%"
-            tinSublistReplacements[placeholder] = original
-            placeholder
-        }
-
-        var conditionalsProcessed = conditionalProcessing(lineWithoutTins, itemData, tinData, formattedQuantities)
-
-        tinSublistReplacements.forEach { (placeholder, original) ->
-            conditionalsProcessed = conditionalsProcessed.replace(placeholder, original)
-        }
-
-        processedLine = conditionalsProcessed
-
-
-        // Tins as sublist processing
-        processedLine = tinSublist.replace(processedLine) { result ->
-            val sublistTemplate = result.groupValues[1]
-            val sublistOut = StringBuilder()
-            val sublistDelimiter = sublistTemplate.substringAfterLast("~", "").substringBeforeLast("}")
-
-            val tinsToProcess = itemData?.tins?.filter { it in filteredTins }
-
-            if (tinsToProcess.isNullOrEmpty()) { return@replace "" }
-
-            tinsToProcess.forEachIndexed { index, tin ->
-                var tinLine = sublistTemplate.substringBeforeLast("~")
-
-                if (index > 0 && sublistDelimiter.isNotBlank()) { sublistOut.append(sublistDelimiter) }
-
-                tinLine = conditionalProcessing(tinLine, itemData, tin, formattedQuantities)
-
-                tinLine = tinLine.replace("@label", tin.tinLabel)
-                tinLine = tinLine.replace("@container", tin.container)
-                tinLine = tinLine.replace("@T_qty", if (tin.unit.isNotBlank() && !tin.finished) "${formatDecimal(tin.tinQuantity)} ${tin.unit}" else "")
-                tinLine = tinLine.replace("@manufacture", formatMediumDate(tin.manufactureDate))
-                tinLine = tinLine.replace("@cellar", formatMediumDate(tin.cellarDate))
-                tinLine = tinLine.replace("@open", formatMediumDate(tin.openDate))
-                tinLine = tinLine.replace("@finished", if (tin.finished) "(Finished)" else "")
-
-                sublistOut.append(tinLine)
-            }
-            if (sublistDelimiter.isNotBlank() && sublistOut.endsWith(sublistDelimiter)) {
-                sublistOut.removeSuffix(sublistDelimiter)
-            }
-
-            sublistOut.toString()
-        }
-
-
-        // Number count processing
-        if (processedLine.contains("#")) {
-            processedLine = numPlaceholderRegex.replace(processedLine) {
-                currentLineNumber.toString().padStart(it.value.length, '0')
-            }
-        }
-
-
-        // Main item processing
-        if (itemData != null) {
-            val ratingRegex = Regex("@rating_(\\d+)(?:_(\\d))?")
-
-            processedLine = ratingRegex.replace(processedLine) { result ->
-                val max = result.groupValues[1].toIntOrNull() ?: 5
-                val rounding = result.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
-
-                exportRatingString(itemData.items.rating, max, rounding)
-            }
-
-            processedLine = processedLine.replace("@brand", itemData.items.brand)
-            processedLine = processedLine.replace("@blend", itemData.items.blend)
-            processedLine = processedLine.replace("@type", itemData.items.type)
-            processedLine = processedLine.replace("@subgenre", itemData.items.subGenre)
-            processedLine = processedLine.replace("@cut", itemData.items.cut)
-            processedLine = processedLine.replace("@comps", itemData.components.joinToString(", ") { it.componentName })
-            processedLine = processedLine.replace("@flavors", itemData.flavoring.joinToString(", ") { it.flavoringName })
-            processedLine = processedLine.replace("@qty", formattedQuantities[itemData.items.id] ?: "")
-            processedLine = processedLine.replace("@prod", if (itemData.items.inProduction) "In Production" else "Discontinued")
-        } else {
-            listOf("@brand", "@blend", "@type", "@subgenre", "@cut", "@comps", "@flavors", "@qty", "@rating", "@prod").forEach {
-                processedLine = processedLine.replace(it, "")
-            }
-        }
-
-        if (tinData != null) {
-            processedLine = processedLine.replace("@label", tinData.tinLabel)
-            processedLine = processedLine.replace("@container", tinData.container)
-            processedLine = processedLine.replace("@T_qty", if (tinData.unit.isNotBlank() && !tinData.finished) "${formatDecimal(tinData.tinQuantity)} ${tinData.unit}" else "")
-            processedLine = processedLine.replace("@manufacture", formatMediumDate(tinData.manufactureDate))
-            processedLine = processedLine.replace("@cellar", formatMediumDate(tinData.cellarDate))
-            processedLine = processedLine.replace("@open", formatMediumDate(tinData.openDate))
-            processedLine = processedLine.replace("@finished", if (tinData.finished) "(Finished)" else "")
-        } else {
-            listOf("@label", "@container", "@T_qty", "@manufacture", "@cellar", "@open", "@finished").forEach {
-                processedLine = processedLine.replace(it, "")
-            }
-        }
-
-        // Revert escaped characters
-        escapeReplacements.forEach { (placeholder, original) ->
-            processedLine = processedLine.replace(placeholder, original)
-        }
-
-        processedLine += delimiter
-        processedLine = processedLine.replace("_n_", "\n")
-
-        return processedLine
-    }
-
-    private fun conditionalProcessing (
-        inputLine: String,
-        itemData: ItemsComponentsAndTins?,
-        tinData: Tins?,
-        formattedQuantities: Map<Int, String>,
-    ): String {
-        var processedLine = inputLine
-        var lineBeforeThisPass: String
-        val nestedConditional = Regex("""\[([^\[\]]*)]""")
-
-        do {
-            lineBeforeThisPass = processedLine
-            processedLine = nestedConditional.replace(processedLine) { result ->
-                val innerContent = result.groupValues[1]
-                val placeholderScan = Regex("""@\w+(?!\w)""")
-                val allPlaceholders = placeholderScan.findAll(innerContent).toList()
-
-                var content = innerContent
-                var anyResolved = false
-
-                if (innerContent.contains("%TIN")) {
-                    if (itemData != null && itemData.tins.isNotEmpty()) {
+                is Template.LineNumber -> {
+                    result.append(currentLineNumber.toString().padStart(segment.length, '0'))
+                }
+                is Template.Conditional -> {
+                    val (inner, resolved) = renderSegments(segment.segments, itemData, tinData, filteredTins, formattedQuantities, currentLineNumber, "")
+                    if (resolved) {
                         anyResolved = true
+                        result.append(inner)
                     }
                 }
-
-                if (allPlaceholders.isNotEmpty()) {
-                    allPlaceholders.forEach {
-                        val placeholder = it.value
-                        val resolved =
-                            resolveSinglePlace(
-                                placeholder,
-                                itemData,
-                                tinData,
-                                formattedQuantities
-                            )
-
-                        if (resolved.isNotBlank() && resolved != placeholder) {
-                            anyResolved = true
+                is Template.TinSublist -> {
+                    val itemTins = itemData?.tins?.filter { it in filteredTins } ?: emptyList()
+                    if (itemTins.isNotEmpty()) {
+                        val sublistResult = itemTins.joinToString(segment.subDelimiter) { tin ->
+                            renderSegments(segment.segments, itemData, tin, filteredTins, formattedQuantities, currentLineNumber, "").first
                         }
-                        content = content.replace(placeholder, resolved)
+                        if (sublistResult.isNotBlank()) {
+                            anyResolved = true
+                            result.append(sublistResult)
+                        }
                     }
                 }
-                if (anyResolved) {
-                    content
-                } else { "" }
             }
-        } while (processedLine != lineBeforeThisPass)
-        return processedLine
+        }
+
+        if (anyResolved || segments.any { it is Template.Text }) { result.append(delimiter) }
+
+        return result.toString() to anyResolved
     }
 
     private fun resolveSinglePlace(
@@ -900,13 +640,10 @@ class PlaintextViewModel (
     ): String {
         if (itemData != null) {
             if (placeholder.startsWith("@rating_")) {
-                val ratingRegex = Regex("@rating_(\\d+)(?:_(\\d))?")
-                val matchResult = ratingRegex.find(placeholder)
-
+                val matchResult = RATING_PLACEHOLDER.find(placeholder)
                 if (matchResult != null) {
                     val max = matchResult.groupValues[1].toIntOrNull() ?: 5
                     val rounding = matchResult.groupValues[2].toIntOrNull().takeIf { it in 0..2 } ?: 2
-
                     return exportRatingString(itemData.items.rating, max, rounding)
                 }
             }
@@ -937,8 +674,140 @@ class PlaintextViewModel (
         return ""
     }
 
+    private fun parseTemplate(input: String): List<Template> {
+        val segments = mutableListOf<Template>()
+        var i = 0
+        while (i < input.length) {
+            when (input[i]) {
+                '\'' -> {
+                    if (i + 1 < input.length && SPECIAL_CHARACTERS.contains(input[i + 1])) {
+                        segments.add(Template.Text(input[i + 1].toString()))
+                        i += 2
+                    } else { segments.add(Template.Text("'")); i++ }
+                }
+                '@' -> {
+                    val match = PLACEHOLDER_SCAN.find(input, i)
+                    if (match != null && match.range.first == i) {
+                        segments.add(Template.Placeholder(match.value))
+                        i = match.range.last + 1
+                    } else { segments.add(Template.Text("@")); i++ }
+                }
+                '#' -> {
+                    var length = 0
+                    while (i < input.length && input[i] == '#') { length++; i++ }
+                    segments.add(Template.LineNumber(length))
+                }
+                '[' -> {
+                    val (inner, nextIndex) = findClosing(input, i + 1, '[', ']')
+                    segments.add(Template.Conditional(parseTemplate(inner)))
+                    i = nextIndex
+                }
+                '{' -> {
+                    val (inner, nextIndex) = findClosing(input, i + 1, '{', '}')
+                    val subDelimiter = inner.substringAfterLast("~", "").replace("_n_", "\n")
+                    val subTemplate = if (inner.contains("~")) inner.substringBeforeLast("~") else inner
+                    segments.add(Template.TinSublist(parseTemplate(subTemplate), subDelimiter))
+                    i = nextIndex
+                }
+                '_' -> {
+                    if (input.startsWith("_n_", i)) {
+                        segments.add(Template.Text("\n"))
+                        i += 3
+                    } else {
+                        segments.add(Template.Text("_"))
+                        i++
+                    }
+                }
+                else -> {
+                    val start = i
+                    while (i < input.length && !isSpecial(input[i])) { i++ }
+                    segments.add(Template.Text(input.substring(start, i)))
+                }
+            }
+        }
+        return segments
+    }
+
+    private fun isSpecial(char: Char) = SPECIAL_CHARACTERS.contains(char) || char == '@' || char == '#'
+
+    private fun findClosing(input: String, start: Int, open: Char, close: Char): Pair<String, Int> {
+        var depth = 1
+        var i = start
+        while (i < input.length) {
+            if (input[i] == open) depth++
+            else if (input[i] == close) depth--
+            if (depth == 0) return input.substring(start, i) to i + 1
+            i++
+        }
+        return input.substring(start) to input.length
+    }
+
+
+    fun resetSelection() {
+        _selectionKey.update { it + 1 }
+        updateFocused(false)
+    }
+
+    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
+
+    private fun tinNormalizedWeight(tin: Tins): Double {
+        if (tin.finished || tin.unit.isBlank()) return 0.0
+
+        return when (tin.unit) {
+            "oz" -> tin.tinQuantity * 28.3495
+            "lbs" -> tin.tinQuantity * 453.592
+            "grams" -> tin.tinQuantity
+            else -> 0.0
+        }
+    }
+
+    fun toggleActionRow() { _actionRowExpanded.update { !it } }
+
+    fun updateSortMenuState(sortMenu: SortMenuState) {
+        val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
+
+        _sortMenuState.value = SortMenuState(
+            mainMenu = sortMenu.mainMenu,
+            subMenu = subMenuOverride,
+            mainSelection = sortMenu.mainSelection,
+            subSelection = sortMenu.subSelection
+        )
+    }
+
+    fun updateSorting(option: String, reverseSwitch: Boolean) {
+        viewModelScope.launch {
+            val currentSort = _sortState.value
+            val reverse = if (reverseSwitch) !currentSort.ascending else currentSort.ascending
+            val newSort =
+                if (currentSort.value == option) { PlaintextSortOption(value = option, reverse) }
+                else { PlaintextSortOption(option) }
+            preferencesRepo.setPlaintextSorting(newSort.value, newSort.ascending)
+        }
+    }
+
+    fun updateSubSorting(option: String) {
+        _subSortOption.value = option
+        viewModelScope.launch { preferencesRepo.setPlaintextSubSorting(option) }
+    }
+
+    fun saveFormatString(format: String, delimiter: String = "") {
+        _formatStringEntry.value = format
+        _delimiter.value = delimiter
+    }
+
+    fun savePreset(slot: Int, format: String, delimiter: String) {
+        viewModelScope.launch { preferencesRepo.savePlaintextPreset(slot, format, delimiter) }
+    }
+
+    fun showPrintDialog(show: Boolean) { _printDialog.value = show }
+
+    fun savePrintOptions(font: Float, margin: Double) {
+        _printOptions.value = PrintOptions(font, margin)
+        viewModelScope.launch { preferencesRepo.setPlaintextPrintOptions(font, margin) }
+    }
 
 }
+
 
 @Serializable
 @Stable
@@ -959,7 +828,10 @@ data class PlaintextSortOption(
     val ascending: Boolean = true,
     val subSort: String = "",
     val icon: Int =
-        if (ascending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        when (value) {
+            "Quantity", "Rating" -> if (ascending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
+            else -> if (ascending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
+        }
 ) {
     companion object {
         val DEFAULT = PlaintextSortOption("Item Default")
