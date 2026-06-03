@@ -1,4 +1,4 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// Top-level build file where you can add configuration options common to all subprojects/modules.
 buildscript {
 }
 
@@ -10,5 +10,6 @@ plugins {
 }
 
 tasks.register("clean", Delete::class) {
+    description = ""
     delete(rootProject.layout.buildDirectory)
 }
