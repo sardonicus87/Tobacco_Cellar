@@ -150,6 +150,7 @@ import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -898,7 +899,7 @@ private fun PlaintextList(
 
     LaunchedEffect(loading) {
         if (!loading) {
-            delay(25)
+            delay(25.milliseconds)
             showLoading = false
         }
     }

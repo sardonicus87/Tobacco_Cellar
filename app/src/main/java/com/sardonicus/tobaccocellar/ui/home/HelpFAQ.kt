@@ -69,6 +69,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,7 +114,7 @@ private fun HelpBody(
 ) {
     val columnState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val delayMillis = 210L
+    val delayMillis = 210.milliseconds
 
     val sections: List<Pair<String, @Composable () -> Unit>> = listOf(
         "Cellar Screen" to { CellarScreen() },
@@ -1022,7 +1023,7 @@ private fun MultiSync(
 
             if (pressedUrl != null) {
                 LaunchedEffect(Unit) {
-                    delay(30000)
+                    delay(30000.milliseconds)
                     pressedUrl = null
                     pressedRange = null
                 }

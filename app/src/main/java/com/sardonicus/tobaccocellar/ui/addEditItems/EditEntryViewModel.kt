@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 class EditEntryViewModel(
     private val itemsId: Int,
@@ -69,7 +70,7 @@ class EditEntryViewModel(
         viewModelScope.launch {
             loading.value = true
 
-            val initialDetails = withTimeoutOrNull(3000) {
+            val initialDetails = withTimeoutOrNull(3000.milliseconds) {
                 filterViewModel.everythingFlow
                     .mapNotNull { list -> list.find { it.items.id == itemsId } }
                     .first()
@@ -310,7 +311,7 @@ class EditEntryViewModel(
             tinsToDelete.forEach {
                 itemsRepository.deleteTin(it)
             }
-            delay(1)
+            delay(1.milliseconds)
             conflictingTins.forEach { blocker ->
                 val tempTin = Tins(
                     tinId = blocker.tinId,
@@ -327,12 +328,12 @@ class EditEntryViewModel(
                 )
                 itemsRepository.updateTin(tempTin)
             }
-            delay(1)
+            delay(1.milliseconds)
             updatedTins.forEach {
                 val tin = it.copy(lastModified = time).toTin(itemsId)
                 itemsRepository.updateTin(tin)
             }
-            delay(1)
+            delay(1.milliseconds)
             newTins.forEach {
                 val tin = it.copy(lastModified = time).toTin(itemsId)
                 itemsRepository.insertTin(tin)

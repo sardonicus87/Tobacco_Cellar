@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.floor
+import kotlin.time.Duration.Companion.milliseconds
 
 class StatsViewModel(
     filterViewModel: FilterViewModel,
@@ -391,7 +392,7 @@ class StatsViewModel(
             combine(rawStats, filteredStats) { raw, filtered ->
                 raw.rawLoading && filtered.filteredLoading
             }.collect {
-                if (it) { delay(10) }
+                if (it) { delay(10.milliseconds) }
                 updateLoading(it)
             }
         }

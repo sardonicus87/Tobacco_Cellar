@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 class CsvImportViewModel(
     private val itemsRepository: ItemsRepository,
@@ -1007,7 +1008,7 @@ class CsvImportViewModel(
                     csvImportState.value.recordCount
                 }
 
-            delay(1500)
+            delay(1500.milliseconds)
 
             _importStatus.value = ImportStatus.Success(
                 totalRecords = totalRecords,

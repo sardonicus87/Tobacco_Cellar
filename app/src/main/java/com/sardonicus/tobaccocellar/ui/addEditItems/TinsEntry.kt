@@ -96,6 +96,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun TinsEntry(
@@ -540,7 +541,7 @@ private fun IndividualTin(
                                 onClick = {
                                     showPicker("Manufacture")
                                     coroutineScope.launch {
-                                        delay(50)
+                                        delay(50.milliseconds)
                                         manuFocusRequester.requestFocus()
                                     }
                                 },
@@ -615,7 +616,7 @@ private fun IndividualTin(
                                 onClick = {
                                     showPicker("Cellared")
                                     coroutineScope.launch {
-                                        delay(50)
+                                        delay(50.milliseconds)
                                         cellaredFocusRequester.requestFocus()
                                     }
                                 }
@@ -683,7 +684,7 @@ private fun IndividualTin(
                                 onClick = {
                                     showPicker("Opened")
                                     coroutineScope.launch {
-                                        delay(50)
+                                        delay(50.milliseconds)
                                         openedFocusRequester.requestFocus()
                                     }
                                 }

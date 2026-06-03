@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +122,7 @@ fun ImportResultsBody(
         indexCondition = totalIndex
 
         while (visibleItemIndex < totalIndex) {
-            delay(850)
+            delay(850.milliseconds)
             visibleItemIndex++
         }
     }

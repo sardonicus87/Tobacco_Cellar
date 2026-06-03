@@ -44,6 +44,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,11 +69,11 @@ fun ChangelogScreen (
             scrolling = true
             val offset = with(density) { -16.dp.roundToPx() }
 
-            delay(600)
+            delay(600.milliseconds)
             listState.animateScrollToItem(index + 1, offset)
 
             snapshotFlow { listState.isScrollInProgress }.first { !it }
-            delay(50)
+            delay(50.milliseconds)
             scrollingFinished = true
         }
         scrolling = false

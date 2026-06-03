@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun DeviceSyncDialog(
@@ -83,7 +84,7 @@ fun DeviceSyncDialog(
         if (disconnectFailure) {
             snapshotFlow { connectionEnabled }.collect {
                 if (it) {
-                    delay(1000)
+                    delay(1000.milliseconds)
                     disconnectFailure = false
                     onDeviceSync(true)
                 }

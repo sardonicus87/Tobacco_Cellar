@@ -83,6 +83,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -647,9 +648,9 @@ fun DetailsEntry(
 
                             if (tooltipState.isVisible) {
                                 // 30-second overall timeout, dismiss no matter what
-                                withTimeoutOrNull(30000) {
+                                withTimeoutOrNull(30000.milliseconds) {
                                     // 5 seconds minimum of visibility (if user hasn't dismissed manually)
-                                    delay(5000)
+                                    delay(5000.milliseconds)
 
                                     // check now if we're holding to add 1 second after release
                                     val held = hovered || pressed
@@ -660,7 +661,7 @@ fun DetailsEntry(
 
                                     // dismiss 1 second after release, will be false if we weren't
                                     // holding/hovering at 5 seconds
-                                    if (held) { delay(250) }
+                                    if (held) { delay(250.milliseconds) }
                                 }
                                 tooltipState.dismiss()
                             }

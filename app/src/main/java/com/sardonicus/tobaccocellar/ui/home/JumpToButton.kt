@@ -24,6 +24,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun JumpToButton(
@@ -101,14 +102,14 @@ private fun rememberJumpToState(
 
             if (isScrolling && !overScroll) {
                 if (!value) {
-                    delay(25)
+                    delay(25.milliseconds)
                     value = true
                 }
             } else {
                 updateJob(
                     launch {
-                        val delayMillis = if (atTop || atBottom) 0 else 1500L
-                        delay(delayMillis)
+                        val delayMillis = if (atTop || atBottom) 0 else 1500
+                        delay(delayMillis.milliseconds)
                         value = false
                     }
                 )

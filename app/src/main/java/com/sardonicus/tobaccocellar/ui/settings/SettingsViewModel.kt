@@ -58,6 +58,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -451,7 +452,7 @@ class SettingsViewModel(
             )
 
             val timeoutJob = viewModelScope.launch {
-                delay(5000)
+                delay(5000.milliseconds)
                 val workInfo = workManager.getWorkInfoById(workRequest.id).get()
                 if (workInfo?.state == WorkInfo.State.ENQUEUED) {
                     workManager.cancelWorkById(workRequest.id)

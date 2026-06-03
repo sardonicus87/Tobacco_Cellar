@@ -36,6 +36,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 data class OneTimeAlert(
     val id: Int,
@@ -192,7 +193,7 @@ fun ImportantAlertDialog(
             LaunchedEffect(isScrollable, alert.id) {
                 if (!isScrollable) {
                     while (countdown > 0) {
-                        delay(1000)
+                        delay(1000.milliseconds)
                         countdown--
                     }
                     enabled = true

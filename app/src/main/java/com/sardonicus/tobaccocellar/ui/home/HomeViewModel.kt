@@ -53,6 +53,7 @@ import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.floor
+import kotlin.time.Duration.Companion.milliseconds
 
 class HomeViewModel(
     private val preferencesRepo: PreferencesRepo,
@@ -270,7 +271,7 @@ class HomeViewModel(
 
         val displayedMessage =
             if (searchWasPerformed && !searchPerformed) {
-                delay(50L)
+                delay(50.milliseconds)
                 emptyMessage
             } else {
                 emptyMessage
@@ -687,7 +688,7 @@ class HomeViewModel(
         _itemMenuShown.value = false
         _activeMenuId.value = null
         dismissJob = viewModelScope.launch {
-            delay(150)
+            delay(150.milliseconds)
             setQuickEditItem(null)
         }
     }

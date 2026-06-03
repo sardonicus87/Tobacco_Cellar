@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.milliseconds
 
 class PlaintextViewModel (
     filterViewModel: FilterViewModel,
@@ -298,7 +299,7 @@ class PlaintextViewModel (
                 ) { format, delimiter ->
                     format to delimiter
                 }.collectLatest { (format, delimiter) ->
-                    delay(500)
+                    delay(500.milliseconds)
                     preferencesRepo.setPlaintextFormatString(format)
                     preferencesRepo.setPlaintextDelimiter(delimiter)
                 }
@@ -439,7 +440,7 @@ class PlaintextViewModel (
                     !initialized -> true
                     format.isBlank() -> false
                     list.isNotBlank() -> {
-                        delay(25)
+                        delay(25.milliseconds)
                         false
                     }
                     else -> true

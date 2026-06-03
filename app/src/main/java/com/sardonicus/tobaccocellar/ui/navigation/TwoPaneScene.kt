@@ -68,6 +68,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlin.time.Duration.Companion.milliseconds
 
 data class TwoPaneScene<T : Any>(
     override val key: Any,
@@ -106,7 +107,7 @@ data class TwoPaneScene<T : Any>(
             if (showButton) {
                 if (secondExpanded) {
                     snapshotFlow { paneWidth }.first { it >= expandedWidth }
-                    delay(3000)
+                    delay(3000.milliseconds)
                     showButton = false
                 }
             }

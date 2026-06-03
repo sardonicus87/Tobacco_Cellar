@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.time.Duration.Companion.milliseconds
 
 class FilterViewModel (
     private val itemsRepository: ItemsRepository,
@@ -346,7 +347,7 @@ class FilterViewModel (
                 if (it is DatabaseRestoreEvent) {
                     resetFilter()
                     _refresh.emit(Unit)
-                    delay(25)
+                    delay(25.milliseconds)
                     _refresh.emit(Unit)
                     _shouldScrollUp.value = true
                 }
@@ -1145,7 +1146,7 @@ class FilterViewModel (
         viewModelScope.launch(Dispatchers.Default) {
             unifiedFilteredItems.collectLatest { items ->
                 if (items.isEmpty() && isFilterApplied.value && !searchPerformed.value && !_emptyDatabase.value) {
-                    delay(50)
+                    delay(50.milliseconds)
                     if (unifiedFilteredItems.value.isEmpty()) {
                         recoverFromEmpty()
                     }
@@ -1297,7 +1298,6 @@ class FilterViewModel (
             selectAllItems,
             selectedIndex
         )
-
     }
         .flowOn(Dispatchers.Default)
         .stateIn(
@@ -1374,7 +1374,6 @@ class FilterViewModel (
         val iconOpacity = if (searchPerformed) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
 
         if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend.value) }
-
 
         SearchState(
             searchFocused = searchFocused,
@@ -1505,8 +1504,9 @@ class FilterViewModel (
             }
 
             if (score != null) score to brand else null
-        }.distinct().sortedBy { it.first }.map { it.second }
+        }.sortedBy { it.first }.map { it.second }
     }
+
     fun updateUnselectedBrandRow(
         filteredBrands: List<String>,
         excluded: Boolean,

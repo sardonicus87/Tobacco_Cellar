@@ -83,6 +83,7 @@ import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ItemMenu(
@@ -109,7 +110,7 @@ fun ItemMenu(
     val onShowQtyPop: (Boolean) -> Unit = { showQtyPop = it }
 
     LaunchedEffect(Unit) {
-        delay(150)
+        delay(150.milliseconds)
         viewModel.setQuickEditItem(activeItemId())
     }
 

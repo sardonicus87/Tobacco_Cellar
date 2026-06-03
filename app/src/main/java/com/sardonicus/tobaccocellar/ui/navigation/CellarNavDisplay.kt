@@ -61,6 +61,7 @@ import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.delay
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CellarNavigation(
@@ -82,7 +83,7 @@ fun CellarNavigation(
     val twoPaneState by filterViewModel.twoPaneState.collectAsState()
     LaunchedEffect(navigationState.isTwoPane, twoPaneState, navigationState.currentStack.size) {
         if (twoPaneState && !navigationState.isTwoPane && navigationState.currentStack.size > 1) {
-            delay(500)
+            delay(500.milliseconds)
             filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
         } else {
             filterViewModel.updateTwoPaneState(navigationState.isTwoPane)

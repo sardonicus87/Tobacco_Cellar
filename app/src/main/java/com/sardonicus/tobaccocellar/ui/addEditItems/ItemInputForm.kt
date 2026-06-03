@@ -55,6 +55,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ItemInputForm(
@@ -327,12 +328,12 @@ private fun AdaptiveTabRow(
     LaunchedEffect(selectedTabIndex) {
         if (selectedTabIndex == 2) {
             scope.launch {
-                delay(50)
+                delay(50.milliseconds)
                 showAdditional.value = true
             }
         } else {
             scope.launch {
-                delay(5)
+                delay(5.milliseconds)
                 showAdditional.value = false
             }
         }

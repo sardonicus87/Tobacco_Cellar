@@ -59,6 +59,7 @@ import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,10 +164,10 @@ private fun StatsBody(
         scope.launch {
             lazyListState.scrollToItem(0)
             while (lazyListState.canScrollBackward) {
-                delay(5)
+                delay(5.milliseconds)
             }
             viewModel.updateExpanded(false)
-            delay(10)
+            delay(10.milliseconds)
         }
     }
 

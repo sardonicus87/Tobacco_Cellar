@@ -62,6 +62,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun HomeHeader(
@@ -210,7 +211,7 @@ private fun SearchField (
             coroutineScope.launch {
                 if (state.searchText.isNotBlank()) {
                     if (!state.searchPerformed) { getPositionTrigger() }
-                    delay(15)
+                    delay(15.milliseconds)
                     EventBus.emit(SearchPerformedEvent)
                     onSearch(state.searchText)
                 }

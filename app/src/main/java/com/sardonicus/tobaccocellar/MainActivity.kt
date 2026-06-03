@@ -71,6 +71,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
 
@@ -107,7 +108,7 @@ class MainActivity : ComponentActivity() {
                         .show()
 
                     lifecycleScope.launch(Dispatchers.Default) {
-                        delay(2000)
+                        delay(2000.milliseconds)
                         backPressedOnce = false
                     }
                 }
