@@ -323,7 +323,7 @@ class HomeViewModel(
         val showRating = values[5] as Boolean
         val listSorting = values[6] as ListSorting
 
-        val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY)
+        val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY, ListSortOption.EDITED)
         val subgenreOption = when (typeGenreOption) {
             TypeGenreOption.SUBGENRE -> true
             TypeGenreOption.BOTH -> true
@@ -487,6 +487,7 @@ class HomeViewModel(
                     TableColumn.FAV_DIS -> 64.dp
                     TableColumn.NOTE -> 64.dp
                     TableColumn.QTY -> 98.dp
+                    TableColumn.EDITED -> 108.dp
                 }
             } else {
                 0.dp
@@ -513,6 +514,7 @@ class HomeViewModel(
 
                 TableColumn.NOTE -> { item: Items -> item.notes }
                 TableColumn.QTY -> { item: Items -> item.id }
+                TableColumn.EDITED -> { item: Items -> formatMediumDate(item.lastModified, true) }
             }
         }
         val alignment = columnMinWidths.indices.map {
@@ -525,6 +527,7 @@ class HomeViewModel(
                 5 -> Alignment.Center // fav/dis
                 6 -> Alignment.Center // notes
                 7 -> Alignment.Center // quantity
+                8 -> Alignment.Center // edited
                 else -> Alignment.CenterStart
             }
         }
@@ -541,6 +544,7 @@ class HomeViewModel(
                     5 -> "" // favorite/dislike
                     6 -> "Note"
                     7 -> "Qty"
+                    8 -> "Modified"
                     else -> ""
                 }
             }
@@ -805,6 +809,9 @@ class HomeViewModel(
                                 if (sortQuantity[it.items.id] == 0.0) 1 else 0
                             }.thenBy { sortQuantity[it.items.id] }
                         )
+                    8 ->
+                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.lastModified }
+                        else filteredItems.sortedBy { it.items.lastModified }
                     else -> filteredItems
                 }
             } else {
@@ -849,6 +856,9 @@ class HomeViewModel(
                             compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
                                 .thenBy { sortQuantity[it.items.id] }
                         )
+                    ListSortOption.EDITED ->
+                        if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.lastModified }
+                        else filteredItems.sortedBy { it.items.lastModified }
                 }
             }
         } else emptyList()
@@ -951,7 +961,8 @@ class HomeViewModel(
                 TableColumn.RATING to ratings,
                 TableColumn.FAV_DIS to favDis,
                 TableColumn.NOTE to notes,
-                TableColumn.QTY to true
+                TableColumn.QTY to true,
+                TableColumn.EDITED to true
             )
         }
             .stateIn(
@@ -965,7 +976,8 @@ class HomeViewModel(
                     TableColumn.RATING to true,
                     TableColumn.FAV_DIS to true,
                     TableColumn.NOTE to true,
-                    TableColumn.QTY to true
+                    TableColumn.QTY to true,
+                    TableColumn.EDITED to true
                 )
             )
 
@@ -1188,7 +1200,7 @@ data class ListSorting(
     val listAscending: Boolean = true,
     val listIcon: Int =
         when (option) {
-            ListSortOption.RATING, ListSortOption.QUANTITY -> if (listAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
+            ListSortOption.RATING, ListSortOption.QUANTITY, ListSortOption.EDITED -> if (listAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
             else -> if (listAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
         }
 )
@@ -1199,7 +1211,7 @@ data class TableSorting(
     val sortAscending: Boolean = true,
     val sortIcon: Int =
         when (columnIndex) {
-            4, 7 -> if (sortAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
+            4, 7, 8 -> if (sortAscending) R.drawable.triangle_arrow_down else R.drawable.triangle_arrow_up
             else -> if (sortAscending) R.drawable.triangle_arrow_up else R.drawable.triangle_arrow_down
         }
 )
@@ -1246,7 +1258,8 @@ enum class ListSortOption(val value: String) {
     TYPE("Type"),
     SUBGENRE("Subgenre"),
     RATING("Rating"),
-    QUANTITY("Quantity")
+    QUANTITY("Quantity"),
+    EDITED("Modified")
 }
 
 @Immutable
