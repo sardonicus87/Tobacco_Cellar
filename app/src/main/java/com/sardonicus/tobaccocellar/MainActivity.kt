@@ -149,18 +149,10 @@ class MainActivity : ComponentActivity() {
 
                         when {
                             userEmail != null && hasScope -> {
-                                lifecycleScope.launch {
-                                    preferencesRepo.saveCrossDeviceSync(true)
-                                }
+                                lifecycleScope.launch { preferencesRepo.saveCrossDeviceSync(true) }
                             }
-
-                            userEmail != null && !hasScope -> {
-                                authorizeDrive()
-                            }
-
-                            else -> {
-                                signIn()
-                            }
+                            userEmail != null && !hasScope -> { authorizeDrive() }
+                            else -> { signIn() }
                         }
                     }
                     if (event is SignOutEvent) {
@@ -292,6 +284,7 @@ class MainActivity : ComponentActivity() {
                         if (userEmail != null) {
                             preferencesRepo.saveLoginState(userEmail, true)
                             preferencesRepo.saveCrossDeviceSync(true)
+                            (application as CellarApplication).periodicDownloadSetup()
                             Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
                         }
                     }
