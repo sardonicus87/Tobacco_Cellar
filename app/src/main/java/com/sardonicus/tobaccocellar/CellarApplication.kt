@@ -13,7 +13,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -26,8 +25,6 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
-import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +35,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
@@ -72,12 +68,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         // Check Network Flow and trigger upload if there are pending ops,
         applicationScope.launch(Dispatchers.Default) {
             preferencesRepo.crossDeviceSync.collectLatest { enabled ->
-                if (enabled) {
-                    supervisorScope{
-                        launch { triggerPendingUpload() }
-                        launch { periodicDownloadSetup() }
-                    }
-                }
+                if (enabled) { triggerPendingUpload() }
+                else { cancelPeriodicSync() }
             }
         }
     }
@@ -98,41 +90,32 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
     }
 
-    private suspend fun periodicDownloadSetup() {
-        val workManager = WorkManager.getInstance(this@CellarApplication)
-        val mobileEnabled = preferencesRepo.allowMobileData.first()
-        val networkType = if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
+    fun periodicDownloadSetup() {
+        applicationScope.launch(Dispatchers.Default) {
+            val workManager = WorkManager.getInstance(this@CellarApplication)
+            val mobileEnabled = preferencesRepo.allowMobileData.first()
+            val networkType = if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
 
-        // Periodic Worker
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(networkType)
-            .build()
-
-        val downloadWorkRequest =
-            PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
-                .setConstraints(constraints)
-                .addTag("periodic worker")
+            // Periodic Worker
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(networkType)
                 .build()
 
-        workManager.enqueueUniquePeriodicWork(
-            "download_sync_work",
-            ExistingPeriodicWorkPolicy.KEEP,
-            downloadWorkRequest
-        )
+            val downloadWorkRequest =
+                PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
+                    .setConstraints(constraints)
+                    .addTag("periodic worker")
+                    .build()
 
-        // Refresh Db flow when there's a download
-        workManager.getWorkInfoByIdFlow(downloadWorkRequest.id).collect { workInfo ->
-            when (workInfo?.state) {
-                WorkInfo.State.SUCCEEDED -> {
-                    val result = workInfo.outputData
-                    when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
-                        DownloadSyncWorker.SYNC_COMPLETE -> EventBus.emit(SyncDownloadEvent)
-                    }
-                }
-                else -> {}
-            }
+            workManager.enqueueUniquePeriodicWork(
+                "download_sync_work",
+                ExistingPeriodicWorkPolicy.KEEP,
+                downloadWorkRequest
+            )
         }
     }
+
+    fun cancelPeriodicSync() { WorkManager.getInstance(this).cancelUniqueWork("download_sync_work") }
 
     private suspend fun migrateSyncSettings() {
         SyncStateManager.loggingPaused = true
@@ -198,8 +181,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         if (savedInstanceState == null) {
             applicationScope.launch(Dispatchers.Default) {
                 val syncEnabled = preferencesRepo.crossDeviceSync.first()
+                val syncInProgress = SyncStateManager.isSyncing.first()
 
-                if (syncEnabled) {
+                if (syncEnabled && !syncInProgress) {
                     val workManager = WorkManager.getInstance(this@CellarApplication)
                     val allowMobile = preferencesRepo.allowMobileData.first()
                     val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED

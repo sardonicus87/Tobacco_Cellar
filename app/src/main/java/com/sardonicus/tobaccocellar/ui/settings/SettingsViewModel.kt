@@ -17,6 +17,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
+import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
@@ -403,6 +404,10 @@ class SettingsViewModel(
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
             if (enable) {
+                val email = _userEmail.value
+                if (!email.isNullOrEmpty()) {
+                    (application as CellarApplication).periodicDownloadSetup()
+                }
                 _signingIn.value = _userEmail.value.isNullOrEmpty()
                 EventBus.emit(SignInEvent)
             } else {
@@ -421,6 +426,11 @@ class SettingsViewModel(
 
     fun manualSync() {
         viewModelScope.launch {
+            if (SyncStateManager.isSyncing.first()) {
+                showSnackbar("Sync already in progress.")
+                return@launch
+            }
+
             preferencesRepo.signedInUserEmail.first() ?: return@launch
 
             if (!networkEnabled.value) {
@@ -477,7 +487,6 @@ class SettingsViewModel(
                             val result = workInfo.outputData
                             when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
                                 DownloadSyncWorker.SYNC_COMPLETE -> {
-                                    EventBus.emit(SyncDownloadEvent)
                                     showSnackbar("Sync complete.")
                                 }
                                 DownloadSyncWorker.REMOTE_EMPTY -> {
@@ -508,6 +517,11 @@ class SettingsViewModel(
 
     fun clearRemoteData() {
         viewModelScope.launch {
+            if (SyncStateManager.isSyncing.first()) {
+                showSnackbar("Sync in progress, please wait for it to finish.")
+                return@launch
+            }
+
             if (!networkEnabled.value) {
                 val message = if (!networkMonitor.isWifi.first()) "allow mobile data is off"
                     else "check connection"
@@ -574,13 +588,7 @@ class SettingsViewModel(
     }
 
     fun stopWorkers() {
-        viewModelScope.launch {
-            preferencesRepo.signedInUserEmail.first() ?: return@launch
-
-            val workManager = WorkManager.getInstance(application)
-
-            workManager.cancelUniqueWork(("download_sync_work"))
-        }
+        viewModelScope.launch { (application as CellarApplication).cancelPeriodicSync() }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {

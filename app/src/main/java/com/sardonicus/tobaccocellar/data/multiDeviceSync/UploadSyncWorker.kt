@@ -3,9 +3,13 @@ package com.sardonicus.tobaccocellar.data.multiDeviceSync
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.google.api.client.http.InputStreamContent
 import com.google.api.services.drive.model.File
 import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker.Companion.NETWORK_ERROR
+import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker.Companion.RESULT_KEY
+import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -23,6 +27,15 @@ class UploadSyncWorker(
         val app = applicationContext as CellarApplication
         val preferencesRepo = app.preferencesRepo
         val pendingSyncOperationDao = app.container.itemsRepository.getPendingSyncOperationDao()
+
+        val allowMobile = preferencesRepo.allowMobileData.first()
+        if (!allowMobile) {
+            val networkMonitor = NetworkMonitor(applicationContext)
+            val isWifi = networkMonitor.isWifi.first()
+            if (!isWifi) { return Result.success(workDataOf(RESULT_KEY to NETWORK_ERROR)) }
+        }
+
+        SyncStateManager.started()
 
         try {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
@@ -61,12 +74,13 @@ class UploadSyncWorker(
 
                 val processedIds = pendingOperations.map { it.id }
                 pendingSyncOperationDao.deleteOperation(processedIds)
-
             }
 
             return Result.success()
         } catch (_: Exception) {
             return Result.retry()
+        } finally {
+            SyncStateManager.finished()
         }
     }
 }

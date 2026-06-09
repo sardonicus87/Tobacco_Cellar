@@ -15,6 +15,8 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.TinSyncPayload
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -47,6 +49,8 @@ class DownloadSyncWorker(
             val isWifi = networkMonitor.isWifi.first()
             if (!isWifi) { return Result.success(workDataOf(RESULT_KEY to NETWORK_ERROR)) }
         }
+
+        SyncStateManager.started()
 
         try {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
@@ -94,6 +98,8 @@ class DownloadSyncWorker(
 
                 } catch (_: Exception) {
                     continue
+                } finally {
+                    SyncStateManager.finished()
                 }
             }
 
@@ -119,6 +125,7 @@ class DownloadSyncWorker(
 
             preferencesRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
 
+            EventBus.emit(SyncDownloadEvent)
             return Result.success(workDataOf(RESULT_KEY to SYNC_COMPLETE))
         } catch (_: Exception) {
             return Result.retry()
