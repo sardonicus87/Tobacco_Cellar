@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
+import android.text.format.DateFormat
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
@@ -312,11 +313,17 @@ fun formatShortDate(millis: Long?): String {
     } ?: ""
 }
 
-fun formatMediumDate(millis: Long?): String {
+fun formatMediumDate(millis: Long?, alternate: Boolean = false): String {
     return millis?.let {
         val instant = Instant.ofEpochMilli(it)
         val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(localDate)
+
+        val formatter = if (alternate) {
+            val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMddyy")
+            DateTimeFormatter.ofPattern(pattern)
+        } else { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+
+        formatter.format(localDate)
     } ?: ""
 }
 
