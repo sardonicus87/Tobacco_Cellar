@@ -151,12 +151,12 @@ class EditEntryViewModel(
     }
 
     fun updateUiState(itemDetails: ItemDetails) {
-        val syncedTins = calculateSyncTins(itemDetails.tinDetailsList, tinConversion.value)
-
-        val updatedDetails = itemDetails.copy(
-            quantityString = if (itemDetails.syncTins) syncedTins.toString() else itemDetails.quantity.toString(),
-            quantity = if (itemDetails.syncTins) syncedTins else itemDetails.quantity
-        )
+        val updatedDetails = if (itemDetails.syncTins) {
+            val syncedTins = calculateSyncTins(itemDetails.tinDetailsList, tinConversion.value)
+            itemDetails.copy(
+                quantityString = syncedTins.toString(),
+                quantity = syncedTins)
+        } else { itemDetails }
 
         itemUiState = ItemUiState(
             itemDetails = updatedDetails,

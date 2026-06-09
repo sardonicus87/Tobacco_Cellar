@@ -60,19 +60,20 @@ class AddEntryViewModel(
                     ozRate = ozRate,
                     gramsRate = gramsRate,
                 )
-                updateUiState(itemUiState.itemDetails.copy(syncTins = defaultSync))
+                if (defaultSync) updateUiState(itemUiState.itemDetails.copy(syncTins = true))
             }
         }
     }
 
     /** update item state **/
     fun updateUiState(itemDetails: ItemDetails) {
-        val syncedTins = calculateSyncTins(itemDetails.tinDetailsList, tinConversion.value)
+        val updatedDetails = if (itemDetails.syncTins) {
+            val syncedTins = calculateSyncTins(itemDetails.tinDetailsList, tinConversion.value)
+            itemDetails.copy(
+                quantityString = syncedTins.toString(),
+                quantity = syncedTins)
+        } else { itemDetails }
 
-        val updatedDetails = itemDetails.copy(
-            quantityString = if (itemDetails.syncTins) syncedTins.toString() else itemDetails.quantity.toString(),
-            quantity = if (itemDetails.syncTins) syncedTins else itemDetails.quantity
-        )
 
         itemUiState = ItemUiState(
             itemDetails = updatedDetails,
