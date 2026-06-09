@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 /** TextField with AutoComplete suggestions */
 @Composable
@@ -78,7 +80,7 @@ fun AutoCompleteText(
 
     var listCache by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    val input = remember(textFieldValueState) {
+    val input = remember(textFieldValueState.text, textFieldValueState.selection) {
         getInput(
             text = textFieldValueState.text,
             cursorPosition = textFieldValueState.selection.start,
@@ -86,31 +88,32 @@ fun AutoCompleteText(
         )
     }
 
-    LaunchedEffect(input, textFieldValueState.text) {
-        suggestionsState = getSuggestions(
+    LaunchedEffect(input) {
+        val newSuggestions = getSuggestions(
             input = input,
             fullText = textFieldValueState.text,
             allItems = allItems,
             componentField = componentField
         )
-        if (suggestionsState.isNotEmpty()) listCache = suggestionsState
+        suggestionsState = newSuggestions
+        if (expandedState && newSuggestions.isNotEmpty()) { listCache = newSuggestions }
+    }
+
+    LaunchedEffect(expandedState) {
+        if (expandedState && suggestionsState.isNotEmpty()) { listCache = suggestionsState }
     }
 
     LaunchedEffect(input, suggestionsState, override, value, focusInteractionCount) {
         expandedState = if (input.length >= 2 && focusInteractionCount > 2) {
             suggestionsState.isNotEmpty() && !override && value.isNotBlank()
-        } else {
-            false
-        }
+        } else { false }
     }
 
     LaunchedEffect(override) {
         if (override) {
-            delay(250)
+            delay(250.milliseconds)
             override = false
-            if (componentField) {
-                suggestionsState = emptyList()
-            }
+            if (componentField) { suggestionsState = emptyList() }
         }
     }
 
@@ -130,28 +133,26 @@ fun AutoCompleteText(
             onValueChange = { textFieldValue ->
                 textFieldValueState = textFieldValue
                 onValueChange?.invoke(textFieldValue.text)
-
-                if (focusInteractionCount > 0) {
-                    focusInteractionCount++
-                }
+                if (focusInteractionCount > 0) focusInteractionCount++
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
                 .onFocusChanged {
                     if (it.isFocused) {
-                        if (focusInteractionCount == 0) {
-                            focusInteractionCount = 1
-                        }
+                        if (focusInteractionCount == 0) focusInteractionCount = 1
                     } else {
                         expandedState = false
                         focusInteractionCount = 0
                     }
                 }
-                .pointerInput(focusInteractionCount, expandedState) {
-                    if (focusInteractionCount > 0 && !expandedState) {
-                        awaitPointerEventScope {
-                            focusInteractionCount++
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type == PointerEventType.Press) {
+                                if (focusInteractionCount > 0) focusInteractionCount++
+                            }
                         }
                     }
                 }
@@ -184,7 +185,7 @@ fun AutoCompleteText(
             expanded = expandedState,
             onDismissRequest = { /**/ },
             modifier = Modifier
-                .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+                .padding(0.dp)
                 .height(intrinsicSize = IntrinsicSize.Max)
                 .onGloballyPositioned { menuY = it.positionOnScreen().y },
             properties = PopupProperties(focusable = false),
@@ -226,12 +227,10 @@ fun AutoCompleteText(
 
                                 val updatedText = currentText.replaceRange(startIndex + 1, endIndex, " $label, ")
                                     .trimStart().replace("  ", " ").replace(", ,", ",")
-                                val finalCursorPos = if (startIndex == -1) {
-                                    label.length + 2
-                                } else if (endIndex == currentText.length) {
-                                    updatedText.length
-                                }
-                                else { (startIndex + 1) + label.length + 1 }
+                                val finalCursorPos =
+                                    if (startIndex == -1) { label.length + 2 }
+                                    else if (endIndex == currentText.length) { updatedText.length }
+                                    else { (startIndex + 1) + label.length + 1 }
 
                                 TextFieldValue(
                                     text = updatedText,
@@ -249,6 +248,7 @@ fun AutoCompleteText(
 
                         override = true
                         expandedState = false
+                        focusInteractionCount = if (componentField) focusInteractionCount else 1
                         onOptionSelected?.invoke(newValue.text)
                     },
                     modifier = Modifier
@@ -273,7 +273,7 @@ private fun CustomDropdownMenuItem(
                 indication = LocalIndication.current,
                 interactionSource = null
             ) { onClick() }
-            .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 0.dp)
+            .padding(0.dp)
     ) {
         text()
     }
@@ -304,35 +304,34 @@ private fun getSuggestions(
     allItems: List<String>,
     componentField: Boolean
 ): List<String> {
-    if (input.length >= 2 ) {
-        val startsWith = allItems.filter { it.startsWith(input, ignoreCase = true) }
+    if (input.length < 2) return emptyList()
 
-        val otherWordsStartsWith = allItems.filter { string ->
-            string.split(" ").drop(1)
-                .any {
-                    it.startsWith(input, ignoreCase = true) }
-                    && !startsWith.contains(string)
+    val selectedInput = if (componentField && fullText.isNotBlank()) {
+        fullText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    } else { emptyList() }
+
+    val selected = allItems.filter {
+        if (componentField) selectedInput.contains(it)
+        else it.equals(input, ignoreCase = false)
+    }.toSet()
+
+    val scoreResults = allItems.mapNotNull { brand ->
+        val score = when {
+            brand.startsWith(input, ignoreCase = true) -> 0
+            brand.split(" ").any { it.startsWith(input, ignoreCase = true) } -> 1
+            brand.contains(input, ignoreCase = true) -> 2
+            else -> null
         }
+        if (score != null) score to brand else null
+    }.filter { it.second !in selected }
 
-        val contains = if (input.length > 3) allItems.filter {
-            it.contains(input, ignoreCase = true) && !startsWith.contains(it) && !otherWordsStartsWith.contains(it)
-        } else emptyList()
+    val hasPrimaryMatches = scoreResults.any { it.first < 2 }
 
-        val selectedInput =
-            if (componentField) {
-                if (fullText.isNotBlank()) {
-                    fullText.split(", ").map { it.trim() }.filter { it.isNotBlank() } }
-                else { emptyList() } }
-            else { listOf(input) }
-
-        val selected = allItems.filter {
-            if (componentField) { selectedInput.contains(it) }
-            else { it.equals(input, ignoreCase = false) } }.toSet()
-
-        val newSuggestions = (startsWith + otherWordsStartsWith + contains) - selected
-
-        return newSuggestions
-    } else {
-        return emptyList()
-    }
+    return scoreResults.filter { (score, _) ->
+        when (score) {
+            0, 1 -> true
+            2 -> if (hasPrimaryMatches) true else input.length > 3
+            else -> false
+        }
+    }.sortedBy { it.first }.map { it.second } - selected
 }
