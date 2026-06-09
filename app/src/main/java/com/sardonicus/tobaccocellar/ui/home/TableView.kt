@@ -238,7 +238,7 @@ private fun TableItem(
                     contentAlignment = layoutData.alignment.values[columnIndex]
                 ) {
                     when (columnIndex) {
-                        0, 1, 2, 3, 4 -> { // brand, blend, type, subgenre, rating
+                        0, 1, 2, 3, 4, 8 -> { // brand, blend, type, subgenre, rating last modified
                             Text(
                                 text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -336,7 +336,7 @@ private fun TableHeaderRow(
                 contentAlignment = layoutData.alignment.values[columnIndex]
             ) {
                 when (columnIndex) {
-                    0, 1, 2, 3, 7 -> { // brand, blend, type, subgenre, quantity
+                    0, 1, 2, 3, 7, 8 -> { // brand, blend, type, subgenre, quantity, last modified
                         Box(
                             modifier = Modifier
                                 .clickable(
@@ -529,5 +529,6 @@ enum class TableColumn(val title: String) {
     RATING("Rating"),
     FAV_DIS("Fav/Dis"),
     NOTE("Notes"),
-    QTY("Quantity")
+    QTY("Quantity"),
+    EDITED("Last Modified")
 }
