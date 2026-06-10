@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -60,6 +61,7 @@ import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -96,6 +98,8 @@ fun CellarNavigation(
     val csvHelper = app.csvHelper
     val networkMonitor = remember { NetworkMonitor(app) }
 
+    val csvHelpScrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
@@ -165,7 +169,10 @@ fun CellarNavigation(
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
                     navigateToBulkEdit = { navigator.navigate(BulkEditDestination) },
-                    navigateToCsvImport = { navigator.navigate(CsvFlowDestination) },
+                    navigateToCsvImport = {
+                        scope.launch { csvHelpScrollState.scrollTo(0) }
+                        navigator.navigate(CsvImportDestination(UUID.randomUUID().toString()))
+                    },
                     navigateToPlaintext = { navigator.navigate(PlaintextDestination) },
                     navigateToHelp = { navigator.navigate(HelpDestination) },
                     navigateToAbout = { navigator.navigate(AboutDestination) },
@@ -319,68 +326,46 @@ fun CellarNavigation(
                 )
             }
 
-            is CsvFlowDestination -> NavEntry(key) {
-                val csvHelpScrollState = rememberScrollState()
-
-                val startRoute = remember { CsvImportDestination(UUID.randomUUID().toString()) }
-                val nestedNavigationState = rememberNavigationState(startRoute, setOf(startRoute))
-                val nestedNavigator = remember { Navigator(nestedNavigationState) }
-
-                val nestedEntryProvider: (NavKey) -> NavEntry<NavKey> = { nestedKey ->
-                    when (val csvKey = nestedKey as CsvFlowKey) {
-
-                        is CsvImportDestination -> NavEntry(csvKey, metadata = paneInfo) {
-                            val viewModel: CsvImportViewModel = viewModel(
-                                factory = viewModelFactory {
-                                    initializer {
-                                        CsvImportViewModel(
-                                            itemsRepository,
-                                            preferencesRepo
-                                        )
-                                    }
-                                }
-                            )
-
-                            CsvImportScreen(
-                                navKey = csvKey,
-                                onNavigateUp = { navigator.goBack() },
-                                navigateToHome = { navigator.navigate(HomeDestination) },
-                                navigateToCsvHelp = { nestedNavigator.navigate(CsvHelpDestination) },
-                                navigateToImportResults = { totalRecords, successCount, successfulInsertions, successfulUpdates, successfulTins, updateFlag, tinFlag ->
-                                    navigator.goBack()
-                                    navigator.navigate(
-                                        CsvImportResultsDestination(
-                                            totalRecords,
-                                            successCount,
-                                            successfulInsertions,
-                                            successfulUpdates,
-                                            successfulTins,
-                                            updateFlag,
-                                            tinFlag
-                                        )
-                                    )
-                                },
-                                viewModel = viewModel
-                            )
-                        }
-
-                        is CsvHelpDestination -> NavEntry(csvKey, metadata = slideTransition + paneInfo) {
-                            CsvHelpScreen(
-                                onNavigateUp = { nestedNavigator.goBack() },
-                                scrollState = csvHelpScrollState,
+            is CsvImportDestination -> NavEntry(key, metadata = paneInfo) {
+                val viewModel: CsvImportViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            CsvImportViewModel(
+                                itemsRepository,
+                                preferencesRepo
                             )
                         }
                     }
-                }
-                NavDisplay(
-                    entries = nestedNavigationState.toEntries(nestedEntryProvider),
-                    onBack = {
-                        if (nestedNavigationState.canGoBack) {
-                            nestedNavigator.goBack()
-                        } else {
-                            navigator.goBack()
-                        }
-                    }
+                )
+
+                CsvImportScreen(
+                    navKey = key,
+                    onNavigateUp = { navigator.goBack() },
+                    navigateToHome = { navigator.navigate(HomeDestination) },
+                    navigateToCsvHelp = { navigator.navigate(CsvHelpDestination) },
+                    navigateToImportResults = { totalRecords, successCount, successfulInsertions, successfulUpdates, successfulTins, updateFlag, tinFlag ->
+                        val stack = navigationState.backStacks[HomeDestination]
+                        stack?.removeIf { it is CsvImportDestination }
+                        navigator.navigate(
+                            CsvImportResultsDestination(
+                                totalRecords,
+                                successCount,
+                                successfulInsertions,
+                                successfulUpdates,
+                                successfulTins,
+                                updateFlag,
+                                tinFlag
+                            )
+                        )
+                    },
+                    viewModel = viewModel
+                )
+            }
+
+            is CsvHelpDestination -> NavEntry(key, metadata = slideTransition + paneInfo) {
+                CsvHelpScreen(
+                    onNavigateUp = { navigator.goBack() },
+                    scrollState = csvHelpScrollState,
                 )
             }
 

@@ -86,20 +86,12 @@ data object BulkEditDestination : NavKey, PaneInfo {
 }
 
 @Serializable
-sealed interface CsvFlowKey : NavKey
-
-@Serializable
-data object CsvFlowDestination : NavKey, PaneInfo {
+data class CsvImportDestination(val id: String) : NavKey, PaneInfo {
     override val paneType = PaneType.NONE
 }
 
 @Serializable
-data class CsvImportDestination(val id: String) : CsvFlowKey, PaneInfo {
-    override val paneType = PaneType.NONE
-}
-
-@Serializable
-data object CsvHelpDestination : CsvFlowKey, PaneInfo {
+data object CsvHelpDestination : NavKey, PaneInfo {
     override val paneType = PaneType.NONE
 }
 
