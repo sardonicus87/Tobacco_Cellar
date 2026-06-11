@@ -66,7 +66,8 @@ private fun normalizeDate(millis: Long?): Long? {
 
 
 fun isTinLabelValid(tins: List<TinDetails>, tinLabel: String, tempTinId: Int): Boolean {
-    return tins.filter { it.tempTinId != tempTinId && it.tinLabel.isNotBlank() }.none { it.tinLabel == tinLabel }
+    if (tinLabel.isBlank()) return true
+    return tins.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
 }
 
 
@@ -151,7 +152,7 @@ data class TinDetails(
     val cellarDateLong: String = "",
     val openDateLong: String = "",
     val detailsExpanded: Boolean = true,
-    val labelIsValid: Boolean = false,
+    val labelIsValid: Boolean = true,
 )
 
 data class OriginalTin(
