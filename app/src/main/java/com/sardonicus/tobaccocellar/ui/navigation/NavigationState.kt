@@ -36,14 +36,17 @@ fun rememberNavigationState(
 
     val backStacks = topLevelRoutes.associateWith { rememberNavBackStack(it) }
 
+    if (topLevelRoute.value !in topLevelRoutes) { topLevelRoute.value = startRoute }
+
     LaunchedEffect(topLevelRoutes, twoPaneAllowed) {
         if (twoPaneAllowed) {
-            val currentStack = backStacks.getValue(topLevelRoute.value)
-            val currentTop = topLevelRoute.value
+            backStacks[topLevelRoute.value]?.let { currentStack ->
+                val currentTop = topLevelRoute.value
 
-            mainSecondaryMap[currentTop]?.let {
-                if (currentStack.getOrNull(1) != it.defaultSecondary) {
-                    currentStack.add(1, it.defaultSecondary)
+                mainSecondaryMap[currentTop]?.let {
+                    if (currentStack.getOrNull(1) != it.defaultSecondary) {
+                        currentStack.add(1, it.defaultSecondary)
+                    }
                 }
             }
         } else {
@@ -90,7 +93,7 @@ class NavigationState(
         }
 
     val currentStack: List<NavKey>
-        get() { return backStacks.getValue(topLevelRoute).toList() }
+        get() { return backStacks[topLevelRoute]?.toList() ?: emptyList() }
 
     var cameFrom: NavKey? by mutableStateOf(currentStack.lastOrNull())
 
@@ -101,7 +104,7 @@ class NavigationState(
         get() {
             if (!twoPaneAllowed) return false
 
-            val currentStack = backStacks.getValue(topLevelRoute)
+            val currentStack = backStacks[topLevelRoute] ?: return false
             val mainKey = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
             val lastKey = currentStack.lastOrNull()
 
@@ -115,8 +118,7 @@ class NavigationState(
 
     val interceptBack: Boolean
         get() {
-            val currentStack = backStacks.getValue(topLevelRoute)
-
+            val currentStack = backStacks[topLevelRoute] ?: return false
             return isTwoPane && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
         }
 
