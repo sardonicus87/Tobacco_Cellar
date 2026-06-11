@@ -193,9 +193,9 @@ fun CsvImportBody(
                         when (val result = csvHelper.csvFileReader(inputStream)) {
                             is CsvResult.Success -> {
                                 viewModel.onCsvLoaded(
+                                    uri,
                                     result.header,
                                     result.firstFullRecord,
-                                    result.allRecords,
                                     result.recordCount
                                 )
                                 viewModel.generateColumns(
@@ -1084,7 +1084,7 @@ fun CsvImportBody(
 
                             // Confirm and  Import button //
                             Button(
-                                onClick = { coroutineScope.launch { viewModel.confirmImport() } },
+                                onClick = { coroutineScope.launch { viewModel.confirmImport(context.contentResolver) } },
                                 enabled = csvUiState.isFormValid,
                                 modifier = Modifier
                                     .padding(8.dp)

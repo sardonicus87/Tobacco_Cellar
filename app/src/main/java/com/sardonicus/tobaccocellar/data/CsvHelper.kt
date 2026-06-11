@@ -8,7 +8,6 @@ import org.apache.commons.csv.QuoteMode
 import java.io.InputStream
 import java.io.StringWriter
 import java.nio.charset.Charset
-import java.text.ParseException
 
 class CsvHelper {
 
@@ -16,21 +15,27 @@ class CsvHelper {
         return try {
             val defaultParser = CSVParser.parse(inputStream, Charset.defaultCharset(),
                 CSVFormat.DEFAULT)
-            val records = defaultParser.records
+            val iterator = defaultParser.iterator()
 
-            if (records.isNotEmpty()) {
-                val header = records.first().toList().map { it.toString() }
-                val allRecords = records.map { record -> record.toList().map { it.toString() }}
-                val columnCount = records.maxOfOrNull { it.size() } ?: 0
-                val firstFullRecord =
-                    allRecords.drop(1).firstOrNull { it.size == columnCount } ?: emptyList()
-                val recordCount = records.size
-                CsvResult.Success(header, allRecords, firstFullRecord, columnCount, recordCount)
-            } else {
-                CsvResult.Empty
-            }
-        } catch (e: ParseException) {
-            CsvResult.Error(e)
+            if (iterator.hasNext()) {
+                val headerRecord = iterator.next()
+                val header = headerRecord.toList().map { it.toString() }
+                var firstFullRecord = emptyList<String>()
+                var recordCount = 1
+                var columnCount = header.size
+
+                while (iterator.hasNext()) {
+                    val record = iterator.next()
+                    val recordList = record.toList().map { it.toString() }
+
+                    if (firstFullRecord.isEmpty() && recordList.size >= header.size) {
+                        firstFullRecord = recordList
+                    }
+                    if (recordList.size > columnCount) columnCount = recordList.size
+                    recordCount++
+                }
+                CsvResult.Success(header, emptyList(), firstFullRecord, columnCount, recordCount)
+            } else CsvResult.Empty
         } catch (e: Exception) {
             CsvResult.Error(e)
         }

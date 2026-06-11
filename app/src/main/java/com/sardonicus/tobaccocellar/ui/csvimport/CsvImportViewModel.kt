@@ -1,5 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.csvimport
 
+import android.content.ContentResolver
+import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +26,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVRecord
+import java.nio.charset.Charset
 import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -43,9 +49,9 @@ class CsvImportViewModel(
 
     /** setting states from the CSV data **/
     fun onCsvLoaded(
+        uri: Uri,
         header: List<String>,
         firstFullRecord: List<String>,
-        allRecords: List<List<String>>,
         recordCount: Int
     ) {
         val updatedHeader = header.mapIndexed { index, value ->
@@ -56,10 +62,10 @@ class CsvImportViewModel(
         }
 
         _csvImportState.value = CsvImportState(
+            uri = uri,
             header = header.toList(),
             testHeader = updatedHeader.toList(),
             firstFullRecord = updatedFirstFullRecord.toList(),
-            allRecords = allRecords.toList(),
             recordCount = recordCount
         )
     }
@@ -430,609 +436,300 @@ class CsvImportViewModel(
     }
 
 
-    fun confirmImport() = viewModelScope.launch {
+    fun confirmImport(contentResolver: ContentResolver) = viewModelScope.launch {
         _importStatus.value = ImportStatus.Loading
         SyncStateManager.schedulingPaused = true
 
+        val uri = csvImportState.value.uri ?: return@launch
         val hasHeader = mappingOptions.hasHeader
-        val collateTins = mappingOptions.collateTins
-        val importOption = importOption.value
-        var updatedCount = 0
-        var updatedConversions = 0
-        var addedTins = 0
-        var updatedFlagSet = false
-        var tinsFlagSet = false
-
-        val recordsToImport =
-            if (hasHeader) csvImportState.value.allRecords.drop(1)
-            else csvImportState.value.allRecords
         val columnIndices = getSelectedColumnIndices()
-
-        val tinLabelMap = mutableMapOf<Pair<String, String>, Int>()
-        val tinDataMap = mutableMapOf<Pair<String, String>, MutableList<TinData>>()
-
-        recordsToImport.forEach { record ->
-            val brand = record[columnIndices[CsvField.Brand]!!]
-            val blend = record[columnIndices[CsvField.Blend]!!]
-            val brandBlendKey = Pair(brand, blend)
-
-            val numTins = 1
-            val nextLabelNumber = tinLabelMap.getOrDefault(brandBlendKey, 1)
-            val tinLabels = generateTinLabels(numTins, nextLabelNumber)
-            tinLabelMap[brandBlendKey] = nextLabelNumber + numTins
-
-            if (collateTins) {
-                tinsFlagSet = true
-                if (importOption == ImportOption.OVERWRITE) {
-                    if (brand.isNotBlank() && blend.isNotBlank()) {
-                        val existingItem = withContext(Dispatchers.Default) {
-                            itemsRepository.getItemByIndex(brand, blend)
-                        }
-                        if (existingItem != null) {
-                            itemsRepository.deleteAllTinsForItem(existingItem.id)
-                        }
-                    }
-                }
-            }
-
-            val tinDataList = if (collateTins) {
-                List(numTins) { index ->
-                    val container =
-                        if (columnIndices[CsvField.Container] != null &&
-                            columnIndices[CsvField.Container]!! in record.indices
-                        ) {
-                            record[columnIndices[CsvField.Container]!!].trim()
-                        } else ""
-                    val (quantity, unit) =
-                        if (columnIndices[CsvField.TinQuantity] != null &&
-                            columnIndices[CsvField.TinQuantity]!! in record.indices
-                        ) {
-                            record[columnIndices[CsvField.TinQuantity]!!].trim().parseTinQuantity()
-                        } else {
-                            Pair(0.0, "")
-                        }
-                    val manufactureDate =
-                        if (columnIndices[CsvField.ManufactureDate] != null &&
-                            columnIndices[CsvField.ManufactureDate]!! in record.indices
-                        ) {
-                            val dateString = record[columnIndices[CsvField.ManufactureDate]!!].trim()
-                            val dateFormat = mappingOptions.dateFormat
-                            parseDateString(dateString, dateFormat)
-                        } else null
-                    val cellarDate =
-                        if (columnIndices[CsvField.CellarDate] != null &&
-                            columnIndices[CsvField.CellarDate]!! in record.indices
-                        ) {
-                            val dateString = record[columnIndices[CsvField.CellarDate]!!].trim()
-                            val dateFormat = mappingOptions.dateFormat
-                            parseDateString(dateString, dateFormat)
-                        } else null
-                    val openDate =
-                        if (columnIndices[CsvField.OpenDate] != null &&
-                            columnIndices[CsvField.OpenDate]!! in record.indices
-                        ) {
-                            val dateString = record[columnIndices[CsvField.OpenDate]!!].trim()
-                            val dateFormat = mappingOptions.dateFormat
-                            parseDateString(dateString, dateFormat)
-                        } else null
-                    val finished =
-                        if (columnIndices[CsvField.Finished] != null &&
-                            columnIndices[CsvField.Finished]!! in record.indices
-                        ) {
-                            record[columnIndices[CsvField.Finished]!!].toBoolean()
-                        } else false
-
-
-                    TinData(
-                        label = tinLabels[index],
-                        container = container,
-                        quantity = quantity,
-                        unit = unit,
-                        manufactureDate = manufactureDate,
-                        cellarDate = cellarDate,
-                        openDate = openDate,
-                        finished = finished
-                    )
-                }
-            } else emptyList()
-
-            tinDataMap.getOrPut(brandBlendKey) { mutableListOf() }.addAll(tinDataList)
-        }
-
-        @Suppress("SimplifyBooleanWithConstants")
-        val itemsToImport = recordsToImport.mapNotNull { record ->
-            val brand =
-                if (columnIndices[CsvField.Brand] != null &&
-                    columnIndices[CsvField.Brand]!! in record.indices)
-                    record[columnIndices[CsvField.Brand]!!] else ""
-            val blend =
-                if (columnIndices[CsvField.Blend] != null &&
-                    columnIndices[CsvField.Blend]!! in record.indices)
-                    record[columnIndices[CsvField.Blend]!!] else ""
-            val components =
-                if (columnIndices[CsvField.Components] != null &&
-                    columnIndices[CsvField.Components]!! in record.indices)
-                    record[columnIndices[CsvField.Components]!!] else ""
-            val flavoring =
-                if (columnIndices[CsvField.Flavoring] != null &&
-                    columnIndices[CsvField.Flavoring]!! in record.indices)
-                    record[columnIndices[CsvField.Flavoring]!!] else ""
-
-            val brandBlendKey = Pair(brand, blend)
-            val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
-
-            if (brand.isBlank() || blend.isBlank()) {
-                null
-            } else {
-                val existingItem = withContext(Dispatchers.Default) {
-                    itemsRepository.getItemByIndex(brand, blend)
-                }
-                val componentsList = componentSplitter(components)
-                val flavoringList = flavorSplitter(flavoring)
-
-                if (existingItem != null) {
-                    updatedConversions++
-                    when (importOption) {
-
-                        ImportOption.UPDATE -> {
-                            updatedFlagSet = true
-                            val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
-                            val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
-                            val existingTins = withContext(Dispatchers.Default) {
-                                itemsRepository.getTinsForItemStream(existingItem.id).first()
-                            }
-
-                            val updatedItem = existingItem.copy(
-                                type = if (existingItem.type.isBlank() &&
-                                    columnIndices[CsvField.Type] != null &&
-                                    columnIndices[CsvField.Type]!! in record.indices
-                                ) {
-                                    val typeFromCsv = record[columnIndices[CsvField.Type]!!]
-                                    when (typeFromCsv.uppercase()) {
-                                        "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
-                                            typeFromCsv.lowercase()
-                                                .replaceFirstChar { it.uppercase() }
-                                        }
-                                        else -> ""
-                                    }
-                                } else existingItem.type,
-                                subGenre = if (existingItem.subGenre.isBlank() &&
-                                    columnIndices[CsvField.SubGenre] != null &&
-                                    columnIndices[CsvField.SubGenre]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.SubGenre]!!]
-                                else existingItem.subGenre,
-                                cut = if (existingItem.cut.isBlank() &&
-                                    columnIndices[CsvField.Cut] != null &&
-                                    columnIndices[CsvField.Cut]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Cut]!!]
-                                else existingItem.cut,
-                                quantity = if (mappingOptions.syncTins && tinDataList.isNotEmpty() && existingTins.isEmpty())
-                                    calculateSyncTinsQuantity(tinDataList)
-                                else existingItem.quantity,
-                                syncTins = if (mappingOptions.syncTins && tinDataList.isNotEmpty() && existingTins.isEmpty()) true else existingItem.syncTins,
-                                rating = if (existingItem.rating == null &&
-                                    columnIndices[CsvField.Rating] != null &&
-                                    mappingOptions.maxValue != null &&
-                                    columnIndices[CsvField.Rating]!! in record.indices
-                                )
-                                    parseRating(record[columnIndices[CsvField.Rating]!!], mappingOptions.maxValue)
-                                else existingItem.rating,
-                                favorite = if (existingItem.favorite == false &&
-                                    existingItem.disliked == false &&
-                                    columnIndices[CsvField.Favorite] != null &&
-                                    columnIndices[CsvField.Favorite]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Favorite]!!].toBoolean()
-                                else existingItem.favorite,
-                                disliked = if (existingItem.favorite == false &&
-                                    existingItem.disliked == false &&
-                                    columnIndices[CsvField.Disliked] != null &&
-                                    columnIndices[CsvField.Disliked]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Disliked]!!].toBoolean()
-                                else existingItem.disliked,
-                                inProduction = if (existingItem.inProduction == false &&
-                                    columnIndices[CsvField.Production] != null &&
-                                    columnIndices[CsvField.Production]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Production]!!].toBoolean()
-                                else existingItem.inProduction,
-                                notes = if (existingItem.notes.isBlank() &&
-                                    columnIndices[CsvField.Notes] != null &&
-                                    columnIndices[CsvField.Notes]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Notes]!!]
-                                else existingItem.notes,
-                                lastModified = existingItem.lastModified
-                            )
-
-                            val existingComponents = withContext(Dispatchers.Default) {
-                                itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
-                                    it.componentName
-                                }
-                            }
-                            var compsAdded = false
-                            if (existingComponents.isEmpty() && componentsList.isNotEmpty()) {
-                                compsAdded = true
-                                componentsList.forEach {
-                                    var componentId = itemsRepository.getComponentIdByName(it.componentName)
-                                    if (componentId == null) {
-                                        componentId = itemsRepository.insertComponent(it).toInt()
-                                    }
-                                    itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = existingItem.id, componentId = componentId))
-                                }
-                            }
-
-                            val existingFlavoring = withContext(Dispatchers.Default) {
-                                itemsRepository.getFlavoringForItemStream(existingItem.id).first().map {
-                                    it.flavoringName
-                                }
-                            }
-                            var flavorAdded = false
-                            if (existingFlavoring.isEmpty() && flavoringList.isNotEmpty()) {
-                                flavorAdded = true
-                                flavoringList.forEach {
-                                    var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                                    if (flavoringId == null) {
-                                        flavoringId = itemsRepository.insertFlavoring(it).toInt()
-                                    }
-                                    itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = existingItem.id, flavoringId = flavoringId))
-                                }
-                            }
-
-                            var tinsAddedToItem = false
-                            if (collateTins) {
-                                if (existingTins.isEmpty()) {
-                                    if (tinDataList.isNotEmpty()) {
-                                        tinsAddedToItem = true
-                                        insertTins(existingItem.id, tinDataList)
-                                        tinDataList.forEach { _ -> addedTins++ }
-                                    }
-                                }
-                            }
-
-                            if (existingItem != updatedItem) {
-                                updatedCount++
-                                val updated = updatedItem.copy(lastModified = System.currentTimeMillis())
-                                withContext(Dispatchers.Default) { itemsRepository.updateItem(updated) }
-                            }
-                            if (existingItem == updatedItem && (compsAdded || flavorAdded || tinsAddedToItem)) updatedCount++
-
-                            null
-                        }
-
-                        ImportOption.OVERWRITE -> {
-                            updatedFlagSet = true
-                            val overwriteFields = overwriteSelections.value.filterValues { it }.keys
-                            val brandBlendKey = Pair(existingItem.brand, existingItem.blend)
-                            val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
-                            // Should be empty in overwrite, but double check
-                            val existingTins = withContext(Dispatchers.Default) { itemsRepository.getTinsForItemStream(existingItem.id).first() }
-
-                            val updatedItem = existingItem.copy(
-                                type = if (overwriteFields.contains(CsvField.Type) &&
-                                    columnIndices[CsvField.Type] != null &&
-                                    columnIndices[CsvField.Type]!! in record.indices
-                                ) {
-                                    val typeFromCsv = record[columnIndices[CsvField.Type]!!]
-                                    when (typeFromCsv.uppercase()) {
-                                        "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
-                                            typeFromCsv.lowercase()
-                                                .replaceFirstChar { it.uppercase() }
-                                        }
-                                        else -> ""
-                                    }
-                                } else existingItem.type,
-                                subGenre = if (overwriteFields.contains(CsvField.SubGenre) &&
-                                    columnIndices[CsvField.SubGenre] != null &&
-                                    columnIndices[CsvField.SubGenre]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.SubGenre]!!]
-                                else existingItem.subGenre,
-                                cut = if (overwriteFields.contains(CsvField.Cut) &&
-                                    columnIndices[CsvField.Cut] != null &&
-                                    columnIndices[CsvField.Cut]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Cut]!!]
-                                else existingItem.cut,
-                                quantity = if (mappingOptions.syncTins && tinDataList.isNotEmpty()) {
-                                    calculateSyncTinsQuantity(tinDataList)
-                                } else if (overwriteFields.contains(CsvField.Quantity) &&
-                                    columnIndices[CsvField.Quantity] != null &&
-                                    columnIndices[CsvField.Quantity]!! in record.indices
-                                ) {
-                                    if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99) 0
-                                    else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1
-                                } else existingItem.quantity,
-                                syncTins = if (mappingOptions.syncTins && tinDataList.isNotEmpty()) true else existingItem.syncTins,
-                                rating = if (overwriteFields.contains(CsvField.Rating) &&
-                                    columnIndices[CsvField.Rating] != null &&
-                                    mappingOptions.maxValue != null &&
-                                    columnIndices[CsvField.Rating]!! in record.indices
-                                )
-                                    parseRating(record[columnIndices[CsvField.Rating]!!], mappingOptions.maxValue)
-                                else existingItem.rating,
-                                favorite = if (overwriteFields.contains(CsvField.Favorite) &&
-                                    columnIndices[CsvField.Favorite] != null &&
-                                    columnIndices[CsvField.Favorite]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Favorite]!!].toBoolean()
-                                else existingItem.favorite,
-                                disliked = if (overwriteFields.contains(CsvField.Disliked) &&
-                                    columnIndices[CsvField.Disliked] != null &&
-                                    columnIndices[CsvField.Disliked]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Disliked]!!].toBoolean()
-                                else existingItem.disliked,
-                                inProduction = if (overwriteFields.contains(CsvField.Production) &&
-                                    columnIndices[CsvField.Production] != null &&
-                                    columnIndices[CsvField.Production]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Production]!!].toBoolean()
-                                else existingItem.inProduction,
-                                notes = if (overwriteFields.contains(CsvField.Notes) &&
-                                    columnIndices[CsvField.Notes] != null &&
-                                    columnIndices[CsvField.Notes]!! in record.indices
-                                )
-                                    record[columnIndices[CsvField.Notes]!!]
-                                else existingItem.notes,
-                                lastModified = existingItem.lastModified
-                            )
-
-                            val existingComponents = withContext(Dispatchers.Default) {
-                                itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
-                                    it.componentName
-                                }
-                            }
-                            var compsAdded = false
-                            if (overwriteFields.contains(CsvField.Components) &&
-                                columnIndices[CsvField.Components] != null &&
-                                columnIndices[CsvField.Components]!! in record.indices
-                            ) {
-                                withContext(Dispatchers.Default) {
-                                    itemsRepository.deleteComponentsCrossRefByItemId(existingItem.id)
-                                }
-                                componentsList.forEach {
-                                    var componentId = itemsRepository.getComponentIdByName(it.componentName)
-                                    if (componentId == null) {
-                                        componentId = itemsRepository.insertComponent(it).toInt()
-                                    }
-                                    itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = existingItem.id, componentId = componentId))
-                                }
-
-                                val insertedComponents = withContext(Dispatchers.Default) {
-                                    itemsRepository.getComponentsForItemStream(existingItem.id).first().map {
-                                        it.componentName
-                                    }
-                                }
-                                if (insertedComponents != existingComponents) {
-                                    compsAdded = true
-                                }
-                            }
-
-                            val existingFlavoring = withContext(Dispatchers.Default) {
-                                itemsRepository.getFlavoringForItemStream(existingItem.id).first().map {
-                                    it.flavoringName
-                                }
-                            }
-                            var flavorAdded = false
-                            if (overwriteFields.contains(CsvField.Flavoring) &&
-                                columnIndices[CsvField.Flavoring] != null &&
-                                columnIndices[CsvField.Flavoring]!! in record.indices
-                            ) {
-                                withContext(Dispatchers.Default) {
-                                    itemsRepository.deleteFlavoringCrossRefByItemId(existingItem.id)
-                                }
-                                flavoringList.forEach {
-                                    var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                                    if (flavoringId == null) {
-                                        flavoringId = itemsRepository.insertFlavoring(it).toInt()
-                                    }
-                                    itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = existingItem.id, flavoringId = flavoringId))
-                                }
-
-                                val insertedFlavoring = withContext(Dispatchers.Default) {
-                                    itemsRepository.getFlavoringForItemStream(existingItem.id)
-                                        .first().map {
-                                            it.flavoringName
-                                        }
-                                }
-                                if (insertedFlavoring != existingFlavoring) {
-                                    flavorAdded = true
-                                }
-                            }
-
-                            if (collateTins) {
-                                if (existingTins.isEmpty()) {
-                                    if (tinDataList.isNotEmpty()) {
-                                        insertTins(existingItem.id, tinDataList)
-                                        tinDataList.forEach { _ -> addedTins++ }
-                                    }
-                                }
-                            }
-
-                            if (existingItem != updatedItem) {
-                                updatedCount++
-                                val updated = updatedItem.copy(lastModified = System.currentTimeMillis())
-                                withContext(Dispatchers.Default) { itemsRepository.updateItem(updated) }
-                            }
-                            if (existingItem == updatedItem && (compsAdded || flavorAdded)) updatedCount++
-
-                            null
-                        }
-
-                        else -> null
-                    }
-                } else { // Default Import Option SKIP and add new records for above options
-                    Items(
-                        brand = brand,
-                        blend = blend,
-                        type = if (columnIndices[CsvField.Type] != null &&
-                            columnIndices[CsvField.Type]!! >= 0 &&
-                            columnIndices[CsvField.Type]!! < record.size
-                        ) {
-                            val typeFromCsv = record[columnIndices[CsvField.Type]!!]
-                            when (typeFromCsv.uppercase()) {
-                                "AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER" -> {
-                                    typeFromCsv.lowercase()
-                                        .replaceFirstChar { it.uppercase() }
-                                } else -> ""
-                            }
-                        } else "",
-                        subGenre = if (columnIndices[CsvField.SubGenre] != null &&
-                            columnIndices[CsvField.SubGenre]!! >= 0 &&
-                            columnIndices[CsvField.SubGenre]!! < record.size
-                        )
-                            record[columnIndices[CsvField.SubGenre]!!] else "",
-                        cut = if (columnIndices[CsvField.Cut] != null &&
-                            columnIndices[CsvField.Cut]!! >= 0 &&
-                            columnIndices[CsvField.Cut]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Cut]!!] else "",
-                        quantity = if (mappingOptions.syncTins && tinDataList.isNotEmpty()) {
-                            calculateSyncTinsQuantity(tinDataList)
-                        }
-                            else if (columnIndices[CsvField.Quantity] != null &&
-                            columnIndices[CsvField.Quantity]!! >= 0 &&
-                            columnIndices[CsvField.Quantity]!! < record.size
-                        ) {
-                            if ((record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1) > 99) 0
-                            else record[columnIndices[CsvField.Quantity]!!].toIntOrNull() ?: 1
-                        } else 1,
-                        syncTins = mappingOptions.syncTins && tinDataList.isNotEmpty(),
-                        rating = if (columnIndices[CsvField.Rating] != null &&
-                            columnIndices[CsvField.Rating]!! >= 0 &&
-                            mappingOptions.maxValue != null &&
-                            columnIndices[CsvField.Rating]!! < record.size
-                        )
-                            parseRating(record[columnIndices[CsvField.Rating]!!], mappingOptions.maxValue) else null,
-                        favorite = if (columnIndices[CsvField.Favorite] != null &&
-                            columnIndices[CsvField.Favorite]!! >= 0 &&
-                            columnIndices[CsvField.Favorite]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Favorite]!!].toBoolean() else false,
-                        disliked = if (columnIndices[CsvField.Disliked] != null &&
-                            columnIndices[CsvField.Disliked]!! >= 0 &&
-                            columnIndices[CsvField.Disliked]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Disliked]!!].toBoolean() else false,
-                        inProduction = if (columnIndices[CsvField.Production] != null &&
-                            columnIndices[CsvField.Production]!! >= 0 &&
-                            columnIndices[CsvField.Production]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Production]!!].toBoolean() else true,
-                        notes = if (columnIndices[CsvField.Notes] != null &&
-                            columnIndices[CsvField.Notes]!! >= 0 &&
-                            columnIndices[CsvField.Notes]!! < record.size
-                        )
-                            record[columnIndices[CsvField.Notes]!!] else "",
-                        lastModified = System.currentTimeMillis()
-                    )
-                }
-            }
-        }
-
+        val importOption = importOption.value
+        var successfulConversions = 0
+        var updatedCount = 0
         var insertions = 0
+        var addedTins = 0
 
-        try {
-            val insertedIds = withContext(Dispatchers.Default) { itemsRepository.insertMultipleItems(itemsToImport) }
+        withContext(Dispatchers.Default) {
+            try {
+                val existingItems = itemsRepository.getEverythingStream().first()
+                    .associateBy { (it.items.brand to it.items.blend) }
 
-            withContext(Dispatchers.Default) {
-                itemsToImport.forEachIndexed { index, items ->
-                    val itemId = insertedIds[index].toInt()
+                val tinDataMap = mutableMapOf<Pair<String, String>, MutableList<TinData>>()
+                val clearedTins = mutableSetOf<Int>()
 
-                    val comps = if (
-                        columnIndices[CsvField.Components] != null &&
-                        columnIndices[CsvField.Components]!!
-                        in recordsToImport[index].indices
-                    ) recordsToImport[index][columnIndices[CsvField.Components]!!] else ""
-                    val components = componentSplitter(comps)
+                // Pre-pass: collate tins
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val parser = CSVParser.parse(stream, Charset.defaultCharset(), CSVFormat.DEFAULT)
+                    parser.forEachIndexed { index, record ->
+                        if (index == 0 && hasHeader) return@forEachIndexed
 
-                    components.forEach {
-                        var componentId = itemsRepository.getComponentIdByName(it.componentName)
-                        if (componentId == null) {
-                            componentId = itemsRepository.insertComponent(it).toInt()
-                        }
-                        if (insertedIds[index] != -1L) {
-                            itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = itemId, componentId = componentId))
-                        }
-                    }
+                        val brand = record.getMapped(CsvField.Brand, columnIndices)
+                        val blend = record.getMapped(CsvField.Blend, columnIndices)
+                        if (brand.isBlank() || blend.isBlank()) return@forEachIndexed
+                        val key = brand to blend
 
-                    val flavor = if (
-                        columnIndices[CsvField.Flavoring] != null &&
-                        columnIndices[CsvField.Flavoring]!!
-                        in recordsToImport[index].indices
-                    ) recordsToImport[index][columnIndices[CsvField.Flavoring]!!] else ""
-                    val flavoring = flavorSplitter(flavor)
-
-                    flavoring.forEach {
-                        var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                        if (flavoringId == null) {
-                            flavoringId = itemsRepository.insertFlavoring(it).toInt()
-                        }
-                        if (insertedIds[index] != -1L) {
-                            itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = itemId, flavoringId = flavoringId))
-                        }
-                    }
-
-                    if (itemId != -1) { insertions++ }
-                    val brandBlendKey = Pair(items.brand, items.blend)
-                    val tinDataList = tinDataMap[brandBlendKey] ?: emptyList()
-
-                    if (insertedIds[index] != -1L) {
-                        if (collateTins) {
-                            insertTins(itemId, tinDataList)
-                            tinDataList.forEach { _ -> addedTins++ }
+                        if (mappingOptions.collateTins) {
+                            if (importOption == ImportOption.OVERWRITE) {
+                                existingItems[key]?.items?.id?.let { id ->
+                                    if (id !in clearedTins) {
+                                        itemsRepository.deleteAllTinsForItem(id)
+                                        clearedTins.add(id)
+                                    }
+                                }
+                            }
+                            val currentList = tinDataMap.getOrPut(key) { mutableListOf() }
+                            currentList.add(parseTinData(record, columnIndices))
                         }
                     }
                 }
-            }
-        } catch (e: Exception) {
-            _importStatus.value = ImportStatus.Error(e)
-        } finally {
-            SyncStateManager.schedulingPaused = false
-            itemsRepository.triggerUploadWorker()
 
-            val successfulConversions = itemsToImport.size + updatedConversions
-            val successfulInsertions = insertions
-            val successfulUpdates = updatedCount
-            val successfulTins = addedTins
-            val updateFlag = updatedFlagSet
-            val tinFlag = tinsFlagSet
-            val totalRecords =
-                if (hasHeader) {
-                    csvImportState.value.recordCount - 1
-                } else {
-                    csvImportState.value.recordCount
+                // Item Mapping
+                val itemsToImport = mutableListOf<Items>()
+                val itemsToUpdate = mutableListOf<Items>()
+                val insertMeta = mutableListOf<RecordMeta>()
+                val updateMeta = mutableListOf<Pair<Int, RecordMeta>>()
+
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val parser = CSVParser.parse(stream, Charset.defaultCharset(), CSVFormat.DEFAULT)
+                    parser.forEachIndexed { index, record ->
+                        if (hasHeader && index == 0) return@forEachIndexed
+
+                        val brand = record.getMapped(CsvField.Brand, columnIndices)
+                        val blend = record.getMapped(CsvField.Blend, columnIndices)
+                        if (brand.isBlank() || blend.isBlank()) return@forEachIndexed
+
+                        successfulConversions++
+
+                        val key = brand to blend
+                        val existing = existingItems[key]?.items
+                        val metaFromCsv = extractMeta(record, columnIndices, tinDataMap[key] ?: emptyList())
+                        val tins = tinDataMap[key] ?: emptyList()
+
+                        if (existing != null) {
+                            if (importOption == ImportOption.SKIP) return@forEachIndexed
+                            val updated = createUpdatedItem(existing, record, columnIndices, tins)
+
+                            val itemChanged = updated.copy(lastModified = 0) != existing.copy(lastModified = 0)
+                            val compsChanged = compareChange(existingItems[key]!!.components.map { it.componentName }, metaFromCsv.componentString)
+                            val flavorsChanged = compareChange(existingItems[key]!!.flavoring.map { it.flavoringName }, metaFromCsv.flavoringString)
+                            val tinsChanged = mappingOptions.collateTins && compareTins(existingItems[key]!!.tins, tins)
+
+                            if (itemChanged || compsChanged || flavorsChanged || tinsChanged) {
+                                updatedCount++
+                                itemsToUpdate.add(updated)
+                                updateMeta.add(existing.id to metaFromCsv)
+                            }
+                        } else {
+                            val newItem = createNewItem(brand, blend, record, columnIndices, tins)
+                            itemsToImport.add(newItem)
+                            insertMeta.add(extractMeta(record, columnIndices, tins))
+                        }
+                    }
                 }
 
-            delay(1500.milliseconds)
+                if (itemsToUpdate.isNotEmpty()) { itemsRepository.updateMultipleItems(itemsToUpdate) }
 
-            _importStatus.value = ImportStatus.Success(
-                totalRecords = totalRecords,
-                successfulConversions = successfulConversions,
-                successfulInsertions = successfulInsertions,
-                successfulUpdates = successfulUpdates,
-                successfulTins = successfulTins,
-                updateFlag = updateFlag,
-                tinFlag = tinFlag
-            )
-            _navigateToResults.emit(
-                ImportResults(
+                val insertedIds =
+                    if (itemsToImport.isNotEmpty()) { itemsRepository.insertMultipleItems(itemsToImport) }
+                    else emptyList()
+                insertions = insertedIds.count { it != -1L }
+
+                updateMeta.forEach { (id, meta) ->
+                    processRelations(id, meta, importOption == ImportOption.OVERWRITE)
+                    addedTins += meta.tins.size
+                }
+
+                itemsToImport.forEachIndexed { index, _ ->
+                    val newId = insertedIds[index].toInt()
+                    if (newId != -1) {
+                        val meta = insertMeta[index]
+                        processRelations(newId, meta, false)
+                        addedTins += meta.tins.size
+                    }
+                }
+            } catch (e: Exception) {
+                _importStatus.value = ImportStatus.Error(e)
+            } finally {
+                SyncStateManager.schedulingPaused = false
+                itemsRepository.triggerUploadWorker()
+
+                val totalRecords = if (hasHeader) csvImportState.value.recordCount - 1 else csvImportState.value.recordCount
+                val results = ImportResults(
                     totalRecords = totalRecords,
                     successfulConversions = successfulConversions,
-                    successfulInsertions = successfulInsertions,
-                    successfulUpdates = successfulUpdates,
-                    successfulTins = successfulTins,
-                    updateFlag = updateFlag,
-                    tinFlag = tinFlag
+                    successfulInsertions = insertions,
+                    successfulUpdates = updatedCount,
+                    successfulTins = addedTins,
+                    updateFlag = updatedCount > 0,
+                    tinFlag = mappingOptions.collateTins
                 )
-            )
+
+                delay(1500.milliseconds)
+
+                _importStatus.value = ImportStatus.Success(
+                    totalRecords = results.totalRecords,
+                    successfulConversions = results.successfulConversions,
+                    successfulInsertions = results.successfulInsertions,
+                    successfulUpdates = results.successfulUpdates,
+                    successfulTins = results.successfulTins,
+                    updateFlag = results.updateFlag,
+                    tinFlag = results.tinFlag
+                )
+                _navigateToResults.emit(results)
+            }
         }
     }
 
+    private fun CSVRecord.getMapped(field: CsvField, indices: Map<CsvField, Int>): String {
+        val index = indices[field] ?: return ""
+        return if (index >= 0 && index < size()) get(index).trim() else ""
+    }
+
+    private fun extractMeta(record: CSVRecord, indices: Map<CsvField, Int>, tins: List<TinData>): RecordMeta {
+        return RecordMeta(
+            componentString = record.getMapped(CsvField.Components, indices),
+            flavoringString = record.getMapped(CsvField.Flavoring, indices),
+            tins = tins
+        )
+    }
+
+    private suspend fun processRelations(id: Int, meta: RecordMeta, clearExisting: Boolean) {
+        if (clearExisting) {
+            itemsRepository.deleteComponentsCrossRefByItemId(id)
+            itemsRepository.deleteFlavoringCrossRefByItemId(id)
+        }
+
+        if (meta.componentString.isNotBlank()) {
+            componentSplitter(meta.componentString).forEach { comp ->
+                val compId = itemsRepository.getComponentIdByName(comp.componentName) ?: itemsRepository.insertComponent(comp).toInt()
+                itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = id, componentId = compId))
+            }
+        }
+        if (meta.flavoringString.isNotBlank()) {
+            flavorSplitter(meta.flavoringString).forEach { flavor ->
+                val flavorId = itemsRepository.getFlavoringIdByName(flavor.flavoringName) ?: itemsRepository.insertFlavoring(flavor).toInt()
+                itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = id, flavoringId = flavorId))
+            }
+        }
+        if (meta.tins.isNotEmpty()) { insertTins(id, meta.tins) }
+    }
+
+    private suspend fun createNewItem(
+        brand: String,
+        blend: String,
+        record: CSVRecord,
+        indices: Map<CsvField, Int>,
+        tins: List<TinData>
+    ): Items {
+        val quantity = record.getMapped(CsvField.Quantity, indices).toIntOrNull() ?: 1
+        val syncTins = mappingOptions.syncTins && tins.isNotEmpty()
+
+        return Items(
+            brand = brand,
+            blend = blend,
+            type = record.getMapped(CsvField.Type, indices).capitalizeType(),
+            subGenre = record.getMapped(CsvField.SubGenre, indices),
+            cut = record.getMapped(CsvField.Cut, indices),
+            quantity = if (syncTins) calculateSyncTinsQuantity(tins) else if (quantity > 99) 1 else quantity,
+            syncTins = syncTins,
+            rating = parseRating(record.getMapped(CsvField.Rating, indices), mappingOptions.maxValue),
+            favorite = record.getMapped(CsvField.Favorite, indices).toBoolean(),
+            disliked = record.getMapped(CsvField.Disliked, indices).toBoolean(),
+            inProduction = record.getMapped(CsvField.Production, indices).toBoolean(),
+            notes = record.getMapped(CsvField.Notes, indices),
+            lastModified = System.currentTimeMillis()
+        )
+    }
+
+    private suspend fun createUpdatedItem(
+        existing: Items,
+        record: CSVRecord,
+        indices: Map<CsvField, Int>,
+        tins: List<TinData>
+    ): Items {
+        val overwrite = importOption.value == ImportOption.OVERWRITE
+        val selections = overwriteSelections.value
+
+        fun shouldUpdate(field: CsvField, currentValue: Any?): Boolean {
+            return if (overwrite) { selections[field] == true } else {
+                when (currentValue) {
+                    is String -> currentValue.isBlank()
+                    is Boolean -> !currentValue
+                    null -> true
+                    else -> false
+                }
+            }
+        }
+
+        val syncTins =
+            if (overwrite) { mappingOptions.syncTins && tins.isNotEmpty() }
+            else { existing.syncTins || (mappingOptions.syncTins && tins.isNotEmpty()) }
+
+        return existing.copy(
+            type = if (shouldUpdate(CsvField.Type, existing.type)) record.getMapped(CsvField.Type, indices).capitalizeType() else existing.type,
+            subGenre = if (shouldUpdate(CsvField.SubGenre, existing.subGenre)) record.getMapped(CsvField.SubGenre, indices) else existing.subGenre,
+            cut = if (shouldUpdate(CsvField.Cut, existing.cut)) record.getMapped(CsvField.Cut, indices) else existing.cut,
+            quantity =
+                if (syncTins) { calculateSyncTinsQuantity(tins) }
+                else if (shouldUpdate(CsvField.Quantity, existing.quantity)) { record.getMapped(CsvField.Quantity, indices).toIntOrNull() ?: existing.quantity }
+                else { existing.quantity },
+            syncTins = syncTins,
+            rating = if (shouldUpdate(CsvField.Rating, existing.rating)) parseRating(record.getMapped(CsvField.Rating, indices), mappingOptions.maxValue) else existing.rating,
+            favorite = if (shouldUpdate(CsvField.Favorite, existing.favorite)) record.getMapped(CsvField.Favorite, indices).toBoolean() else existing.favorite,
+            disliked = if (shouldUpdate(CsvField.Disliked, existing.disliked)) record.getMapped(CsvField.Disliked, indices).toBoolean() else existing.disliked,
+            inProduction = if (shouldUpdate(CsvField.Production, existing.inProduction)) record.getMapped(CsvField.Production, indices).toBoolean() else existing.inProduction,
+            notes = if (shouldUpdate(CsvField.Notes, existing.notes)) record.getMapped(CsvField.Notes, indices) else existing.notes,
+            lastModified = System.currentTimeMillis()
+        )
+    }
+
+    private fun compareChange(existing: List<String>, csvString: String): Boolean {
+        if (existing.isEmpty() && csvString.isBlank()) return false
+        val newNames = csvString.split(",").map { it.trim() }.filter { it.isNotBlank() }
+
+        return existing.map { it.lowercase() }.sorted() != newNames.map { it.lowercase() }.sorted()
+    }
+
+    private fun compareTins(existing: List<Tins>, csvTins: List<TinData>): Boolean {
+        if (existing.isEmpty() && csvTins.isEmpty()) return false
+        if (existing.size != csvTins.size) return true
+
+        val existingMap = existing.map {
+            TinData(
+                label = it.tinLabel,
+                container = it.container,
+                quantity = it.tinQuantity,
+                unit = it.unit,
+                manufactureDate = it.manufactureDate,
+                cellarDate = it.cellarDate
+            )
+        }.sortedBy { it.label }
+
+        return existingMap != csvTins.sortedBy { it.label }
+    }
+
+    private fun String.capitalizeType(): String {
+        val upper = this.uppercase()
+        return if (upper in listOf("AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER")) {
+            this.lowercase().replaceFirstChar { it.uppercase() }
+        } else ""
+    }
+
+    private fun parseTinData(record: CSVRecord, indices: Map<CsvField, Int>): TinData {
+        val (quantity, unit) = record.getMapped(CsvField.TinQuantity, indices).parseTinQuantity()
+        val dateFormat = mappingOptions.dateFormat
+
+        return TinData(
+            label = "",
+            container = record.getMapped(CsvField.Container, indices),
+            quantity = quantity,
+            unit = unit,
+            manufactureDate = parseDateString(record.getMapped(CsvField.ManufactureDate, indices), dateFormat),
+            cellarDate = parseDateString(record.getMapped(CsvField.CellarDate, indices), dateFormat),
+            openDate = parseDateString(record.getMapped(CsvField.OpenDate, indices), dateFormat),
+            finished = record.getMapped(CsvField.Finished, indices).toBoolean()
+        )
+    }
 
     // Stored CSV UI state to Database Table structure conversion function //
     private fun getSelectedColumnIndices(): Map<CsvField, Int> {
@@ -1072,10 +769,10 @@ class CsvImportViewModel(
 
 
 data class CsvImportState(
+    val uri: Uri? = null,
     val header: List<String> = emptyList(),
     val testHeader: List<String> = emptyList(),
     val firstFullRecord: List<String> = emptyList(),
-    val allRecords: List<List<String>> = emptyList(),
     val recordCount: Int = 0,
 )
 
@@ -1083,6 +780,12 @@ data class CsvUiState(
     val csvImportState: CsvImportState = CsvImportState(),
     val columns: List<String> = emptyList(),
     val isFormValid: Boolean = false,
+)
+
+data class RecordMeta(
+    val componentString: String,
+    val flavoringString: String,
+    val tins: List<TinData>
 )
 
 data class MappingOptions(
