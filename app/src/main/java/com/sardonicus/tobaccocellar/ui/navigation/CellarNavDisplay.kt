@@ -295,11 +295,11 @@ fun CellarNavigation(
 
                 EditEntryScreen(
                     navigateBack = { navigator.goBack() },
-                    navigateHome = {
+                    navigateBackSkip = {
                         navigationState.backStacks.forEach { (_, stack) ->
-                            stack.removeIf { stack.indexOf(it) > 0}
+                            stack.removeIf { it is BlendDetailsDestination && it.itemsId == key.itemsId }
                         }
-                        navigator.navigate(HomeDestination)
+                        navigator.goBack()
                     },
                     twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
