@@ -71,7 +71,7 @@ class BlendDetailsViewModel(
 
         _parseLinks.value = parseLinks
 
-        val item = allItems.first { it.items.id == itemsId }
+        val item = allItems.find { it.items.id == itemsId } ?: return@combine BlendDetails()
 
         BlendDetails(
             id = item.items.id,
