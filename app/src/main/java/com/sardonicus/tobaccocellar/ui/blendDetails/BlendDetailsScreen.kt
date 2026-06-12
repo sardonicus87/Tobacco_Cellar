@@ -71,6 +71,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
@@ -165,7 +166,9 @@ fun BlendDetailsScreen(
                     exit = fadeOut(tween(250)),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+                    Box(Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background))
                 }
             }
         }
@@ -321,49 +324,78 @@ private fun BlendDetailsBody(
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
                     )
                 }
-                key(selectionKey) { SelectionContainer(
-                    Modifier.onFocusChanged { selectionFocused(it.isFocused) }
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Top,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 12.dp)
-                    ) {
-                        blendDetails.itemDetails.forEach {
-                            Text(
-                                text = it,
-                                modifier = Modifier,
-                            )
-                        }
-                        if (blendDetails.rating != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically,
+                Box {
+                    key(selectionKey) {
+                        SelectionContainer(
+                            Modifier.onFocusChanged { selectionFocused(it.isFocused) }
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Top,
                                 modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 12.dp)
                             ) {
-                                Text(
-                                    text = "Rating: ",
-                                    modifier = Modifier,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                )
-                                RatingRow(
-                                    rating = blendDetails.rating,
-                                    modifier = Modifier,
-                                    starSize = 17.dp
-                                )
-                                Text(
-                                    text = "(${formatDecimal(blendDetails.rating)})",
-                                    modifier = Modifier
-                                        .padding(start = 6.dp),
-                                    fontSize = 12.sp,
-                                )
+                                blendDetails.itemDetails.forEach {
+                                    Text(
+                                        text = it,
+                                        modifier = Modifier,
+                                    )
+                                }
+                                if (blendDetails.rating != null) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                    ) {
+                                        Text(
+                                            text = "Rating: ",
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                        )
+                                        RatingRow(
+                                            rating = blendDetails.rating,
+                                            modifier = Modifier,
+                                            starSize = 17.dp
+                                        )
+                                        Text(
+                                            text = "(${formatDecimal(blendDetails.rating)})",
+                                            modifier = Modifier
+                                                .padding(start = 6.dp),
+                                            fontSize = 12.sp,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                } }
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(bottom = 2.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                    ) {
+                        Text(
+                            text = "modified",
+                            modifier = Modifier,
+                            fontSize = 12.sp,
+                            lineHeight = 1.em,
+                            letterSpacing = 0.5.sp,
+                            textAlign = TextAlign.End,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = blendDetails.lastModified,
+                            modifier = Modifier,
+                            fontSize = 12.sp,
+                            lineHeight = 1.em,
+                            textAlign = TextAlign.End,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
             }
         }
 

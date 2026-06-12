@@ -109,7 +109,8 @@ class BlendDetailsViewModel(
                     }
                 }
             },
-            tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap)
+            tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap),
+            lastModified = formatMediumDate(item.items.lastModified, true)
         )
     }
         .stateIn(
@@ -267,6 +268,7 @@ data class BlendDetails(
     val notes: String = "",
     val tinsDetails: Map<Tins, Set<DetailLine>?> = emptyMap(),
     val tinsTotal: String = "",
+    val lastModified: String = ""
 )
 
 @Stable
