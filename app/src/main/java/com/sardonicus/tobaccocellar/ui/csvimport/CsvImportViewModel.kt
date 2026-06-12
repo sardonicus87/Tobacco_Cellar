@@ -448,6 +448,7 @@ class CsvImportViewModel(
         var updatedCount = 0
         var insertions = 0
         var addedTins = 0
+        var updateFlag = false
 
         withContext(Dispatchers.Default) {
             try {
@@ -488,6 +489,7 @@ class CsvImportViewModel(
                 val itemsToUpdate = mutableListOf<Items>()
                 val insertMeta = mutableListOf<RecordMeta>()
                 val updateMeta = mutableListOf<Pair<Int, RecordMeta>>()
+                val processedKeys = mutableSetOf<Pair<String, String>>()
 
                 contentResolver.openInputStream(uri)?.use { stream ->
                     val parser = CSVParser.parse(stream, Charset.defaultCharset(), CSVFormat.DEFAULT)
@@ -501,18 +503,28 @@ class CsvImportViewModel(
                         successfulConversions++
 
                         val key = brand to blend
+                        if (key in processedKeys) return@forEachIndexed
+                        processedKeys.add(key)
+
                         val existing = existingItems[key]?.items
-                        val metaFromCsv = extractMeta(record, columnIndices, tinDataMap[key] ?: emptyList())
                         val tins = tinDataMap[key] ?: emptyList()
 
                         if (existing != null) {
+                            updateFlag = true
                             if (importOption == ImportOption.SKIP) return@forEachIndexed
-                            val updated = createUpdatedItem(existing, record, columnIndices, tins)
+                            val tinsToProcess = if (mappingOptions.collateTins) {
+                                when (importOption) {
+                                    ImportOption.OVERWRITE -> tins
+                                    ImportOption.UPDATE -> { if (existingItems[key]!!.tins.isEmpty()) tins else emptyList() }
+                                }
+                            } else emptyList()
+                            val metaFromCsv = extractMeta(record, columnIndices, tinsToProcess)
+                            val updated = createUpdatedItem(existing, record, columnIndices, tinsToProcess)
 
                             val itemChanged = updated.copy(lastModified = 0) != existing.copy(lastModified = 0)
-                            val compsChanged = compareChange(existingItems[key]!!.components.map { it.componentName }, metaFromCsv.componentString)
-                            val flavorsChanged = compareChange(existingItems[key]!!.flavoring.map { it.flavoringName }, metaFromCsv.flavoringString)
-                            val tinsChanged = mappingOptions.collateTins && compareTins(existingItems[key]!!.tins, tins)
+                            val compsChanged = compareChange(existingItems[key]!!.components.map { it.componentName }, metaFromCsv.componentString, importOption)
+                            val flavorsChanged = compareChange(existingItems[key]!!.flavoring.map { it.flavoringName }, metaFromCsv.flavoringString, importOption)
+                            val tinsChanged = mappingOptions.collateTins && compareTins(existingItems[key]!!.tins, tins, importOption)
 
                             if (itemChanged || compsChanged || flavorsChanged || tinsChanged) {
                                 updatedCount++
@@ -536,7 +548,8 @@ class CsvImportViewModel(
 
                 updateMeta.forEach { (id, meta) ->
                     processRelations(id, meta, importOption == ImportOption.OVERWRITE)
-                    addedTins += meta.tins.size
+                    val originalTinCount = existingItems.values.find { it.items.id == id }?.tins?.size ?: 0
+                    addedTins += (meta.tins.size - originalTinCount)
                 }
 
                 itemsToImport.forEachIndexed { index, _ ->
@@ -560,7 +573,7 @@ class CsvImportViewModel(
                     successfulInsertions = insertions,
                     successfulUpdates = updatedCount,
                     successfulTins = addedTins,
-                    updateFlag = updatedCount > 0,
+                    updateFlag = updateFlag,
                     tinFlag = mappingOptions.collateTins
                 )
 
@@ -683,29 +696,32 @@ class CsvImportViewModel(
         )
     }
 
-    private fun compareChange(existing: List<String>, csvString: String): Boolean {
+    private fun compareChange(existing: List<String>, csvString: String, option: ImportOption): Boolean {
         if (existing.isEmpty() && csvString.isBlank()) return false
         val newNames = csvString.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        val existingNames = existing.map { it.lowercase() }
 
-        return existing.map { it.lowercase() }.sorted() != newNames.map { it.lowercase() }.sorted()
+        return when (option) {
+            ImportOption.OVERWRITE -> newNames.sorted() != existing.sorted()
+            ImportOption.UPDATE -> {
+                if (newNames.isEmpty()) false
+                else newNames.any { it !in existingNames }
+            }
+            else -> false
+        }
     }
 
-    private fun compareTins(existing: List<Tins>, csvTins: List<TinData>): Boolean {
-        if (existing.isEmpty() && csvTins.isEmpty()) return false
-        if (existing.size != csvTins.size) return true
-
-        val existingMap = existing.map {
-            TinData(
-                label = it.tinLabel,
-                container = it.container,
-                quantity = it.tinQuantity,
-                unit = it.unit,
-                manufactureDate = it.manufactureDate,
-                cellarDate = it.cellarDate
-            )
-        }.sortedBy { it.label }
-
-        return existingMap != csvTins.sortedBy { it.label }
+    private fun compareTins(existing: List<Tins>, csvTins: List<TinData>, option: ImportOption): Boolean {
+        return when (option) {
+            ImportOption.OVERWRITE -> {
+                if (existing.isEmpty() && csvTins.isEmpty()) false
+                else existing.size != csvTins.size
+            }
+            ImportOption.UPDATE -> {
+                existing.isEmpty() && csvTins.isNotEmpty()
+            }
+            else -> false
+        }
     }
 
     private fun String.capitalizeType(): String {
@@ -727,7 +743,8 @@ class CsvImportViewModel(
             manufactureDate = parseDateString(record.getMapped(CsvField.ManufactureDate, indices), dateFormat),
             cellarDate = parseDateString(record.getMapped(CsvField.CellarDate, indices), dateFormat),
             openDate = parseDateString(record.getMapped(CsvField.OpenDate, indices), dateFormat),
-            finished = record.getMapped(CsvField.Finished, indices).toBoolean()
+            finished = record.getMapped(CsvField.Finished, indices).toBoolean(),
+            lastModified = System.currentTimeMillis()
         )
     }
 
@@ -825,6 +842,7 @@ data class TinData(
     val cellarDate: Long? = null,
     val openDate: Long? = null,
     val finished: Boolean = false,
+    val lastModified: Long = System.currentTimeMillis()
 )
 
 enum class ImportOption { SKIP, UPDATE, OVERWRITE }
