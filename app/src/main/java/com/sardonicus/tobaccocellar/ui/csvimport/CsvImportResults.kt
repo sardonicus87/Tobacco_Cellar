@@ -225,7 +225,7 @@ fun ImportResultsBody(
                     // Records Imported
                     if (visibleItemIndex <= 3) {
                         Text(
-                            text = "Total records imported: ",
+                            text = "Total entries imported: ",
                             modifier = Modifier
                                 .padding(bottom = 0.dp),
                             fontSize = 18.sp,
@@ -237,7 +237,7 @@ fun ImportResultsBody(
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                     ) {
                         Text(
-                            text = "Total records imported: ",
+                            text = "Total entries imported: ",
                             modifier = Modifier
                                 .padding(0.dp),
                             fontSize = 18.sp,
@@ -249,7 +249,7 @@ fun ImportResultsBody(
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
                             Text(
-                                text = "Total records updated: ",
+                                text = "Total entries updated: ",
                                 modifier = Modifier
                                     .padding(bottom = 0.dp),
                                 fontSize = 18.sp,
@@ -261,7 +261,7 @@ fun ImportResultsBody(
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
-                                text = "Total records updated: ",
+                                text = "Total entries updated: ",
                                 modifier = Modifier
                                     .padding(0.dp),
                                 fontSize = 18.sp,
@@ -270,7 +270,7 @@ fun ImportResultsBody(
                         // Successful Tins
                         if (visibleItemIndex <= 5) {
                             Text(
-                                text = "Total tins inserted: ",
+                                text = "Total tins change: ",
                                 modifier = Modifier
                                     .padding(bottom = 0.dp),
                                 fontSize = 18.sp,
@@ -282,7 +282,7 @@ fun ImportResultsBody(
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
                         ) {
                             Text(
-                                text = "Total tins inserted: ",
+                                text = "Total tins change: ",
                                 modifier = Modifier
                                     .padding(0.dp),
                                 fontSize = 18.sp,
@@ -292,7 +292,7 @@ fun ImportResultsBody(
 
                     // Updates OR Tins
                     if (indexCondition == 6) {
-                        val label = if (updateFlag) "Total records updated: " else "Total tins inserted: "
+                        val label = if (updateFlag) "Total entries updated: " else "Total tins change: "
                         if (visibleItemIndex <= 4) {
                             Text(
                                 text = label,
