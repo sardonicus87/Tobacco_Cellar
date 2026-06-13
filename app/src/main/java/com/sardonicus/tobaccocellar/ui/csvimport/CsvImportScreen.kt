@@ -62,7 +62,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,9 +93,6 @@ import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.CsvImportDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
-import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,8 +109,6 @@ fun CsvImportScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val csvImportState = viewModel.csvImportState.value
     val csvUiState = viewModel.csvUiState
-    val mappingOptions = viewModel.mappingOptions
-    val importOption by viewModel.importOption.collectAsState()
 
     Scaffold(
         modifier = modifier
@@ -140,11 +134,6 @@ fun CsvImportScreen(
                 csvImportState = csvImportState,
                 viewModel = viewModel,
                 csvUiState = csvUiState,
-                mappingOptions = mappingOptions,
-                importOption = importOption,
-                onHeaderChange = { viewModel.updateHeaderOption(it) },
-                updateCollateTinsOption = { viewModel.updateCollateTinsOption(it) },
-                updateSyncTinsOption = { viewModel.updateSyncTinsOption(it) },
                 navigateToCsvHelp = navigateToCsvHelp,
                 navigateToImportResults = navigateToImportResults,
                 navigateToHome = navigateToHome,
@@ -161,25 +150,15 @@ fun CsvImportBody(
     navigateToImportResults: (Int, Int, Int, Int, Int, Boolean, Boolean) -> Unit,
     navigateToHome: () -> Unit,
     navigateToCsvHelp: () -> Unit,
-    onHeaderChange: (isChecked: Boolean) -> Unit,
-    updateCollateTinsOption: (isChecked: Boolean) -> Unit,
-    updateSyncTinsOption: (Boolean) -> Unit,
     csvImportState: CsvImportState,
     csvUiState: CsvUiState,
-    mappingOptions: MappingOptions,
-    importOption: ImportOption,
     viewModel: CsvImportViewModel,
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
     val showErrorDialog by viewModel.showErrorDialog.collectAsState()
     val importStatus by viewModel.importStatus.collectAsState()
-    val overwriteSelections by viewModel.overwriteSelections.collectAsState()
     val context = LocalContext.current
-    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "text/*"
-    }
     val csvHelper = CsvHelper()
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
@@ -221,6 +200,13 @@ fun CsvImportBody(
             }
         }
     }
+    val onSelectFile = {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "text/*"
+        }
+        launcher.launch(intent)
+    }
 
     if (showErrorDialog) {
         LoadErrorDialog(
@@ -234,21 +220,21 @@ fun CsvImportBody(
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.navigateToResults.collect { success ->
+        viewModel.navigateToResults.collect { results ->
             navigateToImportResults(
-                success.totalRecords,
-                success.successfulConversions,
-                success.successfulInsertions,
-                success.successfulUpdates,
-                success.successfulTins,
-                success.updateFlag,
-                success.tinFlag,
+                results.totalRecords,
+                results.successfulConversions,
+                results.successfulInsertions,
+                results.successfulUpdates,
+                results.successfulTins,
+                results.updateFlag,
+                results.tinFlag,
             )
         }
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(0.dp),
         verticalArrangement = Arrangement.Top,
@@ -270,7 +256,7 @@ fun CsvImportBody(
                 if (csvUiState.columns.isEmpty()) {
                     Spacer(Modifier.weight(1f))
                     Button(
-                        onClick = { launcher.launch(intent) },
+                        onClick = onSelectFile,
                         enabled = true,
                         modifier = Modifier
                             .padding(8.dp)
@@ -296,811 +282,572 @@ fun CsvImportBody(
                     Spacer(Modifier.weight(2.5f))
                 }
                 else {
+                    CsvLoadedBody(
+                        viewModel = viewModel,
+                        csvImportState = csvImportState,
+                        csvUiState = csvUiState,
+                        onSelectFile = onSelectFile,
+                        navigateToCsvHelp = navigateToCsvHelp,
+                        modifier = Modifier
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun CsvLoadedBody(
+    viewModel: CsvImportViewModel,
+    csvImportState: CsvImportState,
+    csvUiState: CsvUiState,
+    onSelectFile: () -> Unit,
+    navigateToCsvHelp: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val importOption by viewModel.importOption.collectAsState()
+    val overwriteSelections by viewModel.overwriteSelections.collectAsState()
+    val mappingOptions = viewModel.mappingOptions
+
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    Column(
+        modifier = modifier
+            .padding(0.dp)
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start,
+    ) { // Screen after CSV loaded //
+        Spacer(Modifier.height(12.dp))
+        // Select CSV and Help buttons //
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Button(
+                onClick = onSelectFile,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(40.dp),
+                colors = ButtonDefaults.buttonColors(
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .5f),
+                    disabledContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.select_csv),
+                    modifier = Modifier,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Button(
+                onClick = { navigateToCsvHelp() },
+                enabled = true,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(40.dp),
+            ) {
+                Row(
+                    modifier = Modifier,
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Help ",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.help_outline),
+                        contentDescription = "Help?",
+                        modifier = Modifier
+                            .size(16.dp),
+                        tint = LocalContentColor.current
+                    )
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start,
+        ) {
+            // CSV parse test //
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .background(
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(vertical = 8.dp, horizontal = 12.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.possible_header),
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth(),
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = csvImportState.header.joinToString(", "),
+                    modifier = Modifier
+                        .padding(start = 8.dp, bottom = 8.dp),
+                )
+                Text(
+                    text = stringResource(R.string.possible_record),
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth(),
+                    fontWeight = FontWeight.Bold,
+                )
+                val parseTest =
+                    if (csvImportState.firstFullRecord.isEmpty()) "(Parse error)"
+                    else csvImportState.firstFullRecord.joinToString(", ")
+
+                Text(
+                    text = parseTest,
+                    modifier = Modifier
+                        .padding(start = 8.dp),
+                )
+            }
+
+            // Import options //
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .padding(8.dp),
+            ) {
+                // Has header option and record count //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Column(
                         modifier = Modifier
                             .padding(0.dp)
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.Top,
+                            .weight(1f),
                         horizontalAlignment = Alignment.Start,
-                    ) { // Screen after CSV loaded //
-                        Spacer(Modifier.height(12.dp))
-                        // Select CSV and Help buttons //
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                12.dp,
-                                Alignment.CenterHorizontally
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        LabeledCheckbox(
+                            text = "Has header?",
+                            width = 96.dp,
+                            checked = mappingOptions.hasHeader,
+                            onCheckedChange = viewModel::updateHeaderOption,
+                            modifier = Modifier,
+                        )
+                    }
+                    // record count //
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(0.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text =
+                                if (mappingOptions.hasHeader) {
+                                    "Record count: ${csvImportState.recordCount - 1}"
+                                } else { "Record count: ${csvImportState.recordCount}" },
+                            modifier = Modifier,
+                            textAlign = TextAlign.End
+                        )
+                    }
+                }
+                // Collate Tins option and warning //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .weight(1f),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+                    ) {
+                        LabeledCheckbox(
+                            text = "Collate tins?",
+                            maxLines = 1,
+                            width = 96.dp,
+                            checked = mappingOptions.collateTins,
+                            onCheckedChange = viewModel::updateCollateTinsOption,
+                            modifier = Modifier,
+                        )
+                        LabeledCheckbox(
+                            text = "Sync tins?",
+                            maxLines = 1,
+                            width = 96.dp,
+                            checked = mappingOptions.syncTins,
+                            enabled = mappingOptions.collateTins,
+                            onCheckedChange = viewModel::updateSyncTinsOption,
+                        )
+                    }
+                    // Warning //
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(0.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = if (mappingOptions.collateTins && importOption == ImportOption.OVERWRITE) {
+                                "Warning: Overwrite will erase existing tins." } else { "" },
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.End
                             ),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Button(
-                                onClick = { launcher.launch(intent) },
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .height(40.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .5f),
-                                    disabledContentColor = MaterialTheme.colorScheme.onPrimary
-                                )
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.select_csv),
-                                    modifier = Modifier,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            }
-                            Button(
-                                onClick = { navigateToCsvHelp() },
-                                enabled = true,
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .height(40.dp),
-                            ) {
-                                Row(
-                                    modifier = Modifier,
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = "Help ",
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(id = R.drawable.help_outline),
-                                        contentDescription = "Help?",
-                                        modifier = Modifier
-                                            .size(16.dp),
-                                        tint = LocalContentColor.current
-                                    )
-                                }
-                            }
-                        }
-
-                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp),
-                            verticalArrangement = Arrangement.Top,
-                            horizontalAlignment = Alignment.Start,
+                                .heightIn(max = 48.dp),
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 8.sp,
+                                maxFontSize = 15.sp,
+                                stepSize = .25.sp,
+                            ),
+                            maxLines = 2,
+                        )
+                    }
+                }
+                // Existing Records options //
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Existing entries:",
+                        modifier = Modifier
+                            .padding(end = 8.dp),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) {
+                                    viewModel.updateImportOption(
+                                        ImportOption.SKIP
+                                    )
+                                }
+                                .width(36.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            // CSV parse test //
-                            Column(
-                                modifier = Modifier
-                                    .padding(bottom = 16.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer.copy(
-                                            alpha = 0.3f
-                                        ),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.secondaryContainer,
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(vertical = 8.dp, horizontal = 12.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.possible_header),
-                                    modifier = modifier
-                                        .padding(0.dp)
-                                        .fillMaxWidth(),
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Text(
-                                    text = csvImportState.header.joinToString(", "),
-                                    modifier = Modifier
-                                        .padding(start = 8.dp, bottom = 8.dp),
-                                )
-                                Text(
-                                    text = stringResource(R.string.possible_record),
-                                    modifier = Modifier
-                                        .padding(0.dp)
-                                        .fillMaxWidth(),
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                val parseTest =
-                                    if (csvImportState.firstFullRecord.isEmpty()) "(Parse error)"
-                                    else csvImportState.firstFullRecord.joinToString(", ")
-
-                                Text(
-                                    text = parseTest,
-                                    modifier = Modifier
-                                        .padding(start = 8.dp),
-                                )
-                            }
-
-                            // Import options //
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp)
-                                    .padding(8.dp),
-                            ) {
-                                // Has header option and record count //
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 8.dp),
-                                    horizontalArrangement = Arrangement.Start,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .padding(0.dp)
-                                            .weight(1f),
-                                        horizontalAlignment = Alignment.Start,
-                                        verticalArrangement = Arrangement.Center,
-                                    ) {
-                                        LabeledCheckbox(
-                                            text = "Has header?",
-                                            width = 96.dp,
-                                            checked = mappingOptions.hasHeader,
-                                            onCheckedChange = {
-                                                onHeaderChange(it)
-                                            },
-                                            modifier = Modifier,
-                                        )
-                                    }
-                                    // record count //
-                                    Column(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(0.dp),
-                                        horizontalAlignment = Alignment.End,
-                                        verticalArrangement = Arrangement.Center,
-                                    ) {
-                                        Text(
-                                            text =
-                                                if (mappingOptions.hasHeader) {
-                                                    "Record count: ${csvImportState.recordCount - 1}"
-                                                } else {
-                                                    "Record count: ${csvImportState.recordCount}"
-                                                },
-                                            modifier = Modifier,
-                                            textAlign = TextAlign.End
-                                        )
-                                    }
-                                }
-                                // Collate Tins option and warning //
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 8.dp),
-                                    horizontalArrangement = Arrangement.Start,
-                                    verticalAlignment = Alignment.Top,
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .padding(0.dp)
-                                            .weight(1f),
-                                        horizontalAlignment = Alignment.Start,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-                                    ) {
-                                        LabeledCheckbox(
-                                            text = "Collate tins?",
-                                            maxLines = 1,
-                                            width = 96.dp,
-                                            checked = mappingOptions.collateTins,
-                                            onCheckedChange = {
-                                                updateCollateTinsOption(it)
-                                            },
-                                            modifier = Modifier,
-                                        )
-                                        LabeledCheckbox(
-                                            text = "Sync tins?",
-                                            maxLines = 1,
-                                            width = 96.dp,
-                                            checked = mappingOptions.syncTins,
-                                            enabled = mappingOptions.collateTins,
-                                            onCheckedChange = {
-                                                updateSyncTinsOption(it)
-                                            },
-                                        )
-                                    }
-                                    // Warning //
-                                    Column(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(0.dp),
-                                        horizontalAlignment = Alignment.End,
-                                        verticalArrangement = Arrangement.Center,
-                                    ) {
-                                        Text(
-                                            text = if (mappingOptions.collateTins && importOption == ImportOption.OVERWRITE) {
-                                                "Warning: Overwrite will erase existing tins."
-                                            } else { "" },
-                                            style = TextStyle(
-                                                color = MaterialTheme.colorScheme.error,
-                                                textAlign = TextAlign.End
-                                            ),
-                                            modifier = Modifier
-                                                .heightIn(max = 48.dp),
-                                            autoSize = TextAutoSize.StepBased(
-                                                minFontSize = 8.sp,
-                                                maxFontSize = 15.sp,
-                                                stepSize = .25.sp,
-                                            ),
-                                            maxLines = 2,
-                                        )
-                                    }
-                                }
-                                // Existing Records options //
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = "Existing entries:",
-                                        modifier = Modifier
-                                            .padding(end = 8.dp),
-                                    )
-                                    Row(
-                                        modifier = Modifier
-                                            .padding(0.dp)
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clickable(
-                                                    indication = LocalIndication.current,
-                                                    interactionSource = null
-                                                ) {
-                                                    viewModel.updateImportOption(
-                                                        ImportOption.SKIP
-                                                    )
-                                                }
-                                                .width(36.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "Skip",
-                                                modifier = Modifier,
-                                                color = if (importOption == ImportOption.SKIP) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
-                                                    alpha = 0.7f
-                                                ),
-                                                fontWeight = if (importOption == ImportOption.SKIP) FontWeight.SemiBold else FontWeight.Normal,
-                                            )
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .clickable(
-                                                    indication = LocalIndication.current,
-                                                    interactionSource = null
-                                                ) {
-                                                    viewModel.updateImportOption(
-                                                        ImportOption.UPDATE
-                                                    )
-                                                }
-                                                .width(56.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "Update",
-                                                modifier = Modifier,
-                                                color = if (importOption == ImportOption.UPDATE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
-                                                    alpha = 0.7f
-                                                ),
-                                                fontWeight = if (importOption == ImportOption.UPDATE) FontWeight.SemiBold else FontWeight.Normal,
-                                            )
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .clickable(
-                                                    indication = LocalIndication.current,
-                                                    interactionSource = null
-                                                ) {
-                                                    viewModel.updateImportOption(
-                                                        ImportOption.OVERWRITE
-                                                    )
-                                                }
-                                                .width(76.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "Overwrite",
-                                                modifier = Modifier,
-                                                color = if (importOption == ImportOption.OVERWRITE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
-                                                    alpha = 0.7f
-                                                ),
-                                                fontWeight = if (importOption == ImportOption.OVERWRITE) FontWeight.SemiBold else FontWeight.Normal,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            HorizontalDivider(Modifier.padding(bottom = 16.dp))
-
-                            // column mapping options //
-                            Column(
-                                modifier = Modifier
-                                    .padding(
-                                        start = 12.dp,
-                                        top = 8.dp,
-                                        end = 20.dp,
-                                        bottom = 16.dp
-                                    )
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(0.dp),
-                            ) {
-                                // Header
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = "Database Field",
-                                        style = LocalTextStyle.current.copy(
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                            lineBreak = LineBreak.Paragraph,
-                                            fontWeight = FontWeight.Medium,
-                                            textAlign = TextAlign.Start
-                                        ),
-                                        maxLines = 2,
-                                        modifier = Modifier
-                                            .weight(1f),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = .25.sp,
-                                        )
-                                    )
-                                    Spacer(Modifier.weight(1.1f))
-                                    Text(
-                                        text = "CSV Column",
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center,
-                                        style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
-                                        maxLines = 2,
-                                        modifier = Modifier
-                                            .weight(1f),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = .25.sp,
-                                        )
-                                    )
-                                    Spacer(Modifier.weight(.9f))
-                                    Text(
-                                        text = "Overwrite Allowed",
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.End,
-                                        style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
-                                        maxLines = 2,
-                                        modifier = Modifier
-                                            .alpha(if (importOption == ImportOption.OVERWRITE) 1f else 0.5f)
-                                            .weight(1f),
-                                        autoSize = TextAutoSize.StepBased(
-                                            minFontSize = 13.sp,
-                                            maxFontSize = 14.sp,
-                                            stepSize = .25.sp,
-                                        )
-                                    )
-                                }
-
-                                MappingField(
-                                    label = "Brand:",
-                                    selectedColumn = mappingOptions.brandColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Brand, selectedColumn
-                                        )
-                                    },
-                                    placeholder = "Required",
-                                    showCheckbox = false
-                                )
-                                MappingField(
-                                    label = "Blend:",
-                                    selectedColumn = mappingOptions.blendColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Blend, selectedColumn
-                                        )
-                                    },
-                                    placeholder = "Required",
-                                )
-                                MappingField(
-                                    label = "Type:",
-                                    selectedColumn = mappingOptions.typeColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Type, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Type] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Type,
-                                            it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "Subgenre:",
-                                    selectedColumn = mappingOptions.subGenreColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.SubGenre, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.SubGenre] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.SubGenre,
-                                            it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "Cut:",
-                                    selectedColumn = mappingOptions.cutColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Cut, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Cut] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Cut,
-                                            it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "Components:",
-                                    selectedColumn = mappingOptions.componentsColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Components, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Components] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Components, it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "Flavoring:",
-                                    selectedColumn = mappingOptions.flavoringColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Flavoring, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Flavoring] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Flavoring, it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "No. of Tins:",
-                                    selectedColumn = mappingOptions.quantityColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Quantity, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Quantity] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Quantity, it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true,
-                                    enabled = !mappingOptions.syncTins
-                                )
-                                MappingField(
-                                    label = "Rating:",
-                                    selectedColumn = mappingOptions.ratingColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Rating,
-                                            selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Rating] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Rating,
-                                            it
-                                        )
-                                    }
-                                )
-
-                                val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-                                val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
-                                val decimalSeparator = symbols.decimalSeparator.toString()
-                                val pattern = remember(decimalSeparator) {
-                                    val ds = Regex.escape(decimalSeparator)
-                                    Regex("^(\\s*|(\\d*)?($ds\\d{0,2})?)$")
-                                }
-
-                                MaxValueField(
-                                    label = "Max Possible\nCSV Rating:",
-                                    maxValue = mappingOptions.maxValueString,
-                                    onMaxValueChange = { string ->
-                                        if (string.matches(pattern)) {
-                                            var parsedDouble: Double?
-
-                                            if (string.isNotBlank()) {
-                                                val preNumber = if (string.startsWith(decimalSeparator)) {
-                                                    "0$string"
-                                                } else string
-
-                                                val number = numberFormat.parse(preNumber)
-                                                parsedDouble = number?.toDouble()
-                                            } else { parsedDouble = null }
-
-                                            val maxValueDouble = parsedDouble?.takeIf { it > 0.0 }
-
-                                            viewModel.updateMaxValue(string, maxValueDouble)
-                                        }
-                                    },
-                                    enabled = mappingOptions.ratingColumn.isNotBlank(),
-                                    error = mappingOptions.ratingColumn.isNotBlank() && mappingOptions.maxValue == null,
-                                )
-                                MappingField(
-                                    label = "Favorite:",
-                                    selectedColumn = mappingOptions.favoriteColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Favorite, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Favorite] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Favorite, it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "Disliked:",
-                                    selectedColumn = mappingOptions.dislikedColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Disliked, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Disliked] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Disliked, it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                                MappingField(
-                                    label = "Production\nStatus:",
-                                    selectedColumn = mappingOptions.productionColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Production, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Production] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Production, it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true,
-                                    maxLines = 2
-                                )
-                                MappingField(
-                                    label = "Notes:",
-                                    selectedColumn = mappingOptions.notesColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Notes, selectedColumn
-                                        )
-                                    },
-                                    overwriteSelected = overwriteSelections[CsvImportViewModel.CsvField.Notes] ?: false,
-                                    onOverwrite = {
-                                        viewModel.updateOverwriteSelection(
-                                            CsvImportViewModel.CsvField.Notes,
-                                            it
-                                        )
-                                    },
-                                    importOption = importOption,
-                                    showCheckbox = true
-                                )
-                            }
-
-                            // Tins mapping options
-                            Column(
-                                modifier = Modifier
-                                    .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(0.dp)
-                            ) {
-                                Text(
-                                    text = "Tins Mapping",
-                                    modifier = Modifier,
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (mappingOptions.collateTins) LocalContentColor.current
-                                    else LocalContentColor.current.copy(alpha = 0.5f)
-                                )
-                                MappingField(
-                                    label = "Container:",
-                                    selectedColumn = mappingOptions.containerColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.Container, selectedColumn
-                                        )
-                                    },
-                                    enabled = mappingOptions.collateTins
-                                )
-                                MappingField(
-                                    label = "Quantity:",
-                                    selectedColumn = mappingOptions.tinQuantityColumn,
-                                    csvColumns = csvUiState.columns,
-                                    onColumnSelected = { selectedColumn ->
-                                        viewModel.updateFieldMapping(
-                                            CsvImportViewModel.CsvField.TinQuantity, selectedColumn
-                                        )
-                                    },
-                                    enabled = mappingOptions.collateTins
-                                )
-
-                                Spacer(Modifier.height(8.dp))
-
-                                var dateFormatSelected by rememberSaveable { mutableStateOf(false) }
-
-                                DateFormatField(
-                                    label = "CSV Date\nFormat:",
-                                    selectedFormat = mappingOptions.dateFormat,
-                                    onFormatSelected = { selectedFormat ->
-                                        viewModel.updateDateFormat(selectedFormat)
-                                        dateFormatSelected = selectedFormat.isNotBlank()
-                                    },
-                                    enabled = mappingOptions.collateTins,
-                                    modifier = Modifier
-                                )
-
-                                Box(
-                                    modifier = Modifier,
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column {
-                                        MappingField(
-                                            label = "Manufacture\nDate:",
-                                            selectedColumn = mappingOptions.manufactureDateColumn,
-                                            csvColumns = csvUiState.columns,
-                                            onColumnSelected = { selectedColumn ->
-                                                viewModel.updateFieldMapping(
-                                                    CsvImportViewModel.CsvField.ManufactureDate, selectedColumn
-                                                )
-                                            },
-                                            enabled = mappingOptions.collateTins && dateFormatSelected,
-                                            maxLines = 2
-                                        )
-                                        MappingField(
-                                            label = "Cellar Date:",
-                                            selectedColumn = mappingOptions.cellarDateColumn,
-                                            csvColumns = csvUiState.columns,
-                                            onColumnSelected = { selectedColumn ->
-                                                viewModel.updateFieldMapping(
-                                                    CsvImportViewModel.CsvField.CellarDate, selectedColumn
-                                                )
-                                            },
-                                            enabled = mappingOptions.collateTins && dateFormatSelected
-                                        )
-                                        MappingField(
-                                            label = "Open Date:",
-                                            selectedColumn = mappingOptions.openDateColumn,
-                                            csvColumns = csvUiState.columns,
-                                            onColumnSelected = { selectedColumn ->
-                                                viewModel.updateFieldMapping(
-                                                    CsvImportViewModel.CsvField.OpenDate, selectedColumn
-                                                )
-                                            },
-                                            enabled = mappingOptions.collateTins && dateFormatSelected,
-                                        )
-                                        MappingField(
-                                            label = "Finished:",
-                                            selectedColumn = mappingOptions.finishedColumn,
-                                            csvColumns = csvUiState.columns,
-                                            onColumnSelected = { selectedColumn ->
-                                                viewModel.updateFieldMapping(
-                                                    CsvImportViewModel.CsvField.Finished, selectedColumn
-                                                )
-                                            },
-                                            enabled = mappingOptions.collateTins && dateFormatSelected
-                                        )
-                                    }
-                                    if (mappingOptions.collateTins && !dateFormatSelected) {
-                                        Box(
-                                            modifier = Modifier
-                                                .background(
-                                                    Color.Black.copy(alpha = 0.50f),
-                                                    RoundedCornerShape(4.dp)
-                                                )
-                                                .matchParentSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "(must select date format)",
-                                                modifier = Modifier
-                                                    .background(Color.Black.copy(alpha = 0.33f)),
-                                                textAlign = TextAlign.Center,
-                                                fontWeight = FontWeight.SemiBold,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Confirm and  Import button //
-                            Button(
-                                onClick = { coroutineScope.launch { viewModel.confirmImport(context.contentResolver) } },
-                                enabled = csvUiState.isFormValid,
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .height(48.dp)
-                                    .align(Alignment.CenterHorizontally),
-                            ) {
-                                Text(
-                                    text = "Confirm and Import",
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            }
-                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = "Skip",
+                                modifier = Modifier,
+                                color =
+                                    if (importOption == ImportOption.SKIP) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                fontWeight =
+                                    if (importOption == ImportOption.SKIP) FontWeight.SemiBold
+                                    else FontWeight.Normal,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { viewModel.updateImportOption(ImportOption.UPDATE) }
+                                .width(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Update",
+                                modifier = Modifier,
+                                color =
+                                    if (importOption == ImportOption.UPDATE) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                fontWeight =
+                                    if (importOption == ImportOption.UPDATE) FontWeight.SemiBold
+                                    else FontWeight.Normal,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clickable(
+                                    indication = LocalIndication.current,
+                                    interactionSource = null
+                                ) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
+                                .width(76.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Overwrite",
+                                modifier = Modifier,
+                                color =
+                                    if (importOption == ImportOption.OVERWRITE) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                fontWeight =
+                                    if (importOption == ImportOption.OVERWRITE) FontWeight.SemiBold
+                                    else FontWeight.Normal,
+                            )
                         }
                     }
                 }
             }
+
+            HorizontalDivider(Modifier.padding(bottom = 16.dp))
+
+            // column mapping options //
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Database Field",
+                        style = LocalTextStyle.current.copy(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            lineBreak = LineBreak.Paragraph,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Start
+                        ),
+                        maxLines = 2,
+                        modifier = Modifier
+                            .weight(1f),
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 13.sp,
+                            maxFontSize = 14.sp,
+                            stepSize = .25.sp,
+                        )
+                    )
+                    Spacer(Modifier.weight(1.1f))
+                    Text(
+                        text = "CSV Column",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
+                        maxLines = 2,
+                        modifier = Modifier
+                            .weight(1f),
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 13.sp,
+                            maxFontSize = 14.sp,
+                            stepSize = .25.sp,
+                        )
+                    )
+                    Spacer(Modifier.weight(.9f))
+                    Text(
+                        text = "Overwrite Allowed",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.End,
+                        style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
+                        maxLines = 2,
+                        modifier = Modifier
+                            .alpha(if (importOption == ImportOption.OVERWRITE) 1f else 0.5f)
+                            .weight(1f),
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 13.sp,
+                            maxFontSize = 14.sp,
+                            stepSize = .25.sp,
+                        )
+                    )
+                }
+
+                val mainFields = remember(mappingOptions.syncTins) {
+                    listOf(
+                        FieldConfig(CsvField.Brand, "Brand:", showCheckbox = false, placeholder = "Required"),
+                        FieldConfig(CsvField.Blend, "Blend:", showCheckbox = false, placeholder = "Required"),
+                        FieldConfig(CsvField.Type, "Type:"),
+                        FieldConfig(CsvField.SubGenre, "Subgenre:"),
+                        FieldConfig(CsvField.Cut, "Cut:"),
+                        FieldConfig(CsvField.Components, "Components:"),
+                        FieldConfig(CsvField.Flavoring, "Flavoring:"),
+                        FieldConfig(CsvField.Quantity, "No. of Tins:", enabled = !mappingOptions.syncTins),
+                        FieldConfig(CsvField.Rating, "Rating:"),
+                        FieldConfig(CsvField.Favorite, "Favorite:"),
+                        FieldConfig(CsvField.Disliked, "Disliked:"),
+                        FieldConfig(CsvField.Production, "Production\nStatus:", maxLines = 2),
+                        FieldConfig(CsvField.Notes, "Notes:")
+                    )
+                }
+
+                mainFields.forEach { config ->
+                    MappingField(
+                        label = config.label,
+                        selectedColumn = mappingOptions.columnMap[config.field] ?: "",
+                        csvColumns = csvUiState.columns,
+                        onColumnSelected = { viewModel.updateFieldMapping(config.field, it) },
+                        enabled = config.enabled,
+                        showCheckbox = config.showCheckbox,
+                        overwriteSelected = overwriteSelections[config.field] ?: false,
+                        onOverwrite = { viewModel.updateOverwriteSelection(config.field, it) },
+                        importOption = importOption,
+                        placeholder = config.placeholder,
+                        maxLines = config.maxLines
+                    )
+
+                    if (config.field == CsvField.Rating) {
+                        val ratingNotBlank = mappingOptions.columnMap[CsvField.Rating]?.isNotBlank() == true
+
+                        MaxValueField(
+                            label = "Max Possible\nCSV Rating:",
+                            maxValue = mappingOptions.maxValueString,
+                            onMaxValueChange = viewModel::updateMaxValue,
+                            enabled = ratingNotBlank,
+                            error = ratingNotBlank && mappingOptions.maxValue == null,
+                        )
+                    }
+                }
+            }
+
+            // Tins mapping options
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                val dateFormatSelected = remember(mappingOptions.dateFormat) { mappingOptions.dateFormat.isNotBlank() }
+                Text(
+                    text = "Tins Mapping",
+                    modifier = Modifier,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (mappingOptions.collateTins) LocalContentColor.current
+                    else LocalContentColor.current.copy(alpha = 0.5f)
+                )
+                MappingField(
+                    label = "Container:",
+                    selectedColumn = mappingOptions.columnMap[CsvField.Container] ?: "",
+                    csvColumns = csvUiState.columns,
+                    onColumnSelected = { viewModel.updateFieldMapping(CsvField.Container, it) },
+                    enabled = mappingOptions.collateTins
+                )
+                MappingField(
+                    label = "Quantity:",
+                    selectedColumn = mappingOptions.columnMap[CsvField.TinQuantity] ?: "",
+                    csvColumns = csvUiState.columns,
+                    onColumnSelected = { viewModel.updateFieldMapping(CsvField.TinQuantity, it) },
+                    enabled = mappingOptions.collateTins
+                )
+
+                DateFormatField(
+                    label = "CSV Date\nFormat:",
+                    selectedFormat = mappingOptions.dateFormat,
+                    onFormatSelected = viewModel::updateDateFormat,
+                    enabled = mappingOptions.collateTins,
+                    modifier = Modifier
+                )
+
+                Box(
+                    modifier = Modifier,
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column {
+                        MappingField(
+                            label = "Manufacture\nDate:",
+                            selectedColumn = mappingOptions.columnMap[CsvField.ManufactureDate] ?: "",
+                            csvColumns = csvUiState.columns,
+                            onColumnSelected = { viewModel.updateFieldMapping(CsvField.ManufactureDate, it) },
+                            enabled = mappingOptions.collateTins && dateFormatSelected,
+                            maxLines = 2
+                        )
+                        MappingField(
+                            label = "Cellar Date:",
+                            selectedColumn = mappingOptions.columnMap[CsvField.CellarDate] ?: "",
+                            csvColumns = csvUiState.columns,
+                            onColumnSelected = { viewModel.updateFieldMapping(CsvField.CellarDate, it) },
+                            enabled = mappingOptions.collateTins && dateFormatSelected
+                        )
+                        MappingField(
+                            label = "Open Date:",
+                            selectedColumn = mappingOptions.columnMap[CsvField.OpenDate] ?: "",
+                            csvColumns = csvUiState.columns,
+                            onColumnSelected = { viewModel.updateFieldMapping(CsvField.OpenDate, it) },
+                            enabled = mappingOptions.collateTins && dateFormatSelected,
+                        )
+                    }
+                    if (mappingOptions.collateTins && !dateFormatSelected) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    Color.Black.copy(alpha = 0.50f),
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .matchParentSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "(must select date format)",
+                                modifier = Modifier
+                                    .background(Color.Black.copy(alpha = 0.33f)),
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
+                }
+                MappingField(
+                    label = "Finished:",
+                    selectedColumn = mappingOptions.columnMap[CsvField.Finished] ?: "",
+                    csvColumns = csvUiState.columns,
+                    onColumnSelected = { viewModel.updateFieldMapping(CsvField.Finished, it) },
+                    enabled = mappingOptions.collateTins
+                )
+            }
+
+            // Confirm and  Import button //
+            Button(
+                onClick = { coroutineScope.launch { viewModel.confirmImport(context.contentResolver) } },
+                enabled = csvUiState.isFormValid,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(48.dp)
+                    .align(Alignment.CenterHorizontally),
+            ) {
+                Text(
+                    text = "Confirm and Import",
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -1469,9 +1216,7 @@ fun MaxValueField(
             ) {
                 OutlinedTextField(
                     value = maxValue,
-                    onValueChange = {
-                        onMaxValueChange(it)
-                    },
+                    onValueChange = onMaxValueChange,
                     modifier = Modifier
                         .fillMaxWidth(),
                     singleLine = true,
@@ -1659,3 +1404,11 @@ fun MappingField(
     }
 }
 
+private data class FieldConfig(
+    val field: CsvField,
+    val label: String,
+    val showCheckbox: Boolean = true,
+    val placeholder: String = "",
+    val maxLines: Int = 1,
+    val enabled: Boolean = true
+)
