@@ -62,9 +62,7 @@ fun RatingPopup(
     var parsedDouble by rememberSaveable { mutableStateOf<Double?>(null) }
 
     val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) {
-        onDispose { focusManager.clearFocus() }
-    }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
