@@ -40,9 +40,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -70,64 +70,78 @@ class SettingsViewModel(
 ): ViewModel() {
 
     /** Display Settings */
-    private val _themeSetting = MutableStateFlow(ThemeSetting.SYSTEM)
-    val themeSetting: StateFlow<ThemeSetting> = _themeSetting.asStateFlow()
+    val themeSetting = preferencesRepo.themeSetting
+    val showRatings = preferencesRepo.showRating.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _showRatings = MutableStateFlow(false)
-    val showRatings: StateFlow<Boolean> = _showRatings.asStateFlow()
+    val typeGenreOptionEnablement: StateFlow<Map<TypeGenreOption, Boolean>> = combine(
+        filterViewModel.typesExist,
+        filterViewModel.subgenresExist,
+    ) { types, subgenres ->
+        mapOf(
+            TypeGenreOption.TYPE to (types || !subgenres),
+            TypeGenreOption.SUBGENRE to subgenres,
+            TypeGenreOption.BOTH to (types && subgenres),
+            TypeGenreOption.TYPE_FALLBACK to types,
+            TypeGenreOption.SUB_FALLBACK to subgenres,
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = mapOf(
+                TypeGenreOption.TYPE to true,
+                TypeGenreOption.SUBGENRE to true,
+                TypeGenreOption.BOTH to true,
+                TypeGenreOption.TYPE_FALLBACK to true,
+                TypeGenreOption.SUB_FALLBACK to true,
+            )
+        )
 
-    private val _typeGenreOption = MutableStateFlow(TypeGenreOption.TYPE)
-    val typeGenreOption: StateFlow<TypeGenreOption> = _typeGenreOption.asStateFlow()
+    val typeGenreOption = combine(
+        preferencesRepo.typeGenreOption,
+        typeGenreOptionEnablement
+    ) { option, typeGenreEnablement ->
+        val enabled = typeGenreEnablement[option] ?: true
+        if (enabled) option else TypeGenreOption.TYPE
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TypeGenreOption.TYPE)
 
-    private val _quantityOption = MutableStateFlow(QuantityOption.TINS)
-    val quantityOption: StateFlow<QuantityOption> = _quantityOption.asStateFlow()
+    val quantityOption = preferencesRepo.quantityOption.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), QuantityOption.TINS)
 
-    private val _parseLinks = MutableStateFlow(true)
-    val parseLinks: StateFlow<Boolean> = _parseLinks.asStateFlow()
+    val parseLinks = preferencesRepo.parseLinks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    private val _globalTwoPane = MutableStateFlow(true)
-    val globalTwoPane: StateFlow<Boolean> = _globalTwoPane.asStateFlow()
+    val globalTwoPane = preferencesRepo.globalTwoPane.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    private val _landscapeTwoPane = MutableStateFlow(false)
-    val landscapeTwoPane = _landscapeTwoPane.asStateFlow()
+    val landscapeTwoPane = preferencesRepo.landscapeTwoPane
 
-    private val _twoColumnTabs = MutableStateFlow(true)
-    val twoColumnTabs: StateFlow<Boolean> = _twoColumnTabs.asStateFlow()
+    val twoColumnTabs = preferencesRepo.twoColumnTabs
 
 
     /** App & Database settings */
-    private val _deviceSyncAcknowledgement = MutableStateFlow(false)
-    val deviceSyncAcknowledgement = _deviceSyncAcknowledgement.asStateFlow()
+    val deviceSyncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    private val _crossDeviceSync = MutableStateFlow(false)
-    val crossDeviceSync = _crossDeviceSync.asStateFlow()
+    val crossDeviceSync = preferencesRepo.crossDeviceSync
+        .onEach { if (it) _signingIn.value = false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _signingIn = MutableStateFlow(false)
     val signingIn = _signingIn.asStateFlow()
 
-    private val _allowMobileData = MutableStateFlow(false)
-    val allowMobileData = _allowMobileData.asStateFlow()
+    val allowMobileData = preferencesRepo.allowMobileData.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _userEmail = MutableStateFlow<String?>(null)
-    val userEmail = _userEmail.asStateFlow()
+    val userEmail = preferencesRepo.signedInUserEmail.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val _hasScope = MutableStateFlow(false)
-    val hasScope = _hasScope.asStateFlow()
+    val hasScope = preferencesRepo.hasDriveScope.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _tinOzConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.ozRate)
-    val tinOzConversionRate: StateFlow<Double> = _tinOzConversionRate.asStateFlow()
+    val tinOzConversionRate = preferencesRepo.tinOzConversionRate.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinConversionRates.DEFAULT.ozRate)
 
-    private val _defaultSyncOption = MutableStateFlow(false)
-    val defaultSyncOption = _defaultSyncOption.asStateFlow()
+    val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinConversionRates.DEFAULT.gramsRate)
 
+    val defaultSyncOption = preferencesRepo.defaultSyncOption.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
     /** General UI control **/
     private val _openDialog = MutableStateFlow<DialogType?>(null)
     val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
-
-    private val _tinGramsConversionRate = MutableStateFlow(TinConversionRates.DEFAULT.gramsRate)
-    val tinGramsConversionRate: StateFlow<Double> = _tinGramsConversionRate.asStateFlow()
 
     private val _snackbarState = MutableStateFlow(SnackbarState())
     val snackbarState: StateFlow<SnackbarState> = _snackbarState.asStateFlow()
@@ -136,73 +150,7 @@ class SettingsViewModel(
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
 
-    // option initializations //
     init {
-        // Theme Setting
-        viewModelScope.launch(Dispatchers.Default) {
-            supervisorScope {
-                // Theme Setting
-                launch {
-                    preferencesRepo.themeSetting.collect { _themeSetting.value = it }
-                }
-                // Ratings Visibility
-                launch {
-                    preferencesRepo.showRating.collect { _showRatings.value = it }
-                }
-                // Type/Genre Display
-                launch {
-                    preferencesRepo.typeGenreOption.collect { _typeGenreOption.value = it }
-                }
-                // Quantity Display
-                launch {
-                    preferencesRepo.quantityOption.collect { _quantityOption.value = it }
-                }
-                //Parse Links
-                launch {
-                    preferencesRepo.parseLinks.collect { _parseLinks.value = it }
-                }
-                // Large Screen Options
-                launch {
-                    preferencesRepo.globalTwoPane.collect { _globalTwoPane.value = it }
-                }
-                launch {
-                    preferencesRepo.landscapeTwoPane.collect { _landscapeTwoPane.value = it }
-                }
-                launch {
-                    preferencesRepo.twoColumnTabs.collect { _twoColumnTabs.value = it }
-                }
-
-                // Device Sync
-                launch {
-                    preferencesRepo.crossDeviceAcknowledged.collect { _deviceSyncAcknowledgement.value = it }
-                }
-                launch {
-                    preferencesRepo.crossDeviceSync.collect {
-                        _crossDeviceSync.value = it
-                        if (it) {
-                            _signingIn.value = false
-                        }
-                    }
-                }
-                launch {
-                    preferencesRepo.signedInUserEmail.collect { _userEmail.value = it }
-                }
-                launch {
-                    preferencesRepo.allowMobileData.collect { _allowMobileData.value = it }
-                }
-                // Tin Conversion Rates
-                launch {
-                    preferencesRepo.tinOzConversionRate.collect { _tinOzConversionRate.value = it }
-                }
-                launch {
-                    preferencesRepo.tinGramsConversionRate.collect { _tinGramsConversionRate.value = it }
-                }
-                // Default sync tins
-                launch {
-                    preferencesRepo.defaultSyncOption.collect { _defaultSyncOption.value = it }
-                }
-            }
-        }
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 if (event is SignInCancelled) {
@@ -230,11 +178,11 @@ class SettingsViewModel(
 
 
     val displaySettings = combine(
-        _themeSetting,
-        _showRatings,
-        _typeGenreOption,
-        _quantityOption,
-        _parseLinks
+        themeSetting,
+        showRatings,
+        typeGenreOption,
+        quantityOption,
+        parseLinks
     ) { theme, showRatings, typeGenre, quantity, parseLinks ->
         listOf(
             SettingsDialog("Theme", "Change the theme of the app.", theme.value, DialogType.Theme),
@@ -258,12 +206,12 @@ class SettingsViewModel(
         )
 
     val databaseSettings = combine (
-        _crossDeviceSync,
-        _allowMobileData,
+        crossDeviceSync,
+        allowMobileData,
         networkEnabled,
-        _tinOzConversionRate,
-        _tinGramsConversionRate,
-        _defaultSyncOption,
+        tinOzConversionRate,
+        tinGramsConversionRate,
+        defaultSyncOption,
     ) { values: Array<Any> ->
         val crossDeviceSync = values[0] as Boolean
         val mobileData = values[1] as Boolean
@@ -305,44 +253,6 @@ class SettingsViewModel(
 
 
     /** Display Settings **/
-    val typeGenreOptionEnablement: StateFlow<Map<TypeGenreOption, Boolean>> = combine(
-        filterViewModel.typesExist,
-        filterViewModel.subgenresExist,
-    ) { types, subgenres ->
-        mapOf(
-            TypeGenreOption.TYPE to (types || !subgenres),
-            TypeGenreOption.SUBGENRE to subgenres,
-            TypeGenreOption.BOTH to (types && subgenres),
-            TypeGenreOption.TYPE_FALLBACK to types,
-            TypeGenreOption.SUB_FALLBACK to subgenres,
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = mapOf(
-                TypeGenreOption.TYPE to true,
-                TypeGenreOption.SUBGENRE to true,
-                TypeGenreOption.BOTH to true,
-                TypeGenreOption.TYPE_FALLBACK to true,
-                TypeGenreOption.SUB_FALLBACK to true,
-            )
-        )
-
-    init {
-        viewModelScope.launch {
-            combine(
-                preferencesRepo.typeGenreOption,
-                typeGenreOptionEnablement
-            ) { option, typeGenreEnablement ->
-                val enabled = typeGenreEnablement[option] ?: true
-                if (enabled) option else TypeGenreOption.TYPE
-            }.collect {
-                _typeGenreOption.value = it
-                preferencesRepo.saveTypeGenreOption(it.value)
-            }
-        }
-    }
 
     fun saveThemeSetting(setting: String) {
         viewModelScope.launch {
@@ -393,7 +303,6 @@ class SettingsViewModel(
     }
 
 
-
     /** Database Settings **/
     fun saveCrossDeviceAcknowledged() {
         viewModelScope.launch {
@@ -404,11 +313,11 @@ class SettingsViewModel(
     fun saveCrossDeviceSync(enable: Boolean) {
         viewModelScope.launch {
             if (enable) {
-                val email = _userEmail.value
+                val email = userEmail.value
                 if (!email.isNullOrEmpty()) {
                     (application as CellarApplication).periodicDownloadSetup()
                 }
-                _signingIn.value = _userEmail.value.isNullOrEmpty()
+                _signingIn.value = userEmail.value.isNullOrEmpty()
                 EventBus.emit(SignInEvent)
             } else {
                 _signingIn.value = false
@@ -595,8 +504,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepo.setTinOzConversionRate(ozRate)
             preferencesRepo.setTinGramsConversionRate(gramsRate)
-            _tinOzConversionRate.value = ozRate
-            _tinGramsConversionRate.value = gramsRate
 
             updateTinSync(ozRate, gramsRate)
         }
@@ -755,7 +662,7 @@ class SettingsViewModel(
                 val settingsBytes = if (backupState.value.settingsChecked) createSettingsBytes() else ByteArray(0)
 
                 val magicNumber = byteArrayOf(0x54, 0x43, 0x42, 0x55) // "TCBU"
-                val version = byteArrayOf(0x03) // Version 3 item sync state now in database
+                val version = byteArrayOf(0x04) // Version 3 item sync state now in database, version 4 settings backup data class change
                 val settingsLength = settingsBytes.size.toByteArray()
 
                 val header = magicNumber + version + settingsLength
@@ -803,6 +710,7 @@ class SettingsViewModel(
             var message = ""
 
             val bytes = readBytesFromFile(uri, context)
+
             if (bytes == null) {
                 message = "Invalid file."
             } else try {
@@ -826,7 +734,7 @@ class SettingsViewModel(
                                 if (fileContentState.version == 2) {
                                     restoreItemSyncState(itemSyncStateBytes)
                                 }
-                                restoreSettings(settingsBytes)
+                                restoreSettings(settingsBytes, fileContentState.version)
                                 updateTinSync(runSilent = true)
                                 message = "Database and Settings restored."
                             } catch (_: Exception) {
@@ -835,7 +743,7 @@ class SettingsViewModel(
                         } else {
                             if (!fileContentState.databasePresent) {
                                 try {
-                                    restoreSettings(settingsBytes)
+                                    restoreSettings(settingsBytes, fileContentState.version)
                                     updateTinSync(runSilent = true)
                                     message = "File missing database data, settings restored."
                                 } catch (_: Exception) {
@@ -870,7 +778,7 @@ class SettingsViewModel(
                     }
                     else if (restoreState.settingsChecked) {
                         if (fileContentState.settingsPresent) {
-                            restoreSettings(settingsBytes)
+                            restoreSettings(settingsBytes, fileContentState.version)
                             updateTinSync(runSilent = true)
                             message = "Settings restored."
                         } else {
@@ -895,15 +803,11 @@ class SettingsViewModel(
     private fun validateBackupFile(bytes: ByteArray): FileContentState {
         val magicNumber = bytes.copyOfRange(0, 4)
         val isMagicNumberValid = magicNumber.contentEquals(byteArrayOf(0x54, 0x43, 0x42, 0x55))
-        if (!isMagicNumberValid) {
-            return FileContentState(magicNumberValid = false, versionValid = false)
-        }
+        if (!isMagicNumberValid) return FileContentState(magicNumberValid = false, versionValid = false)
 
         val version = bytes[4]
-        val isVersionValid = (version == 0x02.toByte() || version == 0x03.toByte())
-        if (!isVersionValid) {
-            return FileContentState(magicNumberValid = true, versionValid = false)
-        }
+        val isVersionValid = version.toInt() in 2..4
+        if (!isVersionValid) return FileContentState(magicNumberValid = true, versionValid = false)
 
         val settingsLengthBytes = bytes.copyOfRange(5, 9)
         val settingsLength = byteArrayToInt(settingsLengthBytes)
@@ -1062,10 +966,10 @@ class SettingsViewModel(
         }
     }
 
-    private fun restoreSettings(settingsBytes: ByteArray) {
+    private fun restoreSettings(settingsBytes: ByteArray, backupVersion: Int) {
         viewModelScope.launch(Dispatchers.Default) {
             val settingsText = String(settingsBytes, Charset.forName("UTF-8"))
-            parseSettingsText(settingsText, preferencesRepo)
+            parseSettingsText(settingsText, preferencesRepo, backupVersion)
         }
     }
 
@@ -1160,6 +1064,33 @@ data class BackupState(
     val databaseChecked: Boolean = false,
     val settingsChecked: Boolean = false,
     val suggestedFilename: String = "",
+)
+
+@Serializable
+data class SettingsBackup (
+    val tableView: Boolean = false,
+    val tableColumnsHidden: Set<String> = emptySet(),
+    val quantityOption: String = QuantityOption.TINS.value,
+    val themeSetting: String = ThemeSetting.SYSTEM.value,
+    val tinOzConversionRate: Double = 1.75,
+    val tinGramsConversionRate: Double = 50.0,
+    val plaintextFormatString: String = "",
+    val plaintextDelimiter: String = "",
+    val plaintextPresets: List<PlaintextPreset> = emptyList(),
+    val plaintextPrintFontSize: Float = 12f,
+    val plaintextPrintMargin: Double = 1.0,
+    val showRatingOption: Boolean = true,
+    val typeGenreOption: String = TypeGenreOption.TYPE.value,
+    val exportRating: ExportRating = ExportRating(),
+    val defaultSyncTinsOption: Boolean = false,
+    val columnVisibility: Set<String> = emptySet(),
+    val parseLinksOption: Boolean = true,
+    val syncAcknowledgement: Boolean = false,
+    val processedSync: Set<String> = emptySet(),
+    val datesLastSeen: String = "",
+    val globalTwoPane: Boolean = true,
+    val twoColumnTabs: Boolean = true,
+    val landscapeTwoPane: Boolean = false
 )
 
 data class RestoreState(
@@ -1279,53 +1210,33 @@ fun backupDatabase(context: Context, backupFile: File) {
 }
 
 suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
-    val tableView = preferencesRepo.isTableView.toString()
-    val tableColumnsHidden = Json.encodeToString(preferencesRepo.tableColumnsHidden.first())
-    val quantityOption = preferencesRepo.quantityOption.first().value
-    val themeSetting = preferencesRepo.themeSetting.first()
-    val tinOzConversionRate = preferencesRepo.tinOzConversionRate.first().toString()
-    val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first().toString()
-    val plaintextFormatString = preferencesRepo.plaintextFormatString.first()
-    val plaintextDelimiter = preferencesRepo.plaintextDelimiter.first()
-    val plaintextPresets = Json.encodeToString(preferencesRepo.plaintextPresetsFlow.first())
-    val plaintextPrintOptions = "${preferencesRepo.plaintextPrintFontSize.first()}, ${preferencesRepo.plaintextPrintMargin.first()}"
-    val showRatingOption = preferencesRepo.showRating.first().toString()
-    val typeGenreOption = preferencesRepo.typeGenreOption.first().value
-    val exportRating = Json.encodeToString(preferencesRepo.exportRating.first())
-    val defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first().toString()
-    val columnVisibility = preferencesRepo.tableColumnsHidden.first().joinToString(", ") { it }
-    val parseLinksOption = preferencesRepo.parseLinks.first().toString()
-    val syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first().toString()
-    val processedSync = preferencesRepo.processedSyncFiles.first().joinToString(", ") { it }
-    val datesLastSeen = preferencesRepo.datesSeen.first()
-    val globalTwoPane = preferencesRepo.globalTwoPane.first().toString()
-    val twoColumnTabs = preferencesRepo.twoColumnTabs.first().toString()
-    val landscapeTwoPane = preferencesRepo.landscapeTwoPane.first().toString()
+    val backup = SettingsBackup(
+        tableView = preferencesRepo.isTableView.first(),
+        tableColumnsHidden = preferencesRepo.tableColumnsHidden.first(),
+        quantityOption = preferencesRepo.quantityOption.first().value,
+        themeSetting = preferencesRepo.themeSetting.first().value,
+        tinOzConversionRate = preferencesRepo.tinOzConversionRate.first(),
+        tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first(),
+        plaintextFormatString = preferencesRepo.plaintextFormatString.first(),
+        plaintextDelimiter = preferencesRepo.plaintextDelimiter.first(),
+        plaintextPresets = preferencesRepo.plaintextPresetsFlow.first(),
+        plaintextPrintFontSize = preferencesRepo.plaintextPrintFontSize.first(),
+        plaintextPrintMargin = preferencesRepo.plaintextPrintMargin.first(),
+        showRatingOption = preferencesRepo.showRating.first(),
+        typeGenreOption = preferencesRepo.typeGenreOption.first().value,
+        exportRating = preferencesRepo.exportRating.first(),
+        defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first(),
+        columnVisibility = preferencesRepo.tableColumnsHidden.first(),
+        parseLinksOption = preferencesRepo.parseLinks.first(),
+        syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first(),
+        processedSync = preferencesRepo.processedSyncFiles.first(),
+        datesLastSeen = preferencesRepo.datesSeen.first(),
+        globalTwoPane = preferencesRepo.globalTwoPane.first(),
+        twoColumnTabs = preferencesRepo.twoColumnTabs.first(),
+        landscapeTwoPane = preferencesRepo.landscapeTwoPane.first()
+    )
 
-    return """
-            tableView=$tableView
-            tableColumnsHidden=$tableColumnsHidden
-            quantityOption=$quantityOption
-            themeSetting=$themeSetting
-            tinOzConversionRate=$tinOzConversionRate
-            tinGramsConversionRate=$tinGramsConversionRate
-            plaintextFormatString=$plaintextFormatString
-            plaintextDelimiter=$plaintextDelimiter
-            plaintextPresets=$plaintextPresets
-            plaintextPrintOptions=$plaintextPrintOptions
-            showRatingOption=$showRatingOption
-            typeGenreOption=$typeGenreOption
-            exportRating=$exportRating
-            defaultSyncTinsOption=$defaultSyncTinsOption
-            columnVisibility=$columnVisibility
-            parseLinksOption=$parseLinksOption
-            syncAcknowledgement=$syncAcknowledgement
-            processedSync=$processedSync
-            datesLastSeen=$datesLastSeen
-            globalTwoPane=$globalTwoPane
-            twoColumnTabs=$twoColumnTabs
-            landscapeTwoPane=$landscapeTwoPane
-        """.trimIndent()
+    return Json.encodeToString(backup)
 }
 
 fun writeBytesToFile(uri: Uri, bytes: ByteArray, context: Context) {
@@ -1347,56 +1258,92 @@ fun readBytesFromFile(uri: Uri, context: Context): ByteArray? {
     }
 }
 
-suspend fun parseSettingsText(settingsText: String, preferencesRepo: PreferencesRepo) {
-    val lines = settingsText.lines()
-    for (line in lines) {
-        val parts = line.split("=")
-        if (parts.size == 2) {
-            val key = parts[0].trim()
-            val value = parts[1].trim()
+suspend fun parseSettingsText(settingsText: String, preferencesRepo: PreferencesRepo, version: Int) {
+    if (version >= 4) {
+        val backup = Json.decodeFromString<SettingsBackup>(settingsText)
+        with(preferencesRepo) {
+            saveViewPreference(backup.tableView)
+            saveTableColumnsHidden(backup.tableColumnsHidden)
+            saveQuantityPreference(backup.quantityOption)
+            saveThemeSetting(backup.themeSetting)
+            setTinOzConversionRate(backup.tinOzConversionRate)
+            setTinGramsConversionRate(backup.tinGramsConversionRate)
+            setPlaintextFormatString(backup.plaintextFormatString)
+            setPlaintextDelimiter(backup.plaintextDelimiter)
+            backup.plaintextPresets.forEach {
+                preferencesRepo.savePlaintextPreset(it.slot, it.formatString, it.delimiter)
+            }
+            setPlaintextPrintOptions(backup.plaintextPrintFontSize, backup.plaintextPrintMargin)
+            saveShowRatingOption(backup.showRatingOption)
+            saveTypeGenreOption(backup.typeGenreOption)
+            saveExportRating(backup.exportRating.maxRating, backup.exportRating.rounding)
+            saveDefaultSyncOption(backup.defaultSyncTinsOption)
+            saveTableColumnsHidden(backup.columnVisibility)
+            saveParseLinksOption(backup.parseLinksOption)
+            saveCrossDeviceAcknowledged(backup.syncAcknowledgement)
+            saveProcessedSyncFiles(backup.processedSync)
+            setDatesSeen(backup.datesLastSeen)
+            saveGlobalTwoPane(backup.globalTwoPane)
+            saveTwoColumnTabs(backup.twoColumnTabs)
+            saveLandscapeTwoPane(backup.landscapeTwoPane)
+        }
+    } else {
+        val lines = settingsText.lines()
+        for (line in lines) {
+            val parts = line.split("=")
+            if (parts.size == 2) {
+                val key = parts[0].trim()
+                val value = parts[1].trim()
 
-            when (key) {
-                "tableView" -> preferencesRepo.saveViewPreference(value.toBoolean())
-                "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(Json.decodeFromString<Set<String>>(value))
-                "quantityOption" -> preferencesRepo.saveQuantityPreference(value)
-                "themeSetting" -> preferencesRepo.saveThemeSetting(value)
-                "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
-                "tinGramsConversionRate" -> preferencesRepo.setTinGramsConversionRate(value.toDouble())
-                "plaintextFormatString" -> preferencesRepo.setPlaintextFormatString(value)
-                "plaintextDelimiter" -> preferencesRepo.setPlaintextDelimiter(value)
-                "plaintextPresets" -> {
-                    val presets = Json.decodeFromString<List<PlaintextPreset>>(value)
-                    presets.forEach {
-                        preferencesRepo.savePlaintextPreset(it.slot, it.formatString, it.delimiter)
+                when (key) {
+                    "tableView" -> preferencesRepo.saveViewPreference(value.toBoolean())
+                    "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(
+                        Json.decodeFromString<Set<String>>(value)
+                    )
+                    "quantityOption" -> preferencesRepo.saveQuantityPreference(value)
+                    "themeSetting" -> preferencesRepo.saveThemeSetting(value)
+                    "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
+                    "tinGramsConversionRate" -> preferencesRepo.setTinGramsConversionRate(value.toDouble())
+                    "plaintextFormatString" -> preferencesRepo.setPlaintextFormatString(value)
+                    "plaintextDelimiter" -> preferencesRepo.setPlaintextDelimiter(value)
+                    "plaintextPresets" -> {
+                        val presets = Json.decodeFromString<List<PlaintextPreset>>(value)
+                        presets.forEach {
+                            preferencesRepo.savePlaintextPreset(
+                                it.slot,
+                                it.formatString,
+                                it.delimiter
+                            )
+                        }
                     }
+                    "plaintextPrintOptions" -> {
+                        val options = value.split(", ")
+                        val font = options.first().toFloat()
+                        val margin = options.last().toDouble()
+                        preferencesRepo.setPlaintextPrintOptions(font, margin)
+                    }
+                    "showRatingOption" -> preferencesRepo.saveShowRatingOption(value.toBoolean())
+                    "typeGenreOption" -> preferencesRepo.saveTypeGenreOption(value)
+                    "exportRating" -> {
+                        val options = Json.decodeFromString<ExportRating>(value)
+                        preferencesRepo.saveExportRating(options.maxRating, options.rounding)
+                    }
+                    "defaultSyncTinsOption" -> preferencesRepo.saveDefaultSyncOption(value.toBoolean())
+                    "columnVisibility" -> {
+                        val columns = value.split(", ").toSet()
+                        preferencesRepo.saveTableColumnsHidden(columns)
+                    }
+                    "parseLinksOption" -> preferencesRepo.saveParseLinksOption(value.toBoolean())
+                    "syncAcknowledgement" -> preferencesRepo.saveCrossDeviceAcknowledged(value.toBoolean())
+                    "processedSync" -> {
+                        val files = value.split(", ").toSet()
+                        preferencesRepo.saveProcessedSyncFiles(files)
+                    }
+                    "datesLastSeen" -> preferencesRepo.setDatesSeen(value)
+                    "globalTwoPane" -> preferencesRepo.saveGlobalTwoPane(value.toBoolean())
+                    "twoColumnTabs" -> preferencesRepo.saveTwoColumnTabs(value.toBoolean())
+                    "landscapeTwoPane" -> preferencesRepo.saveLandscapeTwoPane(value.toBoolean())
                 }
-                "plaintextPrintOptions" -> {
-                    val options = value.split(", ")
-                    val font = options.first().toFloat()
-                    val margin = options.last().toDouble()
-                    preferencesRepo.setPlaintextPrintOptions(font, margin)
-                }
-                "showRatingOption" -> preferencesRepo.saveShowRatingOption(value.toBoolean())
-                "typeGenreOption" -> preferencesRepo.saveTypeGenreOption(value)
-                "exportRating" -> {
-                    val options = Json.decodeFromString<ExportRating>(value)
-                    preferencesRepo.saveExportRating(options.maxRating, options.rounding)
-                }
-                "defaultSyncTinsOption" -> preferencesRepo.saveDefaultSyncOption(value.toBoolean())
-                "columnVisibility" -> {
-                    val columns = value.split(", ").toSet()
-                    preferencesRepo.saveTableColumnsHidden(columns)
-                }
-                "parseLinksOption" -> preferencesRepo.saveParseLinksOption(value.toBoolean())
-                "syncAcknowledgement" -> preferencesRepo.saveCrossDeviceAcknowledged(value.toBoolean())
-                "processedSync" -> {
-                    val files = value.split(", ").toSet()
-                    preferencesRepo.saveProcessedSyncFiles(files)
-                }
-                "datesLastSeen" -> preferencesRepo.setDatesSeen(value)
-                "globalTwoPane" -> preferencesRepo.saveGlobalTwoPane(value.toBoolean())
-                "twoColumnTabs" -> preferencesRepo.saveTwoColumnTabs(value.toBoolean())
-                "landscapeTwoPane" -> preferencesRepo.saveLandscapeTwoPane(value.toBoolean())
             }
         }
     }
