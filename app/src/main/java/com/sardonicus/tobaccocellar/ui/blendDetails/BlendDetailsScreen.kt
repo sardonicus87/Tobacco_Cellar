@@ -378,7 +378,7 @@ private fun BlendDetailsBody(
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
-                            text = "modified",
+                            text = "Modified:",
                             modifier = Modifier,
                             fontSize = 12.sp,
                             lineHeight = 1.em,
