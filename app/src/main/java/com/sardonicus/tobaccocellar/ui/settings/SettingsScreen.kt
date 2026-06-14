@@ -18,21 +18,30 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,7 +49,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -57,13 +68,6 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DbOperationsD
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeleteAllDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
-import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinSyncDefaultDialog
-import com.sardonicus.tobaccocellar.ui.settings.displayDialogs.GlobalTwoPaneDialog
-import com.sardonicus.tobaccocellar.ui.settings.displayDialogs.ParseLinksDialog
-import com.sardonicus.tobaccocellar.ui.settings.displayDialogs.QuantityDialog
-import com.sardonicus.tobaccocellar.ui.settings.displayDialogs.RatingsDialog
-import com.sardonicus.tobaccocellar.ui.settings.displayDialogs.ThemeDialog
-import com.sardonicus.tobaccocellar.ui.settings.displayDialogs.TypeGenreDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -314,70 +318,83 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         // Display settings
         DialogType.Theme -> {
             val themeSetting by viewModel.themeSetting.collectAsState()
-
-            ThemeDialog(
+            SelectionDialog(
                 onDismiss = viewModel::dismissDialog,
-                themeSetting = themeSetting,
-                onThemeSelected = viewModel::saveThemeSetting
+                options = ThemeSetting.entries,
+                selectedOption = themeSetting,
+                onOptionSelected = { viewModel.saveThemeSetting(it.value) },
+                optionLabel = { it.value }
             )
         }
         DialogType.Ratings -> {
             val showRatings by viewModel.showRatings.collectAsState()
-
-            RatingsDialog(
+            ToggleDialog(
+                description = "Display ratings on cellar screen:",
                 onDismiss = viewModel::dismissDialog,
-                showRatings = showRatings,
-                onRatingsOption = viewModel::saveShowRatingOption,
-                modifier = Modifier,
+                checked = showRatings,
+                onCheckedChange = viewModel::saveShowRatingOption
             )
         }
         DialogType.TypeGenre -> {
             val typeGenreOption by viewModel.typeGenreOption.collectAsState()
             val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
-
-            TypeGenreDialog(
+            SelectionDialog(
+                description = "This option sets the display of Type, Subgenre or both on the " +
+                        "Cellar screen. Fallback options display the option and if it's unused " +
+                        "on an entry, fallback to the other (e.g. Subgenre (fallback) would " +
+                        "display the subgenre but if an entry has no subgenre, will instead show " +
+                        "the type value in parenthesis). This also affects table view when only " +
+                        "one or the other of Type or Subgenre columns are shown.",
                 onDismiss = viewModel::dismissDialog,
-                typeGenreOption = typeGenreOption,
-                optionEnablement = typeGenreEnablement,
-                onTypeGenreOption = viewModel::saveTypeGenreOption,
-                modifier = Modifier
+                options = TypeGenreOption.entries,
+                selectedOption = typeGenreOption,
+                onOptionSelected = { viewModel.saveTypeGenreOption(it.value) },
+                optionLabel = { it.value },
+                optionEnabled = { typeGenreEnablement[it] ?: false }
             )
         }
         DialogType.QuantityDisplay -> {
             val quantityOption by viewModel.quantityOption.collectAsState()
-
-            QuantityDialog(
+            SelectionDialog(
+                description = "Displayed quantities for ounces and grams are based on the summed " +
+                        "quantities of tins. If no tins are present, \"No. of Tins\" value will " +
+                        "be converted and displayed with an asterisk.",
                 onDismiss = viewModel::dismissDialog,
-                quantityOption = quantityOption,
-                onQuantityOption = viewModel::saveQuantityOption,
-                modifier = Modifier
+                options = QuantityOption.entries,
+                selectedOption = quantityOption,
+                onOptionSelected = { viewModel.saveQuantityOption(it.value) },
+                optionLabel = { it.value }
             )
         }
         DialogType.ParseLinks -> {
             val parseLinks by viewModel.parseLinks.collectAsState()
-
-            ParseLinksDialog(
+            ToggleDialog(
+                description = "Parse links in notes:",
                 onDismiss = viewModel::dismissDialog,
-                parseLinks = parseLinks,
-                onParseLinksOption = viewModel::saveParseLinksOption,
-                modifier = Modifier
+                checked = parseLinks,
+                onCheckedChange = viewModel::saveParseLinksOption
             )
         }
         DialogType.GlobalTwoPane -> {
             val globalTwoPane by viewModel.globalTwoPane.collectAsState()
             val landscapeTwoPane by viewModel.landscapeTwoPane.collectAsState()
             val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
-
-            GlobalTwoPaneDialog(
-                onDismiss = viewModel::dismissDialog,
-                globalTwoPane = globalTwoPane,
-                twoColumnTabs = twoColumnTabs,
-                landscapeTwoPane = landscapeTwoPane,
-                onGlobalTwoPane = viewModel::saveGlobalTwoPane,
-                onTwoColumnTabs = viewModel::saveTwoColumnTabs,
-                onLandscapeTwoPane = viewModel::saveLandscapeTwoPane,
-                modifier = Modifier
-            )
+            BaseSettingsDialog(
+                onDismiss = viewModel::dismissDialog
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Adaptive layout options for large screens. The dual-pane and " +
+                                "expand tabs are separate options (disabling one will not affect " +
+                                "the other). \"Restrict to landscape\" affects both.",
+                        modifier = Modifier.padding(bottom = 10.dp),
+                        fontSize = 15.sp
+                    )
+                    ToggleRow("Dual pane layouts:", globalTwoPane, viewModel::saveGlobalTwoPane)
+                    ToggleRow("Expand tabs to two columns:", twoColumnTabs, viewModel::saveTwoColumnTabs)
+                    ToggleRow("Restrict to landscape only:", landscapeTwoPane, viewModel::saveLandscapeTwoPane)
+                }
+            }
         }
 
         // App/Database Settings
@@ -424,12 +441,11 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.TinSyncDefault -> {
             val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
-
-            TinSyncDefaultDialog(
+            ToggleDialog(
+                description = "Set \"Sync Tins\" default on or off when adding new entries:",
                 onDismiss = viewModel::dismissDialog,
-                defaultSyncOption = defaultSyncOption,
-                onDefaultSync = viewModel::setDefaultSyncOption,
-                modifier = Modifier
+                checked = defaultSyncOption,
+                onCheckedChange = viewModel::setDefaultSyncOption
             )
         }
         DialogType.DbOperations -> {
@@ -467,5 +483,134 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         null -> { }
+    }
+}
+
+
+@Composable
+private fun BaseSettingsDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        text = content,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        containerColor = MaterialTheme.colorScheme.background,
+        textContentColor = MaterialTheme.colorScheme.onBackground,
+        shape = MaterialTheme.shapes.large
+    )
+}
+
+@Composable
+private fun <T> SelectionDialog(
+    description: String? = null,
+    onDismiss: () -> Unit,
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    optionLabel: (T) -> String,
+    optionEnabled: (T) -> Boolean = { true }
+) {
+    BaseSettingsDialog(onDismiss = onDismiss) {
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            if (description != null) {
+                Text(
+                    text = description,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    fontSize = 15.sp,
+                    color = LocalContentColor.current
+                )
+            }
+            options.forEach { option ->
+                val enabled = optionEnabled(option)
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(25))
+                        .clickable(enabled = enabled) { onOptionSelected(option) }
+                        .padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
+                ) {
+                    RadioButton(
+                        selected = selectedOption == option,
+                        onClick = null,
+                        enabled = enabled,
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Text(
+                        text = optionLabel(option),
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .alpha(if (enabled) 1f else .38f),
+                        fontSize = 15.sp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToggleDialog(
+    description: String,
+    onDismiss: () -> Unit,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    BaseSettingsDialog(onDismiss = onDismiss) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(text = description, fontSize = 15.sp, color = LocalContentColor.current)
+            SwitchToggle(checked = checked, onCheckedChange = onCheckedChange)
+        }
+    }
+}
+
+@Composable
+private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val offAlpha = if (!checked) 1f else .5f
+        val onAlpha = if (checked) 1f else .5f
+        Text(
+            text = "Off",
+            fontSize = 14.sp,
+            fontWeight = if (!checked) FontWeight.SemiBold else FontWeight.Normal,
+            color = LocalContentColor.current.copy(alpha = offAlpha)
+        )
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier
+                    .requiredHeight(20.dp)
+                    .scale(.6f)
+            )
+        }
+        Text(
+            text = "On",
+            fontSize = 14.sp,
+            fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal,
+            color = LocalContentColor.current.copy(alpha = onAlpha)
+        )
+    }
+}
+
+@Composable
+private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+            .padding(start = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+            Switch(checked = checked, onCheckedChange = onCheckedChange, modifier = Modifier
+                .scale(.6f)
+                .padding(start = 10.dp))
+        }
     }
 }
