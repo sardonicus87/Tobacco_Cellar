@@ -1,15 +1,14 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 
 /** Replacement stuff for ContextualFlowRow */
@@ -28,109 +27,84 @@ fun <T> OverflowRow(
     enabledAtIndex: ((index: Int) -> Boolean)? = null,
 ) {
     val density = LocalDensity.current
-    val spacingPx =
-        remember(itemSpacing, density) { with(density) { itemSpacing.toPx() } }.toInt()
+    val spacingPx = remember(itemSpacing, density) { with(density) { itemSpacing.toPx() }.toInt() }
 
     SubcomposeLayout(modifier = modifier) { constraints ->
         val itemCount = items.size
+        if (itemCount == 0) return@SubcomposeLayout layout(0, 0) {}
         val maxWidth = constraints.maxWidth
-        if (itemCount == 0) {
-            return@SubcomposeLayout layout(0, 0) {}
-        }
 
         // measure indicator
-        val maxPossibleOverflow = itemCount
-        val overflowMeasurable = subcompose("overflow_max") {
-            overflowIndicator(0, maxPossibleOverflow, maxPossibleOverflow, true) }.firstOrNull()
-        val overflowPlaceable = overflowMeasurable?.measure(Constraints())
-        val overflowIndicatorWidth = overflowPlaceable?.width ?: 0
-        val overflowIndicatorHeight = overflowPlaceable?.height ?: 0
+        val overflowMeasurable = subcompose("overflow") { overflowIndicator(0, itemCount, itemCount, true) }
+            .firstOrNull()
+
+        val overflowPlaceable = overflowMeasurable?.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        val indicatorWidth = overflowPlaceable?.width ?: 0
 
         // measure items and check fit in row
-        var currentItemsWidth = 0
-        var visibleItemCount = 0
-        val placeables = mutableListOf<Placeable>()
-        var lineMaxHeight = 0
+        val itemMeasurables = subcompose("items_measure") { items.forEach { itemContent(it) } }
 
-        val allItemMeasurables = subcompose("items_measure") {
-            for (i in 0 until itemCount) itemContent(items[i])
-        }
+        val placeables = arrayOfNulls<Placeable>(itemCount)
+        var currentWidth = 0
+        var visibleCount = 0
+        var rowMaxHeight = 0
+
 
         for (i in 0 until itemCount) {
-            val itemMeasurable = allItemMeasurables[i]
-            val itemPlaceable = itemMeasurable.measure(Constraints())
-            val itemWidth = itemPlaceable.width + if (visibleItemCount > 0) spacingPx else 0
+            val placeable = itemMeasurables[i].measure(constraints.copy(minWidth = 0, minHeight = 0))
+            val spaceNeeded = if (visibleCount > 0) spacingPx else 0
 
             // checking item fit by adding items until over width
-            if (currentItemsWidth + itemWidth <= maxWidth) {
-                placeables.add(itemPlaceable)
-                currentItemsWidth += itemWidth
-                lineMaxHeight = maxOf(lineMaxHeight, itemPlaceable.height)
-                visibleItemCount++
-            } else {
-                val widthVisibleSoFar = currentItemsWidth
-                val widthWithOverflow =
-                    widthVisibleSoFar + (if (visibleItemCount > 0 && overflowIndicatorWidth > 0) spacingPx else 0) + overflowIndicatorWidth
+            if (currentWidth + spaceNeeded + placeable.width <= maxWidth) {
+                placeables[i] = placeable
+                currentWidth += spaceNeeded + placeable.width // itemWidth
+                rowMaxHeight = maxOf(rowMaxHeight, placeable.height)
+                visibleCount++
+            } else { break }
+        }
 
-                if (widthWithOverflow <= maxWidth) {
-                    // everything fits,  no op
-                } else {
-                    // remove additional items as needed until overflow indicator fits
-                    while (visibleItemCount > 0) {
-                        visibleItemCount--
-                        currentItemsWidth = placeables.take(visibleItemCount)
-                            .sumOf { it.width } + if (visibleItemCount > 0) (visibleItemCount - 1) * spacingPx else 0
+        val showIndicator = visibleCount < itemCount
+        if (showIndicator && indicatorWidth > 0) {
+            val indicatorSpaceNeeded = if (visibleCount > 0) spacingPx else 0
 
-                        val newWidthWithOverflow =
-                            currentItemsWidth + (if (visibleItemCount > 0 && overflowIndicatorWidth > 0) spacingPx else 0) + overflowIndicatorWidth
-                        if (newWidthWithOverflow <= maxWidth) {
-                            break // overflow indicator fits
-                        }
-                    }
-
-                    if (visibleItemCount == 0 && overflowIndicatorWidth > 0 && overflowIndicatorWidth > maxWidth) {
-                        return@SubcomposeLayout layout(0, 0) {} // even overflow indicator doesn't fit
-                    }
-                }
-                break
+            while (visibleCount > 0 && currentWidth + indicatorSpaceNeeded + indicatorWidth > maxWidth) {
+                visibleCount--
+                val removedPlaceable = placeables[visibleCount]!!
+                val removedSpace = if (visibleCount > 0) spacingPx else 0
+                currentWidth -= (removedPlaceable.width + removedSpace)
+                placeables[visibleCount] = null
             }
         }
 
-        val actualOverCount = itemCount - visibleItemCount
-        val showOver = actualOverCount > 0 && overflowIndicatorWidth > 0
+        val overflowCount = itemCount - visibleCount
+        val enabledOverflowCount = if (enabledAtIndex != null) {
+            (visibleCount until itemCount).count { enabledAtIndex(it) }
+        } else overflowCount
 
-        var enabledOverflowCount = 0
-        var anyOverflowedEnabled = false
-        if (showOver && enabledAtIndex != null) {
-            for (i in visibleItemCount until itemCount) {
-                if (enabledAtIndex(i)) {
-                    enabledOverflowCount++
-                    anyOverflowedEnabled = true
-                }
+        val showOver = (itemCount - visibleCount) > 0
+
+        val finalIndicatorPlaceable = if (showIndicator) {
+            subcompose("final_overflow") {
+                overflowIndicator(visibleCount, overflowCount, enabledOverflowCount, showOver)
+            }.firstOrNull()?.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        } else null
+
+        val contentWidth = currentWidth +
+                (if (showOver && visibleCount > 0) spacingPx else 0) +
+                (finalIndicatorPlaceable?.width ?: 0)
+        val contentHeight = maxOf(rowMaxHeight, finalIndicatorPlaceable?.height ?: 0)
+
+        val resolvedWidth = constraints.constrainWidth(contentWidth)
+        val resolvedHeight = constraints.constrainHeight(contentHeight)
+
+        layout(resolvedWidth, resolvedHeight) {
+            var xPosition = 0
+            for (i in 0 until visibleCount) {
+                val placeable = placeables[i] ?: continue
+                placeable.placeRelative(xPosition, (resolvedHeight - placeable.height) / 2)
+                xPosition += placeable.width + spacingPx
             }
-        } else if (showOver) {
-            enabledOverflowCount = actualOverCount
-            anyOverflowedEnabled = true
-        }
-
-        // final composition
-        val finalPlaceables = subcompose("final_render") {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(itemSpacing)
-            ) {
-                repeat(visibleItemCount) { i -> itemContent(items[i]) }
-
-                if (showOver) { overflowIndicator(visibleItemCount, actualOverCount, enabledOverflowCount, anyOverflowedEnabled) }
-            }
-        }.map { it.measure(constraints) }
-
-        val finalWidth = finalPlaceables.firstOrNull()?.width ?: 0
-        val finalHeight = finalPlaceables.firstOrNull()?.height ?: maxOf(
-            lineMaxHeight, if (showOver) overflowIndicatorHeight else 0
-        )
-
-        layout(finalWidth, finalHeight) {
-            finalPlaceables.forEach { it.placeRelative(0, 0) }
+            finalIndicatorPlaceable?.let { it.placeRelative(xPosition, (resolvedHeight - it.height) / 2) }
         }
     }
 }
