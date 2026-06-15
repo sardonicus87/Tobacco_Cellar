@@ -14,12 +14,48 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 50,
+        versionNumber = "5.2.7",
+        buildDate = "15 Jun, 2026",
+        changes = listOf(
+            "List/Table sorting: added sort by \"Last Modified\", as well as a last modified " +
+                    "column in table view. Tip: if a last modified date looks wrong, like a " +
+                    "weird year, edit the item and change one thing and save, then change it " +
+                    "back and save again (last modified only updates if the item actually changes " +
+                    "when saving an update; this can be done either from Edit Entry screen or " +
+                    "from a Quick Edit menu action).",
+            "Blend Details: added \"last modified\" date to details box (bottom-right corner)."
+        ),
+        improvements = listOf(
+            "More performance, stability and memory overhead improvements.",
+            "Auto-complete refinement: suggestions pop up less aggressively when no words start " +
+                    "with the entered input (suggestion list based on input found within words).",
+            "Plaintext Screen: improved loading speed, added padding on format tab when keyboard " +
+                    "is open so the format guide can be scrolled into view without dismissing " +
+                    "keyboard.",
+            "CSV Import: improved performance and memory of importing CSV files.",
+            "More performance improvements related to filtering."
+        ),
+        bugFixes = listOf(
+            "Fixed a layout issue with the CSV Import Help screen.",
+            "Fixed some potential navigation crashes.",
+            "Other minor bugs fixed."
+        ),
+        releaseNotes = listOf(
+            "New Sorting option: \"Last Modified\".",
+            "Last modified (date) also added to Blend Details screen.",
+            "More performance and stability improvements.",
+            "Other minor bugs and some UI jank fixed."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 49,
         versionNumber = "5.2.6",
         buildDate = "30 May, 2026",
         improvements = listOf(
             "Continuing performance and stability improvements, mainly with regards to the Multi-" +
-                    "Device Sync feature, as well as several more memory and stability improvements."
+                    "Device Sync feature, as well as several more memory overhead improvements."
         )
     ),
 
