@@ -16,15 +16,12 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 class EditEntryViewModel(
@@ -63,25 +60,13 @@ class EditEntryViewModel(
     val originalComponentList = MutableStateFlow<List<Components>>(emptyList())
     val originalFlavoringList = MutableStateFlow<List<Flavoring>>(emptyList())
 
-    private val _uiEvents = MutableSharedFlow<ItemNotFoundEvent>()
-    val uiEvents = _uiEvents.asSharedFlow()
-
     init {
         viewModelScope.launch {
             loading.value = true
 
-            val initialDetails = withTimeoutOrNull(3000.milliseconds) {
-                filterViewModel.everythingFlow
-                    .mapNotNull { list -> list.find { it.items.id == itemsId } }
-                    .first()
-            }
-
-            if (initialDetails == null) {
-                loading.value = false
-                _uiEvents.emit(ItemNotFoundEvent.ShowMessage("Error: item not found."))
-                _uiEvents.emit(ItemNotFoundEvent.NavigateBack)
-                return@launch
-            }
+            val initialDetails = filterViewModel.everythingFlow
+                .mapNotNull { list -> list.find { it.items.id == itemsId } }
+                .first()
 
             val components = initialDetails.components.map { it.componentName }.sorted().joinToString(", ")
             val flavoring = initialDetails.flavoring.map { it.flavoringName }.sorted().joinToString(", ")
@@ -388,9 +373,4 @@ fun TinDetails.toOriginalTin(): OriginalTin {
         finished = this.finished,
         lastModified = this.lastModified
     )
-}
-
-sealed class ItemNotFoundEvent {
-    object NavigateBack: ItemNotFoundEvent()
-    data class ShowMessage(val message: String): ItemNotFoundEvent()
 }
