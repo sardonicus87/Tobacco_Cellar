@@ -1002,26 +1002,62 @@ class FilterViewModel (
             if (passesAllOthers(7)) cutsMap[item.cut.ifBlank { "(Unassigned)" }] = true
 
             if (passesAllOthers(8)) {
-                if (items.components.isEmpty()) componentsMap["(None Assigned)"] = true else itemComps.forEach { componentsMap[it] = true }
-                if (selections.components.isNotEmpty()) FlowMatchOption.entries.forEach { option ->
-                    val match = when (option) {
-                        FlowMatchOption.ANY -> (selections.components.contains("(None Assigned)") && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) }
-                        FlowMatchOption.ALL -> (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || itemComps.containsAll(selections.components)
-                        FlowMatchOption.ONLY -> (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || (itemComps.containsAll(selections.components) && itemComps.size == selections.components.size)
+                val noneMatch = items.components.isEmpty() && (selections.components.isEmpty() || selections.components == listOf("(None Assigned)"))
+                if (noneMatch && (selections.compMatching == FlowMatchOption.ANY || items.components.isEmpty())) {
+                    componentsMap["(None Assigned)"] = true
+                }
+
+                if (!selections.components.contains("(None Assigned)")) {
+                    itemComps.forEach { comp ->
+                        val potential = (selections.components + comp).distinct()
+                        val isEnabled = when (selections.compMatching) {
+                            FlowMatchOption.ANY -> true
+                            FlowMatchOption.ALL -> itemComps.containsAll(potential)
+                            FlowMatchOption.ONLY -> itemComps.containsAll(potential) && itemComps.size == potential.size
+                        }
+                        if (isEnabled) componentsMap[comp] = true
                     }
-                    if (match) compMatchingMap[option] = true
+                }
+
+                if (selections.components.isNotEmpty()) {
+                    FlowMatchOption.entries.forEach { option ->
+                        val match = when (option) {
+                            FlowMatchOption.ANY -> (selections.components.contains("(None Assigned)") && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) }
+                            FlowMatchOption.ALL -> (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || itemComps.containsAll(selections.components)
+                            FlowMatchOption.ONLY -> (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || (itemComps.containsAll(selections.components) && itemComps.size == selections.components.size)
+                        }
+                        if (match) compMatchingMap[option] = true
+                    }
                 }
             }
 
             if (passesAllOthers(9)) {
-                if (items.flavoring.isEmpty()) flavoringsMap["(None Assigned)"] = true else itemFlavor.forEach { flavoringsMap[it] = true }
-                if (selections.flavorings.isNotEmpty()) FlowMatchOption.entries.forEach { option ->
-                    val match = when (option) {
-                        FlowMatchOption.ANY -> (selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) }
-                        FlowMatchOption.ALL -> (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.containsAll(selections.flavorings)
-                        FlowMatchOption.ONLY -> (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (itemFlavor.containsAll(selections.flavorings) && itemFlavor.size == selections.flavorings.size)
+                val noneMatch = items.flavoring.isEmpty() && (selections.flavorings.isEmpty() || selections.flavorings == listOf("(None Assigned)"))
+                if (noneMatch && (selections.flavorMatching == FlowMatchOption.ANY || items.flavoring.isEmpty())) {
+                    flavoringsMap["(None Assigned)"] = true
+                }
+
+                if (!selections.flavorings.contains("(None Assigned)")) {
+                    itemFlavor.forEach { flavor ->
+                        val potential = (selections.flavorings + flavor).distinct()
+                        val isEnabled = when (selections.flavorMatching) {
+                            FlowMatchOption.ANY -> true
+                            FlowMatchOption.ALL -> itemFlavor.containsAll(potential)
+                            FlowMatchOption.ONLY -> itemFlavor.containsAll(potential) && itemFlavor.size == potential.size
+                        }
+                        if (isEnabled) flavoringsMap[flavor] = true
                     }
-                    if (match) flavorMatchingMap[option] = true
+                }
+
+                if (selections.flavorings.isNotEmpty()) {
+                    FlowMatchOption.entries.forEach { option ->
+                        val match = when (option) {
+                            FlowMatchOption.ANY -> (selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) }
+                            FlowMatchOption.ALL -> (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.containsAll(selections.flavorings)
+                            FlowMatchOption.ONLY -> (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (itemFlavor.containsAll(selections.flavorings) && itemFlavor.size == selections.flavorings.size)
+                        }
+                        if (match) flavorMatchingMap[option] = true
+                    }
                 }
             }
 
