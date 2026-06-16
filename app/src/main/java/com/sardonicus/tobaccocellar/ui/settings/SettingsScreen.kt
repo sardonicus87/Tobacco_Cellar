@@ -313,6 +313,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             viewModel.restoreBackup(context, it)
         }
     }
+    val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
 
     when (openDialog) {
         // Display settings
@@ -399,7 +400,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
 
         // App/Database Settings
         DialogType.DeviceSync -> {
-            val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
             val email by viewModel.userEmail.collectAsState()
             val hasScope by viewModel.hasScope.collectAsState()
             val connectionEnabled by viewModel.networkEnabled.collectAsState()

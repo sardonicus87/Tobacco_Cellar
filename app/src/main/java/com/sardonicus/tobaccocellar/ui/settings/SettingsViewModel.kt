@@ -117,7 +117,7 @@ class SettingsViewModel(
 
 
     /** App & Database settings */
-    val deviceSyncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val deviceSyncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val crossDeviceSync = preferencesRepo.crossDeviceSync
         .onEach { if (it) _signingIn.value = false }
