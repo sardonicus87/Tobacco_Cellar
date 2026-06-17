@@ -415,7 +415,10 @@ fun CellarNavigation(
             is AboutDestination -> NavEntry(key, metadata = paneInfo) {
                 AboutScreen(
                     onNavigateUp = {
-                        navigationState.resetBackStack(AboutDestination)
+                        if (navigationState.isTwoPane) {
+                            val aboutStack = navigationState.backStacks[AboutDestination]
+                            aboutStack?.removeIf { it is ChangelogDestination }
+                        }
                         navigator.goBack()
                     },
                     navigateToChangelog = { navigator.navigate(ChangelogDestination(changelogEntries)) },

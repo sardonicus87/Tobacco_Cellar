@@ -86,11 +86,11 @@ class NavigationState(
             listOf(startRoute, topLevelRoute)
         }
 
-    val canGoBack: Boolean
-        get() {
-            val currentStack = backStacks[topLevelRoute]
-            return (currentStack?.size ?: 0) > 1 || (topLevelRoute != startRoute)
-        }
+//    val canGoBack: Boolean
+//        get() {
+//            val currentStack = backStacks[topLevelRoute]
+//            return (currentStack?.size ?: 0) > 1 || (topLevelRoute != startRoute)
+//        }
 
     val currentStack: List<NavKey>
         get() { return backStacks[topLevelRoute]?.toList() ?: emptyList() }
@@ -121,12 +121,6 @@ class NavigationState(
             val currentStack = backStacks[topLevelRoute] ?: return false
             return isTwoPane && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
         }
-
-
-    fun resetBackStack(route: NavKey) {
-        val stack = backStacks[route]
-        stack?.clear()
-    }
 }
 
 
