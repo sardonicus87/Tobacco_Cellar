@@ -66,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -541,8 +542,7 @@ fun CsvLoadedBody(
                 ) {
                     Text(
                         text = "Existing entries:",
-                        modifier = Modifier
-                            .padding(end = 8.dp),
+                        modifier = Modifier,
                     )
                     Row(
                         modifier = Modifier
@@ -553,14 +553,12 @@ fun CsvLoadedBody(
                     ) {
                         Box(
                             modifier = Modifier
+                                .clip(RoundedCornerShape(25))
                                 .clickable(
                                     indication = LocalIndication.current,
                                     interactionSource = null
-                                ) {
-                                    viewModel.updateImportOption(
-                                        ImportOption.SKIP
-                                    )
-                                }
+                                ) { viewModel.updateImportOption(ImportOption.SKIP) }
+                                .padding(horizontal = 8.dp)
                                 .width(36.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -573,14 +571,22 @@ fun CsvLoadedBody(
                                 fontWeight =
                                     if (importOption == ImportOption.SKIP) FontWeight.SemiBold
                                     else FontWeight.Normal,
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 13.sp,
+                                    maxFontSize = 16.sp,
+                                    stepSize = .25.sp,
+                                )
                             )
                         }
                         Box(
                             modifier = Modifier
+                                .clip(RoundedCornerShape(25))
                                 .clickable(
                                     indication = LocalIndication.current,
                                     interactionSource = null
                                 ) { viewModel.updateImportOption(ImportOption.UPDATE) }
+                                .padding(horizontal = 8.dp)
                                 .width(56.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -593,14 +599,22 @@ fun CsvLoadedBody(
                                 fontWeight =
                                     if (importOption == ImportOption.UPDATE) FontWeight.SemiBold
                                     else FontWeight.Normal,
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 13.sp,
+                                    maxFontSize = 16.sp,
+                                    stepSize = .25.sp,
+                                )
                             )
                         }
                         Box(
                             modifier = Modifier
+                                .clip(RoundedCornerShape(25))
                                 .clickable(
                                     indication = LocalIndication.current,
                                     interactionSource = null
                                 ) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
+                                .padding(horizontal = 8.dp)
                                 .width(76.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -613,6 +627,12 @@ fun CsvLoadedBody(
                                 fontWeight =
                                     if (importOption == ImportOption.OVERWRITE) FontWeight.SemiBold
                                     else FontWeight.Normal,
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 13.sp,
+                                    maxFontSize = 16.sp,
+                                    stepSize = .25.sp,
+                                )
                             )
                         }
                     }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.HorizontalDivider
@@ -27,6 +28,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -53,13 +55,15 @@ fun QuickStatsSection(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(start = 12.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
     ) {
         Row(
             modifier = Modifier
-                .padding(vertical = 2.dp),
+                .padding(vertical = 2.dp)
+                .padding(start = 12.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -87,6 +91,7 @@ fun QuickStatsSection(
         Row(
             modifier = Modifier
                 .padding(vertical = 2.dp)
+                .padding(start = 12.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
@@ -142,76 +147,49 @@ fun QuickStatsSection(
                 selectionKey = selectionKey,
                 selectionFocused = selectionFocused,
                 modifier = Modifier
+                    .padding(start = 12.dp)
             )
         }
         if (availableSections.anyAvailable) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                if (expanded) {
-                    availableSections.available.forEach { (label, raw, filtered) ->
-                        StatSubSection(
-                            label = label,
-                            rawField = raw,
-                            filteredField = filtered,
-                            selectionKey = selectionKey,
-                            selectionFocused = selectionFocused,
-                            modifier = Modifier
-                        )
-                    }
+            if (expanded) {
+                availableSections.available.forEach { (label, raw, filtered) ->
+                    StatSubSection(
+                        label = label,
+                        rawField = raw,
+                        filteredField = filtered,
+                        selectionKey = selectionKey,
+                        selectionFocused = selectionFocused,
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                    )
                 }
             }
 
             // Expand/collapse
-            if (expanded) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .padding(start = 4.dp, end = 16.dp)
+                    .clip(RoundedCornerShape(25))
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null,
+                    ) { if (expanded) { contracted(true) } else { updateExpanded(true) } }
+                    .padding(horizontal = 8.dp)
+            ) {
+                HorizontalDivider(Modifier.weight(1f), 1.dp)
+                Icon(
+                    painter = painterResource(id = if (expanded) R.drawable.double_up else R.drawable.double_down),
+                    contentDescription = "Collapse",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(24.dp)
-                        .padding(end = 24.dp)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { contracted(true) }
-                ) {
-                    HorizontalDivider(Modifier.weight(1f), 1.dp)
-                    Icon(
-                        painter = painterResource(id = R.drawable.double_up),
-                        contentDescription = "Collapse",
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(18.dp),
-                        tint = LocalContentColor.current.copy(alpha = 0.5f)
-                    )
-                    HorizontalDivider(Modifier.weight(1f), 1.dp)
-                }
-            } else {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(24.dp)
-                        .padding(end = 24.dp)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { updateExpanded(true) }
-                ) {
-                    HorizontalDivider(Modifier.weight(1f), 1.dp)
-                    Icon(
-                        painter = painterResource(id = R.drawable.double_down),
-                        contentDescription = "Expand",
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(18.dp),
-                        tint = LocalContentColor.current.copy(alpha = 0.5f)
-                    )
-                    HorizontalDivider(Modifier.weight(1f), 1.dp)
-                }
+                        .padding(horizontal = 4.dp)
+                        .size(18.dp),
+                    tint = LocalContentColor.current.copy(alpha = 0.5f)
+                )
+                HorizontalDivider(Modifier.weight(1f), 1.dp)
             }
         }
 
@@ -246,7 +224,7 @@ private fun StatSubSection(
         Row(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {

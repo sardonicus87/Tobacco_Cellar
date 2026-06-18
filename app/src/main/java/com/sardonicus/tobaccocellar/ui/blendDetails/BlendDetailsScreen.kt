@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -283,119 +285,119 @@ private fun BlendDetailsBody(
 
         // Blend Details
         item {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Top,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer,
-                        RoundedCornerShape(8.dp)
-                    )
-                    .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
-                    .padding(vertical = 8.dp, horizontal = 12.dp)
-            ) {
-                Row(
+            Box {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Top,
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.Top
+                        .fillMaxWidth()
+                        .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+                        .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
-                    Text(
-                        text = "Details",
+                    Row(
                         modifier = Modifier
-                            .padding(bottom = 4.dp),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Icon(
-                        painter = painterResource(R.drawable.edit_icon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .offset(y = 2.dp)
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { navigateToEditEntry(blendDetails.id) },
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
-                    )
-                }
-                Box {
-                    key(selectionKey) {
-                        SelectionContainer(
-                            Modifier.onFocusChanged { selectionFocused(it.isFocused) }
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.Start,
-                                verticalArrangement = Arrangement.Top,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 12.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = "Details",
+                            modifier = Modifier
+                                .padding(bottom = 4.dp),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                    Box {
+                        key(selectionKey) {
+                            SelectionContainer(
+                                Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                             ) {
-                                blendDetails.itemDetails.forEach {
-                                    Text(
-                                        text = it,
-                                        modifier = Modifier,
-                                    )
-                                }
-                                if (blendDetails.rating != null) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.Start,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                    ) {
+                                Column(
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Top,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp)
+                                ) {
+                                    blendDetails.itemDetails.forEach {
                                         Text(
-                                            text = "Rating: ",
+                                            text = it,
                                             modifier = Modifier,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
                                         )
-                                        RatingRow(
-                                            rating = blendDetails.rating,
-                                            modifier = Modifier,
-                                            starSize = 17.dp
-                                        )
-                                        Text(
-                                            text = "(${formatDecimal(blendDetails.rating)})",
+                                    }
+                                    if (blendDetails.rating != null) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.Start,
+                                            verticalAlignment = Alignment.CenterVertically,
                                             modifier = Modifier
-                                                .padding(start = 6.dp),
-                                            fontSize = 12.sp,
-                                        )
+                                        ) {
+                                            Text(
+                                                text = "Rating: ",
+                                                modifier = Modifier,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                            )
+                                            RatingRow(
+                                                rating = blendDetails.rating,
+                                                modifier = Modifier,
+                                                starSize = 17.dp
+                                            )
+                                            Text(
+                                                text = "(${formatDecimal(blendDetails.rating)})",
+                                                modifier = Modifier
+                                                    .padding(start = 6.dp),
+                                                fontSize = 12.sp,
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(bottom = 2.dp),
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(1.dp)
-                    ) {
-                        Text(
-                            text = "Modified:",
-                            modifier = Modifier,
-                            fontSize = 12.sp,
-                            lineHeight = 1.em,
-                            letterSpacing = 0.5.sp,
-                            textAlign = TextAlign.End,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = blendDetails.lastModified,
-                            modifier = Modifier,
-                            fontSize = 12.sp,
-                            lineHeight = 1.em,
-                            textAlign = TextAlign.End,
-                            color = MaterialTheme.colorScheme.outline
-                        )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(bottom = 2.dp),
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(1.dp)
+                        ) {
+                            Text(
+                                text = "Modified:",
+                                modifier = Modifier,
+                                fontSize = 12.sp,
+                                lineHeight = 1.em,
+                                letterSpacing = 0.5.sp,
+                                textAlign = TextAlign.End,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = blendDetails.lastModified,
+                                modifier = Modifier,
+                                fontSize = 12.sp,
+                                lineHeight = 1.em,
+                                textAlign = TextAlign.End,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                 }
+                Icon(
+                    painter = painterResource(R.drawable.edit_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 2.dp, end = 4.dp)
+                        .clip(CircleShape)
+                        .clickable(
+                            indication = LocalIndication.current,
+                            interactionSource = null
+                        ) { navigateToEditEntry(blendDetails.id) }
+                        .padding(8.dp)
+                        .size(18.dp),
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
+                )
             }
         }
 

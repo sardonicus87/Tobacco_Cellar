@@ -113,7 +113,7 @@ private fun FilterHeader(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
+                .padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -126,7 +126,7 @@ private fun FilterHeader(
                 maxLines = 1,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(top = 4.dp),
+                    .padding(top = 8.dp, bottom = 6.dp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Column(
@@ -140,13 +140,13 @@ private fun FilterHeader(
                     painter = painterResource(id = R.drawable.close),
                     contentDescription = "Close",
                     modifier = Modifier
-                        .size(30.dp)
                         .clip(CircleShape)
                         .clickable(
                             indication = LocalIndication.current,
                             interactionSource = null
                         ) { closeSheet() }
-                        .padding(4.dp),
+                        .padding(6.dp)
+                        .size(20.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                 )
             }

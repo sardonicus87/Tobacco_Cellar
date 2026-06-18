@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
@@ -38,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -194,8 +196,7 @@ private fun StatsBody(
                 updateExpanded = { viewModel.updateExpanded(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(start = 24.dp),
+                    .wrapContentHeight(),
             )
         }
 
@@ -601,6 +602,7 @@ private fun ChartsFormat(
             Text(
                 text = if (!showValue) "Show Values" else "Hide Values",
                 modifier = Modifier
+                    .clip(RoundedCornerShape(25))
                     .clickable(
                         indication = LocalIndication.current,
                         interactionSource = null

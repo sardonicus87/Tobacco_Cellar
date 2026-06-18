@@ -7,8 +7,11 @@ import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
@@ -34,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -46,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -718,41 +724,53 @@ private fun BottomBarButton(
 ) {
     Box(
         modifier = modifier
-            .padding(vertical = 4.dp),
+            .padding(vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {
-        if (showIndicator()) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .offset(x = 13.dp, y = (-17).dp)
-                    .clip(CircleShape)
-                    .border(1.5.dp, borderColor(), CircleShape)
-                    .background(indicatorColor())
-            )
-        }
-
-        IconButton(
-            onClick = onClick,
-            enabled = enabled(),
-            modifier = Modifier.padding(0.dp)
+        val interactionSource = remember { MutableInteractionSource() }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .indication(interactionSource, LocalIndication.current)
+                .padding(2.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = icon()),
-                contentDescription = title(),
-                modifier = Modifier
-                    .size(26.dp)
-                    .offset(y = (-8).dp),
-                tint = activeColor()
+            if (showIndicator()) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .offset(x = 13.dp, y = (-17).dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, borderColor(), CircleShape)
+                        .background(indicatorColor())
+                )
+            }
+
+            CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                IconButton(
+                    onClick = onClick,
+                    interactionSource = interactionSource,
+                    enabled = enabled(),
+                    modifier = Modifier.padding(0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = icon()),
+                        contentDescription = title(),
+                        modifier = Modifier
+                            .size(26.dp)
+                            .offset(y = (-8).dp),
+                        tint = activeColor()
+                    )
+                }
+            }
+
+            Text(
+                text = title(),
+                modifier = Modifier.offset(y = 13.dp),
+                fontSize = 11.sp,
+                fontWeight = if (activeColor() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
+                color = activeColor()
             )
         }
-
-        Text(
-            text = title(),
-            modifier = Modifier.offset(y = 13.dp),
-            fontSize = 11.sp,
-            fontWeight = if (activeColor() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
-            color = activeColor()
-        )
     }
 }

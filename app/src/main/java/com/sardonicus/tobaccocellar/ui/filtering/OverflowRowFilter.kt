@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChipDefaults
@@ -36,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -93,7 +95,7 @@ fun OverflowFilterSection(
             if (matching() != null) {
                 FlowFilterMatchOptions(
                     nothingAssigned, matching, matchOptionEnablement, { onMatchOptionChange(it) },
-                    Modifier, Arrangement.End
+                    Modifier.offset(x = 3.65.dp), Arrangement.End
                 )
             }
         }
@@ -267,10 +269,10 @@ private fun FlowFilterMatchOptions(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Match: ",
+            text = "Match:",
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
-            modifier = Modifier,
+            modifier = Modifier.padding(start = 3.65.dp),
             color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
         )
 
@@ -279,11 +281,13 @@ private fun FlowFilterMatchOptions(
             Box(
                 modifier = Modifier
                     .padding(0.dp)
+                    .clip(RoundedCornerShape(25))
                     .clickable(
                         enabled = enabled,
                         indication = LocalIndication.current,
                         interactionSource = null
-                    ) { onMatchOptionChange(it) },
+                    ) { onMatchOptionChange(it) }
+                    .padding(horizontal = 3.65.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -302,7 +306,7 @@ private fun FlowFilterMatchOptions(
             }
             if (index != FlowMatchOption.entries.lastIndex) {
                 Text(
-                    text = " / ",
+                    text = "/",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     modifier = Modifier,
@@ -372,7 +376,7 @@ private fun FlowFilterOverflowPopup(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Top
                     ) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(Modifier.height(4.dp))
                         // match options
                         if (enableMatchOption()) {
                             FlowFilterMatchOptions(

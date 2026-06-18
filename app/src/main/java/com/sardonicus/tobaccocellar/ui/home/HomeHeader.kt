@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -24,7 +25,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -91,7 +92,6 @@ fun HomeHeader(
         // Select view
         ViewSelect(
             viewModel = viewModel,
-            //    selectView = selectView,
             modifier = Modifier
                 .width(74.dp)
         )
@@ -160,21 +160,20 @@ private fun ViewSelect(
             modifier = Modifier
                 .padding(0.dp)
         )
-        IconButton(
-            onClick = viewModel::selectView,
+        Icon(
+            painter = painterResource(state.toggleIcon),
+            contentDescription = stringResource(state.toggleContentDescription),
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
+                .padding(start = 1.dp)
+                .clip(CircleShape)
+                .clickable(
+                    indication = LocalIndication.current,
+                    interactionSource = null,
+                ) { viewModel.selectView() }
                 .padding(4.dp)
-                .size(22.dp)
-        ) {
-            Icon(
-                painter = painterResource(state.toggleIcon),
-                contentDescription = stringResource(state.toggleContentDescription),
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .size(20.dp)
-                    .padding(0.dp)
-            )
-        }
+                .size(20.dp)
+        )
     }
 }
 
@@ -312,20 +311,20 @@ private fun ListColumnMenu(
         if (!state.isTableView) {
             var sortingMenu by rememberSaveable { mutableStateOf(false) }
 
-            IconButton(
-                onClick = { sortingMenu = !sortingMenu },
+            Icon(
+                painter = painterResource(R.drawable.sort_bars),
+                contentDescription = "List sorting",
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
+                    .padding(start = 1.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null
+                    ) { sortingMenu = !sortingMenu }
                     .padding(4.dp)
-                    .size(22.dp),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.sort_bars),
-                    contentDescription = "List sorting",
-                    modifier = Modifier
-                        .size(20.dp)
-                        .padding(0.dp),
-                )
-            }
+                    .size(20.dp)
+            )
             DropdownMenu(
                 expanded = sortingMenu,
                 onDismissRequest = { sortingMenu = false },
@@ -379,20 +378,21 @@ private fun ListColumnMenu(
                 }
             }
         } else {
-            IconButton(
-                onClick = { onShowColumnPop() },
+            Icon(
+                painter = painterResource(R.drawable.table_edit),
+                contentDescription = "List sorting",
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
+                    .padding(start = 1.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = null,
+                        onClick = onShowColumnPop
+                    )
                     .padding(4.dp)
-                    .size(22.dp),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.table_edit),
-                    contentDescription = "Column Visibility",
-                    modifier = Modifier
-                        .size(20.dp)
-                        .padding(0.dp),
-                )
-            }
+                    .size(20.dp)
+            )
         }
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -521,8 +523,7 @@ private fun OldestTinsSection(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -559,8 +560,7 @@ private fun FutureTinsSection(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -604,18 +604,21 @@ fun DatesSection(
     }
 
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clip(RoundedCornerShape(25))
                 .clickable(
                     enabled = expandEnabled,
                     indication = LocalIndication.current,
                     interactionSource = null
-                ) { expanded = !expanded },
+                ) { expanded = !expanded }
+                .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
@@ -629,14 +632,14 @@ fun DatesSection(
             Spacer(modifier = Modifier.weight(1f))
             Box(
                 modifier = Modifier,
-                contentAlignment = Alignment.TopEnd
+                contentAlignment = Alignment.CenterEnd
             ) {
                 val icon = if (expanded) R.drawable.arrow_up else R.drawable.arrow_down
                 Icon(
                     painter = painterResource(id = icon),
                     contentDescription = "Expand/collapse",
                     modifier = Modifier
-                        .offset(y = (-2).dp)
+                        .offset(y = 1.dp)
                         .size(22.dp),
                     tint = if (expandEnabled) colorScheme.onBackground.copy(alpha = 0.8f) else Color.Transparent
                 )
@@ -650,15 +653,16 @@ fun DatesSection(
                             horizontalAlignment = Alignment.Start,
                             verticalArrangement = Arrangement.Top,
                             modifier = Modifier
-                                .padding(start = 12.dp)
+                                .padding(start = 4.dp, end = 48.dp)
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable(
                                     indication = LocalIndication.current,
                                     interactionSource = null
                                 ) { navigateToDetails(item.id) }
+                                .padding(start = 8.dp, end = 8.dp, bottom = 1.dp)
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth(.9f)
                             ) {
                                 Text(
                                     text = "• ${item.brand}",
@@ -692,7 +696,6 @@ fun DatesSection(
                                 modifier = Modifier
                                     .padding(start = 16.dp)
                             )
-                            Spacer(modifier = Modifier.height(1.dp))
                         }
                     }
                 }
