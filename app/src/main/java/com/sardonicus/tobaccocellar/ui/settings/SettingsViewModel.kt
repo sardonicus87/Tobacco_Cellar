@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -709,94 +710,82 @@ class SettingsViewModel(
 
             var message = ""
 
-            val bytes = readBytesFromFile(uri, context)
+            try {
+                val bytes = readBytesFromFile(uri, context)
+                if (bytes == null) {
+                    message = "Invalid file."
+                    return@launch
+                }
 
-            if (bytes == null) {
-                message = "Invalid file."
-            } else try {
                 val fileContentState = validateBackupFile(bytes)
                 val restoreState = _restoreState.value
                 val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
 
                 if (!fileContentState.magicNumberValid) {
                     message = "Restore failed: file is invalid."
-                }
-                else if (!fileContentState.versionValid) {
+                } else if (!fileContentState.versionValid) {
                     message = "Restore failed: file is for an unsupported version."
-                }
-                else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
+                } else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
                     message = "Restore failed: file does not contain database or settings data."
                 } else {
-                    if (restoreState.databaseChecked && restoreState.settingsChecked) {
-                        if (fileContentState.databasePresent && fileContentState.settingsPresent) {
-                            try {
-                                restoreDatabase(context, databaseBytes)
-                                if (fileContentState.version == 2) {
-                                    restoreItemSyncState(itemSyncStateBytes)
-                                }
-                                restoreSettings(settingsBytes, fileContentState.version)
-                                updateTinSync(runSilent = true)
-                                message = "Database and Settings restored."
-                            } catch (_: Exception) {
-                                message = "Restore failed."
-                            }
-                        } else {
-                            if (!fileContentState.databasePresent) {
-                                try {
-                                    restoreSettings(settingsBytes, fileContentState.version)
-                                    updateTinSync(runSilent = true)
-                                    message = "File missing database data, settings restored."
-                                } catch (_: Exception) {
-                                    message = "Restore failed."
-                                }
-                            } else {
-                                try {
-                                    restoreDatabase(context, databaseBytes)
-                                    if (fileContentState.version == 2) {
-                                        restoreItemSyncState(itemSyncStateBytes)
-                                    }
-                                    updateTinSync(runSilent = true)
-                                    message = "File missing settings data, database restored."
-                                } catch (_: Exception) {
-                                    message = "Restore failed."
-                                }
-                            }
-                        }
+                    var dbRestored = false
+                    var settingsRestored = false
+
+                    if (restoreState.databaseChecked && fileContentState.databasePresent) {
+                        try {
+                            restoreDatabase(context, databaseBytes)
+                            if (fileContentState.version == 2) { restoreItemSyncState(itemSyncStateBytes) }
+                            dbRestored = true
+                        } catch (_: Exception) { }
                     }
-                    else if (restoreState.databaseChecked) {
-                        if (fileContentState.databasePresent) {
-                            try {
-                                restoreDatabase(context, databaseBytes)
-                                if (fileContentState.version == 2) {
-                                    restoreItemSyncState(itemSyncStateBytes)
-                                }
-                                message = "Database restored."
-                            } catch (_: Exception) {
-                                message = "Error restoring database."
-                            }
-                        } else { message = "Backup file does not contain database data." }
-                    }
-                    else if (restoreState.settingsChecked) {
-                        if (fileContentState.settingsPresent) {
+                    if (restoreState.settingsChecked && fileContentState.settingsPresent) {
+                        try {
                             restoreSettings(settingsBytes, fileContentState.version)
-                            updateTinSync(runSilent = true)
-                            message = "Settings restored."
-                        } else {
-                            message = "Backup file does not contain settings data."
+                            settingsRestored = true
+                        } catch (_: Exception) { }
+                    }
+
+                    message = when {
+                        restoreState.databaseChecked && restoreState.settingsChecked -> {
+                            when {
+                                dbRestored && settingsRestored -> "Database and settings restored."
+                                dbRestored -> "File missing settings data, database restored."
+                                settingsRestored -> "File missing database data, settings restored."
+                                else -> "Restore failed."
+                            }
                         }
+                        restoreState.databaseChecked -> {
+                            if (dbRestored) "Database restored."
+                            else if (!fileContentState.databasePresent) "Backup file does not contain database data."
+                            else "Error restoring database."
+                        }
+                        restoreState.settingsChecked -> {
+                            if (settingsRestored) "Settings restored."
+                            else if (!fileContentState.settingsPresent) "Backup file does not contain settings data."
+                            else "Error restoring settings."
+                        }
+                        else -> "Restore failed."
+                    }
+
+                    if (dbRestored || settingsRestored) {
+                        try {
+                            withTimeout(2000.milliseconds) { filterViewModel.everythingFlow.first { it.isNotEmpty() } }
+                        } catch (_: Exception) { }
+                        delay(25.milliseconds)
+                        updateTinSync(runSilent = true)
                     }
                 }
+            } catch (e: Exception) {
+                message = "Restore failed: ${e.message}"
             } finally {
                 SyncStateManager.loggingPaused = false
                 SyncStateManager.schedulingPaused = false
-            }
 
-            if (crossDeviceSync.value) {
-                workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build())
-            }
+                if (crossDeviceSync.value) { workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build()) }
 
-            setLoadingState(false)
-            showSnackbar(message)
+                setLoadingState(false)
+                showSnackbar(message)
+            }
         }
     }
 
