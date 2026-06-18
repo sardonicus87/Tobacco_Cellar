@@ -133,7 +133,7 @@ class DownloadSyncWorker(
     }
 
     private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation, localDbVersion: Int): Boolean {
-        if (op.dbVersion != localDbVersion) { return false }
+        if (op.dbVersion > localDbVersion) { return false }
 
         when (op.entityType) {
             "Items" -> {
