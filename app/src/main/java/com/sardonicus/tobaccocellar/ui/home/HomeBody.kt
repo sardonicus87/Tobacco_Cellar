@@ -115,6 +115,7 @@ private fun BodyContent(
     val tableLayoutData by viewModel.tableLayoutData.collectAsState()
     val tableShadow by viewModel.tableShadow.collectAsState()
 
+    LaunchedEffect(isTableView()) { columnState.scrollToItem(0) }
     LaunchedEffect(columnState.canScrollBackward) { viewModel.updateScrollShadow(columnState.canScrollBackward) }
 
     if (sortedItems.list.isEmpty()) {
@@ -287,9 +288,7 @@ private fun ColumnVisibilityPopup(
         confirmButton = {
             TextButton(onClick = { onDismiss() }
             ) {
-                Text(
-                    text = "Done"
-                )
+                Text("Done")
             }
         }
     )
