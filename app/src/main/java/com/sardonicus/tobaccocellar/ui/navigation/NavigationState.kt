@@ -43,17 +43,18 @@ fun rememberNavigationState(
             backStacks[topLevelRoute.value]?.let { currentStack ->
                 val currentTop = topLevelRoute.value
 
-                getPairing(currentTop)?.let { pairing ->
-                    val secondary = currentStack.getOrNull(1)
-                    if (secondary == null || !secondary.isSameKey(pairing.defaultSecondary)) {
-                        currentStack.add(1, pairing.defaultSecondary)
+                mainSecondaryMap[currentTop]?.let {
+                    if (currentStack.getOrNull(1) != it.defaultSecondary) {
+                        currentStack.add(1, it.defaultSecondary)
                     }
                 }
             }
         } else {
             backStacks.forEach { (navKey, stack) ->
-                getPairing(navKey)?.let { pairing ->
-                    stack.removeIf { it.isSameKey(pairing.defaultSecondary) }
+                mainSecondaryMap[navKey]?.let {
+                    if (stack.getOrNull(1) == it.defaultSecondary) {
+                        stack.remove(it.defaultSecondary)
+                    }
                 }
             }
         }
@@ -103,9 +104,8 @@ class NavigationState(
 
             if (mainKey == null || lastKey == null) return false
 
-            val pairing = getPairing(mainKey) ?: return false
-            val pairingValid = (lastKey as? PaneInfo)?.paneType == PaneType.SECOND &&
-                    pairing.allowedSeconds.any { it.simpleName == lastKey::class.simpleName }
+            val pairing = mainSecondaryMap[mainKey] ?: return false
+            val pairingValid = (lastKey as? PaneInfo)?.paneType == PaneType.SECOND && lastKey::class in pairing.allowedSeconds
 
             return pairingValid
         }
@@ -136,32 +136,18 @@ fun NavigationState.toEntries(
 
     return stacksInUse.flatMap { stackKey ->
         val stackEntries = decoratedEntries[stackKey] ?: emptyList()
-        val pairing = getPairing(stackKey)
 
-        if (twoPaneAllowed && pairing != null) {
-            val hasSecondary = stackEntries.any { it.contentKey.isSameKey(pairing.defaultSecondary) }
+        if (twoPaneAllowed) {
+            mainSecondaryMap[stackKey]?.let {
+                val stack = backStacks[stackKey]
 
-            if (!hasSecondary) {
-                val temp = stackEntries.toMutableList()
-                temp.add(1, entryProvider(pairing.defaultSecondary))
-                return@flatMap temp
+                if (stack?.contains(it.defaultSecondary) == false) {
+                    val temp = stackEntries.toMutableList()
+                    temp.add(1, entryProvider(it.defaultSecondary))
+                    return@flatMap temp
+                }
             }
-            stackEntries
-        } else {
-            if (pairing != null) {
-                stackEntries.filter { !it.contentKey.isSameKey(pairing.defaultSecondary) }
-            } else stackEntries
         }
+        stackEntries
     }.toMutableStateList()
-}
-
-private fun getPairing(key: NavKey?): TwoPanePairing? {
-    if (key == null) return null
-    val name = key.toString().substringBefore('(')
-    return mainSecondaryMap.entries.find { it.key.toString().substringBefore('(') == name }?.value
-}
-
-private fun Any?.isSameKey(other: Any?): Boolean {
-    if (this == null || other == null) return false
-    return this.toString().substringBefore('(') == other.toString().substringBefore('(')
 }
