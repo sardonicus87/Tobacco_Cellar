@@ -85,12 +85,6 @@ class NavigationState(
             listOf(startRoute, topLevelRoute)
         }
 
-//    val canGoBack: Boolean
-//        get() {
-//            val currentStack = backStacks[topLevelRoute]
-//            return (currentStack?.size ?: 0) > 1 || (topLevelRoute != startRoute)
-//        }
-
     val currentStack: List<NavKey>
         get() { return backStacks[topLevelRoute]?.toList() ?: emptyList() }
 
@@ -131,7 +125,7 @@ fun NavigationState.toEntries(
     val decoratedEntries = backStacks.mapValues { (_, stack) ->
         val decorators: List<NavEntryDecorator<NavKey>> = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(removeViewModelStoreOnPop = { true } ),
+            rememberViewModelStoreNavEntryDecorator(),
         )
         rememberDecoratedNavEntries(
             backStack = stack,
