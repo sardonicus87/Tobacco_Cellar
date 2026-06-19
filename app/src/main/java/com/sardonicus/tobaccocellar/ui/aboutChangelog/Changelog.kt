@@ -14,6 +14,16 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 52,
+        versionNumber = "5.2.9",
+        buildDate = "19 Jun, 2026",
+        bugFixes = listOf(
+            "Large screen devices, for sure fixed the bug where the dual pane layout breaks " +
+                    "and leaves stuck on the filter pane."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 51,
         versionNumber = "5.2.8",
         buildDate = "19 Jun, 2026",
