@@ -429,6 +429,7 @@ fun CellarNavigation(
                 ChangelogScreen(
                     onNavigateUp = { navigator.goBack() },
                     changelogEntries = key.changelogEntries,
+                    isTwoPane = navigationState.isTwoPane,
                     targetVersion = key.targetVersion
                 )
             }

@@ -51,6 +51,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ChangelogScreen (
     onNavigateUp: () -> Unit,
     changelogEntries: List<ChangelogEntryData>,
+    isTwoPane: Boolean,
     targetVersion: Int?,
     modifier: Modifier = Modifier
 ) {
@@ -89,6 +90,7 @@ fun ChangelogScreen (
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
+                overrideBack = isTwoPane,
             )
         },
     ) { innerPadding ->
