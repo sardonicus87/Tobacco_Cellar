@@ -191,10 +191,6 @@ class TwoPaneStrategy<T : Any>(
 
         val mainEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.MAIN } ?: return null
         val secondEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.SECOND } ?: return null
-
-        val pairing = getPairing(mainEntry.contentKey) ?: return null
-        if (!validPairing(pairing, secondEntry.contentKey)) return null
-
         if (mainEntry.contentKey == secondEntry.contentKey) return null
 
         val previousEntries = entries.filter { it.contentKey != mainEntry.contentKey && it.contentKey != secondEntry.contentKey }
@@ -394,14 +390,4 @@ private fun <T : Any> isBack(
     // if newBackStack never diverged from oldBackStack, then it is a clean subset of the oldStack
     // and is a pop
     return divergingIndex == null && newBackStack.size != oldBackStack.size
-}
-
-private fun getPairing(mainKey: Any): TwoPanePairing? {
-    val main = mainKey.toString().substringBefore('(')
-    return mainSecondaryMap.entries.find { it.key.toString().substringBefore('(') == main }?.value
-}
-
-private fun validPairing(pairing: TwoPanePairing, secondKey: Any): Boolean {
-    val second = secondKey.toString().substringBefore('(')
-    return pairing.allowedSeconds.any { it.simpleName == second }
 }
