@@ -21,8 +21,8 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 37
-            versionCode = 50
-            versionName = "5.2.7"
+            versionCode = 51
+            versionName = "5.2.8"
 
             vectorDrawables {
                 useSupportLibrary = true
@@ -103,8 +103,6 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.material3.windowsizeclass)
     implementation(libs.androidx.adaptive.layout)
 
 

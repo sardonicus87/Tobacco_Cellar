@@ -14,6 +14,25 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 51,
+        versionNumber = "5.2.8",
+        buildDate = "19 Jun, 2026",
+        improvements = listOf(
+            "Minor UI polishing and improvements (e.g. clickable indication rounding)."
+        ),
+        bugFixes = listOf(
+            "Fixed component and flavoring enablement states with regard to the Any/All/Only " +
+                    "options.",
+            "About screen: fix navigation bug causing a crash when navigating back using the " +
+                    "top bar back button.",
+            "Settings screen Backup/Restore: fixed a bug where the UI could black-out/hang when " +
+                    "selecting both \"database\" and \"settings\" options in the restore process.",
+            "Large Screen Devices: potentially fixed a bug where some devices end up stuck on " +
+                    "the filter pane layout as a single pane."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 50,
         versionNumber = "5.2.7",
         buildDate = "15 Jun, 2026",
