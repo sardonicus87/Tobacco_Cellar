@@ -18,17 +18,12 @@ import androidx.compose.ui.unit.sp
 fun DbOperationsDialog(
     onDismiss: () -> Unit,
     updateTinSync: () -> Unit,
-    optimizeDatabase: () -> Unit,
-    modifier: Modifier = Modifier,
+    optimizeDatabase: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        modifier = modifier
-            .padding(0.dp),
         text = {
             Column(
-                modifier = Modifier
-                    .padding(bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
@@ -43,8 +38,7 @@ fun DbOperationsDialog(
                 TextButton(
                     onClick = { updateTinSync() },
                     contentPadding = PaddingValues(8.dp, 3.dp),
-                    modifier = modifier
-                        .heightIn(28.dp, 28.dp)
+                    modifier = Modifier.heightIn(28.dp, 28.dp)
                 ) {
                     Text(
                         text = "Fix/Update Tin Sync Quantity",
@@ -55,26 +49,16 @@ fun DbOperationsDialog(
                 TextButton(
                     onClick = { optimizeDatabase() },
                     contentPadding = PaddingValues(8.dp, 3.dp),
-                    modifier = modifier
-                        .heightIn(28.dp, 28.dp)
+                    modifier = Modifier.heightIn(28.dp, 28.dp)
                 ) {
                     Text(
                         text = "Clean and Optimize Database",
-                        modifier = Modifier,
                         fontSize = 15.sp,
                     )
                 }
             }
         },
-        confirmButton = {
-            TextButton(
-                onClick = { onDismiss() },
-                modifier = Modifier
-                    .padding(0.dp)
-            ) {
-                Text("Done")
-            }
-        },
+        confirmButton = { TextButton({ onDismiss() }) { Text("Done") } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large

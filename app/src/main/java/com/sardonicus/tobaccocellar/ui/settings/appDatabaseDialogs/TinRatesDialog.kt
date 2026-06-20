@@ -48,21 +48,16 @@ fun TinRatesDialog(
     onDismiss: () -> Unit,
     ozRate: Double,
     gramsRate: Double,
-    onSave: (Double, Double) -> Unit,
-    modifier: Modifier = Modifier
+    onSave: (Double, Double) -> Unit
 ) {
     var tinOzRate by rememberSaveable { mutableStateOf(formatDecimal(ozRate)) }
     var tinGramsRate by rememberSaveable { mutableStateOf(formatDecimal(gramsRate)) }
-
     val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) {
-        onDispose { focusManager.clearFocus() }
-    }
+
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        modifier = modifier
-            .padding(0.dp),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true
@@ -86,13 +81,11 @@ fun TinRatesDialog(
                 ) {
                     Text(
                         text = "One Tin = ",
-                        modifier = Modifier
-                            .padding(end = 8.dp),
+                        modifier = Modifier.padding(end = 8.dp),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
                     )
                     Column(
-                        modifier = Modifier,
                         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                         horizontalAlignment = Alignment.Start
                     ) {
@@ -103,19 +96,13 @@ fun TinRatesDialog(
                         }
 
                         Row(
-                            modifier = Modifier,
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
                         ) {
                             CustomTextField(
                                 value = tinOzRate,
-                                onValueChange = {
-                                    if (it.matches(allowedPattern)) {
-                                        tinOzRate = it
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(80.dp),
+                                onValueChange = { if (it.matches(allowedPattern)) { tinOzRate = it } },
+                                modifier = Modifier.width(80.dp),
                                 textStyle = LocalTextStyle.current.copy(
                                     textAlign = TextAlign.End,
                                     color = LocalContentColor.current,
@@ -139,8 +126,7 @@ fun TinRatesDialog(
                                 placeholder = {
                                     Text(
                                         text = "(${formatDecimal(ozRate)})",
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth(),
                                         style = LocalTextStyle.current.copy(
                                             textAlign = TextAlign.End,
                                             fontSize = 13.5.sp,
@@ -150,23 +136,15 @@ fun TinRatesDialog(
                                     )
                                 }
                             )
-                            Text(
-                                text = "oz",
-                                modifier = Modifier
-                            )
+                            Text("oz")
                         }
                         Row(
-                            modifier = Modifier,
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
                         ) {
                             CustomTextField(
                                 value = tinGramsRate,
-                                onValueChange = {
-                                    if (it.matches(allowedPattern)) {
-                                        tinGramsRate = it
-                                    }
-                                },
+                                onValueChange = { if (it.matches(allowedPattern)) { tinGramsRate = it } },
                                 modifier = Modifier
                                     .width(80.dp),
                                 textStyle = LocalTextStyle.current.copy(
@@ -192,8 +170,7 @@ fun TinRatesDialog(
                                 placeholder = {
                                     Text(
                                         text = "(${formatDecimal(gramsRate)})",
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth(),
                                         style = LocalTextStyle.current.copy(
                                             textAlign = TextAlign.End,
                                             fontSize = 13.5.sp,
@@ -203,23 +180,13 @@ fun TinRatesDialog(
                                     )
                                 }
                             )
-                            Text(
-                                text = "grams",
-                            )
+                            Text("grams")
                         }
                     }
                 }
             }
         },
-        dismissButton = {
-            TextButton(
-                onClick = { onDismiss() },
-                modifier = Modifier
-                    .padding(0.dp)
-            ) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
+        dismissButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel)) } },
         confirmButton = {
             TextButton(
                 onClick = {
@@ -228,11 +195,8 @@ fun TinRatesDialog(
                         tinGramsRate.toDoubleOrNull() ?: gramsRate
                     )
                     onDismiss()
-                },
-                modifier = Modifier
-            ) {
-                Text(stringResource(R.string.save))
-            }
+                }
+            ) { Text(stringResource(R.string.save)) }
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,

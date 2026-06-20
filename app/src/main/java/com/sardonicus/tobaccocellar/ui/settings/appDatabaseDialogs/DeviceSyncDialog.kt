@@ -68,8 +68,7 @@ fun DeviceSyncDialog(
     onAllowMobileData: (Boolean) -> Unit,
     onManualSync: () -> Unit,
     clearRemoteData: () -> Unit,
-    clearLoginState: () -> Unit,
-    modifier: Modifier = Modifier,
+    clearLoginState: () -> Unit
 ) {
     val accountLinked by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
@@ -94,33 +93,28 @@ fun DeviceSyncDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        modifier = modifier
+        modifier = Modifier
             .padding(0.dp)
             .heightIn(max = 350.dp),
         text = {
             Column(
-                modifier = Modifier
-                    .padding(bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (!acknowledgement) {
                     Text(
                         text = "About Multi Device Sync",
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally),
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = LocalContentColor.current
                     )
                     Column(
-                        modifier = Modifier
-                            .verticalScroll(scrollState),
+                        modifier = Modifier.verticalScroll(scrollState),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
                             text = "(You must scroll to the bottom to accept)",
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally),
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
                             fontSize = 13.sp,
                             color = LocalContentColor.current
                         )
@@ -131,7 +125,6 @@ fun DeviceSyncDialog(
                                     "do not need the Google Drive app for this functionality to " +
                                     "work). This feature also requires all synced devices to be " +
                                     "running a version of the app with the same Database Version.",
-                            modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
@@ -147,7 +140,6 @@ fun DeviceSyncDialog(
                                     "clearing login). If you wish to revoke Drive authorization, " +
                                     "this must be done in your Google Account settings: Services " +
                                     "> Connected Apps).",
-                            modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
@@ -157,7 +149,6 @@ fun DeviceSyncDialog(
                                     "every 12 hours as long as the device is powered on. The app " +
                                     "start check and 12-hour cycled checks respect your settings " +
                                     "regarding mobile data or WIFI only.",
-                            modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
@@ -166,7 +157,6 @@ fun DeviceSyncDialog(
                                     "recommended to create a manual database backup of the " +
                                     "device with the most up-to-date data and transfer it to, " +
                                     "and restore on, the other device(s).",
-                            modifier = Modifier,
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
@@ -179,7 +169,7 @@ fun DeviceSyncDialog(
                         // Enable Sync
                         Box {
                             Row(
-                                modifier = modifier
+                                modifier = Modifier
                                     .fillMaxWidth()
                                     .height(28.dp)
                                     .padding(start = 8.dp),
@@ -188,7 +178,6 @@ fun DeviceSyncDialog(
                             ) {
                                 Text(
                                     text = "Multi-Device Sync:",
-                                    modifier = Modifier,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = LocalContentColor.current
@@ -197,11 +186,8 @@ fun DeviceSyncDialog(
                                     Switch(
                                         checked = deviceSync || signingIn || disconnectFailure,
                                         onCheckedChange = {
-                                            if (!connectionEnabled && !deviceSync) {
-                                                disconnectFailure = it
-                                            } else {
-                                                onDeviceSync(it)
-                                            }
+                                            if (!connectionEnabled && !deviceSync) { disconnectFailure = it }
+                                            else { onDeviceSync(it) }
                                         },
                                         modifier = Modifier
                                             .scale(.6f)
@@ -229,8 +215,7 @@ fun DeviceSyncDialog(
                                                 Icon(
                                                     painter = painterResource(R.drawable.close),
                                                     contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier
+                                                    tint = Color.White
                                                 )
                                             }
                                         } else null
@@ -255,7 +240,7 @@ fun DeviceSyncDialog(
 
                         // Allow Mobile
                         Row(
-                            modifier = modifier
+                            modifier = Modifier
                                 .fillMaxWidth()
                                 .height(28.dp)
                                 .padding(start = 8.dp),
@@ -265,7 +250,6 @@ fun DeviceSyncDialog(
                             val alpha = if (!deviceSync) .38f else 1f
                             Text(
                                 text = "Allow Mobile Data:",
-                                modifier = Modifier,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = LocalContentColor.current.copy(alpha = alpha)
@@ -300,12 +284,10 @@ fun DeviceSyncDialog(
                                     onClick = { onManualSync() },
                                     enabled = deviceSync && accountLinked && connectionEnabled,
                                     contentPadding = PaddingValues(8.dp, 3.dp),
-                                    modifier = modifier
-                                        .heightIn(28.dp, 28.dp)
+                                    modifier = Modifier.heightIn(28.dp, 28.dp)
                                 ) {
                                     Text(
                                         text = "Manual Sync",
-                                        modifier = Modifier,
                                         fontSize = 15.sp,
                                     )
                                 }
@@ -315,8 +297,7 @@ fun DeviceSyncDialog(
                                     onClick = { clearRemoteData() },
                                     enabled = accountLinked && connectionEnabled,
                                     contentPadding = PaddingValues(8.dp, 3.dp),
-                                    modifier = modifier
-                                        .heightIn(28.dp, 28.dp)
+                                    modifier = Modifier.heightIn(28.dp, 28.dp)
                                 ) {
                                     Text(
                                         text = "Clear Remote Data",
@@ -335,8 +316,7 @@ fun DeviceSyncDialog(
                             },
                             enabled = accountLinked,
                             contentPadding = PaddingValues(8.dp, 3.dp),
-                            modifier = modifier
-                                .heightIn(28.dp, 28.dp)
+                            modifier = Modifier.heightIn(28.dp, 28.dp)
                         ) {
                             Text(
                                 text = "Sign-Out",
@@ -352,33 +332,14 @@ fun DeviceSyncDialog(
             if (!acknowledgement) {
                 TextButton(
                     onClick = { confirmAcknowledgement() },
-                    modifier = Modifier
-                        .padding(0.dp),
                     enabled = atBottom
-                ) {
-                    Text("Agree")
-                }
-            } else {
-                TextButton(
-                    onClick = { onDismiss() },
-                    modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Text("Done")
-                }
+                ) { Text("Agree") }
             }
+            else { TextButton({ onDismiss() }) { Text("Done") } }
         },
-        dismissButton = if (!acknowledgement) {
-            {
-                TextButton(
-                    onClick = { onDismiss() },
-                    modifier = Modifier
-                        .padding(0.dp)
-                ) {
-                    Text("Cancel")
-                }
-            }
-        } else null,
+        dismissButton =
+            if (!acknowledgement) { { TextButton({ onDismiss() }) { Text("Cancel") } } }
+            else null,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
