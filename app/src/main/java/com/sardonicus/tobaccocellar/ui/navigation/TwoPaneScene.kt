@@ -162,14 +162,15 @@ data class TwoPaneScene<T : Any>(
 
 
 @Composable
-fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean, enabled: Boolean): TwoPaneStrategy<T> {
+fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean, enabled: Boolean, validPairing: Boolean): TwoPaneStrategy<T> {
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
-    return remember(sceneKey, interceptBack, enabled, filterViewModel) {
+    return remember(sceneKey, interceptBack, enabled, validPairing, filterViewModel) {
         TwoPaneStrategy(
             sceneKey,
             interceptBack,
             enabled,
+            validPairing,
             filterViewModel
         )
     }
@@ -180,10 +181,12 @@ class TwoPaneStrategy<T : Any>(
     private val sceneKey: Int,
     private val interceptBack: Boolean,
     private val enabled: Boolean,
+    private val validPairing: Boolean,
     private val filterViewModel: FilterViewModel
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (!enabled) return null
+        if (!validPairing) return null
 
         val lastEntry = entries.lastOrNull() ?: return null
         val lastEntryPaneType = lastEntry.metadata[TwoPaneScene.PANE_TYPE] as? PaneType

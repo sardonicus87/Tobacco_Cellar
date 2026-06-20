@@ -63,6 +63,8 @@ import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.collections.findLast
+import kotlin.collections.lastOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -460,7 +462,13 @@ fun CellarNavigation(
         }
     }
 
-    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed)
+    val currentStack = navigationState.currentStack
+    val mainKey = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
+    val lastKey = currentStack.lastOrNull()
+    val pairing = mainSecondaryMap[mainKey]
+    val validPairing = pairing != null && lastKey != null && lastKey::class in pairing.allowedSeconds
+
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed, validPairing)
 
     LaunchedEffect(twoPaneAllowed) {
         if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
