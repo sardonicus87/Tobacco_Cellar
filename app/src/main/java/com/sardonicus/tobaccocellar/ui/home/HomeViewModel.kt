@@ -497,8 +497,8 @@ class HomeViewModel(
 
         val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
         val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
-        val columnMapping = TableColumn.entries.map {
-            when (it) {
+        val columnMapping = TableColumn.entries.map { column ->
+            when (column) {
                 TableColumn.BRAND -> { item: Items -> item.brand }
                 TableColumn.BLEND -> { item: Items -> item.blend }
                 TableColumn.TYPE -> { item: Items -> item.type.ifBlank { if (fallbackType) "(${item.subGenre})" else "" } }
@@ -514,7 +514,7 @@ class HomeViewModel(
 
                 TableColumn.NOTE -> { item: Items -> item.notes }
                 TableColumn.QTY -> { item: Items -> item.id }
-                TableColumn.EDITED -> { item: Items -> formatMediumDate(item.lastModified, true) }
+                TableColumn.EDITED -> { item: Items -> item.lastModified.let { if (it == 0L) "n/a" else formatMediumDate(it, true) } }
             }
         }
         val alignment = columnMinWidths.indices.map {

@@ -110,7 +110,7 @@ class BlendDetailsViewModel(
                 }
             },
             tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap),
-            lastModified = formatMediumDate(item.items.lastModified, true)
+            lastModified = item.items.lastModified.let { if (it == 0L) "n/a" else formatMediumDate(it, true) },
         )
     }
         .stateIn(
