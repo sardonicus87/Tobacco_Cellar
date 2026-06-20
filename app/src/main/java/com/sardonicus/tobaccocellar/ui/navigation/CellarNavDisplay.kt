@@ -63,8 +63,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
-import kotlin.collections.findLast
-import kotlin.collections.lastOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
