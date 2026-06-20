@@ -313,12 +313,31 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             viewModel.restoreBackup(context, it)
         }
     }
+
+    val themeSetting by viewModel.themeSetting.collectAsState()
+    val showRatings by viewModel.showRatings.collectAsState()
+    val typeGenreOption by viewModel.typeGenreOption.collectAsState()
+    val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
+    val quantityOption by viewModel.quantityOption.collectAsState()
+    val parseLinks by viewModel.parseLinks.collectAsState()
+    val globalTwoPane by viewModel.globalTwoPane.collectAsState()
+    val landscapeTwoPane by viewModel.landscapeTwoPane.collectAsState()
+    val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
+
     val acknowledgement by viewModel.deviceSyncAcknowledgement.collectAsState()
+    val email by viewModel.userEmail.collectAsState()
+    val hasScope by viewModel.hasScope.collectAsState()
+    val connectionEnabled by viewModel.networkEnabled.collectAsState()
+    val deviceSync by viewModel.crossDeviceSync.collectAsState()
+    val signingIn by viewModel.signingIn.collectAsState()
+    val allowMobileData by viewModel.allowMobileData.collectAsState()
+    val ozRate by viewModel.tinOzConversionRate.collectAsState()
+    val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
+    val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
 
     when (openDialog) {
         // Display settings
         DialogType.Theme -> {
-            val themeSetting by viewModel.themeSetting.collectAsState()
             SelectionDialog(
                 onDismiss = viewModel::dismissDialog,
                 options = ThemeSetting.entries,
@@ -328,7 +347,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         DialogType.Ratings -> {
-            val showRatings by viewModel.showRatings.collectAsState()
             ToggleDialog(
                 description = "Display ratings on cellar screen:",
                 onDismiss = viewModel::dismissDialog,
@@ -337,8 +355,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         DialogType.TypeGenre -> {
-            val typeGenreOption by viewModel.typeGenreOption.collectAsState()
-            val typeGenreEnablement by viewModel.typeGenreOptionEnablement.collectAsState()
             SelectionDialog(
                 description = "This option sets the display of Type, Subgenre or both on the " +
                         "Cellar screen. Fallback options display the option and if it's unused " +
@@ -355,7 +371,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         DialogType.QuantityDisplay -> {
-            val quantityOption by viewModel.quantityOption.collectAsState()
             SelectionDialog(
                 description = "Displayed quantities for ounces and grams are based on the summed " +
                         "quantities of tins. If no tins are present, \"No. of Tins\" value will " +
@@ -368,7 +383,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         DialogType.ParseLinks -> {
-            val parseLinks by viewModel.parseLinks.collectAsState()
             ToggleDialog(
                 description = "Parse links in notes:",
                 onDismiss = viewModel::dismissDialog,
@@ -377,12 +391,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         DialogType.GlobalTwoPane -> {
-            val globalTwoPane by viewModel.globalTwoPane.collectAsState()
-            val landscapeTwoPane by viewModel.landscapeTwoPane.collectAsState()
-            val twoColumnTabs by viewModel.twoColumnTabs.collectAsState()
-            BaseSettingsDialog(
-                onDismiss = viewModel::dismissDialog
-            ) {
+            BaseSettingsDialog(viewModel::dismissDialog) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "Adaptive layout options for large screens. The dual-pane and " +
@@ -400,13 +409,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
 
         // App/Database Settings
         DialogType.DeviceSync -> {
-            val email by viewModel.userEmail.collectAsState()
-            val hasScope by viewModel.hasScope.collectAsState()
-            val connectionEnabled by viewModel.networkEnabled.collectAsState()
-            val deviceSync by viewModel.crossDeviceSync.collectAsState()
-            val signingIn by viewModel.signingIn.collectAsState()
-            val allowMobileData by viewModel.allowMobileData.collectAsState()
-
             if (!loading) {
                 DeviceSyncDialog(
                     onDismiss = viewModel::dismissDialog,
@@ -422,25 +424,19 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     onAllowMobileData = viewModel::saveAllowMobileData,
                     onManualSync = viewModel::manualSync,
                     clearRemoteData = viewModel::clearRemoteData,
-                    clearLoginState = viewModel::clearLoginState,
-                    modifier = Modifier
+                    clearLoginState = viewModel::clearLoginState
                 )
             }
         }
         DialogType.TinRates -> {
-            val ozRate by viewModel.tinOzConversionRate.collectAsState()
-            val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
-
             TinRatesDialog(
                 onDismiss = viewModel::dismissDialog,
                 ozRate = ozRate,
                 gramsRate = gramsRate,
-                onSave = viewModel::setTinConversionRates,
-                modifier = Modifier
+                onSave = viewModel::setTinConversionRates
             )
         }
         DialogType.TinSyncDefault -> {
-            val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
             ToggleDialog(
                 description = "Set \"Sync Tins\" default on or off when adding new entries:",
                 onDismiss = viewModel::dismissDialog,
@@ -452,8 +448,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             DbOperationsDialog(
                 onDismiss = viewModel::dismissDialog,
                 updateTinSync = viewModel::updateTinSync,
-                optimizeDatabase = viewModel::optimizeDatabase,
-                modifier = Modifier
+                optimizeDatabase = viewModel::optimizeDatabase
             )
         }
         DialogType.BackupRestore -> {
@@ -467,8 +462,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     openLauncher.launch(arrayOf("application/octet-stream"))
                     viewModel.dismissDialog()
                 },
-                viewmodel = viewModel,
-                modifier = Modifier
+                viewmodel = viewModel
             )
         }
         DialogType.DeleteAll -> {
@@ -477,9 +471,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     viewModel.deleteAllItems()
                     viewModel.dismissDialog()
                 },
-                onDeleteCancel = viewModel::dismissDialog,
-                modifier = Modifier
-                    .padding(0.dp)
+                onDeleteCancel = viewModel::dismissDialog
             )
         }
         null -> { }
