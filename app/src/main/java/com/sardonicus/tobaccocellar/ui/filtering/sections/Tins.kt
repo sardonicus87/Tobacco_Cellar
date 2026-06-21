@@ -72,7 +72,6 @@ fun TinsFilterSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-
                 // Has Tins
                 Column(
                     modifier = Modifier,
