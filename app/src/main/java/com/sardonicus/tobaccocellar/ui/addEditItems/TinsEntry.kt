@@ -946,18 +946,23 @@ private fun IndividualTin(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
+                    val disabled = tinDetails.openDate != null && tinDetails.openDate > System.currentTimeMillis()
+                    LaunchedEffect(disabled) {
+                        if (disabled) { onTinValueChange(tinDetails.copy(finished = false)) }
+                    }
                     Spacer(modifier = Modifier.weight(1f))
                     Spacer(modifier = Modifier.weight(1f))
                     Row(
                         modifier = Modifier
-                            .weight(1f),
+                            .weight(1f)
+                            .clickable(
+                                indication = null,
+                                interactionSource = null,
+                                enabled = !disabled
+                            ) { onTinValueChange(tinDetails.copy(finished = !tinDetails.finished)) },
                         horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val disabled = tinDetails.openDate != null && tinDetails.openDate > System.currentTimeMillis()
-                        LaunchedEffect(disabled) {
-                            if (disabled) { onTinValueChange(tinDetails.copy(finished = false)) }
-                        }
 
                         Text(
                             text = "Finished",

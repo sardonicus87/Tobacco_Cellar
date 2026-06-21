@@ -112,8 +112,7 @@ fun CsvImportScreen(
     val csvUiState = viewModel.csvUiState
 
     Scaffold(
-        modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.csv_import_title),
@@ -138,9 +137,7 @@ fun CsvImportScreen(
                 navigateToCsvHelp = navigateToCsvHelp,
                 navigateToImportResults = navigateToImportResults,
                 navigateToHome = navigateToHome,
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(0.dp),
+                modifier = modifier.fillMaxSize(),
             )
         }
     }
@@ -212,7 +209,6 @@ fun CsvImportBody(
     if (showErrorDialog) {
         LoadErrorDialog(
             viewModel = viewModel,
-            modifier = Modifier,
             confirmError = {
                 viewModel.onShowError(false)
                 viewModel.onCsvError("")
@@ -235,9 +231,7 @@ fun CsvImportBody(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(0.dp),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top,
     ) {
         when (importStatus) {
@@ -316,7 +310,6 @@ fun CsvLoadedBody(
 
     Column(
         modifier = modifier
-            .padding(0.dp)
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
@@ -343,7 +336,6 @@ fun CsvLoadedBody(
             ) {
                 Text(
                     text = stringResource(R.string.select_csv),
-                    modifier = Modifier,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
@@ -355,7 +347,6 @@ fun CsvLoadedBody(
                     .height(40.dp),
             ) {
                 Row(
-                    modifier = Modifier,
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -366,8 +357,7 @@ fun CsvLoadedBody(
                     Icon(
                         imageVector = ImageVector.vectorResource(id = R.drawable.help_outline),
                         contentDescription = "Help?",
-                        modifier = Modifier
-                            .size(16.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = LocalContentColor.current
                     )
                 }
@@ -385,34 +375,22 @@ fun CsvLoadedBody(
             Column(
                 modifier = Modifier
                     .padding(bottom = 16.dp)
-                    .background(
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.secondaryContainer,
-                        RoundedCornerShape(8.dp)
-                    )
+                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
                     .padding(vertical = 8.dp, horizontal = 12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.possible_header),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = csvImportState.header.joinToString(", "),
-                    modifier = Modifier
-                        .padding(start = 8.dp, bottom = 8.dp),
+                    modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
                 )
                 Text(
                     text = stringResource(R.string.possible_record),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     fontWeight = FontWeight.Bold,
                 )
                 val parseTest =
@@ -421,8 +399,7 @@ fun CsvLoadedBody(
 
                 Text(
                     text = parseTest,
-                    modifier = Modifier
-                        .padding(start = 8.dp),
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
 
@@ -442,9 +419,7 @@ fun CsvLoadedBody(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.Center,
                     ) {
@@ -452,15 +427,12 @@ fun CsvLoadedBody(
                             text = "Has header?",
                             width = 96.dp,
                             checked = mappingOptions.hasHeader,
-                            onCheckedChange = viewModel::updateHeaderOption,
-                            modifier = Modifier,
+                            onCheckedChange = viewModel::updateHeaderOption
                         )
                     }
                     // record count //
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(0.dp),
+                        modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.Center,
                     ) {
@@ -469,7 +441,6 @@ fun CsvLoadedBody(
                                 if (mappingOptions.hasHeader) {
                                     "Record count: ${csvImportState.recordCount - 1}"
                                 } else { "Record count: ${csvImportState.recordCount}" },
-                            modifier = Modifier,
                             textAlign = TextAlign.End
                         )
                     }
@@ -483,9 +454,7 @@ fun CsvLoadedBody(
                     verticalAlignment = Alignment.Top,
                 ) {
                     Column(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
                     ) {
@@ -494,8 +463,7 @@ fun CsvLoadedBody(
                             maxLines = 1,
                             width = 96.dp,
                             checked = mappingOptions.collateTins,
-                            onCheckedChange = viewModel::updateCollateTinsOption,
-                            modifier = Modifier,
+                            onCheckedChange = viewModel::updateCollateTinsOption
                         )
                         LabeledCheckbox(
                             text = "Sync tins?",
@@ -508,9 +476,7 @@ fun CsvLoadedBody(
                     }
                     // Warning //
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(0.dp),
+                        modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.Center,
                     ) {
@@ -521,8 +487,7 @@ fun CsvLoadedBody(
                                 color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.End
                             ),
-                            modifier = Modifier
-                                .heightIn(max = 48.dp),
+                            modifier = Modifier.heightIn(max = 48.dp),
                             autoSize = TextAutoSize.StepBased(
                                 minFontSize = 8.sp,
                                 maxFontSize = 15.sp,
@@ -540,10 +505,7 @@ fun CsvLoadedBody(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "Existing entries:",
-                        modifier = Modifier,
-                    )
+                    Text("Existing entries:")
                     Row(
                         modifier = Modifier
                             .padding(0.dp)
@@ -592,7 +554,6 @@ fun CsvLoadedBody(
                         ) {
                             Text(
                                 text = "Update",
-                                modifier = Modifier,
                                 color =
                                     if (importOption == ImportOption.UPDATE) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -620,7 +581,6 @@ fun CsvLoadedBody(
                         ) {
                             Text(
                                 text = "Overwrite",
-                                modifier = Modifier,
                                 color =
                                     if (importOption == ImportOption.OVERWRITE) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -666,8 +626,7 @@ fun CsvLoadedBody(
                             textAlign = TextAlign.Start
                         ),
                         maxLines = 2,
-                        modifier = Modifier
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         autoSize = TextAutoSize.StepBased(
                             minFontSize = 13.sp,
                             maxFontSize = 14.sp,
@@ -682,8 +641,7 @@ fun CsvLoadedBody(
                         textAlign = TextAlign.Center,
                         style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
                         maxLines = 2,
-                        modifier = Modifier
-                            .weight(1f),
+                        modifier = Modifier.weight(1f),
                         autoSize = TextAutoSize.StepBased(
                             minFontSize = 13.sp,
                             maxFontSize = 14.sp,
@@ -796,10 +754,7 @@ fun CsvLoadedBody(
                     modifier = Modifier
                 )
 
-                Box(
-                    modifier = Modifier,
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Column {
                         MappingField(
                             label = "Manufacture\nDate:",
@@ -827,17 +782,13 @@ fun CsvLoadedBody(
                     if (mappingOptions.collateTins && !dateFormatSelected) {
                         Box(
                             modifier = Modifier
-                                .background(
-                                    Color.Black.copy(alpha = 0.50f),
-                                    RoundedCornerShape(4.dp)
-                                )
+                                .background(Color.Black.copy(alpha = 0.50f), RoundedCornerShape(4.dp))
                                 .matchParentSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "(must select date format)",
-                                modifier = Modifier
-                                    .background(Color.Black.copy(alpha = 0.33f)),
+                                modifier = Modifier.background(Color.Black.copy(alpha = 0.33f)),
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.SemiBold,
                             )
@@ -875,7 +826,7 @@ fun CsvLoadedBody(
 
 /** Body Elements */
 @Composable
-fun LoadErrorDialog(
+private fun LoadErrorDialog(
     viewModel: CsvImportViewModel,
     confirmError: () -> Unit,
     modifier: Modifier = Modifier
@@ -886,14 +837,11 @@ fun LoadErrorDialog(
         onDismissRequest = { /* Do nothing */ },
         title = { Text(stringResource(R.string.attention)) },
         text = {
-            Column(
-                verticalArrangement = Arrangement.Top
-            ) {
+            Column(verticalArrangement = Arrangement.Top) {
                 Text(
                     text = stringResource(R.string.csv_import_error),
                     fontSize = 15.sp,
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
                     text = "Reported error message:",
@@ -906,46 +854,36 @@ fun LoadErrorDialog(
             }
         },
         modifier = modifier,
-        confirmButton = {
-            TextButton(onClick = confirmError) {
-                Text(stringResource(R.string.ok))
-            }
-        },
+        confirmButton = { TextButton(onClick = confirmError) { Text(stringResource(R.string.ok)) } },
         containerColor = MaterialTheme.colorScheme.background,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
+        textContentColor = MaterialTheme.colorScheme.onBackground
     )
 }
 
 
 /** Other body conditions */
 @Composable
-fun ImportError(
+private fun ImportError(
     onTryAgain: () -> Unit,
     navigateToHome: () -> Unit,
     exception: Throwable,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(
-            modifier = Modifier
-                .weight(1.5f)
-        )
+        Spacer(Modifier.weight(1.5f))
         Text(
             text = "Error importing CSV!",
-            modifier = Modifier
-                .padding(bottom = 16.dp),
+            modifier = Modifier.padding(bottom = 16.dp),
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp
         )
         Text(
             text = "Please try again or return to cellar.",
-            modifier = Modifier
-                .padding(bottom = 16.dp),
+            modifier = Modifier.padding(bottom = 16.dp),
             fontSize = 18.sp,
         )
         Text(
@@ -965,7 +903,6 @@ fun ImportError(
         }
         TextButton(
             onClick = { onTryAgain() },
-            modifier = Modifier,
             shape = MaterialTheme.shapes.small,
         ) {
             Text(
@@ -983,7 +920,7 @@ fun ImportError(
                 fontSize = 18.sp,
             )
         }
-        Spacer(modifier = Modifier.weight(2f))
+        Spacer(Modifier.weight(2f))
     }
 }
 
@@ -991,7 +928,7 @@ fun ImportError(
 /** Custom composables */
 // Custom checkbox //
 @Composable
-fun LabeledCheckbox(
+private fun LabeledCheckbox(
     text: String,
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
@@ -1006,14 +943,18 @@ fun LabeledCheckbox(
     Row(
         modifier = modifier
             .padding(start = 1.dp)
-            .height(24.dp),
+            .height(24.dp)
+            .clickable(
+                indication = null,
+                interactionSource = null,
+                enabled = enabled
+            ) { onCheckedChange?.invoke(!checked) },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         Text(
             text = text,
-            modifier = Modifier
-                .width(width),
+            modifier = Modifier.width(width),
             color = if(!enabled) fontColor.copy(alpha = .5f) else fontColor,
             maxLines = maxLines,
         )
@@ -1024,11 +965,7 @@ fun LabeledCheckbox(
             modifier = Modifier
                 .triStateToggleable(
                     state = ToggleableState(checked),
-                    onClick = {
-                        if (onCheckedChange != null) {
-                            run { onCheckedChange(!checked) }
-                        }
-                    },
+                    onClick = { if (onCheckedChange != null) { run { onCheckedChange(!checked) } } },
                     enabled = enabled,
                     interactionSource = interactionSource,
                     indication = null
@@ -1044,7 +981,7 @@ fun LabeledCheckbox(
 // Field mapping composables //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateFormatField(
+private fun DateFormatField(
     label: String,
     selectedFormat: String,
     onFormatSelected: (String) -> Unit,
@@ -1068,10 +1005,7 @@ fun DateFormatField(
         "27 January, 2024 or 27 Jan, 2024"
     )
 
-    Column(
-        modifier = modifier
-            .padding(vertical = 4.dp)
-    ) {
+    Column(modifier.padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier
                 .padding(start = 8.dp)
@@ -1102,13 +1036,11 @@ fun DateFormatField(
             }
             Box(
                 modifier = Modifier
-                    .padding(0.dp)
                     .weight(1f)
             ) {
                 ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier
+                    onExpandedChange = { expanded = !expanded }
                 ) {
                     OutlinedTextField(
                         value = selectedFormat.ifBlank { "" },
@@ -1117,13 +1049,8 @@ fun DateFormatField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
-                        trailingIcon =
-                        {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        placeholder = {
-                            Text(text = placeholder)
-                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        placeholder = { Text(placeholder) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
@@ -1134,14 +1061,14 @@ fun DateFormatField(
                         ),
                         singleLine = true,
                         enabled = enabled
-                        )
+                    )
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         containerColor = LocalCustomColors.current.textField,
                     ) {
                         DropdownMenuItem(
-                            text = { Text(text = "") },
+                            text = { Text("") },
                             onClick = {
                                 onFormatSelected("")
                                 expanded = false
@@ -1149,7 +1076,7 @@ fun DateFormatField(
                         )
                         formats.forEach { format ->
                             DropdownMenuItem(
-                                text = { Text(text = format) },
+                                text = { Text(format) },
                                 onClick = {
                                     onFormatSelected(format)
                                     expanded = false
@@ -1161,8 +1088,7 @@ fun DateFormatField(
             }
 
             Column(
-                modifier = Modifier
-                    .width(54.dp),
+                modifier = Modifier.width(54.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -1170,8 +1096,7 @@ fun DateFormatField(
                     Checkbox(
                         checked = overwriteSelected,
                         onCheckedChange = onOverwrite,
-                        modifier = Modifier
-                            .offset(x = 6.dp),
+                        modifier = Modifier.offset(x = 6.dp),
                         enabled = importOption == ImportOption.OVERWRITE && enabled,
                     )
                 }
@@ -1181,7 +1106,7 @@ fun DateFormatField(
 }
 
 @Composable
-fun MaxValueField(
+private fun MaxValueField(
     label: String,
     maxValue: String,
     onMaxValueChange: (String) -> Unit,
@@ -1193,10 +1118,7 @@ fun MaxValueField(
     onOverwrite: (Boolean) -> Unit = {},
     importOption: ImportOption = ImportOption.SKIP,
 ) {
-    Column(
-        modifier = modifier
-            .padding(vertical = 4.dp)
-    ) {
+    Column(modifier.padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier
                 .padding(start = 8.dp)
@@ -1229,16 +1151,11 @@ fun MaxValueField(
                     )
                 )
             }
-            Box(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .weight(1f)
-            ) {
+            Box(Modifier.weight(1f)) {
                 OutlinedTextField(
                     value = maxValue,
                     onValueChange = onMaxValueChange,
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = enabled,
                     isError = error,
@@ -1265,8 +1182,7 @@ fun MaxValueField(
                 )
             }
             Column(
-                modifier = Modifier
-                    .width(54.dp),
+                modifier = Modifier.width(54.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -1274,8 +1190,7 @@ fun MaxValueField(
                     Checkbox(
                         checked = overwriteSelected,
                         onCheckedChange = onOverwrite,
-                        modifier = Modifier
-                            .offset(x = 6.dp),
+                        modifier = Modifier.offset(x = 6.dp),
                         enabled = importOption == ImportOption.OVERWRITE && enabled,
                     )
                 }
@@ -1287,7 +1202,7 @@ fun MaxValueField(
 @SuppressLint("ConfigurationScreenWidthHeight")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MappingField(
+private fun MappingField(
     label: String,
     selectedColumn: String,
     csvColumns: List<String>,
@@ -1305,10 +1220,7 @@ fun MappingField(
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val maxHeight by remember { mutableStateOf(screenHeight * .67f) }
 
-    Column(
-        modifier = modifier
-            .padding(vertical = 4.dp)
-    ) {
+    Column(modifier.padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier
                 .padding(start = 8.dp)
@@ -1330,22 +1242,16 @@ fun MappingField(
                         textAlign = TextAlign.Start,
                         lineBreak = LineBreak.Paragraph
                     ),
-                    modifier = Modifier
-                        .wrapContentHeight(),
+                    modifier = Modifier.wrapContentHeight(),
                     autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 16.sp, stepSize = .02.sp),
                     maxLines = maxLines,
                 )
             }
-            Box(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .weight(1f)
-            ) {
+            Box(Modifier.weight(1f)) {
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
                         value = selectedColumn.ifBlank { "" },
@@ -1354,13 +1260,8 @@ fun MappingField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
-                        trailingIcon =
-                        {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        placeholder = {
-                            Text(text = placeholder)
-                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        placeholder = { Text(placeholder) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
@@ -1376,8 +1277,7 @@ fun MappingField(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         containerColor = LocalCustomColors.current.textField,
-                        modifier = Modifier
-                            .heightIn(max = maxHeight)
+                        modifier = Modifier.heightIn(max = maxHeight)
                     ) {
                         DropdownMenuItem(
                             text = {
@@ -1405,8 +1305,7 @@ fun MappingField(
             }
 
             Column(
-                modifier = Modifier
-                    .width(54.dp),
+                modifier = Modifier.width(54.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -1414,8 +1313,7 @@ fun MappingField(
                     Checkbox(
                         checked = overwriteSelected,
                         onCheckedChange = onOverwrite,
-                        modifier = Modifier
-                            .offset(x = 6.dp),
+                        modifier = Modifier.offset(x = 6.dp),
                         enabled = importOption == ImportOption.OVERWRITE && enabled,
                     )
                 }

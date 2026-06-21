@@ -697,7 +697,7 @@ fun DetailsEntry(
                                 horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally),
                                 modifier = Modifier
                                     .hoverable(interactionSource)
-                                    .clickable(interactionSource, null) { /* do nothing, press listener */ }
+                                    .clickable(interactionSource, null) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
                             ) {
                                 Text(
                                     text = "Sync?",
@@ -707,9 +707,7 @@ fun DetailsEntry(
                                 )
                                 CustomCheckbox(
                                     checked = itemDetails.syncTins,
-                                    onCheckedChange = {
-                                        onValueChange(itemDetails.copy(syncTins = it))
-                                    },
+                                    onCheckedChange = { onValueChange(itemDetails.copy(syncTins = it)) },
                                     size = 34.dp,
                                     checkedIcon = R.drawable.check_box_24,
                                     uncheckedIcon = R.drawable.check_box_outline_24,
@@ -722,9 +720,7 @@ fun DetailsEntry(
                                         .fillMaxHeight()
                                         .width(40.dp)
                                         .clickable(indication = null, interactionSource = interactionSource) {
-                                            coroutineScope.launch {
-                                                tooltipState.show()
-                                            }
+                                            coroutineScope.launch { tooltipState.show() }
                                         }
                                 ) {
                                     Image(
@@ -762,8 +758,7 @@ fun DetailsEntry(
                     .clickable(
                         indication = null,
                         interactionSource = null,
-                        onClick = { onShowRatingPop(true) }
-                    ),
+                    ) { onShowRatingPop(true) },
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -794,7 +789,11 @@ fun DetailsEntry(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(0.dp),
+                    .padding(0.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = null
+                    ) { onValueChange(itemDetails.copy(favorite = !itemDetails.favorite)) },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -829,7 +828,11 @@ fun DetailsEntry(
             }
             Row(
                 modifier = Modifier
-                    .padding(0.dp),
+                    .padding(0.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = null
+                    ) { onValueChange(itemDetails.copy(disliked = !itemDetails.disliked)) },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -855,8 +858,6 @@ fun DetailsEntry(
                     checkedIcon = R.drawable.heartbroken_filled_24,
                     uncheckedIcon = R.drawable.heartbroken_outlined_24,
                     size = 34.dp,
-                    modifier = Modifier
-                        .padding(0.dp),
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContentColor = LocalCustomColors.current.disHeart,
                     )
@@ -868,7 +869,11 @@ fun DetailsEntry(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp),
+                .padding(bottom = 12.dp)
+                .clickable(
+                    indication = null,
+                    interactionSource = null
+                ) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -879,9 +884,7 @@ fun DetailsEntry(
             )
             CustomCheckbox(
                 checked = itemDetails.inProduction,
-                onCheckedChange = {
-                    onValueChange(itemDetails.copy(inProduction = it))
-                },
+                onCheckedChange = { onValueChange(itemDetails.copy(inProduction = it)) },
                 checkedIcon = R.drawable.check_box_24,
                 size = 34.dp,
                 uncheckedIcon = R.drawable.check_box_outline_24,

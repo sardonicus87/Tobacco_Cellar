@@ -22,14 +22,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,7 +57,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -711,21 +707,21 @@ private fun InStockSection(
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        LocalCheckboxWithLabel(
-            text = { "In-stock" },
-            checked = { inStock },
+        CheckboxWithLabel(
+            text = "In-stock",
+            checked = inStock,
             onCheckedChange = filterViewModel::updateSelectedInStock,
             modifier = Modifier,
-            enabled = { inStockEnabled || inStock },
-            allowResize = { true }
+            enabled = inStockEnabled || inStock,
+            allowResize = true
         )
-        LocalCheckboxWithLabel(
-            text = { "Out" },
-            checked = { outOfStock },
+        CheckboxWithLabel(
+            text = "Out",
+            checked = outOfStock,
             onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
-            enabled = { outOfStockEnabled || outOfStock },
-            allowResize = { false }
+            enabled = outOfStockEnabled || outOfStock,
+            allowResize = false
         )
     }
 }
@@ -746,7 +742,12 @@ private fun TriStateCheckWithLabel(
         modifier = modifier
             .padding(0.dp)
             .height(36.dp)
-            .offset(x = (-2).dp),
+            .offset(x = (-2).dp)
+            .clickable(
+                indication = null,
+                interactionSource = null,
+                enabled = enabled()
+            ) { onClick?.invoke() },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -754,8 +755,6 @@ private fun TriStateCheckWithLabel(
             TriStateCheckbox(
                 state = state(),
                 onClick = onClick,
-                modifier = Modifier
-                    .padding(0.dp),
                 enabled = enabled(),
                 colors = colors(),
                 interactionSource = interactionSource
@@ -769,61 +768,6 @@ private fun TriStateCheckWithLabel(
             color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
             fontSize = 15.sp,
             maxLines = maxLines(),
-        )
-    }
-}
-
-
-@Composable
-fun LocalCheckboxWithLabel(
-    text: () -> String,
-    checked: () -> Boolean,
-    onCheckedChange: ((Boolean) -> Unit)?,
-    modifier: Modifier = Modifier,
-    enabled: () -> Boolean = { true },
-    allowResize: () -> Boolean = { false },
-    interactionSource: MutableInteractionSource? = remember { MutableInteractionSource() }
-) {
-    Row(
-        modifier = modifier
-            .padding(0.dp)
-            .height(36.dp)
-            .offset(x = (-2).dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Box(
-            modifier = Modifier,
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Checkbox(
-                checked = checked(),
-                onCheckedChange = onCheckedChange,
-                modifier = Modifier
-                    .padding(0.dp),
-                enabled = enabled(),
-                colors = CheckboxDefaults.colors(),
-                interactionSource = interactionSource
-            )
-        }
-        Text(
-            text = text(),
-            style = LocalTextStyle.current.copy(
-                color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
-                lineHeight = TextUnit.Unspecified
-            ),
-            modifier = Modifier
-                .offset(x = (-4).dp)
-                .padding(end = 6.dp),
-            maxLines = 1,
-            fontSize = if (!allowResize()) 15.sp else TextUnit.Unspecified,
-            autoSize = if (!allowResize()) { null } else {
-                TextAutoSize.StepBased(
-                    maxFontSize = 15.sp,
-                    minFontSize = 9.sp,
-                    stepSize = .2.sp
-                )
-            }
         )
     }
 }
