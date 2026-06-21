@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,9 +42,13 @@ fun CheckboxWithLabel(
 ) {
     Row(
         modifier = modifier
-            .padding(0.dp)
             .height(height)
-            .offset(x = (-2).dp),
+            .offset(x = (-2).dp)
+            .clickable(
+                indication = null,
+                interactionSource = null,
+                enabled = enabled
+            ) { onCheckedChange(!checked) },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
