@@ -209,8 +209,7 @@ fun DatesBody(
                                         items = section.agingDue,
                                         navigateToDetails = navigateToDetails,
                                         modifier = Modifier
-                                            .fillMaxWidth(),
-                                        showTime = true
+                                            .fillMaxWidth()
                                     )
                                 } else {
                                     Spacer(Modifier.height(12.dp))
@@ -345,7 +344,6 @@ private fun AgingSection(
     navigateToDetails: (Int) -> Unit,
     modifier: Modifier = Modifier,
     showDate: Boolean = false,
-    showTime: Boolean = false
 ) {
     Column(
         modifier = modifier,
@@ -395,7 +393,7 @@ private fun AgingSection(
                         )
 
                         val end = buildString {
-                            if (showTime) append(" (${item.timeFrame})")
+                            append(" (${item.timeFrame})")
                             if (showDate) append(" (${item.date})")
                         }
                         if (end.isNotEmpty()) {

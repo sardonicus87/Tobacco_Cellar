@@ -31,8 +31,6 @@ import kotlin.math.sin
 fun PieChart(
     data: Map<String, Int>,
     modifier: Modifier = Modifier,
-    showLabels: Boolean = true,
-    showPercentages: Boolean = true,
     showValues: Boolean = false,
     colors: List<Color> = listOf(
         LocalCustomColors.current.pieOne,
@@ -45,16 +43,9 @@ fun PieChart(
         LocalCustomColors.current.pieEight,
         LocalCustomColors.current.pieNine,
         LocalCustomColors.current.pieTen),
-    onSliceLabelPosition: Float = .5f,
-    outsideSliceLabelPosition: Float = 0.5f,
-    outsideLabelThreshold: Float = 20f,
-    rotationOffset: Float = 270f,
-    textColor: Color = Color.Black,
-    labelBackground: Color = Color.Unspecified,
-    sortData: Boolean = false,
+    labelBackground: Color = Color.Unspecified
 ) {
     val total = data.values.sum()
-    val sortedData = if (sortData) { data.toList().sortedByDescending { it.second }.toMap() } else { data }
     val textMeasurer = rememberTextMeasurer()
 
     val isLightTheme = LocalCustomColors.current.isLightTheme
@@ -66,16 +57,16 @@ fun PieChart(
     ) {
         val centerX = size.width / 2
         val centerY = size.height / 2
-        val insideLabel = min(centerX, centerY) * onSliceLabelPosition
-        val outsideLabel = (min(centerX, centerY) * (1f)) + ((20.dp.toPx() * outsideSliceLabelPosition))
+        val insideLabel = min(centerX, centerY) * .6f
+        val outsideLabel = (min(centerX, centerY) * (1f)) + ((20.dp.toPx() * .6f))
 
         drawSlices(
-            sortedData, colors, total, rotationOffset
+            data, colors, total
         )
 
         drawLabels(
-            sortedData, total, rotationOffset, showLabels, showPercentages, showValues, textMeasurer, textColor, colors, labelBackground,
-            centerX, centerY, insideLabel, outsideLabel, outsideLabelThreshold, isLightTheme, background
+            data, total, showValues, textMeasurer, colors, labelBackground,
+            centerX, centerY, insideLabel, outsideLabel, isLightTheme, background
         )
     }
 }
@@ -84,9 +75,8 @@ private fun DrawScope.drawSlices(
     data: Map<String, Int>,
     colors: List<Color>,
     total: Int,
-    startAngle: Float,
 ) {
-    var currentStartAngle = startAngle
+    var currentStartAngle = 270f
 
     data.forEach { (label, value) ->
         val sweepAngle = (value.toFloat() / total) * 360f
@@ -105,24 +95,21 @@ private fun DrawScope.drawSlices(
 private fun DrawScope.drawLabels(
     data: Map<String, Int>,
     total: Int,
-    startAngle: Float,
-    showLabels: Boolean,
-    showPercentages: Boolean,
     showValues: Boolean,
     textMeasurer: TextMeasurer,
-    textColor: Color,
     colors: List<Color>,
     backgroundColor: Color,
     centerX: Float,
     centerY: Float,
     insideRadius: Float,
     outsideRadius: Float,
-    outsideLabelThreshold: Float,
     isLightTheme: Boolean,
     pageBackground: Color,
 ) {
+    val startAngle = 270f
     var currentStartAngle = startAngle
     var outsideLabelCount = 0
+    val outsideLabelThreshold = 25f
     val sliceCount = data.size
     val totalOutsideLabels = data.values.count { (it.toFloat() / total) * 360f < outsideLabelThreshold }
     val totalThinPercent = data.values.count {
@@ -179,76 +166,37 @@ private fun DrawScope.drawLabels(
         val radius = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
             outsideRadius
         } else {
-            if (sliceCount > 5 && isOther) {
-                insideRadius * .65f
-            } else {
-                insideRadius
-            }
+            if (sliceCount > 5 && isOther) { insideRadius * .65f }
+            else { insideRadius }
         }
 
         /** label coloring */
         val targetColor = listOf(colors[3], colors[4], colors[5], colors[6])
 
-        val labelColor = if (showLabels) {
-            if (totalOutsideLabels > 1) {
-                if (outsideLabelCount >= 1 && !isOther) {
-                    colors[data.keys.indexOf(label) % colors.size]
-                } else {
-                    textColor
-                }
-            } else {
-                textColor
+        val labelColor = if (totalOutsideLabels > 1) {
+            if (outsideLabelCount >= 1 && !isOther) { colors[data.keys.indexOf(label) % colors.size] }
+            else { Color.Black }
+        } else { Color.Black }
+
+        val percentColor = if (totalOutsideLabels > 1) {
+                if (outsideLabelCount >= 1 && !isOther) { colors[data.keys.indexOf(label) % colors.size] }
+                else { Color.Black }
+            } else { Color.Black }
+
+        val labelBg = if (totalOutsideLabels > 1) {
+            if (outsideLabelCount >= 1 && !isOther) {
+                if (isLightTheme && labelColor in targetColor) { Color.DarkGray.copy(alpha = 0.65f) }
+                else { pageBackground.copy(alpha = 0.75f) }
+            } else { backgroundColor }
+        } else { backgroundColor }
+
+        val percentBg = if (totalOutsideLabels > 1) {
+            if (outsideLabelCount >= 1 && !isOther) {
+                if (isLightTheme && percentColor in targetColor) { Color.DarkGray.copy(alpha = 0.65f) }
+                else { pageBackground.copy(alpha = 0.75f) }
             }
-        } else {
-            Color.Transparent
-        }
-        val percentColor = if (showLabels && showPercentages) {
-            if (totalOutsideLabels > 1) {
-                if (outsideLabelCount >= 1 && !isOther) {
-                    colors[data.keys.indexOf(label) % colors.size]
-                } else {
-                    textColor
-                }
-            } else {
-                textColor
-            }
-        } else {
-            Color.Transparent
-        }
-        val labelBg = if (showLabels) {
-            if (totalOutsideLabels > 1) {
-                if (outsideLabelCount >= 1 && !isOther) {
-                    if (isLightTheme && labelColor in targetColor) {
-                        Color.DarkGray.copy(alpha = 0.65f)
-                    } else {
-                        pageBackground.copy(alpha = 0.75f)
-                    }
-                } else {
-                    backgroundColor
-                }
-            } else {
-                backgroundColor
-            }
-        } else {
-            Color.Transparent
-        }
-        val percentBg = if (showLabels && showPercentages) {
-            if (totalOutsideLabels > 1) {
-                if (outsideLabelCount >= 1 && !isOther) {
-                    if (isLightTheme && percentColor in targetColor) {
-                        Color.DarkGray.copy(alpha = 0.65f)
-                    } else {
-                        pageBackground.copy(alpha = 0.75f)
-                    }
-                }  else {
-                    backgroundColor
-                }
-            } else {
-                backgroundColor
-            }
-        } else {
-            Color.Transparent
-        }
+            else { backgroundColor }
+        } else { backgroundColor }
 
 
         /** label text formatting */
@@ -285,15 +233,7 @@ private fun DrawScope.drawLabels(
         val labelHeight = textLabel.size.height.toFloat()
         val percentageWidth = percentageLabel.size.width.toFloat()
         val percentageHeight = percentageLabel.size.height.toFloat()
-        val combinedHeight = if (showLabels && showPercentages) {
-            labelHeight + percentageHeight // * .2f)
-        } else {
-            if (showLabels) {
-                labelHeight
-            } else {
-                percentageHeight
-            }
-        }
+        val combinedHeight = labelHeight + percentageHeight
 
         val labelX = centerX + radius * cos(Math.toRadians(midpointAngle.toDouble())).toFloat()
         val labelY = centerY + radius * sin(Math.toRadians(midpointAngle.toDouble())).toFloat()

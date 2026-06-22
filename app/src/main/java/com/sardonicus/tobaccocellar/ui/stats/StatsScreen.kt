@@ -623,19 +623,11 @@ private fun ChartsFormat(
         if (!showHistogram) {
             PieChart(
                 data = chartData(),
-                showLabels = true,
-                showPercentages = true,
                 showValues = showValue,
                 modifier = Modifier
                     .padding(top = 28.dp, bottom = 44.dp)
                     .fillMaxWidth(0.7f),
-                onSliceLabelPosition = 0.6f,
-                outsideSliceLabelPosition = 0.6f,
-                outsideLabelThreshold = 25f,
-                rotationOffset = 270f,
-                textColor = Color.Black,
-                labelBackground = Color.White.copy(alpha = 0.55f),
-                sortData = false
+                labelBackground = Color.White.copy(alpha = 0.55f)
             )
         } else {
             HistogramChart(

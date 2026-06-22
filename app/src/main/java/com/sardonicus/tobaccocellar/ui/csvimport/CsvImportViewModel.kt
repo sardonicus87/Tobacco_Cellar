@@ -56,10 +56,10 @@ class CsvImportViewModel(
         recordCount: Int
     ) {
         val updatedHeader = header.mapIndexed { index, value ->
-            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate(11)
+            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate()
         }
         val updatedFirstFullRecord = firstFullRecord.mapIndexed { index, value ->
-            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate(11)
+            if (value.isBlank()) "[Column ${index + 1}]" else value.truncate()
         }
 
         _csvImportState.value = CsvImportState(
@@ -85,9 +85,9 @@ class CsvImportViewModel(
         _csvErrorMessage.value = message ?: ""
     }
 
-    private fun String.truncate(maxLength: Int): String {
-        return if (length > maxLength) {
-            substring(0, minOf(8, maxLength - 3)) + "..."
+    private fun String.truncate(): String {
+        return if (length > 11) {
+            substring(0, minOf(8, 11 - 3)) + "..."
         } else {
             this
         }
@@ -529,7 +529,7 @@ class CsvImportViewModel(
 
                 delay(1500.milliseconds)
 
-                _importStatus.value = ImportStatus.Success(results)
+                _importStatus.value = ImportStatus.Success
                 _navigateToResults.emit(results)
 
             } catch (e: Exception) {
@@ -783,7 +783,7 @@ enum class ImportOption { SKIP, UPDATE, OVERWRITE }
 sealed class ImportStatus {
     object Idle : ImportStatus()
     object Loading : ImportStatus()
-    data class Success(val results: ImportResults) : ImportStatus()
+    object Success : ImportStatus()
     data class Error(val exception: Throwable) : ImportStatus()
 }
 

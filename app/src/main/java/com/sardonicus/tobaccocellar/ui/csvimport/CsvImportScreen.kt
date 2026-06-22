@@ -704,7 +704,6 @@ fun CsvLoadedBody(
                         val ratingNotBlank = mappingOptions.columnMap[CsvField.Rating]?.isNotBlank() == true
 
                         MaxValueField(
-                            label = "Max Possible\nCSV Rating:",
                             maxValue = mappingOptions.maxValueString,
                             onMaxValueChange = viewModel::updateMaxValue,
                             enabled = ratingNotBlank,
@@ -747,7 +746,6 @@ fun CsvLoadedBody(
                 )
 
                 DateFormatField(
-                    label = "CSV Date\nFormat:",
                     selectedFormat = mappingOptions.dateFormat,
                     onFormatSelected = viewModel::updateDateFormat,
                     enabled = mappingOptions.collateTins,
@@ -982,7 +980,6 @@ private fun LabeledCheckbox(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateFormatField(
-    label: String,
     selectedFormat: String,
     onFormatSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -1021,7 +1018,7 @@ private fun DateFormatField(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = label,
+                    text = "CSV Date\nFormat:",
                     modifier = Modifier,
                     style = TextStyle(
                         color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
@@ -1107,7 +1104,6 @@ private fun DateFormatField(
 
 @Composable
 private fun MaxValueField(
-    label: String,
     maxValue: String,
     onMaxValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -1134,7 +1130,7 @@ private fun MaxValueField(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = label,
+                    text = "Max Possible\nCSV Rating:",
                     modifier = Modifier,
                     softWrap = true,
                     maxLines = 2,

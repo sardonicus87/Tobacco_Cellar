@@ -34,7 +34,7 @@ class CsvHelper {
                     if (recordList.size > columnCount) columnCount = recordList.size
                     recordCount++
                 }
-                CsvResult.Success(header, emptyList(), firstFullRecord, columnCount, recordCount)
+                CsvResult.Success(header, firstFullRecord, columnCount, recordCount)
             } else CsvResult.Empty
         } catch (e: Exception) {
             CsvResult.Error(e)
@@ -129,7 +129,6 @@ class CsvHelper {
 sealed class CsvResult {
     data class Success(
         val header: List<String>,
-        val allRecords: List<List<String>>,
         val firstFullRecord: List<String>,
         val columnCount: Int,
         val recordCount: Int
