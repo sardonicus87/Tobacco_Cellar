@@ -84,14 +84,14 @@ class StatsViewModel(
                 ratingSum += item.rating
             }
 
-            typeMap.increment(item.type.ifBlank { "Unassigned" })
-            subgenreMap.increment(item.subGenre.ifBlank { "Unassigned" })
-            cutMap.increment(item.cut.ifBlank { "Unassigned" })
+            typeMap.increment(item.type.ifBlank { "(Unassigned)" })
+            subgenreMap.increment(item.subGenre.ifBlank { "(Unassigned)" })
+            cutMap.increment(item.cut.ifBlank { "(Unassigned)" })
 
-            if (fullItem.components.isEmpty()) componentMap.increment("None Assigned")
+            if (fullItem.components.isEmpty()) componentMap.increment("(None Assigned)")
             else fullItem.components.forEach { componentMap.increment(it.componentName) }
 
-            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("None Assigned")
+            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
             else fullItem.flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
             // Tins
@@ -103,7 +103,7 @@ class StatsViewModel(
             for (tin in fullItem.tins) {
                 if (!tin.finished) {
                     unfinishedCount++
-                    containerMap.increment(tin.container.ifBlank { "Unassigned" })
+                    containerMap.increment(tin.container.ifBlank { "(Unassigned)" })
                     if (tin.openDate != null) totalOpened++
 
                     if (tin.unit.isBlank()) allValid = false
@@ -133,12 +133,12 @@ class StatsViewModel(
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = if (!hasTins) null else totalOpened,
 
-            totalByType = remapUnassigned(typeMap.sortByValue(), "Unassigned"),
-            totalBySubgenre = remapUnassigned(subgenreMap.sortByValue(), "Unassigned"),
-            totalByCut = remapUnassigned(cutMap.sortByValue(), "Unassigned"),
-            totalByComponent = remapUnassigned(componentMap.sortByValue(), "None Assigned"),
-            totalByFlavoring = remapUnassigned(flavoringMap.sortByValue(), "None Assigned"),
-            totalByContainer = remapUnassigned(containerMap.sortByValue(), "Unassigned"),
+            totalByType = remapUnassigned(typeMap.sortByValue(), "(Unassigned)"),
+            totalBySubgenre = remapUnassigned(subgenreMap.sortByValue(), "(Unassigned)"),
+            totalByCut = remapUnassigned(cutMap.sortByValue(), "(Unassigned)"),
+            totalByComponent = remapUnassigned(componentMap.sortByValue(), "(None Assigned)"),
+            totalByFlavoring = remapUnassigned(flavoringMap.sortByValue(), "(None Assigned)"),
+            totalByContainer = remapUnassigned(containerMap.sortByValue(), "(Unassigned)"),
 
             rawLoading = false
         )
@@ -220,31 +220,31 @@ class StatsViewModel(
             val item = fullItem.items
             val relevant = item.id in filteredIds
 
-            val type = item.type.ifBlank { "Unassigned" }
-            val subgenre = item.subGenre.ifBlank { "Unassigned" }
-            val cut = item.cut.ifBlank { "Unassigned" }
+            val type = item.type.ifBlank { "(Unassigned)" }
+            val subgenre = item.subGenre.ifBlank { "(Unassigned)" }
+            val cut = item.cut.ifBlank { "(Unassigned)" }
 
             typeMap.increment(type)
             subgenreMap.increment(subgenre)
             cutMap.increment(cut)
 
-            if (fullItem.components.isEmpty()) componentMap.increment("None Assigned")
+            if (fullItem.components.isEmpty()) componentMap.increment("(None Assigned)")
             else fullItem.components.forEach { componentMap.increment(it.componentName) }
 
-            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("None Assigned")
+            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
             else fullItem.flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
-            fullItem.tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { "Unassigned" }) }
+            fullItem.tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { "(Unassigned)" }) }
 
             if (relevant) {
                 typeMapFiltered.increment(type)
                 subgenreMapFiltered.increment(subgenre)
                 cutMapFiltered.increment(cut)
 
-                if (fullItem.components.isEmpty()) componentMapFiltered.increment("None Assigned")
+                if (fullItem.components.isEmpty()) componentMapFiltered.increment("(None Assigned)")
                 else fullItem.components.forEach { componentMapFiltered.increment(it.componentName) }
 
-                if (fullItem.flavoring.isEmpty()) flavoringMapFiltered.increment("None Assigned")
+                if (fullItem.flavoring.isEmpty()) flavoringMapFiltered.increment("(None Assigned)")
                 else fullItem.flavoring.forEach { flavoringMapFiltered.increment(it.flavoringName) }
 
                 if (item.favorite) favoriteCount++
@@ -260,15 +260,15 @@ class StatsViewModel(
                 } else { unratedCount++ }
 
                 brandsByEntries.increment(item.brand)
-                typesByEntries.increment(item.type)
-                subgenresByEntries.increment(item.subGenre)
-                cutsByEntries.increment(item.cut)
+                typesByEntries.increment(type)
+                subgenresByEntries.increment(subgenre)
+                cutsByEntries.increment(cut)
 
                 if (item.quantity > 0) {
                     brandsByQuantity[item.brand] = (brandsByQuantity[item.brand] ?: 0) + item.quantity
-                    typesByQuantity[item.type] = (typesByQuantity[item.type] ?: 0) + item.quantity
-                    subgenresByQuantity[item.subGenre] = (subgenresByQuantity[item.subGenre] ?: 0) + item.quantity
-                    cutsByQuantity[item.cut] = (cutsByQuantity[item.cut] ?: 0) + item.quantity
+                    typesByQuantity[type] = (typesByQuantity[item.type] ?: 0) + item.quantity
+                    subgenresByQuantity[subgenre] = (subgenresByQuantity[item.subGenre] ?: 0) + item.quantity
+                    cutsByQuantity[cut] = (cutsByQuantity[item.cut] ?: 0) + item.quantity
                 }
 
                 // Tins
@@ -280,7 +280,7 @@ class StatsViewModel(
                     if (tin.tinId in filteredTinIds && !tin.finished) {
                         unfinishedTinsCount++
                         relevantTinsWeight.add(tin)
-                        containerMapFiltered.increment(tin.container.ifBlank { "Unassigned" })
+                        containerMapFiltered.increment(tin.container.ifBlank { "(Unassigned)" })
                         if (tin.openDate != null) totalOpened++
                         if (tin.unit.isBlank()) allValid = false
                         itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap)
@@ -312,12 +312,12 @@ class StatsViewModel(
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = totalOpened,
 
-            totalByType = typeMap.buildComp(typeMapFiltered, "Unassigned"),
-            totalBySubgenre = subgenreMap.buildComp(subgenreMapFiltered, "Unassigned"),
-            totalByCut = cutMap.buildComp(cutMapFiltered, "Unassigned"),
-            totalByComponent = componentMap.buildComp(componentMapFiltered, "None Assigned"),
-            totalByFlavoring = flavoringMap.buildComp(flavoringMapFiltered, "None Assigned"),
-            totalByContainer = containerMap.buildComp(containerMapFiltered, "Unassigned"),
+            totalByType = typeMap.buildComp(typeMapFiltered, "(Unassigned)"),
+            totalBySubgenre = subgenreMap.buildComp(subgenreMapFiltered, "(Unassigned)"),
+            totalByCut = cutMap.buildComp(cutMapFiltered, "(Unassigned)"),
+            totalByComponent = componentMap.buildComp(componentMapFiltered, "(None Assigned)"),
+            totalByFlavoring = flavoringMap.buildComp(flavoringMapFiltered, "(None Assigned)"),
+            totalByContainer = containerMap.buildComp(containerMapFiltered, "(Unassigned)"),
 
 
             brandsByEntries = brandsByEntries.reduceToTen(),
@@ -357,12 +357,12 @@ class StatsViewModel(
 
     val availableSections: StateFlow<AvailableSections> =
         combine(rawStats, filteredStats) { raw, filtered ->
-            val type = raw.totalByType.any { it.key != "Unassigned" }
-            val subgenre = raw.totalBySubgenre.any { it.key != "Unassigned" }
-            val cut = raw.totalByCut.any { it.key != "Unassigned" }
-            val component = raw.totalByComponent.any { it.key != "None Assigned" }
-            val flavoring = raw.totalByFlavoring.any { it.key != "None Assigned" }
-            val container = raw.totalByContainer.any { it.key != "Unassigned" }
+            val type = raw.totalByType.any { it.key != "(Unassigned)" }
+            val subgenre = raw.totalBySubgenre.any { it.key != "(Unassigned)" }
+            val cut = raw.totalByCut.any { it.key != "(Unassigned)" }
+            val component = raw.totalByComponent.any { it.key != "(None Assigned)" }
+            val flavoring = raw.totalByFlavoring.any { it.key != "(None Assigned)" }
+            val container = raw.totalByContainer.any { it.key != "(Unassigned)" }
 
             AvailableSections(
                 anyAvailable = subgenre || cut || component || flavoring || container,
