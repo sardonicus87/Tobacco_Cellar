@@ -460,13 +460,23 @@ fun CellarNavigation(
         }
     }
 
-    val currentStack = navigationState.currentStack
-    val mainKey = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
-    val lastKey = currentStack.lastOrNull()
-    val pairing = mainSecondaryMap[mainKey]
-    val validPairing = pairing != null && lastKey != null && lastKey::class in pairing.allowedSeconds
+    val validPairing by remember {
+        derivedStateOf {
+            val currentStack = navigationState.currentStack
+            val mainKey = currentStack.findLast { it is PaneInfo && it.paneType == PaneType.MAIN }
+            val lastKey = currentStack.lastOrNull()
+            val pairing = mainSecondaryMap.entries.find { map -> map.key::class == mainKey?.let { it::class } }?.value
 
-    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed, validPairing)
+            val valid = pairing != null && lastKey != null && lastKey::class in pairing.allowedSeconds
+
+            val topLevelPairing = mainSecondaryMap.entries.find { map -> map.key::class == navigationState.topLevelRoute::class }?.value
+            val isPending = twoPaneAllowed && currentStack.size == 1 && topLevelPairing != null
+
+            valid || isPending
+        }
+    }
+
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed) { validPairing }
 
     LaunchedEffect(twoPaneAllowed) {
         if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
