@@ -467,12 +467,11 @@ fun CellarNavigation(
             val lastKey = currentStack.lastOrNull()
             val pairing = mainSecondaryMap.entries.find { map -> map.key::class == mainKey?.let { it::class } }?.value
 
-            val valid = pairing != null && lastKey != null && lastKey::class in pairing.allowedSeconds
-
-            val topLevelPairing = mainSecondaryMap.entries.find { map -> map.key::class == navigationState.topLevelRoute::class }?.value
-            val isPending = twoPaneAllowed && currentStack.size == 1 && topLevelPairing != null
-
-            valid || isPending
+            if (mainKey != null && lastKey != null && mainKey::class == lastKey::class) {
+                true
+            } else {
+                pairing?.allowedSeconds?.contains(lastKey?.let { it::class }) ?: true
+            }
         }
     }
 
