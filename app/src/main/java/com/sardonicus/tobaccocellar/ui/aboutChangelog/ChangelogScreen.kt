@@ -63,6 +63,8 @@ fun ChangelogScreen (
     var scrollingFinished by rememberSaveable(targetVersion) { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
+    val twoPane by remember { mutableStateOf(isTwoPane) }
+
     LaunchedEffect(targetVersion) {
         val index = changelogEntries.indexOfFirst { it.versionCode == targetVersion }
 
@@ -90,7 +92,7 @@ fun ChangelogScreen (
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
-                overrideBack = isTwoPane,
+                overrideBack = twoPane,
             )
         },
     ) { innerPadding ->
