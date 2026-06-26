@@ -71,8 +71,6 @@ class Navigator(
     }
 
     fun goBack() {
-        val (mainBefore, secondBefore) = findPanes(state.currentStack)
-
         state.cameFrom = state.currentStack.lastOrNull()
 
         val currentStack = state.backStacks[state.topLevelRoute] ?: error("Stack for ${state.topLevelRoute} not found")
@@ -89,12 +87,6 @@ class Navigator(
             state.topLevelRoute = state.startRoute
         } else {
             currentStack.removeLastOrNull()
-        }
-
-
-        val (mainAfter, secondAfter) = findPanes(state.currentStack)
-        if (mainBefore != mainAfter && secondBefore != secondAfter) {
-            state.twoPaneSceneKey.intValue++
         }
     }
 }
