@@ -1,8 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
-import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -104,43 +104,28 @@ fun CellarNavigation(
     val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
         val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
 
-        val slideTransition = if (!navigationState.isTwoPane || (key is PaneInfo && key.paneType == PaneType.NONE)) {
-            transitionSpec {
-                slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
-            } + popTransitionSpec {
-                EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
-            } + predictivePopTransitionSpec { swipeEdge ->
-                if (isGestureNav) {
-                    when (swipeEdge) {
-                        NavigationEvent.EDGE_RIGHT -> {
-                            slideInHorizontally(tween(500)) { it / 2 } togetherWith
-                                    slideOutHorizontally(tween(500)) { -it / 2 }
-                        }
-
-                        NavigationEvent.EDGE_LEFT -> {
-                            slideInHorizontally(tween(500)) { -it / 2 } togetherWith
-                                    slideOutHorizontally(tween(500)) { it / 2 }
-                        }
-
-                        else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+        val slideTrans =
+            if (navigationState.cameFrom is BlendDetailsDestination) { slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it } }
+            else slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
+        val slidePop = EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+        val slidePredictive = { edge: Int ->
+            if (isGestureNav) {
+                when (edge) {
+                    NavigationEvent.EDGE_RIGHT -> {
+                        EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { -it / 2 } + fadeOut()
                     }
-                } else {
-                    EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+                    NavigationEvent.EDGE_LEFT -> {
+                        EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it / 2 } + fadeOut()
+                    }
+                    else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
                 }
-            }
-        } else emptyMap()
+            } else slidePop
+        }
 
-        val twoPaneSlide: Map<String, ContentTransform> = if (navigationState.isTwoPane) {
-            mapOf(
-                TwoPaneScene.PANE_ENTER to
-                        if (navigationState.cameFrom is BlendDetailsDestination) {
-                            slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it }
-                        } else {
-                            slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
-                        },
-                TwoPaneScene.PANE_EXIT to (EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it })
-            )
-        } else emptyMap()
+        val slideTransition = transitionSpec { slideTrans } + popTransitionSpec { slidePop } +
+            predictivePopTransitionSpec {slidePredictive(it) } +
+            mapOf("transitionSpec" to slideTrans, "popTransitionSpec" to slidePop, "predictivePopTransitionSpec" to slidePredictive)
+
 
         when (key) {
             is HomeDestination -> NavEntry(key, metadata = paneInfo) {
@@ -183,7 +168,7 @@ fun CellarNavigation(
                 )
             }
 
-            is BlendDetailsDestination -> NavEntry(key, metadata = slideTransition + twoPaneSlide + paneInfo) {
+            is BlendDetailsDestination -> NavEntry(key, metadata = slideTransition + paneInfo) {
                 val viewModel: BlendDetailsViewModel = viewModel(
                     key = key.itemsId.toString(),
                     factory = viewModelFactory {
@@ -425,7 +410,7 @@ fun CellarNavigation(
                 )
             }
 
-            is ChangelogDestination -> NavEntry(key, metadata = slideTransition + twoPaneSlide + paneInfo) {
+            is ChangelogDestination -> NavEntry(key, metadata = slideTransition + paneInfo) {
                 ChangelogScreen(
                     onNavigateUp = { navigator.goBack() },
                     changelogEntries = key.changelogEntries,
@@ -474,7 +459,6 @@ fun CellarNavigation(
             }
         }
     }
-
     val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed) { validPairing }
 
     LaunchedEffect(twoPaneAllowed) {
@@ -501,17 +485,20 @@ fun CellarNavigation(
         }
     }
 
-    NavDisplay(
-        entries = navigationState.toEntries(entryProvider),
-        modifier = modifier,
-        onBack = { navigator.goBack() },
-        sceneStrategies = listOf(twoPaneScene, SinglePaneSceneStrategy()),
-        transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
-        popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
-        predictivePopTransitionSpec = {
-            if (isGestureNav && initialState::class != TwoPaneStrategy::class) {
-                fadeIn() togetherWith scaleOut(targetScale = 0.7f)
-            } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
-        }
-    )
+    SharedTransitionLayout {
+        NavDisplay(
+            entries = navigationState.toEntries(entryProvider),
+            modifier = modifier,
+            onBack = { navigator.goBack() },
+            sceneStrategies = listOf(twoPaneScene, SinglePaneSceneStrategy()),
+            sharedTransitionScope = this,
+            transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
+            popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
+            predictivePopTransitionSpec = {
+                if (isGestureNav && initialState::class != TwoPaneStrategy::class) {
+                    fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f)
+                } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
+            }
+        )
+    }
 }
