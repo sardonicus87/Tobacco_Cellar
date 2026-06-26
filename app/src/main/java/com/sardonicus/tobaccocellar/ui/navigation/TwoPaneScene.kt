@@ -72,6 +72,7 @@ import kotlin.time.Duration.Companion.milliseconds
 data class TwoPaneScene<T : Any>(
     override val key: Any,
     override val previousEntries: List<NavEntry<T>>,
+    override val metadata: Map<String, Any>,
     val interceptBack: Boolean,
     val mainEntry: NavEntry<T>,
     val secondEntry: NavEntry<T>,
@@ -153,11 +154,7 @@ data class TwoPaneScene<T : Any>(
         }
     }
 
-    companion object {
-        const val PANE_TYPE = "PaneType"
-        const val PANE_ENTER = "PaneEnter"
-        const val PANE_EXIT = "PaneExit"
-    }
+    companion object { const val PANE_TYPE = "PaneType" }
 }
 
 
@@ -201,6 +198,7 @@ class TwoPaneStrategy<T : Any>(
         return TwoPaneScene(
             key = sceneKey,
             previousEntries = previousEntries,
+            metadata = emptyMap(),
             interceptBack = interceptBack,
             mainEntry = mainEntry,
             secondEntry = secondEntry,
@@ -229,8 +227,9 @@ private fun <T : Any> PaneContainer(
         if (paneState.currentState != entry) paneState.animateTo(entry) else paneState.snapTo(entry)
     }
 
-    val contentTransform = (transition.targetState.metadata[if (isMain) TwoPaneScene.PANE_ENTER else TwoPaneScene.PANE_ENTER] as? ContentTransform)
-        ?: (transition.currentState.metadata[if (isMain) TwoPaneScene.PANE_EXIT else TwoPaneScene.PANE_EXIT] as? ContentTransform)
+    val contentTransform =
+        (transition.targetState.metadata["transitionSpec"] as? ContentTransform)
+        ?: (transition.currentState.metadata["popTransitionSpec"] as? ContentTransform)
         ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
 
     val isBack = isBack(remember(transition.currentState) { fullBackStack }, fullBackStack)
