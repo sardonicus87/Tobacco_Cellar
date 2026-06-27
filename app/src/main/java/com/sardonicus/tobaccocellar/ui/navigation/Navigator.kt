@@ -13,8 +13,6 @@ class Navigator(
         if (currentTime - lastNavigationTime < 300) return
         lastNavigationTime = currentTime
 
-        val (mainBefore, secondBefore) = findPanes(state.currentStack)
-
         state.cameFrom = state.currentStack.lastOrNull()
 
         if (route in state.backStacks.keys) { // is a top level route, switch to that backstack
@@ -63,11 +61,6 @@ class Navigator(
             }
 
         }
-
-        val (mainAfter, secondAfter) = findPanes(state.currentStack)
-        if (mainBefore != mainAfter && secondBefore != secondAfter) {
-            state.twoPaneSceneKey.intValue++
-        }
     }
 
     fun goBack() {
@@ -89,10 +82,4 @@ class Navigator(
             currentStack.removeLastOrNull()
         }
     }
-}
-
-private fun findPanes(stack: List<NavKey>): Pair<NavKey?, NavKey?> {
-    val main = stack.findLast { (it as? PaneInfo)?.paneType == PaneType.MAIN }
-    val second = stack.findLast { (it as? PaneInfo)?.paneType == PaneType.SECOND }
-    return main to second
 }
