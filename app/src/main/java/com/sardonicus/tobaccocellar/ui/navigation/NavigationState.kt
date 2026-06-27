@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
@@ -40,18 +39,16 @@ fun rememberNavigationState(
 
     LaunchedEffect(topLevelRoutes, twoPaneAllowed, topLevelRoute.value) {
         if (twoPaneAllowed) {
-            backStacks[topLevelRoute.value]?.let { currentStack ->
-                val currentTop = topLevelRoute.value
-
-                mainSecondaryMap[currentTop]?.let {
-                    if (currentStack.getOrNull(1) != it.defaultSecondary) {
-                        currentStack.add(1, it.defaultSecondary)
+            backStacks.forEach { (topLevelRoute, stack) ->
+                mainSecondaryMap[topLevelRoute]?.let {
+                    if (stack.getOrNull(1) != it.defaultSecondary) {
+                        stack.add(1, it.defaultSecondary)
                     }
                 }
             }
         } else {
-            backStacks.forEach { (navKey, stack) ->
-                mainSecondaryMap[navKey]?.let {
+            backStacks.forEach { (topLevelRoute, stack) ->
+                mainSecondaryMap[topLevelRoute]?.let {
                     if (stack.getOrNull(1) == it.defaultSecondary) {
                         stack.remove(it.defaultSecondary)
                     }
@@ -92,8 +89,6 @@ class NavigationState(
     var cameFrom: NavKey? by mutableStateOf(currentStack.lastOrNull())
 
     // For TwoPane Scene
-    val twoPaneSceneKey = mutableIntStateOf(0)
-
     val isTwoPane: Boolean
         get() {
             if (!twoPaneAllowed) return false
