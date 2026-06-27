@@ -67,12 +67,12 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.milliseconds
 
 data class TwoPaneScene<T : Any>(
-    override val key: Any,
     override val previousEntries: List<NavEntry<T>>,
-    override val metadata: Map<String, Any>,
     val interceptBack: Boolean,
     val mainEntry: NavEntry<T>,
     val secondEntry: NavEntry<T>,
@@ -80,7 +80,9 @@ data class TwoPaneScene<T : Any>(
     val onBack: () -> Unit,
     val filterViewModel: FilterViewModel
 ) : Scene<T> {
+    override val key: Any = 0
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
+    override val metadata: Map<String, Any> = emptyMap()
 
     @SuppressLint("ConfigurationScreenWidthHeight")
     override val content: @Composable (() -> Unit) = {
@@ -102,30 +104,45 @@ data class TwoPaneScene<T : Any>(
         )
 
         var showButton by remember { mutableStateOf(false) }
+        var longDelay by remember { mutableStateOf(true) }
 
         LaunchedEffect(showButton, secondExpanded) {
-            if (showButton) {
-                if (secondExpanded) {
-                    snapshotFlow { paneWidth }.first { it >= expandedWidth }
-                    delay(3000.milliseconds)
-                    showButton = false
-                }
+            if (showButton && secondExpanded) {
+                snapshotFlow { paneWidth }.first { it >= (expandedWidth * .75f) }
+                if (longDelay) { delay(3000.milliseconds) }
+                showButton = false
+                longDelay = true
+            }
+        }
+
+        val mainPaneState = remember { SeekableTransitionState(mainEntry) }
+        val secondPaneState = remember { SeekableTransitionState(secondEntry) }
+        val mainTransition = rememberTransition(mainPaneState)
+        val secondTransition = rememberTransition(secondPaneState)
+
+        LaunchedEffect(mainEntry, secondEntry) {
+            yield()
+            launch {
+                if (mainPaneState.currentState != mainEntry) mainPaneState.animateTo(mainEntry)
+                else mainPaneState.snapTo(mainEntry)
+            }
+            launch {
+                if (secondPaneState.currentState != secondEntry) secondPaneState.animateTo(secondEntry)
+                else secondPaneState.snapTo(secondEntry)
             }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxSize()) {
-                // Main pane
                 PaneContainer(
-                    entry = mainEntry,
+                    transition = mainTransition,
                     fullBackStack = fullBackStack,
                     isMain = true,
                     modifier = Modifier.weight(1f)
                 )
 
-                // Second pane
                 PaneContainer(
-                    entry = secondEntry,
+                    transition = secondTransition,
                     fullBackStack = fullBackStack,
                     isMain = false,
                     modifier = Modifier
@@ -148,7 +165,10 @@ data class TwoPaneScene<T : Any>(
                 TwoPaneButton(
                     secondExpanded = secondExpanded,
                     expansionTween = expansionTween,
-                    toggleSecondPane = filterViewModel::toggleSecondPane
+                    toggleSecondPane = {
+                        if (!secondExpanded)  longDelay = false
+                        filterViewModel.toggleSecondPane()
+                    }
                 )
             }
         }
@@ -159,12 +179,11 @@ data class TwoPaneScene<T : Any>(
 
 
 @Composable
-fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean, enabled: Boolean, validPairing: () -> Boolean): TwoPaneStrategy<T> {
+fun <T : Any> rememberTwoPaneStrategy(interceptBack: Boolean, enabled: Boolean, validPairing: () -> Boolean): TwoPaneStrategy<T> {
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
-    return remember(sceneKey, interceptBack, enabled, filterViewModel) {
+    return remember(interceptBack, enabled, filterViewModel) {
         TwoPaneStrategy(
-            sceneKey,
             interceptBack,
             enabled,
             validPairing,
@@ -175,7 +194,6 @@ fun <T : Any> rememberTwoPaneStrategy(sceneKey: Int, interceptBack: Boolean, ena
 
 
 class TwoPaneStrategy<T : Any>(
-    private val sceneKey: Int,
     private val interceptBack: Boolean,
     private val enabled: Boolean,
     private val validPairing: () -> Boolean,
@@ -196,9 +214,7 @@ class TwoPaneStrategy<T : Any>(
         val previousEntries = entries.filter { it.contentKey != mainEntry.contentKey && it.contentKey != secondEntry.contentKey }
 
         return TwoPaneScene(
-            key = sceneKey,
             previousEntries = previousEntries,
-            metadata = emptyMap(),
             interceptBack = interceptBack,
             mainEntry = mainEntry,
             secondEntry = secondEntry,
@@ -212,28 +228,23 @@ class TwoPaneStrategy<T : Any>(
 
 @Composable
 private fun <T : Any> PaneContainer(
-    entry: NavEntry<T>,
+    transition: Transition<NavEntry<T>>,
     fullBackStack: List<NavEntry<T>>,
     isMain: Boolean,
     modifier: Modifier = Modifier,
     expandedWidth: Dp = 0.dp,
     onEnter: () -> Unit = {}
 ) {
-    val paneState = remember { SeekableTransitionState(entry) }
-    val transition = rememberTransition(paneState)
-
-    LaunchedEffect(entry) {
-        onEnter()
-        if (paneState.currentState != entry) paneState.animateTo(entry) else paneState.snapTo(entry)
-    }
+    LaunchedEffect(transition.targetState) { onEnter() }
 
     val contentTransform =
         (transition.targetState.metadata["transitionSpec"] as? ContentTransform)
         ?: (transition.currentState.metadata["popTransitionSpec"] as? ContentTransform)
         ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
 
+    val isDeparture = fullBackStack.none { it.contentKey.toString().substringBefore('(') == transition.currentState.contentKey.toString().substringBefore('(') }
     val isBack = isBack(remember(transition.currentState) { fullBackStack }, fullBackStack)
-    val targetZIndex = if (isBack) -1f else 1f
+    val targetZIndex = if (isBack || isDeparture) -1f else 1f
 
     val contentModifier = if (isMain) modifier else {
         modifier.layout { measurable, constraints ->
