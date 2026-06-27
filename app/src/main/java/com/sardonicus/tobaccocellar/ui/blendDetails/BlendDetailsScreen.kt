@@ -44,6 +44,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -92,6 +93,7 @@ fun BlendDetailsScreen(
     viewModel: BlendDetailsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val twoPane by remember { mutableStateOf(isTwoPane) }
 
     val blendDetails by viewModel.blendDetails.collectAsState()
     val selectionFocused by viewModel.selectionFocused.collectAsState()
@@ -137,7 +139,7 @@ fun BlendDetailsScreen(
                     } else { onNavigateUp() }
                 },
                 showMenu = false,
-                overrideBack = isTwoPane,
+                overrideBack = twoPane,
                 modifier = Modifier
             )
         }
