@@ -459,7 +459,7 @@ fun CellarNavigation(
             }
         }
     }
-    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.twoPaneSceneKey.intValue, navigationState.interceptBack, twoPaneAllowed) { validPairing }
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.interceptBack, twoPaneAllowed) { validPairing }
 
     LaunchedEffect(twoPaneAllowed) {
         if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
