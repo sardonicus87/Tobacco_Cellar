@@ -360,9 +360,10 @@ private fun BlendDetailsBody(
                         }
                         Column(
                             modifier = Modifier
+                                .width(IntrinsicSize.Max)
                                 .align(Alignment.BottomEnd)
                                 .padding(bottom = 2.dp),
-                            horizontalAlignment = Alignment.End,
+                            horizontalAlignment = Alignment.Start,
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             Text(
@@ -371,15 +372,14 @@ private fun BlendDetailsBody(
                                 fontSize = 12.sp,
                                 lineHeight = 1.em,
                                 letterSpacing = 0.5.sp,
-                                textAlign = TextAlign.End,
                                 color = MaterialTheme.colorScheme.outline
                             )
                             Text(
                                 text = blendDetails.lastModified,
-                                modifier = Modifier,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = if (blendDetails.lastModified == "n/a") TextAlign.Center else TextAlign.Start,
                                 fontSize = 12.sp,
                                 lineHeight = 1.em,
-                                textAlign = TextAlign.End,
                                 color = MaterialTheme.colorScheme.outline
                             )
                         }
