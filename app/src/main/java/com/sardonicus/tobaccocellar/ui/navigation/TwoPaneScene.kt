@@ -108,7 +108,7 @@ data class TwoPaneScene<T : Any>(
 
         LaunchedEffect(showButton, secondExpanded) {
             if (showButton && secondExpanded) {
-                snapshotFlow { paneWidth }.first { it >= (expandedWidth * .75f) }
+                snapshotFlow { paneWidth }.first { it >= expandedWidth }
                 if (longDelay) { delay(3000.milliseconds) }
                 showButton = false
                 longDelay = true
