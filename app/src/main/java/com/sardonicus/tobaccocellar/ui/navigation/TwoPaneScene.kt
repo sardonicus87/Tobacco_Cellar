@@ -90,9 +90,14 @@ data class TwoPaneScene<T : Any>(
         val configuration = LocalConfiguration.current
         val expandedWidth = configuration.screenWidthDp.dp / 2
         val expansionTween = 300
+        var showButton by remember { mutableStateOf(false) }
+        var longDelay by remember { mutableStateOf(true) }
 
         BackHandler(enabled = interceptBack, onBack = onBack)
-        BackHandler(!secondExpanded, filterViewModel::toggleSecondPane)
+        BackHandler(!secondExpanded) {
+            longDelay = false
+            filterViewModel.toggleSecondPane()
+        }
 
         val paneWidth by animateDpAsState(
             targetValue = if (secondExpanded) expandedWidth else 32.dp,
@@ -102,9 +107,6 @@ data class TwoPaneScene<T : Any>(
             targetValue = if (secondExpanded) 12.dp else 0.dp,
             animationSpec = tween(expansionTween)
         )
-
-        var showButton by remember { mutableStateOf(false) }
-        var longDelay by remember { mutableStateOf(true) }
 
         LaunchedEffect(showButton, secondExpanded) {
             if (showButton && secondExpanded) {
@@ -150,7 +152,10 @@ data class TwoPaneScene<T : Any>(
                         .graphicsLayer { clip = true }
                         .tapToggle(secondExpanded) { showButton = true },
                     expandedWidth = expandedWidth,
-                    onEnter = { filterViewModel.setSecondPaneExpansion(true) }
+                    onEnter = {
+                        longDelay = false
+                        filterViewModel.setSecondPaneExpansion(true)
+                    }
                 )
             }
 
