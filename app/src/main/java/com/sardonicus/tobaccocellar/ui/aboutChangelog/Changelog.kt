@@ -14,6 +14,23 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 53,
+        versionNumber = "5.2.10",
+        buildDate = "28 Jun, 2026",
+        improvements = listOf(
+            "Fixed displays of \"last modified\" to ensure the automatic \"Epoch\" date isn't " +
+                    "used when there's no valid last modified date.",
+            "Dual pane layouts: navigation animation improvements.",
+            "Other minor UI/UX tweaks, performance improvements (e.g. text labels next to " +
+                    "checkboxes now also activate the boxes).",
+        ),
+        bugFixes = listOf(
+            "Stats Screen: charts for Types, Subgenres, and Cuts were missing the labels for " +
+                    "\"Unassigned\" slices (though the slice and percentage were shown)."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 52,
         versionNumber = "5.2.9",
         buildDate = "19 Jun, 2026",
