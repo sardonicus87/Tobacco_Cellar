@@ -72,6 +72,7 @@ import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.milliseconds
 
 data class TwoPaneScene<T : Any>(
+    override val key: Any,
     override val previousEntries: List<NavEntry<T>>,
     val interceptBack: Boolean,
     val mainEntry: NavEntry<T>,
@@ -80,7 +81,6 @@ data class TwoPaneScene<T : Any>(
     val onBack: () -> Unit,
     val filterViewModel: FilterViewModel
 ) : Scene<T> {
-    override val key: Any = 0
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
     override val metadata: Map<String, Any> = emptyMap()
 
@@ -214,6 +214,7 @@ class TwoPaneStrategy<T : Any>(
         val previousEntries = entries.filter { it.contentKey != mainEntry.contentKey && it.contentKey != secondEntry.contentKey }
 
         return TwoPaneScene(
+            key = 0,
             previousEntries = previousEntries,
             interceptBack = interceptBack,
             mainEntry = mainEntry,
@@ -238,9 +239,9 @@ private fun <T : Any> PaneContainer(
     LaunchedEffect(transition.targetState) { onEnter() }
 
     val contentTransform =
-        (transition.targetState.metadata["transitionSpec"] as? ContentTransform)
-        ?: (transition.currentState.metadata["popTransitionSpec"] as? ContentTransform)
-        ?: (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
+        (transition.targetState.metadata["transitionSpec"] as? ContentTransform) ?:
+        (transition.currentState.metadata["popTransitionSpec"] as? ContentTransform) ?:
+        (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
 
     val isDeparture = fullBackStack.none { it.contentKey.toString().substringBefore('(') == transition.currentState.contentKey.toString().substringBefore('(') }
     val isBack = isBack(remember(transition.currentState) { fullBackStack }, fullBackStack)
