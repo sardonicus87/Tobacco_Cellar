@@ -1283,12 +1283,6 @@ class FilterViewModel (
 
 
     /** Final UI States and hoisted states for other stuff **/
-    // TwoPane stuff
-    private val _secondPaneExpanded = MutableStateFlow(true)
-    val secondPaneExpanded = _secondPaneExpanded.asStateFlow()
-    fun toggleSecondPane() { _secondPaneExpanded.value = !_secondPaneExpanded.value }
-    fun setSecondPaneExpansion(expanded: Boolean) { _secondPaneExpanded.value = expanded }
-
     // top app bar
     val menuExpanded = MutableStateFlow(false)
     val menuState = MutableStateFlow(MenuState.MAIN)
