@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,8 +58,6 @@ import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
-import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -79,24 +76,24 @@ data class TwoPaneScene<T : Any>(
     val secondEntry: NavEntry<T>,
     val fullBackStack: List<NavEntry<T>>,
     val onBack: () -> Unit,
-    val filterViewModel: FilterViewModel
 ) : Scene<T> {
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
     override val metadata: Map<String, Any> = emptyMap()
 
     @SuppressLint("ConfigurationScreenWidthHeight")
     override val content: @Composable (() -> Unit) = {
-        val secondExpanded by filterViewModel.secondPaneExpanded.collectAsState()
         val configuration = LocalConfiguration.current
         val expandedWidth = configuration.screenWidthDp.dp / 2
         val expansionTween = 300
+        var initialComposition = remember { mutableStateOf(true) }
+        var secondExpanded by remember { mutableStateOf(true) }
         var showButton by remember { mutableStateOf(false) }
         var longDelay by remember { mutableStateOf(true) }
 
         BackHandler(enabled = interceptBack, onBack = onBack)
         BackHandler(!secondExpanded) {
             longDelay = false
-            filterViewModel.toggleSecondPane()
+            secondExpanded = true
         }
 
         val paneWidth by animateDpAsState(
@@ -124,13 +121,20 @@ data class TwoPaneScene<T : Any>(
 
         LaunchedEffect(mainEntry, secondEntry) {
             yield()
-            launch {
-                if (mainPaneState.currentState != mainEntry) mainPaneState.animateTo(mainEntry)
-                else mainPaneState.snapTo(mainEntry)
-            }
-            launch {
-                if (secondPaneState.currentState != secondEntry) secondPaneState.animateTo(secondEntry)
-                else secondPaneState.snapTo(secondEntry)
+            if (initialComposition.value) {
+                mainPaneState.snapTo(mainEntry)
+                secondPaneState.snapTo(secondEntry)
+                delay(50.milliseconds)
+                initialComposition.value = false
+            } else {
+                launch {
+                    if (mainPaneState.currentState != mainEntry) mainPaneState.animateTo(mainEntry)
+                    else mainPaneState.snapTo(mainEntry)
+                }
+                launch {
+                    if (secondPaneState.currentState != secondEntry) secondPaneState.animateTo(secondEntry)
+                    else secondPaneState.snapTo(secondEntry)
+                }
             }
         }
 
@@ -154,7 +158,7 @@ data class TwoPaneScene<T : Any>(
                     expandedWidth = expandedWidth,
                     onEnter = {
                         longDelay = false
-                        filterViewModel.setSecondPaneExpansion(true)
+                        secondExpanded = true
                     }
                 )
             }
@@ -172,7 +176,7 @@ data class TwoPaneScene<T : Any>(
                     expansionTween = expansionTween,
                     toggleSecondPane = {
                         if (!secondExpanded)  longDelay = false
-                        filterViewModel.toggleSecondPane()
+                        secondExpanded = !secondExpanded
                     }
                 )
             }
@@ -185,14 +189,12 @@ data class TwoPaneScene<T : Any>(
 
 @Composable
 fun <T : Any> rememberTwoPaneStrategy(interceptBack: Boolean, enabled: Boolean, validPairing: () -> Boolean): TwoPaneStrategy<T> {
-    val filterViewModel = LocalCellarApplication.current.filterViewModel
 
-    return remember(interceptBack, enabled, filterViewModel) {
+    return remember(interceptBack, enabled) {
         TwoPaneStrategy(
             interceptBack,
             enabled,
             validPairing,
-            filterViewModel
         )
     }
 }
@@ -202,7 +204,6 @@ class TwoPaneStrategy<T : Any>(
     private val interceptBack: Boolean,
     private val enabled: Boolean,
     private val validPairing: () -> Boolean,
-    private val filterViewModel: FilterViewModel
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (!enabled) return null
@@ -226,7 +227,6 @@ class TwoPaneStrategy<T : Any>(
             secondEntry = secondEntry,
             fullBackStack = entries,
             onBack = this.onBack,
-            filterViewModel = filterViewModel
         )
     }
 }
