@@ -84,7 +84,6 @@ data class TwoPaneScene<T : Any>(
     override val content: @Composable (() -> Unit) = {
         val configuration = LocalConfiguration.current
         val expandedWidth = configuration.screenWidthDp.dp / 2
-        val expansionTween = 300
         var initialComposition = remember { mutableStateOf(true) }
         var secondExpanded by remember { mutableStateOf(true) }
         var showButton by remember { mutableStateOf(false) }
@@ -98,11 +97,11 @@ data class TwoPaneScene<T : Any>(
 
         val paneWidth by animateDpAsState(
             targetValue = if (secondExpanded) expandedWidth else 32.dp,
-            animationSpec = tween(expansionTween)
+            animationSpec = tween(300)
         )
         val buttonOffset by animateDpAsState(
             targetValue = if (secondExpanded) 12.dp else 0.dp,
-            animationSpec = tween(expansionTween)
+            animationSpec = tween(300)
         )
 
         LaunchedEffect(showButton, secondExpanded) {
@@ -119,7 +118,7 @@ data class TwoPaneScene<T : Any>(
         val mainTransition = rememberTransition(mainPaneState)
         val secondTransition = rememberTransition(secondPaneState)
 
-        LaunchedEffect(mainEntry, secondEntry) {
+        LaunchedEffect(mainEntry.contentKey, secondEntry.contentKey) {
             yield()
             if (initialComposition.value) {
                 mainPaneState.snapTo(mainEntry)
@@ -128,11 +127,11 @@ data class TwoPaneScene<T : Any>(
                 initialComposition.value = false
             } else {
                 launch {
-                    if (mainPaneState.currentState != mainEntry) mainPaneState.animateTo(mainEntry)
+                    if (mainPaneState.currentState.contentKey != mainEntry.contentKey) mainPaneState.animateTo(mainEntry)
                     else mainPaneState.snapTo(mainEntry)
                 }
                 launch {
-                    if (secondPaneState.currentState != secondEntry) secondPaneState.animateTo(secondEntry)
+                    if (secondPaneState.currentState.contentKey != secondEntry.contentKey) secondPaneState.animateTo(secondEntry)
                     else secondPaneState.snapTo(secondEntry)
                 }
             }
@@ -173,7 +172,6 @@ data class TwoPaneScene<T : Any>(
             ) {
                 TwoPaneButton(
                     secondExpanded = secondExpanded,
-                    expansionTween = expansionTween,
                     toggleSecondPane = {
                         if (!secondExpanded)  longDelay = false
                         secondExpanded = !secondExpanded
@@ -188,12 +186,12 @@ data class TwoPaneScene<T : Any>(
 
 
 @Composable
-fun <T : Any> rememberTwoPaneStrategy(interceptBack: Boolean, enabled: Boolean, validPairing: () -> Boolean): TwoPaneStrategy<T> {
+fun <T : Any> rememberTwoPaneStrategy(enabled: Boolean, interceptBack: Boolean, validPairing: () -> Boolean): TwoPaneStrategy<T> {
 
-    return remember(interceptBack, enabled) {
+    return remember(enabled, interceptBack) {
         TwoPaneStrategy(
-            interceptBack,
             enabled,
+            interceptBack,
             validPairing,
         )
     }
@@ -201,9 +199,9 @@ fun <T : Any> rememberTwoPaneStrategy(interceptBack: Boolean, enabled: Boolean, 
 
 
 class TwoPaneStrategy<T : Any>(
-    private val interceptBack: Boolean,
     private val enabled: Boolean,
-    private val validPairing: () -> Boolean,
+    private val interceptBack: Boolean,
+    private val validPairing: () -> Boolean
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (!enabled) return null
@@ -298,7 +296,6 @@ private fun <T : Any> PaneContent(
 @Composable
 private fun TwoPaneButton(
     secondExpanded: Boolean,
-    expansionTween: Int,
     toggleSecondPane: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -306,19 +303,19 @@ private fun TwoPaneButton(
 
     val buttonHeight by animateDpAsState(
         targetValue = if (secondExpanded) 32.dp else screenHeight,
-        animationSpec = tween(expansionTween)
+        animationSpec = tween(300)
     )
     val buttonAlpha by animateFloatAsState(
         targetValue = if (secondExpanded) .6f else 1f,
-        animationSpec = tween(expansionTween)
+        animationSpec = tween(300)
     )
     val buttonCorner by animateDpAsState(
         targetValue = if (secondExpanded) 4.dp else 0.dp,
-        animationSpec = tween(expansionTween)
+        animationSpec = tween(300)
     )
     val borderAlpha by animateFloatAsState(
         targetValue = if (secondExpanded) .3f else 0f,
-        animationSpec = tween(expansionTween)
+        animationSpec = tween(300)
     )
 
     Box(
@@ -335,8 +332,8 @@ private fun TwoPaneButton(
     ) {
         AnimatedVisibility(
             visible = !secondExpanded,
-            enter = fadeIn(tween(expansionTween)) + expandVertically(tween(expansionTween), Alignment.CenterVertically),
-            exit = fadeOut(tween(expansionTween)) + shrinkVertically(tween(expansionTween), Alignment.CenterVertically),
+            enter = fadeIn(tween(300)) + expandVertically(tween(300), Alignment.CenterVertically),
+            exit = fadeOut(tween(300)) + shrinkVertically(tween(300), Alignment.CenterVertically),
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.CenterStart)
@@ -352,7 +349,7 @@ private fun TwoPaneButton(
         }
         AnimatedContent(
             targetState = if (secondExpanded) R.drawable.arrow_right else R.drawable.arrow_left,
-            transitionSpec = { fadeIn(tween(expansionTween)) togetherWith fadeOut(tween(expansionTween)) },
+            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
         ) {
             Icon(
                 painter = painterResource(id = it),
