@@ -101,31 +101,30 @@ fun CellarNavigation(
     val csvHelpScrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
 
-    val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
-        val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
-
-        val slideTrans =
-            if (navigationState.cameFrom is BlendDetailsDestination) { slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it } }
-            else slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
-        val slidePop = EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
-        val slidePredictive = { edge: Int ->
-            if (isGestureNav) {
-                when (edge) {
-                    NavigationEvent.EDGE_RIGHT -> {
-                        EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { -it / 2 } + fadeOut()
-                    }
-                    NavigationEvent.EDGE_LEFT -> {
-                        EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it / 2 } + fadeOut()
-                    }
-                    else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+    val slideTrans =
+        if (navigationState.cameFrom is BlendDetailsDestination) { slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it } }
+        else slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
+    val slidePop = EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+    val slidePredictive = { edge: Int ->
+        if (isGestureNav) {
+            when (edge) {
+                NavigationEvent.EDGE_RIGHT -> {
+                    EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { -it / 2 } + fadeOut()
                 }
-            } else slidePop
-        }
+                NavigationEvent.EDGE_LEFT -> {
+                    EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it / 2 } + fadeOut()
+                }
+                else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+            }
+        } else slidePop
+    }
 
-        val slideTransition = transitionSpec { slideTrans } + popTransitionSpec { slidePop } +
-            predictivePopTransitionSpec {slidePredictive(it) } +
+    val slideTransition = transitionSpec { slideTrans } + popTransitionSpec { slidePop } +
+            predictivePopTransitionSpec { slidePredictive(it) } +
             mapOf("transitionSpec" to slideTrans, "popTransitionSpec" to slidePop, "predictivePopTransitionSpec" to slidePredictive)
 
+    val entryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
+        val paneInfo = (key as? PaneInfo)?.paneType?.let { mapOf(TwoPaneScene.PANE_TYPE to it) } ?: emptyMap()
 
         when (key) {
             is HomeDestination -> NavEntry(key, metadata = paneInfo) {
@@ -142,13 +141,9 @@ fun CellarNavigation(
                         }
                     }
                 )
-                val secondPaneExpanded by filterViewModel.secondPaneExpanded.collectAsState()
 
                 HomeScreen(
-                    navigateToBlendDetails = {
-                        navigator.navigate(BlendDetailsDestination(it))
-                        if (navigationState.isTwoPane && !secondPaneExpanded ) { filterViewModel.setSecondPaneExpansion(true) }
-                    },
+                    navigateToBlendDetails = { navigator.navigate(BlendDetailsDestination(it)) },
                     navigateToStats = { navigator.navigate(StatsDestination) },
                     navigateToDates = { navigator.navigate(DatesDestination) },
                     navigateToAddEntry = { navigator.navigate(AddEntryDestination) },
@@ -252,7 +247,6 @@ fun CellarNavigation(
                         }
                     }
                 )
-
 
                 AddEntryScreen(
                     navigateBack = { navigator.goBack() },
@@ -459,7 +453,7 @@ fun CellarNavigation(
             }
         }
     }
-    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(navigationState.interceptBack, twoPaneAllowed) { validPairing }
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(twoPaneAllowed, navigationState.interceptBack) { validPairing }
 
     LaunchedEffect(twoPaneAllowed) {
         if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
@@ -495,7 +489,7 @@ fun CellarNavigation(
             transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
             popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
             predictivePopTransitionSpec = {
-                if (isGestureNav && initialState::class != TwoPaneStrategy::class) {
+                if (isGestureNav && initialState.entries.size == 1) {
                     fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f)
                 } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
             }
