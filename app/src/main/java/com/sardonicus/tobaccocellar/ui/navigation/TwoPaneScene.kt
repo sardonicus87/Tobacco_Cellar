@@ -186,30 +186,17 @@ data class TwoPaneScene<T : Any>(
 
 
 @Composable
-fun <T : Any> rememberTwoPaneStrategy(enabled: Boolean, interceptBack: Boolean, validPairing: () -> Boolean): TwoPaneStrategy<T> {
-
-    return remember(enabled, interceptBack) {
-        TwoPaneStrategy(
-            enabled,
-            interceptBack,
-            validPairing,
-        )
-    }
+fun <T : Any> rememberTwoPaneStrategy(enabled: Boolean, interceptBack: Boolean): TwoPaneStrategy<T> {
+    return remember(enabled, interceptBack) { TwoPaneStrategy(enabled, interceptBack) }
 }
 
 
 class TwoPaneStrategy<T : Any>(
     private val enabled: Boolean,
-    private val interceptBack: Boolean,
-    private val validPairing: () -> Boolean
+    private val interceptBack: Boolean
 ) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (!enabled) return null
-        if (!validPairing()) return null
-
-        val lastEntry = entries.lastOrNull() ?: return null
-        val lastEntryPaneType = lastEntry.metadata[TwoPaneScene.PANE_TYPE] as? PaneType
-        if (lastEntryPaneType != PaneType.SECOND) return null
 
         val mainEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.MAIN } ?: return null
         val secondEntry = entries.findLast { it.metadata[TwoPaneScene.PANE_TYPE] == PaneType.SECOND } ?: return null
@@ -287,9 +274,7 @@ private fun <T : Any> PaneContent(
                 targetContentZIndex = zIndex
             )
         }
-    ) {
-        it.Content()
-    }
+    ) { it.Content() }
 }
 
 
