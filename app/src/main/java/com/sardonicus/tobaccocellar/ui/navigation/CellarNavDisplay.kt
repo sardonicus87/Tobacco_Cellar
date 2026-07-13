@@ -453,7 +453,7 @@ fun CellarNavigation(
             }
         }
     }
-    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(twoPaneAllowed, navigationState.interceptBack) { validPairing }
+    val twoPaneScene = rememberTwoPaneStrategy<NavKey>(twoPaneAllowed && validPairing, navigationState.interceptBack)
 
     LaunchedEffect(twoPaneAllowed) {
         if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
@@ -489,7 +489,7 @@ fun CellarNavigation(
             transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
             popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
             predictivePopTransitionSpec = {
-                if (isGestureNav && initialState.entries.size == 1) {
+                if (isGestureNav && (initialState.entries.size == 1 || targetState.entries.size == 1)) {
                     fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f)
                 } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
             }
