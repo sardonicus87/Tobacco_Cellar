@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.home
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -36,7 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
@@ -45,7 +46,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
@@ -63,7 +65,6 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
-@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun TableViewMode(
     viewModel: HomeViewModel,
@@ -82,8 +83,9 @@ fun TableViewMode(
     modifier: Modifier = Modifier
 ) {
     val horizontalScroll = rememberScrollState()
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    val switch by remember(screenWidth, tableLayoutData.totalWidth) { derivedStateOf { screenWidth.dp >= tableLayoutData.totalWidth } }
+    val density = LocalDensity.current
+    var screenWidth by remember { mutableStateOf(0.dp) }
+    val switch by remember(screenWidth, tableLayoutData.totalWidth) { derivedStateOf { screenWidth >= tableLayoutData.totalWidth } }
 
     val focusManager = LocalFocusManager.current
     val haptics = LocalHapticFeedback.current
@@ -120,7 +122,8 @@ fun TableViewMode(
 
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .onGloballyPositioned { screenWidth = with(density) { it.size.width.toDp() } }
     ) {
         // Items
         LazyColumn(
@@ -184,7 +187,7 @@ fun TableViewMode(
                             visible = openMenu,
                             modifier = Modifier
                                 .fillMaxHeight()
-                                .width(if (switch) tableLayoutData.totalWidth.value.dp else screenWidth.dp)
+                                .width(if (switch) tableLayoutData.totalWidth.value.dp else screenWidth)
                                 .offset { IntOffset(if (switch) 0 else horizontalScroll.value, 0) },
                             enter = fadeIn(tween(150)),
                             exit = fadeOut(tween(150))
