@@ -147,7 +147,7 @@ private fun BodyContent(
                 shadowAlpha = { tableShadow },
                 tableLayoutData = tableLayoutData,
                 sorting = tableSorting,
-                updateSorting = viewModel::updateSorting,
+                updateSorting = viewModel::updateTableSorting,
                 onDetailsClick = onDetailsClick,
                 onEditClick = onEditClick,
                 shouldScrollUp = shouldScrollUp,
