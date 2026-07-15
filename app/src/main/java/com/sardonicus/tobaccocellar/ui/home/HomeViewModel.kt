@@ -198,13 +198,12 @@ class HomeViewModel(
 
                 // Ensure Brand and Blend columns never get hidden, unhide them if so
                 launch {
-                    preferencesRepo.tableColumnsHidden.collect {
-                        if (it.contains(TableColumn.BRAND.name)) {
-                            updateColumnVisibility(TableColumn.BRAND, true)
-                        }
-                        if (it.contains(TableColumn.BLEND.name)) {
-                            updateColumnVisibility(TableColumn.BLEND, true)
-                        }
+                    val hiddenColumns = preferencesRepo.tableColumnsHidden.first()
+                    if (hiddenColumns.contains(TableColumn.BRAND.name)) {
+                        updateColumnVisibility(TableColumn.BRAND, true)
+                    }
+                    if (hiddenColumns.contains(TableColumn.BLEND.name)) {
+                        updateColumnVisibility(TableColumn.BLEND, true)
                     }
                 }
 
@@ -887,6 +886,7 @@ class HomeViewModel(
     }
 
     fun saveListSorting(value: ListSortOption) {
+        onDismissMenu()
         val currentSorting = _listSorting.value
         val newListSorting =
             if (currentSorting.option == value) {
@@ -900,7 +900,8 @@ class HomeViewModel(
         }
     }
 
-    fun updateSorting(columnIndex: Int) {
+    fun updateTableSorting(columnIndex: Int) {
+        onDismissMenu()
         val currentSorting = _tableTableSorting.value
         val newTableSorting =
             if (currentSorting.columnIndex == columnIndex) {
