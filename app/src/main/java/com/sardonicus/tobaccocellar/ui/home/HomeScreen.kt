@@ -168,7 +168,10 @@ fun HomeScreen(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
                 updateSearchText = filterViewModel::updateSearchText,
-                onSearch = filterViewModel::onSearch,
+                onSearch = {
+                    viewModel.onDismissMenu()
+                    filterViewModel.onSearch(it)
+                },
                 updateSearchFocused = filterViewModel::updateSearchFocused,
                 getPositionTrigger = filterViewModel::getPositionTrigger,
                 saveSearchSetting = filterViewModel::saveSearchSetting,
