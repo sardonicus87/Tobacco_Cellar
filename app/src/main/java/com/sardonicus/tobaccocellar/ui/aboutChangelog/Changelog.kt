@@ -14,6 +14,19 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 54,
+        versionNumber = "5.2.11",
+        buildDate = "16 Jul, 2026",
+        improvements = listOf(
+            "UI and minor performance improvements."
+        ),
+        bugFixes = listOf(
+            "Large Screen Table View in dual pane layouts, fixed the menu overlay for entries " +
+                    "being too wide.",
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 53,
         versionNumber = "5.2.10",
         buildDate = "28 Jun, 2026",
