@@ -98,8 +98,6 @@ class DownloadSyncWorker(
 
                 } catch (_: Exception) {
                     continue
-                } finally {
-                    SyncStateManager.finished()
                 }
             }
 
@@ -129,6 +127,8 @@ class DownloadSyncWorker(
             return Result.success(workDataOf(RESULT_KEY to SYNC_COMPLETE))
         } catch (_: Exception) {
             return Result.retry()
+        } finally {
+            SyncStateManager.finished()
         }
     }
 
