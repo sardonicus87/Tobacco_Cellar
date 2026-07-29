@@ -14,6 +14,19 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 55,
+        versionNumber = "5.2.12",
+        buildDate = "29 Jul, 2026",
+        improvements = listOf(
+            "Snackbar messages now centered in all layouts."
+        ),
+        bugFixes = listOf(
+            "Multi-Device Sync fixed a bug where sync manager could get stuck on reporting a " +
+                    "sync in progress."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 54,
         versionNumber = "5.2.11",
         buildDate = "16 Jul, 2026",
@@ -22,7 +35,7 @@ val changelogEntries = listOf(
         ),
         bugFixes = listOf(
             "Large Screen Table View in dual pane layouts, fixed the menu overlay for entries " +
-                    "being too wide.",
+                    "being too wide."
         )
     ),
 
