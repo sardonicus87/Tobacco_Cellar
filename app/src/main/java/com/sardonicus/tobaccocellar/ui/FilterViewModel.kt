@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.ExportType
-import com.sardonicus.tobaccocellar.MenuState
+import com.sardonicus.tobaccocellar.TopMenuState
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
@@ -1285,7 +1285,7 @@ class FilterViewModel (
     /** Final UI States and hoisted states for other stuff **/
     // top app bar
     val menuExpanded = MutableStateFlow(false)
-    val menuState = MutableStateFlow(MenuState.MAIN)
+    val topMenuState = MutableStateFlow(TopMenuState.MAIN)
     val exportCsvPopup = MutableStateFlow(false)
     val exportType = MutableStateFlow<ExportType?>(null)
     val displayedExportRating = MutableStateFlow(Pair("", ""))
@@ -1293,14 +1293,14 @@ class FilterViewModel (
 
     val topAppBarMenuState = combine(
         menuExpanded,
-        menuState
+        topMenuState
     ) { values: Array<Any?> ->
         val menuExpanded = values[0] as Boolean
-        val menuState = values[1] as MenuState
+        val topMenuState = values[1] as TopMenuState
 
         TopAppBarMenuState(
             menuExpanded = menuExpanded,
-            menuState = menuState,
+            topMenuState = topMenuState,
         )
     }
         .flowOn(Dispatchers.Default)
@@ -1341,7 +1341,7 @@ class FilterViewModel (
         getPositionTrigger()
     }
     fun showMenu(expanded: Boolean) { menuExpanded.value = expanded }
-    fun changeMenuState(state: MenuState) { menuState.value = state }
+    fun changeMenuState(state: TopMenuState) { topMenuState.value = state }
     fun changeExportType(type: ExportType) { exportType.value = type }
     fun selectAll(all: Boolean) { selectAllItems.value = all }
     fun showExportCsv(show: Boolean) {
@@ -1353,7 +1353,7 @@ class FilterViewModel (
             }
         } else {
             exportCsvPopup.value = false
-            changeMenuState(MenuState.MAIN)
+            changeMenuState(TopMenuState.MAIN)
         }
     }
     fun updateExportRating(max: String, rounding: String) { displayedExportRating.value = Pair(max, rounding) }
@@ -2373,7 +2373,7 @@ data class EnablementState(
 @Stable
 data class TopAppBarMenuState(
     val menuExpanded: Boolean = false,
-    val menuState: MenuState = MenuState.MAIN,
+    val topMenuState: TopMenuState = TopMenuState.MAIN,
 )
 
 @Stable

@@ -280,8 +280,8 @@ fun TopBarMenu(
         containerColor = LocalCustomColors.current.textField,
         shadowElevation = 6.dp
     ) {
-        when (menuState.menuState) {
-            MenuState.MAIN -> {
+        when (menuState.topMenuState) {
+            TopMenuState.MAIN -> {
                 DropdownMenuItem(
                     text = { Text(text = stringResource(R.string.bulk_edit_title)) },
                     onClick = {
@@ -316,7 +316,7 @@ fun TopBarMenu(
                         }
                     },
                     onClick = {
-                        filterViewModel.changeMenuState(MenuState.EXPORT_CSV)
+                        filterViewModel.changeMenuState(TopMenuState.EXPORT_CSV)
                     },
                     modifier = Modifier
                         .padding(0.dp),
@@ -370,7 +370,7 @@ fun TopBarMenu(
                     )
                 }
             }
-            MenuState.EXPORT_CSV -> {
+            TopMenuState.EXPORT_CSV -> {
                 DropdownMenuItem(
                     text = {
                         Icon(
@@ -380,7 +380,7 @@ fun TopBarMenu(
                             tint = LocalContentColor.current.copy(alpha = 0.75f)
                         )
                     },
-                    onClick = { filterViewModel.changeMenuState(MenuState.MAIN) }
+                    onClick = { filterViewModel.changeMenuState(TopMenuState.MAIN) }
                 )
                 DropdownMenuItem(
                     text = { Text(text = "Normal") },
@@ -566,7 +566,7 @@ fun ExportCsvDialog(
     )
 }
 
-enum class MenuState { MAIN, EXPORT_CSV }
+enum class TopMenuState { MAIN, EXPORT_CSV }
 enum class ExportType { ITEMS, TINS }
 
 
