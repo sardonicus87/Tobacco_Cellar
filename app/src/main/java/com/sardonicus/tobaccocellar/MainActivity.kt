@@ -227,15 +227,12 @@ class MainActivity : ComponentActivity() {
                         )
 
                         if (snackbarHostState.currentSnackbarData != null) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.BottomCenter
-                            ) {
-                                SnackbarHost(
-                                    hostState = snackbarHostState,
-                                    modifier = Modifier.padding(bottom = 10.dp)
-                                )
-                            }
+                            SnackbarHost(
+                                hostState = snackbarHostState,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 10.dp)
+                            )
                         }
                     }
                     SystemBarsProtection()
