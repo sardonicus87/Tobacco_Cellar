@@ -32,10 +32,6 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,7 +39,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -68,6 +63,8 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DbOperationsD
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeleteAllDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
+import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,27 +75,14 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val snackbarState by viewModel.snackbarState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val loading by viewModel.loading.collectAsState()
-
-
-    if (snackbarState.show) {
-        LaunchedEffect(snackbarState) {
-            snackbarHostState.showSnackbar(
-                message = snackbarState.message,
-                duration = SnackbarDuration.Short
-            )
-            viewModel.snackbarShown()
-        }
-    }
 
     val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
             if (activity?.isChangingConfigurations == false) {
-                viewModel.snackbarShown()
                 viewModel.dismissDialog()
+                EventBus.tryEmit(DismissSnackbar)
             }
         }
     }
@@ -116,21 +100,7 @@ fun SettingsScreen(
                 canNavigateBack = canNavigateBack,
                 showMenu = false,
             )
-        },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .padding(0.dp),
-                snackbar = {
-                    Snackbar(
-                        snackbarData = it,
-                        modifier = Modifier
-                            .padding(bottom = 20.dp)
-                    )
-                }
-            )
-        },
+        }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -146,9 +116,7 @@ fun SettingsScreen(
                         .fillMaxSize(),
                 )
                 if (loading) {
-                    LoadingIndicator(
-                        scrimColor = Color.Black.copy(alpha = 0.5f),
-                    )
+                    LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f))
                 }
             }
         }

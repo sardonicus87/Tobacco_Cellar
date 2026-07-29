@@ -10,17 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +28,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
+import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import kotlinx.coroutines.launch
 
@@ -56,29 +51,17 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val homeUiState by viewModel.homeUiState.collectAsState()
 
-    val showSnackbar by viewModel.showSnackbar.collectAsState()
-    if (showSnackbar) {
-        LaunchedEffect(Unit) {
-            snackbarHostState.showSnackbar(
-                message = "CSV Exported",
-                duration = SnackbarDuration.Short
-            )
-            viewModel.snackbarShown()
-        }
-    }
-
     val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
             if (activity?.isChangingConfigurations == false) {
-                viewModel.snackbarShown()
+                EventBus.tryEmit(DismissSnackbar)
                 viewModel.onDismissMenu()
             }
         }
@@ -140,20 +123,6 @@ fun HomeScreen(
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
                 currentDestination = HomeDestination,
-            )
-        },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .padding(0.dp),
-                snackbar = {
-                    Snackbar(
-                        snackbarData = it,
-                        modifier = Modifier
-                            .padding(bottom = 10.dp)
-                    )
-                }
             )
         }
     ) { innerPadding ->

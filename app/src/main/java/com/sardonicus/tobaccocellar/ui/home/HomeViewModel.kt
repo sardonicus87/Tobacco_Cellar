@@ -32,6 +32,7 @@ import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
+import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -994,11 +995,6 @@ class HomeViewModel(
 
 
     /** csvExport for TopAppBar **/
-    private val _showSnackbar = MutableStateFlow(false)
-    val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()
-
-    fun snackbarShown() { _showSnackbar.value = false }
-
     override fun onExportCsvClick(uri: Uri?, allItems: Boolean, exportRating: ExportRating) {
         viewModelScope.launch(Dispatchers.Default) {
             val data = if (allItems) filterViewModel.everythingFlow.first() else filterViewModel.homeScreenFilteredItems.first()
@@ -1010,7 +1006,7 @@ class HomeViewModel(
             if (uri != null) {
                 application.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(csvData.toByteArray())
-                    _showSnackbar.value = true
+                    EventBus.emit(ShowSnackbar("CSV Exported"))
                 }
             } else {
                 val documentsDirectory = Environment
@@ -1036,7 +1032,7 @@ class HomeViewModel(
             if (uri != null) {
                 application.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(tinCsvData.toByteArray())
-                    _showSnackbar.value = true
+                    EventBus.emit(ShowSnackbar("CSV Exported"))
                 }
             } else {
                 val documentsDirectory = Environment

@@ -51,10 +51,6 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.Text
@@ -113,6 +109,8 @@ import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.composables.RatingPopup
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,27 +124,13 @@ fun BulkEditScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
     val bulkEditUiState by viewModel.bulkEditUiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val showSnackbar by viewModel.showSnackbar.collectAsState()
     val saveIndicator by viewModel.saveIndicator.collectAsState()
     val tabIndex by viewModel.tabIndex.collectAsState()
-
-    if (showSnackbar) {
-        LaunchedEffect(Unit) {
-            snackbarHostState.showSnackbar(
-                message = "Batch edits saved.",
-                duration = SnackbarDuration.Short
-            )
-            viewModel.snackbarShown()
-        }
-    }
 
     val activity = LocalActivity.current
     DisposableEffect(Unit) {
         onDispose {
-            if (activity?.isChangingConfigurations == false) {
-                viewModel.snackbarShown()
-            }
+            if (activity?.isChangingConfigurations == false) { EventBus.tryEmit(DismissSnackbar) }
         }
     }
 
@@ -162,14 +146,6 @@ fun BulkEditScreen(
                 modifier = Modifier,
                 navigateUp = onNavigateUp,
                 showMenu = false,
-            )
-        },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .padding(0.dp),
-                snackbar = { Snackbar(it) }
             )
         }
     ) { innerPadding ->

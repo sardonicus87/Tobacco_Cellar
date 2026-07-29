@@ -32,6 +32,7 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
+import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -144,9 +145,6 @@ class SettingsViewModel(
     private val _openDialog = MutableStateFlow<DialogType?>(null)
     val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
 
-    private val _snackbarState = MutableStateFlow(SnackbarState())
-    val snackbarState: StateFlow<SnackbarState> = _snackbarState.asStateFlow()
-
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
@@ -246,49 +244,35 @@ class SettingsViewModel(
 
     fun dismissDialog() { _openDialog.value = null }
 
-    fun showSnackbar(message: String) { _snackbarState.value = SnackbarState(true, message) }
+    private suspend fun showSnackbar(message: String) { EventBus.emit(ShowSnackbar(message)) }
 
-    fun snackbarShown() { _snackbarState.value = SnackbarState(false, "") }
-
-    fun setLoadingState(loading: Boolean) { _loading.value = loading }
+    private fun setLoadingState(loading: Boolean) { _loading.value = loading }
 
 
     /** Display Settings **/
 
     fun saveThemeSetting(setting: String) {
-        viewModelScope.launch {
-            preferencesRepo.saveThemeSetting(setting)
-        }
+        viewModelScope.launch { preferencesRepo.saveThemeSetting(setting) }
     }
 
     fun saveQuantityOption(option: String) {
-        viewModelScope.launch {
-            preferencesRepo.saveQuantityPreference(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveQuantityPreference(option) }
     }
 
     fun saveShowRatingOption(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveShowRatingOption(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveShowRatingOption(option) }
     }
 
     fun saveTypeGenreOption(option: String) {
-        viewModelScope.launch {
-            preferencesRepo.saveTypeGenreOption(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveTypeGenreOption(option) }
     }
 
     fun saveParseLinksOption(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveParseLinksOption(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveParseLinksOption(option) }
     }
 
     fun saveGlobalTwoPane(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveGlobalTwoPane(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveGlobalTwoPane(option) }
     }
 
     fun saveLandscapeTwoPane(option: Boolean) {
@@ -492,12 +476,10 @@ class SettingsViewModel(
     }
 
     fun clearLoginState() {
-        viewModelScope.launch {
-            EventBus.emit(SignOutEvent)
-        }
+        viewModelScope.launch { EventBus.emit(SignOutEvent) }
     }
 
-    fun stopWorkers() {
+    private fun stopWorkers() {
         viewModelScope.launch { (application as CellarApplication).cancelPeriodicSync() }
     }
 
@@ -511,9 +493,7 @@ class SettingsViewModel(
     }
 
     fun setDefaultSyncOption(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveDefaultSyncOption(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveDefaultSyncOption(option) }
     }
 
     fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
@@ -1093,11 +1073,6 @@ data class FileContentState(
     val versionValid: Boolean = false,
     val magicNumberValid: Boolean = false,
     val version: Int = 0
-)
-
-data class SnackbarState(
-    val show: Boolean = false,
-    val message: String = ""
 )
 
 data object DatabaseRestoreEvent

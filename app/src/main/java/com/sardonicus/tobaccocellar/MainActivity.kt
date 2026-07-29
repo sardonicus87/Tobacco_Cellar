@@ -19,16 +19,22 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -37,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -66,8 +73,11 @@ import com.sardonicus.tobaccocellar.ui.settings.SignInCancelled
 import com.sardonicus.tobaccocellar.ui.settings.SignInEvent
 import com.sardonicus.tobaccocellar.ui.settings.SignOutEvent
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
+import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -139,6 +149,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+
         // sign in launch
         lifecycleScope.launch(Dispatchers.Default) {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -165,6 +176,27 @@ class MainActivity : ComponentActivity() {
         setContent {
             val gestureNavigation = gestureNavigation()
             val isGestureNav = remember(gestureNavigation) { gestureNavigation }
+            val snackbarHostState = remember { SnackbarHostState() }
+            LaunchedEffect(Unit) {
+                var snackbarJob: Job? = null
+                EventBus.events.collect { event ->
+                    when (event) {
+                        is ShowSnackbar -> {
+                            snackbarJob?.cancel()
+                            snackbarJob = launch {
+                                snackbarHostState.showSnackbar(
+                                    message = event.message,
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        }
+                        is DismissSnackbar -> {
+                            snackbarJob?.cancel()
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                        }
+                    }
+                }
+            }
 
             CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
@@ -193,6 +225,18 @@ class MainActivity : ComponentActivity() {
                             twoPaneAllowed = twoPaneAllowed,
                             twoColumnTabs = twoColumnTabs
                         )
+
+                        if (snackbarHostState.currentSnackbarData != null) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                SnackbarHost(
+                                    hostState = snackbarHostState,
+                                    modifier = Modifier.padding(bottom = 10.dp)
+                                )
+                            }
+                        }
                     }
                     SystemBarsProtection()
                 }

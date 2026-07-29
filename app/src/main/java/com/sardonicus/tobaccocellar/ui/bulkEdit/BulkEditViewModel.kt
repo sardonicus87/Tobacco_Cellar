@@ -16,6 +16,8 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -74,11 +76,6 @@ class BulkEditViewModel (
     val tabIndex = _tabIndex.asStateFlow()
 
     fun updateTabIndex(index: Int) { _tabIndex.value = index }
-
-    private val _showSnackbar = MutableStateFlow(false)
-    val showSnackbar: StateFlow<Boolean> = _showSnackbar.asStateFlow()
-
-    fun snackbarShown() { _showSnackbar.value = false }
 
     fun onValueChange(editing: EditingState) {
         editingState = EditingState(
@@ -258,7 +255,7 @@ class BulkEditViewModel (
             itemsRepository.triggerUploadWorker()
             resetEditingState()
             updateTabIndex(0)
-            _showSnackbar.value = true
+            EventBus.emit(ShowSnackbar("Batch edits saved."))
         }
     }
 }
