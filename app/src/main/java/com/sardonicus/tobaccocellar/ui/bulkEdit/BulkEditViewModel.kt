@@ -13,9 +13,9 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
-import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.calculateSyncTins
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class BulkEditViewModel (
     filterViewModel: FilterViewModel,
@@ -130,20 +129,7 @@ class BulkEditViewModel (
 
     fun resetSelectedItems() { editingState = editingState.copy(selectedItems = emptySet()) }
 
-    fun selectAll() { editingState = editingState.copy(
-        selectedItems = bulkEditUiState.value.items.map { it.items.id }.toSet())
-    }
-
-
-    /** helper functions for tin sync */
-    private fun calculateSyncTins(allTins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
-        val tins = allTins.filter { !it.finished }
-        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf { (it.tinQuantity * 16) / ozRate }
-        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf { it.tinQuantity / ozRate }
-        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf { it.tinQuantity / gramsRate }
-
-        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
-    }
+    fun selectAll() { editingState = editingState.copy(selectedItems = bulkEditUiState.value.items.map { it.items.id }.toSet()) }
 
     private val _saveIndicator = MutableStateFlow(false)
     val saveIndicator: StateFlow<Boolean> = _saveIndicator.asStateFlow()
@@ -226,9 +212,7 @@ class BulkEditViewModel (
 
                     val newQuantity = if (editingState.syncTinsSelected && editingState.syncTins) {
                         calculateSyncTins(items.tins, ozRate, gramsRate)
-                    } else {
-                        items.items.quantity
-                    }
+                    } else { items.items.quantity }
 
 
                     items.items.copy(
