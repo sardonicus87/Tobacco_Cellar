@@ -323,20 +323,23 @@ class HomeViewModel(
         val showRating = values[5] as Boolean
         val listSorting = values[6] as ListSorting
 
-        val alwaysOptions = listOf(ListSortOption.DEFAULT, ListSortOption.BLEND, ListSortOption.BRAND, ListSortOption.QUANTITY, ListSortOption.EDITED)
-        val subgenreOption = when (typeGenreOption) {
-            TypeGenreOption.SUBGENRE -> true
-            TypeGenreOption.BOTH -> true
-            TypeGenreOption.SUB_FALLBACK -> true
-            else -> false
-        }
         val sortingOptions = ListSortOption.entries.filter {
             when (it) {
-                in alwaysOptions -> true
+                ListSortOption.DEFAULT -> true
+                ListSortOption.BLEND -> true
+                ListSortOption.BRAND -> true
+                ListSortOption.QUANTITY -> true
+                ListSortOption.EDITED -> true
                 ListSortOption.TYPE -> typesExist
-                ListSortOption.SUBGENRE -> subgenreOption && subgenresExist
+                ListSortOption.SUBGENRE -> {
+                    subgenresExist && when (typeGenreOption) {
+                        TypeGenreOption.SUBGENRE -> true
+                        TypeGenreOption.BOTH -> true
+                        TypeGenreOption.SUB_FALLBACK -> true
+                        else -> false
+                    }
+                }
                 ListSortOption.RATING -> ratingsExist && showRating
-                else -> false
             }
         }
 
@@ -489,9 +492,7 @@ class HomeViewModel(
                     TableColumn.QTY -> 98.dp
                     TableColumn.EDITED -> 108.dp
                 }
-            } else {
-                0.dp
-            }
+            } else { 0.dp }
         }
         val totalWidth = columnMinWidths.sumOf { it.value.toDouble() }.dp
 
@@ -949,20 +950,14 @@ class HomeViewModel(
             filterViewModel.favDisExist,
             filterViewModel.notesExist,
         ) {
-            val types = it[0]
-            val subgenres = it[1]
-            val ratings = it[2]
-            val favDis = it[3]
-            val notes = it[4]
-
             mapOf(
                 TableColumn.BRAND to true,
                 TableColumn.BLEND to true,
-                TableColumn.TYPE to types,
-                TableColumn.SUBGENRE to subgenres,
-                TableColumn.RATING to ratings,
-                TableColumn.FAV_DIS to favDis,
-                TableColumn.NOTE to notes,
+                TableColumn.TYPE to it[0],
+                TableColumn.SUBGENRE to it[1],
+                TableColumn.RATING to it[2],
+                TableColumn.FAV_DIS to it[3],
+                TableColumn.NOTE to it[4],
                 TableColumn.QTY to true,
                 TableColumn.EDITED to true
             )
@@ -1049,19 +1044,11 @@ class HomeViewModel(
         val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())
 
         for (item in items) {
-            val components = item.components.joinToString(", ") { it.componentName }
-            val flavoring = item.flavoring.joinToString(", ") { it.flavoringName }
-            val ratingString = exportRatingString(item.items.rating, maxRating, rounding)
-
-            val tins = item.tins
-
-            if (tins.isNotEmpty()) {
-                for (tin in tins) {
+            if (item.tins.isNotEmpty()) {
+                for (tin in item.tins) {
                     val quantity = if (tin.tinQuantity == floor(tin.tinQuantity)) {
                         integerFormat.format(tin.tinQuantity.toLong())
-                    } else {
-                        numberFormat.format(tin.tinQuantity)
-                    }
+                    } else { numberFormat.format(tin.tinQuantity) }
 
                     val tinExport = TinExportData(
                         brand = item.items.brand,
@@ -1069,10 +1056,10 @@ class HomeViewModel(
                         type = item.items.type,
                         subGenre = item.items.subGenre,
                         cut = item.items.cut,
-                        components = components,
-                        flavoring = flavoring,
+                        components = item.components.joinToString(", ") { it.componentName },
+                        flavoring = item.flavoring.joinToString(", ") { it.flavoringName },
                         quantity = item.items.quantity,
-                        rating = ratingString,
+                        rating = exportRatingString(item.items.rating, maxRating, rounding),
                         favorite = item.items.favorite,
                         disliked = item.items.disliked,
                         inProduction = item.items.inProduction,
@@ -1093,10 +1080,10 @@ class HomeViewModel(
                     type = item.items.type,
                     subGenre = item.items.subGenre,
                     cut = item.items.cut,
-                    components = components,
-                    flavoring = flavoring,
+                    components = item.components.joinToString(", ") { it.componentName },
+                    flavoring = item.flavoring.joinToString(", ") { it.flavoringName },
                     quantity = item.items.quantity,
-                    rating = ratingString,
+                    rating = exportRatingString(item.items.rating, maxRating, rounding),
                     favorite = item.items.favorite,
                     disliked = item.items.disliked,
                     inProduction = item.items.inProduction,
