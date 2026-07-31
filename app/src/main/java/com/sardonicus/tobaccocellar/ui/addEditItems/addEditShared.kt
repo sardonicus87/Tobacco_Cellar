@@ -71,17 +71,20 @@ fun isTinLabelValid(tins: List<TinDetails>, tinLabel: String, tempTinId: Int): B
 }
 
 
-fun calculateSyncTins(
+fun calculateSyncTinsDetails(
     tinDetails: List<TinDetails>,
     conversion: TinConversion
 ): Int {
-    val tins = tinDetails.filter { !it.finished }
-
-    val totalLbs = tins.filter { it.unit == "lbs" }.sumOf { (it.tinQuantity * 16) / conversion.ozRate }
-    val totalOz = tins.filter { it.unit == "oz" }.sumOf { it.tinQuantity / conversion.ozRate }
-    val totalGrams = tins.filter { it.unit == "grams" }.sumOf { it.tinQuantity / conversion.gramsRate }
-
-    return (totalLbs + totalOz + totalGrams).roundToInt()
+    return tinDetails.sumOf {
+        if (it.finished) 0.0 else {
+            when (it.unit) {
+                "lbs" -> (it.tinQuantity * 16) / conversion.ozRate
+                "oz" -> it.tinQuantity / conversion.ozRate
+                "grams" -> it.tinQuantity / conversion.gramsRate
+                else -> 0.0
+            }
+        }
+    }.roundToInt()
 }
 
 

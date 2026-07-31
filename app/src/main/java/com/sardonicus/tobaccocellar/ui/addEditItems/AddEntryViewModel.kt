@@ -68,7 +68,7 @@ class AddEntryViewModel(
     /** update item state **/
     fun updateUiState(itemDetails: ItemDetails) {
         val updatedDetails = if (itemDetails.syncTins) {
-            val syncedTins = calculateSyncTins(itemDetails.tinDetailsList, tinConversion.value)
+            val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value)
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins)
