@@ -347,16 +347,16 @@ class CsvImportViewModel(
     }
 
     fun calculateSyncTinsQuantity(tinDataList: List<TinData>, ozRate: Double, gramsRate: Double): Int {
-        val tins = tinDataList.filter { !it.finished }
-
-        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
-            (it.quantity * 16) / ozRate }
-        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
-            it.quantity / ozRate }
-        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
-            it.quantity / gramsRate }
-
-        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
+        return tinDataList.sumOf {
+            if (it.finished) 0.0 else {
+                when (it.unit) {
+                    "lbs" -> (it.quantity * 16) / ozRate
+                    "oz" -> it.quantity / ozRate
+                    "grams" -> it.quantity / gramsRate
+                    else -> 0.0
+                }
+            }
+        }.roundToInt()
     }
 
 
