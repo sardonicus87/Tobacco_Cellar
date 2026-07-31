@@ -3,6 +3,8 @@ package com.sardonicus.tobaccocellar
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -31,10 +33,12 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -43,7 +47,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -69,6 +77,9 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.drive.DriveScopes
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
+import com.sardonicus.tobaccocellar.ui.settings.DismissLoading
+import com.sardonicus.tobaccocellar.ui.settings.ShowLoading
 import com.sardonicus.tobaccocellar.ui.settings.SignInCancelled
 import com.sardonicus.tobaccocellar.ui.settings.SignInEvent
 import com.sardonicus.tobaccocellar.ui.settings.SignOutEvent
@@ -177,6 +188,8 @@ class MainActivity : ComponentActivity() {
             val gestureNavigation = gestureNavigation()
             val isGestureNav = remember(gestureNavigation) { gestureNavigation }
             val snackbarHostState = remember { SnackbarHostState() }
+            var loading by remember { mutableStateOf(false) }
+
             LaunchedEffect(Unit) {
                 var snackbarJob: Job? = null
                 EventBus.events.collect { event ->
@@ -194,6 +207,8 @@ class MainActivity : ComponentActivity() {
                             snackbarJob?.cancel()
                             snackbarHostState.currentSnackbarData?.dismiss()
                         }
+                        is ShowLoading -> { loading = true }
+                        is DismissLoading -> { loading = false }
                     }
                 }
             }
@@ -227,14 +242,33 @@ class MainActivity : ComponentActivity() {
                         )
 
                         if (snackbarHostState.currentSnackbarData != null) {
-                            SnackbarHost(
-                                hostState = snackbarHostState,
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(bottom = 10.dp)
-                            )
+                            Dialog(
+                                onDismissRequest = { },
+                                properties = DialogProperties(
+                                    usePlatformDefaultWidth = false,
+                                    dismissOnBackPress = false,
+                                    dismissOnClickOutside = false
+                                )
+                            ) {
+                                val view = LocalView.current
+                                SideEffect {
+                                    (view.parent as? DialogWindowProvider)?.window?.let {
+                                        it.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                                        it.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+                                        it.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL)
+                                        it.setGravity(Gravity.BOTTOM)
+                                    }
+                                }
+                                SnackbarHost(
+                                    hostState = snackbarHostState,
+                                    modifier = Modifier.padding(bottom = 10.dp)
+                                )
+                            }
                         }
+
+                        if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
                     }
+
                     SystemBarsProtection()
                 }
             }
