@@ -156,35 +156,18 @@ class BlendDetailsViewModel(
                 else -> null
             }
 
-        val formattedSum =
-            when (quantityOption) {
-                QuantityOption.OUNCES -> {
-                    if (sum != null) {
-                        if (sum >= 16.00) {
-                            val pounds = sum / 16
-                            formatDecimal(pounds) + " lbs"
-                        } else {
-                            formatDecimal(sum) + " oz"
-                        }
-                    } else {
-                        null
-                    }
-                }
-
-                QuantityOption.GRAMS -> {
-                    if (sum != null) {
-                        formatDecimal(sum) + " g"
-                    } else {
-                        null
-                    }
-                }
-
-                else -> {
-                    null
-                }
+        return when (quantityOption) {
+            QuantityOption.OUNCES -> {
+                if (sum != null) {
+                    if (sum >= 16.00) { formatDecimal((sum / 16)) + " lbs" }
+                    else { formatDecimal(sum) + " oz" }
+                } else { null }
             }
-
-        return formattedSum ?: ""
+            QuantityOption.GRAMS -> {
+                if (sum != null) { formatDecimal(sum) + " g" } else { null }
+            }
+            else -> { null }
+        } ?: ""
     }
 
     fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
@@ -200,11 +183,8 @@ class BlendDetailsViewModel(
             var lastIndex = 0
 
             for (match in matches) {
-                val startIndex = match.range.first
-                val endIndex = match.range.last + 1
-
-                if (startIndex > lastIndex) {
-                    append(text.substring(lastIndex, startIndex))
+                if (match.range.first > lastIndex) {
+                    append(text.substring(lastIndex, match.range.first))
                 }
 
                 val url = match.value
@@ -244,7 +224,7 @@ class BlendDetailsViewModel(
                 append(url)
                 pop()
 
-                lastIndex = endIndex
+                lastIndex = match.range.last + 1
             }
 
             if (lastIndex < text.length) {
@@ -284,30 +264,21 @@ fun calculateAge(date: Long?, field: DateField? = null): String {
     val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
     val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
 
-    val years = period.years
-    val months = period.months
-    val days = period.days
+    val parts = listOfNotNull(
+        if (period.years > 0) { "${period.years} year${if (period.years > 1) "s" else ""}" } else
+            null,
+        if (period.months > 0) { "${period.months} month${if (period.months > 1) "s" else ""}" } else
+            null,
+        if (period.days > 0) { "${period.days} day${if (period.days > 1) "s" else ""}" } else
+            null
+    )
 
-    val parts = mutableListOf<String>()
-
-    if (years > 0) {
-        parts.add("$years year${if (years > 1) "s" else ""}")
-    }
-    if (months > 0) {
-        parts.add("$months month${if (months > 1) "s" else ""}")
-    }
-    if (days > 0) {
-        parts.add("$days day${if (days > 1) "s" else ""}")
-    }
-
-    val end = when (field) {
+    return if (parts.isEmpty()) { "today" } else { parts.joinToString(", ") + when (field) {
         DateField.MANUFACTURE -> if (then < now) { " old" } else { " until available" }
         DateField.CELLAR -> if (then < now) { " in cellar" } else { " until available" }
         DateField.OPEN -> if (then < now) { " open" } else { " until opening" }
-        else -> ""
+        else -> "" }
     }
-
-    return if (parts.isEmpty()) { "today" } else { parts.joinToString(", ") + end }
 }
 
 fun isMetricLocale(): Boolean {
