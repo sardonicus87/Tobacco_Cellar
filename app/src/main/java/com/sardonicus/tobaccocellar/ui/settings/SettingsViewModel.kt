@@ -148,6 +148,8 @@ class SettingsViewModel(
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
+    private val _dbLoading = MutableStateFlow(false)
+    val dbLoading: StateFlow<Boolean> = _dbLoading.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -498,9 +500,7 @@ class SettingsViewModel(
 
     fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
         viewModelScope.launch {
-            if (!runSilent) {
-                setLoadingState(true)
-            }
+            if (!runSilent) { setLoadingState(true) }
             SyncStateManager.schedulingPaused = true
 
             var message = ""
@@ -512,8 +512,7 @@ class SettingsViewModel(
 
             try {
                 allSyncItems.forEach { items ->
-                    val tins = items.tins.filter { !it.finished }
-                    val syncQuantity = calculateSyncTins(tins, ozRate, gramsRate)
+                    val syncQuantity = calculateSyncTins(items.tins, ozRate, gramsRate)
                     itemsRepository.updateItem(
                         items.items.copy(
                             quantity = syncQuantity,
@@ -541,9 +540,7 @@ class SettingsViewModel(
     fun optimizeDatabase() {
         viewModelScope.launch {
             setLoadingState(true)
-
             itemsRepository.optimizeDatabase()
-
             setLoadingState(false)
             showSnackbar("Optimization complete.")
         }
@@ -555,19 +552,6 @@ class SettingsViewModel(
             saveTypeGenreOption(TypeGenreOption.TYPE.value)
             showSnackbar("Database deleted!")
         }
-    }
-
-    private fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
-        val totalLbsTins = tins.filter { it.unit == "lbs" }.sumOf {
-            (it.tinQuantity * 16) / ozRate
-        }
-        val totalOzTins = tins.filter { it.unit == "oz" }.sumOf {
-            it.tinQuantity / ozRate
-        }
-        val totalGramsTins = tins.filter { it.unit == "grams" }.sumOf {
-            it.tinQuantity / gramsRate
-        }
-        return (totalLbsTins + totalOzTins + totalGramsTins).roundToInt()
     }
 
 
@@ -622,7 +606,7 @@ class SettingsViewModel(
 
     fun createBackupBinary(uri: Uri, context: Context) {
         viewModelScope.launch {
-            setLoadingState(true)
+            _dbLoading.value = true
             var message = ""
 
             val tempDbZip = context.contentResolver.openFileDescriptor(uri, "w")?.use {
@@ -663,15 +647,14 @@ class SettingsViewModel(
                 message = "Backup failed."
             } finally {
                 deleteTempFile(tempDbZip)
-                setLoadingState(false)
+                onBackupOptionChanged(BackupState(databaseChecked = false, settingsChecked = false))
+                _dbLoading.value = false
                 showSnackbar(message)
             }
         }
     }
 
-    fun saveBackup(context: Context, uri: Uri) {
-        createBackupBinary(uri, context)
-    }
+    fun saveBackup(context: Context, uri: Uri) { createBackupBinary(uri, context) }
 
     private fun deleteTempFile(file: File) {
         if (file.exists()) {
@@ -682,7 +665,7 @@ class SettingsViewModel(
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {
         viewModelScope.launch(Dispatchers.Default) {
-            setLoadingState(true)
+            _dbLoading.value = true
 
             val workManager = WorkManager.getInstance(context)
             SyncStateManager.loggingPaused = true
@@ -760,10 +743,10 @@ class SettingsViewModel(
             } finally {
                 SyncStateManager.loggingPaused = false
                 SyncStateManager.schedulingPaused = false
-
                 if (crossDeviceSync.value) { workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build()) }
 
-                setLoadingState(false)
+                onRestoreOptionChanged(RestoreState(databaseChecked = false, settingsChecked = false))
+                _dbLoading.value = false
                 showSnackbar(message)
             }
         }
@@ -1080,9 +1063,11 @@ data object SyncDownloadEvent
 data object SignInEvent
 data object SignInCancelled
 data object SignOutEvent
+data object ShowLoading
+data object DismissLoading
 
 
-/** Extension functions */
+/** Helper functions */
 // Create backup //
 fun Int.toByteArray(): ByteArray {
     return byteArrayOf(
@@ -1311,6 +1296,20 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             }
         }
     }
+}
+
+// Global helper functions //
+fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int {
+    return tins.sumOf {
+        if (it.finished) 0.0 else {
+            when (it.unit) {
+                "lbs" -> (it.tinQuantity * 16) / ozRate
+                "oz" -> it.tinQuantity / ozRate
+                "grams" -> it.tinQuantity / gramsRate
+                else -> 0.0
+            }
+        }
+    }.roundToInt()
 }
 
 fun exportRatingString(rating: Double?, maxRating: Int, rounding: Int): String {
