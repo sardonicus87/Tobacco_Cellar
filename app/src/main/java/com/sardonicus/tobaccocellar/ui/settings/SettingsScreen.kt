@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -57,7 +58,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.BackupRestoreDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DbOperationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeleteAllDialog
@@ -65,6 +65,8 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDia
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +77,15 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val loading by viewModel.loading.collectAsState()
+    val dbLoading by viewModel.dbLoading.collectAsState()
+
+    LaunchedEffect(dbLoading) {
+        if (dbLoading) {
+            delay(50.milliseconds)
+            EventBus.emit(ShowLoading)
+        }
+        else { EventBus.emit(DismissLoading) }
+    }
 
     val activity = LocalActivity.current
     DisposableEffect(Unit) {
@@ -109,16 +119,11 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box {
-                SettingsBody(
-                    viewModel = viewModel,
-                    modifier = modifier
-                        .fillMaxSize(),
-                )
-                if (loading) {
-                    LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f))
-                }
-            }
+            SettingsBody(
+                viewModel = viewModel,
+                modifier = modifier
+                    .fillMaxSize(),
+            )
         }
     }
 }
@@ -377,28 +382,28 @@ private fun DialogManager(viewModel: SettingsViewModel) {
 
         // App/Database Settings
         DialogType.DeviceSync -> {
-            if (!loading) {
-                DeviceSyncDialog(
-                    onDismiss = viewModel::dismissDialog,
-                    acknowledgement = acknowledgement,
-                    connectionEnabled = connectionEnabled,
-                    confirmAcknowledgement = viewModel::saveCrossDeviceAcknowledged,
-                    deviceSync = deviceSync,
-                    signingIn = signingIn,
-                    onDeviceSync = viewModel::saveCrossDeviceSync,
-                    email = email,
-                    hasScope = hasScope,
-                    allowMobileData = allowMobileData,
-                    onAllowMobileData = viewModel::saveAllowMobileData,
-                    onManualSync = viewModel::manualSync,
-                    clearRemoteData = viewModel::clearRemoteData,
-                    clearLoginState = viewModel::clearLoginState
-                )
-            }
+            DeviceSyncDialog(
+                onDismiss = viewModel::dismissDialog,
+                loading = loading,
+                acknowledgement = acknowledgement,
+                connectionEnabled = connectionEnabled,
+                confirmAcknowledgement = viewModel::saveCrossDeviceAcknowledged,
+                deviceSync = deviceSync,
+                signingIn = signingIn,
+                onDeviceSync = viewModel::saveCrossDeviceSync,
+                email = email,
+                hasScope = hasScope,
+                allowMobileData = allowMobileData,
+                onAllowMobileData = viewModel::saveAllowMobileData,
+                onManualSync = viewModel::manualSync,
+                clearRemoteData = viewModel::clearRemoteData,
+                clearLoginState = viewModel::clearLoginState
+            )
         }
         DialogType.TinRates -> {
             TinRatesDialog(
                 onDismiss = viewModel::dismissDialog,
+                loading = loading,
                 ozRate = ozRate,
                 gramsRate = gramsRate,
                 onSave = viewModel::setTinConversionRates
@@ -415,6 +420,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         DialogType.DbOperations -> {
             DbOperationsDialog(
                 onDismiss = viewModel::dismissDialog,
+                loading = loading,
                 updateTinSync = viewModel::updateTinSync,
                 optimizeDatabase = viewModel::optimizeDatabase
             )
@@ -430,7 +436,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     openLauncher.launch(arrayOf("application/octet-stream"))
                     viewModel.dismissDialog()
                 },
-                viewmodel = viewModel
+                viewModel = viewModel
             )
         }
         DialogType.DeleteAll -> {
