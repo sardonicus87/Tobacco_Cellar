@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -56,6 +58,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun DeviceSyncDialog(
     onDismiss: () -> Unit,
+    loading: Boolean,
     acknowledgement: Boolean,
     connectionEnabled: Boolean,
     confirmAcknowledgement: () -> Unit,
@@ -77,7 +80,15 @@ fun DeviceSyncDialog(
     val density = LocalDensity.current
     val checkOffset = remember { with(density) { 14.sp.toDp() } }
 
+    var debouncedLoading by remember { mutableStateOf(false) }
     var disconnectFailure by remember { mutableStateOf(false) }
+
+    LaunchedEffect(loading) {
+        if (loading) {
+            delay(50.milliseconds)
+            debouncedLoading = true
+        }
+    }
 
     LaunchedEffect(disconnectFailure, connectionEnabled) {
         if (disconnectFailure) {
@@ -162,12 +173,88 @@ fun DeviceSyncDialog(
                         )
                     }
                 } else {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Spacer(Modifier.height(4.dp))
-                        // Enable Sync
-                        Box {
+                    Box {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Spacer(Modifier.height(4.dp))
+                            // Enable Sync
+                            Box {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(28.dp)
+                                        .padding(start = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Multi-Device Sync:",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = LocalContentColor.current.copy(alpha = if (debouncedLoading) .38f else 1f)
+                                    )
+                                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
+                                        Switch(
+                                            checked = deviceSync || signingIn || disconnectFailure,
+                                            onCheckedChange = {
+                                                if (!connectionEnabled && !deviceSync) {
+                                                    disconnectFailure = it
+                                                } else {
+                                                    onDeviceSync(it)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .scale(.6f)
+                                                .padding(start = 10.dp),
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = if (deviceSync && connectionEnabled) MaterialTheme.colorScheme.onPrimary else if (!connectionEnabled) LocalCustomColors.current.favHeart else Color.Transparent,
+                                                checkedTrackColor = if (deviceSync && connectionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                                checkedBorderColor = if ((deviceSync && !connectionEnabled) || disconnectFailure) MaterialTheme.colorScheme.outline else Color.Transparent
+                                            ),
+                                            enabled = !debouncedLoading,
+                                            thumbContent = if (signingIn && !deviceSync) {
+                                                {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier
+                                                            .padding(0.dp)
+                                                            .fillMaxSize()
+                                                            .background(
+                                                                MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                                CircleShape
+                                                            ),
+                                                        strokeWidth = 3.dp
+                                                    )
+                                                }
+                                            } else if ((deviceSync && !connectionEnabled) || disconnectFailure) {
+                                                {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.close),
+                                                        contentDescription = null,
+                                                        tint = Color.White
+                                                    )
+                                                }
+                                            } else null
+                                        )
+                                    }
+                                }
+                                if ((deviceSync && !connectionEnabled) || disconnectFailure) {
+                                    Text(
+                                        text = "(Check Connection)",
+                                        fontSize = 14.sp,
+                                        textAlign = TextAlign.Center,
+                                        lineHeight = 1.em,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .offset(y = -(checkOffset + 8.dp)),
+                                        maxLines = 1,
+                                        color = MaterialTheme.colorScheme.error.copy(alpha = .75f),
+                                    )
+                                }
+                            }
+
+                            // Allow Mobile
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -176,154 +263,85 @@ fun DeviceSyncDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val alpha = if (!deviceSync || debouncedLoading) .38f else 1f
                                 Text(
-                                    text = "Multi-Device Sync:",
+                                    text = "Allow Mobile Data:",
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = LocalContentColor.current
+                                    color = LocalContentColor.current.copy(alpha = alpha)
                                 )
                                 CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                                     Switch(
-                                        checked = deviceSync || signingIn || disconnectFailure,
-                                        onCheckedChange = {
-                                            if (!connectionEnabled && !deviceSync) { disconnectFailure = it }
-                                            else { onDeviceSync(it) }
-                                        },
+                                        checked = allowMobileData,
+                                        onCheckedChange = { onAllowMobileData(it) },
+                                        enabled = deviceSync && !debouncedLoading,
                                         modifier = Modifier
                                             .scale(.6f)
                                             .padding(start = 10.dp),
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = if (deviceSync && connectionEnabled) MaterialTheme.colorScheme.onPrimary else if (!connectionEnabled) LocalCustomColors.current.favHeart else Color.Transparent,
-                                            checkedTrackColor = if (deviceSync && connectionEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                            checkedBorderColor = if ((deviceSync && !connectionEnabled) || disconnectFailure) MaterialTheme.colorScheme.outline else Color.Transparent
-                                        ),
-                                        thumbContent = if (signingIn && !deviceSync) {
-                                            {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier
-                                                        .padding(0.dp)
-                                                        .fillMaxSize()
-                                                        .background(
-                                                            MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                            CircleShape
-                                                        ),
-                                                    strokeWidth = 3.dp
-                                                )
-                                            }
-                                        } else if ((deviceSync && !connectionEnabled) || disconnectFailure) {
-                                            {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.close),
-                                                    contentDescription = null,
-                                                    tint = Color.White
-                                                )
-                                            }
-                                        } else null
+                                        colors = SwitchDefaults.colors()
                                     )
                                 }
                             }
-                            if ((deviceSync && !connectionEnabled) || disconnectFailure) {
-                                Text(
-                                    text = "(Check Connection)",
-                                    fontSize = 14.sp,
-                                    textAlign = TextAlign.Center,
-                                    lineHeight = 1.em,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .offset(y = -(checkOffset + 8.dp)),
-                                    maxLines = 1,
-                                    color = MaterialTheme.colorScheme.error.copy(alpha = .75f),
-                                )
-                            }
-                        }
 
-                        // Allow Mobile
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp)
-                                .padding(start = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val alpha = if (!deviceSync) .38f else 1f
-                            Text(
-                                text = "Allow Mobile Data:",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = LocalContentColor.current.copy(alpha = alpha)
-                            )
-                            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-                                Switch(
-                                    checked = allowMobileData,
-                                    onCheckedChange = { onAllowMobileData(it) },
-                                    enabled = deviceSync,
-                                    modifier = Modifier
-                                        .scale(.6f)
-                                        .padding(start = 10.dp),
-                                    colors = SwitchDefaults.colors()
-                                )
-                            }
-                        }
-
-                        // Manual Sync
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .height(IntrinsicSize.Min)
-                                .fillMaxWidth()
-                        ) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            // Manual Sync
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .width(IntrinsicSize.Max)
+                                    .height(IntrinsicSize.Min)
+                                    .fillMaxWidth()
                             ) {
-                                TextButton(
-                                    onClick = { onManualSync() },
-                                    enabled = deviceSync && accountLinked && connectionEnabled,
-                                    contentPadding = PaddingValues(8.dp, 3.dp),
-                                    modifier = Modifier.heightIn(28.dp, 28.dp)
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier
+                                        .width(IntrinsicSize.Max)
                                 ) {
-                                    Text(
-                                        text = "Manual Sync",
-                                        fontSize = 15.sp,
-                                    )
-                                }
+                                    TextButton(
+                                        onClick = { onManualSync() },
+                                        enabled = deviceSync && accountLinked && connectionEnabled && !debouncedLoading,
+                                        contentPadding = PaddingValues(8.dp, 3.dp),
+                                        modifier = Modifier.heightIn(28.dp, 28.dp)
+                                    ) {
+                                        Text(
+                                            text = "Manual Sync",
+                                            fontSize = 15.sp,
+                                        )
+                                    }
 
-                                // Clear remote data
-                                TextButton(
-                                    onClick = { clearRemoteData() },
-                                    enabled = accountLinked && connectionEnabled,
-                                    contentPadding = PaddingValues(8.dp, 3.dp),
-                                    modifier = Modifier.heightIn(28.dp, 28.dp)
-                                ) {
-                                    Text(
-                                        text = "Clear Remote Data",
-                                        fontSize = 15.sp,
-                                        maxLines = 1
-                                    )
+                                    // Clear remote data
+                                    TextButton(
+                                        onClick = { clearRemoteData() },
+                                        enabled = accountLinked && connectionEnabled && !debouncedLoading,
+                                        contentPadding = PaddingValues(8.dp, 3.dp),
+                                        modifier = Modifier.heightIn(28.dp, 28.dp)
+                                    ) {
+                                        Text(
+                                            text = "Clear Remote Data",
+                                            fontSize = 15.sp,
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        // Clear Login
-                        TextButton(
-                            onClick = {
-                                clearLoginState()
-                                onDeviceSync(false)
-                            },
-                            enabled = accountLinked,
-                            contentPadding = PaddingValues(8.dp, 3.dp),
-                            modifier = Modifier.heightIn(28.dp, 28.dp)
-                        ) {
-                            Text(
-                                text = "Sign-Out",
-                                fontSize = 15.sp,
-                                color = if (accountLinked) MaterialTheme.colorScheme.primary else Color.Transparent
-                            )
+                            // Clear Login
+                            TextButton(
+                                onClick = {
+                                    clearLoginState()
+                                    onDeviceSync(false)
+                                },
+                                enabled = accountLinked && !debouncedLoading,
+                                contentPadding = PaddingValues(8.dp, 3.dp),
+                                modifier = Modifier.heightIn(28.dp, 28.dp)
+                            ) {
+                                Text(
+                                    text = "Sign-Out",
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
+                                )
+                            }
                         }
+                        if (debouncedLoading) { LoadingIndicator(center = true, modifier = Modifier.matchParentSize()) }
                     }
                 }
             }
@@ -335,7 +353,7 @@ fun DeviceSyncDialog(
                     enabled = atBottom
                 ) { Text("Agree") }
             }
-            else { TextButton({ onDismiss() }) { Text("Done") } }
+            else { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text("Done") } }
         },
         dismissButton =
             if (!acknowledgement) { { TextButton({ onDismiss() }) { Text("Cancel") } } }
