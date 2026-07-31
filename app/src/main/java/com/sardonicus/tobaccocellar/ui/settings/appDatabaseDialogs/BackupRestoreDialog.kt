@@ -37,13 +37,13 @@ fun BackupRestoreDialog(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
     onRestore: () -> Unit,
-    viewmodel: SettingsViewModel
+    viewModel: SettingsViewModel
 ) {
     var option: BackupRestoreOption? by rememberSaveable { mutableStateOf(null) }
     val updateOption: (BackupRestoreOption?) -> Unit = { option = it }
 
-    val backupState by viewmodel.backupState.collectAsState()
-    val restoreState by viewmodel.restoreState.collectAsState()
+    val backupState by viewModel.backupState.collectAsState()
+    val restoreState by viewModel.restoreState.collectAsState()
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -53,8 +53,8 @@ fun BackupRestoreDialog(
         ),
         text = {
             when (option) {
-                BackupRestoreOption.BACKUP -> BackupDialog(backupState, viewmodel) { updateOption(null) }
-                BackupRestoreOption.RESTORE -> RestoreDialog(restoreState, viewmodel) { updateOption(null) }
+                BackupRestoreOption.BACKUP -> BackupDialog(backupState, viewModel) { updateOption(null) }
+                BackupRestoreOption.RESTORE -> RestoreDialog(restoreState, viewModel) { updateOption(null) }
                 null -> {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -95,7 +95,15 @@ fun BackupRestoreDialog(
                 }
             }
         },
-        dismissButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                    viewModel.onBackupOptionChanged(backupState.copy(databaseChecked = false, settingsChecked = false))
+                    viewModel.onRestoreOptionChanged(restoreState.copy(databaseChecked = false, settingsChecked = false))
+                },
+            ) { Text(stringResource(R.string.cancel)) }
+        },
         confirmButton = {
             when (option) {
                 BackupRestoreOption.BACKUP -> {
