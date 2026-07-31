@@ -111,7 +111,6 @@ class EditEntryViewModel(
 
     private fun copyOriginalDetails(itemDetails: ItemDetails): ItemDetails {
         val original = itemDetails.toOriginalItem()
-
         originalItem.value = original
 
         return itemDetails.copy(originalItem = original)
@@ -191,25 +190,18 @@ class EditEntryViewModel(
 
     suspend fun checkItemExistsOnUpdate() {
         val currentItem = itemUiState.itemDetails
-        if (currentItem.brand == originalItem.value.brand && currentItem.blend == originalItem.value.blend) {
+        if (itemUiState.itemDetails.brand == originalItem.value.brand && itemUiState.itemDetails.blend == originalItem.value.blend) {
             existState.value =
                 ExistState(
                     exists = false,
                     transferId = 0
                 )
         } else {
-            val existCheck = itemsRepository.exists(currentItem.brand, currentItem.blend)
-            existState.value = if (existCheck) {
+            existState.value =
                 ExistState(
-                    exists = true,
+                    exists = itemsRepository.exists(currentItem.brand, currentItem.blend),
                     transferId = 0
                 )
-            } else {
-                ExistState(
-                    exists = false,
-                    transferId = 0
-                )
-            }
         }
     }
 
@@ -257,45 +249,25 @@ class EditEntryViewModel(
 
             val time = System.currentTimeMillis()
 
-            if (actuallyUpdated) {
-                itemsRepository.updateItem(details.copy(lastModified = time).toItem())
-            }
+            if (actuallyUpdated) { itemsRepository.updateItem(details.copy(lastModified = time).toItem()) }
 
             compsToAdd.forEach {
-                var componentId = itemsRepository.getComponentIdByName(it.componentName)
-                if (componentId == null) {
-                    componentId = itemsRepository.insertComponent(it).toInt()
-                }
-                itemsRepository.insertComponentsCrossRef(
-                    ItemsComponentsCrossRef(itemsId, componentId)
-                )
+                val componentId = itemsRepository.getComponentIdByName(it.componentName) ?: itemsRepository.insertComponent(it).toInt()
+                itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemsId, componentId))
             }
             compsToRemove.forEach {
-                val componentId = it.componentId
-                itemsRepository.deleteComponentsCrossRef(
-                    ItemsComponentsCrossRef(itemsId, componentId)
-                )
+                itemsRepository.deleteComponentsCrossRef(ItemsComponentsCrossRef(itemsId, it.componentId))
             }
 
             flavorToAdd.forEach {
-                var flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                if (flavorId == null) {
-                    flavorId = itemsRepository.insertFlavoring(it).toInt()
-                }
-                itemsRepository.insertFlavoringCrossRef(
-                    ItemsFlavoringCrossRef(itemsId, flavorId)
-                )
+                val flavorId = itemsRepository.getFlavoringIdByName(it.flavoringName) ?: itemsRepository.insertFlavoring(it).toInt()
+                itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemsId, flavorId))
             }
             flavorToRemove.forEach {
-                val flavorId = it.flavoringId
-                itemsRepository.deleteFlavoringCrossRef(
-                    ItemsFlavoringCrossRef(itemsId, flavorId)
-                )
+                itemsRepository.deleteFlavoringCrossRef(ItemsFlavoringCrossRef(itemsId, it.flavoringId))
             }
 
-            tinsToDelete.forEach {
-                itemsRepository.deleteTin(it)
-            }
+            tinsToDelete.forEach { itemsRepository.deleteTin(it) }
             delay(1.milliseconds)
             conflictingTins.forEach { blocker ->
                 val tempTin = Tins(
@@ -315,13 +287,11 @@ class EditEntryViewModel(
             }
             delay(1.milliseconds)
             updatedTins.forEach {
-                val tin = it.copy(lastModified = time).toTin(itemsId)
-                itemsRepository.updateTin(tin)
+                itemsRepository.updateTin(it.copy(lastModified = time).toTin(itemsId))
             }
             delay(1.milliseconds)
             newTins.forEach {
-                val tin = it.copy(lastModified = time).toTin(itemsId)
-                itemsRepository.insertTin(tin)
+                itemsRepository.insertTin(it.copy(lastModified = time).toTin(itemsId))
             }
 
             SyncStateManager.schedulingPaused = false

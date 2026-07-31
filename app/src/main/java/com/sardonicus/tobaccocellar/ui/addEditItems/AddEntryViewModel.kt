@@ -118,23 +118,12 @@ class AddEntryViewModel(
     val existState = mutableStateOf(ExistState())
 
     suspend fun checkItemExistsOnSave() {
-        val currentItem = itemUiState.itemDetails
-        val exists = itemsRepository.exists(currentItem.brand, currentItem.blend)
-        if (exists) {
-            val transferId = itemsRepository.getItemIdByIndex(currentItem.brand, currentItem.blend)
-
-            existState.value =
-                ExistState(
-                    exists = true,
-                    transferId = transferId!!
-                )
-        } else {
-            existState.value =
-                ExistState(
-                    exists = false,
-                    transferId = 0
-                )
-        }
+        val transferId = itemsRepository.getItemIdByIndex(itemUiState.itemDetails.brand, itemUiState.itemDetails.blend)
+        existState.value =
+            ExistState(
+                exists = transferId != null,
+                transferId = transferId ?: 0
+            )
     }
 
     fun resetExistState() {
@@ -153,24 +142,17 @@ class AddEntryViewModel(
 
             val components = itemUiState.itemDetails.componentString.toComponents(autoCompleteData.components)
             val flavoring = itemUiState.itemDetails.flavoringString.toFlavoring(autoCompleteData.flavorings)
-
             val lastModified = System.currentTimeMillis()
             val itemDetails = itemUiState.itemDetails.copy(lastModified = lastModified)
 
             val savedItemId = itemsRepository.insertItem(itemDetails.toItem())
 
             components.forEach {
-                var componentId = itemsRepository.getComponentIdByName(it.componentName)
-                if (componentId == null) {
-                    componentId = itemsRepository.insertComponent(it).toInt()
-                }
+                val componentId = itemsRepository.getComponentIdByName(it.componentName) ?: itemsRepository.insertComponent(it).toInt()
                 itemsRepository.insertComponentsCrossRef(ItemsComponentsCrossRef(itemId = savedItemId.toInt(), componentId = componentId))
             }
             flavoring.forEach {
-                var flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName)
-                if (flavoringId == null) {
-                    flavoringId = itemsRepository.insertFlavoring(it).toInt()
-                }
+                val flavoringId = itemsRepository.getFlavoringIdByName(it.flavoringName) ?: itemsRepository.insertFlavoring(it).toInt()
                 itemsRepository.insertFlavoringCrossRef(ItemsFlavoringCrossRef(itemId = savedItemId.toInt(), flavoringId = flavoringId))
             }
 

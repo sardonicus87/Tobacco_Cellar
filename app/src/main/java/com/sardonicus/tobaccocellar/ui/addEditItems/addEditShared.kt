@@ -25,14 +25,13 @@ fun validateInput(
     val validDetails = details.brand.isNotBlank() && details.blend.isNotBlank()
 
     val labels = tins.map { it.tinLabel }
-    val uniqueLabels = labels.size == labels.distinct().size
     val validTins = tins.all { tin ->
         val (manuf, cellar, open) = validateDates(tin.manufactureDate, tin.cellarDate, tin.openDate)
         tin.tinLabel.isNotBlank() &&
                 ((tin.tinQuantityString.isNotBlank() && tin.unit.isNotBlank()) ||
                 tin.tinQuantityString.isBlank()) &&
                 manuf && cellar && open
-    } && uniqueLabels
+    } && labels.size == labels.distinct().size
 
     onTabErrorUpdate(TabErrorState(!validDetails, !validTins))
     return validDetails && validTins
@@ -275,17 +274,13 @@ fun Items.toItemDetails(compString: String, flavorString: String): ItemDetails =
 
 
 fun Tins.toTinDetails(): TinDetails {
-    val numberFormat = NumberFormat.getInstance(Locale.getDefault())
     val quantityString = if (unit.isNotBlank()) {
         if (tinQuantity == floor(tinQuantity)) {
-            val integerFormatter = NumberFormat.getIntegerInstance(Locale.getDefault())
-            integerFormatter.format(tinQuantity.toLong())
+            NumberFormat.getIntegerInstance(Locale.getDefault()).format(tinQuantity.toLong())
         } else {
-            numberFormat.format(tinQuantity)
+            NumberFormat.getInstance(Locale.getDefault()).format(tinQuantity)
         }
-    } else {
-        ""
-    }
+    } else { "" }
 
     return TinDetails(
         tinId = tinId,
@@ -312,15 +307,13 @@ fun Tins.toTinDetails(): TinDetails {
 /** Date functions **/
 fun formatShortDate(millis: Long?): String {
     return millis?.let {
-        val instant = Instant.ofEpochMilli(it)
-        DateTimeFormatter.ofPattern("MM/yy").withZone(ZoneId.systemDefault()).format(instant)
+        DateTimeFormatter.ofPattern("MM/yy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(it))
     } ?: ""
 }
 
 fun formatMediumDate(millis: Long?, alternate: Boolean = false): String {
     return millis?.let {
-        val instant = Instant.ofEpochMilli(it)
-        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        val localDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
 
         val formatter = if (alternate) {
             val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMddyy")
