@@ -69,7 +69,7 @@ fun TinRatesDialog(
         if (loading) {
             delay(50.milliseconds)
             debouncedLoading = true
-        }
+        } else { debouncedLoading = false }
     }
 
     LaunchedEffect(saving, loading) {

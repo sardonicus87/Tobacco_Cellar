@@ -87,7 +87,7 @@ fun DeviceSyncDialog(
         if (loading) {
             delay(50.milliseconds)
             debouncedLoading = true
-        }
+        } else { debouncedLoading = false }
     }
 
     LaunchedEffect(disconnectFailure, connectionEnabled) {
