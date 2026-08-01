@@ -29,7 +29,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -241,6 +243,8 @@ class MainActivity : ComponentActivity() {
                             twoColumnTabs = twoColumnTabs
                         )
 
+                        if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
+
                         if (snackbarHostState.currentSnackbarData != null) {
                             Dialog(
                                 onDismissRequest = { },
@@ -259,14 +263,15 @@ class MainActivity : ComponentActivity() {
                                         it.setGravity(Gravity.BOTTOM)
                                     }
                                 }
-                                SnackbarHost(
-                                    hostState = snackbarHostState,
-                                    modifier = Modifier.padding(bottom = 10.dp)
-                                )
+
+                                val dismissState = rememberSwipeToDismissBoxState()
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    backgroundContent = { },
+                                    onDismiss = { snackbarHostState.currentSnackbarData?.dismiss() },
+                                ) { SnackbarHost(snackbarHostState, Modifier.padding(bottom = 10.dp)) }
                             }
                         }
-
-                        if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
                     }
 
                     SystemBarsProtection()
