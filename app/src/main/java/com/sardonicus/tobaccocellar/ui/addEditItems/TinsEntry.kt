@@ -49,6 +49,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -1019,6 +1020,17 @@ private fun CustomDatePickerDialog(
         selectableDates = selectableDates
     )
     val datePickerFormatter = remember { DatePickerDefaults.dateFormatter() }
+    val thisMonth = remember {
+        ZonedDateTime.now(ZoneOffset.UTC)
+            .withDayOfMonth(1)
+            .toLocalDate()
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant()
+            .toEpochMilli()
+    }
+    val todayVisible by remember(datePickerState.displayedMonthMillis) {
+        derivedStateOf { datePickerState.displayedMonthMillis == thisMonth }
+    }
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
@@ -1074,7 +1086,7 @@ private fun CustomDatePickerDialog(
                     )
                 }
 
-                // clear option
+                // jump to today and clear option
                 if (datePickerState.displayMode == DisplayMode.Picker) {
                     Row(
                         modifier = Modifier
@@ -1082,6 +1094,16 @@ private fun CustomDatePickerDialog(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        TextButton(
+                            onClick = { datePickerState.displayedMonthMillis = thisMonth },
+                            enabled = !todayVisible,
+                            contentPadding = PaddingValues(12.dp, 4.dp),
+                            modifier = Modifier
+                                .heightIn(32.dp, 32.dp)
+                        ) {
+                            Text("Today")
+                        }
+
                         TextButton(
                             onClick = { datePickerState.selectedDateMillis = null },
                             enabled = datePickerState.selectedDateMillis != null,
