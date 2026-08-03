@@ -14,6 +14,20 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 56,
+        versionNumber = "5.2.13",
+        buildDate = "2 Aug, 2026",
+        improvements = listOf(
+            "General UI/UX improvements: snackbar messages now show above open dialog scrims. " +
+                    "Additionally, snackbars can now be swiped to dismiss.",
+            "Settings Screen UI/UX: loading states and dialogs improved, loading states now show " +
+                    "directly in the dialogs, except backup/restore which now show loading state " +
+                    "on whole screen in Dual Pane layouts (both panes rather than just settings).",
+            "Other general performance improvements."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 55,
         versionNumber = "5.2.12",
         buildDate = "29 Jul, 2026",
