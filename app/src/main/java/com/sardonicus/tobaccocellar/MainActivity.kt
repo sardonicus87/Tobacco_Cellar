@@ -246,6 +246,7 @@ class MainActivity : ComponentActivity() {
                         if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
 
                         if (snackbarHostState.currentSnackbarData != null) {
+                            val dismissState = rememberSwipeToDismissBoxState()
                             Dialog(
                                 onDismissRequest = { },
                                 properties = DialogProperties(
@@ -263,12 +264,10 @@ class MainActivity : ComponentActivity() {
                                         it.setGravity(Gravity.BOTTOM)
                                     }
                                 }
-
-                                val dismissState = rememberSwipeToDismissBoxState()
                                 SwipeToDismissBox(
                                     state = dismissState,
                                     backgroundContent = { },
-                                    onDismiss = { snackbarHostState.currentSnackbarData?.dismiss() },
+                                    onDismiss = { EventBus.tryEmit(DismissSnackbar) },
                                 ) { SnackbarHost(snackbarHostState, Modifier.padding(bottom = 10.dp)) }
                             }
                         }
