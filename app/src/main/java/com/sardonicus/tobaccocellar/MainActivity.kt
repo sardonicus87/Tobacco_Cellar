@@ -170,18 +170,13 @@ class MainActivity : ComponentActivity() {
                     if (event is SignInEvent) {
                         val userEmail = preferencesRepo.signedInUserEmail.first()
                         val hasScope = preferencesRepo.hasDriveScope.first()
-
                         when {
-                            userEmail != null && hasScope -> {
-                                lifecycleScope.launch { preferencesRepo.saveCrossDeviceSync(true) }
-                            }
+                            userEmail != null && hasScope -> { preferencesRepo.saveCrossDeviceSync(true) }
                             userEmail != null && !hasScope -> { authorizeDrive() }
                             else -> { signIn() }
                         }
                     }
-                    if (event is SignOutEvent) {
-                        signOut()
-                    }
+                    if (event is SignOutEvent) { signOut() }
                 }
             }
         }
@@ -315,19 +310,19 @@ class MainActivity : ComponentActivity() {
                 val userEmail = credential.id
 
                 preferencesRepo.saveLoginState(userEmail, false)
-
                 authorizeDrive()
-
-            } catch (_: NoCredentialException) {
-                EventBus.emit(SignInCancelled)
-                Toast.makeText(this@MainActivity, "Sign-in failed", Toast.LENGTH_SHORT).show()
-            } catch (_: GetCredentialCancellationException) {
-                EventBus.emit(SignInCancelled)
-            } catch (_: GetCredentialException) {
-                EventBus.emit(SignInCancelled)
-                Toast.makeText(this@MainActivity, "Sign-in failed", Toast.LENGTH_SHORT).show()
-            }
+            } catch (e: GetCredentialException) { handleSignInFailure(e) }
         }
+    }
+
+    private suspend fun handleSignInFailure(e: GetCredentialException) {
+        val message = when (e) {
+            is GetCredentialCancellationException -> "Sign-in cancelled."
+            is NoCredentialException -> "No accounts on this device."
+            else -> "Sign-in failed."
+        }
+        EventBus.emit(SignInCancelled)
+        Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
     }
 
     fun signOut() {
