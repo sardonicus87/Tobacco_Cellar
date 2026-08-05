@@ -35,6 +35,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -76,7 +77,9 @@ fun DeviceSyncDialog(
     val accountLinked by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
-    val atBottom by remember { derivedStateOf { !scrollState.canScrollForward } }
+    var atBottom by rememberSaveable { mutableStateOf(false) }
+    val scrolled by remember { derivedStateOf { !scrollState.canScrollForward } }
+    if (scrolled) { atBottom = true }
     val density = LocalDensity.current
     val checkOffset = remember { with(density) { 14.sp.toDp() } }
 
@@ -132,42 +135,44 @@ fun DeviceSyncDialog(
                         Text(
                             text = "To auto-synchronize collection changes across devices, you " +
                                     "must enable this option and sign-in with the same Google " +
-                                    "account to authorize Google Drive access on each device (you " +
-                                    "do not need the Google Drive app for this functionality to " +
-                                    "work). This feature also requires all synced devices to be " +
+                                    "account on each device you want sync'ed. This will also " +
+                                    "authorize the app to have Google Drive access (you do not " +
+                                    "need the Google Drive app for this functionality to work). " +
+                                    "This feature also requires all synced devices to be " +
                                     "running a version of the app with the same Database Version.",
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "I (developer), and any third parties will not have access to " +
-                                    "your login or drive, this authorization just allows the app " +
+                            text = "Developer and/or any third parties will not have access to " +
+                                    "your login or drive. This authorization just allows the app " +
                                     "to use your Google Drive as a cloud location for storing and " +
                                     "retrieving data changes between devices. The app will create " +
-                                    "a hidden folder that only this app can access, and this " +
-                                    "folder is the only part of your Drive that the app can " +
-                                    "access. Login and remote sync data can be cleared at any " +
-                                    "time in this setting dialog (clear remote data before " +
-                                    "clearing login). If you wish to revoke Drive authorization, " +
-                                    "this must be done in your Google Account settings: Services " +
-                                    "> Connected Apps).",
+                                    "a hidden folder on your Google Drive, and this folder is the " +
+                                    "only part of your Drive that the app can access. Login and " +
+                                    "remote sync data can be cleared at any time in this setting " +
+                                    "dialog (clear remote data before clearing login). If you " +
+                                    "wish to revoke Drive authorization, this must be done in " +
+                                    "your Google Account settings (Services → Connected Apps).",
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "Data does not count toward your Google Drive storage quota, " +
-                                    "and is checked once at every app start, and cyclically once " +
-                                    "every 12 hours as long as the device is powered on. The app " +
-                                    "start check and 12-hour cycled checks respect your settings " +
-                                    "regarding mobile data or WIFI only.",
+                            text = "Sync data does not count toward your Google Drive storage " +
+                                    "quota. Data is checked once at every app start (including " +
+                                    "\"cold starts\" if it has been at least one hour since " +
+                                    "initial app start), and cyclically once every 12 hours as " +
+                                    "long as the device is powered on and connected. All data " +
+                                    "checks respect your settings regarding mobile data or WIFI " +
+                                    "only (will never use mobile data unless enabled).",
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
                         Text(
-                            text = "Before enabling this option on multiple devices, it is " +
-                                    "recommended to create a manual database backup of the " +
-                                    "device with the most up-to-date data and transfer it to, " +
-                                    "and restore on, the other device(s).",
+                            text = "It is recommended to create a manual database backup of the " +
+                                    "device with the most up-to-date information, then transfer " +
+                                    "to and restore on the other device(s) before enabling this " +
+                                    "setting.",
                             fontSize = 14.sp,
                             color = LocalContentColor.current
                         )
