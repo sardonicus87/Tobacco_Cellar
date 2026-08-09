@@ -14,6 +14,17 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 57,
+        versionNumber = "5.2.14",
+        buildDate = "9 Aug, 2026",
+        bugFixes = listOf(
+            "Fixed swipe to dismiss snackbar not working properly.",
+            "Fixed Cellar screen scrolling, list/table returning to top on device rotation and " +
+                    "table view specifically losing scroll position when navigating away."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 56,
         versionNumber = "5.2.13",
         buildDate = "2 Aug, 2026",
