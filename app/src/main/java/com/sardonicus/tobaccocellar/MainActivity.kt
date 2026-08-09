@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -241,7 +242,6 @@ class MainActivity : ComponentActivity() {
                         if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
 
                         if (snackbarHostState.currentSnackbarData != null) {
-                            val dismissState = rememberSwipeToDismissBoxState()
                             Dialog(
                                 onDismissRequest = { },
                                 properties = DialogProperties(
@@ -259,11 +259,17 @@ class MainActivity : ComponentActivity() {
                                         it.setGravity(Gravity.BOTTOM)
                                     }
                                 }
-                                SwipeToDismissBox(
-                                    state = dismissState,
-                                    backgroundContent = { },
-                                    onDismiss = { EventBus.tryEmit(DismissSnackbar) },
-                                ) { SnackbarHost(snackbarHostState, Modifier.padding(bottom = 10.dp)) }
+                                SnackbarHost(
+                                    snackbarHostState,
+                                    Modifier.padding(bottom = 10.dp)
+                                ) {
+                                    val dismissState = rememberSwipeToDismissBoxState()
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        backgroundContent = { },
+                                        onDismiss = { EventBus.tryEmit(DismissSnackbar) },
+                                    ) { Snackbar(it) }
+                                }
                             }
                         }
                     }
