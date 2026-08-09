@@ -22,8 +22,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,10 +67,8 @@ fun HomeBody(
     }
 
     Box {
-        BodyContent(
-            viewModel, filterViewModel, isTableView, columnState, sortedItems, onDetailsClick,
-            onEditClick, shouldScrollUp, modifier
-        )
+        BodyContent(viewModel, filterViewModel, isTableView, columnState, sortedItems,
+            onDetailsClick, onEditClick, shouldScrollUp, modifier)
 
         if (showLoading()) { LoadingIndicator() }
 
@@ -93,7 +93,7 @@ fun HomeBody(
                 .padding(16.dp)
         )
 
-        HomeScrollHandler(columnState, sortedItems, { itemsCount }, filterViewModel)
+        HomeScrollHandler(columnState, sortedItems, { itemsCount }, filterViewModel, isTableView())
     }
 }
 
@@ -114,8 +114,13 @@ private fun BodyContent(
     val tableSorting by viewModel.tableSorting.collectAsState()
     val tableLayoutData by viewModel.tableLayoutData.collectAsState()
     val tableShadow by viewModel.tableShadow.collectAsState()
+    val currentView = isTableView()
+    val lastView = rememberSaveable { mutableStateOf(currentView) }
 
-    LaunchedEffect(isTableView()) { columnState.scrollToItem(0) }
+    LaunchedEffect(currentView) {
+        if (lastView.value != currentView) { columnState.scrollToItem(0) }
+        lastView.value = currentView
+    }
     LaunchedEffect(columnState.canScrollBackward) { viewModel.updateScrollShadow(columnState.canScrollBackward) }
 
     if (sortedItems.list.isEmpty()) {
@@ -186,7 +191,8 @@ private fun HomeScrollHandler(
     columnState: LazyListState,
     sortedItems: ItemsList,
     itemsCount: () -> Int,
-    filterViewModel: FilterViewModel
+    filterViewModel: FilterViewModel,
+    isTableView: Boolean
 ) {
     val scrollState by filterViewModel.homeScrollState.collectAsState()
     val currentItemsList by rememberUpdatedState(sortedItems.list)
@@ -229,7 +235,9 @@ private fun HomeScrollHandler(
     LaunchedEffect(scrollState.getPosition) {
         if (scrollState.getPosition > 0 && !searchPerformed) {
             val layoutInfo = columnState.layoutInfo
-            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull()
+            val firstVisibleItem = if (isTableView){
+                layoutInfo.visibleItemsInfo.firstOrNull { it.index > 0 }
+            } else layoutInfo.visibleItemsInfo.firstOrNull()
 
             if (firstVisibleItem != null) {
                 filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
