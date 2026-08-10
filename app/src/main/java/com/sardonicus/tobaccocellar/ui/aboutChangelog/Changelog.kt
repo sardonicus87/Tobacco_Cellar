@@ -20,7 +20,7 @@ val changelogEntries = listOf(
         bugFixes = listOf(
             "Snackbar \"swipe to dismiss\" fix.",
             "Globally removed the confusing and useless \"Autofill\" button when long-pressing " +
-                    "on text-fields (like for cust/copy/paste)."
+                    "on text-fields (like for cut/copy/paste)."
         )
     ),
 
