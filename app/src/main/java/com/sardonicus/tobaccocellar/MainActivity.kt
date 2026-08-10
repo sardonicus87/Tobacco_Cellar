@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -26,6 +27,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.AutofillKey
+import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -118,6 +121,7 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
+        window.decorView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
 
         onBackPressedDispatcher.addCallback(
             this, object : OnBackPressedCallback(true) {
@@ -219,6 +223,7 @@ class MainActivity : ComponentActivity() {
                             .background(Color.Transparent)
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
+                            .filterTextContextMenuComponents { it.key != AutofillKey }
                     ) {
                         val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
                         val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
