@@ -34,6 +34,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -205,10 +206,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        is DismissSnackbar -> {
-                            snackbarJob?.cancel()
-                            snackbarHostState.currentSnackbarData?.dismiss()
-                        }
+                        is DismissSnackbar -> { snackbarHostState.currentSnackbarData?.dismiss() }
                         is ShowLoading -> { loading = true }
                         is DismissLoading -> { loading = false }
                     }
@@ -269,11 +267,26 @@ class MainActivity : ComponentActivity() {
                                     Modifier.padding(bottom = 10.dp)
                                 ) {
                                     val dismissState = rememberSwipeToDismissBoxState()
-                                    SwipeToDismissBox(
-                                        state = dismissState,
-                                        backgroundContent = { },
-                                        onDismiss = { EventBus.tryEmit(DismissSnackbar) },
-                                    ) { Snackbar(it) }
+                                    var isVisible by remember { mutableStateOf(true) }
+
+                                    if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) {
+                                        SideEffect {
+                                            if (isVisible) {
+                                                isVisible = false
+                                                EventBus.tryEmit(DismissSnackbar)
+                                            }
+                                        }
+                                    }
+                                    if (isVisible) {
+                                        SwipeToDismissBox(
+                                            state = dismissState,
+                                            backgroundContent = { },
+                                            onDismiss = {
+                                                isVisible = false
+                                                EventBus.tryEmit(DismissSnackbar)
+                                            },
+                                        ) { Snackbar(it) }
+                                    }
                                 }
                             }
                         }
