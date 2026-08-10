@@ -14,11 +14,21 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 58,
+        versionNumber = "5.2.15",
+        buildDate = "10 Aug, 2026",
+        bugFixes = listOf(
+            "Snackbar \"swipe to dismiss\" fix.",
+            "Globally removed the confusing and useless \"Autofill\" button when long-pressing " +
+                    "on text-fields (like for cust/copy/paste)."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 57,
         versionNumber = "5.2.14",
         buildDate = "9 Aug, 2026",
         bugFixes = listOf(
-            "Fixed swipe to dismiss snackbar not working properly.",
             "Fixed Cellar screen scrolling, list/table returning to top on device rotation and " +
                     "table view specifically losing scroll position when navigating away."
         )
