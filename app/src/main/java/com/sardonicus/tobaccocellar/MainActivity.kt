@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.AutofillKey
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
@@ -113,12 +112,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(
-                android.graphics.Color.BLACK,
-            ),
-            navigationBarStyle = SystemBarStyle.dark(
-                android.graphics.Color.BLACK,
-            )
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK)
         )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
@@ -127,14 +122,10 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(
             this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (backPressedOnce) {
-                        finish()
-                        return
-                    }
+                    if (backPressedOnce) { finish(); return }
 
                     backPressedOnce = true
-                    Toast.makeText(this@MainActivity, "Tap again to exit", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(this@MainActivity, "Tap again to exit", Toast.LENGTH_SHORT).show()
 
                     lifecycleScope.launch(Dispatchers.Default) {
                         delay(2000.milliseconds)
@@ -163,9 +154,7 @@ class MainActivity : ComponentActivity() {
                         Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
                     }
                 }
-            } else {
-                Toast.makeText(this@MainActivity, "Drive permission was denied", Toast.LENGTH_SHORT).show()
-            }
+            } else { Toast.makeText(this@MainActivity, "Drive permission was denied", Toast.LENGTH_SHORT).show() }
         }
 
 
@@ -199,12 +188,7 @@ class MainActivity : ComponentActivity() {
                     when (event) {
                         is ShowSnackbar -> {
                             snackbarJob?.cancel()
-                            snackbarJob = launch {
-                                snackbarHostState.showSnackbar(
-                                    message = event.message,
-                                    duration = SnackbarDuration.Short
-                                )
-                            }
+                            snackbarJob = launch { snackbarHostState.showSnackbar(event.message) }
                         }
                         is DismissSnackbar -> { snackbarHostState.currentSnackbarData?.dismiss() }
                         is ShowLoading -> { loading = true }
@@ -306,9 +290,7 @@ class MainActivity : ComponentActivity() {
     private fun updateSystemBarsForOrientation(orientation: Int) {
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-        } else {
-            windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
-        }
+        } else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
     }
 
     private fun signIn() {
@@ -410,11 +392,8 @@ private fun SystemBarsProtection() {
         .fillMaxSize()
         .drawBehind {
             drawRect(Color.Black, size = Size(size.width, statusBarHeight))
-            drawRect(
-                Color.Black,
-                Offset(0f, size.height - navigationHeight),
-                Size(size.width, navigationHeight)
-            )
+            drawRect(Color.Black, Offset(0f, size.height - navigationHeight),
+                Size(size.width, navigationHeight))
         }
     )
 }
@@ -422,9 +401,8 @@ private fun SystemBarsProtection() {
 
 @Composable
 fun gestureNavigation(): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-        return false
-    } else {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { return false }
+    else {
         val insets = WindowInsets.systemGestures
         val density = LocalDensity.current
         val direction = LocalLayoutDirection.current
