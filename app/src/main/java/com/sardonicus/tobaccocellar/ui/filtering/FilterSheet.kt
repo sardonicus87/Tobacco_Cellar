@@ -33,6 +33,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 @Composable
 fun FilterSheet(
     filterViewModel: FilterViewModel,
+    largeScreen: Boolean,
     modifier: Modifier = Modifier
 ) {
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
@@ -68,6 +69,7 @@ fun FilterSheet(
                 FilterLayout(
                     filterViewModel = filterViewModel,
                     closeSheet = filterViewModel::closeBottomSheet,
+                    paginateLayout = !largeScreen,
                     pagerState = pagerState,
                     modifier = Modifier
                 )

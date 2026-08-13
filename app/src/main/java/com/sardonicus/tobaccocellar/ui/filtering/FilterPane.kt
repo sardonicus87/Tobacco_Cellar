@@ -33,7 +33,7 @@ fun FilterPane(
                 .padding(innerPadding)
         ) {
             FilterLayout(
-                sheetLayout = false,
+                paginateLayout = false,
                 filterViewModel = filterViewModel,
                 modifier = Modifier
             )

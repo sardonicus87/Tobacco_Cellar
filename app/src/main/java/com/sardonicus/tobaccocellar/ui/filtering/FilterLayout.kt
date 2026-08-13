@@ -66,11 +66,12 @@ fun FilterLayout(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
     closeSheet: () -> Unit = {},
-    sheetLayout: Boolean = true,
+    paginateLayout: Boolean = true,
     pagerState: PagerState = rememberPagerState { 3 },
 ) {
     val focusManager = LocalFocusManager.current
     var hasFocus by remember { mutableStateOf(false) }
+    val twoPane by filterViewModel.twoPaneState.collectAsState()
 
     Column (
         modifier = modifier
@@ -92,9 +93,9 @@ fun FilterLayout(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        FilterHeader(sheetLayout, closeSheet)
+        FilterHeader(!twoPane, closeSheet)
 
-        if (sheetLayout) { PagerLayout(filterViewModel, pagerState) }
+        if (paginateLayout) { PagerLayout(filterViewModel, pagerState) }
         else { PaneLayout(filterViewModel) }
 
         FilterFooter(filterViewModel)
