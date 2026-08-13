@@ -35,7 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -539,7 +539,7 @@ private fun OldestTinsSection(
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
-                text = "No tin dates found.",
+                text = "No past tin dates found.",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 20.dp),
@@ -597,9 +597,7 @@ fun DatesSection(
     var expanded by rememberSaveable { mutableStateOf(true) }
     val expandEnabled = items.isNotEmpty()
 
-    LaunchedEffect(items.isEmpty()) {
-        if (items.isEmpty()) expanded = true
-    }
+    SideEffect(items.isEmpty()) { if (items.isEmpty()) expanded = true }
 
     Column(
         modifier = modifier
