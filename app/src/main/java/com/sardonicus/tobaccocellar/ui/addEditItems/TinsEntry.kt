@@ -48,7 +48,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -183,11 +183,9 @@ private fun IndividualTin(
     fieldInteractionSource: MutableInteractionSource?,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect (tinDetailsList) {
-        onTinValueChange(
-            tinDetails.copy(
-                labelIsValid = isTinLabelValid(tinDetailsList, tinDetails.tinLabel, tempTinId)
-            )
+    SideEffect(tinDetailsList) {
+        onTinValueChange(tinDetails
+            .copy(labelIsValid = isTinLabelValid(tinDetailsList, tinDetails.tinLabel, tempTinId))
         )
     }
 
@@ -947,7 +945,7 @@ private fun IndividualTin(
                     verticalAlignment = Alignment.Top
                 ) {
                     val disabled = tinDetails.openDate != null && tinDetails.openDate > System.currentTimeMillis()
-                    LaunchedEffect(disabled) {
+                    SideEffect(disabled) {
                         if (disabled) { onTinValueChange(tinDetails.copy(finished = false)) }
                     }
                     Spacer(modifier = Modifier.weight(1f))
