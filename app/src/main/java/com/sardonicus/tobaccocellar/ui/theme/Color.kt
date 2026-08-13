@@ -1,3 +1,5 @@
+@file:Suppress("SpellCheckingInspection")
+
 package com.sardonicus.tobaccocellar.ui.theme
 
 import androidx.compose.ui.graphics.Color
