@@ -1,8 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +37,7 @@ fun rememberNavigationState(
 
     if (topLevelRoute.value !in topLevelRoutes) { topLevelRoute.value = startRoute }
 
-    LaunchedEffect(topLevelRoutes, twoPaneAllowed, topLevelRoute.value) {
+    SideEffect(topLevelRoutes, twoPaneAllowed, topLevelRoute.value) {
         if (twoPaneAllowed) {
             backStacks.forEach { (topLevelRoute, stack) ->
                 mainSecondaryMap[topLevelRoute]?.let {
