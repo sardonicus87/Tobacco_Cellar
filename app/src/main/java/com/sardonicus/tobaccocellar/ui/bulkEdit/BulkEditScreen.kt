@@ -61,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -211,11 +212,10 @@ fun BulkEditBody(
 
     val focusManager = LocalFocusManager.current
     var anythingFocused by remember { mutableStateOf(false) }
-    val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
 
     BackHandler(anythingFocused) { focusManager.clearFocus() }
 
-    LaunchedEffect(pagerState.currentPage) {
+    SideEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
             if (pagerState.currentPage != tabIndex) {
                 onTabChange(pagerState.currentPage)
@@ -231,7 +231,7 @@ fun BulkEditBody(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .onFocusChanged { updateFocused(it.hasFocus) },
+            .onFocusChanged { anythingFocused = it.hasFocus },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -250,9 +250,7 @@ fun BulkEditBody(
                             modifier = Modifier
                                 .weight(1f)
                                 .onFocusChanged {
-                                    if (it.hasFocus && tabIndex == 1) {
-                                        onTabChange(0)
-                                    }
+                                    if (it.hasFocus && tabIndex == 1) { onTabChange(0) }
                                 }
                                 .pointerInput(tabIndex) {
                                     if (tabIndex == 1) {
@@ -421,11 +419,7 @@ fun BulkEditBody(
                 }
             }
 
-            if (saveIndicator) {
-                LoadingIndicator(
-                    scrimColor = Color.Black.copy(alpha = .38f)
-                )
-            }
+            if (saveIndicator) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = .38f)) }
         }
     }
 }
