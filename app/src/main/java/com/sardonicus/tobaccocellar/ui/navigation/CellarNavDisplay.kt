@@ -13,6 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -75,11 +76,8 @@ fun CellarNavigation(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val shouldCloseSheet by remember(twoPaneAllowed, navigationState.isTwoPane) {
-        derivedStateOf { twoPaneAllowed && navigationState.isTwoPane }
-    }
-    LaunchedEffect(shouldCloseSheet) {
-        if (shouldCloseSheet) { filterViewModel.closeBottomSheet() }
+    SideEffect(twoPaneAllowed && navigationState.isTwoPane) {
+        if (twoPaneAllowed && navigationState.isTwoPane) { filterViewModel.closeBottomSheet() }
     }
 
     val twoPaneState by filterViewModel.twoPaneState.collectAsState()
