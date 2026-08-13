@@ -34,7 +34,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -207,7 +207,7 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.displayCutout)
                             .filterTextContextMenuComponents { it.key != AutofillKey }
                     ) {
-                        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+                        val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
                         val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
                         val globalTwoPane by preferencesRepo.globalTwoPane.collectAsState()
                         val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
@@ -222,6 +222,7 @@ class MainActivity : ComponentActivity() {
 
                         CellarApp(
                             isGestureNav = isGestureNav,
+                            largeScreen = isLarge,
                             twoPaneAllowed = twoPaneAllowed,
                             twoColumnTabs = twoColumnTabs
                         )
