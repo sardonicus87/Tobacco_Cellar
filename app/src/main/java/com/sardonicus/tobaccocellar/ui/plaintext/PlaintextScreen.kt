@@ -76,6 +76,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -252,7 +253,7 @@ private fun PlaintextBody(
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
     // pager and tab synchronizing
-    LaunchedEffect(pagerState.currentPage) {
+    SideEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
             if (pagerState.currentPage != tabIndex) {
                 onTabChange(pagerState.currentPage)
