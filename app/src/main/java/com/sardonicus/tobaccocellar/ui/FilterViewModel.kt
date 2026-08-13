@@ -1368,10 +1368,6 @@ class FilterViewModel (
     val twoPaneState = _twoPaneState.asStateFlow()
     fun updateTwoPaneState(state: Boolean) { _twoPaneState.value = state }
 
-    private val _clickToAdd = MutableStateFlow(false)
-    val clickToAdd = _clickToAdd.asStateFlow()
-    fun updateClickToAdd(clicked: Boolean) { _clickToAdd.value = clicked }
-
 
     // HomeScreen stuff
     val searchState = combine(
