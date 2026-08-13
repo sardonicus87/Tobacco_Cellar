@@ -169,15 +169,8 @@ fun CsvImportBody(
                     contentResolver.openInputStream(uri)?.use { inputStream ->
                         when (val result = csvHelper.csvFileReader(inputStream)) {
                             is CsvResult.Success -> {
-                                viewModel.onCsvLoaded(
-                                    uri,
-                                    result.header,
-                                    result.firstFullRecord,
-                                    result.recordCount
-                                )
-                                viewModel.generateColumns(
-                                    result.columnCount
-                                )
+                                viewModel.onCsvLoaded(uri, result.header, result.firstFullRecord, result.recordCount)
+                                viewModel.generateColumns(result.columnCount)
                             }
 
                             is CsvResult.Error -> {
@@ -193,9 +186,7 @@ fun CsvImportBody(
 
                     }
                 }
-            } catch (_: Exception) {
-                viewModel.onShowError(true)
-            }
+            } catch (_: Exception) { viewModel.onShowError(true) }
         }
     }
     val onSelectFile = {
@@ -216,7 +207,7 @@ fun CsvImportBody(
         )
     }
 
-    LaunchedEffect(viewModel) {
+    LaunchedEffect(viewModel.navigateToResults) {
         viewModel.navigateToResults.collect { results ->
             navigateToImportResults(
                 results.totalRecords,
