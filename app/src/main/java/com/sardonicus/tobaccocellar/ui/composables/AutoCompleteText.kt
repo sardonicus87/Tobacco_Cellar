@@ -22,6 +22,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -88,22 +89,18 @@ fun AutoCompleteText(
         )
     }
 
-    LaunchedEffect(input) {
-        val newSuggestions = getSuggestions(
-            input = input,
-            fullText = textFieldValueState.text,
-            allItems = allItems,
-            componentField = componentField
-        )
+    SideEffect(input) {
+        val newSuggestions = getSuggestions(input, textFieldValueState.text, allItems, componentField)
         suggestionsState = newSuggestions
+
         if (expandedState && newSuggestions.isNotEmpty()) { listCache = newSuggestions }
     }
 
-    LaunchedEffect(expandedState) {
+    SideEffect(expandedState) {
         if (expandedState && suggestionsState.isNotEmpty()) { listCache = suggestionsState }
     }
 
-    LaunchedEffect(input, suggestionsState, override, value, focusInteractionCount) {
+    SideEffect(input, suggestionsState, override, value, focusInteractionCount) {
         expandedState = if (input.length >= 2 && focusInteractionCount > 2) {
             suggestionsState.isNotEmpty() && !override && value.isNotBlank()
         } else { false }
@@ -141,10 +138,8 @@ fun AutoCompleteText(
                 .onFocusChanged {
                     if (it.isFocused) {
                         if (focusInteractionCount == 0) focusInteractionCount = 1
-                    } else {
-                        expandedState = false
-                        focusInteractionCount = 0
                     }
+                    else { expandedState = false; focusInteractionCount = 0 }
                 }
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
@@ -274,9 +269,7 @@ private fun CustomDropdownMenuItem(
                 interactionSource = null
             ) { onClick() }
             .padding(0.dp)
-    ) {
-        text()
-    }
+    ) { text() }
 }
 
 
