@@ -47,6 +47,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -101,24 +102,15 @@ fun ItemMenu(
     val onQuickEdit: () -> Unit = { quickEdit = !quickEdit }
 
     var showRatingPop by rememberSaveable { mutableStateOf(false) }
-    val onShowRatingPop: (Boolean) -> Unit = { showRatingPop = it }
-
     var showNotePop by rememberSaveable { mutableStateOf(false) }
-    val onShowNotePop: (Boolean) -> Unit = { showNotePop = it }
-
     var showQtyPop by rememberSaveable { mutableStateOf(false) }
-    val onShowQtyPop: (Boolean) -> Unit = { showQtyPop = it }
 
     LaunchedEffect(Unit) {
         delay(150.milliseconds)
         viewModel.setQuickEditItem(activeItemId())
     }
 
-    BackHandler(quickEdit) {
-        if (quickEdit) {
-            onQuickEdit()
-        }
-    }
+    BackHandler(quickEdit) { if (quickEdit) { onQuickEdit() } }
 
 
     AnimatedContent(
@@ -129,17 +121,13 @@ fun ItemMenu(
             .background(LocalCustomColors.current.listMenuScrim)
     ) { quickMenu ->
         Row(
-            modifier = Modifier
-                .fillMaxHeight(),
+            modifier = Modifier.fillMaxHeight(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!quickMenu) {
                 TextButton(
-                    onClick = {
-                        onEditClick()
-                        onMenuDismiss()
-                    },
+                    onClick = { onEditClick(); onMenuDismiss() },
                     modifier = Modifier
                 ) {
                     Text(
@@ -207,7 +195,7 @@ fun ItemMenu(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .clip(RoundedCornerShape(50))
-                                    .clickable { onShowRatingPop(true) }
+                                    .clickable { showRatingPop = true }
                                     .padding(horizontal = 8.dp)
                             ) {
                                 Text(
@@ -268,7 +256,7 @@ fun ItemMenu(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .clip(RoundedCornerShape(50))
-                                    .clickable { onShowNotePop(true) }
+                                    .clickable { showNotePop = true }
                                     .padding(horizontal = 8.dp)
                             ) {
                                 Image(
@@ -291,7 +279,7 @@ fun ItemMenu(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .clip(RoundedCornerShape(50))
-                                        .clickable { onShowQtyPop(true) }
+                                        .clickable { showQtyPop = true }
                                         .padding(horizontal = 8.dp)
                                 ) {
                                     Text(
@@ -329,16 +317,16 @@ fun ItemMenu(
         if (showRatingPop) {
             EditRatingPop(
                 textFieldState = editRatingState,
+                undoEnabled = editRatingState != formatDecimal(originalState.rating),
                 updateTextField = { editRatingState = it },
-                onDismiss = { onShowRatingPop(false) },
+                onDismiss = { showRatingPop = false },
                 onCancel = {
-                    onShowRatingPop(false)
                     editRatingState = formatDecimal(originalState.rating)
                     viewModel.updateQuickRating(originalState.rating)
                 },
                 onRatingEdited = {
                     viewModel.updateQuickRating(it)
-                    onShowRatingPop(false)
+                    showRatingPop = false
                 }
             )
 
@@ -349,16 +337,16 @@ fun ItemMenu(
         if (showNotePop) {
             EditNotePop(
                 textFieldState = editNoteState,
+                undoEnabled = editNoteState != originalState.notes,
                 updateTextField = { editNoteState = it },
-                onDismiss = { onShowNotePop(false) },
+                onDismiss = { showNotePop = false },
                 onCancel = {
-                    onShowNotePop(false)
                     editNoteState = originalState.notes
                     viewModel.updateQuickNotes(originalState.notes)
                 },
                 onNoteEdited = {
                     viewModel.updateQuickNotes(it)
-                    onShowNotePop(false)
+                    showNotePop = false
                 }
             )
         }
@@ -368,16 +356,16 @@ fun ItemMenu(
         if (showQtyPop) {
             EditQuantityPop(
                 textFieldState = qtyState,
+                undoEnabled = qtyState != originalState.quantity.toString(),
                 updateTextField = { qtyState = it },
-                onDismiss = { onShowQtyPop(false) },
+                onDismiss = { showQtyPop = false },
                 onCancel = {
-                    onShowQtyPop(false)
                     qtyState = originalState.quantity.toString()
                     viewModel.updateQuickQuantity(originalState.quantity)
                 },
                 onQtyEdited = {
                     viewModel.updateQuickQuantity(it)
-                    onShowQtyPop(false)
+                    showQtyPop = false
                 }
             )
         }
@@ -409,6 +397,7 @@ private fun QuickOption(
 @Composable
 private fun EditRatingPop(
     textFieldState: String,
+    undoEnabled: Boolean,
     updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
@@ -442,20 +431,15 @@ private fun EditRatingPop(
                 parsed = null
             }
 
-        } catch (_: ParseException) {
-            return null
-        }
+        } catch (_: ParseException) { return null }
         return parsed
     }
 
-    LaunchedEffect(Unit) {
-        updateParsedDouble(parseDouble(textFieldState))
-    }
+    SideEffect(textFieldState) { updateParsedDouble(parseDouble(textFieldState)) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier
-            .wrapContentHeight(),
+        modifier = modifier.wrapContentHeight(),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -477,8 +461,7 @@ private fun EditRatingPop(
                     text = "Set a rating (maximum 5). To make an item unrated, make the field " +
                             "blank. Supports fractional ratings (up to 2 decimal places).",
                     fontSize = 15.sp,
-                    modifier = Modifier
-                        .padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
                 Row(
                     modifier = Modifier
@@ -491,31 +474,10 @@ private fun EditRatingPop(
                         value = textFieldState,
                         onValueChange = {
                             if (it.matches(allowedPattern)) {
-                                updateTextField(it)
-                                updateParsedDouble(parseDouble(it))
-
-//                                try {
-//                                    if (it.isNotBlank()) {
-//                                        val preNumber = if (it.startsWith(decimalSeparator)) {
-//                                            "0$it"
-//                                        } else it
-//                                        val number = numberFormat.parse(preNumber)
-//                                        parsedDouble = number?.toDouble() ?: 0.0
-//                                        if (parsedDouble!! > 5.0) {
-//                                            parsedDouble = 5.0
-//                                        }
-//                                    } else {
-//                                        parsedDouble = null
-//                                    }
-//
-//                                } catch (e: ParseException) {
-//                                    Log.e("Rating", "Input: $it", e)
-//                                }
+                                updateTextField(it); updateParsedDouble(parseDouble(it))
                             }
                         },
-                        modifier = Modifier
-                            .width(80.dp)
-                            .padding(end = 8.dp),
+                        modifier = Modifier.width(80.dp).padding(end = 8.dp),
                         enabled = true,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -542,10 +504,7 @@ private fun EditRatingPop(
                                 indication = LocalIndication.current,
                                 interactionSource = null,
                                 enabled = textFieldState.isNotBlank()
-                            ) {
-                                updateTextField("")
-                                updateParsedDouble(null)
-                            }
+                            ) { updateTextField(""); updateParsedDouble(null) }
                             .padding(4.dp)
                             .size(20.dp)
                             .alpha(alpha)
@@ -557,21 +516,16 @@ private fun EditRatingPop(
             TextButton(
                 onClick = { onRatingEdited(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Done")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(text = "Done") }
         },
         dismissButton = {
             TextButton(
                 onClick = onCancel,
+                enabled = undoEnabled, // textFieldState != originalRating,
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Undo")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(text = "Undo") }
         }
     )
 }
@@ -579,6 +533,7 @@ private fun EditRatingPop(
 @Composable
 private fun EditNotePop(
     textFieldState: String,
+    undoEnabled: Boolean,
     updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
@@ -587,8 +542,7 @@ private fun EditNotePop(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier
-            .wrapContentHeight(),
+        modifier = modifier.wrapContentHeight(),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -618,16 +572,13 @@ private fun EditNotePop(
                             if (currentLine.startsWith(lastWord) && currentLine.length > 1) {
                                 updatedText = if (currentLine.length == lastWord.length + 1) {
                                     it.dropLast(lastWord.length + 1)
-                                } else {
-                                    it.dropLast(lastWord.length)
-                                }
+                                } else { it.dropLast(lastWord.length) }
                             }
                         }
                     }
                     updateTextField(updatedText)
                 },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
@@ -651,21 +602,16 @@ private fun EditNotePop(
             TextButton(
                 onClick = { onNoteEdited(textFieldState) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Done")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(text = "Done") }
         },
         dismissButton = {
             TextButton(
                 onClick = onCancel,
+                enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Undo")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(text = "Undo") }
         }
     )
 }
@@ -673,6 +619,7 @@ private fun EditNotePop(
 @Composable
 private fun EditQuantityPop(
     textFieldState: String,
+    undoEnabled: Boolean,
     updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
@@ -704,9 +651,7 @@ private fun EditQuantityPop(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .height(IntrinsicSize.Min)
-                    .fillMaxWidth()
+                modifier = Modifier.height(IntrinsicSize.Min).fillMaxWidth()
             ) {
                 Spacer(Modifier.width(34.dp))
 
@@ -714,14 +659,11 @@ private fun EditQuantityPop(
                 TextField(
                     value = textFieldState,
                     onValueChange = {
-                        if (it.matches(pattern) && it.length <= 2) {
-                            updateTextField(it)
-                        }
+                        if (it.matches(pattern) && it.length <= 2) { updateTextField(it) }
                     },
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                    modifier = Modifier
-                        .width(54.dp),
+                    modifier = Modifier.width(54.dp),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
@@ -739,33 +681,28 @@ private fun EditQuantityPop(
 
                 IncreaseDecrease(
                     increaseClick = {
-                        if (textFieldState.isEmpty()) {
-                            updateTextField("1")
-                        } else {
+                        if (textFieldState.isEmpty()) { updateTextField("1") }
+                        else {
                             if (textFieldState.toInt() < 99) {
                                 val intQty = textFieldState.toInt()
                                 val updatedQty = intQty + 1
                                 updateTextField(updatedQty.toString())
-                            } else {
-                                updateTextField("99")
                             }
+                            else { updateTextField("99") }
                         }
                     },
                     decreaseClick = {
-                        if (textFieldState.isEmpty()) {
-                            updateTextField("0")
-                        } else {
+                        if (textFieldState.isEmpty()) { updateTextField("0") }
+                        else {
                             if (textFieldState.toInt() > 0) {
                                 val intQty = textFieldState.toInt()
                                 val updatedQty = intQty - 1
                                 updateTextField(updatedQty.toString())
-                            } else if (textFieldState.toInt() == 0) {
-                                updateTextField("0")
                             }
+                            else if (textFieldState.toInt() == 0) { updateTextField("0") }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxHeight()
+                    modifier = Modifier.fillMaxHeight()
                 )
             }
         },
@@ -773,21 +710,16 @@ private fun EditQuantityPop(
             TextButton(
                 onClick = { onQtyEdited(textFieldState.toIntOrNull() ?: 1) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Done")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(text = "Done") }
         },
         dismissButton = {
             TextButton(
                 onClick = onCancel,
+                enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Undo")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(text = "Undo") }
         }
     )
 }
