@@ -52,12 +52,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -580,8 +582,6 @@ fun CellarBottomAppBar(
     navigateToDates: () -> Unit = {},
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    LaunchedEffect(Unit) { filterViewModel.updateClickToAdd(false) }
-
     val isTwoPane by filterViewModel.twoPaneState.collectAsState()
     val sheetState by filterViewModel.bottomSheetState.collectAsState()
     val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
@@ -589,7 +589,8 @@ fun CellarBottomAppBar(
     val datesExist by filterViewModel.datesExist.collectAsState()
     val databaseEmpty by filterViewModel.emptyDatabase.collectAsState()
     val tinsReady by filterViewModel.tinsReady.collectAsState()
-    val clickToAdd by filterViewModel.clickToAdd.collectAsState()
+    var clickToAdd by remember { mutableStateOf(false) }
+    SideEffect(currentDestination) { clickToAdd = false }
 
     val navIcon = LocalCustomColors.current.navIcon
     val indicatorCircle = LocalCustomColors.current.indicatorCircle
@@ -619,7 +620,7 @@ fun CellarBottomAppBar(
                     title = { "Cellar" },
                     icon = { R.drawable.table_view_old },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
-                    activeColor = { if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon },
+                    color = { if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -629,7 +630,7 @@ fun CellarBottomAppBar(
                     icon = { R.drawable.bar_chart },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
                     enabled = { !databaseEmpty },
-                    activeColor = {
+                    color = {
                         if (currentDestination == StatsDestination && !clickToAdd) onPrimaryLight
                         else if (databaseEmpty) navIcon.copy(alpha = 0.5f)
                         else navIcon
@@ -652,7 +653,7 @@ fun CellarBottomAppBar(
                         }
                         else Color.Transparent
                     },
-                    activeColor = {
+                    color = {
                         if (currentDestination == DatesDestination && !clickToAdd) onPrimaryLight
                         else if (datesExist) navIcon
                         else navIcon.copy(alpha = 0.5f)
@@ -687,7 +688,7 @@ fun CellarBottomAppBar(
                             }
                             else Color.Transparent
                         },
-                        activeColor = {
+                        color = {
                             if (!filterEnabled) navIcon.copy(alpha = .5f)
                             else if (sheetState == BottomSheetState.OPENED) onPrimaryLight
                             else navIcon
@@ -700,8 +701,8 @@ fun CellarBottomAppBar(
                 BottomBarButton(
                     title = { "Add" },
                     icon = { R.drawable.add_circle },
-                    onClick = { filterViewModel.updateClickToAdd(true); filterViewModel.getPositionTrigger(); navigateToAddEntry() },
-                    activeColor = { if (clickToAdd) onPrimaryLight else navIcon },
+                    onClick = { clickToAdd = true; filterViewModel.getPositionTrigger(); navigateToAddEntry() },
+                    color = { if (clickToAdd) onPrimaryLight else navIcon },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -715,7 +716,7 @@ private fun BottomBarButton(
     title: () -> String,
     icon: () -> Int,
     onClick: () -> Unit,
-    activeColor: () -> Color,
+    color: () -> Color,
     modifier: Modifier = Modifier,
     enabled: () -> Boolean = { true },
     showIndicator: () -> Boolean = { false },
@@ -759,7 +760,7 @@ private fun BottomBarButton(
                         modifier = Modifier
                             .size(26.dp)
                             .offset(y = (-8).dp),
-                        tint = activeColor()
+                        tint = color()
                     )
                 }
             }
@@ -768,8 +769,8 @@ private fun BottomBarButton(
                 text = title(),
                 modifier = Modifier.offset(y = 13.dp),
                 fontSize = 11.sp,
-                fontWeight = if (activeColor() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
-                color = activeColor()
+                fontWeight = if (color() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
+                color = color()
             )
         }
     }
