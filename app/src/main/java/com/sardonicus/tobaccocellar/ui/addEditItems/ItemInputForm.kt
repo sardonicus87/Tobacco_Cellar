@@ -30,10 +30,10 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,7 +54,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -90,7 +89,7 @@ fun ItemInputForm(
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
     if (twoColumn) {
-        LaunchedEffect(largePagerState.currentPage) {
+        SideEffect(largePagerState.currentPage) {
             if (largePagerState.currentPage == largePagerState.targetPage) {
                 if (largePagerState.currentPage != currentLeftTab()) {
                     updateSelectedTab(largePagerState.currentPage)
@@ -103,7 +102,7 @@ fun ItemInputForm(
             }
         }
     } else {
-        LaunchedEffect(narrowPagerState.currentPage) {
+        SideEffect(narrowPagerState.currentPage) {
             if (narrowPagerState.currentPage == narrowPagerState.targetPage) {
                 if (narrowPagerState.currentPage != selectedTabIndex()) {
                     updateSelectedTab(narrowPagerState.currentPage)
@@ -322,20 +321,15 @@ private fun AdaptiveTabRow(
 ) {
     val titles = listOf("Details", "Notes", "Tins")
     val focusManager = LocalFocusManager.current
-    val scope = rememberCoroutineScope()
     val showAdditional = rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(selectedTabIndex) {
         if (selectedTabIndex == 2) {
-            scope.launch {
-                delay(50.milliseconds)
-                showAdditional.value = true
-            }
+            delay(50.milliseconds)
+            showAdditional.value = true
         } else {
-            scope.launch {
-                delay(5.milliseconds)
-                showAdditional.value = false
-            }
+            delay(5.milliseconds)
+            showAdditional.value = false
         }
     }
 
