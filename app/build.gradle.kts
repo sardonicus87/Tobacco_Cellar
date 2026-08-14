@@ -11,9 +11,8 @@ ksp {
 
 
 kotlin {
-    compilerOptions {
-        freeCompilerArgs.add("-Xlambdas=class")
-    }
+    compilerOptions { freeCompilerArgs.add("-Xlambdas=class") }
+
     android {
         compileSdk = 37
 
@@ -21,8 +20,8 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 37
-            versionCode = 58
-            versionName = "5.2.15"
+            versionCode = 59
+            versionName = "5.2.16"
 
             vectorDrawables {
                 useSupportLibrary = true
@@ -47,9 +46,7 @@ kotlin {
 
                 signingConfig = signingConfigs.getByName("debug")
 
-                ndk {
-                    debugSymbolLevel = "SYMBOL_TABLE"
-                }
+                ndk { debugSymbolLevel = "SYMBOL_TABLE" }
             }
         }
 
@@ -104,7 +101,6 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.adaptive.layout)
-
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.ui.text.google.fonts)

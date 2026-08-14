@@ -14,13 +14,32 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 59,
+        versionNumber = "5.2.16",
+        buildDate = "14 Aug, 2026",
+        improvements = listOf(
+            "Quick Edit: undoing changes in ratings, quantity and notes no longer automatically " +
+                    "closes the dialog box.",
+            "Large Screens: filter sheet when not in Dual Pane views is no longer paginated when " +
+                    "screen is tall enough.",
+            "Minor performance improvements."
+        ),
+        bugFixes = listOf(
+            "Another fix to snackbar \"swipe to dismiss\" not working on some devices. Should " +
+                    "now finally be fixed across the board."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 58,
         versionNumber = "5.2.15",
         buildDate = "10 Aug, 2026",
-        bugFixes = listOf(
-            "Snackbar \"swipe to dismiss\" fix.",
+        improvements = listOf(
             "Globally removed the confusing and useless \"Autofill\" button when long-pressing " +
                     "on text-fields (like for cut/copy/paste)."
+        ),
+        bugFixes = listOf(
+            "Snackbar \"swipe to dismiss\" fix."
         )
     ),
 
