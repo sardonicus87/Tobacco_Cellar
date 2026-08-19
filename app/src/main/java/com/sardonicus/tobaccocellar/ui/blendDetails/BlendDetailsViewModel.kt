@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -42,21 +41,9 @@ class BlendDetailsViewModel(
     filterViewModel: FilterViewModel,
     preferencesRepo: PreferencesRepo
 ) : ViewModel() {
-    private val _selectionKey = MutableStateFlow(0)
-    val selectionKey = _selectionKey.asStateFlow()
-
-    private val _selectionFocused = MutableStateFlow(false)
-    val selectionFocused = _selectionFocused.asStateFlow()
 
     private val _parseLinks = MutableStateFlow(false)
     val parseLinks = _parseLinks.asStateFlow()
-
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
 
     val blendDetails: StateFlow<BlendDetails> = combine(
         filterViewModel.everythingFlow,
@@ -169,8 +156,6 @@ class BlendDetailsViewModel(
             else -> { null }
         } ?: ""
     }
-
-    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
 
     val urlRegex = Regex("""(https?://|www\.)[a-zA-Z0-9_./-]*[a-zA-Z0-9_/-]""")
     fun parseHyperlinks(text: String, color: Color, linkListener: LinkInteractionListener, parseLinks: Boolean): AnnotatedString {

@@ -1,7 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.blendDetails
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
@@ -43,9 +42,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -96,23 +95,13 @@ fun BlendDetailsScreen(
     val twoPane by remember { mutableStateOf(isTwoPane) }
 
     val blendDetails by viewModel.blendDetails.collectAsState()
-    val selectionFocused by viewModel.selectionFocused.collectAsState()
-    var composed by rememberSaveable { mutableStateOf(false) }
+    var composed by remember { mutableStateOf(false) }
 
-    BackHandler(selectionFocused) {
-        if (selectionFocused) {
-            viewModel.resetSelection()
-        }
-    }
+    var selectionFocused by remember { mutableStateOf(false) }
+    var selectionKey by remember { mutableIntStateOf(0) }
 
-    val activity = LocalActivity.current
-    DisposableEffect(Unit) {
-        onDispose {
-            if (activity?.isChangingConfigurations == false) {
-                viewModel.resetSelection()
-            }
-        }
-    }
+    BackHandler(selectionFocused) { if (selectionFocused) selectionKey++; selectionFocused = false }
+    DisposableEffect(Unit) { onDispose { selectionKey++; selectionFocused = false } }
 
     Scaffold(
         modifier = modifier
@@ -120,23 +109,17 @@ fun BlendDetailsScreen(
             .pointerInput(selectionFocused) {
                 awaitEachGesture {
                     val down = awaitFirstDown(pass = PointerEventPass.Main)
-                    if (selectionFocused) {
-                        viewModel.resetSelection()
-                        down.consume()
-                    }
+                    if (selectionFocused) { selectionKey++; selectionFocused = false; down.consume() }
                 }
-            }
-        ,
+            },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.blend_details_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = {
-                    if (selectionFocused) {
-                        viewModel.resetSelection()
-                        onNavigateUp()
-                    } else { onNavigateUp() }
+                    if (selectionFocused) { selectionKey++; selectionFocused = false; onNavigateUp() }
+                    else { onNavigateUp() }
                 },
                 showMenu = false,
                 overrideBack = twoPane,
@@ -156,11 +139,9 @@ fun BlendDetailsScreen(
                 BlendDetailsBody(
                     blendDetails = blendDetails,
                     viewModel = viewModel,
-                    navigateToEditEntry = {
-                        viewModel.resetSelection()
-                        navigateToEditEntry(it)
-                    },
-                    selectionFocused = viewModel::updateFocused,
+                    navigateToEditEntry = { selectionKey++; selectionFocused = false; navigateToEditEntry(it) },
+                    selectionKey = selectionKey,
+                    selectionFocused = { selectionFocused = it },
                     updateComposed = { composed = it },
                     modifier = Modifier
                 )
@@ -169,11 +150,7 @@ fun BlendDetailsScreen(
                     enter = EnterTransition.None,
                     exit = fadeOut(tween(250)),
                     modifier = Modifier.fillMaxSize()
-                ) {
-                    Box(Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background))
-                }
+                ) { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) }
             }
         }
     }
@@ -185,11 +162,11 @@ private fun BlendDetailsBody(
     blendDetails: BlendDetails,
     viewModel: BlendDetailsViewModel,
     navigateToEditEntry: (Int) -> Unit,
+    selectionKey: Int,
     selectionFocused: (Boolean) -> Unit,
     updateComposed: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val selectionKey by viewModel.selectionKey.collectAsState()
     val columnState = rememberLazyListState()
 
     LaunchedEffect(columnState) {
@@ -202,9 +179,7 @@ private fun BlendDetailsBody(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
         state = columnState,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)
     ) {
         // Header
         item {
