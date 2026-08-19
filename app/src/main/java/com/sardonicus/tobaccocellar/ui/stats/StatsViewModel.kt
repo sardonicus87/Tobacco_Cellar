@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.floor
 import kotlin.time.Duration.Companion.milliseconds
@@ -28,12 +27,6 @@ class StatsViewModel(
     filterViewModel: FilterViewModel,
     preferencesRepo: PreferencesRepo
 ): ViewModel() {
-
-    private val _selectionFocused = MutableStateFlow(false)
-    val selectionFocused = _selectionFocused.asStateFlow()
-
-    private val _selectionKey = MutableStateFlow(0)
-    val selectionKey = _selectionKey.asStateFlow()
 
     private val _showLoading = MutableStateFlow(true)
     val showLoading = _showLoading.asStateFlow()
@@ -397,24 +390,6 @@ class StatsViewModel(
             }
         }
     }
-
-
-    /** UI functions/vals **/
-    val expanded = MutableStateFlow(false)
-
-    fun updateExpanded(newExpanded: Boolean) {
-        expanded.value = newExpanded
-    }
-
-    fun updateFocused(focused: Boolean) {
-        _selectionFocused.update { focused }
-    }
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
 }
 
 

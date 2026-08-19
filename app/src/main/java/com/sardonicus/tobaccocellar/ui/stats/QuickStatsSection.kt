@@ -1,5 +1,11 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +30,12 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -40,6 +51,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun QuickStatsSection(
@@ -48,11 +61,18 @@ fun QuickStatsSection(
     availableSections: AvailableSections,
     selectionKey: () -> Int,
     selectionFocused: (Boolean) -> Unit,
-    contracted: (Boolean) -> Unit,
     expanded: Boolean,
-    updateExpanded: (Boolean) -> Unit,
+    contract: () -> Unit,
+    expand: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var iconExpanded by remember { mutableStateOf(expanded) }
+
+    LaunchedEffect(expanded) {
+        if (expanded) { delay(250.milliseconds); iconExpanded = true }
+        else { delay(250.milliseconds); iconExpanded = false }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -69,8 +89,7 @@ fun QuickStatsSection(
         ) {
             Text(
                 text = "Raw Stats",
-                modifier = Modifier
-                    .weight(1f),
+                modifier = Modifier.weight(1f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
@@ -79,8 +98,7 @@ fun QuickStatsSection(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "Filtered Stats",
-                modifier = Modifier
-                    .weight(1f),
+                modifier = Modifier.weight(1f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
@@ -96,9 +114,7 @@ fun QuickStatsSection(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
-            key(selectionKey()) { SelectionContainer(Modifier
-                .weight(1f)
-                .onFocusChanged { selectionFocused(it.isFocused) }
+            key(selectionKey()) { SelectionContainer(Modifier.weight(1f).onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
                     text = "${rawStats.blendsCount} blends, ${rawStats.brandsCount} brands\n" +
@@ -151,17 +167,22 @@ fun QuickStatsSection(
             )
         }
         if (availableSections.anyAvailable) {
-            if (expanded) {
-                availableSections.available.forEach { (label, raw, filtered) ->
-                    StatSubSection(
-                        label = label,
-                        rawField = raw,
-                        filteredField = filtered,
-                        selectionKey = selectionKey,
-                        selectionFocused = selectionFocused,
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                    )
+            AnimatedVisibility (
+                visible = expanded,
+                enter = expandVertically(tween(250), Alignment.Top) + fadeIn(tween(250)),
+                exit = shrinkVertically(tween(250), Alignment.Top) + fadeOut(tween(250))
+            ) {
+                Column {
+                    availableSections.available.forEach { (label, raw, filtered) ->
+                        StatSubSection(
+                            label = label,
+                            rawField = raw,
+                            filteredField = filtered,
+                            selectionKey = selectionKey,
+                            selectionFocused = selectionFocused,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
                 }
             }
 
@@ -177,16 +198,14 @@ fun QuickStatsSection(
                     .clickable(
                         indication = LocalIndication.current,
                         interactionSource = null,
-                    ) { if (expanded) { contracted(true) } else { updateExpanded(true) } }
+                    ) { if (expanded) { contract() } else { expand() } }
                     .padding(horizontal = 8.dp)
             ) {
                 HorizontalDivider(Modifier.weight(1f), 1.dp)
                 Icon(
-                    painter = painterResource(id = if (expanded) R.drawable.double_up else R.drawable.double_down),
+                    painter = painterResource(id = if (iconExpanded) R.drawable.double_up else R.drawable.double_down),
                     contentDescription = "Collapse",
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(18.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp).size(18.dp),
                     tint = LocalContentColor.current.copy(alpha = 0.5f)
                 )
                 HorizontalDivider(Modifier.weight(1f), 1.dp)
@@ -207,8 +226,7 @@ private fun StatSubSection(
     modifier: Modifier = Modifier
 ) {
     Box (
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.TopStart
     ) {
         Text(

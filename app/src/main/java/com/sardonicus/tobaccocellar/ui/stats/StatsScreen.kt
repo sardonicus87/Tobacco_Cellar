@@ -1,10 +1,11 @@
 package com.sardonicus.tobaccocellar.ui.stats
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,10 +33,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,9 +62,7 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,35 +77,25 @@ fun StatsScreen(
     val rawStats by viewModel.rawStats.collectAsState()
     val filteredStats by viewModel.filteredStats.collectAsState()
     val availableSections by viewModel.availableSections.collectAsState()
-    val selectionFocused by viewModel.selectionFocused.collectAsState()
-    val selectionKey by viewModel.selectionKey.collectAsState()
+    var selectionFocused by remember { mutableStateOf(false) }
+    var selectionKey by remember { mutableIntStateOf(0) }
 
     val showLoading by viewModel.showLoading.collectAsState()
 
-    BackHandler(selectionFocused) {
-        if (selectionFocused) {
-            viewModel.resetSelection()
-        }
-    }
+    BackHandler(selectionFocused) { if (selectionFocused) { selectionKey++; selectionFocused = false } }
 
-    val activity = LocalActivity.current
-    DisposableEffect(Unit) {
-        onDispose {
-            if (activity?.isChangingConfigurations == false) {
-                viewModel.resetSelection()
-            }
-        }
-    }
+    DisposableEffect(Unit) { onDispose { selectionKey++; selectionFocused = false } }
 
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(
-                indication = null,
-                interactionSource = null,
-                onClick = viewModel::resetSelection
-            ),
+            .pointerInput(selectionFocused) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Main)
+                    if (selectionFocused) { selectionKey++; selectionFocused = false; down.consume() }
+                }
+            },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.stats_title),
@@ -117,9 +108,9 @@ fun StatsScreen(
             CellarBottomAppBar(
                 modifier = Modifier
                     .padding(0.dp),
-                navigateToHome = { viewModel.resetSelection(); navigateToHome() },
-                navigateToDates = { viewModel.resetSelection(); navigateToDates() },
-                navigateToAddEntry = { viewModel.resetSelection(); navigateToAddEntry() },
+                navigateToHome = { selectionKey++; selectionFocused = false; navigateToHome() },
+                navigateToDates = { selectionKey++; selectionFocused = false; navigateToDates() },
+                navigateToAddEntry = { selectionKey++; selectionFocused = false; navigateToAddEntry() },
                 currentDestination = StatsDestination,
             )
         },
@@ -131,18 +122,15 @@ fun StatsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (showLoading) {
-                LoadingIndicator()
-            } else {
+            if (showLoading) { LoadingIndicator() }
+            else {
                 StatsBody(
                     rawStats = rawStats,
                     filteredStats = filteredStats,
                     availableSections = availableSections,
-                    viewModel = viewModel,
                     selectionKey = { selectionKey },
-                    selectionFocused = viewModel::updateFocused,
-                    modifier = modifier
-                        .fillMaxSize(),
+                    selectionFocused = { selectionFocused = it },
+                    modifier = modifier.fillMaxSize(),
                 )
             }
         }
@@ -154,24 +142,13 @@ private fun StatsBody(
     rawStats: RawStats,
     filteredStats: FilteredStats,
     availableSections: AvailableSections,
-    viewModel: StatsViewModel,
     selectionKey: () -> Int,
     selectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val expanded by viewModel.expanded.collectAsState()
-    val contract = {
-        scope.launch {
-            lazyListState.scrollToItem(0)
-            while (lazyListState.canScrollBackward) {
-                delay(5.milliseconds)
-            }
-            viewModel.updateExpanded(false)
-            delay(10.milliseconds)
-        }
-    }
+    var expanded by remember { mutableStateOf(false) }
 
 
     LazyColumn(
@@ -191,9 +168,9 @@ private fun StatsBody(
                 availableSections = availableSections,
                 selectionKey = selectionKey,
                 selectionFocused = selectionFocused,
-                contracted = { if (it) contract() },
                 expanded = expanded,
-                updateExpanded = { viewModel.updateExpanded(it) },
+                contract = { scope.launch { lazyListState.animateScrollToItem(0); expanded = false } },
+                expand = { expanded = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
@@ -220,8 +197,7 @@ private fun StatsBody(
                     text = "*Charts are filter-reactive. Some charts may be redundant/irrelevant " +
                             "depending on the chosen filters.",
                     color = LocalContentColor.current.copy(alpha = 0.75f),
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Start,
                     softWrap = true,
@@ -249,24 +225,20 @@ private fun StatsBody(
         if (filteredStats.brandsByQuantity.count() > 1) {
             item {
                 HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    modifier = Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
                     thickness = 1.dp,
                 )
                 ChartsFormat(
                     label = "Brands by \"No. of Tins\"",
                     chartData = { filteredStats.brandsByQuantity },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
-
         if (filteredStats.brandsByRating.count() > 1) {
             item {
                 HorizontalDivider(
-                    modifier = Modifier
-                        .padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    modifier = Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
                     thickness = 1.dp,
                 )
                 BrandsByRatingSection(
@@ -274,7 +246,6 @@ private fun StatsBody(
                 )
             }
         }
-
         if (filteredStats.typesByEntries.count() > 1) {
             item {
                 HorizontalDivider(
@@ -284,8 +255,7 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Types by Entries",
                     chartData = { filteredStats.typesByEntries },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -298,8 +268,7 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Types by \"No. of Tins\"",
                     chartData = { filteredStats.typesByQuantity },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
 
             }
@@ -314,8 +283,7 @@ private fun StatsBody(
                     label = "Ratings Distribution",
                     histogramData = { filteredStats.ratingsDistribution },
                     showHistogram = true,
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -328,8 +296,7 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Fav/Dislike by Entries",
                     chartData = { filteredStats.favDisByEntries },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -342,8 +309,7 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Subgenres by Entries",
                     chartData = { filteredStats.subgenresByEntries },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -356,8 +322,7 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Subgenres by \"No. of Tins\"",
                     chartData = { filteredStats.subgenresByQuantity },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -370,15 +335,13 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Cuts by Entries",
                     chartData = { filteredStats.cutsByEntries },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
 
             }
         }
         if (filteredStats.cutsByQuantity.count() > 1) {
             item {
-
                 HorizontalDivider(
                     Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
                     1.dp
@@ -415,8 +378,7 @@ private fun Header(
         ) {
             Text(
                 text = title,
-                modifier = Modifier
-                    .padding(start = 8.dp),
+                modifier = Modifier.padding(start = 8.dp),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Start,
@@ -455,8 +417,7 @@ private fun BrandsByRatingSection(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -477,17 +438,13 @@ private fun BrandsByRatingSection(
         Column (
             modifier = Modifier
                 .padding(top = 20.dp, bottom = 44.dp)
-                .fillMaxWidth(0.7f)
-            ,
+                .fillMaxWidth(0.7f),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(
-                        20.dp,
-                        Alignment.CenterHorizontally
-                    ),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
                     modifier = Modifier.padding(bottom = 4.dp),
                 ) {
                     Column(Modifier.width(IntrinsicSize.Max)) {
@@ -495,7 +452,6 @@ private fun BrandsByRatingSection(
                             val index = brandsByRating().keys.indexOf(it.key)
                             Text(
                                 text = "${index + 1}.",
-                                modifier = Modifier,
                                 fontSize = 14.sp,
                                 textAlign = TextAlign.End,
                                 fontWeight = FontWeight.Medium,
@@ -507,7 +463,6 @@ private fun BrandsByRatingSection(
                         brandsByRating().forEach {
                             Text(
                                 text = it.key,
-                                modifier = Modifier,
                                 fontSize = 14.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -518,7 +473,6 @@ private fun BrandsByRatingSection(
                         brandsByRating().forEach {
                             Text(
                                 text = formatDecimal(it.value.averageRating, drop = false),
-                                modifier = Modifier,
                                 fontSize = 14.sp,
                                 maxLines = 1,
                             )
@@ -528,7 +482,6 @@ private fun BrandsByRatingSection(
                         brandsByRating().forEach {
                             Text(
                                 text = "(${it.value.ratingsCount})",
-                                modifier = Modifier,
                                 fontSize = 14.sp,
                                 maxLines = 1,
                             )
@@ -538,7 +491,6 @@ private fun BrandsByRatingSection(
                         brandsByRating().forEach {
                             Text(
                                 text = formatDecimal(it.value.weightedRating, drop = false),
-                                modifier = Modifier,
                                 fontSize = 14.sp,
                                 maxLines = 1,
                             )
@@ -567,12 +519,12 @@ private fun ChartsFormat(
 ) {
     val countVal by remember(showHistogram, chartData(), histogramData()) {
         derivedStateOf {
-            if (!showHistogram) chartData().values.sum() else histogramData().distribution.values.sum()
+            if (!showHistogram) chartData().values.sum()
+            else histogramData().distribution.values.sum()
         }
     }
 
-    var showValue by rememberSaveable { mutableStateOf(false) }
-    val onShowValue: () -> Unit = { showValue = !showValue }
+    var showValue by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -606,7 +558,7 @@ private fun ChartsFormat(
                     .clickable(
                         indication = LocalIndication.current,
                         interactionSource = null
-                    ) { onShowValue() }
+                    ) { showValue = !showValue }
                     .width(75.dp),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
