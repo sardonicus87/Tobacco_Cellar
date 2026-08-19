@@ -17,8 +17,10 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -85,9 +87,7 @@ fun CellarNavigation(
         if (twoPaneState && !navigationState.isTwoPane && navigationState.currentStack.size > 1) {
             delay(500.milliseconds)
             filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
-        } else {
-            filterViewModel.updateTwoPaneState(navigationState.isTwoPane)
-        }
+        } else { filterViewModel.updateTwoPaneState(navigationState.isTwoPane) }
     }
 
     val app = LocalCellarApplication.current
@@ -133,8 +133,7 @@ fun CellarNavigation(
                                 preferencesRepo,
                                 itemsRepository,
                                 filterViewModel,
-                                csvHelper,
-                                app
+                                csvHelper, app
                             )
                         }
                     }
@@ -379,6 +378,7 @@ fun CellarNavigation(
                 PlaintextScreen(
                     onNavigateUp = { navigator.goBack() },
                     twoColumnTabs = twoColumnTabs,
+                    filterViewModel = filterViewModel,
                     viewModel = viewModel
                 )
             }
@@ -444,36 +444,36 @@ fun CellarNavigation(
             val lastKey = currentStack.lastOrNull()
             val pairing = mainSecondaryMap.entries.find { map -> map.key::class == mainKey?.let { it::class } }?.value
 
-            if (mainKey != null && lastKey != null && mainKey::class == lastKey::class) {
-                true
-            } else {
-                pairing?.allowedSeconds?.contains(lastKey?.let { it::class }) ?: true
-            }
+            if (mainKey != null && lastKey != null && mainKey::class == lastKey::class) { true }
+            else { pairing?.allowedSeconds?.contains(lastKey?.let { it::class }) ?: true }
         }
     }
     val twoPaneScene = rememberTwoPaneStrategy<NavKey>(twoPaneAllowed && validPairing, navigationState.interceptBack)
 
-    LaunchedEffect(twoPaneAllowed) {
-        if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
-            val aboutStack = navigationState.backStacks[AboutDestination]
+    var wasAllowed by remember { mutableStateOf(twoPaneAllowed) }
 
-            if (aboutStack?.size == 1 && aboutStack.last() == AboutDestination) {
-                navigationState.topLevelRoute = navigationState.startRoute
-                val targetStack = navigationState.backStacks[navigationState.startRoute]
-                if (targetStack != null && !targetStack.contains(SettingsDestination)) {
-                    targetStack.add(SettingsDestination)
+    SideEffect(twoPaneAllowed) {
+        if (wasAllowed != twoPaneAllowed) {
+            if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
+                val aboutStack = navigationState.backStacks[AboutDestination]
+
+                if (aboutStack?.size == 1 && aboutStack.last() == AboutDestination) {
+                    navigationState.topLevelRoute = navigationState.startRoute
+                    val targetStack = navigationState.backStacks[navigationState.startRoute]
+                    if (targetStack != null && !targetStack.contains(SettingsDestination)) {
+                        targetStack.add(SettingsDestination)
+                    }
+                }
+            } else {
+                if (twoPaneAllowed) {
+                    val startStack = navigationState.backStacks[navigationState.startRoute]
+
+                    if (navigationState.topLevelRoute == navigationState.startRoute && startStack?.lastOrNull() == SettingsDestination) {
+                        navigator.navigate(AboutDestination); startStack.remove(SettingsDestination)
+                    }
                 }
             }
-        }
-        else {
-            if (twoPaneAllowed) {
-                val startStack = navigationState.backStacks[navigationState.startRoute]
-
-                if (navigationState.topLevelRoute == navigationState.startRoute && startStack?.lastOrNull() == SettingsDestination) {
-                    navigator.navigate(AboutDestination)
-                    startStack.remove(SettingsDestination)
-                }
-            }
+            wasAllowed = twoPaneAllowed
         }
     }
 
@@ -488,8 +488,8 @@ fun CellarNavigation(
             popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
             predictivePopTransitionSpec = {
                 if (isGestureNav && (initialState.entries.size == 1 || targetState.entries.size == 1)) {
-                    fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f)
-                } else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
+                    fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f) }
+                else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
             }
         )
     }
