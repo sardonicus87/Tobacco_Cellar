@@ -178,27 +178,25 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         // cold/warm start check for new files
-        if (savedInstanceState == null) {
-            applicationScope.launch(Dispatchers.Default) {
-                val syncEnabled = preferencesRepo.crossDeviceSync.first()
-                val syncInProgress = SyncStateManager.isSyncing.first()
+        applicationScope.launch(Dispatchers.Default) {
+            val syncEnabled = preferencesRepo.crossDeviceSync.first()
+            val syncInProgress = SyncStateManager.isSyncing.first()
 
-                if (syncEnabled && !syncInProgress) {
-                    val workManager = WorkManager.getInstance(this@CellarApplication)
-                    val allowMobile = preferencesRepo.allowMobileData.first()
-                    val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
+            if (syncEnabled && !syncInProgress) {
+                val workManager = WorkManager.getInstance(this@CellarApplication)
+                val allowMobile = preferencesRepo.allowMobileData.first()
+                val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
 
-                    val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
-                        .setConstraints(
-                            Constraints.Builder()
-                                .setRequiredNetworkType(networkType)
-                                .build()
-                        )
-                        .addTag("cold/warm start check")
-                        .build()
+                val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
+                    .setConstraints(
+                        Constraints.Builder()
+                            .setRequiredNetworkType(networkType)
+                            .build()
+                    )
+                    .addTag("cold/warm start check")
+                    .build()
 
-                    workManager.enqueue(onStartWorkRequest)
-                }
+                workManager.enqueue(onStartWorkRequest)
             }
         }
     }
