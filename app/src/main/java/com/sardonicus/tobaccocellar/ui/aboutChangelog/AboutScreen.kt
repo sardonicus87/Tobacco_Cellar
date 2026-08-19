@@ -7,6 +7,8 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,11 +32,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +46,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -74,24 +79,13 @@ fun AboutScreen(
     modifier: Modifier = Modifier
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    var selectionFocused by remember { mutableStateOf(false) }
+    var selectionKey by remember { mutableIntStateOf(0) }
 
-    var selectionFocused by rememberSaveable { mutableStateOf(false) }
-    var selectionKey by rememberSaveable { mutableIntStateOf(0) }
-    val resetSelection: () -> Unit = {
-        selectionKey += 1
-        selectionFocused = false
-    }
-
-    BackHandler(selectionFocused) {
-        if (selectionFocused) {
-            resetSelection()
-        }
-    }
+    BackHandler(selectionFocused) { if (selectionFocused) { selectionKey++; selectionFocused = false } }
+    DisposableEffect(Unit) { onDispose { selectionKey++; selectionFocused = false } }
 
     val context = LocalContext.current
-
-    val appVersion = BuildConfig.VERSION_NAME
-    val dbVersion = TobaccoDatabase.getDatabaseVersion(LocalContext.current).toString()
     val versionInfo = buildAnnotatedString {
         withStyle(
             style = SpanStyle(
@@ -104,7 +98,7 @@ fun AboutScreen(
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Medium
             )
-        ) { append(appVersion) }
+        ) { append(BuildConfig.VERSION_NAME) }
         withStyle(
             style = SpanStyle(
                 color = MaterialTheme.colorScheme.onBackground,
@@ -116,14 +110,19 @@ fun AboutScreen(
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Medium
             )
-        ) { append(dbVersion) }
+        ) { append(TobaccoDatabase.getDatabaseVersion(context).toString()) }
     }
 
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { resetSelection() },
+            .pointerInput(selectionFocused) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Main)
+                    if (selectionFocused) { selectionKey++; selectionFocused = false; down.consume() }
+                }
+            },
         topBar = {
             CellarTopAppBar(
                 title = "About",
@@ -202,12 +201,8 @@ fun AboutScreen(
                             lineHeight = 1.5.em,
                             softWrap = true,
                         )
-                        key(selectionKey) {
-                            SelectionContainer(
-                                modifier = Modifier
-                                    .onFocusChanged { selectionFocused = it.isFocused }
-                            ) {
-
+                        key(selectionKey) { SelectionContainer(
+                            Modifier.onFocusChanged { selectionFocused = it.isFocused }) {
                                 Text(
                                     text = "sardonicus.notadev@gmail.com",
                                     modifier = Modifier
@@ -233,14 +228,17 @@ fun AboutScreen(
                     }
                 }
 
-                Text(
-                    text = versionInfo,
-                    modifier = Modifier,
-                    textAlign = TextAlign.Center,
-                    fontSize = 15.sp,
-                    lineHeight = 1.5.em,
-                    softWrap = true,
-                )
+                key(selectionKey) { SelectionContainer(
+                    Modifier.onFocusChanged { selectionFocused = it.isFocused }) {
+                    Text(
+                        text = versionInfo,
+                        modifier = Modifier,
+                        textAlign = TextAlign.Center,
+                        fontSize = 15.sp,
+                        lineHeight = 1.5.em,
+                        softWrap = true,
+                    )
+                } }
 
                 // Changelog and links
                 Column(
@@ -303,21 +301,14 @@ private fun ExternalLink(
     val externalLink: (String) -> AnnotatedString = {
         buildAnnotatedString {
             append("$it↗")
-            addStyle(
-                style = SpanStyle(textDecoration = TextDecoration.Underline),
-                start = 0,
-                end = length - 1
-            )
+            addStyle(SpanStyle(textDecoration = TextDecoration.Underline), 0, length - 1)
         }
     }
     Text(
         text = externalLink(text),
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .clickable(
-                indication = LocalIndication.current,
-                interactionSource = null
-            ) {
+            .clickable(indication = LocalIndication.current, interactionSource = null) {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 uriHandler.openUri(url)
             }
