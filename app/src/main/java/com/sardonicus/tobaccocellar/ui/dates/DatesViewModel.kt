@@ -11,13 +11,10 @@ import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.calculateAge
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -31,12 +28,6 @@ class DatesViewModel(
     private val filterViewModel: FilterViewModel,
     private val preferencesRepo: PreferencesRepo,
 ) : ViewModel() {
-
-    private val _selectionFocused = MutableStateFlow(false)
-    val selectionFocused = _selectionFocused.asStateFlow()
-
-    private val _selectionKey = MutableStateFlow(0)
-    val selectionKey = _selectionKey.asStateFlow()
 
     val datesUiState: StateFlow<DatesUiState> =
         combine(
@@ -74,10 +65,8 @@ class DatesViewModel(
 
             DatesUiState(
                 datesExist = datedTins.isNotEmpty(),
-
                 agingSection = listOf(weekSection, monthSection),
-                agingExists = agingData.first.isNotEmpty() || agingData.second.isNotEmpty(), // agingDue(allItems).first.isNotEmpty() || agingDue(allItems).second.isNotEmpty(),
-
+                agingExists = agingData.first.isNotEmpty() || agingData.second.isNotEmpty(),
                 averageAgeSection = listOf(
                     AverageAgeSection("Average age (manuf): ", averageManuf),
                     AverageAgeSection("Average time in cellar: ", averageCellar),
@@ -85,21 +74,18 @@ class DatesViewModel(
                     AverageAgeSection("Average wait (open): ", averageWait)
                 ),
                 averageAgeExists = averageManuf.isNotBlank() || averageCellar.isNotBlank() || averageOpen.isNotBlank() || averageWait.isNotBlank(),
-
                 oldestTinsSection = listOf(
                     OldestTinsSection("Manufacture", pastManu),
                     OldestTinsSection("Cellared", pastCellar),
                     OldestTinsSection("Opened", pastOpened)
                 ),
                 oldestTinsExists = pastManu.isNotEmpty() || pastCellar.isNotEmpty() || pastOpened.isNotEmpty(),
-
                 futureTinsSection = listOf(
                     FutureTinsSection("Manufacture", futureManu),
                     FutureTinsSection("Cellared", futureCellar),
                     FutureTinsSection("Opened", futureOpen)
                 ),
                 futureTinsExists = futureManu.isNotEmpty() || futureCellar.isNotEmpty() || futureOpen.isNotEmpty(),
-
                 loading = false,
             )
         }
@@ -128,10 +114,7 @@ class DatesViewModel(
         }
     }
 
-    fun cancelDatesSeen() {
-        trackingJob?.cancel()
-        trackingJob = null
-    }
+    fun cancelDatesSeen() { trackingJob?.cancel(); trackingJob = null }
 
 
     fun findDatedTins(
@@ -258,16 +241,6 @@ class DatesViewModel(
         }
 
         return Pair(thisWeekTins, thisMonthTins)
-    }
-
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
-    fun updateFocused(focused: Boolean) {
-        _selectionFocused.update { focused }
     }
 
 }

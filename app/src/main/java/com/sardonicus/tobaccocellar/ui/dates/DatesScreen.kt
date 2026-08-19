@@ -1,11 +1,12 @@
 package com.sardonicus.tobaccocellar.ui.dates
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,8 +40,9 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +51,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -79,30 +83,24 @@ fun DatesScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val datesUiState by viewModel.datesUiState.collectAsState()
-    val selectionFocused by viewModel.selectionFocused.collectAsState()
-    val selectionKey by viewModel.selectionKey.collectAsState()
+    var selectionFocused by remember { mutableStateOf(false) }
+    var selectionKey by remember { mutableIntStateOf(0) }
 
-    BackHandler(selectionFocused) {
-        if (selectionFocused) {
-            viewModel.resetSelection()
-        }
-    }
-
-    val activity = LocalActivity.current
+    BackHandler(selectionFocused) { if (selectionFocused) selectionKey++; selectionFocused = false }
     DisposableEffect(Unit) {
         viewModel.startDatesSeen()
-        onDispose {
-            viewModel.cancelDatesSeen()
-            if (activity?.isChangingConfigurations == false) {
-                viewModel.resetSelection()
-            }
-        }
+        onDispose { viewModel.cancelDatesSeen(); selectionKey++; selectionFocused = false }
     }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { viewModel.resetSelection() },
+            .pointerInput(selectionFocused) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Main)
+                    if (selectionFocused) { selectionKey++; selectionFocused = false; down.consume() }
+                }
+            },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.dates_title),
@@ -116,9 +114,9 @@ fun DatesScreen(
             CellarBottomAppBar(
                 modifier = Modifier
                     .padding(0.dp),
-                navigateToHome = { viewModel.resetSelection(); navigateToHome() },
-                navigateToStats = { viewModel.resetSelection(); navigateToStats() },
-                navigateToAddEntry = { viewModel.resetSelection(); navigateToAddEntry() },
+                navigateToHome = { selectionKey++; selectionFocused = false; navigateToHome() },
+                navigateToStats = { selectionKey++; selectionFocused = false; navigateToStats() },
+                navigateToAddEntry = { selectionKey++; selectionFocused = false; navigateToAddEntry() },
                 currentDestination = DatesDestination,
             )
         },
@@ -137,7 +135,7 @@ fun DatesScreen(
                     navigateToDetails = navigateToDetails,
                     datesUiState = datesUiState,
                     selectionKey = { selectionKey },
-                    updateSelectionFocused = viewModel::updateFocused,
+                    updateSelectionFocused = { selectionFocused = it },
                     modifier = Modifier
                         .fillMaxSize()
                 )
@@ -171,9 +169,7 @@ fun DatesBody(
             item(key = "disclaimer") {
                 Text(
                     text = "*Excluding \"Aging Tracker\", all date information on this screen is filter-reactive.",
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .fillMaxWidth(.9f),
+                    modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(.9f),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     color = LocalContentColor.current.copy(alpha = .75f),
@@ -200,23 +196,20 @@ fun DatesBody(
                                     Spacer(Modifier.height(12.dp))
                                     Text(
                                         text = section.exists,
-                                        modifier = Modifier
-                                            .padding(bottom = 1.dp),
+                                        modifier = Modifier.padding(bottom = 1.dp),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Medium,
                                     )
                                     AgingSection(
                                         items = section.agingDue,
                                         navigateToDetails = navigateToDetails,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 } else {
                                     Spacer(Modifier.height(12.dp))
                                     Text(
                                         text = section.empty,
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Start,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Medium,
@@ -224,13 +217,11 @@ fun DatesBody(
                                 }
                             }
                         }
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(Modifier.height(20.dp))
                     } else {
                         Text(
                             text = "No tins coming of age this week or month.",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 20.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -282,9 +273,7 @@ fun DatesBody(
                 }
             }
         }
-        if (!datesUiState.loading && !datesUiState.datesExist) {
-            EmptyState()
-        }
+        if (!datesUiState.loading && !datesUiState.datesExist) { EmptyState() }
     }
 }
 
@@ -321,16 +310,11 @@ private fun EmptyState() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        HorizontalDivider(
-            Modifier.fillMaxWidth(),
-            Dp.Hairline,
-            colorScheme.secondary
-        )
+        HorizontalDivider(Modifier.fillMaxWidth(), Dp.Hairline, colorScheme.secondary)
         Spacer(Modifier.weight(1f))
         Text(
             text = "No date information found within filtered entries.",
-            modifier = Modifier
-                .fillMaxWidth(.75f),
+            modifier = Modifier.fillMaxWidth(.75f),
             textAlign = TextAlign.Center,
             fontSize = 24.sp,
         )
@@ -363,16 +347,14 @@ private fun AgingSection(
                         ) { navigateToDetails(item.id) }
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = "• ${item.brand}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
-                            modifier = Modifier
-                                .width(IntrinsicSize.Max)
+                            modifier = Modifier.width(IntrinsicSize.Max)
                         )
                         Text(
                             text = ", ${item.blend}",
@@ -380,16 +362,14 @@ private fun AgingSection(
                             fontWeight = FontWeight.Normal,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .weight(1f, false)
+                            modifier = Modifier.weight(1f, false)
                         )
                         Text(
                             text = " - ${item.tinLabel}",
                             fontSize = 14.sp,
                             fontStyle = FontStyle.Italic,
                             maxLines = 1,
-                            modifier = Modifier
-                                .width(IntrinsicSize.Max)
+                            modifier = Modifier.width(IntrinsicSize.Max)
                         )
 
                         val end = buildString {
@@ -400,8 +380,7 @@ private fun AgingSection(
                             Text(
                                 text = end,
                                 fontSize = 14.sp,
-                                modifier = Modifier
-                                    .width(IntrinsicSize.Max)
+                                modifier = Modifier.width(IntrinsicSize.Max)
                             )
                         }
                     }
@@ -421,15 +400,12 @@ private fun QuickStatsSection(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
         ) {
             Spacer(Modifier.height(10.dp))
@@ -439,17 +415,13 @@ private fun QuickStatsSection(
                         Modifier.onFocusChanged { updateSelectionFocused(it.isFocused) }
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(IntrinsicSize.Min)
+                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
                                 .padding(horizontal = 8.dp),
                             verticalAlignment = Alignment.Top,
                             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .width(IntrinsicSize.Max)
-                                    .padding(start = 8.dp),
+                                modifier = Modifier.width(IntrinsicSize.Max).padding(start = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                                 horizontalAlignment = Alignment.Start
                             ) {
@@ -462,10 +434,7 @@ private fun QuickStatsSection(
                                 }
                             }
                             Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .padding(end = 8.dp),
+                                modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
                                 horizontalAlignment = Alignment.Start
                             ) {
@@ -481,9 +450,7 @@ private fun QuickStatsSection(
                                             text = it.averageAge,
                                             modifier = Modifier,
                                             maxLines = 1,
-                                            style = LocalTextStyle.current.copy(
-                                                color = LocalContentColor.current
-                                            ),
+                                            style = LocalTextStyle.current.copy(color = LocalContentColor.current),
                                             autoSize = TextAutoSize.StepBased(
                                                 minFontSize = 13.sp,
                                                 maxFontSize = 15.sp,
@@ -500,9 +467,7 @@ private fun QuickStatsSection(
             } else {
                 Text(
                     text = "No relevant date stats found in entries.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                     textAlign = TextAlign.Center,
                     fontSize = 15.sp,
                 )
@@ -520,8 +485,7 @@ private fun OldestTinsSection(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -532,17 +496,14 @@ private fun OldestTinsSection(
                     label = it.title,
                     items = it.oldestTins,
                     navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
                 text = "No past tin dates found.",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center,
             )
         }
@@ -557,8 +518,7 @@ private fun FutureTinsSection(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -569,17 +529,14 @@ private fun FutureTinsSection(
                     label = it.title,
                     items = it.futureTins,
                     navigateToDetails = navigateToDetails,
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(Modifier.height(20.dp))
         } else {
             Text(
                 text = "No future tin dates found.",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center,
             )
         }
@@ -594,14 +551,13 @@ fun DatesSection(
     navigateToDetails: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
+    var expanded by remember { mutableStateOf(true) }
     val expandEnabled = items.isNotEmpty()
 
     SideEffect(items.isEmpty()) { if (items.isEmpty()) expanded = true }
 
     Column(
-        modifier = modifier
-            .padding(horizontal = 12.dp),
+        modifier = modifier.padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -625,7 +581,7 @@ fun DatesSection(
                 modifier = Modifier
                     .padding(bottom = 1.dp)
             )
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier,
                 contentAlignment = Alignment.CenterEnd
@@ -634,9 +590,7 @@ fun DatesSection(
                 Icon(
                     painter = painterResource(id = icon),
                     contentDescription = "Expand/collapse",
-                    modifier = Modifier
-                        .offset(y = 1.dp)
-                        .size(22.dp),
+                    modifier = Modifier.offset(y = 1.dp).size(22.dp),
                     tint = if (expandEnabled) colorScheme.onBackground.copy(alpha = 0.8f) else Color.Transparent
                 )
             }
@@ -665,8 +619,7 @@ fun DatesSection(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
-                                    modifier = Modifier
-                                        .width(IntrinsicSize.Max)
+                                    modifier = Modifier.width(IntrinsicSize.Max)
                                 )
                                 Text(
                                     text = ", ${item.blend}",
@@ -682,20 +635,18 @@ fun DatesSection(
                                     fontSize = 14.sp,
                                     fontStyle = FontStyle.Italic,
                                     maxLines = 1,
-                                    modifier = Modifier
-                                        .width(IntrinsicSize.Max)
+                                    modifier = Modifier.width(IntrinsicSize.Max)
                                 )
                             }
                             Text(
                                 text = "${item.date} (${item.timeFrame})",
                                 fontSize = 14.sp,
-                                modifier = Modifier
-                                    .padding(start = 16.dp)
+                                modifier = Modifier.padding(start = 16.dp)
                             )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(Modifier.height(10.dp))
             } else {
                 Text(
                     text = "No ${label.lowercase()} dates found.",
@@ -708,7 +659,7 @@ fun DatesSection(
                 )
             }
         } else {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(Modifier.height(10.dp))
         }
     }
 }
