@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.milliseconds
@@ -57,9 +56,6 @@ class PlaintextViewModel (
     private val _subSortOption = MutableStateFlow("")
     val subSortOption: StateFlow<String> = _subSortOption.asStateFlow()
 
-    private val _printDialog = MutableStateFlow(false)
-    val printDialog = _printDialog.asStateFlow()
-
     private val _printOptions = MutableStateFlow(PrintOptions())
     val printOptions: StateFlow<PrintOptions> = _printOptions.asStateFlow()
 
@@ -71,20 +67,6 @@ class PlaintextViewModel (
 
     private val _presets = MutableStateFlow(emptyList<PlaintextPreset>())
     val presets: StateFlow<List<PlaintextPreset>> = _presets.asStateFlow()
-
-    private val _selectionFocused = MutableStateFlow(false)
-    val selectionFocused = _selectionFocused.asStateFlow()
-
-    private val _selectionKey = MutableStateFlow(0)
-    val selectionKey = _selectionKey.asStateFlow()
-
-    private val _tabIndex = MutableStateFlow(0)
-    val tabIndex = _tabIndex.asStateFlow()
-
-    private val _actionRowExpanded = MutableStateFlow(false)
-    val actionRowExpanded = _actionRowExpanded.asStateFlow()
-
-    fun updateTabIndex(index: Int) { _tabIndex.value = index }
 
     private sealed class Template {
         data class Text(val content: String) : Template()
@@ -316,9 +298,7 @@ class PlaintextViewModel (
             }
 
             // Presets loading
-            launch {
-                preferencesRepo.plaintextPresetsFlow.collect { _presets.value = it }
-            }
+            launch { preferencesRepo.plaintextPresetsFlow.collect { _presets.value = it } }
         }
     }
 
@@ -743,14 +723,6 @@ class PlaintextViewModel (
         return input.substring(start) to input.length
     }
 
-
-    fun resetSelection() {
-        _selectionKey.update { it + 1 }
-        updateFocused(false)
-    }
-
-    fun updateFocused(focused: Boolean) { _selectionFocused.update { focused } }
-
     private fun tinNormalizedWeight(tin: Tins): Double {
         if (tin.finished || tin.unit.isBlank()) return 0.0
 
@@ -761,8 +733,6 @@ class PlaintextViewModel (
             else -> 0.0
         }
     }
-
-    fun toggleActionRow() { _actionRowExpanded.update { !it } }
 
     fun updateSortMenuState(sortMenu: SortMenuState) {
         val subMenuOverride = if (!sortMenu.mainMenu) false else sortMenu.subMenu
@@ -799,8 +769,6 @@ class PlaintextViewModel (
     fun savePreset(slot: Int, format: String, delimiter: String) {
         viewModelScope.launch { preferencesRepo.savePlaintextPreset(slot, format, delimiter) }
     }
-
-    fun showPrintDialog(show: Boolean) { _printDialog.value = show }
 
     fun savePrintOptions(font: Float, margin: Double) {
         _printOptions.value = PrintOptions(font, margin)
