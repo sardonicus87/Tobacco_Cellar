@@ -22,9 +22,6 @@
 
 -keep class com.sardonicus.tobaccocellar.data.** { *; }
 -keep class com.sardonicus.tobaccocellar.ui.settings.SettingsViewModelKt { *; }
--keep class com.sardonicus.tobaccocellar.data.TobaccoDatabaseKt { *; }
--keep class com.sardonicus.tobaccocellar.data.PreferencesRepo { *; }
--keep class com.sardonicus.tobaccocellar.data.multiDeviceSync.** { *; }
 -dontwarn edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 #-keepnames class kotlinx.serialization.SerializersKt
 #-keep class *$$serializer { *; }
