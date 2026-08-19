@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -106,15 +107,13 @@ fun DetailsEntry(
     ) {
         // Brand //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Brand:",
-                modifier = Modifier
-                    .width(80.dp)
+                modifier = Modifier.width(80.dp)
             )
 
             AutoCompleteText(
@@ -122,23 +121,20 @@ fun DetailsEntry(
                 allItems = autoComplete.brands,
                 onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
                 onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.brand.isNotEmpty()) {
                             "(" + itemDetails.originalItem.brand + ")" } else ""
                         Text(
                             text = text,
-                            modifier = Modifier
-                                .alpha(0.66f),
+                            modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                         )
                     } else {
                         Text(
                             text = "Required",
-                            modifier = Modifier
-                                .alpha(0.66f),
+                            modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -171,21 +167,18 @@ fun DetailsEntry(
 
         // Blend //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Blend:",
-                modifier = Modifier
-                    .width(80.dp)
+                modifier = Modifier.width(80.dp)
             )
             TextField(
                 value = itemDetails.blend,
                 onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = true,
                 singleLine = true,
                 placeholder = {
@@ -194,15 +187,13 @@ fun DetailsEntry(
                             "(" + itemDetails.originalItem.blend + ")" } else ""
                         Text(
                             text = text,
-                            modifier = Modifier
-                                .alpha(0.66f),
+                            modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                         )
                     } else {
                         Text(
                             text = "Required",
-                            modifier = Modifier
-                                .alpha(0.66f),
+                            modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -244,36 +235,31 @@ fun DetailsEntry(
 
         // Type //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Type:",
-                modifier = Modifier
-                    .width(80.dp)
+                modifier = Modifier.width(80.dp)
             )
             CustomDropDown(
                 selectedValue = itemDetails.type,
                 onValueChange = { onValueChange(itemDetails.copy(type = it)) },
                 options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 
         // Subgenre //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Subgenre:",
-                modifier = Modifier
-                    .width(80.dp)
+                modifier = Modifier.width(80.dp)
             )
 
             AutoCompleteText(
@@ -281,8 +267,7 @@ fun DetailsEntry(
                 onValueChange = { onValueChange(itemDetails.copy(subGenre = it)) },
                 allItems = autoComplete.subgenres,
                 onOptionSelected = { onValueChange(itemDetails.copy(subGenre = it)) },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.subGenre.length > 4) {
                         Icon(
@@ -310,15 +295,13 @@ fun DetailsEntry(
 
         // Cut //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Cut:",
-                modifier = Modifier
-                    .width(80.dp)
+                modifier = Modifier.width(80.dp)
             )
 
             AutoCompleteText(
@@ -326,8 +309,7 @@ fun DetailsEntry(
                 onValueChange = { onValueChange(itemDetails.copy(cut = it)) },
                 onOptionSelected = { onValueChange(itemDetails.copy(cut = it)) },
                 allItems = autoComplete.cuts,
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.cut.length > 4) {
                         Icon(
@@ -355,8 +337,7 @@ fun DetailsEntry(
 
         // Components //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -365,9 +346,7 @@ fun DetailsEntry(
                 style = TextStyle(
                     color = LocalContentColor.current
                 ),
-                modifier = Modifier
-                    .width(80.dp)
-                    .align(Alignment.CenterVertically),
+                modifier = Modifier.width(80.dp).align(Alignment.CenterVertically),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 8.sp,
                     maxFontSize = 16.sp,
@@ -382,8 +361,7 @@ fun DetailsEntry(
                 onValueChange = { onValueChange(itemDetails.copy(componentString = it)) },
                 componentField = true,
                 onOptionSelected = { onValueChange(itemDetails.copy(componentString = it)) },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.componentString.length > 4) {
                         Icon(
@@ -409,8 +387,7 @@ fun DetailsEntry(
                 placeholder = {
                     Text(
                         text = "(Separate with comma + space)",
-                        modifier = Modifier
-                            .alpha(0.66f),
+                        modifier = Modifier.alpha(0.66f),
                         fontSize = 13.sp,
                         softWrap = false,
                         maxLines = 1,
@@ -423,8 +400,7 @@ fun DetailsEntry(
 
         // Flavoring //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -433,9 +409,7 @@ fun DetailsEntry(
                 style = TextStyle(
                     color = LocalContentColor.current
                 ),
-                modifier = Modifier
-                    .width(80.dp)
-                    .align(Alignment.CenterVertically),
+                modifier = Modifier.width(80.dp).align(Alignment.CenterVertically),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 8.sp,
                     maxFontSize = 16.sp,
@@ -450,8 +424,7 @@ fun DetailsEntry(
                 componentField = true,
                 onOptionSelected = { onValueChange(itemDetails.copy(flavoringString = it)) },
                 allItems = autoComplete.flavorings,
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.flavoringString.length > 4) {
                         Icon(
@@ -477,8 +450,7 @@ fun DetailsEntry(
                 placeholder = {
                     Text(
                         text = "(Separate with comma + space)",
-                        modifier = Modifier
-                            .alpha(0.66f),
+                        modifier = Modifier.alpha(0.66f),
                         fontSize = 13.sp,
                         softWrap = false,
                         maxLines = 1,
@@ -491,9 +463,7 @@ fun DetailsEntry(
 
         // No. of Tins //
         Row(
-            modifier = Modifier
-                .padding(0.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(0.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -515,9 +485,7 @@ fun DetailsEntry(
                 maxLines = 2,
             )
             Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .height(IntrinsicSize.Min),
+                modifier = Modifier.padding(0.dp).height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -537,9 +505,7 @@ fun DetailsEntry(
                             }
                         }
                     },
-                    modifier = Modifier
-                        .width(54.dp)
-                        .padding(0.dp),
+                    modifier = Modifier.width(54.dp).padding(0.dp),
                     visualTransformation = VisualTransformation.None,
                     enabled = !itemDetails.syncTins,
                     singleLine = true,
@@ -562,10 +528,7 @@ fun DetailsEntry(
 
                 // Tin field options //
                 Row(
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxHeight()
-                        .fillMaxWidth(),
+                    modifier = Modifier.padding(0.dp).fillMaxSize(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -625,15 +588,12 @@ fun DetailsEntry(
                         },
                         increaseEnabled = !itemDetails.syncTins,
                         decreaseEnabled = !itemDetails.syncTins,
-                        modifier = Modifier
-                            .fillMaxHeight()
+                        modifier = Modifier.fillMaxHeight()
                     )
 
                     // Sync Tins? //
                     Row(
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .fillMaxHeight(),
+                        modifier = Modifier.padding(start = 8.dp).fillMaxHeight(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
                     ) {
@@ -659,7 +619,7 @@ fun DetailsEntry(
                                     // before 5 seconds or opened by clicking tip button
                                     snapshotFlow { hovered || pressed }.first { !it }
 
-                                    // dismiss 1 second after release, will be false if we weren't
+                                    // dismiss 1/4 second after release, will be false if we weren't
                                     // holding/hovering at 5 seconds
                                     if (held) { delay(250.milliseconds) }
                                 }
@@ -667,9 +627,7 @@ fun DetailsEntry(
                             }
                         }
 
-                        BackHandler(tooltipState.isVisible) {
-                            tooltipState.dismiss()
-                        }
+                        BackHandler(tooltipState.isVisible) { tooltipState.dismiss() }
 
                         TooltipBox(
                             positionProvider = rememberTooltipPositionProvider(Above, 3.dp),
@@ -701,8 +659,7 @@ fun DetailsEntry(
                             ) {
                                 Text(
                                     text = "Sync?",
-                                    modifier = Modifier
-                                        .offset(x = 0.dp, y = 1.dp),
+                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                     fontSize = 14.sp,
                                 )
                                 CustomCheckbox(
@@ -727,9 +684,7 @@ fun DetailsEntry(
                                         painter = painterResource(id = R.drawable.help_outline),
                                         contentDescription = "Help",
                                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
-                                        modifier = Modifier
-                                            .size(15.dp)
-                                            .offset((-3).dp, (-9).dp)
+                                        modifier = Modifier.size(15.dp).offset((-3).dp, (-9).dp)
                                     )
                                 }
                             }
@@ -741,24 +696,19 @@ fun DetailsEntry(
 
         // Rating //
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "Rating:",
-                modifier = Modifier
-                    .width(80.dp)
+                modifier = Modifier.width(80.dp)
             )
             Row(
                 modifier = Modifier
                     .padding(0.dp)
-                    .clickable(
-                        indication = null,
-                        interactionSource = null,
-                    ) { onShowRatingPop(true) },
+                    .clickable(indication = null, interactionSource = null) {
+                        onShowRatingPop(true) },
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -772,8 +722,7 @@ fun DetailsEntry(
                     Text(
                         text = "(${formatDecimal(itemDetails.rating)})",
                         fontSize = 13.sp,
-                        modifier = Modifier
-                            .alpha(0.75f)
+                        modifier = Modifier.alpha(0.75f)
                     )
                 }
             }
@@ -790,17 +739,14 @@ fun DetailsEntry(
             Row(
                 modifier = Modifier
                     .padding(0.dp)
-                    .clickable(
-                        indication = null,
-                        interactionSource = null
-                    ) { onValueChange(itemDetails.copy(favorite = !itemDetails.favorite)) },
+                    .clickable(indication = null, interactionSource = null) {
+                        onValueChange(itemDetails.copy(favorite = !itemDetails.favorite)) },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "Favorite?",
-                    modifier = Modifier
-                        .offset(x = 0.dp, y = 1.dp)
+                    modifier = Modifier.offset(x = 0.dp, y = 1.dp)
                 )
                 CustomCheckbox(
                     checked = itemDetails.favorite,
@@ -819,8 +765,7 @@ fun DetailsEntry(
                     checkedIcon = R.drawable.heart_filled_24,
                     uncheckedIcon = R.drawable.heart_outline_24,
                     size = 34.dp,
-                    modifier = Modifier
-                        .padding(0.dp),
+                    modifier = Modifier.padding(0.dp),
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContentColor = LocalCustomColors.current.favHeart,
                     )
@@ -829,17 +774,14 @@ fun DetailsEntry(
             Row(
                 modifier = Modifier
                     .padding(0.dp)
-                    .clickable(
-                        indication = null,
-                        interactionSource = null
-                    ) { onValueChange(itemDetails.copy(disliked = !itemDetails.disliked)) },
+                    .clickable(indication = null, interactionSource = null) {
+                        onValueChange(itemDetails.copy(disliked = !itemDetails.disliked)) },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "Disliked?",
-                    modifier = Modifier
-                        .offset(x = 0.dp, y = 1.dp)
+                    modifier = Modifier.offset(x = 0.dp, y = 1.dp)
                 )
                 CustomCheckbox(
                     checked = itemDetails.disliked,
@@ -870,17 +812,14 @@ fun DetailsEntry(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp)
-                .clickable(
-                    indication = null,
-                    interactionSource = null
-                ) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
+                .clickable(indication = null, interactionSource = null) {
+                    onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "In Production",
-                modifier = Modifier
-                    .offset(x = 0.dp, y = 1.dp)
+                modifier = Modifier.offset(x = 0.dp, y = 1.dp)
             )
             CustomCheckbox(
                 checked = itemDetails.inProduction,
@@ -898,8 +837,7 @@ fun DetailsEntry(
             currentRating = itemDetails.rating,
             onDismiss = { onShowRatingPop(false) },
             onRatingSelected = {
-                onValueChange(itemDetails.copy(rating = it))
-                onShowRatingPop(false)
+                onValueChange(itemDetails.copy(rating = it)); onShowRatingPop(false)
             }
         )
     }

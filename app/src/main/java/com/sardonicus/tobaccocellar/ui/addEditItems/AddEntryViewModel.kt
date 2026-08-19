@@ -12,8 +12,6 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -31,21 +29,8 @@ class AddEntryViewModel(
     var tabErrorState by mutableStateOf(TabErrorState())
         private set
 
-
     val autoCompleteData = filterViewModel.autoComplete.value
     val tinConversion = mutableStateOf(TinConversion())
-
-    private val _selectedTabIndex = MutableStateFlow(0)
-    val selectedTabIndex = _selectedTabIndex.asStateFlow()
-    private val _currentLeftTab = MutableStateFlow(0)
-    val currentLeftTab = _currentLeftTab.asStateFlow()
-
-    fun updateSelectedTab(index: Int) {
-        _selectedTabIndex.value = index
-        if (index < 2) _currentLeftTab.value = index
-
-        updateUiState(itemUiState.itemDetails)
-    }
 
     init {
         viewModelScope.launch {
@@ -91,13 +76,6 @@ class AddEntryViewModel(
         }
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
     }
-
-
-    /** Popup and menu control **/
-    private val _showRatingPop = MutableStateFlow(false)
-    val showRatingPop = _showRatingPop.asStateFlow()
-
-    fun onShowRatingPop(show: Boolean) { _showRatingPop.value = show }
 
 
     /** add/remove tins **/

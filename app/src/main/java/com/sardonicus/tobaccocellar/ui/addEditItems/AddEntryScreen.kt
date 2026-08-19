@@ -2,15 +2,20 @@ package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -24,17 +29,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -50,7 +55,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEntryScreen(
     modifier: Modifier = Modifier,
@@ -62,34 +67,35 @@ fun AddEntryScreen(
     viewModel: AddEntryViewModel = viewModel(),
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val imeOpen = WindowInsets.isImeVisible
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val shouldCollapse = !twoColumnTabs && isLandscape && imeOpen
+    val topBarHeight by animateDpAsState(if (shouldCollapse) 0.dp else 56.dp, tween(250))
+
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
-    val currentLeftTab by viewModel.currentLeftTab.collectAsState()
-    val showRatingPop by viewModel.showRatingPop.collectAsState()
 
-    val activity = LocalActivity.current
-    DisposableEffect(Unit) {
-        onDispose {
-            if (activity?.isChangingConfigurations == false) {
-                focusManager.clearFocus()
-            }
-        }
-    }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
-            CellarTopAppBar(
-                title = stringResource(R.string.add_entry_title),
-                scrollBehavior = scrollBehavior,
-                canNavigateBack = canNavigateBack,
-                modifier = Modifier,
-                navigateUp = onNavigateUp,
-                showMenu = false,
-            )
+            Box(Modifier
+                .fillMaxWidth()
+                .height(topBarHeight)
+                .graphicsLayer { translationY = topBarHeight.toPx() - 56.dp.toPx() }
+            ) {
+                CellarTopAppBar(
+                    title = stringResource(R.string.add_entry_title),
+                    scrollBehavior = scrollBehavior,
+                    canNavigateBack = canNavigateBack,
+                    modifier = Modifier,
+                    navigateUp = onNavigateUp,
+                    showMenu = false,
+                )
+            }
         },
     ) { innerPadding ->
         Column(
@@ -101,9 +107,6 @@ fun AddEntryScreen(
         ) {
             AddEntryBody(
                 twoColumnTabs = { twoColumnTabs },
-                selectedTabIndex = { selectedTabIndex },
-                currentLeftTab = { currentLeftTab },
-                updateSelectedTab = viewModel::updateSelectedTab,
                 itemUiState = viewModel.itemUiState,
                 autoComplete = viewModel.autoCompleteData,
                 tabErrorState = viewModel.tabErrorState,
@@ -113,22 +116,19 @@ fun AddEntryScreen(
                 onTinValueChange = viewModel::updateTinDetails,
                 addTin = viewModel::addTin,
                 removeTin = viewModel::removeTin,
-                showRatingPop = showRatingPop,
-                onShowRatingPop = viewModel::onShowRatingPop,
                 onSaveClick = {
                     coroutineScope.launch {
                         withContext(Dispatchers.Main) {
                             viewModel.checkItemExistsOnSave()
                             if (!viewModel.existState.value.exists) {
-                                viewModel.saveItem()
-                                navigateBack()
+                                viewModel.saveItem(); navigateBack()
                             }
                         }
                     }
                 },
-                onDeleteClick = { },
                 isEditEntry = false,
                 navigateToEditEntry = navigateToEditEntry,
+                focusManager = focusManager,
                 modifier = modifier
                     .padding(0.dp)
                     .fillMaxSize(),
@@ -141,9 +141,6 @@ fun AddEntryScreen(
 @Composable
 fun AddEntryBody(
     twoColumnTabs: () -> Boolean,
-    selectedTabIndex: () -> Int,
-    currentLeftTab: () -> Int,
-    updateSelectedTab: (Int) -> Unit,
     itemUiState: ItemUiState,
     autoComplete: AutoCompleteData,
     tabErrorState: TabErrorState,
@@ -152,19 +149,16 @@ fun AddEntryBody(
     onTinValueChange: (TinDetails) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
-    showRatingPop: Boolean,
-    onShowRatingPop: (Boolean) -> Unit,
     onSaveClick: () -> Unit,
-    onDeleteClick: () -> Unit,
     isEditEntry: Boolean,
+    focusManager: FocusManager,
     modifier: Modifier = Modifier,
+    onDeleteClick: () -> Unit = { },
     navigateToEditEntry: (Int) -> Unit = {},
     resetExistState: () -> Unit = {}
 ) {
-    var deleteConfirm by rememberSaveable { mutableStateOf(false) }
+    var deleteConfirm by remember { mutableStateOf(false) }
     var anythingFocused by remember { mutableStateOf(false) }
-    val updateFocused: (Boolean) -> Unit = { anythingFocused = it }
-    val focusManager = LocalFocusManager.current
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     BackHandler(enabled = anythingFocused) { focusManager.clearFocus() }
@@ -172,16 +166,13 @@ fun AddEntryBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .onFocusChanged { updateFocused(it.hasFocus) }
+            .onFocusChanged { anythingFocused = it.hasFocus }
             .padding(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ItemInputForm(
             twoColumnTabs = twoColumnTabs,
-            selectedTabIndex = selectedTabIndex,
-            currentLeftTab = currentLeftTab,
-            updateSelectedTab = updateSelectedTab,
             itemDetails = itemUiState.itemDetails,
             tinDetailsList = itemUiState.itemDetails.tinDetailsList,
             autoComplete = autoComplete,
@@ -190,9 +181,8 @@ fun AddEntryBody(
             onTinValueChange = onTinValueChange,
             addTin = addTin,
             removeTin = removeTin,
-            showRatingPop = showRatingPop,
-            onShowRatingPop = onShowRatingPop,
             isEditEntry = isEditEntry,
+            focusManager = focusManager,
             modifier = Modifier
                 .weight(1f)
         )
@@ -200,7 +190,7 @@ fun AddEntryBody(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
                 .padding(horizontal = 24.dp)
-                .padding(top = 24.dp, bottom = if (!twoColumnTabs() && landscape) 24.dp else 40.dp),
+                .padding(top = 24.dp, bottom = if (!twoColumnTabs() && landscape) 12.dp else 40.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Button(
@@ -223,8 +213,7 @@ fun AddEntryBody(
                         disabledContainerColor = MaterialTheme.colorScheme.onErrorContainer,
                         disabledContentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.delete_forever),
@@ -234,13 +223,9 @@ fun AddEntryBody(
                 }
                 if (deleteConfirm) {
                     DeleteConfirmationDialog(
-                        onDeleteConfirm = {
-                            deleteConfirm = false
-                            onDeleteClick()
-                        },
+                        onDeleteConfirm = { deleteConfirm = false; onDeleteClick() },
                         onDeleteCancel = { deleteConfirm = false },
-                        modifier = Modifier
-                            .padding(0.dp)
+                        modifier = Modifier.padding(0.dp)
                     )
                 }
             } else { Spacer(Modifier.height(40.dp)) }
@@ -249,10 +234,7 @@ fun AddEntryBody(
 
     if (existState.exists) {
         ItemExistsDialog(
-            onItemExistsConfirm = {
-                resetExistState()
-                navigateToEditEntry(existState.transferId)
-            },
+            onItemExistsConfirm = { resetExistState(); navigateToEditEntry(existState.transferId) },
             onItemExistsCancel = { resetExistState() },
         )
     }
@@ -274,16 +256,8 @@ fun ItemExistsDialog(
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        dismissButton = {
-            TextButton(onClick = onItemExistsCancel) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onItemExistsConfirm) {
-                Text(stringResource(R.string.yes))
-            }
-        }
+        dismissButton = { TextButton(onItemExistsCancel) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton(onItemExistsConfirm) { Text(stringResource(R.string.yes)) } }
     )
 }
 
@@ -297,20 +271,15 @@ fun ItemExistsEditDialog(
         title = { Text(stringResource(R.string.attention)) },
         text = {
             Text(
-                text = "An entry already exists with this combination of Brand and Blend (the " +
+                "An entry already exists with this combination of Brand and Blend (the " +
                         "combination of Brand and Blend must be unique for each entry).",
-                softWrap = true,
             )
         },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        confirmButton = {
-            TextButton(onClick = onItemExistsConfirm) {
-                Text(stringResource(R.string.ok))
-            }
-        }
+        confirmButton = { TextButton(onItemExistsConfirm) { Text(stringResource(R.string.ok)) } }
     )
 }
 
@@ -321,22 +290,14 @@ private fun DeleteConfirmationDialog(
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
+        onDismissRequest = { },
         title = { Text(stringResource(R.string.delete_entry)) },
         text = { Text(stringResource(R.string.delete_question)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        dismissButton = {
-            TextButton(onClick = onDeleteCancel) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDeleteConfirm) {
-                Text(stringResource(R.string.yes))
-            }
-        }
+        dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes)) } }
     )
 }

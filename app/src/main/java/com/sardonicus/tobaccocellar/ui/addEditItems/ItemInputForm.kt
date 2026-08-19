@@ -30,20 +30,20 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -59,9 +59,6 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun ItemInputForm(
     twoColumnTabs: () -> Boolean,
-    selectedTabIndex: () -> Int,
-    currentLeftTab: () -> Int,
-    updateSelectedTab: (Int) -> Unit,
     itemDetails: ItemDetails,
     tinDetailsList: List<TinDetails>,
     autoComplete: AutoCompleteData,
@@ -71,48 +68,64 @@ fun ItemInputForm(
     onTinValueChange: (TinDetails) -> Unit,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
-    showRatingPop: Boolean,
-    onShowRatingPop: (Boolean) -> Unit,
+    focusManager: FocusManager,
     modifier: Modifier = Modifier
 ) {
+    var showRatingPop by remember { mutableStateOf(false) }
     var tooltipVisible by remember { mutableStateOf(false) }
     var textFieldFocused by remember { mutableStateOf(false) }
-    val fieldFocused: (Boolean) -> Unit = { textFieldFocused = it }
     val twoColumn = twoColumnTabs()
-    val currentLeftTab = currentLeftTab()
-    val selectedTabIndex = remember(selectedTabIndex()) { selectedTabIndex().coerceIn(0, 2) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var currentLeftTab by remember { mutableIntStateOf(0) }
+    val updateSelectedTab = remember {
+        { it: Int ->
+            if (selectedTabIndex != it) {
+                selectedTabIndex = it
+                if (it < 2) currentLeftTab = it
+            }
+        }
+    }
 
-    val largePagerState = rememberPagerState(initialPage = currentLeftTab()) { 2 }
-    val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex()) { 3 }
+    val largePagerState = rememberPagerState(initialPage = currentLeftTab) { 2 }
+    val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex) { 3 }
 
     val fieldInteractionSource = remember { MutableInteractionSource() }
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
-    if (twoColumn) {
-        SideEffect(largePagerState.currentPage) {
-            if (largePagerState.currentPage == largePagerState.targetPage) {
-                if (largePagerState.currentPage != currentLeftTab()) {
-                    updateSelectedTab(largePagerState.currentPage)
-                }
+    LaunchedEffect(twoColumn) {
+        if (twoColumn) {
+            if (largePagerState.currentPage != currentLeftTab) {
+                largePagerState.scrollToPage(currentLeftTab)
+            }
+        } else {
+            if (narrowPagerState.currentPage != selectedTabIndex) {
+                narrowPagerState.scrollToPage(selectedTabIndex)
             }
         }
-        LaunchedEffect(currentLeftTab()) {
-            if (largePagerState.currentPage != currentLeftTab()) {
-                largePagerState.animateScrollToPage(currentLeftTab())
+    }
+
+    LaunchedEffect(selectedTabIndex, currentLeftTab) {
+        if (twoColumn) {
+            if (largePagerState.currentPage != currentLeftTab) {
+                largePagerState.animateScrollToPage(currentLeftTab)
+            }
+        } else {
+            if (narrowPagerState.currentPage != selectedTabIndex) {
+                narrowPagerState.animateScrollToPage(selectedTabIndex)
             }
         }
-    } else {
-        SideEffect(narrowPagerState.currentPage) {
-            if (narrowPagerState.currentPage == narrowPagerState.targetPage) {
-                if (narrowPagerState.currentPage != selectedTabIndex()) {
-                    updateSelectedTab(narrowPagerState.currentPage)
-                }
-            }
-        }
-        LaunchedEffect(selectedTabIndex()) {
-            if (narrowPagerState.currentPage != selectedTabIndex()) {
-                narrowPagerState.animateScrollToPage(selectedTabIndex())
-            }
+    }
+
+    val largeDragged by largePagerState.interactionSource.collectIsDraggedAsState()
+    val narrowDragged by narrowPagerState.interactionSource.collectIsDraggedAsState()
+
+    LaunchedEffect(largePagerState, narrowPagerState, twoColumn) {
+        if (twoColumn) {
+            snapshotFlow { largePagerState.currentPage }
+                .collect { if (it != currentLeftTab && largeDragged) updateSelectedTab(it) }
+        } else {
+            snapshotFlow { narrowPagerState.currentPage }
+                .collect { if (it != selectedTabIndex && narrowDragged) updateSelectedTab(it) }
         }
     }
 
@@ -120,13 +133,15 @@ fun ItemInputForm(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .onFocusChanged { fieldFocused(it.hasFocus) },
+            .onFocusChanged { textFieldFocused = it.hasFocus },
         verticalArrangement = Arrangement.Top
     ) {
         AdaptiveTabRow(
             twoColumnTabs = twoColumn,
             selectedTabIndex = selectedTabIndex,
             tabErrorState = tabErrorState,
+            focusManager = focusManager,
+            anythingFocused = textFieldFocused || tooltipVisible,
             updateSelectedTab = updateSelectedTab
         )
         if (twoColumn) {
@@ -141,19 +156,19 @@ fun ItemInputForm(
                     HorizontalPager(
                         state = largePagerState,
                         modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = !textFieldFocused,
+                        userScrollEnabled = !textFieldFocused && !tooltipVisible && !unfocusedFieldScroll,
                         verticalAlignment = Alignment.Top
                     ) { targetIndex ->
                         Column(
                             modifier = Modifier
                                 .verticalScroll(rememberScrollState(), !tooltipVisible)
                                 .onFocusChanged {
-                                    if (it.hasFocus && selectedTabIndex == 2) updateSelectedTab(
-                                        currentLeftTab
-                                    )
+                                    if (it.hasFocus && selectedTabIndex == 2 && !largePagerState.isScrollInProgress) {
+                                        updateSelectedTab(currentLeftTab)
+                                    }
                                 }
                                 .pointerInput(currentLeftTab, selectedTabIndex) {
-                                    if (selectedTabIndex() == 2) {
+                                    if (selectedTabIndex == 2) {
                                         awaitPointerEventScope {
                                             while (true) {
                                                 val event =
@@ -173,26 +188,21 @@ fun ItemInputForm(
                                     isEditEntry = isEditEntry,
                                     onValueChange = onValueChange,
                                     showRatingPop = showRatingPop,
-                                    onShowRatingPop = onShowRatingPop,
+                                    onShowRatingPop = { showRatingPop = it },
                                     fieldInteractionSource = fieldInteractionSource,
-                                    tooltipVisible = { tooltipVisible = it },
-                                    modifier = Modifier
+                                    tooltipVisible = { tooltipVisible = it }
                                 )
                             } else {
                                 NotesEntry(
                                     itemDetails = itemDetails,
-                                    onValueChange = onValueChange,
-                                    modifier = Modifier
+                                    onValueChange = onValueChange
                                 )
                             }
                         }
                     }
                 }
 
-                VerticalDivider(
-                    thickness = Dp.Hairline,
-                    color = DividerDefaults.color.copy(alpha = .5f)
-                )
+                VerticalDivider(thickness = Dp.Hairline, color = DividerDefaults.color.copy(alpha = .5f))
 
                 GlowBox(
                     color = GlowColor(MaterialTheme.colorScheme.background),
@@ -206,9 +216,7 @@ fun ItemInputForm(
                             .fillMaxHeight()
                             .verticalScroll(rememberScrollState())
                             .onFocusChanged {
-                                if (it.hasFocus && selectedTabIndex != 2) updateSelectedTab(
-                                    2
-                                )
+                                if (it.hasFocus && selectedTabIndex != 2) updateSelectedTab(2)
                             }
                             .pointerInput(selectedTabIndex) {
                                 if (selectedTabIndex != 2) {
@@ -229,17 +237,14 @@ fun ItemInputForm(
                             onTinValueChange = onTinValueChange,
                             addTin = addTin,
                             removeTin = removeTin,
-                            autoComplete = autoComplete,
-                            modifier = Modifier
+                            autoComplete = autoComplete
                         )
                         Spacer(Modifier.weight(1f))
                     }
                 }
             }
         } else {
-            BackHandler(narrowPagerState.currentPage != 0 && !textFieldFocused) {
-                updateSelectedTab(0)
-            }
+            BackHandler(narrowPagerState.currentPage != 0 && !textFieldFocused) { updateSelectedTab(0) }
 
             GlowBox(
                 color = GlowColor(MaterialTheme.colorScheme.background),
@@ -268,17 +273,15 @@ fun ItemInputForm(
                                     isEditEntry = isEditEntry,
                                     onValueChange = onValueChange,
                                     showRatingPop = showRatingPop,
-                                    onShowRatingPop = onShowRatingPop,
+                                    onShowRatingPop = { showRatingPop = it },
                                     fieldInteractionSource = fieldInteractionSource,
-                                    tooltipVisible = { tooltipVisible = it },
-                                    modifier = Modifier
+                                    tooltipVisible = { tooltipVisible = it }
                                 )
 
                             1 ->
                                 NotesEntry(
                                     itemDetails = itemDetails,
-                                    onValueChange = onValueChange,
-                                    modifier = Modifier
+                                    onValueChange = onValueChange
                                 )
 
                             2 ->
@@ -288,8 +291,7 @@ fun ItemInputForm(
                                     addTin = addTin,
                                     removeTin = removeTin,
                                     autoComplete = autoComplete,
-                                    fieldInteractionSource = fieldInteractionSource,
-                                    modifier = Modifier
+                                    fieldInteractionSource = fieldInteractionSource
                                 )
 
                             else ->
@@ -299,10 +301,9 @@ fun ItemInputForm(
                                     isEditEntry = isEditEntry,
                                     onValueChange = onValueChange,
                                     showRatingPop = showRatingPop,
-                                    onShowRatingPop = onShowRatingPop,
+                                    onShowRatingPop = { showRatingPop = it },
                                     fieldInteractionSource = fieldInteractionSource,
-                                    tooltipVisible = { tooltipVisible = it },
-                                    modifier = Modifier
+                                    tooltipVisible = { tooltipVisible = it }
                                 )
                         }
                     }
@@ -317,19 +318,22 @@ private fun AdaptiveTabRow(
     twoColumnTabs: Boolean,
     selectedTabIndex: Int,
     tabErrorState: TabErrorState,
+    focusManager: FocusManager,
+    anythingFocused: Boolean,
     updateSelectedTab: (Int) -> Unit,
 ) {
     val titles = listOf("Details", "Notes", "Tins")
-    val focusManager = LocalFocusManager.current
-    val showAdditional = rememberSaveable { mutableStateOf(false) }
+    var showAdditional by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTabIndex) {
-        if (selectedTabIndex == 2) {
-            delay(50.milliseconds)
-            showAdditional.value = true
-        } else {
-            delay(5.milliseconds)
-            showAdditional.value = false
+        if (twoColumnTabs) {
+            if (selectedTabIndex == 2) {
+                delay(50.milliseconds)
+                showAdditional = true
+            } else {
+                delay(5.milliseconds)
+                showAdditional = false
+            }
         }
     }
 
@@ -339,8 +343,7 @@ private fun AdaptiveTabRow(
                 Box(Modifier.fillMaxWidth()) {
                     SecondaryTabRow(
                         selectedTabIndex = selectedTabIndex,
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         containerColor = MaterialTheme.colorScheme.background,
                         contentColor = LocalContentColor.current,
                         indicator = {
@@ -350,7 +353,7 @@ private fun AdaptiveTabRow(
                                 color = MaterialTheme.colorScheme.inversePrimary
                             )
 
-                            if (showAdditional.value) {
+                            if (showAdditional) {
                                 SecondaryIndicator(
                                     modifier = Modifier.tabIndicatorOffset(2),
                                     color = MaterialTheme.colorScheme.inversePrimary
@@ -369,8 +372,8 @@ private fun AdaptiveTabRow(
                         Tab(
                             selected = selectedTabIndex == 0,
                             onClick = {
-                                focusManager.clearFocus()
-                                updateSelectedTab(0)
+                                if (anythingFocused) { focusManager.clearFocus() }
+                                else updateSelectedTab(0)
                             },
                             text = {
                                 Text(
@@ -391,8 +394,8 @@ private fun AdaptiveTabRow(
                         Tab(
                             selected = selectedTabIndex == 1,
                             onClick = {
-                                focusManager.clearFocus()
-                                updateSelectedTab(1)
+                                if (anythingFocused) { focusManager.clearFocus() }
+                                else updateSelectedTab(1)
                             },
                             text = {
                                 Text(
@@ -412,11 +415,7 @@ private fun AdaptiveTabRow(
                         )
                         Tab(
                             selected = selectedTabIndex == 2,
-                            onClick = {
-                                focusManager.clearFocus()
-                                updateSelectedTab(2)
-                            },
-                            text = { },
+                            onClick = { },
                             modifier = Modifier
                                 .background(
                                     if (selectedTabIndex == 2) MaterialTheme.colorScheme.background
@@ -425,11 +424,7 @@ private fun AdaptiveTabRow(
                         )
                         Tab(
                             selected = selectedTabIndex == 2,
-                            onClick = {
-                                focusManager.clearFocus()
-                                updateSelectedTab(2)
-                            },
-                            text = { },
+                            onClick = { },
                             modifier = Modifier
                                 .background(
                                     if (selectedTabIndex == 2) MaterialTheme.colorScheme.background
@@ -437,7 +432,6 @@ private fun AdaptiveTabRow(
                                 )
                         )
                     }
-
 
                     SecondaryTabRow(
                         selectedTabIndex = if (selectedTabIndex == 2) 0 else -1,
@@ -452,8 +446,8 @@ private fun AdaptiveTabRow(
                         Tab(
                             selected = selectedTabIndex == 2,
                             onClick = {
-                                focusManager.clearFocus()
-                                updateSelectedTab(2)
+                                if (anythingFocused) { focusManager.clearFocus() }
+                                else updateSelectedTab(2)
                             },
                             text = {
                                 Text(
@@ -461,11 +455,9 @@ private fun AdaptiveTabRow(
                                     fontWeight =
                                         if (selectedTabIndex == 2) FontWeight.Bold
                                         else FontWeight.SemiBold,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
+                                    textAlign = TextAlign.Center
                                 )
                             },
-                            modifier = Modifier,
                             selectedContentColor = MaterialTheme.colorScheme.onBackground,
                             unselectedContentColor =
                                 if (tabErrorState.tinsError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
@@ -482,8 +474,7 @@ private fun AdaptiveTabRow(
                 contentColor = LocalContentColor.current,
                 indicator = {
                     SecondaryIndicator(
-                        modifier = Modifier
-                            .tabIndicatorOffset(selectedTabIndex),
+                        modifier = Modifier.tabIndicatorOffset(selectedTabIndex),
                         color = MaterialTheme.colorScheme.inversePrimary
                     )
                 },
@@ -509,8 +500,8 @@ private fun AdaptiveTabRow(
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = {
-                            focusManager.clearFocus()
-                            updateSelectedTab(index)
+                            if (anythingFocused) focusManager.clearFocus()
+                            else updateSelectedTab(index)
                         },
                         modifier = Modifier
                             .background(

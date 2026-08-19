@@ -1,24 +1,32 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
-import androidx.activity.compose.LocalActivity
+import android.content.res.Configuration
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -30,7 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditEntryScreen(
     modifier: Modifier = Modifier,
@@ -41,49 +49,45 @@ fun EditEntryScreen(
     viewModel: EditEntryViewModel = viewModel(),
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val imeOpen = WindowInsets.isImeVisible
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val shouldCollapse = !twoColumnTabs && isLandscape && imeOpen
+    val topBarHeight by animateDpAsState(if (shouldCollapse) 0.dp else 56.dp, tween(durationMillis = 250))
+
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    val selectedTabIndex by viewModel.selectedTabIndex.collectAsState()
-    val currentLeftTab by viewModel.currentLeftTab.collectAsState()
-    val showRatingPop by viewModel.showRatingPop.collectAsState()
 
-    val activity = LocalActivity.current
-    DisposableEffect(Unit) {
-        onDispose {
-            if (activity?.isChangingConfigurations == false) {
-                focusManager.clearFocus()
-            }
-        }
-    }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
-            CellarTopAppBar(
-                title = stringResource(R.string.edit_entry_title),
-                scrollBehavior = scrollBehavior,
-                canNavigateBack = canNavigateBack,
-                navigateUp = navigateBack,
-                showMenu = false,
-                modifier = Modifier
-            )
+            Box(Modifier
+                .fillMaxWidth()
+                .height(topBarHeight)
+                .graphicsLayer { translationY = topBarHeight.toPx() - 56.dp.toPx() }
+            ) {
+                CellarTopAppBar(
+                    title = stringResource(R.string.edit_entry_title),
+                    scrollBehavior = scrollBehavior,
+                    canNavigateBack = canNavigateBack,
+                    navigateUp = navigateBack,
+                    showMenu = false,
+                    modifier = Modifier
+                )
+            }
         },
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
             Box {
                 AddEntryBody(
                     twoColumnTabs = { twoColumnTabs },
-                    selectedTabIndex = { selectedTabIndex },
-                    currentLeftTab = { currentLeftTab },
-                    updateSelectedTab = viewModel::updateSelectedTab,
                     itemUiState = viewModel.itemUiState,
                     autoComplete = viewModel.autoCompleteData,
                     tabErrorState = viewModel.tabErrorState,
@@ -92,43 +96,28 @@ fun EditEntryScreen(
                     onTinValueChange = viewModel::updateTinDetails,
                     addTin = viewModel::addTin,
                     removeTin = viewModel::removeTin,
-                    showRatingPop = showRatingPop,
-                    onShowRatingPop = viewModel::onShowRatingPop,
                     onSaveClick = {
                         coroutineScope.launch {
                             withContext(Dispatchers.Main) {
                                 viewModel.checkItemExistsOnUpdate()
                                 if (!viewModel.existState.value.exists) {
-                                    viewModel.updateItem()
-                                    navigateBack()
+                                    viewModel.updateItem(); navigateBack()
                                 }
                             }
                         }
                     },
                     onDeleteClick = {
-                        coroutineScope.launch {
-                            viewModel.deleteItem()
-                            navigateBackSkip()
-                        }
+                        coroutineScope.launch { viewModel.deleteItem(); navigateBackSkip() }
                     },
                     isEditEntry = true,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxSize()
+                    focusManager = focusManager,
+                    modifier = Modifier.padding(0.dp).fillMaxSize()
                 )
-                if (viewModel.loading.value) {
-                    LoadingIndicator(
-                        scrimColor = Color.Black.copy(alpha = 0.33f),
-                    )
-                }
+                if (viewModel.loading.value) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.33f)) }
             }
 
             if (viewModel.existState.value.exists) {
-                ItemExistsEditDialog(
-                    onItemExistsConfirm = {
-                        viewModel.resetExistState()
-                    },
-                )
+                ItemExistsEditDialog(onItemExistsConfirm = { viewModel.resetExistState() })
             }
         }
     }
