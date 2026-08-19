@@ -22,21 +22,12 @@ fun FilterPane(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            FilterLayout(
-                paginateLayout = false,
-                filterViewModel = filterViewModel,
-                modifier = Modifier
-            )
-        }
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ) { FilterLayout(filterViewModel = filterViewModel, paginateLayout = false) }
     }
 }

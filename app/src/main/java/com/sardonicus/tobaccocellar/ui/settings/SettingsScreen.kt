@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
@@ -87,21 +86,14 @@ fun SettingsScreen(
         else { EventBus.emit(DismissLoading) }
     }
 
-    val activity = LocalActivity.current
     DisposableEffect(Unit) {
-        onDispose {
-            if (activity?.isChangingConfigurations == false) {
-                viewModel.dismissDialog()
-                EventBus.tryEmit(DismissSnackbar)
-            }
-        }
+        onDispose { viewModel.dismissDialog(); EventBus.tryEmit(DismissSnackbar) }
     }
 
     DialogManager(viewModel = viewModel)
 
     Scaffold(
-        modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.settings_title),
@@ -115,14 +107,11 @@ fun SettingsScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
             SettingsBody(
                 viewModel = viewModel,
-                modifier = modifier
-                    .fillMaxSize(),
+                modifier = modifier.fillMaxSize(),
             )
         }
     }
@@ -138,8 +127,7 @@ private fun SettingsBody(
     val databaseSettings by viewModel.databaseSettings.collectAsState()
 
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
     ) {
@@ -149,8 +137,7 @@ private fun SettingsBody(
             Text(
                 text = "Display Settings",
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(start = 16.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
                 fontSize = 17.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -160,8 +147,7 @@ private fun SettingsBody(
             SettingsRow(
                 item = it,
                 onClick = viewModel::showDialog,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
+                modifier = Modifier.padding(horizontal = 12.dp)
             )
         }
 
@@ -171,8 +157,7 @@ private fun SettingsBody(
             Text(
                 text = "App & Database Settings",
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(start = 16.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
                 fontSize = 17.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -185,8 +170,7 @@ private fun SettingsBody(
                 color =
                     if (it.dialogType == DialogType.DeleteAll) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
+                modifier = Modifier.padding(horizontal = 12.dp)
             )
         }
 
@@ -274,18 +258,10 @@ private fun DialogManager(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
-    ) {
-        it?.let {
-            viewModel.saveBackup(context, it)
-        }
-    }
+    ) { it?.let { viewModel.saveBackup(context, it) } }
     val openLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
-    ) {
-        it?.let {
-            viewModel.restoreBackup(context, it)
-        }
-    }
+    ) { it?.let { viewModel.restoreBackup(context, it) } }
 
     val themeSetting by viewModel.themeSetting.collectAsState()
     val showRatings by viewModel.showRatings.collectAsState()
@@ -428,10 +404,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         DialogType.BackupRestore -> {
             BackupRestoreDialog(
                 onDismiss = viewModel::dismissDialog,
-                onSave = {
-                    launcher.launch(it)
-                    viewModel.dismissDialog()
-                },
+                onSave = { launcher.launch(it); viewModel.dismissDialog() },
                 onRestore = {
                     openLauncher.launch(arrayOf("application/octet-stream"))
                     viewModel.dismissDialog()
@@ -441,10 +414,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.DeleteAll -> {
             DeleteAllDialog(
-                onDeleteConfirm = {
-                    viewModel.deleteAllItems()
-                    viewModel.dismissDialog()
-                },
+                onDeleteConfirm = { viewModel.deleteAllItems(); viewModel.dismissDialog() },
                 onDeleteCancel = viewModel::dismissDialog
             )
         }
@@ -503,9 +473,7 @@ private fun <T> SelectionDialog(
                     )
                     Text(
                         text = optionLabel(option),
-                        modifier = Modifier
-                            .padding(end = 4.dp)
-                            .alpha(if (enabled) 1f else .38f),
+                        modifier = Modifier.padding(end = 4.dp).alpha(if (enabled) 1f else .38f),
                         fontSize = 15.sp,
                     )
                 }
@@ -548,9 +516,7 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier
-                    .requiredHeight(20.dp)
-                    .scale(.6f)
+                modifier = Modifier.requiredHeight(20.dp).scale(.6f)
             )
         }
         Text(

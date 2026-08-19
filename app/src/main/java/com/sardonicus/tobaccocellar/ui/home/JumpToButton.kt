@@ -45,11 +45,8 @@ fun JumpToButton(
         FloatingActionButton(
             onClick = {
                 jumpToState.second.value
-                if (jumpToState.second.value == ScrollDirection.DOWN) {
-                    onScrollToBottom()
-                } else {
-                    onScrollToTop()
-                }
+                if (jumpToState.second.value == ScrollDirection.DOWN) { onScrollToBottom() }
+                else { onScrollToTop() }
             },
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
@@ -61,8 +58,7 @@ fun JumpToButton(
             Icon(
                 painter = painterResource(id = if (jumpToState.second.value == ScrollDirection.DOWN) R.drawable.double_down else R.drawable.double_up),
                 contentDescription = if (jumpToState.second.value == ScrollDirection.DOWN) "Scroll to bottom" else "Scroll to top",
-                modifier = Modifier
-                    .size(36.dp),
+                modifier = Modifier.size(36.dp),
             )
         }
     }
@@ -77,11 +73,8 @@ private fun rememberJumpToState(
         val updatePrevious: (Int) -> Unit = { previousIndex = it }
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .collect { currentIndex ->
-                if (currentIndex > previousIndex) {
-                    value = ScrollDirection.DOWN
-                } else if (currentIndex < previousIndex) {
-                    value = ScrollDirection.UP
-                }
+                if (currentIndex > previousIndex) { value = ScrollDirection.DOWN }
+                else if (currentIndex < previousIndex) { value = ScrollDirection.UP }
                 updatePrevious(currentIndex)
             }
     }

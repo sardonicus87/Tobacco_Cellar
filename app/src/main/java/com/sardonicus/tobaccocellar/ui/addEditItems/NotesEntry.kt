@@ -26,22 +26,18 @@ fun NotesEntry(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
+        modifier = modifier.padding(top = 20.dp, bottom = 12.dp, start = 20.dp, end = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Notes //
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
                 text = "Notes:",
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 4.dp)
             )
             TextField(
                 value = itemDetails.notes,
@@ -64,8 +60,7 @@ fun NotesEntry(
                     }
                     onValueChange(itemDetails.copy(notes = updatedText))
                 },
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,

@@ -154,12 +154,8 @@ class SettingsViewModel(
     init {
         viewModelScope.launch {
             EventBus.events.collect { event ->
-                if (event is SignInCancelled) {
-                    _signingIn.value = false
-                }
-                if (event is SignOutEvent) {
-                    _signingIn.value = false
-                }
+                if (event is SignInCancelled) { _signingIn.value = false }
+                if (event is SignOutEvent) { _signingIn.value = false }
             }
         }
     }
@@ -226,8 +222,7 @@ class SettingsViewModel(
                 if (it) {
                     if (!connected) "Disconnected" else "On (${if (mobileData) "mobile" else "WiFi"})"
                 } else "Off"
-            },
-                DialogType.DeviceSync),
+            }, DialogType.DeviceSync),
             SettingsDialog("Tin Conversion Rates", "Change tin conversion rates.", "$ozRate oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
             SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option.", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
             SettingsDialog("Backup/Restore", "Backup or restore database and/or settings.", null, DialogType.BackupRestore),
@@ -278,23 +273,17 @@ class SettingsViewModel(
     }
 
     fun saveLandscapeTwoPane(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveLandscapeTwoPane(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveLandscapeTwoPane(option) }
     }
 
     fun saveTwoColumnTabs(option: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveTwoColumnTabs(option)
-        }
+        viewModelScope.launch { preferencesRepo.saveTwoColumnTabs(option) }
     }
 
 
     /** Database Settings **/
     fun saveCrossDeviceAcknowledged() {
-        viewModelScope.launch {
-            preferencesRepo.saveCrossDeviceAcknowledged(true)
-        }
+        viewModelScope.launch { preferencesRepo.saveCrossDeviceAcknowledged(true) }
     }
 
     fun saveCrossDeviceSync(enable: Boolean) {
@@ -315,29 +304,23 @@ class SettingsViewModel(
     }
 
     fun saveAllowMobileData(enable: Boolean) {
-        viewModelScope.launch {
-            preferencesRepo.saveAllowMobileData(enable)
-        }
+        viewModelScope.launch { preferencesRepo.saveAllowMobileData(enable) }
     }
 
     fun manualSync() {
         viewModelScope.launch {
             if (SyncStateManager.isSyncing.first()) {
-                showSnackbar("Sync already in progress.")
-                return@launch
-            }
+                showSnackbar("Sync already in progress."); return@launch }
 
             preferencesRepo.signedInUserEmail.first() ?: return@launch
 
             if (!networkEnabled.value) {
                 val message = if (!networkMonitor.isWifi.first()) "allow mobile data is off"
                     else "check connection"
-                showSnackbar("Failed: $message.")
-                return@launch
+                showSnackbar("Failed: $message."); return@launch
             }
 
             val workManager = WorkManager.getInstance(application)
-
             val allowMobile = preferencesRepo.allowMobileData.first()
             val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
 
@@ -345,17 +328,11 @@ class SettingsViewModel(
 
             val workRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
                 .setConstraints(
-                    Constraints.Builder()
-                        .setRequiredNetworkType(networkType)
-                        .build()
+                    Constraints.Builder().setRequiredNetworkType(networkType).build()
                 )
                 .build()
 
-            workManager.enqueueUniqueWork(
-                "manual_download_sync",
-                ExistingWorkPolicy.REPLACE,
-                workRequest
-            )
+            workManager.enqueueUniqueWork("manual_download_sync", ExistingWorkPolicy.REPLACE, workRequest)
 
             val timeoutJob = viewModelScope.launch {
                 delay(5000.milliseconds)
@@ -370,27 +347,16 @@ class SettingsViewModel(
             workManager.getWorkInfoByIdFlow(workRequest.id)
                 .collect { workInfo ->
                     when (workInfo?.state) {
-                        WorkInfo.State.ENQUEUED -> {
-                            setLoadingState(true)
-                        }
-                        WorkInfo.State.RUNNING -> {
-                            timeoutJob.cancel()
-                            setLoadingState(true)
-                        }
+                        WorkInfo.State.ENQUEUED -> { setLoadingState(true) }
+                        WorkInfo.State.RUNNING -> { timeoutJob.cancel(); setLoadingState(true) }
                         WorkInfo.State.SUCCEEDED -> {
                             timeoutJob.cancel()
                             setLoadingState(false)
                             val result = workInfo.outputData
                             when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
-                                DownloadSyncWorker.SYNC_COMPLETE -> {
-                                    showSnackbar("Sync complete.")
-                                }
-                                DownloadSyncWorker.REMOTE_EMPTY -> {
-                                    showSnackbar("Remote files not found.")
-                                }
-                                DownloadSyncWorker.UP_TO_DATE -> {
-                                    showSnackbar("No new sync data available.")
-                                }
+                                DownloadSyncWorker.SYNC_COMPLETE -> { showSnackbar("Sync complete.") }
+                                DownloadSyncWorker.REMOTE_EMPTY -> { showSnackbar("Remote files not found.") }
+                                DownloadSyncWorker.UP_TO_DATE -> { showSnackbar("No new sync data available.") }
                             }
                         }
                         WorkInfo.State.FAILED -> {
@@ -398,14 +364,8 @@ class SettingsViewModel(
                             setLoadingState(false)
                             showSnackbar("Sync failed (check connection).")
                         }
-                        WorkInfo.State.CANCELLED -> {
-                            timeoutJob.cancel()
-                            setLoadingState(false)
-                        }
-                        else -> {
-                            timeoutJob.cancel()
-                            setLoadingState(false)
-                        }
+                        WorkInfo.State.CANCELLED -> { timeoutJob.cancel(); setLoadingState(false) }
+                        else -> { timeoutJob.cancel(); setLoadingState(false) }
                     }
                 }
         }
@@ -429,10 +389,7 @@ class SettingsViewModel(
 
             withContext(Dispatchers.IO) {
                 val email = preferencesRepo.signedInUserEmail.first()
-                if (email == null) {
-                    setLoadingState(false)
-                    return@withContext
-                }
+                if (email == null) { setLoadingState(false); return@withContext }
 
                 try {
                     val driveService = GoogleDriveServiceHelper.getDriveService(application, email)
@@ -468,18 +425,14 @@ class SettingsViewModel(
                     batch.execute()
                     showSnackbar("Remote data deleted.")
 
-                } catch (_: Exception) {
-                    showSnackbar("Error deleting remote data.")
-                } finally {
-                    setLoadingState(false)
                 }
+                catch (_: Exception) { showSnackbar("Error deleting remote data.") }
+                finally { setLoadingState(false) }
             }
         }
     }
 
-    fun clearLoginState() {
-        viewModelScope.launch { EventBus.emit(SignOutEvent) }
-    }
+    fun clearLoginState() { viewModelScope.launch { EventBus.emit(SignOutEvent) } }
 
     private fun stopWorkers() {
         viewModelScope.launch { (application as CellarApplication).cancelPeriodicSync() }
@@ -513,11 +466,7 @@ class SettingsViewModel(
             try {
                 allSyncItems.forEach { items ->
                     val syncQuantity = calculateSyncTins(items.tins, ozRate, gramsRate)
-                    itemsRepository.updateItem(
-                        items.items.copy(
-                            quantity = syncQuantity,
-                        )
-                    )
+                    itemsRepository.updateItem(items.items.copy(quantity = syncQuantity))
                 }
 
                 message = if (ozConversion != null || gramsConversion != null) {
@@ -656,11 +605,7 @@ class SettingsViewModel(
 
     fun saveBackup(context: Context, uri: Uri) { createBackupBinary(uri, context) }
 
-    private fun deleteTempFile(file: File) {
-        if (file.exists()) {
-            file.delete()
-        }
-    }
+    private fun deleteTempFile(file: File) { if (file.exists()) { file.delete() } }
 
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {

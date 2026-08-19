@@ -54,9 +54,7 @@ fun HistogramChart(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .onGloballyPositioned {
-                currentWidth = with(density) { it.size.width.toDp() }
-            }
+            .onGloballyPositioned { currentWidth = with(density) { it.size.width.toDp() } }
     ) {
         val width: Dp = (currentWidth) / 11
         val ratingSteps = List(11) { it / 2.0 }
@@ -76,14 +74,11 @@ fun HistogramChart(
                     val barHeight = count.toFloat() / maxCount
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxHeight(),
+                        modifier = Modifier.fillMaxHeight(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Box(
-                            modifier = Modifier
-                                .width(width)
-                                .weight(1f),
+                            modifier = Modifier.width(width).weight(1f),
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             if (showValues && count == 0) {
@@ -219,8 +214,7 @@ fun HistogramChart(
                 if (index % 2 == 0) {
                     Text(
                         text = formatDecimal(it, 0),
-                        modifier = Modifier
-                            .width(width),
+                        modifier = Modifier.width(width),
                         textAlign = TextAlign.Center,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
@@ -229,9 +223,7 @@ fun HistogramChart(
                     val offset = with(density) { 9.sp.toDp() }
                     Text(
                         text = formatDecimal(it, 1),
-                        modifier = Modifier
-                            .width(width)
-                            .offset(y = -offset),
+                        modifier = Modifier.width(width).offset(y = -offset),
                         textAlign = TextAlign.Center,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Normal
@@ -240,9 +232,7 @@ fun HistogramChart(
             }
         }
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {

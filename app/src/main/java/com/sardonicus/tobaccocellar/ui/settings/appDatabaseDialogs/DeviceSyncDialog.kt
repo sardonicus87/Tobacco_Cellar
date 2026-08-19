@@ -35,7 +35,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -77,7 +76,7 @@ fun DeviceSyncDialog(
     val accountLinked by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
-    var atBottom by rememberSaveable { mutableStateOf(false) }
+    var atBottom by remember { mutableStateOf(false) }
     val scrolled by remember { derivedStateOf { !scrollState.canScrollForward } }
     if (scrolled) { atBottom = true }
     val density = LocalDensity.current
@@ -107,13 +106,9 @@ fun DeviceSyncDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        modifier = Modifier
-            .padding(0.dp)
-            .heightIn(max = 350.dp),
+        modifier = Modifier.padding(0.dp).heightIn(max = 350.dp),
         text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!acknowledgement) {
                     Text(
                         text = "About Multi Device Sync",
@@ -203,11 +198,8 @@ fun DeviceSyncDialog(
                                         Switch(
                                             checked = deviceSync || signingIn || disconnectFailure,
                                             onCheckedChange = {
-                                                if (!connectionEnabled && !deviceSync) {
-                                                    disconnectFailure = it
-                                                } else {
-                                                    onDeviceSync(it)
-                                                }
+                                                if (!connectionEnabled && !deviceSync) { disconnectFailure = it }
+                                                else { onDeviceSync(it) }
                                             },
                                             modifier = Modifier
                                                 .scale(.6f)
@@ -280,9 +272,7 @@ fun DeviceSyncDialog(
                                         checked = allowMobileData,
                                         onCheckedChange = { onAllowMobileData(it) },
                                         enabled = deviceSync && !debouncedLoading,
-                                        modifier = Modifier
-                                            .scale(.6f)
-                                            .padding(start = 10.dp),
+                                        modifier = Modifier.scale(.6f).padding(start = 10.dp),
                                         colors = SwitchDefaults.colors()
                                     )
                                 }
@@ -298,8 +288,7 @@ fun DeviceSyncDialog(
                             ) {
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier
-                                        .width(IntrinsicSize.Max)
+                                    modifier = Modifier.width(IntrinsicSize.Max)
                                 ) {
                                     TextButton(
                                         onClick = { onManualSync() },
@@ -331,10 +320,7 @@ fun DeviceSyncDialog(
 
                             // Clear Login
                             TextButton(
-                                onClick = {
-                                    clearLoginState()
-                                    onDeviceSync(false)
-                                },
+                                onClick = { clearLoginState(); onDeviceSync(false) },
                                 enabled = accountLinked && !debouncedLoading,
                                 contentPadding = PaddingValues(8.dp, 3.dp),
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
@@ -346,17 +332,14 @@ fun DeviceSyncDialog(
                                 )
                             }
                         }
-                        if (debouncedLoading) { LoadingIndicator(center = true, modifier = Modifier.matchParentSize()) }
+                        if (debouncedLoading) { LoadingIndicator(Modifier.matchParentSize(), center = true) }
                     }
                 }
             }
         },
         confirmButton = {
             if (!acknowledgement) {
-                TextButton(
-                    onClick = { confirmAcknowledgement() },
-                    enabled = atBottom
-                ) { Text("Agree") }
+                TextButton({ confirmAcknowledgement() }, enabled = atBottom) { Text("Agree") }
             }
             else { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text("Done") } }
         },

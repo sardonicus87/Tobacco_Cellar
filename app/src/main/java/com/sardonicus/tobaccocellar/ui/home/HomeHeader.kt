@@ -35,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,19 +89,13 @@ fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         // Select view
-        ViewSelect(
-            viewModel = viewModel,
-            modifier = Modifier
-                .width(74.dp)
-        )
+        ViewSelect(viewModel, Modifier.width(74.dp))
 
         Spacer(Modifier.width(8.dp))
 
         // Search field
         Box(
-            modifier = Modifier
-                .padding(horizontal = 0.dp)
-                .weight(1f, false),
+            modifier = Modifier.padding(horizontal = 0.dp).weight(1f, false),
         ) {
             SearchField(
                 filterViewModel = filterViewModel,
@@ -111,8 +104,7 @@ fun HomeHeader(
                 updateSearchFocused = updateSearchFocused,
                 getPositionTrigger = getPositionTrigger,
                 saveSearchSetting = saveSearchSetting,
-                onExpandSearchMenu = onExpandSearchMenu,
-                modifier = Modifier
+                onExpandSearchMenu = onExpandSearchMenu
             )
         }
 
@@ -120,8 +112,7 @@ fun HomeHeader(
 
         // total items & list sorting or column hiding
         Row(
-            modifier = modifier
-                .width(68.dp),
+            modifier = modifier.width(68.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -129,8 +120,7 @@ fun HomeHeader(
                 viewModel = viewModel,
                 shouldScrollUp = shouldScrollUp,
                 saveListSorting = saveListSorting,
-                onShowColumnPop = onShowColumnPop,
-                modifier = Modifier
+                onShowColumnPop = onShowColumnPop
             )
             Spacer(Modifier.width(6.dp))
             TotalCount(viewModel)
@@ -146,9 +136,7 @@ private fun ViewSelect(
     val state by viewModel.viewSelect.collectAsState()
 
     Row(
-        modifier = modifier
-            .padding(0.dp)
-            .width(74.dp),
+        modifier = modifier.padding(0.dp).width(74.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -157,8 +145,7 @@ private fun ViewSelect(
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Normal,
             fontSize = 15.sp,
-            modifier = Modifier
-                .padding(0.dp)
+            modifier = Modifier.padding(0.dp)
         )
         Icon(
             painter = painterResource(state.toggleIcon),
@@ -189,17 +176,11 @@ private fun SearchField (
     modifier: Modifier = Modifier,
 ) {
     val state by filterViewModel.searchState.collectAsState()
-
     val coroutineScope = rememberCoroutineScope()
 
     CustomBlendSearch(
         value = { state.searchText },
-        onValueChange = {
-            updateSearchText(it)
-            if (it.isEmpty()) {
-                onSearch(it)
-            }
-        },
+        onValueChange = { updateSearchText(it); if (it.isEmpty()) { onSearch(it) } },
         modifier = modifier
             .fillMaxWidth()
             .onFocusChanged {
@@ -229,9 +210,7 @@ private fun SearchField (
                 Icon(
                     painter = painterResource(id = R.drawable.search),
                     contentDescription = null,
-                    modifier = Modifier
-                        .padding(end = 2.dp)
-                        .size(20.dp),
+                    modifier = Modifier.padding(end = 2.dp).size(20.dp),
                     tint = LocalContentColor.current.copy(alpha = state.searchIconOpacity)
                 )
                 Icon(
@@ -248,21 +227,16 @@ private fun SearchField (
             DropdownMenu(
                 expanded = state.searchMenuExpanded,
                 onDismissRequest = { onExpandSearchMenu(false) },
-                modifier = Modifier,
                 containerColor = LocalCustomColors.current.textField,
                 shadowElevation = 4.dp,
                 offset = DpOffset((-2).dp, 2.dp)
             ) {
                 state.settingsList.settings.forEach {
                     DropdownMenuItem(
-                        text = { Text(text = it.value) },
-                        onClick = {
-                            saveSearchSetting(it.value)
-                            onExpandSearchMenu(false)
-                        },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = true,
+                        text = { Text(it.value) },
+                        onClick = { saveSearchSetting(it.value); onExpandSearchMenu(false) },
+                        modifier = Modifier.padding(0.dp),
+                        enabled = true
                     )
                 }
             }
@@ -278,16 +252,12 @@ private fun SearchField (
                             indication = LocalIndication.current,
                             interactionSource = null
                         ) {
-                            updateSearchText("")
-                            onSearch("")
+                            updateSearchText(""); onSearch("")
 
                             if (state.searchPerformed) {
-                                coroutineScope.launch {
-                                    EventBus.emit(SearchClearedEvent)
-                                }
+                                coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
                             }
                         }
-
                         .padding(0.dp),
                 )
             }
@@ -309,7 +279,7 @@ private fun ListColumnMenu(
     Box(modifier = modifier) {
         // List Sorting
         if (!state.isTableView) {
-            var sortingMenu by rememberSaveable { mutableStateOf(false) }
+            var sortingMenu by remember { mutableStateOf(false) }
 
             Icon(
                 painter = painterResource(R.drawable.sort_bars),
@@ -336,19 +306,16 @@ private fun ListColumnMenu(
                     DropdownMenuItem(
                         text = {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(
                                     text = it.value,
-                                    fontWeight = FontWeight.Normal,
-                                    modifier = Modifier
+                                    fontWeight = FontWeight.Normal
                                 )
                                 Box(
-                                    modifier = Modifier
-                                        .width(14.dp),
+                                    modifier = Modifier.width(14.dp),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
                                     if (state.listSorting.option.value == it.value) {
@@ -367,13 +334,9 @@ private fun ListColumnMenu(
                                 }
                             }
                         },
-                        onClick = {
-                            saveListSorting(it)
-                            shouldScrollUp()
-                        },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = true,
+                        onClick = { saveListSorting(it); shouldScrollUp() },
+                        modifier = Modifier.padding(0.dp),
+                        enabled = true
                     )
                 }
             }
@@ -387,9 +350,8 @@ private fun ListColumnMenu(
                     .clip(CircleShape)
                     .clickable(
                         indication = LocalIndication.current,
-                        interactionSource = null,
-                        onClick = onShowColumnPop
-                    )
+                        interactionSource = null
+                    ) { onShowColumnPop() }
                     .padding(4.dp)
                     .size(20.dp)
             )
@@ -406,8 +368,7 @@ private fun TotalCount(
     Box (contentAlignment = Alignment.CenterEnd) {
         Text(
             text = "$count",
-            modifier = Modifier
-                .widthIn(min = 28.dp),
+            modifier = Modifier.widthIn(min = 28.dp),
             textAlign = TextAlign.End,
             fontWeight = FontWeight.Normal,
             fontSize = 15.sp,
@@ -440,11 +401,8 @@ private fun CustomBlendSearch(
             .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
             .height(30.dp)
             .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus
-                showCursor = focusState.hasFocus
-                if (!focusState.hasFocus) {
-                    focusManager.clearFocus()
-                }
+                hasFocus = focusState.hasFocus; showCursor = focusState.hasFocus
+                if (!focusState.hasFocus) { focusManager.clearFocus() }
             }
             .padding(horizontal = 8.dp),
         textStyle = LocalTextStyle.current.copy(
@@ -458,32 +416,21 @@ private fun CustomBlendSearch(
             imeAction = ImeAction.Search,
         ),
         keyboardActions = KeyboardActions(
-            onSearch = {
-                onImeAction()
-                focusManager.clearFocus()
-            }
+            onSearch = { onImeAction(); focusManager.clearFocus() }
         ),
         singleLine = true,
-        cursorBrush = if (showCursor) {
-            SolidColor(MaterialTheme.colorScheme.primary)
-        } else {
-            SolidColor(Color.Transparent)
-        },
+        cursorBrush =
+            if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
+            else { SolidColor(Color.Transparent) },
         decorationBox = { innerTextField ->
             Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxSize(),
+                modifier = Modifier.padding(0.dp).fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start,
             ) {
                 leadingIcon()
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
+                Box(Modifier.weight(1f), Alignment.CenterStart) {
                     if (value().isEmpty() && !hasFocus) {
                         Text(
                             text = placeholder,

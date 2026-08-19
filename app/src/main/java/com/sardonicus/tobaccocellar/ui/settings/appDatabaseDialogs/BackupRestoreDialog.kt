@@ -18,7 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,22 +39,18 @@ fun BackupRestoreDialog(
     onRestore: () -> Unit,
     viewModel: SettingsViewModel
 ) {
-    var option: BackupRestoreOption? by rememberSaveable { mutableStateOf(null) }
-    val updateOption: (BackupRestoreOption?) -> Unit = { option = it }
+    var option: BackupRestoreOption? by remember { mutableStateOf(null) }
 
     val backupState by viewModel.backupState.collectAsState()
     val restoreState by viewModel.restoreState.collectAsState()
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        ),
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         text = {
             when (option) {
-                BackupRestoreOption.BACKUP -> BackupDialog(backupState, viewModel) { updateOption(null) }
-                BackupRestoreOption.RESTORE -> RestoreDialog(restoreState, viewModel) { updateOption(null) }
+                BackupRestoreOption.BACKUP -> BackupDialog(backupState, viewModel) { option = null }
+                BackupRestoreOption.RESTORE -> RestoreDialog(restoreState, viewModel) { option = null }
                 null -> {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -71,25 +67,15 @@ fun BackupRestoreDialog(
                         ) {
                             Spacer(Modifier.height(8.dp))
                             TextButton(
-                                onClick = { updateOption(BackupRestoreOption.BACKUP) },
+                                onClick = { option = BackupRestoreOption.BACKUP },
                                 contentPadding = PaddingValues(8.dp, 3.dp),
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
-                            ) {
-                                Text(
-                                    text = "Backup",
-                                    fontSize = 15.sp
-                                )
-                            }
+                            ) { Text("Backup", fontSize = 15.sp) }
                             TextButton(
-                                onClick = { updateOption(BackupRestoreOption.RESTORE) },
+                                onClick = { option = BackupRestoreOption.RESTORE },
                                 contentPadding = PaddingValues(8.dp, 3.dp),
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
-                            ) {
-                                Text(
-                                    text = "Restore",
-                                    fontSize = 15.sp
-                                )
-                            }
+                            ) { Text("Restore", fontSize = 15.sp) }
                         }
                     }
                 }

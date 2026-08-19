@@ -23,8 +23,8 @@ fun DeleteAllDialog(
                 fontSize = 15.sp
             )
         },
-        dismissButton = { TextButton(onClick = onDeleteCancel) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onClick = onDeleteConfirm) { Text(stringResource(R.string.yes)) } },
+        dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large

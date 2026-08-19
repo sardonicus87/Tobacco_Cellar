@@ -90,19 +90,10 @@ data class TwoPaneScene<T : Any>(
         var longDelay by remember { mutableStateOf(true) }
 
         BackHandler(enabled = interceptBack, onBack = onBack)
-        BackHandler(!secondExpanded) {
-            longDelay = false
-            secondExpanded = true
-        }
+        BackHandler(!secondExpanded) { longDelay = false; secondExpanded = true }
 
-        val paneWidth by animateDpAsState(
-            targetValue = if (secondExpanded) expandedWidth else 32.dp,
-            animationSpec = tween(300)
-        )
-        val buttonOffset by animateDpAsState(
-            targetValue = if (secondExpanded) 12.dp else 0.dp,
-            animationSpec = tween(300)
-        )
+        val paneWidth by animateDpAsState(if (secondExpanded) expandedWidth else 32.dp, tween(300))
+        val buttonOffset by animateDpAsState(if (secondExpanded) 12.dp else 0.dp, tween(300))
 
         LaunchedEffect(showButton, secondExpanded) {
             if (showButton && secondExpanded) {
@@ -155,10 +146,7 @@ data class TwoPaneScene<T : Any>(
                         .graphicsLayer { clip = true }
                         .tapToggle(secondExpanded) { showButton = true },
                     expandedWidth = expandedWidth,
-                    onEnter = {
-                        longDelay = false
-                        secondExpanded = true
-                    }
+                    onEnter = { longDelay = false; secondExpanded = true }
                 )
             }
 
@@ -250,12 +238,9 @@ private fun <T : Any> PaneContainer(
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = .15f)),
                 size = GlowSize(start = 4.dp)
-            ) {
-                PaneContent(transition, contentTransform, targetZIndex)
-            }
-        } else {
-            PaneContent(transition, contentTransform, targetZIndex)
+            ) { PaneContent(transition, contentTransform, targetZIndex) }
         }
+        else { PaneContent(transition, contentTransform, targetZIndex) }
     }
 }
 
@@ -286,22 +271,10 @@ private fun TwoPaneButton(
 ) {
     val screenHeight = LocalWindowInfo.current.containerDpSize.height
 
-    val buttonHeight by animateDpAsState(
-        targetValue = if (secondExpanded) 32.dp else screenHeight,
-        animationSpec = tween(300)
-    )
-    val buttonAlpha by animateFloatAsState(
-        targetValue = if (secondExpanded) .6f else 1f,
-        animationSpec = tween(300)
-    )
-    val buttonCorner by animateDpAsState(
-        targetValue = if (secondExpanded) 4.dp else 0.dp,
-        animationSpec = tween(300)
-    )
-    val borderAlpha by animateFloatAsState(
-        targetValue = if (secondExpanded) .3f else 0f,
-        animationSpec = tween(300)
-    )
+    val buttonHeight by animateDpAsState(if (secondExpanded) 32.dp else screenHeight, tween(300))
+    val buttonAlpha by animateFloatAsState(if (secondExpanded) .6f else 1f, tween(300))
+    val buttonCorner by animateDpAsState(if (secondExpanded) 4.dp else 0.dp, tween(300))
+    val borderAlpha by animateFloatAsState(if (secondExpanded) .3f else 0f, tween(300))
 
     Box(
         modifier = modifier
@@ -309,28 +282,21 @@ private fun TwoPaneButton(
             .height(buttonHeight)
             .background(LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha), RoundedCornerShape(buttonCorner))
             .border(1.dp, LocalCustomColors.current.whiteBlackInverted.copy(alpha = borderAlpha), RoundedCornerShape(buttonCorner))
-            .clickable(
-                indication = null,
-                interactionSource = null
-            ) { toggleSecondPane() },
+            .clickable(indication = null, interactionSource = null) { toggleSecondPane() },
         contentAlignment = Alignment.Center
     ) {
         AnimatedVisibility(
             visible = !secondExpanded,
             enter = fadeIn(tween(300)) + expandVertically(tween(300), Alignment.CenterVertically),
             exit = fadeOut(tween(300)) + shrinkVertically(tween(300), Alignment.CenterVertically),
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.CenterStart)
+            modifier = Modifier.fillMaxSize().align(Alignment.CenterStart)
         ) {
             GlowBox(
                 color = GlowColor(end = LocalCustomColors.current.whiteBlackInverted.copy(alpha = .15f)),
                 size = GlowSize(end = 4.dp),
                 contentAlignment = Alignment.CenterStart,
                 modifier = Modifier.fillMaxSize(),
-            ) {
-                Spacer(modifier = Modifier.width(32.dp))
-            }
+            ) { Spacer(Modifier.width(32.dp)) }
         }
         AnimatedContent(
             targetState = if (secondExpanded) R.drawable.arrow_right else R.drawable.arrow_left,

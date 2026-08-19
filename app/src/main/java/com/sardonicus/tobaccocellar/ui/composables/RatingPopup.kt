@@ -27,7 +27,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,8 +57,8 @@ fun RatingPopup(
     modifier: Modifier = Modifier,
     currentRating: Double? = null,
 ) {
-    var currentRatingString by rememberSaveable { mutableStateOf(formatDecimal(currentRating)) }
-    var parsedDouble by rememberSaveable { mutableStateOf<Double?>(null) }
+    var currentRatingString by remember { mutableStateOf(formatDecimal(currentRating)) }
+    var parsedDouble by remember { mutableStateOf<Double?>(null) }
 
     val focusManager = LocalFocusManager.current
     DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }

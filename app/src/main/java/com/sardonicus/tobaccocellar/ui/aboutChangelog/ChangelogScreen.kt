@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -60,7 +59,7 @@ fun ChangelogScreen (
     val density = LocalDensity.current
 
     var scrolling by remember { mutableStateOf(false) }
-    var scrollingFinished by rememberSaveable(targetVersion) { mutableStateOf(false) }
+    var scrollingFinished by remember(targetVersion) { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     val twoPane by remember { mutableStateOf(isTwoPane) }
@@ -110,9 +109,7 @@ fun ChangelogScreen (
                 ) {
                     // log entries
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp),
+                        modifier = Modifier.fillMaxWidth().padding(0.dp),
                         state = listState,
                         userScrollEnabled = true,
                     ) {
@@ -135,11 +132,7 @@ fun ChangelogScreen (
                     }
                 }
             }
-            if (scrolling) {
-                LoadingIndicator(
-                    scrimColor = Color.Black.copy(alpha = 0.38f),
-                )
-            }
+            if (scrolling) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.38f)) }
         }
     }
 }
@@ -154,9 +147,7 @@ fun ChangeLogEntryLayout(
     bugFixes: List<String> = emptyList(),
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -172,8 +163,7 @@ fun ChangeLogEntryLayout(
         HorizontalDivider(Modifier.padding(bottom = 8.dp), 1.dp)
 
         Column(
-            modifier = Modifier
-                .padding(horizontal = 8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
         ) {
@@ -185,9 +175,7 @@ fun ChangeLogEntryLayout(
                     fontWeight = FontWeight.Medium,
                 )
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -222,9 +210,7 @@ fun ChangeLogEntryLayout(
                     fontWeight = FontWeight.Medium,
                 )
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -259,9 +245,7 @@ fun ChangeLogEntryLayout(
                     fontWeight = FontWeight.Medium,
                 )
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.Start
                 ) {

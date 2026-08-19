@@ -57,9 +57,7 @@ fun ReleaseNotesDialog(
             dismissOnClickOutside = true,
             usePlatformDefaultWidth = !landscape
         ),
-        modifier = modifier
-            .heightIn(max = maxHeight)
-            .widthIn(minWidth, maxWidth),
+        modifier = modifier.heightIn(max = maxHeight).widthIn(minWidth, maxWidth),
         containerColor = LocalCustomColors.current.darkNeutral,
         shape = RoundedCornerShape(8.dp),
         tonalElevation = 4.dp,
@@ -72,8 +70,7 @@ fun ReleaseNotesDialog(
                     textAlign = TextAlign.Start,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.tertiary)
@@ -86,16 +83,14 @@ fun ReleaseNotesDialog(
                 modifier = Modifier
             ) {
                 Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
                 ) {
                     Spacer(Modifier.height(4.dp))
                     releaseNotesState.changelogData.forEachIndexed { index, log ->
                         val alpha = if (index == 0) 1f else 0.8f
                         Text(
                             text = "Version ${log.versionNumber} (${log.buildDate})",
-                            modifier = Modifier
-                                .padding(bottom = 6.dp),
+                            modifier = Modifier.padding(bottom = 6.dp),
                             fontSize = if (index == 0) 16.sp else 15.sp,
                             fontWeight = if (index == 0) FontWeight.ExtraBold else FontWeight.Medium,
                             color = LocalContentColor.current.copy(alpha = alpha),
@@ -127,8 +122,7 @@ fun ReleaseNotesDialog(
                                 text = annotatedString,
                                 fontSize = if (index == 0) 15.sp else 14.sp,
                                 color = LocalContentColor.current.copy(alpha = alpha),
-                                modifier = Modifier
-                                    .padding(start = 12.dp)
+                                modifier = Modifier.padding(start = 12.dp)
                             )
                         }
                         if (index != releaseNotesState.changelogData.lastIndex) {
@@ -143,25 +137,15 @@ fun ReleaseNotesDialog(
             TextButton(
                 onClick = viewModel::saveReleaseNotesSeen,
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text("OK")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text("OK") }
         },
         dismissButton = {
             TextButton(
-                onClick = {
-                    viewModel.saveReleaseNotesSeen()
-                    onNavigateToChangelog(null)
-                },
+                onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(null) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text("Full Changelog")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text("Full Changelog") }
         }
     )
-
 }

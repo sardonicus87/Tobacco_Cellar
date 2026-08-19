@@ -52,7 +52,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,20 +97,18 @@ fun ItemMenu(
     val originalState by viewModel.originalState.collectAsState()
     val changed by viewModel.quickChanges.collectAsState()
 
-    var quickEdit by rememberSaveable { mutableStateOf(false) }
-    val onQuickEdit: () -> Unit = { quickEdit = !quickEdit }
+    var quickEdit by remember { mutableStateOf(false) }
 
-    var showRatingPop by rememberSaveable { mutableStateOf(false) }
-    var showNotePop by rememberSaveable { mutableStateOf(false) }
-    var showQtyPop by rememberSaveable { mutableStateOf(false) }
+    var showRatingPop by remember { mutableStateOf(false) }
+    var showNotePop by remember { mutableStateOf(false) }
+    var showQtyPop by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(150.milliseconds)
         viewModel.setQuickEditItem(activeItemId())
     }
 
-    BackHandler(quickEdit) { if (quickEdit) { onQuickEdit() } }
-
+    BackHandler(quickEdit) { if (quickEdit) { quickEdit = false } }
 
     AnimatedContent(
         targetState = quickEdit,
@@ -133,7 +130,10 @@ fun ItemMenu(
                     Text(
                         text = "Edit Item",
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(25))
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = .8f),
+                                RoundedCornerShape(25)
+                            )
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
@@ -141,14 +141,14 @@ fun ItemMenu(
                     )
                 }
 
-                TextButton(
-                    onClick = onQuickEdit,
-                    modifier = Modifier
-                ) {
+                TextButton({ quickEdit = !quickEdit }) {
                     Text(
                         text = "Quick Edit",
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(25))
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = .8f),
+                                RoundedCornerShape(25)
+                            )
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
@@ -160,7 +160,7 @@ fun ItemMenu(
                 Box (
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .clickable { onQuickEdit() }
+                        .clickable { quickEdit = !quickEdit }
                         .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -169,8 +169,7 @@ fun ItemMenu(
                         contentDescription = null,
                         colorFilter = ColorFilter.tint(Color.Gray.copy(alpha = .25f).compositeOver(MaterialTheme.colorScheme.onBackground)),
                         alignment = Alignment.Center,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
+                        contentScale = ContentScale.Fit
                     )
                 }
 
@@ -181,7 +180,10 @@ fun ItemMenu(
                         .fillMaxHeight()
                         .horizontalScroll(rememberScrollState())
                         .padding(3.dp, 8.dp)
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(50))
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .8f),
+                            RoundedCornerShape(50)
+                        )
                 ) {
                     CompositionLocalProvider(
                         LocalContentColor provides MaterialTheme.colorScheme.primary.copy(alpha = 0.25f).compositeOver(MaterialTheme.colorScheme.onBackground)
@@ -214,8 +216,7 @@ fun ItemMenu(
                                         else LocalContentColor.current
                                     ),
                                     alignment = Alignment.Center,
-                                    contentScale = ContentScale.FillHeight,
-                                    modifier = Modifier,
+                                    contentScale = ContentScale.FillHeight
                                 )
                             }
                         }
@@ -265,8 +266,7 @@ fun ItemMenu(
                                     colorFilter = ColorFilter.tint(if (quickEditState.notes.isNotBlank()) MaterialTheme.colorScheme.tertiary else LocalContentColor.current),
                                     alignment = Alignment.Center,
                                     contentScale = ContentScale.FillHeight,
-                                    modifier = Modifier
-                                        .padding(vertical = 1.dp)
+                                    modifier = Modifier.padding(vertical = 1.dp)
                                 )
                             }
                         }
@@ -297,13 +297,15 @@ fun ItemMenu(
 
                 TextButton(
                     onClick = viewModel::saveQuickEdits,
-                    enabled = quickEditState.saveEnabled,
-                    modifier = Modifier,
+                    enabled = quickEditState.saveEnabled
                 ) {
                     Text(
                         text = "Save",
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = .8f), RoundedCornerShape(25))
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = .8f),
+                                RoundedCornerShape(25)
+                            )
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
@@ -312,7 +314,7 @@ fun ItemMenu(
             }
         }
 
-        var editRatingState by rememberSaveable { mutableStateOf(formatDecimal(quickEditState.rating)) }
+        var editRatingState by remember { mutableStateOf(formatDecimal(quickEditState.rating)) }
 
         if (showRatingPop) {
             EditRatingPop(
@@ -324,15 +326,12 @@ fun ItemMenu(
                     editRatingState = formatDecimal(originalState.rating)
                     viewModel.updateQuickRating(originalState.rating)
                 },
-                onRatingEdited = {
-                    viewModel.updateQuickRating(it)
-                    showRatingPop = false
-                }
+                onRatingEdited = { viewModel.updateQuickRating(it); showRatingPop = false }
             )
 
         }
 
-        var editNoteState by rememberSaveable { mutableStateOf(quickEditState.notes) }
+        var editNoteState by remember { mutableStateOf(quickEditState.notes) }
 
         if (showNotePop) {
             EditNotePop(
@@ -344,14 +343,11 @@ fun ItemMenu(
                     editNoteState = originalState.notes
                     viewModel.updateQuickNotes(originalState.notes)
                 },
-                onNoteEdited = {
-                    viewModel.updateQuickNotes(it)
-                    showNotePop = false
-                }
+                onNoteEdited = { viewModel.updateQuickNotes(it); showNotePop = false }
             )
         }
 
-        var qtyState by rememberSaveable { mutableStateOf(quickEditState.quantity.toString()) }
+        var qtyState by remember { mutableStateOf(quickEditState.quantity.toString()) }
 
         if (showQtyPop) {
             EditQuantityPop(
@@ -363,10 +359,7 @@ fun ItemMenu(
                     qtyState = originalState.quantity.toString()
                     viewModel.updateQuickQuantity(originalState.quantity)
                 },
-                onQtyEdited = {
-                    viewModel.updateQuickQuantity(it)
-                    showQtyPop = false
-                }
+                onQtyEdited = { viewModel.updateQuickQuantity(it); showQtyPop = false }
             )
         }
     }
@@ -382,14 +375,16 @@ private fun QuickOption(
         contentAlignment = Alignment.Center,
         modifier = modifier
     ) {
-        if (edited) Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(6.dp)
-                .offset((-1).dp, (-8).dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.tertiary)
-        )
+        if (edited) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(6.dp)
+                    .offset((-1).dp, (-8).dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiary)
+            )
+        }
         content()
     }
 }
@@ -404,7 +399,7 @@ private fun EditRatingPop(
     onRatingEdited: (Double?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var parsedDouble by rememberSaveable { mutableStateOf<Double?>(null) }
+    var parsedDouble by remember { mutableStateOf<Double?>(null) }
     val updateParsedDouble: (Double?) -> Unit = { parsedDouble = it }
 
     val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
@@ -419,18 +414,11 @@ private fun EditRatingPop(
         var parsed: Double?
         try {
             if (it.isNotBlank()) {
-                val preNumber = if (it.startsWith(decimalSeparator)) {
-                    "0$it"
-                } else it
+                val preNumber = if (it.startsWith(decimalSeparator)) { "0$it" } else it
                 val number = numberFormat.parse(preNumber)
                 parsed = number?.toDouble() ?: 0.0
-                if (parsed > 5.0) {
-                    parsed = 5.0
-                }
-            } else {
-                parsed = null
-            }
-
+                if (parsed > 5.0) { parsed = 5.0 }
+            } else { parsed = null }
         } catch (_: ParseException) { return null }
         return parsed
     }
@@ -440,10 +428,7 @@ private fun EditRatingPop(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier.wrapContentHeight(),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-        ),
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.small,
@@ -451,8 +436,7 @@ private fun EditRatingPop(
             Text(
                 text = "Rating",
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier
+                fontSize = 18.sp
             )
         },
         text = {
@@ -517,15 +501,15 @@ private fun EditRatingPop(
                 onClick = { onRatingEdited(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(text = "Done") }
+            ) { Text("Done") }
         },
         dismissButton = {
             TextButton(
                 onClick = onCancel,
-                enabled = undoEnabled, // textFieldState != originalRating,
+                enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(text = "Undo") }
+            ) { Text("Undo") }
         }
     )
 }
@@ -543,10 +527,7 @@ private fun EditNotePop(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier.wrapContentHeight(),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-        ),
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.small,
@@ -554,8 +535,7 @@ private fun EditNotePop(
             Text(
                 text = "Notes",
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier
+                fontSize = 18.sp
             )
         },
         text = {
@@ -603,7 +583,7 @@ private fun EditNotePop(
                 onClick = { onNoteEdited(textFieldState) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(text = "Done") }
+            ) { Text("Done") }
         },
         dismissButton = {
             TextButton(
@@ -611,7 +591,7 @@ private fun EditNotePop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(text = "Undo") }
+            ) { Text("Undo") }
         }
     )
 }
@@ -628,9 +608,7 @@ private fun EditQuantityPop(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier
-            .wrapContentHeight()
-            .width(280.dp),
+        modifier = modifier.wrapContentHeight().width(280.dp),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -643,8 +621,7 @@ private fun EditQuantityPop(
             Text(
                 text = "No. of Tins",
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier
+                fontSize = 18.sp
             )
         },
         text = {
@@ -711,7 +688,7 @@ private fun EditQuantityPop(
                 onClick = { onQtyEdited(textFieldState.toIntOrNull() ?: 1) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(text = "Done") }
+            ) { Text("Done") }
         },
         dismissButton = {
             TextButton(
@@ -719,7 +696,7 @@ private fun EditQuantityPop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(text = "Undo") }
+            ) { Text("Undo") }
         }
     )
 }

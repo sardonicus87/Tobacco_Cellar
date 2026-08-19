@@ -33,7 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,13 +75,11 @@ fun OverflowFilterSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
-        var showOverflowPopup by rememberSaveable { mutableStateOf(false) }
+        var showOverflowPopup by remember { mutableStateOf(false) }
 
         // Header and Match options
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -102,16 +100,13 @@ fun OverflowFilterSection(
 
         if (nothingAssigned()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = nothingLabel(),
-                    modifier = Modifier
-                        .padding(0.dp),
+                    modifier = Modifier.padding(0.dp),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -159,10 +154,7 @@ private fun OverflowWrapper(
 ) {
     OverflowRow(
         items = available,
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(Alignment.Top)
-            .padding(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth().wrapContentHeight(Alignment.Top).padding(horizontal = 4.dp),
         itemSpacing = 6.dp,
         itemContent = {
             val isSelected = selected.contains(it)
@@ -172,8 +164,7 @@ private fun OverflowWrapper(
                 selected = { isSelected },
                 enabled = { (enabled[it] ?: false) || isSelected },
                 onClick = { updateSelectedOptions(it, !isSelected) },
-                modifier = Modifier
-                    .widthIn(max = 140.dp)
+                modifier = Modifier.widthIn(max = 140.dp)
             )
         },
         enabledAtIndex = { enabled[available[it]] ?: true },
@@ -300,8 +291,7 @@ private fun FlowFilterMatchOptions(
                     text = it.value,
                     fontSize = 14.sp,
                     fontWeight = if (matching() == it && !nothingAssigned()) FontWeight.Medium else FontWeight.Normal,
-                    color = if (matching() == it && !nothingAssigned()) MaterialTheme.colorScheme.primary else if (enabled) LocalContentColor.current.copy(alpha = .6f) else LocalContentColor.current.copy(alpha = .38f),
-                    modifier = Modifier
+                    color = if (matching() == it && !nothingAssigned()) MaterialTheme.colorScheme.primary else if (enabled) LocalContentColor.current.copy(alpha = .6f) else LocalContentColor.current.copy(alpha = .38f)
                 )
             }
             if (index != FlowMatchOption.entries.lastIndex) {
@@ -309,7 +299,6 @@ private fun FlowFilterMatchOptions(
                     text = "/",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    modifier = Modifier,
                     color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
                 )
             }
@@ -337,9 +326,7 @@ private fun FlowFilterOverflowPopup(
         title = {
             Text(
                 text = label(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(0.dp),
+                modifier = Modifier.fillMaxWidth().padding(0.dp),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -354,25 +341,18 @@ private fun FlowFilterOverflowPopup(
         shape = MaterialTheme.shapes.medium,
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(0.dp),
+                modifier = Modifier.fillMaxWidth().padding(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
             ) {
                 GlowBox(
                     color = GlowColor(MaterialTheme.colorScheme.background),
                     size = GlowSize(vertical = 10.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 280.dp)
-                        .weight(1f, false),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp).weight(1f, false),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Top
                     ) {
@@ -387,9 +367,7 @@ private fun FlowFilterOverflowPopup(
 
                         // Chips
                         FlowRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight(),
+                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
                             verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
                         ) {
@@ -400,8 +378,7 @@ private fun FlowFilterOverflowPopup(
                                         updateSelectedOptions(it, !selected().contains(it))
                                     },
                                     label = { Text(text = it, fontSize = 14.sp) },
-                                    modifier = Modifier
-                                        .padding(0.dp),
+                                    modifier = Modifier.padding(0.dp),
                                     shape = MaterialTheme.shapes.small,
                                     colors = FilterChipDefaults.filterChipColors(
                                         containerColor = MaterialTheme.colorScheme.background
@@ -413,25 +390,18 @@ private fun FlowFilterOverflowPopup(
                     }
                 }
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Max),
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     TextButton(
-                        onClick = {
-                            clearAll()
-                        },
-                        modifier = Modifier
-                            .offset(x = (-4).dp),
+                        onClick = { clearAll() },
+                        modifier = Modifier.offset(x = (-4).dp),
                         enabled = selected().isNotEmpty()
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
                             contentDescription = "",
-                            modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(20.dp)
+                            modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
                             text = "Clear All",
@@ -443,11 +413,7 @@ private fun FlowFilterOverflowPopup(
                 }
             }
         },
-        confirmButton = {
-            Button(onClick = { onDismiss() }) {
-                Text("Close")
-            }
-        },
+        confirmButton = { Button({ onDismiss() }) { Text("Close") } },
         containerColor = MaterialTheme.colorScheme.background,
         titleContentColor = MaterialTheme.colorScheme.onBackground,
         textContentColor = MaterialTheme.colorScheme.onBackground,

@@ -94,16 +94,13 @@ fun TableViewMode(
 
     val onClick = remember {
         { itemId: Int ->
-            if (filterViewModel.searchFocused.value) {
-                focusManager.clearFocus()
-            } else {
+            if (filterViewModel.searchFocused.value) { focusManager.clearFocus() }
+            else {
                 when {
                     activeMenuId == itemId -> { }
                     activeMenuId != null -> { onDismissMenu() }
                     else -> {
-                        if (!filterViewModel.searchPerformed.value) {
-                            filterViewModel.getPositionTrigger()
-                        }
+                        if (!filterViewModel.searchPerformed.value) { filterViewModel.getPositionTrigger() }
                         onDetailsClick(itemId)
                     }
                 }
@@ -113,9 +110,7 @@ fun TableViewMode(
     val onLongClick = remember {
         { itemId: Int ->
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            if (!filterViewModel.searchPerformed.value) {
-                filterViewModel.getPositionTrigger()
-            }
+            if (!filterViewModel.searchPerformed.value) { filterViewModel.getPositionTrigger() }
             onShowMenu(itemId)
         }
     }
@@ -227,8 +222,7 @@ private fun TableItem(
     // item
     Box(Modifier) {
         Row(
-            modifier = modifier
-                .background(MaterialTheme.colorScheme.secondaryContainer)
+            modifier = modifier.background(MaterialTheme.colorScheme.secondaryContainer)
         ) {
             for (columnIndex in layoutData.columnMinWidths.values.indices) {
                 Box(
@@ -310,15 +304,10 @@ private fun TableHeaderRow(
 
     val onClick = remember {
         { columnIndex: Int ->
-            if (filterViewModel.searchFocused.value) {
-                focusManager.clearFocus()
-            } else {
-                if (activeMenuId() != null) {
-                    onDismissMenu()
-                } else {
-                    updateSorting(columnIndex)
-                    shouldScrollUp()
-                }
+            if (filterViewModel.searchFocused.value) { focusManager.clearFocus() }
+            else {
+                if (activeMenuId() != null) { onDismissMenu() }
+                else { updateSorting(columnIndex); shouldScrollUp() }
             }
         }
     }
@@ -458,8 +447,7 @@ private fun TableTinsList(
         ) {
             filteredTins.tins.forEachIndexed { index, it ->
                 Row(
-                    modifier = Modifier
-                        .height(IntrinsicSize.Min),
+                    modifier = Modifier.height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -472,14 +460,12 @@ private fun TableTinsList(
                     if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
                         Text(
                             text = " (",
-                            modifier = Modifier,
                             fontWeight = FontWeight.Normal,
                             fontSize = 13.sp
                         )
                         if (it.container.isNotEmpty()) {
                             Text(
                                 text = it.container,
-                                modifier = Modifier,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 13.sp
                             )
@@ -487,28 +473,24 @@ private fun TableTinsList(
                         if (it.container.isNotEmpty() && it.unit.isNotEmpty()) {
                             Text(
                                 text = " - ",
-                                modifier = Modifier,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 13.sp
                             )
                         }
                         if (it.unit.isNotEmpty()) {
-                            val quantity =
-                                formatDecimal(it.tinQuantity)
+                            val quantity = formatDecimal(it.tinQuantity)
                             val unit = when (it.unit) {
                                 "grams" -> "g"
                                 else -> it.unit
                             }
                             Text(
                                 text = "$quantity $unit",
-                                modifier = Modifier,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 13.sp
                             )
                         }
                         Text(
                             text = ")",
-                            modifier = Modifier,
                             fontWeight = FontWeight.Normal,
                             fontSize = 13.sp
                         )

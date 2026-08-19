@@ -68,18 +68,10 @@ class Navigator(
 
         val currentStack = state.backStacks[state.topLevelRoute] ?: error("Stack for ${state.topLevelRoute} not found")
         val currentRoute = currentStack.last()
+        val currentRoute2: NavKey = if (state.isTwoPane) { currentStack[currentStack.size - 2] }
+            else { currentRoute }
 
-        val currentRoute2: NavKey =
-            if (state.isTwoPane) {
-                currentStack[currentStack.size - 2]
-            } else {
-                currentRoute
-            }
-
-        if (currentRoute2 == state.topLevelRoute) {
-            state.topLevelRoute = state.startRoute
-        } else {
-            currentStack.removeLastOrNull()
-        }
+        if (currentRoute2 == state.topLevelRoute) { state.topLevelRoute = state.startRoute }
+        else { currentStack.removeLastOrNull() }
     }
 }

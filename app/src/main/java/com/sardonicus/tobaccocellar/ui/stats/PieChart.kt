@@ -122,10 +122,7 @@ private fun DrawScope.drawLabels(
     var tempAngle = startAngle
     for ((_, value) in data) {
         val sweep = (value.toFloat() / total) * 360f
-        if (sweep < outsideLabelThreshold) {
-            firstOutsideLabelAngle = (tempAngle + sweep / 2f) % 360f
-            break
-        }
+        if (sweep < outsideLabelThreshold) { firstOutsideLabelAngle = (tempAngle + sweep / 2f) % 360f; break }
         tempAngle += sweep
     }
 
@@ -267,102 +264,47 @@ private fun DrawScope.drawLabels(
 
 
         /** final adjustment */
-        val adjustedLabelX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            // list placement
-            listX
-        } else {
-            // normal on slice labels
-            labelX - (labelWidth * xOffsetFactor)
-        }
-        val adjustedLabelY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            // list placement
-            val listBase = if (moveToBottom) { size.height - listHeight } else { 0f }
-            listBase + labelList
-        } else {
-            // normal on slice labels
-            labelY - (combinedHeight * yOffsetFactor)
-        }
+        val adjustedLabelX =
+            if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) { listX } // list
+            else { labelX - (labelWidth * xOffsetFactor) } // normal on-slice labels
 
-        val adjustedPercentageX = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            // very thin slices extra adjustment
-            if (sweepAngle < 10f && normalizedMidpointAngle > 245f && totalThinPercent > 0) {
-                // list
-                val start = centerY - (totalThinWidth / 2)
-                val index = orderedThinLabels.indexOf(label)
-                val precedingWidth = orderedThinLabels.take(index).sumOf {
-                    thinPercentMeasures[it]?.toDouble() ?: 0.0
-                }.toFloat()
-                val precedingSpace = listSpacing * index
+        val adjustedLabelY =
+            if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) { // list placement
+                val listBase = if (moveToBottom) { size.height - listHeight } else { 0f }
+                listBase + labelList }
+            else { labelY - (combinedHeight * yOffsetFactor) } // normal on slice labels
 
-                start + precedingWidth + precedingSpace
-//                if (totalThinPercent > 2) {
-//                    val right = (totalThinPercent - thinCount)
-//                    (percentageX - (percentageWidth * xOffsetFactor)) - ((right * (percentageHeight * 1.15f)) * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
-//                } else {
-//                    // alternating
-//                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
-//                        // evens up
-//                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
-//                    } else {
-//                        // odds down
-//                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
-//                    }
-//                    (percentageX - (percentageWidth * xOffsetFactor)) - (additionalOffset * cos(Math.toRadians(midpointAngle.toDouble())).toFloat())
-//                }
-            } else {
-                // normal outside slice placement
-                percentageX - (percentageWidth * xOffsetFactor)
+        val adjustedPercentageX =
+            if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) { // very thin slices extra adjustment
+                if (sweepAngle < 10f && normalizedMidpointAngle > 245f && totalThinPercent > 0) { // list
+                    val start = centerY - (totalThinWidth / 2)
+                    val index = orderedThinLabels.indexOf(label)
+                    val precedingWidth = orderedThinLabels.take(index).sumOf { thinPercentMeasures[it]?.toDouble() ?: 0.0 }.toFloat()
+                    val precedingSpace = listSpacing * index
+
+                    start + precedingWidth + precedingSpace
+                }
+                else { percentageX - (percentageWidth * xOffsetFactor) } // normal outside slice placement
             }
-        } else {
-            // normal inside slice placement
-            adjustedLabelX + (labelWidth - percentageWidth) / 2
-        }
-        val adjustedPercentageY = if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
-            if (sweepAngle < 10f && normalizedMidpointAngle > 245f && totalThinPercent > 1) {
-                // list placement
-                listY
+            else { adjustedLabelX + (labelWidth - percentageWidth) / 2 } // normal inside slice placement
 
-//                // very thin slices at the top of the chart
-//                if (totalThinPercent > 2) {
-//                    val down = (totalThinPercent - thinCount)
-//                    ((centerY - radius) - percentageHeight) + (down * (percentageHeight * 1.15f))
-//                }
-//                else {
-//                    // alternating
-//                    val additionalOffset = if (outsideLabelCount % 2 == 0) {
-//                        // evens up
-//                        (-1 * ((percentageHeight * 0.25f) + (alternatingOffsetMax * alternatingOffsetFactor)))
-//                    } else {
-//                        // odds down
-//                        (percentageHeight * 0.75f) + ((alternatingOffsetMax * 3) * alternatingOffsetFactor)
-//                    }
-//                    (percentageY - (percentageHeight * yOffsetFactor)) + (additionalOffset)
-//                }
-            } else {
-                // outside slice placement
-                percentageY - (percentageHeight * yOffsetFactor)
+        val adjustedPercentageY =
+            if (sweepAngle < outsideLabelThreshold && totalOutsideLabels > 1) {
+                if (sweepAngle < 10f && normalizedMidpointAngle > 245f && totalThinPercent > 1) { listY } // list placement
+                else { percentageY - (percentageHeight * yOffsetFactor) } // outside slice placement
             }
-        } else {
-            // normal inside slice placement
-            adjustedLabelY + labelHeight
-        }
+            else { adjustedLabelY + labelHeight } // normal inside slice placement
 
         drawText(
             textLayoutResult = textLabel,
             brush = SolidColor(labelColor),
-            topLeft = Offset(
-                x = adjustedLabelX,
-                y = adjustedLabelY
-            ),
+            topLeft = Offset(adjustedLabelX, adjustedLabelY)
         )
 
         drawText(
             textLayoutResult = percentageLabel,
             brush = SolidColor(percentColor),
-            topLeft = Offset(
-                x = adjustedPercentageX,
-                y = adjustedPercentageY
-            )
+            topLeft = Offset(adjustedPercentageX, adjustedPercentageY)
         )
 
         currentStartAngle += sweepAngle

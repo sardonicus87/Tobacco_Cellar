@@ -40,15 +40,12 @@ fun FilterSheet(
     val pagerState = rememberPagerState { 3 }
 
     val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) {
-        onDispose { focusManager.clearFocus() }
-    }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     if (bottomSheetState == BottomSheetState.OPENED) {
         ModalBottomSheet(
             onDismissRequest = { filterViewModel.closeBottomSheet() },
-            modifier = modifier
-                .statusBarsPadding(),
+            modifier = modifier.statusBarsPadding(),
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = MaterialTheme.colorScheme.onBackground,
@@ -70,18 +67,14 @@ fun FilterSheet(
                     filterViewModel = filterViewModel,
                     closeSheet = filterViewModel::closeBottomSheet,
                     paginateLayout = !largeScreen,
-                    pagerState = pagerState,
-                    modifier = Modifier
+                    pagerState = pagerState
                 )
 
                 Spacer(Modifier
                     .matchParentSize()
                     .drawBehind {
-                        drawRect(
-                            Color.Black.copy(alpha = .9f),
-                            Offset(0f, size.height),
-                            Size(size.width, navigation)
-                        )
+                        drawRect(Color.Black.copy(alpha = .9f), Offset(0f, size.height),
+                            Size(size.width, navigation))
                     }
                 )
             }

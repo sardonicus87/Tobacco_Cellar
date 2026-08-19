@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.filtering
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,6 +74,8 @@ fun FilterLayout(
     var hasFocus by remember { mutableStateOf(false) }
     val twoPane by filterViewModel.twoPaneState.collectAsState()
 
+    BackHandler(hasFocus) { if (hasFocus) { focusManager.clearFocus() } }
+
     Column (
         modifier = modifier
             .fillMaxWidth()
@@ -83,10 +86,7 @@ fun FilterLayout(
             .pointerInput(hasFocus) {
                 awaitEachGesture {
                     val down = awaitFirstDown(pass = PointerEventPass.Main)
-                    if (hasFocus) {
-                        focusManager.clearFocus()
-                        down.consume()
-                    }
+                    if (hasFocus) { focusManager.clearFocus(); down.consume() }
                 }
             },
         verticalArrangement = Arrangement.Top,
@@ -112,9 +112,7 @@ private fun FilterHeader(
 ) {
     if (sheetLayout) {
         Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
+            modifier = modifier.fillMaxWidth().padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -125,15 +123,11 @@ private fun FilterHeader(
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
                 maxLines = 1,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(top = 8.dp, bottom = 6.dp),
+                modifier = Modifier.weight(1f).padding(top = 8.dp, bottom = 6.dp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 6.dp),
+                modifier = Modifier.weight(1f).padding(end = 6.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Top
             ) {
@@ -154,9 +148,7 @@ private fun FilterHeader(
         }
     } else {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -165,8 +157,7 @@ private fun FilterHeader(
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
                 maxLines = 1,
-                modifier = Modifier,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
@@ -180,17 +171,13 @@ private fun FilterFooter(
 
     TextButton(
         onClick = filterViewModel::resetFilter,
-        modifier = Modifier
-            .offset(x = (-4).dp)
-            .padding(top = 6.dp),
+        modifier = Modifier.offset(x = (-4).dp).padding(top = 6.dp),
         enabled = filtersApplied,
     ) {
         Icon(
             painter = painterResource(R.drawable.close),
             contentDescription = null,
-            modifier = Modifier
-                .padding(end = 3.dp)
-                .size(20.dp)
+            modifier = Modifier.padding(end = 3.dp).size(20.dp)
         )
         Text(
             text = "Clear All",
@@ -207,20 +194,9 @@ private fun PaneLayout(
     filterViewModel: FilterViewModel
 ) {
     Spacer(Modifier.height(8.dp))
-    PageOne(
-        filterViewModel = filterViewModel,
-        modifier = Modifier
-    )
-    PageTwo(
-        filterViewModel = filterViewModel,
-        modifier = Modifier
-            .padding(vertical = 8.dp)
-    )
-    PageThree(
-        filterViewModel = filterViewModel,
-        modifier = Modifier
-            .padding(top = 4.dp)
-    )
+    PageOne(filterViewModel)
+    PageTwo(filterViewModel, Modifier.padding(vertical = 8.dp))
+    PageThree(filterViewModel, Modifier.padding(top = 4.dp))
 }
 
 
@@ -239,10 +215,7 @@ private fun PagerLayout(
                 var totalDrag = 0f
                 detectHorizontalDragGestures(
                     onDragStart = { totalDrag = 0f },
-                    onHorizontalDrag = { change, amount ->
-                        change.consume()
-                        totalDrag += amount
-                    },
+                    onHorizontalDrag = { change, amount -> change.consume(); totalDrag += amount },
                     onDragEnd = {
                         coroutineScope.launch {
                             if (totalDrag < (-50) && pagerState.currentPage < (pagerState.pageCount - 1)) {
@@ -259,46 +232,21 @@ private fun PagerLayout(
     ) {
         PagerIndicator(
             pagerState = pagerState,
-            modifier = Modifier
-                .padding(0.dp),
+            modifier = Modifier.padding(0.dp),
             indicatorSize = IndicatorSizes(6.5.dp, 6.dp)
         )
     }
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(383.dp),
+        modifier = Modifier.fillMaxWidth().height(383.dp),
         userScrollEnabled = true,
         verticalAlignment = Alignment.Top,
     ) { page ->
         when (page) {
-            // brand, type, rating, stock filters //
-            0 -> {
-                PageOne(
-                    filterViewModel = filterViewModel,
-                    modifier = Modifier
-                )
-            }
-
-            // subgenre, cuts, components, flavoring filters //
-            1 -> {
-                PageTwo(
-                    filterViewModel = filterViewModel,
-                    modifier = Modifier
-                )
-            }
-
-            // tin filtering, containers, production //
-            2 -> {
-                PageThree(
-                    filterViewModel = filterViewModel,
-                    modifier = Modifier
-                        .height(383.dp)
-                        .padding(bottom = 24.dp)
-                )
-            }
+            0 -> { PageOne(filterViewModel) }
+            1 -> { PageTwo(filterViewModel) }
+            2 -> { PageThree(filterViewModel, Modifier.height(383.dp).padding(bottom = 24.dp)) }
         }
     }
 }
@@ -319,11 +267,9 @@ private fun PagerIndicator(
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(pagerState.pageCount) {
-            val color = if (pagerState.currentPage == it) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
-            }
+            val color =
+                if (pagerState.currentPage == it) { MaterialTheme.colorScheme.primary }
+                else { MaterialTheme.colorScheme.primary.copy(alpha = 0.38f) }
             val size =
                 if (pagerState.currentPage == it) indicatorSize.current else indicatorSize.other
 
@@ -334,8 +280,7 @@ private fun PagerIndicator(
                     .background(color)
                     .size(size)
                     .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
+                        indication = LocalIndication.current, interactionSource = null
                     ) { animationScope.launch { pagerState.animateScrollToPage(it) } }
             )
         }
@@ -349,25 +294,21 @@ private fun PageOne(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BrandFilterSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier
-                .padding(6.dp),
+            modifier = Modifier.padding(6.dp),
         )
         TypeFilterSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier
-                .padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
+            modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
         )
         OtherFiltersSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 0.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 0.dp),
         )
     }
 }
@@ -378,9 +319,7 @@ private fun PageTwo(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 6.dp),
+        modifier = modifier.fillMaxWidth().padding(top = 6.dp),
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -397,8 +336,7 @@ private fun PageThree(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

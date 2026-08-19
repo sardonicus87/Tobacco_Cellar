@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -59,10 +58,10 @@ fun TinRatesDialog(
     gramsRate: Double,
     onSave: (Double, Double) -> Unit
 ) {
-    var tinOzRate by rememberSaveable { mutableStateOf(formatDecimal(ozRate)) }
-    var tinGramsRate by rememberSaveable { mutableStateOf(formatDecimal(gramsRate)) }
+    var tinOzRate by remember { mutableStateOf(formatDecimal(ozRate)) }
+    var tinGramsRate by remember { mutableStateOf(formatDecimal(gramsRate)) }
     val focusManager = LocalFocusManager.current
-    var saving by rememberSaveable { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
     var debouncedLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(loading) {
@@ -89,10 +88,7 @@ fun TinRatesDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        ),
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         text = {
             Box {
                 Column(
@@ -140,9 +136,7 @@ fun TinRatesDialog(
                                 CustomTextField(
                                     value = tinOzRate,
                                     onValueChange = {
-                                        if (it.matches(allowedPattern)) {
-                                            tinOzRate = it
-                                        }
+                                        if (it.matches(allowedPattern)) { tinOzRate = it }
                                     },
                                     modifier = Modifier.width(80.dp),
                                     textStyle = LocalTextStyle.current.copy(
@@ -191,12 +185,9 @@ fun TinRatesDialog(
                                 CustomTextField(
                                     value = tinGramsRate,
                                     onValueChange = {
-                                        if (it.matches(allowedPattern)) {
-                                            tinGramsRate = it
-                                        }
+                                        if (it.matches(allowedPattern)) { tinGramsRate = it }
                                     },
-                                    modifier = Modifier
-                                        .width(80.dp),
+                                    modifier = Modifier.width(80.dp),
                                     textStyle = LocalTextStyle.current.copy(
                                         textAlign = TextAlign.End,
                                         color = LocalContentColor.current,
@@ -246,10 +237,7 @@ fun TinRatesDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(
-                        tinOzRate.toDoubleOrNull() ?: ozRate,
-                        tinGramsRate.toDoubleOrNull() ?: gramsRate
-                    )
+                    onSave(tinOzRate.toDoubleOrNull() ?: ozRate, tinGramsRate.toDoubleOrNull() ?: gramsRate)
                     saving = true
                 },
                 enabled = !debouncedLoading

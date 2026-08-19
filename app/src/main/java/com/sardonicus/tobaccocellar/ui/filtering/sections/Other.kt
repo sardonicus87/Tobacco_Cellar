@@ -39,7 +39,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -355,13 +354,13 @@ private fun RatingRangePop(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var ratingLowString by rememberSaveable { mutableStateOf(formatDecimal(ratingLow())) }
-    var selectedLow by rememberSaveable { mutableStateOf(ratingLow()) }
-    val minRating by rememberSaveable { mutableStateOf(ratingLowEnabled()) }
+    var ratingLowString by remember { mutableStateOf(formatDecimal(ratingLow())) }
+    var selectedLow by remember { mutableStateOf(ratingLow()) }
+    val minRating by remember { mutableStateOf(ratingLowEnabled()) }
 
-    var ratingHighString by rememberSaveable { mutableStateOf(formatDecimal(ratingHigh())) }
-    var selectedHigh by rememberSaveable { mutableStateOf(ratingHigh()) }
-    val maxRating by rememberSaveable { mutableStateOf(ratingHighEnabled()) }
+    var ratingHighString by remember { mutableStateOf(formatDecimal(ratingHigh())) }
+    var selectedHigh by remember { mutableStateOf(ratingHigh()) }
+    val maxRating by remember { mutableStateOf(ratingHighEnabled()) }
 
     val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
     val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
@@ -375,18 +374,12 @@ private fun RatingRangePop(
     }
 
     val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) {
-        onDispose { focusManager.clearFocus() }
-    }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier
-            .wrapContentHeight(),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-        ),
+        modifier = modifier.wrapContentHeight(),
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.small,
@@ -400,9 +393,7 @@ private fun RatingRangePop(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
+                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
             ) {
@@ -413,15 +404,13 @@ private fun RatingRangePop(
                         updateSelectedUnrated(it)
                         updateSelectedRatingRange(selectedLow, selectedHigh)
                     },
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = 8.dp),
                     enabled = unratedEnabled() || unrated(),
                     fontColor = if (!unratedEnabled()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
                 )
                 // Rating Range //
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -434,9 +423,9 @@ private fun RatingRangePop(
 
                                 try {
                                     if (it.isNotBlank()) {
-                                        val preNumber = if (it.startsWith(decimalSeparator)) {
-                                            "0$it"
-                                        } else it
+                                        val preNumber =
+                                            if (it.startsWith(decimalSeparator)) { "0$it" }
+                                            else it
                                         val number = numberFormat.parse(preNumber)?.toDouble()
 
                                         selectedLow = when {
@@ -445,13 +434,8 @@ private fun RatingRangePop(
                                             number > compMax -> compMax
                                             else -> number
                                         }
-                                    } else {
-                                        selectedLow = null
-                                    }
-
-                                } catch (_: ParseException) {
-                                    selectedLow = null
-                                }
+                                    } else { selectedLow = null }
+                                } catch (_: ParseException) { selectedLow = null }
                             }
                         },
                         modifier = Modifier
@@ -517,9 +501,9 @@ private fun RatingRangePop(
 
                                 try {
                                     if (it.isNotBlank()) {
-                                        val preNumber = if (it.startsWith(decimalSeparator)) {
-                                            "0$it"
-                                        } else it
+                                        val preNumber =
+                                            if (it.startsWith(decimalSeparator)) { "0$it" }
+                                            else it
                                         val number = numberFormat.parse(preNumber)?.toDouble()
 
                                         selectedHigh = when {
@@ -528,13 +512,8 @@ private fun RatingRangePop(
                                             number > (maxRating ?: 5.0) -> (maxRating ?: 5.0)
                                             else -> number
                                         }
-                                    } else {
-                                        selectedHigh = null
-                                    }
-
-                                } catch (_: ParseException) {
-                                    selectedHigh = null
-                                }
+                                    } else { selectedHigh = null }
+                                } catch (_: ParseException) { selectedHigh = null }
                             }
                         },
                         modifier = Modifier
@@ -573,9 +552,7 @@ private fun RatingRangePop(
 
                 // Clear buttons and available range //
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 29.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 29.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -629,8 +606,7 @@ private fun RatingRangePop(
 
                 // Clear all button //
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     TextButton(
@@ -643,15 +619,12 @@ private fun RatingRangePop(
                             updateSelectedRatingRange(null, null)
                         },
                         enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated(),
-                        modifier = Modifier
-                            .offset(x = (-4).dp),
+                        modifier = Modifier.offset(x = (-4).dp),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.close),
                             contentDescription = "",
-                            modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(20.dp)
+                            modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
                             text = "Clear All",
@@ -665,26 +638,17 @@ private fun RatingRangePop(
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    updateSelectedRatingRange(selectedLow, selectedHigh)
-                    onDismiss()
-                },
+                onClick = { updateSelectedRatingRange(selectedLow, selectedHigh); onDismiss() },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Done")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text("Done") }
         },
         dismissButton = {
             TextButton(
                 onClick = { onDismiss() },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Cancel")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text("Cancel") }
         }
     )
 }
@@ -762,9 +726,7 @@ private fun TriStateCheckWithLabel(
         }
         Text(
             text = text(),
-            modifier = Modifier
-                .offset(x = (-4).dp)
-                .padding(end = 6.dp),
+            modifier = Modifier.offset(x = (-4).dp).padding(end = 6.dp),
             color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
             fontSize = 15.sp,
             maxLines = maxLines(),

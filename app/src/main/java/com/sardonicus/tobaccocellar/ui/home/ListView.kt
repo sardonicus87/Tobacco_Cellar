@@ -92,17 +92,13 @@ fun ListViewMode(
     val onLongClick = remember {
         { itemId: Int ->
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            if (!filterViewModel.searchPerformed.value) {
-                filterViewModel.getPositionTrigger()
-            }
+            if (!filterViewModel.searchPerformed.value) { filterViewModel.getPositionTrigger() }
             onShowMenu(itemId)
         }
     }
 
     Box(
-        modifier = Modifier
-            .padding(0.dp)
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         LazyColumn(
             modifier = modifier
@@ -140,8 +136,7 @@ fun ListViewMode(
 
                     AnimatedVisibility(
                         visible = openMenu,
-                        modifier = Modifier
-                            .matchParentSize(),
+                        modifier = Modifier.matchParentSize(),
                         enter = fadeIn(tween(150)),
                         exit = fadeOut(tween(150))
                     ) {
@@ -161,17 +156,10 @@ fun ListViewMode(
                         modifier = Modifier
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 12.dp),
+                            modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.Top
-                        ) {
-                            TinList(
-                                filteredTins = item.tins,
-                                modifier = Modifier
-                            )
-                        }
+                        ) { TinList(item.tins) }
                     }
                 }
             }
@@ -194,9 +182,7 @@ private fun ListItem(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 1.dp)
+        modifier = modifier.fillMaxWidth().padding(bottom = 1.dp)
     ) {
         // main details
         Row(
@@ -216,24 +202,15 @@ private fun ListItem(
                 notes = notes,
                 rating = rating,
                 typeGenreText = typeGenreText,
-                modifier = Modifier
-                    .weight(1f, false)
+                modifier = Modifier.weight(1f, false)
             )
 
             // Quantity
             Column(
-                modifier = Modifier
-                    .width(IntrinsicSize.Max)
-                    .padding(0.dp),
+                modifier = Modifier.width(IntrinsicSize.Max).padding(0.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.End
-            ) {
-                QuantityColumn(
-                    formattedQuantity = formattedQuantity,
-                    outOfStock = outOfStock,
-                    modifier = Modifier
-                )
-            }
+            ) { QuantityColumn(formattedQuantity, outOfStock) }
         }
     }
 }
@@ -250,15 +227,12 @@ private fun MainDetails(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(fraction = .95f)
+        modifier = modifier.fillMaxWidth(fraction = .95f)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = blend(),
-                modifier = Modifier
-                    .weight(1f, false)
-                    .padding(end = 4.dp),
+                modifier = Modifier.weight(1f, false).padding(end = 4.dp),
                 style = MaterialTheme.typography.titleMedium.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     textDecoration = TextDecoration.None
@@ -270,15 +244,12 @@ private fun MainDetails(
             IconRow(favorite, disliked, notes)
         }
         Row(
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .offset(y = (-4).dp),
+            modifier = Modifier.padding(horizontal = 8.dp).offset(y = (-4).dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Start),
             verticalAlignment = Alignment.Top
         ) {
             Text(
                 text = brand(),
-                modifier = Modifier,
                 fontStyle = Italic,
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp,
@@ -290,7 +261,6 @@ private fun MainDetails(
             if (typeGenreText().isNotEmpty()){
                 Text (
                     text = typeGenreText(),
-                    modifier = Modifier,
                     style = MaterialTheme.typography.titleMedium.copy(
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textDecoration = TextDecoration.None
@@ -299,9 +269,7 @@ private fun MainDetails(
                     fontSize = 11.sp
                 )
             }
-            if (rating().isNotEmpty()) {
-                RatingLabel(rating)
-            }
+            if (rating().isNotEmpty()) { RatingLabel(rating) }
         }
     }
 }
@@ -341,9 +309,7 @@ private fun IconRow(
             Icon(
                 painter = painterResource(id = R.drawable.heart_filled_24),
                 contentDescription = null,
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .size(17.dp),
+                modifier = Modifier.padding(start = 2.dp).size(17.dp),
                 tint = LocalCustomColors.current.favHeart
             )
         }
@@ -351,9 +317,7 @@ private fun IconRow(
             Icon(
                 painter = painterResource(id = R.drawable.heartbroken_filled_24),
                 contentDescription = null,
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .size(17.dp),
+                modifier = Modifier.padding(start = 2.dp).size(17.dp),
                 tint = LocalCustomColors.current.disHeart
             )
         }
@@ -361,9 +325,7 @@ private fun IconRow(
             Icon(
                 painter = painterResource(id = R.drawable.notes_24),
                 contentDescription = null,
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .size(16.dp),
+                modifier = Modifier.padding(start = 2.dp).size(16.dp),
                 tint = MaterialTheme.colorScheme.tertiary
             )
         }
@@ -382,7 +344,6 @@ private fun RatingLabel(
     ) {
         Text(
             text = rating(),
-            modifier = Modifier,
             fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
         )
@@ -391,9 +352,7 @@ private fun RatingLabel(
             contentDescription = null,
             colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
             alignment = Alignment.Center,
-            modifier = Modifier
-                .padding(start = 2.dp)
-                .size(12.dp),
+            modifier = Modifier.padding(start = 2.dp).size(12.dp),
         )
     }
 }
@@ -414,14 +373,12 @@ private fun TinList(
     ) {
         filteredTins.tins.forEach {
             Row (
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
                     text = it.tinLabel,
-                    modifier = Modifier,
                     fontWeight = FontWeight.Medium,
                     fontSize = 13.sp
                 )
@@ -429,12 +386,8 @@ private fun TinList(
                     val tinInfo = remember(it.container, it.tinQuantity, it.unit) {
                         buildString {
                             append(" (")
-                            if (it.container.isNotEmpty()) {
-                                append(it.container)
-                            }
-                            if (it.container.isNotEmpty() && it.unit.isNotEmpty()) {
-                                append(" - ")
-                            }
+                            if (it.container.isNotEmpty()) { append(it.container) }
+                            if (it.container.isNotEmpty() && it.unit.isNotEmpty()) { append(" - ") }
                             if (it.unit.isNotEmpty()) {
                                 val quantity = formatDecimal(it.tinQuantity)
                                 val unit = if (it.unit == "grams") "g" else it.unit
@@ -446,7 +399,6 @@ private fun TinList(
 
                     Text(
                         text = tinInfo,
-                        modifier = Modifier,
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp
                     )
@@ -454,7 +406,6 @@ private fun TinList(
                 if (it.finished) {
                     Text(
                         text = " (Finished)",
-                        modifier = Modifier,
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
                         fontStyle = Italic,
