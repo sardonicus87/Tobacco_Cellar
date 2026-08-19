@@ -88,20 +88,6 @@ class HomeViewModel(
     private val _activeMenuId = MutableStateFlow<Int?>(null)
     val activeMenuId = _activeMenuId.asStateFlow()
 
-    private val _showColumnMenu = MutableStateFlow(false)
-    val showColumnMenu = _showColumnMenu.asStateFlow()
-
-    private val _listShadow = MutableStateFlow(0.dp)
-    val listShadow: StateFlow<Dp> = _listShadow.asStateFlow()
-
-    private val _tableShadow = MutableStateFlow(0f)
-    val tableShadow: StateFlow<Float> = _tableShadow.asStateFlow()
-
-    fun updateScrollShadow (canScroll: Boolean) {
-        _listShadow.value = if (canScroll) 3.dp else 0.dp
-        _tableShadow.value = if (canScroll) 0.15f else 0f
-    }
-
     private val _isRendered = MutableStateFlow(false)
     fun updateListRendered(rendered: Boolean) { _isRendered.value = rendered }
 
@@ -676,9 +662,7 @@ class HomeViewModel(
         viewModelScope.launch {
             sortedItems.collect {
                 val ids = it.map { item -> item.items.id }
-                if (_activeMenuId.value != null && _activeMenuId.value !in ids) {
-                    onDismissMenu()
-                }
+                if (_activeMenuId.value != null && _activeMenuId.value !in ids) { onDismissMenu() }
             }
         }
     }
@@ -732,21 +716,15 @@ class HomeViewModel(
     }
 
     fun updateQuickRating(rating: Double?) {
-        _quickEditState.value = _quickEditState.value.copy(
-            rating = rating
-        )
+        _quickEditState.value = _quickEditState.value.copy(rating = rating)
     }
 
     fun updateQuickNotes(notes: String) {
-        _quickEditState.value = _quickEditState.value.copy(
-            notes = notes
-        )
+        _quickEditState.value = _quickEditState.value.copy(notes = notes)
     }
 
     fun updateQuickQuantity(quantity: Int) {
-        _quickEditState.value = _quickEditState.value.copy(
-            quantity = quantity
-        )
+        _quickEditState.value = _quickEditState.value.copy(quantity = quantity)
     }
 
     fun saveQuickEdits() {
@@ -921,8 +899,6 @@ class HomeViewModel(
             )
         }
     }
-
-    fun showColumnMenuToggle() { _showColumnMenu.value = !_showColumnMenu.value }
 
     val tableColumnVisibility: StateFlow<Map<TableColumn, Boolean>> =
         preferencesRepo.tableColumnsHidden.map {

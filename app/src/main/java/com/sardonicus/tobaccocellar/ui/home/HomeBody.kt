@@ -19,13 +19,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +51,8 @@ fun HomeBody(
     filterViewModel: FilterViewModel,
     showLoading: () -> Boolean,
     isTableView: () -> Boolean,
+    columnMenu: () -> Boolean,
+    showColumnMenuToggle: () -> Unit,
     coroutineScope: () -> CoroutineScope,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
@@ -58,12 +62,11 @@ fun HomeBody(
     val columnState = rememberLazyListState()
     val sortedItems by viewModel.itemsListState.collectAsState()
     val itemsCount by viewModel.itemsCount.collectAsState()
-    val showColumnMenu by viewModel.showColumnMenu.collectAsState()
+    val showColumnMenu = columnMenu()
 
     LaunchedEffect(columnState) {
         snapshotFlow { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() }
-            .distinctUntilChanged()
-            .collect { viewModel.updateListRendered(it) }
+            .distinctUntilChanged().collect { viewModel.updateListRendered(it) }
     }
 
     Box {
@@ -76,7 +79,7 @@ fun HomeBody(
             ColumnVisibilityPopup(
                 viewModel = viewModel,
                 onVisibilityChange = viewModel::updateColumnVisibility,
-                onDismiss = viewModel::showColumnMenuToggle
+                onDismiss = showColumnMenuToggle
             )
         }
 
@@ -88,9 +91,7 @@ fun HomeBody(
             itemCountPass = { itemsCountPass },
             onScrollToTop = { coroutineScope().launch { columnState.scrollToItem(0) } },
             onScrollToBottom = { coroutineScope().launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(16.dp)
+            modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp)
         )
 
         HomeScrollHandler(columnState, sortedItems, { itemsCount }, filterViewModel, isTableView())
@@ -110,18 +111,24 @@ private fun BodyContent(
     shouldScrollUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val listShadow by viewModel.listShadow.collectAsState()
-    val tableSorting by viewModel.tableSorting.collectAsState()
     val tableLayoutData by viewModel.tableLayoutData.collectAsState()
-    val tableShadow by viewModel.tableShadow.collectAsState()
+    val tableSorting by viewModel.tableSorting.collectAsState()
+
     val currentView = isTableView()
-    val lastView = rememberSaveable { mutableStateOf(currentView) }
+    val lastView = remember { mutableStateOf(currentView) }
 
     LaunchedEffect(currentView) {
         if (lastView.value != currentView) { columnState.scrollToItem(0) }
         lastView.value = currentView
     }
-    LaunchedEffect(columnState.canScrollBackward) { viewModel.updateScrollShadow(columnState.canScrollBackward) }
+
+    var listShadow by remember { mutableStateOf (0.dp) }
+    var tableShadow by remember { mutableFloatStateOf(0f) }
+
+    SideEffect(columnState.canScrollBackward) {
+        listShadow = if (columnState.canScrollBackward) 3.dp else 0.dp
+        tableShadow = if (columnState.canScrollBackward) 0.15f else 0f
+    }
 
     if (sortedItems.list.isEmpty()) {
         Column(
@@ -137,8 +144,7 @@ private fun BodyContent(
                 text = emptyMessage,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .padding(0.dp),
+                modifier = Modifier.padding(0.dp),
             )
             Spacer(Modifier.weight(1.25f))
         }
@@ -158,9 +164,7 @@ private fun BodyContent(
                 shouldScrollUp = shouldScrollUp,
                 onShowMenu = viewModel::onShowMenu,
                 onDismissMenu = viewModel::onDismissMenu,
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxWidth()
+                modifier = Modifier.padding(0.dp).fillMaxWidth()
             )
         } else {
             GlowBox(
@@ -176,9 +180,7 @@ private fun BodyContent(
                     onEditClick = onEditClick,
                     onShowMenu = viewModel::onShowMenu,
                     onDismissMenu = viewModel::onDismissMenu,
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .fillMaxWidth()
+                    modifier = Modifier.padding(0.dp).fillMaxWidth()
                 )
             }
         }
