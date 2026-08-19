@@ -71,11 +71,6 @@ class BulkEditViewModel (
         }
     }
 
-    private val _tabIndex = MutableStateFlow(0)
-    val tabIndex = _tabIndex.asStateFlow()
-
-    fun updateTabIndex(index: Int) { _tabIndex.value = index }
-
     fun onValueChange(editing: EditingState) {
         editingState = EditingState(
             selectedItems = editing.selectedItems,
@@ -231,14 +226,11 @@ class BulkEditViewModel (
 
                 itemsRepository.updateMultipleItems(itemsToUpdate)
 
-            } finally {
-                SyncStateManager.schedulingPaused = false
-            }
+            } finally { SyncStateManager.schedulingPaused = false }
 
             setLoadingState(false)
             itemsRepository.triggerUploadWorker()
             resetEditingState()
-            updateTabIndex(0)
             EventBus.emit(ShowSnackbar("Batch edits saved."))
         }
     }

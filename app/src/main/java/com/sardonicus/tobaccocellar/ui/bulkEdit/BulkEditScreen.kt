@@ -2,7 +2,6 @@ package com.sardonicus.tobaccocellar.ui.bulkEdit
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,14 +63,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -126,14 +126,8 @@ fun BulkEditScreen(
     val focusManager = LocalFocusManager.current
     val bulkEditUiState by viewModel.bulkEditUiState.collectAsState()
     val saveIndicator by viewModel.saveIndicator.collectAsState()
-    val tabIndex by viewModel.tabIndex.collectAsState()
 
-    val activity = LocalActivity.current
-    DisposableEffect(Unit) {
-        onDispose {
-            if (activity?.isChangingConfigurations == false) { EventBus.tryEmit(DismissSnackbar) }
-        }
-    }
+    DisposableEffect(Unit) { onDispose { EventBus.tryEmit(DismissSnackbar) } }
 
     Scaffold(
         modifier = modifier
@@ -153,15 +147,11 @@ fun BulkEditScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
             BulkEditBody(
                 saveIndicator = saveIndicator,
                 twoColumnTabs = twoColumnTabs,
-                tabIndex = tabIndex,
-                onTabChange = viewModel::updateTabIndex,
                 items = bulkEditUiState.items,
                 selectedItems = viewModel.editingState.selectedItems,
                 editingState = viewModel.editingState,
@@ -175,9 +165,8 @@ fun BulkEditScreen(
                 autoCuts = bulkEditUiState.autoCuts,
                 autoComps = bulkEditUiState.autoComps,
                 autoFlavor = bulkEditUiState.autoFlavor,
-                modifier = modifier
-                    .padding(0.dp)
-                    .fillMaxSize(),
+                focusManager = focusManager,
+                modifier = modifier.padding(0.dp).fillMaxSize(),
             )
         }
     }
@@ -187,8 +176,6 @@ fun BulkEditScreen(
 fun BulkEditBody(
     saveIndicator: Boolean,
     twoColumnTabs: Boolean,
-    tabIndex: Int,
-    onTabChange: (Int) -> Unit,
     items: List<ItemsComponentsAndTins>,
     selectedItems: Set<Int>,
     editingState: EditingState,
@@ -202,36 +189,31 @@ fun BulkEditBody(
     autoCuts: List<String>,
     autoComps: List<String>,
     autoFlavor: List<String>,
+    focusManager: FocusManager,
     modifier: Modifier = Modifier,
 ) {
+    var tabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
     var textFieldFocused by remember { mutableStateOf(false) }
 
     val fieldInteractionSource = remember { MutableInteractionSource() }
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
-    val focusManager = LocalFocusManager.current
     var anythingFocused by remember { mutableStateOf(false) }
 
     BackHandler(anythingFocused) { focusManager.clearFocus() }
 
     SideEffect(pagerState.currentPage) {
         if (pagerState.currentPage == pagerState.targetPage) {
-            if (pagerState.currentPage != tabIndex) {
-                onTabChange(pagerState.currentPage)
-            }
+            if (pagerState.currentPage != tabIndex) { tabIndex = pagerState.currentPage }
         }
     }
     LaunchedEffect(tabIndex) {
-        if (pagerState.currentPage != tabIndex) {
-            pagerState.animateScrollToPage(tabIndex)
-        }
+        if (pagerState.currentPage != tabIndex) { pagerState.animateScrollToPage(tabIndex) }
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .onFocusChanged { anythingFocused = it.hasFocus },
+        modifier = modifier.fillMaxSize().onFocusChanged { anythingFocused = it.hasFocus },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -239,8 +221,7 @@ fun BulkEditBody(
 
         Box {
             Column(
-                modifier = modifier
-                    .fillMaxWidth(),
+                modifier = modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -249,9 +230,7 @@ fun BulkEditBody(
                         Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .onFocusChanged {
-                                    if (it.hasFocus && tabIndex == 1) { onTabChange(0) }
-                                }
+                                .onFocusChanged { if (it.hasFocus && tabIndex == 1) tabIndex = 0 }
                                 .pointerInput(tabIndex) {
                                     if (tabIndex == 1) {
                                         awaitPointerEventScope {
@@ -259,7 +238,7 @@ fun BulkEditBody(
                                                 val event =
                                                     awaitPointerEvent(pass = PointerEventPass.Initial)
                                                 if (event.changes.any { it.changedToDown() }) {
-                                                    onTabChange(0)
+                                                    tabIndex = 0
                                                 }
                                             }
                                         }
@@ -281,11 +260,7 @@ fun BulkEditBody(
                         Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .onFocusChanged {
-                                    if (it.hasFocus && tabIndex == 0) {
-                                        onTabChange(1)
-                                    }
-                                }
+                                .onFocusChanged { if (it.hasFocus && tabIndex == 0) tabIndex = 1 }
                                 .pointerInput(tabIndex) {
                                     if (tabIndex == 0) {
                                         awaitPointerEventScope {
@@ -293,7 +268,7 @@ fun BulkEditBody(
                                                 val event =
                                                     awaitPointerEvent(pass = PointerEventPass.Initial)
                                                 if (event.changes.any { it.changedToDown() }) {
-                                                    onTabChange(1)
+                                                    tabIndex = 1
                                                 }
                                             }
                                         }
@@ -310,25 +285,22 @@ fun BulkEditBody(
                                 autoCuts = autoCuts,
                                 autoComps = autoComps,
                                 autoFlavor = autoFlavor,
-                                fieldFocused = { textFieldFocused = it },
-                                modifier = Modifier
+                                fieldFocused = { textFieldFocused = it }
                             )
                         }
                     }
 
                 } else {
-                    BackHandler(pagerState.currentPage != 0 && !anythingFocused) { onTabChange(0) }
+                    BackHandler(pagerState.currentPage != 0 && !anythingFocused) { tabIndex = 0 }
 
                     SecondaryTabRow(
                         selectedTabIndex = tabIndex,
-                        modifier = Modifier
-                            .padding(bottom = 1.dp),
+                        modifier = Modifier.padding(bottom = 1.dp),
                         containerColor = MaterialTheme.colorScheme.background,
                         contentColor = LocalContentColor.current,
                         indicator = {
                             SecondaryIndicator(
-                                modifier = Modifier
-                                    .tabIndicatorOffset(tabIndex),
+                                modifier = Modifier.tabIndicatorOffset(tabIndex),
                                 color = MaterialTheme.colorScheme.inversePrimary
                             )
                         },
@@ -345,8 +317,8 @@ fun BulkEditBody(
                                 Tab(
                                     selected = tabIndex == index,
                                     onClick = {
-                                        focusManager.clearFocus()
-                                        onTabChange(index)
+                                        if (anythingFocused) focusManager.clearFocus()
+                                        else tabIndex = index
                                     },
                                     modifier = Modifier
                                         .background(
@@ -373,9 +345,7 @@ fun BulkEditBody(
                         verticalAlignment = Alignment.Top
                     ) { targetIndex ->
                         Column(
-                            modifier = Modifier
-                                .padding(0.dp)
-                                .fillMaxSize(),
+                            modifier = Modifier.padding(0.dp).fillMaxSize(),
                         ) {
                             when (targetIndex) {
                                 0 ->
@@ -384,8 +354,7 @@ fun BulkEditBody(
                                         selectedItems = selectedItems,
                                         updateSelection = updateSelection,
                                         clearSelections = clearSelections,
-                                        selectAll = selectAll,
-                                        modifier = Modifier
+                                        selectAll = selectAll
                                     )
 
                                 1 ->
@@ -394,14 +363,13 @@ fun BulkEditBody(
                                         editingState = editingState,
                                         onValueChange = onValueChange,
                                         enableSave = enableSave,
-                                        batchEdit = batchEdit,
+                                        batchEdit = { batchEdit(); tabIndex = 0 },
                                         autoGenres = autoGenres,
                                         autoCuts = autoCuts,
                                         autoComps = autoComps,
                                         autoFlavor = autoFlavor,
                                         fieldFocused = { textFieldFocused = it },
-                                        fieldInteractionSource = fieldInteractionSource,
-                                        modifier = Modifier
+                                        fieldInteractionSource = fieldInteractionSource
                                     )
 
                                 else ->
@@ -410,8 +378,7 @@ fun BulkEditBody(
                                         selectedItems = selectedItems,
                                         updateSelection = updateSelection,
                                         clearSelections = clearSelections,
-                                        selectAll = selectAll,
-                                        modifier = Modifier
+                                        selectAll = selectAll
                                     )
                             }
                         }
@@ -436,14 +403,12 @@ fun BulkSelections(
     val filterViewModel = LocalCellarApplication.current.filterViewModel
 
     Column(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
         ) {
@@ -479,9 +444,7 @@ fun BulkSelections(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
             contentPadding = PaddingValues(0.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -494,9 +457,7 @@ fun BulkSelections(
                     onItemClick = { updateSelection(it.items.id) },
                 )
             }
-            item(span = { GridItemSpan(2) }) {
-                Spacer(Modifier.height(8.dp))
-            }
+            item(span = { GridItemSpan(2) }) { Spacer(Modifier.height(8.dp)) }
         }
         Spacer(Modifier.height(8.dp))
 
@@ -519,14 +480,13 @@ fun BulkEditing(
     fieldInteractionSource: MutableInteractionSource? = null,
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
-    var showRatingPop by rememberSaveable { mutableStateOf(false) }
+    var showRatingPop by remember { mutableStateOf(false) }
 
     Column {
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
             size = GlowSize(vertical = 8.dp),
-            modifier = Modifier
-                .weight(1f)
+            modifier = Modifier.weight(1f)
         ) {
             Column(
                 modifier = modifier
@@ -539,9 +499,7 @@ fun BulkEditing(
             ) {
                 if (isLargeScreen) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -552,9 +510,7 @@ fun BulkEditing(
                             modifier = Modifier
                         )
                     }
-                } else {
-                    Spacer(Modifier.height(12.dp))
-                }
+                } else { Spacer(Modifier.height(12.dp)) }
 
                 // Field selections //
                 Column(
@@ -564,8 +520,7 @@ fun BulkEditing(
                 ) {
                     // Type //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -575,8 +530,7 @@ fun BulkEditing(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.typeSelected,
@@ -596,36 +550,24 @@ fun BulkEditing(
                         CustomDropDown(
                             selectedValue = editingState.type,
                             onValueChange = { onValueChange(editingState.copy(type = it)) },
-                            options = listOf(
-                                "",
-                                "Aromatic",
-                                "English",
-                                "Burley",
-                                "Virginia",
-                                "Other"
-                            ),
-                            modifier = Modifier
-                                //    .fillMaxWidth()
-                                .weight(.7f),
+                            options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
+                            modifier = Modifier.weight(.7f),
                             enabled = editingState.typeSelected
                         )
                     }
 
                     // Subgenre //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.genreSelected,
@@ -659,8 +601,7 @@ fun BulkEditing(
                             onValueChange = { onValueChange(editingState.copy(subGenre = it)) },
                             onOptionSelected = { onValueChange(editingState.copy(subGenre = it)) },
                             allItems = autoGenres,
-                            modifier = Modifier
-                                .weight(.7f),
+                            modifier = Modifier.weight(.7f),
                             trailingIcon = {
                                 if (editingState.subGenre.length > 4) {
                                     Icon(
@@ -689,19 +630,16 @@ fun BulkEditing(
 
                     // Cut //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.cutSelected,
@@ -724,8 +662,7 @@ fun BulkEditing(
                             onValueChange = { onValueChange(editingState.copy(cut = it)) },
                             onOptionSelected = { onValueChange(editingState.copy(cut = it)) },
                             allItems = autoCuts,
-                            modifier = Modifier
-                                .weight(.7f),
+                            modifier = Modifier.weight(.7f),
                             trailingIcon = {
                                 if (editingState.cut.length > 4) {
                                     Icon(
@@ -754,19 +691,16 @@ fun BulkEditing(
 
                     // Components //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.compsSelected,
@@ -806,8 +740,7 @@ fun BulkEditing(
                             componentField = true,
                             onOptionSelected = { onValueChange(editingState.copy(compsString = it)) },
                             allItems = autoComps,
-                            modifier = Modifier
-                                .weight(.7f),
+                            modifier = Modifier.weight(.7f),
                             trailingIcon = {
                                 if (editingState.compsSelected) {
                                     val addIcon =
@@ -857,8 +790,7 @@ fun BulkEditing(
 
                     // Flavor //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -908,8 +840,7 @@ fun BulkEditing(
                             componentField = true,
                             onOptionSelected = { onValueChange(editingState.copy(flavorString = it)) },
                             allItems = autoFlavor,
-                            modifier = Modifier
-                                .weight(.7f),
+                            modifier = Modifier.weight(.7f),
                             trailingIcon = {
                                 if (editingState.flavorSelected) {
                                     val addIcon =
@@ -933,19 +864,14 @@ fun BulkEditing(
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Done,
                             ),
-                            textStyle = LocalTextStyle.current.copy(
-                                color = color.copy(
-                                    alpha = alpha
-                                )
-                            ),
+                            textStyle = LocalTextStyle.current.copy(color = color.copy(alpha = alpha)),
                             enabled = editingState.flavorSelected,
                             maxLines = 1,
                             placeholder = {
                                 if (editingState.flavorSelected) {
                                     Text(
                                         text = "(Separate with comma + space)",
-                                        modifier = Modifier
-                                            .alpha(alpha),
+                                        modifier = Modifier.alpha(alpha),
                                         fontSize = 13.sp,
                                         softWrap = false,
                                         maxLines = 1,
@@ -959,25 +885,20 @@ fun BulkEditing(
 
                     // Rating //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.ratingSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(ratingSelected = it))
-                                    }
+                                    onCheckedChange = { onValueChange(editingState.copy(ratingSelected = it)) }
                                 )
                             }
                             Text(
@@ -1014,20 +935,15 @@ fun BulkEditing(
 
                     // Favorite/Dislike //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(42.dp)
-                            ) {
+                            Box(Modifier.width(42.dp)) {
                                 Checkbox(
                                     checked = editingState.favoriteDisSelected,
                                     onCheckedChange = {
@@ -1056,22 +972,19 @@ fun BulkEditing(
                             )
                         }
                         Row(
-                            modifier = modifier
-                                .weight(.7f),
+                            modifier = modifier.weight(.7f),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Favorite
                             Row(
-                                modifier = Modifier
-                                    .padding(0.dp),
+                                modifier = Modifier.padding(0.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = "Favorite?",
-                                    modifier = Modifier
-                                        .offset(x = 0.dp, y = 1.dp),
+                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                     color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -1083,17 +996,13 @@ fun BulkEditing(
                                             onValueChange(editingState.copy(favorite = it))
                                         } else {
                                             onValueChange(
-                                                editingState.copy(
-                                                    favorite = it,
-                                                    disliked = false
-                                                )
+                                                editingState.copy(favorite = it, disliked = false)
                                             )
                                         }
                                     },
                                     checkedIcon = R.drawable.heart_filled_24,
                                     uncheckedIcon = R.drawable.heart_outline_24,
-                                    modifier = Modifier
-                                        .padding(0.dp),
+                                    modifier = Modifier.padding(0.dp),
                                     size = 34.dp,
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.favHeart,
@@ -1103,15 +1012,13 @@ fun BulkEditing(
                             }
                             // Disliked
                             Row(
-                                modifier = Modifier
-                                    .padding(0.dp),
+                                modifier = Modifier.padding(0.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = "Disliked?",
-                                    modifier = Modifier
-                                        .offset(x = 0.dp, y = 1.dp),
+                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                     color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
                                     ) else LocalContentColor.current
@@ -1132,8 +1039,7 @@ fun BulkEditing(
                                     },
                                     checkedIcon = R.drawable.heartbroken_filled_24,
                                     uncheckedIcon = R.drawable.heartbroken_outlined_24,
-                                    modifier = Modifier
-                                        .padding(0.dp),
+                                    modifier = Modifier.padding(0.dp),
                                     size = 34.dp,
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.disHeart,
@@ -1146,19 +1052,16 @@ fun BulkEditing(
 
                     // Production Status //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.productionSelected,
@@ -1188,18 +1091,13 @@ fun BulkEditing(
                             )
                         }
                         Row(
-                            modifier = Modifier
-                                .weight(.7f),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                4.dp,
-                                Alignment.CenterHorizontally
-                            ),
+                            modifier = Modifier.weight(.7f),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "In Production?",
-                                modifier = Modifier
-                                    .offset(x = 0.dp, y = 1.dp),
+                                modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
                                 ) else LocalContentColor.current,
@@ -1211,8 +1109,7 @@ fun BulkEditing(
                                 },
                                 checkedIcon = R.drawable.check_box_24,
                                 uncheckedIcon = R.drawable.check_box_outline_24,
-                                modifier = Modifier
-                                    .padding(0.dp),
+                                modifier = Modifier.padding(0.dp),
                                 size = 34.dp,
                                 enabled = editingState.productionSelected
                             )
@@ -1221,19 +1118,16 @@ fun BulkEditing(
 
                     // Sync Tins //
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .width(42.dp)
+                                modifier = Modifier.width(42.dp)
                             ) {
                                 Checkbox(
                                     checked = editingState.syncTinsSelected,
@@ -1272,8 +1166,7 @@ fun BulkEditing(
                         ) {
                             Text(
                                 text = "Sync Tins?",
-                                modifier = Modifier
-                                    .offset(x = 0.dp, y = 1.dp),
+                                modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
                                 ) else LocalContentColor.current
@@ -1285,8 +1178,7 @@ fun BulkEditing(
                                 },
                                 checkedIcon = R.drawable.check_box_24,
                                 uncheckedIcon = R.drawable.check_box_outline_24,
-                                modifier = Modifier
-                                    .padding(0.dp),
+                                modifier = Modifier.padding(0.dp),
                                 size = 34.dp,
                                 enabled = editingState.syncTinsSelected
                             )
@@ -1322,10 +1214,7 @@ fun BulkEditing(
 
         if (confirmEdit) {
             ConfirmEditDialog(
-                onEditConfirm = {
-                    confirmEdit = false
-                    batchEdit()
-                },
+                onEditConfirm = { confirmEdit = false; batchEdit() },
                 onEditCancel = { confirmEdit = false }
             )
         }
@@ -1334,10 +1223,7 @@ fun BulkEditing(
             RatingPopup(
                 currentRating = editingState.rating,
                 onDismiss = { showRatingPop = false },
-                onRatingSelected = {
-                    onValueChange(editingState.copy(rating = it))
-                    showRatingPop = false
-                }
+                onRatingSelected = { onValueChange(editingState.copy(rating = it)); showRatingPop = false }
             )
         }
     }
@@ -1356,16 +1242,8 @@ private fun ConfirmEditDialog(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
-        dismissButton = {
-            TextButton(onClick = onEditCancel) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onEditConfirm) {
-                Text(stringResource(R.string.yes))
-            }
-        }
+        dismissButton = { TextButton(onEditCancel) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton(onEditConfirm) { Text(stringResource(R.string.yes)) } }
     )
 }
 
@@ -1387,10 +1265,7 @@ fun BulkSelectionsItem(
             .fillMaxWidth()
             .border(1.dp, borderColor, shape = RoundedCornerShape(4.dp))
             .background(color = background, shape = RoundedCornerShape(4.dp))
-            .clickable(
-                indication = null,
-                interactionSource = null
-            ) { onItemClick() }
+            .clickable(indication = null, interactionSource = null) { onItemClick() }
             .padding(6.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center
@@ -1406,8 +1281,7 @@ fun BulkSelectionsItem(
         )
         Text(
             text = item.brand,
-            modifier = Modifier
-                .padding(start = 8.dp),
+            modifier = Modifier.padding(start = 8.dp),
             maxLines = 1,
             fontSize = 13.sp,
             fontStyle = FontStyle.Italic,
