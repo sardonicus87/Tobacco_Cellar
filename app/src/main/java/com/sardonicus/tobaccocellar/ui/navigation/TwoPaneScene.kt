@@ -19,6 +19,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,15 +42,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -88,9 +90,13 @@ data class TwoPaneScene<T : Any>(
         var secondExpanded by remember { mutableStateOf(true) }
         var showButton by remember { mutableStateOf(false) }
         var longDelay by remember { mutableStateOf(true) }
+        val focusManager = LocalFocusManager.current
+        var mainFocus by remember { mutableStateOf(false) }
+        var secondFocus by remember { mutableStateOf(false) }
 
         BackHandler(enabled = interceptBack, onBack = onBack)
         BackHandler(!secondExpanded) { longDelay = false; secondExpanded = true }
+        BackHandler(mainFocus || secondFocus) { focusManager.clearFocus() }
 
         val paneWidth by animateDpAsState(if (secondExpanded) expandedWidth else 32.dp, tween(300))
         val buttonOffset by animateDpAsState(if (secondExpanded) 12.dp else 0.dp, tween(300))
@@ -134,7 +140,17 @@ data class TwoPaneScene<T : Any>(
                     transition = mainTransition,
                     fullBackStack = fullBackStack,
                     isMain = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged { mainFocus = it.hasFocus }
+                        .pointerInput(secondFocus) {
+                            if (secondFocus) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                                    focusManager.clearFocus(); down.consume()
+                                }
+                            }
+                        }
                 )
 
                 PaneContainer(
@@ -144,7 +160,16 @@ data class TwoPaneScene<T : Any>(
                     modifier = Modifier
                         .width(paneWidth)
                         .graphicsLayer { clip = true }
-                        .tapToggle(secondExpanded) { showButton = true },
+                        .tapToggle(secondExpanded) { showButton = true }
+                        .onFocusChanged { secondFocus = it.hasFocus }
+                        .pointerInput(mainFocus) {
+                            if (mainFocus) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                                    focusManager.clearFocus(); down.consume()
+                                }
+                            }
+                        },
                     expandedWidth = expandedWidth,
                     onEnter = { longDelay = false; secondExpanded = true }
                 )
@@ -280,8 +305,15 @@ private fun TwoPaneButton(
         modifier = modifier
             .width(32.dp)
             .height(buttonHeight)
-            .background(LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha), RoundedCornerShape(buttonCorner))
-            .border(1.dp, LocalCustomColors.current.whiteBlackInverted.copy(alpha = borderAlpha), RoundedCornerShape(buttonCorner))
+            .background(
+                LocalCustomColors.current.whiteBlack.copy(alpha = buttonAlpha),
+                RoundedCornerShape(buttonCorner)
+            )
+            .border(
+                1.dp,
+                LocalCustomColors.current.whiteBlackInverted.copy(alpha = borderAlpha),
+                RoundedCornerShape(buttonCorner)
+            )
             .clickable(indication = null, interactionSource = null) { toggleSecondPane() },
         contentAlignment = Alignment.Center
     ) {
@@ -289,7 +321,9 @@ private fun TwoPaneButton(
             visible = !secondExpanded,
             enter = fadeIn(tween(300)) + expandVertically(tween(300), Alignment.CenterVertically),
             exit = fadeOut(tween(300)) + shrinkVertically(tween(300), Alignment.CenterVertically),
-            modifier = Modifier.fillMaxSize().align(Alignment.CenterStart)
+            modifier = Modifier
+                .fillMaxSize()
+                .align(Alignment.CenterStart)
         ) {
             GlowBox(
                 color = GlowColor(end = LocalCustomColors.current.whiteBlackInverted.copy(alpha = .15f)),
@@ -316,28 +350,12 @@ private fun Modifier.tapToggle(
     enabled: Boolean,
     onTap: () -> Unit
 ): Modifier = if (!enabled) this else this.pointerInput(Unit) {
-    awaitPointerEventScope {
-        while (true) {
-            val event = awaitPointerEvent(PointerEventPass.Final)
-            val down = event.changes.find { it.changedToDown() && !it.isConsumed }
-
-            if (down != null) {
-                val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                    var change: PointerInputChange? = null
-                    while (change == null) {
-                        val nextEvent = awaitPointerEvent(PointerEventPass.Final)
-                        if (nextEvent.changes.any { it.changedToUp() }) {
-                            change = nextEvent.changes.find { it.changedToUp() }
-                        } else if (nextEvent.changes.any { it.isConsumed }) {
-                            return@withTimeoutOrNull null
-                        }
-                    }
-                    change
-                }
-
-                if (up != null && !up.isConsumed) { onTap() }
-            }
+    awaitEachGesture {
+        awaitFirstDown(pass = PointerEventPass.Final)
+        val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+            waitForUpOrCancellation(pass = PointerEventPass.Final)
         }
+        if (up != null && !up.isConsumed) { onTap(); up.consume() }
     }
 }
 
